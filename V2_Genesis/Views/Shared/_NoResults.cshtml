@@ -1,0 +1,24 @@
+﻿@model V2_Genesis.Models.GvList
+<div class="ps-card ps-no-results-card">
+    <div class="ps-no-results-body">
+        <div class="ps-no-results-icon">
+            <i class="fa-solid fa-magnifying-glass"></i>
+        </div>
+        <h3>No Properties Found</h3>
+        <p>
+            No properties matched your search criteria on <strong>@Model?.Name</strong>.
+        </p>
+        <div class="ps-no-results-tips">
+            <p><strong>Try:</strong></p>
+            <ul>
+                <li>Removing some search filters</li>
+                <li>Checking the spelling of your address or scheme name</li>
+                <li>Searching by Township only to see all properties</li>
+                <li>Searching on LIS for the latest property data</li>
+            </ul>
+        </div>
+        <a href="/@Model?.ControllerName/PropertyIndex" class="ps-btn-primary" style="display:inline-flex;margin-top:16px;">
+            <i class="fa-solid fa-database"></i> Search on LIS
+        </a>
+    </div>
+</div>

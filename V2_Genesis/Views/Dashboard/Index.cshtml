@@ -1,0 +1,603 @@
+﻿@model V2_Genesis.Models.ViewModels.Dashboard.ClientDashboardViewModel
+@{
+    ViewData["Title"] = "My Dashboard";
+    Layout = "~/Views/Shared/_ClientLayout.cshtml";
+    var ann = Model.Announcement;
+}
+
+@section Styles {
+   
+    <link href="~/css/views/clientdashboard.css" rel="stylesheet" asp-append-version="true" />
+    <style>
+        .ann-bar {
+            padding: 11px 0;
+            border-bottom: 1px solid rgba(0,0,0,.06);
+        }
+
+        .ann-inner {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 24px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+
+        .ann-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 100px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .ann-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: currentColor;
+            opacity: .8;
+            animation: pulse 1.5s infinite;
+        }
+
+        .ann-text {
+            font-size: 13.5px;
+            font-weight: 500;
+            flex: 1;
+        }
+
+        .ann-days {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12.5px;
+            font-weight: 600;
+            padding: 4px 12px;
+            border-radius: 100px;
+            white-space: nowrap;
+        }
+    </style>
+}
+
+<!-- ── Welcome strip ──────────────────────────────────────────────────── -->
+<div class="ann-bar @ann.BadgeCss">
+    <div class="ann-inner">
+        <span class="ann-badge @ann.BadgeCss">
+            <span class="ann-dot"></span>@ann.BadgeText
+        </span>
+        <span class="ann-text">@ann.Message</span>
+        @if (ann.DaysLeft > 0)
+        {
+            <span class="ann-days @ann.DaysCss">
+                <i class="fa-solid fa-calendar-days"></i>
+                @ann.DaysLeft @(ann.DaysLeft == 1 ? "day" : "days") remaining
+            </span>
+        }
+    </div>
+</div>
+
+<div class="cd-welcome">
+    <div class="cd-welcome-inner">
+        <div>
+            <h1 class="cd-welcome-name">
+                Welcome back, <span>@Model.DisplayName</span> 👋
+            </h1>
+            <p class="cd-welcome-sub">
+                @(Model.IsCompany ? "Company Account" : "Individual Account") &nbsp;·&nbsp;
+                Property Dashboard
+            </p>
+        </div>
+        <div class="cd-ann-pill @ann.BadgeCss">
+            <span class="cd-ann-dot"></span>
+            <span>@ann.Message</span>
+        </div>
+    </div>
+</div>
+
+<!-- ── Quick stats row ────────────────────────────────────────────────── -->
+<div class="cd-stats-row">
+    @foreach (var roll in Model.Rolls.Where(r => !r.IsQuery))
+    {
+        var rd = Model.RollData.GetValueOrDefault(roll.Source) ?? new();
+        <div class="cd-stat-card">
+            <div class="cd-stat-label">@roll.Short</div>
+            <div class="cd-stat-nums">
+                <span title="Linked"><i class="fa-solid fa-link"></i> @rd.LinkedCount</span>
+                @if (roll.HasObjection)
+                {
+                    <span title="Objections"><i class="fa-solid fa-file-pen"></i> @rd.ObjectedCount</span>
+                }
+                @if (roll.HasAppeal)
+                {
+                    <span title="Appeals"><i class="fa-solid fa-gavel"></i> @rd.AppealsCount</span>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+<!-- ── Per-roll collapsible sections ──────────────────────────────────── -->
+<div class="cd-body">
+    @foreach (var roll in Model.Rolls)
+    {
+        var rd = Model.RollData.GetValueOrDefault(roll.Source) ?? new();
+        var rollKey = roll.Source.Replace("_", "");
+        var isActive = roll == Model.Rolls.First();
+
+        <div class="cd-roll-section" id="roll-@rollKey">
+
+            <!-- Roll header (click to collapse the whole roll) -->
+            <div class="cd-roll-header @(roll.IsQuery ? "cd-roll-query" : "") @(roll.HasObjection == false && !roll.IsQuery ? "cd-roll-inactive" : "")"
+                 onclick="toggleRoll('@rollKey')">
+                <div class="cd-roll-header-left">
+                    <div class="cd-roll-icon">
+                        @if (roll.IsQuery)
+                        {
+                            <i class="fa-solid fa-magnifying-glass-chart"></i>
+                        }
+                        else if (roll.IsGv)
+                        {
+
+                            <i class="fa-solid fa-landmark"></i>
+                        }
+                        else
+                        {
+
+                            <i class="fa-solid fa-scroll"></i>
+                        }
+                    </div>
+                    <div>
+                        <h2 class="cd-roll-name">@roll.Name</h2>
+                        <span class="cd-roll-short">@roll.Short &nbsp;·&nbsp; @roll.Main_Roll</span>
+                    </div>
+                </div>
+                <div class="cd-roll-header-right">
+                    @if (!roll.IsQuery)
+                    {
+                        @* Change this line in the roll header (was: /@roll.ControllerName/PropertyIndex) *@
+                        <a href="/search/@roll.Source"
+                               class="cd-roll-search-btn"
+                               onclick="event.stopPropagation()">
+                            <i class="fa-solid fa-magnifying-glass"></i> Search Property
+                        </a>
+                    }
+                    <span class="cd-roll-badge @(roll.HasObjection ? "cd-badge-open" : "cd-badge-closed")">
+                        @(roll.HasObjection ? "OPEN" : "CLOSED")
+                    </span>
+                    <i class="fa-solid fa-chevron-down cd-roll-chevron" id="chevron-@rollKey"></i>
+                </div>
+            </div>
+
+            <!-- Roll body (collapsible) -->
+            <div class="cd-roll-body @(isActive ? "open" : "")" id="rollbody-@rollKey">
+
+                @if (roll.IsQuery)
+                {
+                    <!-- Query tile — no tables, just a CTA -->
+                    <div class="cd-query-card">
+                        <i class="fa-solid fa-magnifying-glass-chart cd-query-icon"></i>
+                        <h3>Query / Review</h3>
+                        <p>Submit a query or review request for any property in the valuation system.</p>
+                        <a href="/@roll.ControllerName/PropertyIndex" class="cd-query-btn">
+                            <i class="fa-solid fa-arrow-right"></i> Start Query
+                        </a>
+                    </div>
+                }
+                else
+                {
+                    <!-- ─── 1. Linked Properties ─────────────────────────── -->
+                    <div class="cd-widget">
+                        <div class="cd-widget-toggle" onclick="toggleWidget('@rollKey-linked')">
+                            <div class="cd-widget-toggle-left">
+                                <i class="fa-solid fa-link"></i>
+                                <h3>Linked Properties</h3>
+                                <span class="cd-count-badge">@rd.LinkedCount</span>
+                            </div>
+                            <i class="fa-solid fa-chevron-down cd-widget-chevron" id="wchev-@rollKey-linked"></i>
+                        </div>
+
+                        <div class="cd-widget-body" id="widget-@rollKey-linked">
+                            <div class="cd-widget-toolbar">
+                                <a href="/@roll.ControllerName/PropertyIndex" class="cd-add-btn">
+                                    <i class="fa-solid fa-plus"></i> Link New Property
+                                </a>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="cd-table table table-bordered table-hover"
+                                       id="tbl-@rollKey-linked">
+                                    <thead>
+                                        <tr>
+                                            <th>🏘️ Property Description</th>
+                                            <th>🏷️ Category</th>
+                                            <th>🏙️ Town Name</th>
+                                            <th>💰 Market Value</th>
+                                            <th>📅 WEF Date</th>
+                                            <th>⚙️ Options</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @* TODO: Replace when data method provided *@
+                                        @foreach (dynamic item in rd.LinkedProperties)
+                                        {
+                                            <tr>
+                                                <td>@item.PropertyDesc</td>
+                                                <td>@item.CatDesc</td>
+                                                <td>@item.TownNameDesc</td>
+                                                <td class="cd-market-val">@item.MarketValue</td>
+                                                <td>@item.WefDate</td>
+                                                <td>
+                                                    <div class="dropdown">
+                                                        <button class="cd-action-btn dropdown-toggle"
+                                                                data-bs-toggle="dropdown">
+                                                            Actions
+                                                        </button>
+                                                        <ul class="dropdown-menu">
+                                                            @if (roll.HasObjection)
+                                                            {
+                                                                <li>
+                                                                    <a class="dropdown-item"
+                                                                           href="/@roll.ControllerName/CheckProperty?sourceTable=@item.PropertyFrom&UnitKey=@item.UnitKey&ValuationKey=@item.ValuationKey&AppealStatus=False">
+                                                                        🛑 Object
+                                                                    </a>
+                                                                </li>
+                                                            }
+                                                            <li>
+                                                                <a class="dropdown-item"
+                                                                       href="/Home/Delete@(roll.ControllerName)?id=@item.Id">
+                                                                    🔗 Unlink
+                                                                </a>
+                                                            </li>
+                                                        </ul>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    @* ─── 2. Properties Objected On ────────────────────── *@
+                    @if (roll.HasObjection)
+                    {
+                        <div class="cd-widget">
+                            <div class="cd-widget-toggle" onclick="toggleWidget('@rollKey-objected')">
+                                <div class="cd-widget-toggle-left">
+                                    <i class="fa-solid fa-file-pen"></i>
+                                    <h3>Properties Objected On</h3>
+                                    <span class="cd-count-badge cd-count-orange">@rd.ObjectedCount</span>
+                                </div>
+                                <i class="fa-solid fa-chevron-down cd-widget-chevron" id="wchev-@rollKey-objected"></i>
+                            </div>
+
+                            <div class="cd-widget-body" id="widget-@rollKey-objected">
+                                <div class="table-responsive">
+                                    <table class="cd-table table table-bordered table-hover"
+                                           id="tbl-@rollKey-objected">
+                                        <thead>
+                                            <tr>
+                                                <th>🆔 Objection No.</th>
+                                                <th>🏘️ Property Description</th>
+                                                <th>🏷️ Category</th>
+                                                <th>🏙️ Town Name</th>
+                                                <th>💰 Market Value</th>
+                                                <th>📊 Status</th>
+                                                <th>⚙️ Options</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @* TODO: Replace when data method provided *@
+                                            @foreach (dynamic item in rd.ObjectedProperties)
+                                            {
+                                                <tr>
+                                                    <td>@item.Objection_No</td>
+                                                    <td>@item.Property_Desc</td>
+                                                    <td>@item.Old_Category</td>
+                                                    <td>@item.Town_Name</td>
+                                                    <td class="cd-market-val">@item.Old_Market_Value</td>
+                                                    <td>@Html.Raw(GetStatusPill(item.objection_Status?.ToString()))</td>
+                                                    <td>
+                                                        <div class="dropdown">
+                                                            <button class="cd-action-btn dropdown-toggle"
+                                                                    data-bs-toggle="dropdown">
+                                                                Actions
+                                                            </button>
+                                                            <ul class="dropdown-menu">
+                                                                <li><a class="dropdown-item" href="/Home/FormData@(roll.ControllerName)?propertyID=@item.Property_Type&objectionNo=@item.Objection_No&AppealStatus=False">👁️ View Form</a></li>
+                                                                <li><a class="dropdown-item" href="/@roll.ControllerName/DownloadAcknowledgement?objectionNo=@item.Objection_No">📄 Acknowledgement</a></li>
+                                                                @if (item.objection_Status == "Obj-Lodging")
+                                                                {
+                                                                    <li><a class="dropdown-item" href="/@roll.ControllerName/userDocuments?ObjectionNum=@item.Objection_No">📤 Add Evidence</a></li>
+                                                                }
+                                                                @if (item.objection_Status == "Notice-Sent")
+                                                                {
+                                                                    <li><a class="dropdown-item" href="/@roll.ControllerName/DownloadSection53?ObjectionNum=@item.Objection_No">📥 Download Decision</a></li>
+                                                                }
+                                                                @if (item.objection_Status == "Obj-Lodging" || item.objection_Status == "Obj-Unallocated")
+                                                                {
+                                                                    <li><a class="dropdown-item" href="/@roll.ControllerName/Withdrawal?ObjectionNum=@item.Objection_No&Withdraw=O">❌ Withdraw</a></li>
+                                                                }
+                                                            </ul>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+                    @* ─── 3. Appeals ────────────────────────────────────── *@
+                    @if (roll.HasAppeal)
+                    {
+                        <div class="cd-widget">
+                            <div class="cd-widget-toggle" onclick="toggleWidget('@rollKey-appeals')">
+                                <div class="cd-widget-toggle-left">
+                                    <i class="fa-solid fa-gavel"></i>
+                                    <h3>Properties with an Appeal</h3>
+                                    <span class="cd-count-badge cd-count-red">@rd.AppealsCount</span>
+                                </div>
+                                <i class="fa-solid fa-chevron-down cd-widget-chevron" id="wchev-@rollKey-appeals"></i>
+                            </div>
+
+                            <div class="cd-widget-body" id="widget-@rollKey-appeals">
+                                <div class="table-responsive">
+                                    <table class="cd-table table table-bordered table-hover"
+                                           id="tbl-@rollKey-appeals">
+                                        <thead>
+                                            <tr>
+                                                <th>🆔 Appeal No.</th>
+                                                <th>🏘️ Property Description</th>
+                                                <th>🏷️ Category</th>
+                                                <th>🏙️ Town Name</th>
+                                                <th>💰 Market Value</th>
+                                                <th>📊 Status</th>
+                                                <th>⚙️ Options</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @* TODO: Replace when data method provided *@
+                                            @foreach (dynamic item in rd.Appeals)
+                                            {
+                                                <tr>
+                                                    <td>@item.Objection_No</td>
+                                                    <td>@item.Property_Desc</td>
+                                                    <td>@item.Old_Category</td>
+                                                    <td>@item.Town_Name</td>
+                                                    <td class="cd-market-val">@item.Old_Market_Value</td>
+                                                    <td>@Html.Raw(GetStatusPill(item.objection_Status?.ToString()))</td>
+                                                    <td>
+                                                        <div class="dropdown">
+                                                            <button class="cd-action-btn dropdown-toggle"
+                                                                    data-bs-toggle="dropdown">
+                                                                Actions
+                                                            </button>
+                                                            <ul class="dropdown-menu">
+                                                                <li><a class="dropdown-item" href="/Home/FormData@(roll.ControllerName)?propertyID=@item.Property_Type&objectionNo=@item.Objection_No&AppealStatus=True">👁️ View Form</a></li>
+                                                                <li><a class="dropdown-item" href="/@roll.ControllerName/DownloadAcknowledgement?objectionNo=@item.Objection_No">📄 Acknowledgement</a></li>
+                                                                @if (item.objection_Status == "App-Unallocated")
+                                                                {
+                                                                    <li><a class="dropdown-item" href="/@roll.ControllerName/userDocuments?ObjectionNum=@item.Objection_No">📤 Add Evidence</a></li>
+                                                                }
+                                                                @if (item.objection_Status == "App-Lodging" || item.objection_Status == "App-Unallocated")
+                                                                {
+                                                                    <li><a class="dropdown-item" href="/@roll.ControllerName/Withdrawal?ObjectionNum=@item.Objection_No&Withdraw=AppealSup1">❌ Withdraw</a></li>
+                                                                }
+                                                            </ul>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+
+    }
+    @* ── Rebates ──────────────────────────────────────────────────────────── *@
+    <div class="cd-roll-section">
+        <div class="cd-roll-header cd-roll-rebates" onclick="toggleRoll('rebates')">
+            <div class="cd-roll-header-left">
+                <div class="cd-roll-icon"><i class="fa-solid fa-percent"></i></div>
+                <div>
+                    <h2 class="cd-roll-name">Rebates Process</h2>
+                    <span class="cd-roll-short">Apply or re-apply for property rate rebates</span>
+                </div>
+            </div>
+            <div class="cd-roll-header-right">
+                <span class="cd-roll-badge cd-badge-open">OPEN</span>
+                <i class="fa-solid fa-chevron-down cd-roll-chevron" id="chevron-rebates"></i>
+            </div>
+        </div>
+
+        <div class="cd-roll-body" id="rollbody-rebates">
+            <div class="cd-cta-card">
+                <div class="cd-cta-icon cd-cta-icon-gold">
+                    <i class="fa-solid fa-percent"></i>
+                </div>
+                <div class="cd-cta-body">
+                    <h3>Apply for Property Rebates</h3>
+                    <p>
+                        The City of Johannesburg offers rebate benefits to qualifying property owners —
+                        including pensioners, disabled persons, child-headed households and public benefit
+                        organisations. Apply or re-apply below.
+                    </p>
+                    <div class="cd-cta-actions">
+                        <a href="/Rebates/Index" class="cd-cta-btn cd-cta-btn-primary">
+                            <i class="fa-solid fa-file-pen"></i> Apply for Rebates
+                        </a>
+                        <a href="/Rebates/RebatesDashboard" class="cd-cta-btn cd-cta-btn-outline">
+                            <i class="fa-solid fa-gauge-high"></i> View My Rebates
+                        </a>
+                    </div>
+                </div>
+                <div class="cd-cta-chips">
+                    <span class="cd-chip"><i class="fa-solid fa-person-cane"></i> Pensioner</span>
+                    <span class="cd-chip"><i class="fa-solid fa-wheelchair"></i> Disability</span>
+                    <span class="cd-chip"><i class="fa-solid fa-child"></i> Child-Headed</span>
+                    <span class="cd-chip"><i class="fa-solid fa-hands-holding-child"></i> PBO</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* ── Property Attributes ───────────────────────────────────────────────── *@
+    <div class="cd-roll-section">
+        <div class="cd-roll-header cd-roll-attributes" onclick="toggleRoll('attributes')">
+            <div class="cd-roll-header-left">
+                <div class="cd-roll-icon"><i class="fa-solid fa-clipboard-list"></i></div>
+                <div>
+                    <h2 class="cd-roll-name">Property Attributes</h2>
+                    <span class="cd-roll-short">Submit updated property information for valuation roll preparation</span>
+                </div>
+            </div>
+            <div class="cd-roll-header-right">
+                <span class="cd-roll-badge cd-badge-open">NEW</span>
+                <i class="fa-solid fa-chevron-down cd-roll-chevron" id="chevron-attributes"></i>
+            </div>
+        </div>
+
+        <div class="cd-roll-body" id="rollbody-attributes">
+            <div class="cd-cta-card">
+                <div class="cd-cta-icon cd-cta-icon-black">
+                    <i class="fa-solid fa-clipboard-list"></i>
+                </div>
+                <div class="cd-cta-body">
+                    <h3>Submit Property Attributes</h3>
+                    <p>
+                        Search for your property, link it to your profile and submit updated or additional
+                        property information. Your submission will be reviewed by a valuer before it is
+                        included in the valuation roll.
+                    </p>
+                    <div class="cd-cta-notice">
+                        <i class="fa-solid fa-circle-info"></i>
+                        Submission does not imply acceptance — all information is subject to professional review.
+                    </div>
+                    <div class="cd-cta-actions">
+                        <a href="/attributes/search" class="cd-cta-btn cd-cta-btn-black">
+                            <i class="fa-solid fa-magnifying-glass"></i> Search &amp; Link Property
+                        </a>
+                        <a href="/my-submissions" class="cd-cta-btn cd-cta-btn-outline">
+                            <i class="fa-solid fa-file-lines"></i> My Submissions
+                        </a>
+                    </div>
+                </div>
+                <div class="cd-cta-chips">
+                    <span class="cd-chip"><i class="fa-solid fa-1"></i> Search Property</span>
+                    <span class="cd-chip"><i class="fa-solid fa-2"></i> Link to Profile</span>
+                    <span class="cd-chip"><i class="fa-solid fa-3"></i> Submit Form</span>
+                    <span class="cd-chip"><i class="fa-solid fa-4"></i> Valuer Reviews</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+</div>
+
+
+@functions {
+    string GetStatusPill(string? status) => status switch
+    {
+        "Obj-Unallocated" or "Obj-Section51"
+            => "<span class='cd-pill cd-pill-pending'>Obj-Pending</span>",
+        "Obj-Inprogress" or "Obj-Pending-Approval" or "Obj-Rejected"
+            => "<span class='cd-pill cd-pill-inprogress'>Obj-InProgress</span>",
+        "Obj-Lodging"
+            => "<span class='cd-pill cd-pill-lodging'>Obj-Lodging</span>",
+        "Obj-PenTest"
+            => "<span class='cd-pill cd-pill-rejected'>Invalid</span>",
+        "App-Unallocated" or "App-Lodging"
+            => "<span class='cd-pill cd-pill-pending'>@status</span>",
+        "App-Finalized"
+            => "<span class='cd-pill cd-pill-completed'>App-Finalized</span>",
+        null or ""
+            => "<span class='cd-pill cd-pill-pending'>Pending</span>",
+        _ => $"<span class='cd-pill cd-pill-completed'>{status}</span>"
+    };
+}
+
+@section Scripts {
+    <script>
+        // ── Roll section toggle ────────────────────────────────────────────
+        function toggleRoll(key) {
+            const body    = document.getElementById('rollbody-' + key);
+            const chevron = document.getElementById('chevron-' + key);
+            if (!body) return;
+            const isOpen = body.classList.toggle('open');
+            if (chevron) chevron.style.transform = isOpen ? 'rotate(180deg)' : 'rotate(0deg)';
+        }
+
+        // ── Widget sub-section toggle ──────────────────────────────────────
+        function toggleWidget(key) {
+            const body    = document.getElementById('widget-' + key);
+            const chevron = document.getElementById('wchev-' + key);
+            if (!body) return;
+            const isOpen = body.classList.toggle('open');
+            if (chevron) chevron.style.transform = isOpen ? 'rotate(180deg)' : 'rotate(0deg)';
+        }
+
+        // ── Init DataTables on visible tables ─────────────────────────────
+        function initDataTable(selector) {
+            if ($.fn.DataTable.isDataTable(selector)) return;
+            $(selector).DataTable({
+                responsive : true,
+                dom        : '<"cd-dt-top"lBf>rt<"cd-dt-bottom"ip>',
+                lengthMenu : [[5, 10, 25, -1], [5, 10, 25, 'All']],
+                buttons    : [
+                    { extend:'excel', text:'<i class="fa-solid fa-file-excel"></i> Excel', className:'cd-dt-btn' },
+                    { extend:'pdf',   text:'<i class="fa-solid fa-file-pdf"></i> PDF',     className:'cd-dt-btn' }
+                ],
+                language: {
+                    search: '_INPUT_', searchPlaceholder: 'Search...',
+                    lengthMenu: '_MENU_ per page'
+                }
+            });
+        }
+
+        // Init tables inside open sections on load
+        $(document).ready(function () {
+            // Auto-init tables already visible
+            document.querySelectorAll('.cd-widget-body.open .cd-table').forEach(t => {
+                initDataTable('#' + t.id);
+            });
+
+            // Init when widget opens
+            document.querySelectorAll('.cd-widget-toggle').forEach(toggle => {
+                toggle.addEventListener('click', function () {
+                    const bodyId = this.nextElementSibling?.id;
+                    if (!bodyId) return;
+                    setTimeout(() => {
+                        const table = document.querySelector('#' + bodyId + ' .cd-table');
+                        if (table) initDataTable('#' + table.id);
+                    }, 100);
+                });
+            });
+
+            // Format market values
+            document.querySelectorAll('.cd-market-val').forEach(el => {
+                const raw = parseFloat(el.textContent.replace(/[^0-9.-]/g, ''));
+                if (!isNaN(raw) && raw > 0) {
+                    el.textContent = raw.toLocaleString('en-ZA', {
+                        style: 'currency', currency: 'ZAR',
+                        minimumFractionDigits: 0, maximumFractionDigits: 0
+                    });
+                }
+            });
+        });
+    </script>
+}

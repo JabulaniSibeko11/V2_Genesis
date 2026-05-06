@@ -1,0 +1,27 @@
+﻿@{ ViewData["Title"] = "Email Confirmation"; }
+
+<link href="~/account/emailconfirmationcss.css" rel="stylesheet" />
+
+<div class="auth-page">
+  <div class="auth-card">
+    @if (ViewBag.Success == true)
+    {
+      <div class="confirm-icon success"><i class="fa-solid fa-circle-check"></i></div>
+      <h1 class="auth-title">Email Confirmed!</h1>
+      <p class="auth-desc">
+        Your email address has been successfully confirmed. Your Genesis account is now active.
+        You can sign in and start managing your property information.
+      </p>
+      <a href="/login" class="auth-btn"><i class="fa-solid fa-right-to-bracket"></i> Sign In Now</a>
+    }
+    else
+    {
+      <div class="confirm-icon error"><i class="fa-solid fa-circle-xmark"></i></div>
+      <h1 class="auth-title">Confirmation Failed</h1>
+      <p class="auth-desc">
+        The confirmation link is invalid or has expired. Please register again or contact support if the problem persists.
+      </p>
+      <a href="/register" class="auth-btn"><i class="fa-solid fa-user-plus"></i> Register Again</a>
+    }
+  </div>
+</div>

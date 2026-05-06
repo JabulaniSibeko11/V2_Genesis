@@ -1,0 +1,76 @@
+﻿@model List<V2_Genesis.Models.PropertySearchResult>
+@{
+    var roll = ViewBag.Roll as V2_Genesis.Models.GvList;
+}
+
+<div class="ps-card ps-results-card">
+    <div class="ps-card-header ps-results-header">
+        <div>
+            <i class="fa-solid fa-list-check"></i>
+            Search Results
+            <span class="ps-results-count">@Model.Count @(Model.Count == 1 ? "property" : "properties") found</span>
+        </div>
+    </div>
+    <div class="ps-card-body ps-no-pad">
+        <div class="table-responsive">
+            <table class="ps-table table table-bordered table-hover" id="resultsTable">
+                <thead>
+                    <tr>
+                        <th>Property Description</th>
+                        <th>Town</th>
+                        <th>Address</th>
+                        <th>Market Value</th>
+                        <th>Category</th>
+                        <th>WEF Date</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>
+                                @if (!string.IsNullOrWhiteSpace(item.SchemeName))
+                                {
+                                    <span>@item.SchemeName Unit @item.UnitNo</span>
+                                }
+                                else
+                                {
+                                    <span>Erf @item.Erf Ptn @item.Ptn@(!string.IsNullOrWhiteSpace(item.Re) ? $" RE {item.Re}" : "")</span>
+                                }
+                            </td>
+                            <td>@item.TownNameDesc</td>
+                            <td>@(item.LisStreetAddress ?? "–")</td>
+                            <td class="ps-market-val">@item.MarketValue</td>
+                            <td>@(item.CatDesc ?? "–")</td>
+                            <td>@(item.WefDate ?? "–")</td>
+                            <td>
+                                <a href="/@roll?.ControllerName/CheckProperty?sourceTable=@roll?.Source&UnitKey=@item.UnitKey&ValuationKey=@item.ValuationKey&AppealStatus=False"
+                                       class="ps-select-btn">
+                                    <i class="fa-solid fa-link"></i> View &amp; Link
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+        if (!$.fn.DataTable.isDataTable('#resultsTable')) {
+            $('#resultsTable').DataTable({
+                responsive : true,
+                dom        : '<"ps-dt-top"lBf>rt<"ps-dt-bottom"ip>',
+                lengthMenu : [[10, 25, 50, -1], [10, 25, 50, 'All']],
+                buttons    : [
+                    { extend: 'excel', text: '<i class="fa-solid fa-file-excel"></i> Excel', className: 'ps-dt-btn' },
+                    { extend: 'pdf',   text: '<i class="fa-solid fa-file-pdf"></i> PDF',     className: 'ps-dt-btn' }
+                ],
+                language: { search: '_INPUT_', searchPlaceholder: 'Filter results…', lengthMenu: '_MENU_ per page' }
+            });
+        }
+    });
+</script>

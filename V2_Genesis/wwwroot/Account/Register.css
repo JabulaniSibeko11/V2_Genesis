@@ -1,0 +1,327 @@
+﻿/* ═══════════════════════════════════════════════
+   REGISTER PAGE
+═══════════════════════════════════════════════ */
+.reg-page {
+    min-height: calc(100vh - var(--nav-h));
+    background: var(--grey-100);
+    padding: 40px 20px;
+}
+
+    .reg-page .container {
+        max-width: 1160px;
+        margin: 0 auto;
+    }
+
+.reg-wrap {
+    display: grid;
+    grid-template-columns: 420px 1fr;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: var(--shadow-lg);
+}
+
+/* ── LEFT ────────────────────────────────────── */
+.reg-left {
+    background: var(--black);
+    color: var(--white);
+    padding: 52px 44px;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+    position: sticky;
+    top: var(--nav-h);
+    align-self: start;
+}
+
+.reg-brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.reg-brand-mark {
+    width: 46px;
+    height: 46px;
+    background: var(--gold);
+    color: var(--black);
+    font-weight: 800;
+    font-size: 22px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.reg-brand-name {
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 2.5px;
+    color: var(--gold);
+}
+
+.reg-brand-sub {
+    font-size: 11px;
+    color: rgba(255,255,255,.5);
+}
+
+.reg-headline {
+    font-size: 32px;
+    font-weight: 800;
+    line-height: 1.2;
+    color: var(--white);
+}
+
+    .reg-headline span {
+        color: var(--gold);
+    }
+
+.reg-desc {
+    font-size: 13.5px;
+    color: rgba(255,255,255,.65);
+    line-height: 1.75;
+}
+
+.reg-features {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.reg-feature {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+}
+
+.reg-feature-icon {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    background: rgba(230,176,0,.12);
+    border: 1px solid rgba(230,176,0,.25);
+    border-radius: 8px;
+    color: var(--gold);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+}
+
+.reg-feature-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+    .reg-feature-text strong {
+        font-size: 13.5px;
+        color: var(--white);
+        font-weight: 600;
+    }
+
+    .reg-feature-text span {
+        font-size: 12px;
+        color: rgba(255,255,255,.5);
+    }
+
+.reg-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(230,176,0,.12);
+    border: 1px solid rgba(230,176,0,.3);
+    color: var(--gold);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 8px 14px;
+    border-radius: 100px;
+    width: fit-content;
+    margin-top: auto;
+}
+
+.reg-badge-dot {
+    width: 7px;
+    height: 7px;
+    background: var(--gold);
+    border-radius: 50%;
+    animation: pulse 1.5s infinite;
+}
+
+/* ── RIGHT ───────────────────────────────────── */
+.reg-right {
+    background: var(--white);
+    padding: 52px 52px;
+    overflow-y: auto;
+}
+
+.reg-right-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--black);
+    margin-bottom: 6px;
+}
+
+.reg-right-subtitle {
+    font-size: 13.5px;
+    color: var(--grey-600);
+    margin-bottom: 24px;
+}
+
+/* Tabs */
+.reg-tabs {
+    display: flex;
+    gap: 8px;
+    background: var(--grey-100);
+    padding: 5px;
+    border-radius: 10px;
+    margin-bottom: 24px;
+    width: fit-content;
+}
+
+.reg-tab {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 9px 20px;
+    border: none;
+    cursor: pointer;
+    border-radius: 8px;
+    font-family: var(--font);
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--grey-600);
+    background: transparent;
+    transition: all var(--transition);
+}
+
+    .reg-tab.active {
+        background: var(--white);
+        color: var(--black);
+        font-weight: 600;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .reg-tab i {
+        font-size: 12px;
+    }
+
+/* Tab panes */
+.tab-pane {
+    display: none;
+}
+
+    .tab-pane.active {
+        display: block;
+    }
+
+/* ID toggle */
+.f-hint-inline {
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--grey-600);
+}
+
+.id-toggle {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 10px;
+}
+
+.id-toggle-btn {
+    padding: 6px 16px;
+    border: 1.5px solid var(--grey-200);
+    background: var(--white);
+    border-radius: 7px;
+    font-family: var(--font);
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--grey-600);
+    cursor: pointer;
+    transition: all var(--transition);
+}
+
+    .id-toggle-btn.active {
+        border-color: var(--gold);
+        background: var(--gold-light);
+        color: var(--black);
+        font-weight: 600;
+    }
+
+.id-field {
+    display: none;
+}
+
+    .id-field.active {
+        display: block;
+    }
+
+/* Submit button */
+.reg-submit {
+    width: 100%;
+    padding: 13px;
+    background: var(--gold);
+    color: var(--black);
+    border: none;
+    cursor: pointer;
+    border-radius: 9px;
+    font-family: var(--font);
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: .3px;
+    transition: background var(--transition), transform var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+    .reg-submit:hover {
+        background: var(--gold-hover);
+        transform: translateY(-1px);
+    }
+
+    .reg-submit:active {
+        transform: translateY(0);
+    }
+
+.reg-login-link {
+    text-align: center;
+    font-size: 13.5px;
+    color: var(--grey-600);
+}
+
+    .reg-login-link a {
+        color: var(--gold-dark);
+        font-weight: 600;
+    }
+
+/* ── Responsive ──────────────────────────────── */
+@media (max-width: 900px) {
+    .reg-wrap {
+        grid-template-columns: 1fr;
+    }
+
+    .reg-left {
+        display: none;
+    }
+
+    .reg-right {
+        padding: 36px 24px;
+    }
+}
+
+@media (max-width: 480px) {
+    .reg-right {
+        padding: 28px 16px;
+    }
+
+    .reg-tabs {
+        width: 100%;
+    }
+
+    .reg-tab {
+        flex: 1;
+        justify-content: center;
+    }
+}

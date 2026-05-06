@@ -1,0 +1,261 @@
+﻿@model V2_Genesis.Models.ViewModels.Home.LandingViewModel
+@{
+    ViewData["Title"] = "Home";
+    Layout = "_Layout";
+    var roll = Model.Roll;
+    var ann = Model.Announcement;
+}
+
+<link href="~/css/views/homeindex.css" rel="stylesheet" asp-append-version="true" />
+@* ── Disclaimer Modal (only if cookie absent) ─────────────────────────────── *@
+@if (Model.ShowDisclaimer)
+{
+    <div class="modal-backdrop-custom" id="disclaimerBackdrop"></div>
+    <div class="disclaimer-modal" id="disclaimerModal" role="dialog" aria-modal="true">
+        <div class="disclaimer-card">
+            <div class="disclaimer-header">
+                <div class="disclaimer-header-icon"><i class="fa-solid fa-building-columns"></i></div>
+                <h2>@Model.Disclaimer.Title</h2>
+            </div>
+            <div class="disclaimer-body">
+                <p>@Model.Disclaimer.Text1</p>
+                <p>@Model.Disclaimer.Text2</p>
+                <p>@Model.Disclaimer.Text3</p>
+                <p>@Model.Disclaimer.Text4</p>
+                <p>@Model.Disclaimer.Text5</p>
+            </div>
+            <div class="disclaimer-footer">
+                <button class="disclaimer-accept-btn" id="acceptDisclaimer">
+                    <i class="fa-solid fa-circle-check"></i> Accept &amp; Continue
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@* ── Announcement Bar ─────────────────────────────────────────────────────── *@
+<div class="ann-bar @ann.BadgeCss">
+    <div class="ann-inner">
+        <span class="ann-badge @ann.BadgeCss">
+            <span class="ann-dot"></span>@ann.BadgeText
+        </span>
+        <span class="ann-text">@ann.Message</span>
+        @if (ann.DaysLeft > 0)
+        {
+            <span class="ann-days @ann.DaysCss">
+                <i class="fa-solid fa-calendar-days"></i>
+                @ann.DaysLeft @(ann.DaysLeft == 1 ? "day" : "days") remaining
+            </span>
+        }
+    </div>
+</div>
+
+@* ── Hero ─────────────────────────────────────────────────────────────────── *@
+<section class="hero">
+    <div class="hero-inner">
+        <div class="hero-text">
+            <div class="hero-eyebrow">City of Johannesburg · Property Branch</div>
+            <h1 class="hero-heading">
+                Property Services<br />
+                <span>Valuation Portal</span>
+            </h1>
+            <p class="hero-desc">
+                Access the General Valuation Roll, submit property attributes, lodge objections,
+                and manage your property rights — transparently, securely, and all in one place.
+            </p>
+            <div class="hero-actions">
+                <a href="/register" class="hero-btn-primary">
+                    <i class="fa-solid fa-user-plus"></i> Register Free
+                </a>
+                <a href="/login" class="hero-btn-secondary">
+                    <i class="fa-solid fa-right-to-bracket"></i> Sign In
+                </a>
+            </div>
+        </div>
+        <div class="hero-visual">
+            <div class="hero-card-stack">
+                <div class="hero-stat">
+                    <i class="fa-solid fa-building"></i>
+                    <span class="hero-stat-num">900K+</span>
+                    <span class="hero-stat-label">Properties</span>
+                </div>
+                <div class="hero-stat">
+                    <i class="fa-solid fa-file-pen"></i>
+                    <span class="hero-stat-num">Digital</span>
+                    <span class="hero-stat-label">Submissions</span>
+                </div>
+                <div class="hero-stat">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    <span class="hero-stat-num">Secure</span>
+                    <span class="hero-stat-label">POPIA Compliant</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@* ── Service Tiles ─────────────────────────────────────────────────────────── *@
+<section class="tiles-section">
+    <div class="tiles-inner">
+        <div class="tiles-header">
+            <h2>Property Services</h2>
+            <p>Everything you need to manage your property valuation rights</p>
+        </div>
+
+        <div class="tiles-grid">
+
+            @* ── Supplementary Roll 3 ── *@
+            <div class="tile tile-primary">
+                <div class="tile-status-row">
+                    <span class="tile-status @ann.BadgeCss">
+                        <span class="tile-status-dot"></span>
+                        @ann.BadgeText
+                    </span>
+                    @if (ann.DaysLeft > 0)
+                    {
+                        <span class="tile-days @ann.DaysCss">
+                            <i class="fa-solid fa-calendar-days"></i>
+                            @ann.DaysLeft days
+                        </span>
+                    }
+                </div>
+                <div class="tile-icon"><i class="fa-solid fa-scroll"></i></div>
+                <h3 class="tile-title">@roll.RollName @roll.RollNumber</h3>
+                <p class="tile-desc">
+                    Inspect the Supplementary Roll and lodge objections to your property entry.
+                    Open from <strong>@roll.OpenDate.ToString("dd MMM yyyy")</strong> to
+                    <strong>@roll.CloseDate.ToString("dd MMM yyyy")</strong> at 15:00.
+                </p>
+                <div class="tile-actions">
+                    <a href="/Sup3/PropertyIndex" class="tile-btn tile-btn-solid">
+                        <i class="fa-solid fa-magnifying-glass"></i> Search Property
+                    </a>
+                    <a href="/dashboard" class="tile-btn tile-btn-outline">
+                        <i class="fa-solid fa-chart-bar"></i> Dashboard
+                    </a>
+                </div>
+            </div>
+
+            @* ── Property Attributes (NEW V2) ── *@
+            <div class="tile tile-attributes">
+                <div class="tile-status-row">
+                    <span class="tile-status badge-open">
+                        <span class="tile-status-dot"></span> NEW
+                    </span>
+                    <span class="tile-badge-v2">V2</span>
+                </div>
+                <div class="tile-icon"><i class="fa-solid fa-clipboard-list"></i></div>
+                <h3 class="tile-title">Submit Property Attributes</h3>
+                <p class="tile-desc">
+                    Search for your property, link it to your profile, and submit updated or
+                    additional property information for valuation roll preparation.
+                </p>
+                <div class="tile-actions">
+                    <a href="/login" class="tile-btn tile-btn-solid">
+                        <i class="fa-solid fa-arrow-right"></i> Get Started
+                    </a>
+                    <a href="/register" class="tile-btn tile-btn-outline">
+                        <i class="fa-solid fa-user-plus"></i> Register First
+                    </a>
+                </div>
+            </div>
+
+            @* ── Rebates ── *@
+            <div class="tile tile-rebates">
+                <div class="tile-status-row">
+                    <span class="tile-status badge-open">
+                        <span class="tile-status-dot"></span> OPEN
+                    </span>
+                </div>
+                <div class="tile-icon"><i class="fa-solid fa-percent"></i></div>
+                <h3 class="tile-title">Rebates Process</h3>
+                <p class="tile-desc">
+                    Apply or re-apply for rebate benefits if you own a residential property
+                    within the City of Johannesburg boundaries.
+                </p>
+                <div class="tile-actions">
+                    <a href="/Rebates/Index" class="tile-btn tile-btn-solid">
+                        <i class="fa-solid fa-file-pen"></i> Apply for Rebates
+                    </a>
+                </div>
+            </div>
+
+        </div>
+
+        @* ── Previous Rolls (collapsible) ── *@
+        <div class="prev-rolls">
+            <button class="prev-rolls-toggle" id="prevToggle" onclick="togglePrevRolls()">
+                <span><i class="fa-solid fa-clock-rotate-left"></i> Previous Supplementary Rolls</span>
+                <i class="fa-solid fa-chevron-down prev-chevron" id="prevChevron"></i>
+            </button>
+            <div class="prev-rolls-content" id="prevContent">
+                <div class="prev-rolls-grid">
+                    <div class="prev-tile">
+                        <span class="prev-tile-status">CLOSED</span>
+                        <h4>Supplementary Roll 1</h4>
+                        <p>Archived roll — closed for objections.</p>
+                        <a href="/Home/DashboardSup1" class="prev-tile-btn">
+                            <i class="fa-solid fa-chart-bar"></i> View Dashboard
+                        </a>
+                    </div>
+                    <div class="prev-tile">
+                        <span class="prev-tile-status">CLOSED</span>
+                        <h4>Supplementary Roll 2</h4>
+                        <p>Archived roll — closed for objections.</p>
+                        <a href="/Home/DashboardSup2" class="prev-tile-btn">
+                            <i class="fa-solid fa-chart-bar"></i> View Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        // ── Disclaimer (cookie-based, once per session) ───────────────────
+        (function () {
+            const backdrop = document.getElementById('disclaimerBackdrop');
+            const modal    = document.getElementById('disclaimerModal');
+            const btn      = document.getElementById('acceptDisclaimer');
+            if (!modal) return;
+
+            // Show
+            document.body.style.overflow = 'hidden';
+
+            btn.addEventListener('click', async function () {
+                // POST to set cookie server-side
+                await fetch('/accept-disclaimer', {
+                    method: 'POST',
+                    headers: { 'RequestVerificationToken': getAntiForgeryToken() }
+                });
+                backdrop.classList.remove('show');
+                modal.classList.remove('show');
+                document.body.style.overflow = '';
+            });
+
+            // Trigger animation
+            requestAnimationFrame(() => {
+                backdrop.classList.add('show');
+                modal.classList.add('show');
+            });
+        })();
+
+        function getAntiForgeryToken() {
+            const el = document.querySelector('input[name="__RequestVerificationToken"]');
+            return el ? el.value : '';
+        }
+
+        // ── Previous rolls toggle ─────────────────────────────────────────
+        function togglePrevRolls() {
+            const content  = document.getElementById('prevContent');
+            const chevron  = document.getElementById('prevChevron');
+            const isOpen   = content.classList.contains('open');
+            content.classList.toggle('open', !isOpen);
+            chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+        }
+    </script>
+    @Html.AntiForgeryToken()
+}

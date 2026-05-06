@@ -1,0 +1,326 @@
+﻿
+@*
+    For more information on enabling MVC for empty projects, visit http://go.microsoft.com/fwlink/?LinkID=397860
+*@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] –City of Johannesburg Portal</title>
+
+    <!-- Poppins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+    <!-- Bootstrap 5 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+
+    <!-- DataTables -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/datatables.net-bs5@1.13.6/css/dataTables.bootstrap5.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/datatables.net-responsive-bs5@2.4.1/css/responsive.bootstrap5.min.css" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.bootstrap5.min.css" />
+
+    <!-- Global + Client CSS -->
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/views/client-dashboard.css" asp-append-version="true" />
+
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body>
+
+    @{
+        var gvList = ViewBag.GvList as List<V2_Genesis.Models.GvList> ?? new();
+        var gvRolls = gvList.Where(r => r.Roll_Type == "GV").ToList();
+        var suppRolls = gvList.Where(r => r.Roll_Type == "Supp").ToList();
+        var queryRolls = gvList.Where(r => r.Roll_Type == "Query").ToList();
+    }
+
+    <!-- ═══════════════ NAVBAR ═══════════════ -->
+    <nav class="cl-navbar" id="clientNav">
+        <div class="cl-nav-inner">
+
+            <!-- Brand -->
+            <a href="/dashboard" class="cl-brand">
+                <div class="cl-brand-mark">COJ</div>
+                <div class="cl-brand-text">
+                    <span class="cl-brand-name">City of Johannesburg</span>
+                    <span class="cl-brand-sub">Portal</span>
+                </div>
+            </a>
+
+            <!-- Desktop nav links -->
+            <ul class="cl-nav-links" id="clNavLinks">
+
+                @* ── GV Rolls (e.g. GV23 Valuation Roll) ── *@
+                @foreach (var roll in gvRolls)
+                {
+                    <li class="cl-nav-item cl-dropdown">
+                        <button class="cl-nav-link cl-dropdown-toggle">
+                            @roll.Short <i class="fa-solid fa-chevron-down cl-dd-chevron"></i>
+                        </button>
+                        <ul class="cl-dropdown-menu">
+                            <li>
+                                <a class="cl-dd-item" href="/@roll.ControllerName/PropertyIndex">
+                                    <i class="fa-solid fa-magnifying-glass"></i> Property Search
+                                </a>
+                            </li>
+                            <li class="cl-dd-divider"></li>
+                            <li>
+                                <a class="cl-dd-item" href="/dashboard">
+                                    <i class="fa-solid fa-gauge-high"></i> Dashboard
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                }
+
+                @* ── Supplementary Rolls (grouped dropdown with sub-menus) ── *@
+                @if (suppRolls.Any())
+                {
+                    <li class="cl-nav-item cl-dropdown">
+                        <button class="cl-nav-link cl-dropdown-toggle">
+                            Supplementary Rolls <i class="fa-solid fa-chevron-down cl-dd-chevron"></i>
+                        </button>
+                        <ul class="cl-dropdown-menu">
+                            @foreach (var roll in suppRolls)
+                            {
+                                <li class="cl-submenu-item">
+                                    <button class="cl-dd-item cl-submenu-toggle">
+                                        @roll.Name <i class="fa-solid fa-chevron-right"></i>
+                                    </button>
+                                    <ul class="cl-submenu">
+                                        <li>
+                                            <a class="cl-dd-item" href="/@roll.ControllerName/PropertyIndex">
+                                                <i class="fa-solid fa-magnifying-glass"></i> Property Search
+                                            </a>
+                                        </li>
+                                        <li class="cl-dd-divider"></li>
+                                        <li>
+                                            <a class="cl-dd-item" href="/dashboard">
+                                                <i class="fa-solid fa-gauge-high"></i> Dashboard
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </li>
+                                @if (roll != suppRolls.Last())
+                                {
+                                    <li class="cl-dd-divider"></li>
+                                }
+                            }
+                        </ul>
+                    </li>
+                }
+
+                @* ── Query / Review ── *@
+                @foreach (var roll in queryRolls)
+                {
+                    <li class="cl-nav-item">
+                        <a class="cl-nav-link" href="/@roll.ControllerName/PropertyIndex">
+                            @roll.Short
+                        </a>
+                    </li>
+                }
+
+                @* ── Static modules ── *@
+                <li class="cl-nav-item cl-dropdown">
+                    <button class="cl-nav-link cl-dropdown-toggle">
+                        Section 78 <i class="fa-solid fa-chevron-down cl-dd-chevron"></i>
+                    </button>
+                    <ul class="cl-dropdown-menu">
+                        <li><a class="cl-dd-item" href="/Section78/PropertyIndex"><i class="fa-solid fa-magnifying-glass"></i> Property Search</a></li>
+                        <li class="cl-dd-divider"></li>
+                        <li><a class="cl-dd-item" href="/Dashboard78/DashBoard"><i class="fa-solid fa-gauge-high"></i> Dashboard</a></li>
+                    </ul>
+                </li>
+
+                <li class="cl-nav-item cl-dropdown">
+                    <button class="cl-nav-link cl-dropdown-toggle">
+                        Rebates <i class="fa-solid fa-chevron-down cl-dd-chevron"></i>
+                    </button>
+                    <ul class="cl-dropdown-menu">
+                        <li><a class="cl-dd-item" href="/Rebates/Index"><i class="fa-solid fa-file-pen"></i> Apply for Rebates</a></li>
+                        <li class="cl-dd-divider"></li>
+                        <li><a class="cl-dd-item" href="/Rebates/RebatesDashboard"><i class="fa-solid fa-gauge-high"></i> Dashboard</a></li>
+                    </ul>
+                </li>
+
+                <li class="cl-nav-item cl-dropdown">
+                    <button class="cl-nav-link cl-dropdown-toggle">
+                        Upload Documents <i class="fa-solid fa-chevron-down cl-dd-chevron"></i>
+                    </button>
+                    <ul class="cl-dropdown-menu">
+                        @foreach (var roll in gvList.Where(r => !r.IsQuery))
+                        {
+                            <li>
+                                <a class="cl-dd-item" href="/@roll.ControllerName/AddDocuments">
+                                    <i class="fa-solid fa-upload"></i> @roll.Short Add Evidence
+                                </a>
+                            </li>
+                            @if (roll != gvList.Where(r => !r.IsQuery).Last())
+                            {
+                                <li class="cl-dd-divider"></li>
+                            }
+                        }
+                    </ul>
+                </li>
+
+                <li class="cl-nav-item cl-dropdown">
+                    <button class="cl-nav-link cl-dropdown-toggle">
+                        Help <i class="fa-solid fa-chevron-down cl-dd-chevron"></i>
+                    </button>
+                    <ul class="cl-dropdown-menu">
+                        <li><a class="cl-dd-item" href="/Sup1/ViewGuide"><i class="fa-solid fa-book"></i> User Guidelines</a></li>
+                        <li class="cl-dd-divider"></li>
+                        <li><a class="cl-dd-item" href="/Sup1/viewFAQ"><i class="fa-solid fa-circle-question"></i> FAQ</a></li>
+                    </ul>
+                </li>
+
+            </ul>
+
+            <!-- User pill -->
+            <div class="cl-user" id="clUser">
+                <button class="cl-user-btn" id="clUserBtn">
+                    <div class="cl-avatar">@User.Identity?.Name?.Substring(0, 1).ToUpper()</div>
+                    <span class="cl-user-name d-none d-lg-inline">
+                        @User.Identity?.Name?.Split('@')[0]
+                    </span>
+                    <i class="fa-solid fa-chevron-down" style="font-size:11px;"></i>
+                </button>
+                <div class="cl-user-menu" id="clUserMenu">
+                    <a href="/my-profile" class="cl-user-item"><i class="fa-solid fa-user"></i> My Profile</a>
+                    <div class="cl-dd-divider"></div>
+                    <form asp-action="Logout" asp-controller="Account" method="post">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="cl-user-item cl-logout">
+                            <i class="fa-solid fa-right-from-bracket"></i> Sign Out
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Hamburger -->
+            <button class="cl-hamburger" id="clHamburger">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Mobile drawer -->
+    <div class="cl-mobile-backdrop" id="clBackdrop"></div>
+    <div class="cl-mobile-drawer" id="clDrawer">
+        <div class="cl-drawer-header">
+            <span style="font-weight:800;letter-spacing:2px;color:var(--gold);">GENESIS</span>
+            <button id="clDrawerClose"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <!-- Mobile nav items (simplified) -->
+        @foreach (var roll in gvList)
+        {
+            <a href="/@roll.ControllerName/PropertyIndex" class="cl-drawer-link">
+                <i class="fa-solid fa-scroll"></i> @roll.Name
+            </a>
+        }
+        <div class="cl-dd-divider" style="margin:8px 0;"></div>
+        <a href="/Section78/PropertyIndex" class="cl-drawer-link"><i class="fa-solid fa-file"></i> Section 78</a>
+        <a href="/Rebates/Index" class="cl-drawer-link"><i class="fa-solid fa-percent"></i> Rebates</a>
+        <a href="/my-profile" class="cl-drawer-link"><i class="fa-solid fa-user"></i> My Profile</a>
+        <div class="cl-dd-divider" style="margin:8px 0;"></div>
+        <form asp-action="Logout" asp-controller="Account" method="post">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="cl-drawer-link cl-drawer-logout">
+                <i class="fa-solid fa-right-from-bracket"></i> Sign Out
+            </button>
+        </form>
+    </div>
+
+    <!-- ═══════════ MAIN ═══════════ -->
+    <main class="cl-main">
+        @RenderBody()
+    </main>
+
+    <!-- ═══════════ FOOTER ═══════════ -->
+    <footer class="cl-footer">
+        <div class="cl-footer-inner">
+            <span class="cl-footer-brand">GENESIS – City of Johannesburg Valuation Portal</span>
+            <span class="cl-footer-copy">© @DateTime.Now.Year City of Johannesburg</span>
+        </div>
+    </footer>
+
+    <!-- jQuery (required for DataTables) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Bootstrap -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- DataTables -->
+    <script src="https://cdn.jsdelivr.net/npm/datatables.net@1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/datatables.net-bs5@1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/datatables.net-responsive@2.4.1/js/dataTables.responsive.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/datatables.net-buttons@2.4.1/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/datatables.net-buttons-bs5@2.4.1/js/buttons.bootstrap5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+
+    <script>
+        // ── Navbar dropdowns ───────────────────────────────────────────────────
+        document.querySelectorAll('.cl-dropdown').forEach(dd => {
+        const toggle = dd.querySelector('.cl-dropdown-toggle');
+        const menu   = dd.querySelector('.cl-dropdown-menu');
+        if (!toggle || !menu) return;
+
+        toggle.addEventListener('click', e => {
+        e.stopPropagation();
+        document.querySelectorAll('.cl-dropdown-menu.open')
+        .forEach(m => { if (m !== menu) m.classList.remove('open'); });
+        menu.classList.toggle('open');
+        });
+        });
+
+        // ── Sub-menus ──────────────────────────────────────────────────────────
+        document.querySelectorAll('.cl-submenu-item').forEach(item => {
+        const toggle  = item.querySelector('.cl-submenu-toggle');
+        const submenu = item.querySelector('.cl-submenu');
+        if (!toggle || !submenu) return;
+        toggle.addEventListener('click', e => {
+        e.stopPropagation();
+        submenu.classList.toggle('open');
+        });
+        });
+
+        // Close all on outside click
+        document.addEventListener('click', () => {
+        document.querySelectorAll('.cl-dropdown-menu.open, .cl-submenu.open')
+        .forEach(m => m.classList.remove('open'));
+        });
+
+        // ── User menu ──────────────────────────────────────────────────────────
+        const clUserBtn  = document.getElementById('clUserBtn');
+        const clUserMenu = document.getElementById('clUserMenu');
+        if (clUserBtn) {
+        clUserBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        clUserMenu.classList.toggle('open');
+        });
+        }
+
+        // ── Mobile drawer ──────────────────────────────────────────────────────
+        const ham      = document.getElementById('clHamburger');
+        const drawer   = document.getElementById('clDrawer');
+        const backdrop = document.getElementById('clBackdrop');
+        const dClose   = document.getElementById('clDrawerClose');
+
+        function openDrawer()  { drawer.classList.add('open'); backdrop.classList.add('open'); document.body.style.overflow='hidden'; }
+        function closeDrawer() { drawer.classList.remove('open'); backdrop.classList.remove('open'); document.body.style.overflow=''; }
+
+        if (ham)      ham.addEventListener('click',     openDrawer);
+        if (dClose)   dClose.addEventListener('click',  closeDrawer);
+        if (backdrop) backdrop.addEventListener('click', closeDrawer);
+    </script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

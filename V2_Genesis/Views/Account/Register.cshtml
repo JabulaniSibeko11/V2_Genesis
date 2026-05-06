@@ -1,0 +1,365 @@
+﻿@model V2_Genesis.Models.ViewModels.Account.RegisterPageViewModel
+@{
+    ViewData["Title"] = "Register";
+    var activeTab = Model.ActiveTab ?? "individual";
+}
+
+
+<link href="~/account/register.css" rel="stylesheet" asp-append-version="true" />
+<div class="reg-page">
+    <div class="container">
+        <div class="reg-wrap">
+
+            <!-- ═══ LEFT PANEL ═══ -->
+            <div class="reg-left">
+                <div class="reg-brand">
+                    <div class="reg-brand-mark">COJ</div>
+                    <div>
+                        <div class="reg-brand-name">City of Johannesburg</div>
+                        @* <div class="reg-brand-sub">City of Johannesburg</div> *@
+                    </div>
+                </div>
+
+                <h1 class="reg-headline">
+                    Register for<br /><span>Property Valuations</span>
+                </h1>
+                <p class="reg-desc">
+                    Create your free account to access the General Valuation Roll, submit updated property information,
+                    track cases, and manage your property rights — all in one place.
+                </p>
+
+                <div class="reg-features">
+                    <div class="reg-feature">
+                        <div class="reg-feature-icon"><i class="fa-solid fa-magnifying-glass"></i></div>
+                        <div class="reg-feature-text">
+                            <strong>Search Valuation Roll</strong>
+                            <span>GVR 2025 &amp; all Supplementary Rolls</span>
+                        </div>
+                    </div>
+                    <div class="reg-feature">
+                        <div class="reg-feature-icon"><i class="fa-solid fa-file-pen"></i></div>
+                        <div class="reg-feature-text">
+                            <strong>Submit Property Attributes</strong>
+                            <span>Update your property information digitally</span>
+                        </div>
+                    </div>
+                    <div class="reg-feature">
+                        <div class="reg-feature-icon"><i class="fa-solid fa-chart-line"></i></div>
+                        <div class="reg-feature-text">
+                            <strong>Track Submissions</strong>
+                            <span>Real-time status on all your cases</span>
+                        </div>
+                    </div>
+                    <div class="reg-feature">
+                        <div class="reg-feature-icon"><i class="fa-solid fa-gavel"></i></div>
+                        <div class="reg-feature-text">
+                            <strong>File Objections</strong>
+                            <span>Lodge and escalate to the Valuation Appeal Board</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="reg-badge">
+                    <span class="reg-badge-dot"></span>
+                    GVR 2025 Objection Period Open
+                </div>
+            </div>
+
+            <!-- ═══ RIGHT PANEL ═══ -->
+            <div class="reg-right">
+                <h2 class="reg-right-title">Create your account</h2>
+                <p class="reg-right-subtitle">Join Johannesburg property owners on Genesis. Free &amp; secure.</p>
+
+                <!-- Tab switcher -->
+                <div class="reg-tabs" role="tablist">
+                    <button class="reg-tab @(activeTab == "individual" ? "active" : "")"
+                            id="tab-individual" onclick="switchRegTab('individual')"
+                            type="button" role="tab">
+                        <i class="fa-solid fa-user"></i> Individual
+                    </button>
+                    <button class="reg-tab @(activeTab == "company" ? "active" : "")"
+                            id="tab-company" onclick="switchRegTab('company')"
+                            type="button" role="tab">
+                        <i class="fa-solid fa-building"></i> Company
+                    </button>
+                </div>
+
+                <!-- ═══ INDIVIDUAL FORM ═══ -->
+                <div class="tab-pane @(activeTab == "individual" ? "active" : "")" id="pane-individual">
+                    @if (!ViewData.ModelState.IsValid && Model.ActiveTab == "individual")
+                    {
+                        <div class="val-summary">
+                            <i class="fa-solid fa-circle-exclamation"></i>
+                            <div>
+                                <strong>Please correct the following:</strong>
+                                @Html.ValidationSummary(false, null, new { @class = "mb-0" })
+                            </div>
+                        </div>
+                    }
+
+                    <form asp-action="RegisterIndividual" asp-controller="Account" method="post" novalidate>
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl" />
+
+                        <div class="f-row">
+                            <div class="f-group">
+                                <label class="f-label" asp-for="Individual.FirstName">First Name <em>*</em></label>
+                                <div class="f-wrap">
+                                    <i class="fa-solid fa-user f-icon"></i>
+                                    <input asp-for="Individual.FirstName" class="f-input" placeholder="First name" autocomplete="given-name" />
+                                </div>
+                                <span asp-validation-for="Individual.FirstName" class="f-err"></span>
+                            </div>
+                            <div class="f-group">
+                                <label class="f-label" asp-for="Individual.LastName">Last Name <em>*</em></label>
+                                <div class="f-wrap">
+                                    <i class="fa-solid fa-user f-icon"></i>
+                                    <input asp-for="Individual.LastName" class="f-input" placeholder="Last name" autocomplete="family-name" />
+                                </div>
+                                <span asp-validation-for="Individual.LastName" class="f-err"></span>
+                            </div>
+                        </div>
+
+                        <div class="f-group">
+                            <label class="f-label" asp-for="Individual.Email">Email Address <em>*</em></label>
+                            <div class="f-wrap">
+                                <i class="fa-solid fa-envelope f-icon"></i>
+                                <input asp-for="Individual.Email" class="f-input" type="email" placeholder="yourname@email.com" autocomplete="email" />
+                            </div>
+                            <span asp-validation-for="Individual.Email" class="f-err"></span>
+                        </div>
+
+                        <div class="f-group">
+                            <label class="f-label" asp-for="Individual.PhoneNumber">Phone Number</label>
+                            <div class="f-wrap">
+                                <i class="fa-solid fa-mobile-screen f-icon"></i>
+                                <input asp-for="Individual.PhoneNumber" class="f-input" placeholder="0XX XXX XXXX or +27..." autocomplete="tel" />
+                            </div>
+                            <span asp-validation-for="Individual.PhoneNumber" class="f-err"></span>
+                        </div>
+
+                        <!-- SA ID / Passport toggle -->
+                        <div class="f-group">
+                            <label class="f-label">Identification <em>*</em> <span class="f-hint-inline">(SA ID or Passport)</span></label>
+                            <div class="id-toggle">
+                                <button type="button" class="id-toggle-btn active" id="btnSaId" onclick="showIdField('said')">SA ID Number</button>
+                                <button type="button" class="id-toggle-btn" id="btnPassport" onclick="showIdField('passport')">Passport</button>
+                            </div>
+                            <div id="field-said" class="id-field active">
+                                <div class="f-wrap">
+                                    <i class="fa-solid fa-id-card f-icon"></i>
+                                    <input asp-for="Individual.IDNumber" id="idNumber" class="f-input"
+                                           placeholder="13-digit SA ID number" maxlength="13" inputmode="numeric"
+                                           oninput="this.value=this.value.replace(/\D/g,'').slice(0,13);validateSaId(this)" />
+                                </div>
+                                <div class="f-hint" id="idHint">Your 13-digit South African identity number</div>
+                                <span asp-validation-for="Individual.IDNumber" class="f-err"></span>
+                            </div>
+                            <div id="field-passport" class="id-field">
+                                <div class="f-wrap">
+                                    <i class="fa-solid fa-passport f-icon"></i>
+                                    <input asp-for="Individual.PassportNumber" class="f-input" placeholder="Passport number" />
+                                </div>
+                                <span asp-validation-for="Individual.PassportNumber" class="f-err"></span>
+                            </div>
+                        </div>
+
+                        <div class="f-group">
+                            <label class="f-label" asp-for="Individual.Password">Password <em>*</em></label>
+                            <div class="f-wrap">
+                                <i class="fa-solid fa-lock f-icon"></i>
+                                <input asp-for="Individual.Password" id="iPw" class="f-input" type="password"
+                                       placeholder="Minimum 6 characters" autocomplete="new-password"
+                                       oninput="checkPwStrength(this,'iPwBars','iPwLabel')"
+                                       style="padding-right:2.6rem" />
+                                <button type="button" class="f-eye" onclick="togglePw('iPw',this)">
+                                    <i class="fa-solid fa-eye"></i>
+                                </button>
+                            </div>
+                            <div class="pw-bars" id="iPwBars">
+                                <div class="pw-bar"></div><div class="pw-bar"></div>
+                                <div class="pw-bar"></div><div class="pw-bar"></div>
+                            </div>
+                            <div class="f-hint" id="iPwLabel">Minimum 6 characters</div>
+                            <span asp-validation-for="Individual.Password" class="f-err"></span>
+                        </div>
+
+                        <div class="f-group">
+                            <label class="f-label" asp-for="Individual.ConfirmPassword">Confirm Password <em>*</em></label>
+                            <div class="f-wrap">
+                                <i class="fa-solid fa-lock f-icon"></i>
+                                <input asp-for="Individual.ConfirmPassword" id="iCPw" class="f-input" type="password"
+                                       placeholder="Re-enter password" autocomplete="new-password"
+                                       style="padding-right:2.6rem" />
+                                <button type="button" class="f-eye" onclick="togglePw('iCPw',this)">
+                                    <i class="fa-solid fa-eye"></i>
+                                </button>
+                            </div>
+                            <span asp-validation-for="Individual.ConfirmPassword" class="f-err"></span>
+                        </div>
+
+                        <label class="chk-wrap">
+                            <input asp-for="Individual.AcceptTerms" type="checkbox" />
+                            <span class="chk-label">I agree to the <a href="#" target="_blank">Terms of Use</a> and <a href="#" target="_blank">POPIA Privacy Notice</a>. I understand my data will be processed under the MPRA.</span>
+                        </label>
+                        <span asp-validation-for="Individual.AcceptTerms" class="f-err" style="display:block;margin-bottom:.5rem"></span>
+
+                        <button type="submit" class="reg-submit">
+                            <i class="fa-solid fa-user-plus"></i> Create Individual Account
+                        </button>
+                    </form>
+                </div>
+
+                <!-- ═══ COMPANY FORM ═══ -->
+                <div class="tab-pane @(activeTab == "company" ? "active" : "")" id="pane-company">
+                    @if (!ViewData.ModelState.IsValid && Model.ActiveTab == "company")
+                    {
+                        <div class="val-summary">
+                            <i class="fa-solid fa-circle-exclamation"></i>
+                            <div>
+                                <strong>Please correct the following:</strong>
+                                @Html.ValidationSummary(false, null, new { @class = "mb-0" })
+                            </div>
+                        </div>
+                    }
+
+                    <form asp-action="RegisterCompany" asp-controller="Account" method="post" novalidate>
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl" />
+
+                        <div class="f-group">
+                            <label class="f-label" asp-for="Company.CompanyName">Company Name <em>*</em></label>
+                            <div class="f-wrap">
+                                <i class="fa-solid fa-building f-icon"></i>
+                                <input asp-for="Company.CompanyName" class="f-input" placeholder="Registered company name" />
+                            </div>
+                            <span asp-validation-for="Company.CompanyName" class="f-err"></span>
+                        </div>
+
+                        <div class="f-group">
+                            <label class="f-label" asp-for="Company.CompanyRegistration">CIPC Registration Number <em>*</em></label>
+                            <div class="f-wrap">
+                                <i class="fa-solid fa-hashtag f-icon"></i>
+                                <input asp-for="Company.CompanyRegistration" class="f-input" placeholder="e.g. 2023/123456/07" />
+                            </div>
+                            <span asp-validation-for="Company.CompanyRegistration" class="f-err"></span>
+                        </div>
+
+                        <div class="f-group">
+                            <label class="f-label" asp-for="Company.Email">Company Email Address <em>*</em></label>
+                            <div class="f-wrap">
+                                <i class="fa-solid fa-envelope f-icon"></i>
+                                <input asp-for="Company.Email" class="f-input" type="email" placeholder="accounts@company.co.za" autocomplete="email" />
+                            </div>
+                            <span asp-validation-for="Company.Email" class="f-err"></span>
+                        </div>
+
+                        <div class="f-group">
+                            <label class="f-label" asp-for="Company.PhoneNumber">Company Phone Number <em>*</em></label>
+                            <div class="f-wrap">
+                                <i class="fa-solid fa-phone f-icon"></i>
+                                <input asp-for="Company.PhoneNumber" class="f-input" placeholder="0XX XXX XXXX or +27..." autocomplete="tel" />
+                            </div>
+                            <span asp-validation-for="Company.PhoneNumber" class="f-err"></span>
+                        </div>
+
+                        <div class="f-group">
+                            <label class="f-label" asp-for="Company.Password">Password <em>*</em></label>
+                            <div class="f-wrap">
+                                <i class="fa-solid fa-lock f-icon"></i>
+                                <input asp-for="Company.Password" id="cPw" class="f-input" type="password"
+                                       placeholder="Minimum 6 characters" autocomplete="new-password"
+                                       oninput="checkPwStrength(this,'cPwBars','cPwLabel')"
+                                       style="padding-right:2.6rem" />
+                                <button type="button" class="f-eye" onclick="togglePw('cPw',this)">
+                                    <i class="fa-solid fa-eye"></i>
+                                </button>
+                            </div>
+                            <div class="pw-bars" id="cPwBars">
+                                <div class="pw-bar"></div><div class="pw-bar"></div>
+                                <div class="pw-bar"></div><div class="pw-bar"></div>
+                            </div>
+                            <div class="f-hint" id="cPwLabel">Minimum 6 characters</div>
+                            <span asp-validation-for="Company.Password" class="f-err"></span>
+                        </div>
+
+                        <div class="f-group">
+                            <label class="f-label" asp-for="Company.ConfirmPassword">Confirm Password <em>*</em></label>
+                            <div class="f-wrap">
+                                <i class="fa-solid fa-lock f-icon"></i>
+                                <input asp-for="Company.ConfirmPassword" id="cCPw" class="f-input" type="password"
+                                       placeholder="Re-enter password" autocomplete="new-password"
+                                       style="padding-right:2.6rem" />
+                                <button type="button" class="f-eye" onclick="togglePw('cCPw',this)">
+                                    <i class="fa-solid fa-eye"></i>
+                                </button>
+                            </div>
+                            <span asp-validation-for="Company.ConfirmPassword" class="f-err"></span>
+                        </div>
+
+                        <label class="chk-wrap">
+                            <input asp-for="Company.AcceptTerms" type="checkbox" />
+                            <span class="chk-label">I agree to the <a href="#" target="_blank">Terms of Use</a> and <a href="#" target="_blank">POPIA Privacy Notice</a>.</span>
+                        </label>
+                        <span asp-validation-for="Company.AcceptTerms" class="f-err" style="display:block;margin-bottom:.5rem"></span>
+
+                        <button type="submit" class="reg-submit">
+                            <i class="fa-solid fa-building"></i> Create Company Account
+                        </button>
+                    </form>
+                </div>
+
+                <div class="reg-login-link">
+                    Already have an account? <a href="/login">Sign in here</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script>
+        function switchRegTab(tab) {
+            document.querySelectorAll('.reg-tab').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+            document.getElementById('tab-' + tab).classList.add('active');
+            document.getElementById('pane-' + tab).classList.add('active');
+        }
+        function showIdField(type) {
+            document.querySelectorAll('.id-field').forEach(f => f.classList.remove('active'));
+            document.querySelectorAll('.id-toggle-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('field-' + type).classList.add('active');
+            document.getElementById(type === 'said' ? 'btnSaId' : 'btnPassport').classList.add('active');
+            if (type === 'said') { const p = document.querySelector('[name="Individual.PassportNumber"]'); if(p) p.value=''; }
+            else { const i = document.querySelector('[name="Individual.IDNumber"]'); if(i) i.value=''; }
+        }
+        function validateSaId(inp) {
+            const h = document.getElementById('idHint');
+            if (!h) return;
+            if (inp.value.length === 13) { h.textContent = '✓ Valid format'; h.style.color = '#166534'; }
+            else if (inp.value.length > 0) { h.textContent = inp.value.length + '/13 digits'; h.style.color = '#9b9188'; }
+            else { h.textContent = 'Your 13-digit South African identity number'; h.style.color = '#9b9188'; }
+        }
+        function checkPwStrength(inp, barsId, labelId) {
+            const v=inp.value, lbl=document.getElementById(labelId), bars=document.getElementById(barsId);
+            if(!bars) return;
+            const bs=bars.querySelectorAll('.pw-bar');
+            let s=0;
+            if(v.length>=6)s++; if(v.length>=10)s++;
+            if(/[A-Z]/.test(v)&&/[a-z]/.test(v))s++;
+            if(/\d/.test(v)&&/[^A-Za-z0-9]/.test(v))s++;
+            const cls=['','weak','fair','good','strong'];
+            const hints=['Minimum 6 characters','Weak — too short','Fair — add numbers','Good — add a symbol','Strong ✓'];
+            bs.forEach((b,i)=>b.className='pw-bar'+(i<s?' '+cls[s]:''));
+            if(lbl){lbl.textContent=hints[s]||hints[0];lbl.style.color=s>=3?'#166534':'#9b9188';}
+        }
+        function togglePw(id, btn) {
+            const inp=document.getElementById(id), ico=btn.querySelector('i');
+            inp.type=inp.type==='password'?'text':'password';
+            ico.className=inp.type==='password'?'fa-solid fa-eye':'fa-solid fa-eye-slash';
+        }
+    </script>
+}

@@ -1,0 +1,127 @@
+﻿@model V2_Genesis.Models.ViewModels.Dashboard.AdminDashboardViewModel
+@{
+    ViewData["Title"] = "Admin Dashboard";
+    Layout = "_Layout";
+}
+
+
+<link href="~/css/views/dashboardcss.css" rel="stylesheet" asp-append-version="true" />
+<div class="dash-page">
+
+    @* ── Admin Welcome ── *@
+    <div class="dash-welcome dash-welcome-admin">
+        <div class="dash-welcome-inner">
+            <div class="dash-welcome-text">
+                <h1><i class="fa-solid fa-shield-halved"></i> Admin Dashboard</h1>
+                <p>
+                    Signed in as <strong>@Model.AdminName</strong> ·
+                    Role: <strong>@Model.Role</strong>
+                </p>
+            </div>
+            <div class="dash-ann-pill @Model.Announcement.BadgeCss">
+                <span class="ann-dot"></span>
+                @Model.Announcement.BadgeText — @Model.Announcement.DaysLeft days remaining
+            </div>
+        </div>
+    </div>
+
+    <div class="dash-inner">
+
+        @* ── Admin Stats ── *@
+        <div class="dash-stats">
+            <div class="stat-card">
+                <div class="stat-icon stat-icon-blue"><i class="fa-solid fa-inbox"></i></div>
+                <div class="stat-body">
+                    <span class="stat-num">@Model.TotalSubmissions</span>
+                    <span class="stat-label">Total Submissions</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon stat-icon-orange"><i class="fa-solid fa-hourglass-half"></i></div>
+                <div class="stat-body">
+                    <span class="stat-num">@Model.PendingReview</span>
+                    <span class="stat-label">Pending Review</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon stat-icon-green"><i class="fa-solid fa-circle-check"></i></div>
+                <div class="stat-body">
+                    <span class="stat-num">@Model.Approved</span>
+                    <span class="stat-label">Approved</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon stat-icon-red"><i class="fa-solid fa-circle-xmark"></i></div>
+                <div class="stat-body">
+                    <span class="stat-num">@Model.Rejected</span>
+                    <span class="stat-label">Rejected</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon stat-icon-gold"><i class="fa-solid fa-users"></i></div>
+                <div class="stat-body">
+                    <span class="stat-num">@Model.TotalUsers</span>
+                    <span class="stat-label">Registered Users</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon stat-icon-green"><i class="fa-solid fa-building"></i></div>
+                <div class="stat-body">
+                    <span class="stat-num">@Model.TotalProperties</span>
+                    <span class="stat-label">Properties</span>
+                </div>
+            </div>
+        </div>
+
+        @* ── Admin Action Tiles ── *@
+        <h2 class="dash-section-title">Management</h2>
+        <div class="dash-tiles">
+
+            <a href="/admin/submissions" class="dash-tile dash-tile-featured">
+                <div class="dash-tile-icon dt-blue"><i class="fa-solid fa-inbox"></i></div>
+                <div class="dash-tile-body">
+                    <h3>All Submissions</h3>
+                    <p>Review, approve or reject property attribute submissions</p>
+                </div>
+                <i class="fa-solid fa-chevron-right dash-tile-arrow"></i>
+            </a>
+
+            <a href="/admin/properties" class="dash-tile">
+                <div class="dash-tile-icon dt-green"><i class="fa-solid fa-building"></i></div>
+                <div class="dash-tile-body">
+                    <h3>Properties</h3>
+                    <p>View and manage all properties in the system</p>
+                </div>
+                <i class="fa-solid fa-chevron-right dash-tile-arrow"></i>
+            </a>
+
+            <a href="/admin/users" class="dash-tile">
+                <div class="dash-tile-icon dt-gold"><i class="fa-solid fa-users"></i></div>
+                <div class="dash-tile-body">
+                    <h3>User Management</h3>
+                    <p>Manage registered clients and access roles</p>
+                </div>
+                <i class="fa-solid fa-chevron-right dash-tile-arrow"></i>
+            </a>
+
+            <a href="/admin/reports" class="dash-tile">
+                <div class="dash-tile-icon dt-orange"><i class="fa-solid fa-chart-bar"></i></div>
+                <div class="dash-tile-body">
+                    <h3>Reports</h3>
+                    <p>Generate and export data reports for OVVIO</p>
+                </div>
+                <i class="fa-solid fa-chevron-right dash-tile-arrow"></i>
+            </a>
+
+            <a href="/Sup3/PropertyIndex" class="dash-tile">
+                <div class="dash-tile-icon dt-black"><i class="fa-solid fa-scroll"></i></div>
+                <div class="dash-tile-body">
+                    <h3>Valuation Roll Search</h3>
+                    <p>Search the GVR 2025 supplementary roll</p>
+                </div>
+                <i class="fa-solid fa-chevron-right dash-tile-arrow"></i>
+            </a>
+
+        </div>
+    </div>
+</div>

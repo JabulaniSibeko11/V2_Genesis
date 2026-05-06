@@ -1,0 +1,276 @@
+﻿@model V2_Genesis.Models.PropertySearchParams
+@{
+    var roll      = ViewBag.Roll as V2_Genesis.Models.GvList;
+    var townships = ViewBag.Townships as List<string> ?? new();
+    var schemes   = ViewBag.Schemes   as List<string> ?? new();
+    ViewData["Title"] = $"Property Search – {roll?.Name}";
+    Layout = "~/Views/Shared/_ClientLayout.cshtml";
+}
+
+@section Styles {
+    <link href="~/css/views/searchpropertycss.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/views/clientdashboard.css" rel="stylesheet" asp-append-version="true" />
+}
+
+<div class="ps-page">
+    <div class="ps-inner">
+
+        <!-- ── Page title ──────────────────────────────────────────── -->
+        <div class="ps-title-bar">
+            <a href="/dashboard" class="ps-back">
+                <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
+            </a>
+            <div class="ps-title-text">
+                <h1>
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    Property Search
+                </h1>
+                <span class="ps-roll-tag">@roll?.Name</span>
+            </div>
+        </div>
+
+        <div class="ps-layout">
+
+            <!-- ── LEFT: Search form ───────────────────────────────── -->
+            <div class="ps-card ps-form-card">
+                <div class="ps-card-header">
+                    <i class="fa-solid fa-filter"></i>
+                    Search Criteria
+                </div>
+                <div class="ps-card-body">
+                    <p class="ps-required-note">
+                        <i class="fa-solid fa-circle-info"></i>
+                        Township is required. Fill at least one additional field.
+                    </p>
+
+                    <form id="searchForm" method="post"
+                          action="/search/@roll?.Source">
+                        @Html.AntiForgeryToken()
+
+                        <!-- Township -->
+                        <div class="ps-field">
+                            <label class="ps-label">
+                                <i class="fa-solid fa-map-location-dot"></i>
+                                Township <span class="ps-req">*</span>
+                            </label>
+                            <select name="TownName" id="TownName" class="ps-select" required>
+                                <option value="">— Select Township —</option>
+                                @foreach (var t in townships)
+                                {
+                                    if (Model?.TownName == t)
+                                    {
+                                        <option value="@t" selected="selected">@t</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@t">@t</option>
+                                    }
+                                }
+                            </select>
+                            <span class="ps-val-msg" id="townErr"></span>
+                        </div>
+
+                        <!-- Address -->
+                        <div class="ps-field">
+                            <label class="ps-label">
+                                <i class="fa-solid fa-house"></i> Address
+                            </label>
+                            <input type="text" name="Address" id="Address"
+                                   class="ps-input"
+                                   value="@Model?.Address"
+                                   placeholder="Enter street address"
+                                   minlength="3" />
+                        </div>
+
+                        <!-- Stand -->
+                        <div class="ps-field">
+                            <label class="ps-label">
+                                <i class="fa-solid fa-layer-group"></i> Stand / ERF Number
+                            </label>
+                            <input type="text" name="Stand" id="Stand"
+                                   class="ps-input"
+                                   value="@Model?.Stand"
+                                   placeholder="Enter stand / ERF number" />
+                        </div>
+
+                        <!-- Scheme -->
+                        <div class="ps-field">
+                            <label class="ps-label">
+                                <i class="fa-solid fa-building"></i> Scheme Name
+                            </label>
+                            <select name="Scheme" id="Scheme" class="ps-select">
+                                <option value="">— Select Scheme —</option>
+                               
+
+                                @foreach (var s in schemes)
+                                {
+                                    if (Model?.Scheme == s)
+                                    {
+                                        <option value="@s" selected="selected">@s</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@s">@s</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+
+                        <!-- Unit -->
+                        <div class="ps-field">
+                            <label class="ps-label">
+                                <i class="fa-solid fa-door-open"></i> Unit Number
+                            </label>
+                            <input type="text" name="Unit" id="Unit"
+                                   class="ps-input"
+                                   value="@Model?.Unit"
+                                   placeholder="Enter unit number" />
+                        </div>
+
+                        <div class="ps-btn-row">
+                            <a href="/dashboard" class="ps-btn-secondary">
+                                <i class="fa-solid fa-arrow-left"></i> Back
+                            </a>
+                            <button type="submit" class="ps-btn-primary" id="searchBtn">
+                                <i class="fa-solid fa-magnifying-glass"></i> Search Property
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- ── RIGHT: Instructions + Results ──────────────────── -->
+            <div class="ps-right-col">
+
+                <!-- Instructions card -->
+                <div class="ps-card ps-info-card">
+                    <div class="ps-card-header ps-card-header-gold">
+                        <i class="fa-solid fa-circle-info"></i>
+                        Search Instructions
+                    </div>
+                    <div class="ps-card-body">
+                        <ol class="ps-steps">
+                            <li>
+                                <strong>Step 1:</strong> Select a <strong>Township</strong> (required)
+                            </li>
+                            <li>
+                                <strong>Step 2:</strong> Fill at least one:
+                                <ul>
+                                    <li>Address</li>
+                                    <li>Stand / ERF number</li>
+                                    <li>Scheme Name ± Unit number</li>
+                                </ul>
+                            </li>
+                            <li>
+                                <strong>Step 3:</strong> Click <strong>Search Property</strong>
+                            </li>
+                        </ol>
+                        <div class="ps-warning-box">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                            <div>
+                                <strong>Property not found?</strong><br />
+                                Try searching with fewer filters, or check the LIS
+                                (Land Information System) for the latest data.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Results area — populated via AJAX -->
+                <div id="resultsArea"></div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Preloader overlay -->
+<div class="ps-preloader" id="psPreloader">
+    <div class="ps-spinner"></div>
+    <span>Searching properties…</span>
+</div>
+
+@section Scripts {
+<script>
+    const form     = document.getElementById('searchForm');
+    const stand    = document.getElementById('Stand');
+    const scheme   = document.getElementById('Scheme');
+    const unit     = document.getElementById('Unit');
+    const loader   = document.getElementById('psPreloader');
+    const results  = document.getElementById('resultsArea');
+
+    // ── Mutual exclusion: Stand disables Scheme/Unit and vice versa ──
+    function syncFields() {
+        const hasStand  = stand.value.trim() !== '';
+        const hasScheme = scheme.value.trim() !== '';
+
+        scheme.disabled = hasStand;
+        unit.disabled   = hasStand || (!hasScheme && unit.value.trim() === '');
+
+        if (hasStand) {
+            scheme.value = '';
+            unit.value   = '';
+        }
+        if (hasScheme) {
+            stand.disabled = true;
+            stand.value    = '';
+        } else {
+            stand.disabled = false;
+        }
+    }
+
+    stand.addEventListener('input',  syncFields);
+    scheme.addEventListener('change', syncFields);
+    syncFields();
+
+    // ── AJAX submit ──────────────────────────────────────────────────
+    form.addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        const town = document.getElementById('TownName');
+        if (!town.value) {
+            document.getElementById('townErr').textContent = 'Please select a Township.';
+            town.focus();
+            return;
+        }
+        document.getElementById('townErr').textContent = '';
+
+        loader.classList.add('show');
+        results.innerHTML = '';
+
+        const data = new FormData(form);
+        const token = form.querySelector('input[name="__RequestVerificationToken"]').value;
+
+        const url = form.action.replace('/search/', '/search/') ;
+
+        const response = await fetch(url, {
+            method : 'POST',
+            headers: { 'RequestVerificationToken': token },
+            body   : data
+        });
+
+        loader.classList.remove('show');
+
+        if (response.ok) {
+            results.innerHTML = await response.text();
+            results.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            formatMarketValues();
+        } else {
+            results.innerHTML = '<div class="ps-error">An error occurred. Please try again.</div>';
+        }
+    });
+
+    // ── Format currency values after results load ────────────────────
+    function formatMarketValues() {
+        document.querySelectorAll('.ps-market-val').forEach(el => {
+            const raw = parseFloat(el.textContent.replace(/[^0-9.-]/g, ''));
+            if (!isNaN(raw) && raw > 0) {
+                el.textContent = raw.toLocaleString('en-ZA', {
+                    style: 'currency', currency: 'ZAR',
+                    minimumFractionDigits: 0, maximumFractionDigits: 0
+                });
+            }
+        });
+    }
+</script>
+}
