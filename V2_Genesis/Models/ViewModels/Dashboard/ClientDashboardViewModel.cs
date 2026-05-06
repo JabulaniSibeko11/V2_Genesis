@@ -1,5 +1,6 @@
 ﻿
 using V2_Genesis.Models;
+using V2_Genesis.Models.Results;
 using V2_Genesis.Services;
 
 namespace V2_Genesis.Models.ViewModels.Dashboard;
@@ -25,12 +26,12 @@ public class ClientDashboardViewModel
 /// <summary>Data bucket for one roll's three tables.</summary>
 public class RollData
 {
-    public IEnumerable<dynamic> LinkedProperties { get; set; } = Enumerable.Empty<dynamic>();
-    public IEnumerable<dynamic> ObjectedProperties { get; set; } = Enumerable.Empty<dynamic>();
-    public IEnumerable<dynamic> Appeals { get; set; } = Enumerable.Empty<dynamic>();
-    public IEnumerable<dynamic> Notifications { get; set; } = Enumerable.Empty<dynamic>();
+    public List<LinkedPropertyResult> LinkedProperties { get; set; } = new();
+    public List<ObjectedPropertyResult> ObjectedProperties { get; set; } = new();
+    public List<AppealResult> Appeals { get; set; } = new();
+    public List<NotificationResult> Notifications { get; set; } = new();
 
-    public int LinkedCount => LinkedProperties.Count();
-    public int ObjectedCount => ObjectedProperties.Count();
-    public int AppealsCount => Appeals.Count();
+    public int LinkedCount => LinkedProperties.Count;
+    public int ObjectedCount => ObjectedProperties.Count;
+    public int AppealsCount => Appeals.Count;
 }

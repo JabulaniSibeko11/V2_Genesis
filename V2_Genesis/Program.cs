@@ -77,6 +77,7 @@ builder.Services.AddScoped<IUserManagementService, UserManagementService>();
 builder.Services.AddHttpClient<IReCaptchaService, ReCaptchaService>();
 builder.Services.AddScoped<IAnnouncementService, AnnouncementService>();
 builder.Services.AddScoped<IPropertySearchService, PropertySearchService>();
+builder.Services.AddScoped<IDashboardService, DashboardService>();
 // ── App Pipeline ──────────────────────────────────────────────────────────────
 var app = builder.Build();
 

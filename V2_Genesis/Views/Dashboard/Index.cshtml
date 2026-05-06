@@ -62,6 +62,31 @@
             border-radius: 100px;
             white-space: nowrap;
         }
+
+        /* ── Link property alerts ────────────────────── */
+.dash-link-alert {
+  display: flex; align-items: flex-start; gap: 14px;
+  padding: 16px 20px; font-size: 13.5px;
+  font-family: 'Poppins', sans-serif;
+}
+.dash-link-alert i:first-child { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+.dash-link-alert div { flex: 1; line-height: 1.5; }
+.dash-link-alert strong { display: block; font-weight: 700; margin-bottom: 2px; }
+.dash-link-alert button {
+  background: none; border: none; cursor: pointer;
+  flex-shrink: 0; font-size: 16px; opacity: .6;
+  transition: opacity .15s; align-self: flex-start;
+}
+.dash-link-alert button:hover { opacity: 1; }
+
+.dash-link-success {
+  background: #e8f5ef; color: #166534;
+  border-left: 4px solid #166534;
+}
+.dash-link-error {
+  background: #fdecea; color: #c0392b;
+  border-left: 4px solid #c0392b;
+}
     </style>
 }
 
@@ -122,6 +147,33 @@
     }
 </div>
 
+@if (TempData["LinkSuccess"] != null)
+{
+    <div class="dash-link-alert dash-link-success">
+        <i class="fa-solid fa-circle-check"></i>
+        <div>
+            <strong>Property Linked!</strong>
+            @TempData["LinkSuccess"]
+        </div>
+        <button onclick="this.closest('.dash-link-alert').remove()">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+    </div>
+}
+
+@if (TempData["LinkError"] != null)
+{
+    <div class="dash-link-alert dash-link-error">
+        <i class="fa-solid fa-circle-exclamation"></i>
+        <div>
+            <strong>Could Not Link Property</strong>
+            @TempData["LinkError"]
+        </div>
+        <button onclick="this.closest('.dash-link-alert').remove()">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+    </div>
+}
 <!-- ── Per-roll collapsible sections ──────────────────────────────────── -->
 <div class="cd-body">
     @foreach (var roll in Model.Rolls)
@@ -213,17 +265,17 @@
                                        id="tbl-@rollKey-linked">
                                     <thead>
                                         <tr>
-                                            <th>🏘️ Property Description</th>
-                                            <th>🏷️ Category</th>
-                                            <th>🏙️ Town Name</th>
-                                            <th>💰 Market Value</th>
-                                            <th>📅 WEF Date</th>
-                                            <th>⚙️ Options</th>
+                                            <th>Property Description</th>
+                                            <th>Category</th>
+                                            <th>Town Name</th>
+                                            <th>Market Value</th>
+                                            <th>WEF Date</th>
+                                            <th>Options</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         @* TODO: Replace when data method provided *@
-                                        @foreach (dynamic item in rd.LinkedProperties)
+                                    @foreach (var item in rd.LinkedProperties)
                                         {
                                             <tr>
                                                 <td>@item.PropertyDesc</td>
@@ -283,18 +335,18 @@
                                            id="tbl-@rollKey-objected">
                                         <thead>
                                             <tr>
-                                                <th>🆔 Objection No.</th>
-                                                <th>🏘️ Property Description</th>
-                                                <th>🏷️ Category</th>
-                                                <th>🏙️ Town Name</th>
-                                                <th>💰 Market Value</th>
-                                                <th>📊 Status</th>
-                                                <th>⚙️ Options</th>
+                                                <th>Objection No.</th>
+                                                <th>Property Description</th>
+                                                <th>Category</th>
+                                                <th>Town Name</th>
+                                                <th>Market Value</th>
+                                                <th>Objection Status</th>
+                                                <th>Options</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             @* TODO: Replace when data method provided *@
-                                            @foreach (dynamic item in rd.ObjectedProperties)
+                                         @foreach (var item in rd.ObjectedProperties)
                                             {
                                                 <tr>
                                                     <td>@item.Objection_No</td>
@@ -355,18 +407,18 @@
                                            id="tbl-@rollKey-appeals">
                                         <thead>
                                             <tr>
-                                                <th>🆔 Appeal No.</th>
-                                                <th>🏘️ Property Description</th>
-                                                <th>🏷️ Category</th>
-                                                <th>🏙️ Town Name</th>
-                                                <th>💰 Market Value</th>
-                                                <th>📊 Status</th>
-                                                <th>⚙️ Options</th>
+                                                <th>Appeal No.</th>
+                                                <th>Property Description</th>
+                                                <th>Category</th>
+                                                <th>Town Name</th>
+                                                <th>Market Value</th>
+                                                <th>Appeal Status</th>
+                                                <th>Options</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             @* TODO: Replace when data method provided *@
-                                            @foreach (dynamic item in rd.Appeals)
+                                           @foreach (var item in rd.Appeals)
                                             {
                                                 <tr>
                                                     <td>@item.Objection_No</td>

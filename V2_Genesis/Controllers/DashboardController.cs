@@ -4,11 +4,13 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 using V2_Genesis.Data;
 using V2_Genesis.Models;
 using V2_Genesis.Models.Entities;
 using V2_Genesis.Models.ViewModels.Dashboard;
 using V2_Genesis.Services;
+using V2_Genesis.Services.Interfaces;
 
 namespace V2_Genesis.Controllers;
 
@@ -18,15 +20,17 @@ public class DashboardController : Controller
     private readonly ApplicationDbContext _db;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IAnnouncementService _announcement;
-
+  
+    private readonly IDashboardService _dashboardService;
     public DashboardController(
         ApplicationDbContext db,
         UserManager<ApplicationUser> userManager,
-        IAnnouncementService announcement)
+        IAnnouncementService announcement, IDashboardService dashboardService)
     {
         _db = db;
         _userManager = userManager;
         _announcement = announcement;
+        _dashboardService= dashboardService;
     }
 
     [HttpGet]
@@ -36,26 +40,39 @@ public class DashboardController : Controller
         var user = await _userManager.GetUserAsync(User);
         if (user is null) return RedirectToAction("Login", "Account");
 
-        // ── Load all rolls from GV_LIST ordered by ID ─────────────────────
+        // ── Identity values ───────────────────────────────────────────
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
+        var userEmail = User.FindFirstValue(ClaimTypes.Name) ?? string.Empty;
+
+        // ── Load all rolls from GV_LIST ───────────────────────────────
         var rolls = await _db.GvList
             .OrderBy(r => r.ID)
             .ToListAsync();
 
-        // ── Pass rolls to layout for dynamic navbar ────────────────────────
         ViewBag.GvList = rolls;
 
-        // ── Build per-roll data buckets (stubs — replace with real queries) ─
-        var rollData = new Dictionary<string, RollData>();
-        foreach (var roll in rolls)
-        {
-            rollData[roll.Source] = await GetRollDataAsync(roll, user.Id);
-        }
+        // ── Fetch dashboard data per roll (parallel for performance) ──
+        var rollDataTasks = rolls
+            .Where(r => !r.IsQuery)   // Query roll has no dashboard SPs
+            .ToDictionary(
+                r => r.Source,
+                r => _dashboardService.GetRollDataAsync(r.Source, userId, userEmail));
+
+        await Task.WhenAll(rollDataTasks.Values);
+
+        var rollData = rollDataTasks.ToDictionary(
+            kvp => kvp.Key,
+            kvp => kvp.Value.Result);
+
+        // Query roll gets empty data so the view doesn't crash
+        foreach (var roll in rolls.Where(r => r.IsQuery))
+            rollData[roll.Source] = new RollData();
 
         var vm = new ClientDashboardViewModel
         {
             DisplayName = user.DisplayName,
             IsCompany = user.IsCompany,
-            UserId = user.Id,
+            UserId = userId,
             Announcement = _announcement.GetAnnouncement(),
             Rolls = rolls,
             RollData = rollData
@@ -63,6 +80,7 @@ public class DashboardController : Controller
 
         return View(vm);
     }
+
 
     // ── STUB — replace each case with real DB query when ready ─────────────
     private Task<RollData> GetRollDataAsync(GvList roll, string userId)
