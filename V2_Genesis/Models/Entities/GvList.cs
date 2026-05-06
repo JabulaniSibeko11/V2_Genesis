@@ -42,6 +42,16 @@ public class GvList
         _ => "Index"
     };
 
+    [NotMapped]
+    public string SourceTableCode => Source switch
+    {
+        "Objection" => "GV23",
+        "Objection_Supp1" => "GV23-SUP1",
+        "Objection_Supp2" => "GV23-SUP2",
+        "Objection_Supp3" => "GV23-SUP3",
+        "Objection_Query" => "Query",
+        _ => Source
+    };
     [NotMapped] public bool HasObjection => Objection == true;
     [NotMapped] public bool HasAppeal => Appeal == true;
     [NotMapped] public bool IsQuery => Roll_Type == "Query";

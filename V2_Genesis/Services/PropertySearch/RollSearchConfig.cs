@@ -1,10 +1,5 @@
-﻿namespace V2_Genesis.Services.PropertySearch;
+﻿namespace GenesisV2.Services.PropertySearch;
 
-/// <summary>
-/// Stored procedure names for one roll.
-/// All SPs receive wildcarded params: @SearchTownName = '%value%'
-/// Verify Sup1 SP names against your database before deploying.
-/// </summary>
 public record RollSearchConfig(
     string SpTown,
     string SpStand,
@@ -14,16 +9,17 @@ public record RollSearchConfig(
     string SpUnit,
     string SpSchemeUnit,
     string SpStandScheme,
-    string SpAddressScheme
+    string SpAddressScheme,
+    string DetailSp,
+    string ConnectionKey   // ← used for BOTH search SPs and detail SP
 );
 
 public static class RollSearchRegistry
 {
-    /// <summary>Keyed by GvList.Source value.</summary>
     public static readonly IReadOnlyDictionary<string, RollSearchConfig> Configs =
         new Dictionary<string, RollSearchConfig>
         {
-            // ── GV23 General Valuation Roll ───────────────────────────────
+            // ── GV Roll — SPs use explicit Objection.dbo. prefix → DefaultConnection
             ["Objection"] = new(
                 SpTown: "Objection.dbo.SearchTown",
                 SpStand: "Objection.dbo.SearchTownStandNumber",
@@ -33,10 +29,12 @@ public static class RollSearchRegistry
                 SpUnit: "Objection.dbo.SearchTownUnit",
                 SpSchemeUnit: "Objection.dbo.SearchTownSchemeUnit",
                 SpStandScheme: "Objection.dbo.SearchTownErfScheme",
-                SpAddressScheme: "Objection.dbo.SearchTownAddressScheme"
+                SpAddressScheme: "Objection.dbo.SearchTownAddressScheme",
+                DetailSp: "IndexObjection",
+                ConnectionKey: "DefaultConnection"
             ),
 
-            // ── Supplementary Roll 1 — TODO: verify SP names ──────────────
+            // ── Sup1 — SPs live in Objection_Supp1 database
             ["Objection_Supp1"] = new(
                 SpTown: "SearchTown_Sup1",
                 SpStand: "SearchTownStandNumber_Sup1",
@@ -46,10 +44,12 @@ public static class RollSearchRegistry
                 SpUnit: "SearchTownUnit_Sup1",
                 SpSchemeUnit: "SearchTownSchemeUnit_Sup1",
                 SpStandScheme: "SearchTownERFScheme_Sup1",
-                SpAddressScheme: "SearchTownAddressScheme_Sup1"
+                SpAddressScheme: "SearchTownAddressScheme_Sup1",
+                DetailSp: "IndexObjection_Sup1",
+                ConnectionKey: "Sup1Connection"
             ),
 
-            // ── Supplementary Roll 2 ──────────────────────────────────────
+            // ── Sup2 — SPs live in Objection_Supp2 database
             ["Objection_Supp2"] = new(
                 SpTown: "SearchTown_Sup2",
                 SpStand: "SearchTownStandNumber",
@@ -59,10 +59,12 @@ public static class RollSearchRegistry
                 SpUnit: "SearchTownUnit_Sup2",
                 SpSchemeUnit: "SearchTownSchemeUnit_Sup2",
                 SpStandScheme: "SearchTownERFScheme_Sup2",
-                SpAddressScheme: "SearchTownAddressScheme_Sup2"
+                SpAddressScheme: "SearchTownAddressScheme_Sup2",
+                DetailSp: "IndexObjection_Sup2",
+                ConnectionKey: "Sup2Connection"
             ),
 
-            // ── Supplementary Roll 3 ──────────────────────────────────────
+            // ── Sup3 — SPs live in Objection_Supp3 database
             ["Objection_Supp3"] = new(
                 SpTown: "SearchTown",
                 SpStand: "SearchTownStandNumber",
@@ -72,7 +74,9 @@ public static class RollSearchRegistry
                 SpUnit: "SearchTownUnit",
                 SpSchemeUnit: "SearchTownSchemeUnit",
                 SpStandScheme: "SearchTownERFScheme",
-                SpAddressScheme: "SearchTownAddressScheme"
+                SpAddressScheme: "SearchTownAddressScheme",
+                DetailSp: "IndexObjection_Sup3",
+                ConnectionKey: "Sup3Connection"
             ),
         };
 }

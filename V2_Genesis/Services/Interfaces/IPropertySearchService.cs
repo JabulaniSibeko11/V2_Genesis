@@ -1,5 +1,6 @@
 ﻿
 using V2_Genesis.Models;
+using V2_Genesis.Models.Results;
 
 namespace V2_Genesis.Services.Interfaces
 {
@@ -18,5 +19,17 @@ namespace V2_Genesis.Services.Interfaces
         Task<List<PropertySearchResult>> SearchAsync(
             string rollSource,
             PropertySearchParams @params);
+
+        // Add to existing interface:
+        Task<List<PropertyDetailResult>> GetPropertyDetailsAsync(
+            string rollSource,
+            string unitKey,
+            string valuationKey);
+
+        Task<LinkResult> LinkPropertyAsync(
+    string rollSource,
+    string idProperty,
+    string userId,
+    string propertyFrom);
     }
 }

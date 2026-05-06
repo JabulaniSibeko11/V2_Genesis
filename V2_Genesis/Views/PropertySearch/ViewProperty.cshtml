@@ -1,0 +1,338 @@
+﻿@model V2_Genesis.Models.Results.PropertyDetailViewModel
+@{
+    ViewData["Title"] = "Property Details";
+    Layout = "~/Views/Shared/_ClientLayout.cshtml";
+    var d = Model.Main;
+    var roll = Model.Roll;
+}
+
+@section Styles {
+    <link href="~/css/views/property-detail.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/views/clientdashboard.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/views/property-search.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/views/searchpropertycss.css" rel="stylesheet" asp-append-version="true" />
+}
+
+
+@if (d is null)
+{
+    <div class="pd-page">
+        <div class="pd-inner">
+            <div class="pd-not-found">
+                <i class="fa-solid fa-circle-exclamation"></i>
+                <h2>Property Not Found</h2>
+                <p>The requested property details could not be loaded.</p>
+                <a href="javascript:history.back()" class="pd-btn pd-btn-outline">
+                    <i class="fa-solid fa-arrow-left"></i> Go Back
+                </a>
+            </div>
+        </div>
+    </div>
+    return;
+}
+
+<div class="pd-page">
+    <div class="pd-inner">
+
+        <!-- ── Roll indicator + back ──────────────────────────────── -->
+        <div class="pd-topbar">
+            <a href="javascript:history.back()" class="pd-back">
+                <i class="fa-solid fa-arrow-left"></i> Back to Search
+            </a>
+            <div class="pd-roll-badge">
+                <i class="fa-solid fa-scroll"></i>
+                @roll.Name
+                <span class="pd-roll-code">@roll.Short</span>
+            </div>
+        </div>
+
+        <!-- ── Page heading ──────────────────────────────────────── -->
+        <div class="pd-heading">
+            <div class="pd-heading-icon">
+                <i class="fa-solid fa-building"></i>
+            </div>
+            <div>
+                <h1 class="pd-title">Property Details</h1>
+                <p class="pd-subtitle">@roll.Name</p>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════
+             SECTION 1 — Basic Information (always visible)
+        ══════════════════════════════════════════════════════ -->
+        <div class="pd-card">
+            <div class="pd-card-header">
+                <i class="fa-solid fa-map-marker-alt"></i>
+                Basic Information
+                <span class="pd-card-badge">Main Details</span>
+            </div>
+            <div class="pd-card-body">
+
+                <div class="pd-field-row">
+                    <span class="pd-field-label">
+                        <i class="fa-solid fa-info-circle"></i> Property Description
+                    </span>
+                    <input class="pd-input" disabled value="@d.PropertyDesc" />
+                </div>
+
+                <div class="pd-field-row">
+                    <span class="pd-field-label">
+                        <i class="fa-solid fa-city"></i> Township
+                    </span>
+                    <input class="pd-input" disabled value="@d.TownNameDesc" />
+                </div>
+
+                <!-- Stand / Portion / Re — horizontal on desktop, stacked on mobile -->
+                <div class="pd-field-row">
+                    <span class="pd-field-label">
+                        <i class="fa-solid fa-home"></i> Stand / Portion / Re
+                    </span>
+                    <div class="pd-inline-group">
+                        <div class="pd-inline-field">
+                            <label class="pd-inline-label">Stand</label>
+                            <input class="pd-input" disabled value="@d.Erf" />
+                        </div>
+                        <div class="pd-inline-field">
+                            <label class="pd-inline-label">Portion</label>
+                            <input class="pd-input" disabled value="@d.Ptn" />
+                        </div>
+                        <div class="pd-inline-field">
+                            <label class="pd-inline-label">Re</label>
+                            <input class="pd-input" disabled value="@(d.Re ?? "–")" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pd-field-row">
+                    <span class="pd-field-label">
+                        <i class="fa-solid fa-map-pin"></i> Address
+                    </span>
+                    <input class="pd-input" disabled value="@(d.LisStreetAddress ?? "–")" />
+                </div>
+
+                <div class="pd-field-row">
+                    <span class="pd-field-label">
+                        <i class="fa-solid fa-file-contract"></i> Lease
+                    </span>
+                    <input class="pd-input" disabled value="@(d.LeaseDesc ?? "–")" />
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════
+             SECTION 2 — Categories & Valuations (collapsible)
+        ══════════════════════════════════════════════════════ -->
+        <div class="pd-collapsible">
+            <button class="pd-collapse-toggle" onclick="togglePdSection('valuation', this)">
+                <span>
+                    <i class="fa-solid fa-chart-line"></i>
+                    Property Categories &amp; Valuations
+                    <span class="pd-item-count">@Model.Items.Count @(Model.Items.Count == 1 ? "item" : "items")</span>
+                </span>
+                <i class="fa-solid fa-chevron-down pd-chevron"></i>
+            </button>
+            <div class="pd-collapse-body" id="valuation">
+                @foreach (var item in Model.Items)
+                {
+                    <div class="pd-card pd-inner-card">
+                        <div class="pd-field-row">
+                            <span class="pd-field-label">
+                                <i class="fa-solid fa-tag"></i> Property Category
+                            </span>
+                            <input class="pd-input" disabled value="@(item.CatDesc ?? "–")" />
+                        </div>
+                        <div class="pd-field-row">
+                            <span class="pd-field-label">
+                                <i class="fa-solid fa-chart-bar"></i> Valuation Details
+                            </span>
+                            <div class="pd-inline-group">
+                                <div class="pd-inline-field">
+                                    <label class="pd-inline-label">
+                                        <i class="fa-solid fa-ruler-combined"></i> Extent
+                                    </label>
+                                    <input class="pd-input pd-rateable" disabled value="@(item.RateableArea ?? "–")" />
+                                </div>
+                                <div class="pd-inline-field">
+                                    <label class="pd-inline-label">
+                                        <i class="fa-solid fa-calendar"></i> Effective Date
+                                    </label>
+                                    <input class="pd-input" disabled value="@(item.WefDate ?? "–")" />
+                                </div>
+                                <div class="pd-inline-field">
+                                    <label class="pd-inline-label">
+                                        <i class="fa-solid fa-money-bill-wave"></i> Market Value
+                                    </label>
+                                    <input class="pd-input pd-market-val" disabled value="@(item.MarketValue ?? "–")" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════
+             SECTION 3 — Additional Details (collapsible)
+        ══════════════════════════════════════════════════════ -->
+        <div class="pd-collapsible">
+            <button class="pd-collapse-toggle pd-collapsed" onclick="togglePdSection('additional', this)">
+                <span>
+                    <i class="fa-solid fa-clipboard-list"></i>
+                    Additional Details
+                </span>
+                <i class="fa-solid fa-chevron-down pd-chevron"></i>
+            </button>
+            <div class="pd-collapse-body" id="additional">
+                <div class="pd-card pd-inner-card">
+                    <div class="pd-field-row">
+                        <span class="pd-field-label">
+                            <i class="fa-solid fa-comment"></i> Remarks
+                        </span>
+                        <input class="pd-input" disabled value="@(d.Reason ?? "–")" />
+                    </div>
+                    <div class="pd-field-row">
+                        <span class="pd-field-label">
+                            <i class="fa-solid fa-user"></i> Owner
+                        </span>
+                        <input class="pd-input" disabled value="@(d.OwnerName ?? "–")" />
+                    </div>
+                    <div class="pd-field-row">
+                        <span class="pd-field-label">
+                            <i class="fa-solid fa-calendar-day"></i> Valuation Date
+                        </span>
+                        <input class="pd-input" disabled value="@(d.ValuationDate ?? "–")" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════
+             SECTION 4 — Scheme Details (collapsible)
+        ══════════════════════════════════════════════════════ -->
+        <div class="pd-collapsible">
+            <button class="pd-collapse-toggle pd-collapsed" onclick="togglePdSection('scheme', this)">
+                <span>
+                    <i class="fa-solid fa-building"></i>
+                    Scheme Details
+                </span>
+                <i class="fa-solid fa-chevron-down pd-chevron"></i>
+            </button>
+            <div class="pd-collapse-body" id="scheme">
+                <div class="pd-card pd-inner-card">
+                    <div class="pd-field-row">
+                        <span class="pd-field-label">
+                            <i class="fa-solid fa-sitemap"></i> Scheme Name
+                        </span>
+                        <input class="pd-input" disabled value="@(d.SchemeName ?? "–")" />
+                    </div>
+                    <div class="pd-field-row">
+                        <span class="pd-field-label">
+                            <i class="fa-solid fa-info-circle"></i> Scheme Details
+                        </span>
+                        <div class="pd-inline-group">
+                            <div class="pd-inline-field">
+                                <label class="pd-inline-label">
+                                    <i class="fa-solid fa-hashtag"></i> Scheme No.
+                                </label>
+                                <input class="pd-input" disabled value="@(d.SchemeNumber ?? "–")" />
+                            </div>
+                            <div class="pd-inline-field">
+                                <label class="pd-inline-label">
+                                    <i class="fa-solid fa-calendar"></i> Scheme Year
+                                </label>
+                                <input class="pd-input" disabled value="@(d.SchemeYear ?? "–")" />
+                            </div>
+                            <div class="pd-inline-field">
+                                <label class="pd-inline-label">
+                                    <i class="fa-solid fa-door-open"></i> Unit No.
+                                </label>
+                                <input class="pd-input" disabled
+                                       value="@(d.UnitNo > 0 ? d.UnitNo.ToString() : "–")" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════
+             ACTION BUTTONS
+        ══════════════════════════════════════════════════════ -->
+        <div class="pd-actions">
+            @if (Model.IsWithinObjectionPeriod)
+            {
+                <button class="pd-btn pd-btn-outline" onclick="history.back()">
+                    <i class="fa-solid fa-arrow-left"></i> Cancel
+                </button>
+                @* Replace the existing Link Property <a> tag: *@
+                <a class="pd-btn pd-btn-primary"
+                       href="/property/save?rollSource=@Model.Roll.Source&key=@d.Id&sourceTable=@Model.Roll.SourceTableCode">
+                    <i class="fa-solid fa-link"></i> Link Property
+                </a>
+                <a class="pd-btn pd-btn-secondary"
+                       href="/@roll.ControllerName/Section49Display?ukey=@d.UnitKey&vkey=@d.ValuationKey">
+                    <i class="fa-solid fa-eye"></i> View Section 49
+                </a>
+            }
+            else
+            {
+                <div class="pd-period-ended">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    The objection period for <strong>@roll.Short</strong> has ended.
+                    You can still view property details.
+                </div>
+                <button class="pd-btn pd-btn-outline" onclick="history.back()">
+                    <i class="fa-solid fa-arrow-left"></i> Back
+                </button>
+            }
+        </div>
+
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // ── Collapsible sections ──────────────────────────────────────────
+        function togglePdSection(id, btn) {
+            const body    = document.getElementById(id);
+            const chevron = btn.querySelector('.pd-chevron');
+            const isOpen  = body.classList.toggle('open');
+            chevron.style.transform = isOpen ? 'rotate(180deg)' : 'rotate(0deg)';
+            btn.classList.toggle('pd-collapsed', !isOpen);
+            if (isOpen) {
+                setTimeout(() => body.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 300);
+            }
+        }
+
+        // Auto-open first section on load
+        document.addEventListener('DOMContentLoaded', function () {
+            const first = document.getElementById('valuation');
+            const btn   = first?.previousElementSibling;
+            if (first && btn) {
+                first.classList.add('open');
+                const chev = btn.querySelector('.pd-chevron');
+                if (chev) chev.style.transform = 'rotate(180deg)';
+            }
+
+            // Format market values
+            document.querySelectorAll('.pd-market-val').forEach(function (el) {
+                const raw = parseFloat(el.value.replace(/[^0-9.-]+/g, ''));
+                if (!isNaN(raw) && raw > 0) {
+                    el.value = raw.toLocaleString('en-ZA', {
+                        style: 'currency', currency: 'ZAR',
+                        minimumFractionDigits: 0, maximumFractionDigits: 0
+                    });
+                }
+            });
+
+            // Format rateable areas
+            document.querySelectorAll('.pd-rateable').forEach(function (el) {
+                const raw = el.value.trim();
+                if (raw && raw !== '–') {
+                    el.value = raw.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+                }
+            });
+        });
+    </script>
+}

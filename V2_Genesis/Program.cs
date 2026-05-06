@@ -1,14 +1,15 @@
-using V2_Genesis.Data;
-using V2_Genesis.Models;
-using V2_Genesis.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using V2_Genesis.Data;
+using V2_Genesis.Data;
+using V2_Genesis.Models;
 using V2_Genesis.Models.Emails;
 using V2_Genesis.Models.Entities;
 using V2_Genesis.Services;
+using V2_Genesis.Services;
 using V2_Genesis.Services.Implementations;
 using V2_Genesis.Services.Interfaces;
+using V2_Genesis.Services.PropertySearch;
 
 var builder = WebApplication.CreateBuilder(args);
 var cfg = builder.Configuration;
@@ -68,6 +69,7 @@ builder.Services.Configure<SessionSettings>(cfg.GetSection("Session"));
 builder.Services.Configure<ValuationRollSettings>(cfg.GetSection("ValuationRoll"));
 builder.Services.Configure<DisclaimerSettings>(cfg.GetSection("Disclaimer"));
 
+builder.Services.Configure<RollDatesSettings>(opts =>cfg.GetSection("RollDates").Bind(opts.Dates));
 
 // ── Custom Services ───────────────────────────────────────────────────────────
 builder.Services.AddScoped<IEmailService, EmailService>();
