@@ -1,93 +1,54 @@
-﻿@model V2_Genesis.Models.ViewModels.Dashboard.ClientDashboardViewModel
+﻿@using V2_Genesis.Services.PropertySearch
+@model V2_Genesis.Models.ViewModels.Dashboard.ClientDashboardViewModel
 @{
     ViewData["Title"] = "My Dashboard";
     Layout = "~/Views/Shared/_ClientLayout.cshtml";
     var ann = Model.Announcement;
 }
+@functions {
+
+    string FormatZAR(string? val)
+    {
+        if (string.IsNullOrWhiteSpace(val))
+            return "–";
+
+        // Remove currency symbols and spaces only
+        var clean = val.Replace("R", "")
+                       .Replace(",", "")
+                       .Trim();
+
+        if (!decimal.TryParse(clean,
+            System.Globalization.NumberStyles.Any,
+            System.Globalization.CultureInfo.InvariantCulture,
+            out var num) || num <= 0)
+        {
+            return "–";
+        }
+
+        return "R " + num.ToString("N0",
+            new System.Globalization.CultureInfo("en-ZA"));
+    }
+
+   RollDateEntry? GetDates(string rollSource)
+    {
+        Model.RollDates.TryGetValue(rollSource, out var d);
+        return d;
+    }
+
+    string PeriodStatus(RollDateEntry? d)
+    {
+        if (d is null) return "unknown";
+        var now = DateTime.Now;
+        if (now < d.OpenDate) return "upcoming";
+        if (now <= d.VisibleUntil) return "active";
+        return "closed";
+    }
+}
 
 @section Styles {
    
-    <link href="~/css/views/clientdashboard.css" rel="stylesheet" asp-append-version="true" />
-    <style>
-        .ann-bar {
-            padding: 11px 0;
-            border-bottom: 1px solid rgba(0,0,0,.06);
-        }
-
-        .ann-inner {
-            max-width: 1280px;
-            margin: 0 auto;
-            padding: 0 24px;
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            flex-wrap: wrap;
-        }
-
-        .ann-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 4px 12px;
-            border-radius: 100px;
-            font-size: 11px;
-            font-weight: 700;
-            letter-spacing: 1px;
-            white-space: nowrap;
-            flex-shrink: 0;
-        }
-
-        .ann-dot {
-            width: 7px;
-            height: 7px;
-            border-radius: 50%;
-            background: currentColor;
-            opacity: .8;
-            animation: pulse 1.5s infinite;
-        }
-
-        .ann-text {
-            font-size: 13.5px;
-            font-weight: 500;
-            flex: 1;
-        }
-
-        .ann-days {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 12.5px;
-            font-weight: 600;
-            padding: 4px 12px;
-            border-radius: 100px;
-            white-space: nowrap;
-        }
-
-        /* ── Link property alerts ────────────────────── */
-.dash-link-alert {
-  display: flex; align-items: flex-start; gap: 14px;
-  padding: 16px 20px; font-size: 13.5px;
-  font-family: 'Poppins', sans-serif;
-}
-.dash-link-alert i:first-child { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
-.dash-link-alert div { flex: 1; line-height: 1.5; }
-.dash-link-alert strong { display: block; font-weight: 700; margin-bottom: 2px; }
-.dash-link-alert button {
-  background: none; border: none; cursor: pointer;
-  flex-shrink: 0; font-size: 16px; opacity: .6;
-  transition: opacity .15s; align-self: flex-start;
-}
-.dash-link-alert button:hover { opacity: 1; }
-
-.dash-link-success {
-  background: #e8f5ef; color: #166534;
-  border-left: 4px solid #166534;
-}
-.dash-link-error {
-  background: #fdecea; color: #c0392b;
-  border-left: 4px solid #c0392b;
-}
-    </style>
+    <link href="~/css/views/clientdashboardcss.css" rel="stylesheet" asp-append-version="true" />
+   
 }
 
 <!-- ── Welcome strip ──────────────────────────────────────────────────── -->
@@ -219,9 +180,30 @@
                             <i class="fa-solid fa-magnifying-glass"></i> Search Property
                         </a>
                     }
-                    <span class="cd-roll-badge @(roll.HasObjection ? "cd-badge-open" : "cd-badge-closed")">
-                        @(roll.HasObjection ? "OPEN" : "CLOSED")
-                    </span>
+                    @{
+                        var dates = GetDates(roll.Source);   // ← was Model.DatesFor(roll.Source)
+                        var status = PeriodStatus(dates);
+                    }
+                    @if (!roll.IsQuery && dates is not null)
+                    {
+                        <div class="cd-period-wrap">
+                            <span class="cd-period-dates">
+                                <i class="fa-solid fa-calendar-range"></i>
+                                @dates.OpenDate.ToString("dd MMM yyyy")
+                                –
+                                @dates.VisibleUntil.ToString("dd MMM yyyy")
+                            </span>
+                            <span class="cd-roll-badge cd-badge-@status">
+                                @(status == "active"   ? "Objection Open"   :
+                                  status == "upcoming" ? "Opening Soon"      :
+                                                         "Period Closed")
+                            </span>
+                        </div>
+                    }
+else if (roll.IsQuery)
+{
+    <span class="cd-roll-badge cd-badge-open">OPEN</span>
+}
                     <i class="fa-solid fa-chevron-down cd-roll-chevron" id="chevron-@rollKey"></i>
                 </div>
             </div>
@@ -281,7 +263,7 @@
                                                 <td>@item.PropertyDesc</td>
                                                 <td>@item.CatDesc</td>
                                                 <td>@item.TownNameDesc</td>
-                                                <td class="cd-market-val">@item.MarketValue</td>
+                                              <td>@FormatZAR(item.MarketValue)</td>
                                                 <td>@item.WefDate</td>
                                                 <td>
                                                     <div class="dropdown">
@@ -293,10 +275,11 @@
                                                             @if (roll.HasObjection)
                                                             {
                                                                 <li>
-                                                                    <a class="dropdown-item"
-                                                                           href="/@roll.ControllerName/CheckProperty?sourceTable=@item.PropertyFrom&UnitKey=@item.UnitKey&ValuationKey=@item.ValuationKey&AppealStatus=False">
-                                                                        🛑 Object
-                                                                    </a>
+                                                                  @* Change the existing Object <a> tag: *@
+                                                                            <a class="dropdown-item"
+                                                                               href="/objection/check?rollSource=@roll.Source&sourceTable=@item.PropertyFrom&unitKey=@item.UnitKey&valuationKey=@item.ValuationKey&appealStatus=False">
+                                                                                🛑 Object
+                                                                            </a>
                                                                 </li>
                                                             }
                                                             <li>
@@ -353,7 +336,7 @@
                                                     <td>@item.Property_Desc</td>
                                                     <td>@item.Old_Category</td>
                                                     <td>@item.Town_Name</td>
-                                                    <td class="cd-market-val">@item.Old_Market_Value</td>
+                                                    <td>@FormatZAR(item.Old_Market_Value)</td>
                                                     <td>@Html.Raw(GetStatusPill(item.objection_Status?.ToString()))</td>
                                                     <td>
                                                         <div class="dropdown">
@@ -425,7 +408,7 @@
                                                     <td>@item.Property_Desc</td>
                                                     <td>@item.Old_Category</td>
                                                     <td>@item.Town_Name</td>
-                                                    <td class="cd-market-val">@item.Old_Market_Value</td>
+                                                    <td>@FormatZAR(item.Old_Market_Value)</td>
                                                     <td>@Html.Raw(GetStatusPill(item.objection_Status?.ToString()))</td>
                                                     <td>
                                                         <div class="dropdown">
@@ -640,16 +623,7 @@
                 });
             });
 
-            // Format market values
-            document.querySelectorAll('.cd-market-val').forEach(el => {
-                const raw = parseFloat(el.textContent.replace(/[^0-9.-]/g, ''));
-                if (!isNaN(raw) && raw > 0) {
-                    el.textContent = raw.toLocaleString('en-ZA', {
-                        style: 'currency', currency: 'ZAR',
-                        minimumFractionDigits: 0, maximumFractionDigits: 0
-                    });
-                }
-            });
+           
         });
     </script>
 }

@@ -2,6 +2,7 @@
 using V2_Genesis.Models;
 using V2_Genesis.Models.Results;
 using V2_Genesis.Services;
+using V2_Genesis.Services.PropertySearch;
 
 namespace V2_Genesis.Models.ViewModels.Dashboard;
 
@@ -11,6 +12,8 @@ public class ClientDashboardViewModel
     public bool IsCompany { get; set; }
     public string UserId { get; set; } = string.Empty;
     public AnnouncementResult Announcement { get; set; } = new();
+
+    public Dictionary<string, RollDateEntry> RollDates { get; set; } = new();
 
     /// <summary>Ordered list of rolls from GV_LIST — drives all sections.</summary>
     public List<GvList> Rolls { get; set; } = new();

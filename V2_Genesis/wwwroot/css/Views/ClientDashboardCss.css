@@ -1118,3 +1118,170 @@
         display: none;
     }
 }
+/* ── Roll period dates ───────────────────────────────── */
+.cd-period-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.cd-period-dates {
+    font-size: 11.5px;
+    font-weight: 500;
+    color: rgba(255,255,255,.7);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+    .cd-period-dates i {
+        color: #e6b000;
+        font-size: 11px;
+    }
+
+/* ── Status badges ───────────────────────────────────── */
+.cd-badge-active {
+    background: rgba(34,197,94,.15);
+    color: #22c55e;
+    border: 1px solid rgba(34,197,94,.3);
+}
+
+.cd-badge-upcoming {
+    background: rgba(234,179,8,.15);
+    color: #eab308;
+    border: 1px solid rgba(234,179,8,.3);
+}
+
+.cd-badge-closed {
+    background: rgba(239,68,68,.12);
+    color: #ef4444;
+    border: 1px solid rgba(239,68,68,.2);
+}
+
+.cd-badge-unknown {
+    background: rgba(156,163,175,.12);
+    color: #9ca3af;
+    border: 1px solid rgba(156,163,175,.2);
+}
+
+@media (max-width: 600px) {
+    .cd-period-wrap {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+    }
+
+    .cd-period-dates {
+        font-size: 10.5px;
+    }
+}
+
+
+.ann-bar {
+    padding: 11px 0;
+    border-bottom: 1px solid rgba(0,0,0,.06);
+}
+
+.ann-inner {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.ann-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 100px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.ann-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: .8;
+    animation: pulse 1.5s infinite;
+}
+
+.ann-text {
+    font-size: 13.5px;
+    font-weight: 500;
+    flex: 1;
+}
+
+.ann-days {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12.5px;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 100px;
+    white-space: nowrap;
+}
+
+/* ── Link property alerts ────────────────────── */
+.dash-link-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 16px 20px;
+    font-size: 13.5px;
+    font-family: 'Poppins', sans-serif;
+}
+
+    .dash-link-alert i:first-child {
+        font-size: 20px;
+        flex-shrink: 0;
+        margin-top: 1px;
+    }
+
+    .dash-link-alert div {
+        flex: 1;
+        line-height: 1.5;
+    }
+
+    .dash-link-alert strong {
+        display: block;
+        font-weight: 700;
+        margin-bottom: 2px;
+    }
+
+    .dash-link-alert button {
+        background: none;
+        border: none;
+        cursor: pointer;
+        flex-shrink: 0;
+        font-size: 16px;
+        opacity: .6;
+        transition: opacity .15s;
+        align-self: flex-start;
+    }
+
+        .dash-link-alert button:hover {
+            opacity: 1;
+        }
+
+.dash-link-success {
+    background: #e8f5ef;
+    color: #166534;
+    border-left: 4px solid #166534;
+}
+
+.dash-link-error {
+    background: #fdecea;
+    color: #c0392b;
+    border-left: 4px solid #c0392b;
+}

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using System.Security.Claims;
 using V2_Genesis.Data;
 using V2_Genesis.Models;
@@ -11,6 +12,7 @@ using V2_Genesis.Models.Entities;
 using V2_Genesis.Models.ViewModels.Dashboard;
 using V2_Genesis.Services;
 using V2_Genesis.Services.Interfaces;
+using V2_Genesis.Services.PropertySearch;
 
 namespace V2_Genesis.Controllers;
 
@@ -20,17 +22,22 @@ public class DashboardController : Controller
     private readonly ApplicationDbContext _db;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IAnnouncementService _announcement;
-  
+    private readonly RollDatesSettings _rollDates;
+
     private readonly IDashboardService _dashboardService;
+
     public DashboardController(
         ApplicationDbContext db,
         UserManager<ApplicationUser> userManager,
-        IAnnouncementService announcement, IDashboardService dashboardService)
+        IAnnouncementService announcement,
+        IDashboardService dashboardService,
+        IOptions<RollDatesSettings> rollDatesOpts)      // ← NEW
     {
         _db = db;
         _userManager = userManager;
         _announcement = announcement;
-        _dashboardService= dashboardService;
+        _dashboardService = dashboardService;
+        _rollDates = rollDatesOpts.Value;           // ← NEW
     }
 
     [HttpGet]
@@ -40,20 +47,14 @@ public class DashboardController : Controller
         var user = await _userManager.GetUserAsync(User);
         if (user is null) return RedirectToAction("Login", "Account");
 
-        // ── Identity values ───────────────────────────────────────────
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
         var userEmail = User.FindFirstValue(ClaimTypes.Name) ?? string.Empty;
 
-        // ── Load all rolls from GV_LIST ───────────────────────────────
-        var rolls = await _db.GvList
-            .OrderBy(r => r.ID)
-            .ToListAsync();
-
+        var rolls = await _db.GvList.OrderBy(r => r.ID).ToListAsync();
         ViewBag.GvList = rolls;
 
-        // ── Fetch dashboard data per roll (parallel for performance) ──
         var rollDataTasks = rolls
-            .Where(r => !r.IsQuery)   // Query roll has no dashboard SPs
+            .Where(r => !r.IsQuery)
             .ToDictionary(
                 r => r.Source,
                 r => _dashboardService.GetRollDataAsync(r.Source, userId, userEmail));
@@ -64,7 +65,6 @@ public class DashboardController : Controller
             kvp => kvp.Key,
             kvp => kvp.Value.Result);
 
-        // Query roll gets empty data so the view doesn't crash
         foreach (var roll in rolls.Where(r => r.IsQuery))
             rollData[roll.Source] = new RollData();
 
@@ -75,7 +75,8 @@ public class DashboardController : Controller
             UserId = userId,
             Announcement = _announcement.GetAnnouncement(),
             Rolls = rolls,
-            RollData = rollData
+            RollData = rollData,
+            RollDates = _rollDates.Dates          // ← NEW
         };
 
         return View(vm);

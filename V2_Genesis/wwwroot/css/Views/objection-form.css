@@ -1,0 +1,219 @@
+﻿
+.alert-notice {
+    background: #fff3cd;
+    border: 2px solid #e6b000;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+.alert-notice p {
+    font-size: 16px;
+    color: #006570;
+    font-weight: 600;
+    margin: 0;
+    font-family: 'Poppins', sans-serif;
+}
+
+.alert-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.alert-icon {
+    font-size: 32px;
+    animation: pulse 2s infinite;
+}
+
+.instruction-box {
+    background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+    border-left: 4px solid #e6b000;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 16px;
+}
+
+    .instruction-box p {
+        margin: 0 0 12px 0;
+        color: #2c3e50;
+        font-size: 15px;
+        line-height: 1.6;
+        display: flex;
+        align-items: flex-start;
+        gap: 5px;
+        font-family: 'Poppins', sans-serif;
+    }
+
+        .instruction-box p:last-child {
+            margin-bottom: 0;
+        }
+
+.bullet {
+    color: #006572;
+    font-weight: 600;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.warning-box {
+    background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+    border-left: 4px solid #ff9800;
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 16px;
+}
+
+    .warning-box p {
+        margin: 0;
+        color: #e65100;
+        font-size: 15px;
+        line-height: 1.6;
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        font-family: 'Poppins', sans-serif;
+    }
+
+.warning-icon {
+    font-size: 20px;
+    flex-shrink: 0;
+    animation: shake 3s infinite;
+}
+
+.form-header-container {
+    max-width: 1200px;
+    margin: 0 auto 30px;
+    background: white;
+    border: 3px solid #e6b000;
+    border-radius: 12px;
+    padding: 24px 32px;
+    box-shadow: 0 4px 20px rgba(230, 176, 0, 0.15);
+    position: relative;
+    overflow: hidden;
+}
+
+    .form-header-container::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 6px;
+        background: linear-gradient(90deg, #e6b000 0%, #ffd700 50%, #e6b000 100%);
+    }
+
+    .form-header-container h4 {
+        color: #006572;
+        font-size: 22px;
+        font-weight: 600;
+        text-align: center;
+        margin: 0;
+        line-height: 1.5;
+        letter-spacing: 0.3px;
+    }
+
+.form-icon {
+    display: inline-block;
+    margin-right: 12px;
+    font-size: 26px;
+    vertical-align: middle;
+}
+
+.declaration-text {
+    font-family: 'Poppins', sans-serif;
+    margin-bottom: 20px;
+    line-height: 1.8;
+}
+
+#myForm, #myForm input, #myForm select, #myForm textarea, #myForm button {
+    font-family: 'Poppins', sans-serif;
+}
+
+/* ── Mobile fixes for the copied V1 form ──────────────────────────── */
+@media (max-width: 768px) {
+
+    /* Fix hardcoded 1050px containers */
+    div[style*="width: 1050px"],
+    div[style*="width:1050px"] {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    /* Flex sections stack on mobile */
+    .d-flex {
+        flex-wrap: wrap !important;
+    }
+
+    fieldset[class*="col-md"] {
+        width: 100% !important;
+        max-width: 100% !important;
+        padding-right: 0 !important;
+    }
+
+    /* Section 6 two-column stacks */
+    .col-md-6 {
+        width: 100% !important;
+        margin-bottom: 16px;
+    }
+
+    /* Section 6 inputs full width */
+    div[style*="flex:1"] {
+        width: 100% !important;
+        flex: none !important;
+    }
+
+    /* Tables scroll horizontally */
+    table {
+        display: block;
+        overflow-x: auto;
+    }
+
+    /* Form header */
+    .form-header-container {
+        padding: 14px 12px !important;
+    }
+
+        .form-header-container h4 {
+            font-size: 14px !important;
+        }
+
+    /* Buttons full width on mobile */
+    .btn_n1, .btn_p2, .btn_n2,
+    .btn_p3, .btn_n3, .btn_p4,
+    .btn_n4, .btn_p5, .btn_n5,
+    .btn_p6, .btn_n6, .btn_pU,
+    .btn_nU, .btn_p7, #submitForm {
+        width: 100% !important;
+        margin: 8px 0 !important;
+        float: none !important;
+    }
+
+    /* Signature canvas */
+    #signature {
+        width: 100% !important;
+        height: 160px !important;
+    }
+
+    /* Row spacing */
+    .row.mb-2 {
+        gap: 8px;
+    }
+
+    .col-sm-3, .col-sm-4, .col-sm-6,
+    .col-sm-8, .col-sm-9, .col-sm-12 {
+        width: 100% !important;
+    }
+
+    /* Padding adjustments */
+    .div1, .div2, .div3_R, .div3_A,
+    .div3_B, .div4_R, .div4_B,
+    .div5, .div6, .divU, .div7 {
+        padding: 14px !important;
+    }
+}

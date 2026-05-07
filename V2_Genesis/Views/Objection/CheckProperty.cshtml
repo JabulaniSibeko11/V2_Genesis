@@ -1,0 +1,488 @@
+﻿@model V2_Genesis.Models.ViewModels.Objections.CheckPropertyViewModel
+@{
+    ViewData["Title"] = Model.IsAppeal ? "Property Appeal" : "Property Objection";
+    Layout = "~/Views/Shared/_ClientLayout.cshtml";
+    var d = Model.Main;
+    var src = Model.SourceTable;
+}
+
+@section Styles {
+    <link href="~/css/views/objection.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/views/clientdashboardcss.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/views/property-search.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/views/searchpropertycss.css" rel="stylesheet" asp-append-version="true" />
+}
+
+<div class="obj-page">
+    <div class="obj-inner">
+
+        <!-- ── Page heading ──────────────────────────────────────── -->
+        <div class="obj-heading">
+            <div class="obj-heading-icon">
+                <i class="fa-solid @(Model.IsAppeal ? "fa-gavel" : "fa-file-pen")"></i>
+            </div>
+            <div>
+                <h1 class="obj-title">
+                    @(Model.IsAppeal ? "Property Appeal System" : "Property Objection System")
+                </h1>
+                <p class="obj-subtitle">
+                    @(Model.IsAppeal
+                        ? "Submit your property appeal online"
+                        : "Submit your property objection online")
+                </p>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════
+             STEP 1 — Disclaimer (always visible first)
+        ══════════════════════════════════════════════════════ -->
+        <div class="obj-card" id="disclaimerSection">
+            <div class="obj-card-header">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                @(Model.IsAppeal ? "Disclaimer | Online Appeal" : "Disclaimer | Online Objection")
+            </div>
+            <div class="obj-card-body">
+                <p>
+                    You are about to commence with the online
+                    <strong>@(Model.IsAppeal ? "appeal" : "objection")</strong> process.
+                </p>
+                <p>If you wish to upload supporting documents, please ensure your evidence is ready:</p>
+
+                <div class="obj-disclaimer-list">
+                    <div class="obj-dl-item">
+                        <i class="fa-solid fa-file-pdf"></i>
+                        Evidence attachments must be in <strong>PDF format</strong>
+                    </div>
+                    <div class="obj-dl-item">
+                        <i class="fa-solid fa-upload"></i>
+                        You may upload up to <strong>10 attachments</strong>
+                    </div>
+                    <div class="obj-dl-item">
+                        <i class="fa-solid fa-weight-hanging"></i>
+                        Maximum total size for all attachments: <strong>10 MB</strong>
+                    </div>
+                    <div class="obj-dl-item">
+                        <i class="fa-solid fa-file-lines"></i>
+                        Each attachment may have as many pages as needed within the 10 MB limit
+                    </div>
+                </div>
+
+                <p class="obj-disclaimer-note">
+                    The municipality assumes no responsibility or liability for any errors or omissions
+                    in the content of this site. Information is provided on an "as is" basis.
+                </p>
+
+                <div class="obj-agree-row">
+                    <label class="obj-agree-label">
+                        <input type="checkbox" id="agreeCheckbox" onchange="onAgreeChange(this)" />
+                        <span class="obj-agree-check"></span>
+                        By checking this box I confirm that I have read and understand the above information.
+                    </label>
+                </div>
+
+                <div class="obj-agree-btn-row">
+                    <button id="continueBtn" class="obj-btn obj-btn-primary" disabled
+                            onclick="showMainForm()">
+                        <i class="fa-solid fa-circle-check"></i>
+                        Continue to @(Model.IsAppeal ? "Appeal" : "Objection") Form
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════
+             STEP 2 — Main form (hidden until disclaimer accepted)
+        ══════════════════════════════════════════════════════ -->
+        <div id="mainForm" style="display:none; flex-direction:column; gap:20px;">
+
+            <!-- Property info card -->
+            <div class="obj-card">
+                <div class="obj-card-header">
+                    <i class="fa-solid fa-map-marker-alt"></i>
+                    Property Information
+                    <span class="obj-card-sub">
+                        Details of the property you are
+                        @(Model.IsAppeal ? "appealing" : "objecting to")
+                    </span>
+                </div>
+                <div class="obj-card-body obj-prop-grid">
+                    @if (d is not null)
+                    {
+                        <div class="obj-prop-item">
+                            <span class="obj-prop-label">
+                                <i class="fa-solid fa-file-alt"></i> Property Description
+                            </span>
+                            <span class="obj-prop-value">@(d.PropertyDesc ?? "N/A")</span>
+                        </div>
+                        <div class="obj-prop-item">
+                            <span class="obj-prop-label">
+                                <i class="fa-solid fa-home"></i> Address
+                            </span>
+                            <span class="obj-prop-value">@(d.LisStreetAddress ?? "N/A")</span>
+                        </div>
+                        <div class="obj-prop-item">
+                            <span class="obj-prop-label">
+                                <i class="fa-solid fa-tag"></i> Category
+                            </span>
+                            <span class="obj-prop-value">@(d.CatDesc ?? "N/A")</span>
+                        </div>
+                        <div class="obj-prop-item">
+                            <span class="obj-prop-label">
+                                <i class="fa-solid fa-city"></i> Township
+                            </span>
+                            <span class="obj-prop-value">@(d.TownNameDesc ?? "N/A")</span>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Property type selection -->
+            <div class="obj-card">
+                <div class="obj-card-header">
+                    <i class="fa-solid fa-house"></i>
+                    Property Type
+                    <span class="obj-card-sub">
+                        Choose the property type you want to
+                        @(Model.IsAppeal ? "appeal on" : "object on")
+                    </span>
+                </div>
+                <div class="obj-card-body">
+                    <div class="obj-radio-grid">
+                        <label class="obj-radio-card" id="card-res">
+                            <input type="radio" name="propertyType" value="Res"
+                                   onchange="onTypeSelect('propertyType', 'res-feedback')" />
+                            <div class="obj-radio-content">
+                                <i class="fa-solid fa-house-chimney"></i>
+                                <strong>Residential</strong>
+                                <small>Full Title and Sectional Title used for Residential Purposes</small>
+                            </div>
+                            <div class="obj-radio-check"><i class="fa-solid fa-circle-check"></i></div>
+                        </label>
+
+                        <label class="obj-radio-card" id="card-agric">
+                            <input type="radio" name="propertyType" value="Agric"
+                                   onchange="onTypeSelect('propertyType', 'res-feedback')" />
+                            <div class="obj-radio-content">
+                                <i class="fa-solid fa-tractor"></i>
+                                <strong>Agricultural</strong>
+                                <small>Holdings or Farms</small>
+                            </div>
+                            <div class="obj-radio-check"><i class="fa-solid fa-circle-check"></i></div>
+                        </label>
+
+                        <label class="obj-radio-card" id="card-bus">
+                            <input type="radio" name="propertyType" value="Bus"
+                                   onchange="onTypeSelect('propertyType', 'res-feedback')" />
+                            <div class="obj-radio-content">
+                                <i class="fa-solid fa-building"></i>
+                                <strong>Business / Other</strong>
+                                <small>Business, Factories, Offices, Schools</small>
+                            </div>
+                            <div class="obj-radio-check"><i class="fa-solid fa-circle-check"></i></div>
+                        </label>
+
+                        <label class="obj-radio-card" id="card-multi">
+                            <input type="radio" name="propertyType" value="Multi"
+                                   onchange="onTypeSelect('propertyType', 'res-feedback')" />
+                            <div class="obj-radio-content">
+                                <i class="fa-solid fa-layer-group"></i>
+                                <strong>Multiple Purposes</strong>
+                                <small>Property used for more than one purpose</small>
+                            </div>
+                            <div class="obj-radio-check"><i class="fa-solid fa-circle-check"></i></div>
+                        </label>
+                    </div>
+                    <div class="obj-selection-feedback" id="res-feedback"></div>
+                </div>
+            </div>
+
+            <!-- Objector / Appellant type selection -->
+            <div class="obj-card">
+                <div class="obj-card-header">
+                    <i class="fa-solid fa-user"></i>
+                    @(Model.IsAppeal ? "Appellant Type" : "Objector Type")
+                    <span class="obj-card-sub">Choose the type of @(Model.IsAppeal ? "appellant" : "objector")</span>
+                </div>
+                <div class="obj-card-body">
+                    <div class="obj-radio-grid obj-radio-grid-3">
+                        <label class="obj-radio-card">
+                            <input type="radio" name="objectorType" value="Owner"
+                                   onchange="onTypeSelect('objectorType', 'obj-feedback')" />
+                            <div class="obj-radio-content">
+                                <i class="fa-solid fa-user-check"></i>
+                                <strong>Owner</strong>
+                            </div>
+                            <div class="obj-radio-check"><i class="fa-solid fa-circle-check"></i></div>
+                        </label>
+
+                        <label class="obj-radio-card">
+                            <input type="radio" name="objectorType" value="Third_Party"
+                                   onchange="onTypeSelect('objectorType', 'obj-feedback')" />
+                            <div class="obj-radio-content">
+                                <i class="fa-solid fa-users"></i>
+                                <strong>Third Party</strong>
+                            </div>
+                            <div class="obj-radio-check"><i class="fa-solid fa-circle-check"></i></div>
+                        </label>
+
+                        <label class="obj-radio-card">
+                            <input type="radio" name="objectorType" value="Representative"
+                                   onchange="onTypeSelect('objectorType', 'obj-feedback')" />
+                            <div class="obj-radio-content">
+                                <i class="fa-solid fa-user-tie"></i>
+                                <strong>Representative</strong>
+                            </div>
+                            <div class="obj-radio-check"><i class="fa-solid fa-circle-check"></i></div>
+                        </label>
+                    </div>
+                    <div class="obj-selection-feedback" id="obj-feedback"></div>
+                </div>
+            </div>
+
+            <!-- Lodge button — hidden until both types selected -->
+            <div id="lodgeSection" style="display:none;">
+                <div class="obj-card obj-lodge-card">
+                    <div class="obj-card-body obj-lodge-body">
+                        <div class="obj-lodge-summary" id="lodgeSummary"></div>
+                        <!-- Lodge links — JS sets href and shows the correct one -->
+                        @if (!Model.IsLis)
+                        {
+                            <a href="#" id="btn_choice" class="obj-lodge-btn" hidden>
+                                <i class="fa-solid fa-file-signature"></i>
+                                @(Model.IsAppeal ? "Lodge Appeal" : "Lodge Objection")
+                            </a>
+                            <a href="#" id="btn_choice1" class="obj-lodge-btn" hidden>
+                                <i class="fa-solid fa-file-signature"></i>
+                                @(Model.IsAppeal ? "Lodge Appeal" : "Lodge Objection")
+                            </a>
+                        }
+                        else
+                        {
+                            <a href="#" id="btn_choice" class="obj-lodge-btn" hidden>
+                                <i class="fa-solid fa-file-signature"></i>
+                                @(Model.IsAppeal ? "Lodge Appeal" : "Lodge Objection")
+                            </a>
+                            <a href="#" id="btn_choice1" class="obj-lodge-btn" hidden>
+                                <i class="fa-solid fa-file-signature"></i>
+                                @(Model.IsAppeal ? "Lodge Appeal" : "Lodge Objection")
+                            </a>
+                        }
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Instructions modal -->
+<div class="obj-modal-backdrop" id="instrBackdrop"></div>
+<div class="obj-modal" id="instrModal">
+    <div class="obj-modal-header">
+        <div>
+            <h2>
+                <i class="fa-solid fa-clipboard-list"></i>
+                @(Model.IsAppeal ? "Appeal" : "Objection") Form Instructions
+            </h2>
+            <p>
+                Please read all instructions carefully before starting your
+                @(Model.IsAppeal ? "appeal" : "objection")
+            </p>
+        </div>
+        <button class="obj-modal-close" onclick="closeInstrModal()">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+    </div>
+    <div class="obj-modal-body">
+        <div class="obj-instr-section">
+            <h3><i class="fa-solid fa-user"></i> Section 1: Personal Information</h3>
+            <ul>
+                <li>Complete at least one field to submit your @(Model.IsAppeal ? "appeal" : "objection")</li>
+                <li><strong>ID Number or Passport:</strong> SA citizens enter their ID number. Non-citizens provide a valid Passport or Asylum number</li>
+                <li><strong>Contact Numbers:</strong> Populate at least one contact number</li>
+                <li><strong>Address:</strong> Fill all address fields. Click "Yes" if postal = physical address</li>
+            </ul>
+        </div>
+        <div class="obj-instr-section">
+            <h3><i class="fa-solid fa-users"></i> @(Model.IsAppeal ? "Appellant" : "Objector") Type Requirements</h3>
+            <ul>
+                <li><strong>Third Party:</strong> Clearly mention your @(Model.IsAppeal ? "appellant" : "objector") status</li>
+                <li><strong>Representative:</strong> Provide an authorised letter in Section 1</li>
+            </ul>
+        </div>
+        <div class="obj-instr-section">
+            <h3><i class="fa-solid fa-pen"></i> Section 6: @(Model.IsAppeal ? "Appeal" : "Objection") Details</h3>
+            <ul>
+                <li>Only fill in fields you wish to @(Model.IsAppeal ? "appeal" : "object to") — leave others blank</li>
+                <li>Do not enter values identical to the original</li>
+            </ul>
+        </div>
+        <div class="obj-instr-section">
+            <h3><i class="fa-solid fa-upload"></i> Document Upload</h3>
+            <ul>
+                <li>Upload up to <strong>10 documents</strong> (PDF, PNG, JPG)</li>
+                <li>Additional uploads possible within 48 hours</li>
+                <li>Ensure your signature is clear and visible</li>
+            </ul>
+        </div>
+        <div class="obj-instr-warning">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            <div>
+                <strong>Important Notice:</strong> If you experience problems, do not retry
+                multiple times. Contact the Valuation Admission Team or visit the office.
+            </div>
+        </div>
+    </div>
+    <div class="obj-modal-footer">
+        <label class="obj-agree-label">
+            <input type="checkbox" id="instrAgree" onchange="onInstrAgree(this)" />
+            <span class="obj-agree-check"></span>
+            I have read and understood all the instructions
+        </label>
+        <div class="obj-modal-actions">
+            <button class="obj-btn obj-btn-outline" onclick="closeInstrModal()">
+                <i class="fa-solid fa-xmark"></i> Cancel
+            </button>
+            <button class="obj-btn obj-btn-primary" id="startFormBtn" disabled
+                    onclick="proceedToForm()">
+                <i class="fa-solid fa-play"></i> Start @(Model.IsAppeal ? "Appeal" : "Objection") Form
+            </button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // ── Route config from Razor ───────────────────────────────────────
+        var CONTROLLER  = '@Model.ControllerName';
+        var SOURCE      = '@Model.SourceTable';
+        var IS_APPEAL   = '@Model.AppealStatus' === 'True';
+        var IS_LIS      = SOURCE === 'LIS';
+
+        var selectedProperty = '';
+        var selectedObjector = '';
+        var pendingUrl       = '';
+
+        // ── Preloader ─────────────────────────────────────────────────────
+        window.addEventListener('load', function () {
+            setTimeout(function () {
+                var loader = document.getElementById('preloader');
+                if (loader) loader.style.display = 'none';
+            }, 1000);
+        });
+
+        // ── Disclaimer agree ──────────────────────────────────────────────
+        function onAgreeChange(cb) {
+            document.getElementById('continueBtn').disabled = !cb.checked;
+        }
+
+        function showMainForm() {
+            document.getElementById('disclaimerSection').style.display = 'none';
+            var f = document.getElementById('mainForm');
+            f.style.display = 'flex';
+        }
+
+        // ── Radio card selection ──────────────────────────────────────────
+        function onTypeSelect(name, feedbackId) {
+            var selected = document.querySelector('input[name="' + name + '"]:checked');
+            if (!selected) return;
+
+            // Highlight selected card
+            document.querySelectorAll('input[name="' + name + '"]').forEach(function(r) {
+                r.closest('.obj-radio-card').classList.remove('selected');
+            });
+            selected.closest('.obj-radio-card').classList.add('selected');
+
+            if (name === 'propertyType') selectedProperty = selected.value;
+            if (name === 'objectorType') selectedObjector = selected.value;
+
+            checkBothSelected();
+        }
+
+        function checkBothSelected() {
+            if (!selectedProperty || !selectedObjector) return;
+
+            var isMulti = selectedProperty === 'Multi';
+            var url = buildLodgeUrl(isMulti);
+
+            // Show lodge section
+            document.getElementById('lodgeSection').style.display = 'block';
+
+            // Update summary
+            var propLabel = selectedProperty === 'Res'   ? 'Residential'     :
+                            selectedProperty === 'Agric' ? 'Agricultural'    :
+                            selectedProperty === 'Bus'   ? 'Business / Other': 'Multiple Purposes';
+            var objLabel  = selectedObjector === 'Owner' ? 'Owner' :
+                            selectedObjector === 'Third_Party' ? 'Third Party' : 'Representative';
+            var action    = IS_APPEAL ? 'Appeal' : 'Objection';
+
+            document.getElementById('lodgeSummary').innerHTML =
+                '<i class="fa-solid fa-circle-check"></i> ' + action +
+                ' as <strong>' + objLabel + '</strong> on a <strong>' + propLabel + '</strong> property';
+
+            // Set correct button
+            ['btn_choice','btn_choice1'].forEach(function(id) {
+                var el = document.getElementById(id);
+                if (el) el.setAttribute('hidden', true);
+            });
+
+            var target = document.getElementById(isMulti ? 'btn_choice1' : 'btn_choice');
+            if (target) {
+                target.href = url;
+                target.removeAttribute('hidden');
+            }
+        }
+
+                   function buildLodgeUrl(isMulti) {
+            var qs = '?PropertyFrom=' + encodeURIComponent(SOURCE) +
+                     '&objectorType=' + encodeURIComponent(selectedObjector) +
+                     '&appeal='       + (IS_APPEAL ? 'True' : 'False');
+
+            if (IS_LIS) {
+                return isMulti
+                    ? '/LIS/ViewMultiPurposeFormSup3' + qs
+                    : '/LIS/ViewResidentialFormSup3'  + qs;
+            }
+
+            // Both now use unified V2 routes
+            return isMulti
+                ? '/objection/multipurpose' + qs   // ← was /{CONTROLLER}/ViewMultiPurposeForm
+                : '/objection/form'         + qs;
+        }
+
+        // ── Intercept Lodge button → show instructions modal first ────────
+        document.addEventListener('click', function(e) {
+            var btn = e.target.closest('#btn_choice, #btn_choice1');
+            if (!btn) return;
+            e.preventDefault();
+            pendingUrl = btn.href;
+            document.getElementById('instrAgree').checked = false;
+            document.getElementById('startFormBtn').disabled = true;
+            document.getElementById('instrBackdrop').classList.add('show');
+            document.getElementById('instrModal').classList.add('show');
+            document.body.style.overflow = 'hidden';
+        });
+
+        // ── Instructions modal ────────────────────────────────────────────
+        function onInstrAgree(cb) {
+            document.getElementById('startFormBtn').disabled = !cb.checked;
+        }
+
+        function closeInstrModal() {
+            document.getElementById('instrBackdrop').classList.remove('show');
+            document.getElementById('instrModal').classList.remove('show');
+            document.body.style.overflow = '';
+        }
+
+        function proceedToForm() {
+            if (pendingUrl) window.location.href = pendingUrl;
+        }
+
+        document.getElementById('instrBackdrop')
+            .addEventListener('click', closeInstrModal);
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeInstrModal();
+        });
+    </script>
+}

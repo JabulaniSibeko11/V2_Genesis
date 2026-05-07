@@ -12,19 +12,9 @@ public class RollDateEntry
 
 public class RollDatesSettings
 {
-    /// <summary>Keyed by GvList.Source.</summary>
+    // Must match the appsettings key exactly — no nested "Dates" wrapper
     public Dictionary<string, RollDateEntry> Dates { get; set; } = new();
 
-    /// <summary>
-    /// Returns the entry for the given roll source,
-    /// or a safe default (both dates in the past) if not found.
-    /// </summary>
-    public RollDateEntry For(string rollSource) =>
-        Dates.TryGetValue(rollSource, out var entry)
-            ? entry
-            : new RollDateEntry
-            {
-                OpenDate = DateTime.MinValue,
-                VisibleUntil = DateTime.MinValue
-            };
+    public RollDateEntry? For(string rollSource) =>
+        Dates.TryGetValue(rollSource, out var entry) ? entry : null;
 }
