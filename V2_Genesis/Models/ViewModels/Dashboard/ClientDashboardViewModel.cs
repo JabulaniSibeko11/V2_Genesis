@@ -2,6 +2,7 @@
 using V2_Genesis.Models;
 using V2_Genesis.Models.Results;
 using V2_Genesis.Services;
+using V2_Genesis.Services.Attributes;
 using V2_Genesis.Services.PropertySearch;
 
 namespace V2_Genesis.Models.ViewModels.Dashboard;
@@ -24,6 +25,9 @@ public class ClientDashboardViewModel
     /// Replace with real queries when data methods are ready.
     /// </summary>
     public Dictionary<string, RollData> RollData { get; set; } = new();
+
+    // Add to existing properties:
+    public AttributesDashboardData AttributesData { get; set; } = new();
 }
 
 /// <summary>Data bucket for one roll's three tables.</summary>

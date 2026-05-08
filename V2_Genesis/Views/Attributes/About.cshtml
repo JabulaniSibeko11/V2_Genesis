@@ -1,0 +1,446 @@
+﻿@{
+    ViewData["Title"] = "Property Attributes — About";
+    Layout = "~/Views/Shared/_ClientLayout.cshtml";
+}
+
+@section Styles {
+    <link href="~/css/views/attributes.css" rel="stylesheet" asp-append-version="true" />
+     <link href="~/css/views/clientdashboardcss.css" rel="stylesheet" asp-append-version="true" />
+}
+
+<!-- ── Compact header ──────────────────────────────────────────────── -->
+<div class="ab-compact-header">
+    <div class="ab-compact-inner">
+        <div class="ab-compact-left">
+            <span class="ab-chip">
+                <i class="fa-solid fa-sparkles"></i> NEW FEATURE
+            </span>
+            <div>
+                <h1 class="ab-compact-title">Property Information Submission</h1>
+                <p class="ab-compact-sub">
+                    City of Johannesburg — Valuation Roll Preparation Programme
+                </p>
+            </div>
+        </div>
+        <a href="/attributes/search" class="ab-start-btn">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            Search My Property
+        </a>
+    </div>
+</div>
+
+<!-- ── Sticky anchor nav ───────────────────────────────────────────── -->
+<nav class="ab-nav" id="abNav">
+    <div class="ab-nav-inner">
+        <a href="#why" class="ab-nav-link active" data-target="why">
+            <i class="fa-solid fa-circle-question"></i> Why
+        </a>
+        <a href="#how" class="ab-nav-link" data-target="how">
+            <i class="fa-solid fa-list-check"></i> How It Works
+        </a>
+        <a href="#forms" class="ab-nav-link" data-target="forms">
+            <i class="fa-solid fa-file-lines"></i> Form Types
+        </a>
+        <a href="#important" class="ab-nav-link" data-target="important">
+            <i class="fa-solid fa-triangle-exclamation"></i> Important
+        </a>
+        <a href="/attributes/search" class="ab-nav-cta">
+            <i class="fa-solid fa-arrow-right"></i> Get Started
+        </a>
+    </div>
+</nav>
+
+<!-- ── Section: Why ───────────────────────────────────────────────── -->
+<section class="ab-section" id="why">
+    <div class="ab-section-inner">
+        <div class="ab-section-label">WHY ARE WE DOING THIS?</div>
+        <h2 class="ab-section-title">
+            Accurate property data ensures a fair Valuation Roll
+        </h2>
+        <p class="ab-section-intro">
+            The City of Johannesburg is preparing its next Valuation Roll.
+            Property information on our system may be outdated, incomplete or
+            inaccurate. This programme gives you — the property owner or
+            authorised representative — a structured, transparent way to
+            submit updates directly.
+        </p>
+
+        <div class="ab-why-grid">
+            <div class="ab-why-card ab-animate">
+                <div class="ab-why-num">01</div>
+                <h3>Your data may be outdated</h3>
+                <p>
+                    Improvements, subdivisions, change of use or sectional
+                    title changes may not be reflected in the current roll.
+                </p>
+            </div>
+            <div class="ab-why-card ab-animate">
+                <div class="ab-why-num">02</div>
+                <h3>Accurate information = fair rates</h3>
+                <p>
+                    Incorrect property data leads to incorrect valuations.
+                    Submitting updates gives the Municipal Valuer the full
+                    picture to make a fair decision.
+                </p>
+            </div>
+            <div class="ab-why-card ab-animate">
+                <div class="ab-why-num">03</div>
+                <h3>Full transparency</h3>
+                <p>
+                    You see exactly what information the system holds and
+                    what you are submitting — side by side — before it
+                    reaches the valuer.
+                </p>
+            </div>
+            <div class="ab-why-card ab-animate">
+                <div class="ab-why-num">04</div>
+                <h3>Your submission stays separate</h3>
+                <p>
+                    Submitted information is stored separately from the
+                    existing roll data and only replaces it once a valuer
+                    explicitly approves it.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="ab-divider"></div>
+
+<!-- ── Section: How It Works ──────────────────────────────────────── -->
+<section class="ab-section ab-section-dark" id="how">
+    <div class="ab-section-inner">
+        <div class="ab-section-label ab-label-gold">HOW IT WORKS</div>
+        <h2 class="ab-section-title ab-title-white">Four steps from search to review</h2>
+
+        <div class="ab-steps-timeline">
+
+            <div class="ab-step ab-animate">
+                <div class="ab-step-marker">
+                    <div class="ab-step-dot">1</div>
+                    <div class="ab-step-line"></div>
+                </div>
+                <div class="ab-step-body">
+                    <div class="ab-step-icon"><i class="fa-solid fa-magnifying-glass"></i></div>
+                    <h3>Search for your property</h3>
+                    <p>
+                        Use the property search — same as the objection system — to find
+                        your property by township, erf number, scheme or street address.
+                    </p>
+                    <div class="ab-step-tip">
+                        <i class="fa-solid fa-lightbulb"></i>
+                        If your property has a scheme number, the Sectional Title (ST)
+                        form will open automatically.
+                    </div>
+                </div>
+            </div>
+
+            <div class="ab-step ab-animate">
+                <div class="ab-step-marker">
+                    <div class="ab-step-dot">2</div>
+                    <div class="ab-step-line"></div>
+                </div>
+                <div class="ab-step-body">
+                    <div class="ab-step-icon"><i class="fa-solid fa-link"></i></div>
+                    <h3>Link the property to your profile</h3>
+                    <p>
+                        Link the property to your Genesis account as the owner
+                        or authorised representative. It will appear in your
+                        Attributes dashboard.
+                    </p>
+                    <div class="ab-step-tip">
+                        <i class="fa-solid fa-lightbulb"></i>
+                        Representatives must upload a signed letter of
+                        authorisation from the registered owner.
+                    </div>
+                </div>
+            </div>
+
+            <div class="ab-step ab-animate">
+                <div class="ab-step-marker">
+                    <div class="ab-step-dot">3</div>
+                    <div class="ab-step-line"></div>
+                </div>
+                <div class="ab-step-body">
+                    <div class="ab-step-icon"><i class="fa-solid fa-file-pen"></i></div>
+                    <h3>Complete the attribute form</h3>
+                    <p>
+                        The correct form opens automatically based on your property
+                        category — Residential, Sectional Title, Business &amp; Commercial,
+                        or DRC Method. You see the existing system values alongside
+                        your input.
+                    </p>
+                    <div class="ab-step-tip">
+                        <i class="fa-solid fa-clock"></i>
+                        You have <strong>48 hours</strong> after submission to edit
+                        your response or upload additional evidence.
+                    </div>
+                </div>
+            </div>
+
+            <div class="ab-step ab-animate">
+                <div class="ab-step-marker">
+                    <div class="ab-step-dot">4</div>
+                </div>
+                <div class="ab-step-body">
+                    <div class="ab-step-icon"><i class="fa-solid fa-user-check"></i></div>
+                    <h3>Valuer reviews and validates</h3>
+                    <p>
+                        Your submission is routed to a professional Municipal Valuer
+                        for review. If approved, the updated information is included
+                        in the next Valuation Roll extract.
+                    </p>
+                    <div class="ab-step-tip ab-tip-green">
+                        <i class="fa-solid fa-circle-check"></i>
+                        You will be notified of the outcome via your dashboard
+                        and registered email address.
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<div class="ab-divider"></div>
+
+<!-- ── Section: Form Types ────────────────────────────────────────── -->
+<section class="ab-section" id="forms">
+    <div class="ab-section-inner">
+        <div class="ab-section-label">FORM TYPES</div>
+        <h2 class="ab-section-title">
+            The right form opens automatically
+        </h2>
+        <p class="ab-section-intro">
+            Genesis detects your property type from the search results and
+            routes you to the correct attribute form. Here is what each form
+            covers:
+        </p>
+
+        <div class="ab-forms-grid">
+
+            <div class="ab-form-card ab-animate">
+                <div class="ab-form-badge ab-badge-green">Residential</div>
+                <div class="ab-form-card-body">
+                    <div class="ab-form-trigger">
+                        <i class="fa-solid fa-bolt"></i>
+                        Full-title properties categorised as
+                        <strong>Residential</strong>
+                    </div>
+                    <ul>
+                        <li>Floor areas — TLA1, TLA2, TLA3</li>
+                        <li>Garage / Carport / Granny Flat</li>
+                        <li>Staff Quarters / Storage</li>
+                        <li>Storeys, Security level, Noise</li>
+                        <li>Topography, Quality, Condition</li>
+                        <li>Swimming Pool / Tennis Court</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="ab-form-card ab-animate">
+                <div class="ab-form-badge ab-badge-blue">Residential — ST</div>
+                <div class="ab-form-card-body">
+                    <div class="ab-form-trigger">
+                        <i class="fa-solid fa-bolt"></i>
+                        <strong>Sectional Title</strong> properties or when
+                        a scheme number appears in search
+                    </div>
+                    <ul>
+                        <li>ST Main floor area</li>
+                        <li>Garage / Carport / Storage</li>
+                        <li>ST Condition (1-Excellent to 5-Poor)</li>
+                        <li>ST Floor level</li>
+                        <li>Overall quality rating</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="ab-form-card ab-animate">
+                <div class="ab-form-badge ab-badge-orange">Business &amp; Commercial</div>
+                <div class="ab-form-card-body">
+                    <div class="ab-form-trigger">
+                        <i class="fa-solid fa-bolt"></i>
+                        <strong>Business / Commercial</strong> and
+                        <strong>Multiple Purposes</strong> properties
+                    </div>
+                    <ul>
+                        <li>Building quality, condition, year built</li>
+                        <li>Storeys, depreciation, GBA, DRC</li>
+                        <li>Section usage and market group</li>
+                        <li>Rental income, vacancy, cap rate</li>
+                        <li>Unutilised land extent &amp; rate</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="ab-form-card ab-animate">
+                <div class="ab-form-badge ab-badge-purple">DRC Method</div>
+                <div class="ab-form-card-body">
+                    <div class="ab-form-trigger">
+                        <i class="fa-solid fa-bolt"></i>
+                        Properties valued by
+                        <strong>Depreciated Replacement Cost</strong> method
+                    </div>
+                    <ul>
+                        <li>Building description, quality, GBA</li>
+                        <li>Condition, depreciation %, rate/m²</li>
+                        <li>Replacement cost per building</li>
+                        <li>Improvements with condition rating</li>
+                        <li>Vacant land region min / mid / max</li>
+                        <li>Market value &amp; DRC final value</li>
+                    </ul>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<div class="ab-divider"></div>
+
+<!-- ── Section: Important ─────────────────────────────────────────── -->
+<section class="ab-section" id="important">
+    <div class="ab-section-inner">
+        <div class="ab-section-label">IMPORTANT TO KNOW</div>
+        <h2 class="ab-section-title">Before you begin</h2>
+
+        <div class="ab-notices">
+
+            <div class="ab-notice ab-notice-amber ab-animate">
+                <div class="ab-notice-icon">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+                <div class="ab-notice-body">
+                    <h4>Submission does not imply acceptance</h4>
+                    <p>
+                        All submitted information is subject to professional
+                        review by a qualified Municipal Valuer. Your existing
+                        property data on the roll remains unchanged until it is
+                        explicitly approved.
+                    </p>
+                </div>
+            </div>
+
+            <div class="ab-notice ab-notice-blue ab-animate">
+                <div class="ab-notice-icon">
+                    <i class="fa-solid fa-clock"></i>
+                </div>
+                <div class="ab-notice-body">
+                    <h4>48-hour edit window</h4>
+                    <p>
+                        After submitting your property attributes you have exactly
+                        <strong>48 hours</strong> to make changes or upload
+                        additional evidence. Once this window closes, your
+                        submission is locked and sent for valuer review.
+                    </p>
+                </div>
+            </div>
+
+            <div class="ab-notice ab-notice-purple ab-animate">
+                <div class="ab-notice-icon">
+                    <i class="fa-solid fa-user-tie"></i>
+                </div>
+                <div class="ab-notice-body">
+                    <h4>Representatives must include authorisation</h4>
+                    <p>
+                        If you are submitting on behalf of a property owner,
+                        a signed letter of authorisation from the registered
+                        owner must be uploaded as part of your submission.
+                    </p>
+                </div>
+            </div>
+
+            <div class="ab-notice ab-notice-green ab-animate">
+                <div class="ab-notice-icon">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </div>
+                <div class="ab-notice-body">
+                    <h4>Your data is secure and fully auditable</h4>
+                    <p>
+                        All submissions and valuer decisions are logged with
+                        a complete audit trail. Only validated and approved
+                        information is included in downstream valuation
+                        processes and OVVIO extracts.
+                    </p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<!-- ── Get Started strip ──────────────────────────────────────────── -->
+<div class="ab-getstarted" id="getstarted">
+    <div class="ab-getstarted-inner">
+        <div class="ab-getstarted-text">
+            <h2>Ready to submit your property information?</h2>
+            <p>The process takes approximately 10 – 20 minutes.</p>
+        </div>
+        <div class="ab-getstarted-actions">
+            <a href="/attributes/search" class="ab-start-btn ab-start-btn-lg">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                Search My Property
+            </a>
+            <a href="/dashboard" class="ab-ghost-btn">
+                <i class="fa-solid fa-arrow-left"></i>
+                Back to Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // ── Sticky nav: highlight active section ──────────────────────────
+        const sections  = ['why','how','forms','important'];
+        const navLinks  = document.querySelectorAll('.ab-nav-link[data-target]');
+        const navEl     = document.getElementById('abNav');
+        let   navOffset = 0;
+
+        function updateActiveLink() {
+            let current = sections[0];
+            sections.forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                if (window.scrollY >= el.offsetTop - navOffset - 40)
+                    current = id;
+            });
+            navLinks.forEach(link => {
+                link.classList.toggle('active',
+                    link.dataset.target === current);
+            });
+        }
+
+        // Smooth scroll with offset
+        navLinks.forEach(link => {
+            link.addEventListener('click', e => {
+                e.preventDefault();
+                const target = document.getElementById(link.dataset.target);
+                if (!target) return;
+                const top = target.getBoundingClientRect().top
+                          + window.scrollY - navOffset - 16;
+                window.scrollTo({ top, behavior: 'smooth' });
+            });
+        });
+
+        // ── Scroll-in animation ───────────────────────────────────────────
+        const observer = new IntersectionObserver(entries => {
+            entries.forEach(e => {
+                if (e.isIntersecting) {
+                    e.target.classList.add('visible');
+                    observer.unobserve(e.target);
+                }
+            });
+        }, { threshold: 0.12 });
+
+        document.querySelectorAll('.ab-animate').forEach(el => observer.observe(el));
+
+        window.addEventListener('scroll', updateActiveLink, { passive: true });
+
+        window.addEventListener('load', () => {
+            navOffset = navEl.offsetHeight + 64; // 64 = main navbar
+            updateActiveLink();
+        });
+    </script>
+}

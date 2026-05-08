@@ -3,6 +3,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.CodeAnalysis;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using System.Security.Claims;
@@ -25,19 +26,21 @@ public class DashboardController : Controller
     private readonly RollDatesSettings _rollDates;
 
     private readonly IDashboardService _dashboardService;
-
+    private readonly IAttributesDashboardService _attributesService;
     public DashboardController(
         ApplicationDbContext db,
         UserManager<ApplicationUser> userManager,
         IAnnouncementService announcement,
         IDashboardService dashboardService,
-        IOptions<RollDatesSettings> rollDatesOpts)      // ← NEW
+        IOptions<RollDatesSettings> rollDatesOpts,
+        IAttributesDashboardService attributesService)      // ← NEW
     {
         _db = db;
         _userManager = userManager;
         _announcement = announcement;
         _dashboardService = dashboardService;
         _rollDates = rollDatesOpts.Value;           // ← NEW
+        _attributesService = attributesService;
     }
 
     [HttpGet]
@@ -51,6 +54,7 @@ public class DashboardController : Controller
         var userEmail = User.FindFirstValue(ClaimTypes.Name) ?? string.Empty;
 
         var rolls = await _db.GvList.OrderBy(r => r.ID).ToListAsync();
+        var attributesData = await _attributesService.GetDashboardDataAsync(userId);
         ViewBag.GvList = rolls;
 
         var rollDataTasks = rolls
@@ -76,7 +80,8 @@ public class DashboardController : Controller
             Announcement = _announcement.GetAnnouncement(),
             Rolls = rolls,
             RollData = rollData,
-            RollDates = _rollDates.Dates          // ← NEW
+            RollDates = _rollDates.Dates ,
+            AttributesData = attributesData
         };
 
         return View(vm);

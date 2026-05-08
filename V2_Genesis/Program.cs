@@ -87,6 +87,7 @@ builder.Services.AddScoped<IObjectionFormService, ObjectionFormService>();
 builder.Services.AddScoped<IAdminDashboardService, AdminDashboardService>();
 builder.Services.AddScoped<IAuditService, AuditService>();
 builder.Services.AddScoped<INoticeService, NoticeService>();
+builder.Services.AddScoped<IAttributesDashboardService, AttributesDashboardService>();
 
 
 // ── App Pipeline ──────────────────────────────────────────────────────────────

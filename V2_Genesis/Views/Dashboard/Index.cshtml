@@ -43,6 +43,23 @@
         if (now <= d.VisibleUntil) return "active";
         return "closed";
     }
+
+    string GetAttrStatusPill(string? status) => status switch
+    {
+        "Pending" => "<span class='cd-pill cd-pill-pending'>Pending</span>",
+        "Under Review" => "<span class='cd-pill cd-pill-inprogress'>Under Review</span>",
+        "Approved" => "<span class='cd-pill cd-pill-completed'>Approved</span>",
+        "Rejected" => "<span class='cd-pill cd-pill-lodging'>Rejected</span>",
+        _ => $"<span class='cd-pill cd-pill-pending'>{status}</span>"
+    };
+
+    string GetApptStatusPill(string? status) => status switch
+    {
+        "Scheduled" => "<span class='cd-pill cd-pill-inprogress'>Scheduled</span>",
+        "Completed" => "<span class='cd-pill cd-pill-completed'>Completed</span>",
+        "Cancelled" => "<span class='cd-pill cd-pill-lodging'>Cancelled</span>",
+        _ => $"<span class='cd-pill cd-pill-pending'>{status}</span>"
+    };
 }
 
 @section Styles {
@@ -494,53 +511,290 @@ else if (roll.IsQuery)
     <div class="cd-roll-section">
         <div class="cd-roll-header cd-roll-attributes" onclick="toggleRoll('attributes')">
             <div class="cd-roll-header-left">
-                <div class="cd-roll-icon"><i class="fa-solid fa-clipboard-list"></i></div>
+                <div class="cd-roll-icon">
+                    <i class="fa-solid fa-clipboard-list"></i>
+                </div>
                 <div>
                     <h2 class="cd-roll-name">Property Attributes</h2>
-                    <span class="cd-roll-short">Submit updated property information for valuation roll preparation</span>
+                    <span class="cd-roll-short">
+                        Submit updated property information for valuation roll preparation
+                    </span>
                 </div>
             </div>
             <div class="cd-roll-header-right">
+                <a href="/attributes/about"
+                       class="cd-roll-search-btn cd-roll-learn-btn"
+                       onclick="event.stopPropagation()">
+                    <i class="fa-solid fa-circle-info"></i> Learn How It Works
+                </a>
+                <a href="/attributes/search"
+                       class="cd-roll-search-btn"
+                       onclick="event.stopPropagation()">
+                    <i class="fa-solid fa-magnifying-glass"></i> Search Property
+                </a>
                 <span class="cd-roll-badge cd-badge-open">NEW</span>
-                <i class="fa-solid fa-chevron-down cd-roll-chevron" id="chevron-attributes"></i>
+                <i class="fa-solid fa-chevron-down cd-roll-chevron"
+                   id="chevron-attributes"></i>
             </div>
         </div>
 
         <div class="cd-roll-body" id="rollbody-attributes">
-            <div class="cd-cta-card">
-                <div class="cd-cta-icon cd-cta-icon-black">
-                    <i class="fa-solid fa-clipboard-list"></i>
-                </div>
-                <div class="cd-cta-body">
-                    <h3>Submit Property Attributes</h3>
-                    <p>
-                        Search for your property, link it to your profile and submit updated or additional
-                        property information. Your submission will be reviewed by a valuer before it is
-                        included in the valuation roll.
-                    </p>
-                    <div class="cd-cta-notice">
-                        <i class="fa-solid fa-circle-info"></i>
-                        Submission does not imply acceptance — all information is subject to professional review.
+
+            @{
+                var attrData = Model.AttributesData;
+            }
+
+            <!-- ── 1. Linked Properties ──────────────────────────── -->
+            <div class="cd-widget">
+                <div class="cd-widget-toggle"
+                     onclick="toggleWidget('attr-linked')">
+                    <div class="cd-widget-toggle-left">
+                        <i class="fa-solid fa-link"></i>
+                        <h3>Linked Properties</h3>
+                        <span class="cd-count-badge">@attrData.LinkedCount</span>
                     </div>
-                    <div class="cd-cta-actions">
-                        <a href="/attributes/search" class="cd-cta-btn cd-cta-btn-black">
-                            <i class="fa-solid fa-magnifying-glass"></i> Search &amp; Link Property
-                        </a>
-                        <a href="/my-submissions" class="cd-cta-btn cd-cta-btn-outline">
-                            <i class="fa-solid fa-file-lines"></i> My Submissions
+                    <i class="fa-solid fa-chevron-down cd-widget-chevron"
+                       id="wchev-attr-linked"></i>
+                </div>
+                <div class="cd-widget-body" id="widget-attr-linked">
+                    <div class="cd-widget-toolbar">
+                        <a href="/attributes/search" class="cd-add-btn">
+                            <i class="fa-solid fa-plus"></i> Link New Property
                         </a>
                     </div>
-                </div>
-                <div class="cd-cta-chips">
-                    <span class="cd-chip"><i class="fa-solid fa-1"></i> Search Property</span>
-                    <span class="cd-chip"><i class="fa-solid fa-2"></i> Link to Profile</span>
-                    <span class="cd-chip"><i class="fa-solid fa-3"></i> Submit Form</span>
-                    <span class="cd-chip"><i class="fa-solid fa-4"></i> Valuer Reviews</span>
+                    <div class="table-responsive">
+                        <table class="cd-table table table-bordered"
+                               id="tbl-attr-linked">
+                            <thead>
+                                <tr>
+                                    <th>Property Description</th>
+                                    <th>Category</th>
+                                    <th>Town</th>
+                                    <th>Market Value</th>
+                                    <th>Form Type</th>
+                                    <th>Options</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in attrData.LinkedProperties)
+                                {
+                                    <tr>
+                                        <td>@item.PropertyDesc</td>
+                                        <td>@item.CatDesc</td>
+                                        <td>@item.TownNameDesc</td>
+                                        <td>@FormatZAR(item.MarketValue)</td>
+                                        <td>
+                                            <span class="attr-form-pill attr-pill-@(item.FormType?.ToLower().Replace(" ", "").Replace("&", "").Replace("/", "") ?? "res")">
+                                                @item.FormType
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="dropdown">
+                                                <button class="cd-action-btn dropdown-toggle"
+                                                        data-bs-toggle="dropdown">
+                                                    Actions
+                                                </button>
+                                                <ul class="dropdown-menu">
+                                                    @if (!item.HasSubmission)
+                                                    {
+                                                        <li>
+                                                            <a class="dropdown-item"
+                                                                   href="/attributes/form?id=@item.Id&formType=@item.FormType">
+                                                               Submit Attributes
+                                                            </a>
+                                                        </li>
+                                                    }
+                                                   else
+                                                    {
+                                                        <li>
+                                                            <a class="dropdown-item"
+                                                                   href="/attributes/submission?propertyId=@item.Id">
+                                                                View Submission
+                                                            </a>
+                                                        </li>
+                                                    }
+                                                    <li>
+                                                        <a class="dropdown-item"
+                                                               href="/attributes/unlink?id=@item.Id">
+                                                             Unlink
+                                                        </a>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
+
+            <!-- ── 2. My Submissions ──────────────────────────────── -->
+            <div class="cd-widget">
+                <div class="cd-widget-toggle"
+                     onclick="toggleWidget('attr-submissions')">
+                    <div class="cd-widget-toggle-left">
+                        <i class="fa-solid fa-file-pen"></i>
+                        <h3>My Submissions</h3>
+                        <span class="cd-count-badge cd-count-orange">
+                            @attrData.SubmissionCount
+                        </span>
+                        @if (attrData.PendingCount > 0)
+                        {
+                            <span class="cd-count-badge cd-count-amber">
+                                @attrData.PendingCount pending
+                            </span>
+                        }
+                    </div>
+                    <i class="fa-solid fa-chevron-down cd-widget-chevron"
+                       id="wchev-attr-submissions"></i>
+                </div>
+                <div class="cd-widget-body" id="widget-attr-submissions">
+                    <div class="table-responsive">
+                        <table class="cd-table table table-bordered"
+                               id="tbl-attr-submissions">
+                            <thead>
+                                <tr>
+                                    <th> Reference</th>
+                                    <th>Property Description</th>
+                                    <th>Form Type</th>
+                                    <th> Submitted</th>
+                                    <th>Edit Window</th>
+                                    <th> Status</th>
+                                    <th> Options</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in attrData.Submissions)
+                                {
+                                    <tr>
+                                        <td><strong>@item.SubmissionRef</strong></td>
+                                        <td>@item.PropertyDesc</td>
+                                        <td>@item.FormType</td>
+                                        <td>@item.SubmittedAt.ToString("dd MMM yyyy HH:mm")</td>
+                                        <td>
+                                            @if (item.IsEditable && item.EditTimeLeft.HasValue)
+                                            {
+                                                var tl = item.EditTimeLeft.Value;
+                                                <span class="attr-edit-window attr-edit-open"
+                                                      data-deadline="@item.SubmittedAt.AddHours(48).ToString("o")">
+                                                    <i class="fa-solid fa-clock"></i>
+                                                    @tl.Hours h @tl.Minutes m left
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="attr-edit-window attr-edit-locked">
+                                                    <i class="fa-solid fa-lock"></i> Locked
+                                                </span>
+                                            }
+                                        </td>
+                                        <td>@Html.Raw(GetAttrStatusPill(item.Status))</td>
+                                        <td>
+                                            <div class="dropdown">
+                                                <button class="cd-action-btn dropdown-toggle"
+                                                        data-bs-toggle="dropdown">
+                                                    Actions
+                                                </button>
+                                                <ul class="dropdown-menu">
+                                                    <li>
+                                                        <a class="dropdown-item"
+                                                               href="/attributes/submission/@item.Id">
+                                                            👁️ View Submission
+                                                        </a>
+                                                    </li>
+                                                    @if (item.IsEditable)
+                                                    {
+                                                        <li>
+                                                            <a class="dropdown-item"
+                                                                   href="/attributes/edit/@item.Id">
+                                                                ✏️ Edit Submission
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a class="dropdown-item"
+                                                                   href="/attributes/evidence/@item.Id">
+                                                                📎 Add Evidence
+                                                            </a>
+                                                        </li>
+                                                    }
+                                                </ul>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── 3. My Appointments with Valuer ─────────────────── -->
+            <div class="cd-widget">
+                <div class="cd-widget-toggle"
+                     onclick="toggleWidget('attr-appointments')">
+                    <div class="cd-widget-toggle-left">
+                        <i class="fa-solid fa-calendar-check"></i>
+                        <h3>My Appointments with Valuer</h3>
+                        <span class="cd-count-badge cd-count-blue">
+                            @attrData.AppointmentCount
+                        </span>
+                    </div>
+                    <i class="fa-solid fa-chevron-down cd-widget-chevron"
+                       id="wchev-attr-appointments"></i>
+                </div>
+                <div class="cd-widget-body" id="widget-attr-appointments">
+                    <div class="table-responsive">
+                        <table class="cd-table table table-bordered"
+                               id="tbl-attr-appointments">
+                            <thead>
+                                <tr>
+                                    <th>🆔 Reference</th>
+                                    <th>Property</th>
+                                    <th>👤 Valuer</th>
+                                    <th>📅 Date</th>
+                                    <th>🕐 Time</th>
+                                    <th>📊 Status</th>
+                                    <th>⚙️ Options</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in attrData.Appointments)
+                                {
+                                    <tr>
+                                        <td><strong>@item.AppointmentRef</strong></td>
+                                        <td>@item.PropertyDesc</td>
+                                        <td>@item.ValuerName</td>
+                                        <td>@item.AppointmentDate.ToString("dd MMM yyyy")</td>
+                                        <td>@item.TimeSlot</td>
+                                        <td>@Html.Raw(GetApptStatusPill(item.Status))</td>
+                                        <td>
+                                            <div class="dropdown">
+                                                <button class="cd-action-btn dropdown-toggle"
+                                                        data-bs-toggle="dropdown">
+                                                    Actions
+                                                </button>
+                                                <ul class="dropdown-menu">
+                                                    <li>
+                                                        <a class="dropdown-item"
+                                                               href="/attributes/appointment/@item.Id">
+                                                            👁️ View Details
+                                                        </a>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
-
 
 </div>
 

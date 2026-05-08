@@ -1,4 +1,5 @@
 ﻿using V2_Genesis.Models.Results.Admin;
+using V2_Genesis.Services.Attributes;
 using V2_Genesis.Services.PropertySearch;
 
 namespace V2_Genesis.Models.ViewModels.Dashboard
@@ -19,6 +20,8 @@ namespace V2_Genesis.Models.ViewModels.Dashboard
         public string? FilterRoll { get; set; }
         public string? FilterStatus { get; set; }
         public bool HasSearch => !string.IsNullOrWhiteSpace(SearchValue);
+        // Add to existing properties:
+        public AttributesDashboardData AttributesData { get; set; } = new();
 
         // ── Admin-only: search results ────────────────────────────────────
         public Dictionary<string, List<AdminObjectionResult>> SearchObjections { get; set; } = new();
