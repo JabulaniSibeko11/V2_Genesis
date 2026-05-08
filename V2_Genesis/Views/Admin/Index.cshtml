@@ -331,10 +331,12 @@
                                                                     </a>
                                                                 </li>
                                                                 <li>
+                                                                  
+
                                                                     <a class="dropdown-item"
-                                                                           href="/@roll.ControllerName/DownloadAcknowledgement?objectionNo=@item.Objection_No"
-                                                                           onclick="logAction('DownloadAck', '@roll.Source', '@item.Objection_No')">
-                                                                       Acknowledgement
+                                                                       href="/notice/acknowledgement/download?objectionNo=@item.Objection_No&rollSource=@roll.Source"
+                                                                       onclick="logAction('DownloadAck', '@roll.Source', '@item.Objection_No')">
+                                                                        Acknowledgement
                                                                     </a>
                                                                 </li>
                                                                 @if (item.objection_Status == "Obj-Lodging")

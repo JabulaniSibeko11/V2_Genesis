@@ -1,4 +1,6 @@
-﻿namespace V2_Genesis.Services.Interfaces
+﻿using V2_Genesis.Services.Notice;
+
+namespace V2_Genesis.Services.Interfaces
 {
     public interface INoticeService
     {
@@ -10,5 +12,8 @@
             string rollSource,
             string unitKey,
             string valuationKey);
+
+        Task<(byte[] Pdf, string FileName)> GenerateAcknowledgementAsync(
+       AcknowledgementData data);
     }
 }

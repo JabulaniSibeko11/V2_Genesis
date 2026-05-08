@@ -137,28 +137,29 @@ public class ObjectionController : Controller
     [Route("objection/form")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> SubmitObjectionForm(
-        Obj_Property_InfoModel obj,
-        Obj_Section1Model obj1,
-        Obj_Section2Model obj2,
-        Obj_Section3ResModel objR3,
-        Obj_Section3BusModel objB3,
-        Obj_Section3AgriModel objA3,
-        Obj_Section4BusModel objB4,
-        Obj_Section4ResModel objR4,
-        Obj_Section5Model obj5,
-        Obj_Section6Model obj6,
-        Obj_Section7Model obj7,
-        Obj_Files obj_file,
-        List<IFormFile> files,
-        List<IFormFile> fileR,
-        string AppealStat,
-        string obj_appeal,
-        Obj_Property_Info_AppealModel appeal,
-        string? PropertyFrom)
+      Obj_Property_InfoModel obj,
+      Obj_Section1Model obj1,
+      Obj_Section2Model obj2,
+      Obj_Section3ResModel objR3,
+      Obj_Section3BusModel objB3,
+      Obj_Section3AgriModel objA3,
+      Obj_Section4BusModel objB4,
+      Obj_Section4ResModel objR4,
+      Obj_Section5Model obj5,
+      Obj_Section6Model obj6,
+      Obj_Section7Model obj7,
+      Obj_Files obj_file,
+      List<IFormFile> files,
+      List<IFormFile> fileR,
+      string AppealStat,
+      string obj_appeal,
+      Obj_Property_Info_AppealModel appeal,
+      string? PropertyFrom)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-        var rollSource = HttpContext.Session.GetString("RollSource")
-                        ?? "Objection_Supp3";   // fallback
+        var rollSource = PropertyFrom
+                      ?? HttpContext.Session.GetString("RollSource")
+                      ?? "Objection_Supp3";
 
         var result = await _objectionFormService.SubmitAsync(
             rollSource, userId, AppealStat, obj_appeal,
@@ -171,21 +172,74 @@ public class ObjectionController : Controller
             return RedirectToAction("CheckProperty");
         }
 
-        // Set TempData for display page (same keys as V1)
+        bool isMulti = obj.Property_Type?.Equals(
+            "Multi", StringComparison.OrdinalIgnoreCase) ?? false;
+
+        // ── Reference info ────────────────────────────────────────────────
         TempData["pin"] = result.Pin;
-        TempData["id"] = result.ObjectionNo;
+        TempData["Id"] = result.ObjectionNo;
+        TempData["objection_ref"] = result.ObjectionNo;
+        TempData["section51pin"] = result.Pin;
+        TempData["time"] = DateTime.Now.ToString("dd MMMM yyyy HH:mm");
+        TempData["IsMulti"] = isMulti.ToString();
+        TempData["desc"] = obj.Property_Desc;
         TempData["successmessage"] = result.IsAppeal
             ? "Appeal Submitted Successfully"
             : "Objection Submitted Successfully";
-        TempData["Count"] = result.IsMulti ? "Multi" : "Single";
-        TempData["Old_Category"] = obj6.Old_Category;
-        TempData["Old_Market_Value"] = obj6.Old_Market_Value;
 
-        // Redirect to the same V1 display pages
-        var ctrl = GetControllerForSession();
-        return result.IsMulti
-            ? RedirectToAction("MultiPurposeDisplay", ctrl)
-            : RedirectToAction("Display", ctrl);
+        // ── Section 6 — Old (roll) values ─────────────────────────────────
+        TempData["Old_Property_Description"] = obj6.Old_Property_Description;
+        TempData["Old_Category"] = obj6.Old_Category;
+        TempData["Old_Address"] = obj6.Old_Address;
+        TempData["Old_Extent"] = obj6.Old_Extent;
+        TempData["Old_Market_Value"] = obj6.Old_Market_Value;
+        TempData["Old_Owner"] = obj6.Old_Owner;
+
+        // ── Section 7 — New (objector's) values ───────────────────────────
+        TempData["new_Property_Description"] = obj6.New_Property_Description;
+        TempData["new_Category"] = obj6.New_Category;
+        TempData["new_Address"] = obj6.New_Address;
+        TempData["new_Extent"] = obj6.New_Extent;
+        TempData["new_Market_Value"] = obj6.New_Market_Value;
+        TempData["new_Owner"] = obj6.New_Owner;
+
+        // ── Multi — Section 2 old/new ─────────────────────────────────────
+        TempData["Old2_Category"] = obj6.Old2_Category;
+        TempData["Old2_Extent"] = obj6.Old2_Extent;
+        TempData["Old2_Market_Value"] = obj6.Old2_Market_Value;
+        TempData["new2_Category"] = obj6.New2_Category;
+        TempData["new2_Extent"] = obj6.New2_Extent;
+        TempData["new2_Market_Value"] = obj6.New2_Market_Value; 
+        // ── Multi — Section 3 old/new ─────────────────────────────────────
+        TempData["Old3_Category"] = obj6.Old3_Category;
+        TempData["Old3_Extent"] = obj6.Old3_Extent;
+        TempData["Old3_Market_Value"] = obj6.Old3_Market_Value;
+        TempData["new3_Category"] = obj6.New3_Category;
+        TempData["new3_Extent"] = obj6.New3_Extent;
+        TempData["new3_Market_Value"] = obj6.New3_Market_Value;
+
+        // ── Reason ────────────────────────────────────────────────────────
+        TempData["objection_reason"] = obj6.Objection_Reasons;
+
+        // ── Files ─────────────────────────────────────────────────────────
+        var allFiles = (files ?? new())
+            .Concat(fileR ?? new())
+            .Where(f => f is not null && f.Length > 0)
+            .ToList();
+
+        TempData["Count"] = allFiles.Count.ToString();
+
+        for (int i = 1; i <= 10; i++)
+        {
+            TempData[$"File{i}"] = i <= allFiles.Count
+                ? allFiles[i - 1].FileName
+                : null;
+        }
+
+        // ── Redirect to acknowledgement download ──────────────────────────
+        return RedirectToAction(
+            "DownloadAcknowledgement", "Notice",
+            new { objectionNo = result.ObjectionNo, rollSource });
     }
 
     private string GetControllerForSession()
