@@ -1,0 +1,80 @@
+﻿@{
+    ViewData["Title"] = "Upload Confirmed";
+    Layout = "~/Views/Shared/_ClientLayout.cshtml";
+    var fileNames = ViewBag.FileNames as List<string> ?? new();
+}
+
+@section Styles {
+    <link href="~/css/views/evidence.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/views/clientdashboardcss.css" rel="stylesheet" asp-append-version="true" />
+}
+
+<div class="ev-page">
+    <div class="ev-card ev-card-wide">
+
+        <!-- Success header -->
+        <div class="ev-success-header">
+            <div class="ev-success-icon">
+                <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <div>
+                <h1 class="ev-success-title">Documents Uploaded Successfully</h1>
+                <p class="ev-success-sub">
+                    Your evidence has been attached to
+                    <strong>@ViewBag.ObjectionNo</strong>
+                </p>
+            </div>
+        </div>
+
+        <!-- Summary -->
+        <div class="ev-summary-box">
+            <div class="ev-summary-item">
+                <span class="ev-summary-label">Reference</span>
+                <span class="ev-summary-value">@ViewBag.ObjectionNo</span>
+            </div>
+            <div class="ev-summary-item">
+                <span class="ev-summary-label">Files uploaded</span>
+                <span class="ev-summary-value">@ViewBag.NewCount</span>
+            </div>
+            <div class="ev-summary-item">
+                <span class="ev-summary-label">Date/Time</span>
+                <span class="ev-summary-value">
+                    @DateTime.Now.ToString("dd MMM yyyy HH:mm")
+                </span>
+            </div>
+        </div>
+
+        <!-- File list -->
+        <div class="ev-confirm-files">
+            <h3 class="ev-confirm-files-title">
+                <i class="fa-solid fa-paperclip"></i> Uploaded Files
+            </h3>
+            @foreach (var (name, i) in fileNames.Select((n, i) => (n, i + 1)))
+            {
+                <div class="ev-confirm-file">
+                    <span class="ev-confirm-num">@i</span>
+                    <i class="fa-solid fa-file-pdf"></i>
+                    <span>@name</span>
+                </div>
+            }
+        </div>
+
+        <!-- Notice -->
+        <div class="ev-notice ev-notice-green">
+            <i class="fa-solid fa-circle-check"></i>
+            Your documents have been saved and will be reviewed alongside
+            your submission. Keep the downloaded confirmation as proof.
+        </div>
+
+        <!-- Actions -->
+        <div class="ev-form-actions">
+            <a href="/evidence/download" class="ev-btn ev-btn-primary">
+                <i class="fa-solid fa-file-pdf"></i> Download Confirmation
+            </a>
+            <a href="/dashboard" class="ev-btn ev-btn-ghost">
+                <i class="fa-solid fa-gauge-high"></i> Back to Dashboard
+            </a>
+        </div>
+
+    </div>
+</div>

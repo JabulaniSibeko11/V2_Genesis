@@ -2,12 +2,12 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using QuestPDF.Infrastructure;
 using V2_Genesis.Data;
-using V2_Genesis.Data;
+
 using V2_Genesis.Models;
 using V2_Genesis.Models.Emails;
 using V2_Genesis.Models.Entities;
 using V2_Genesis.Services;
-using V2_Genesis.Services;
+
 using V2_Genesis.Services.Implementations;
 using V2_Genesis.Services.Interfaces;
 using V2_Genesis.Services.Notice;
@@ -88,7 +88,7 @@ builder.Services.AddScoped<IAdminDashboardService, AdminDashboardService>();
 builder.Services.AddScoped<IAuditService, AuditService>();
 builder.Services.AddScoped<INoticeService, NoticeService>();
 builder.Services.AddScoped<IAttributesDashboardService, AttributesDashboardService>();
-
+builder.Services.AddScoped<IEvidenceService, EvidenceService>();
 
 // ── App Pipeline ──────────────────────────────────────────────────────────────
 var app = builder.Build();

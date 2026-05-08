@@ -726,4 +726,150 @@ public class NoticeService : INoticeService
                 data.ObjectionNo);
         }
     }
+    public Task<(byte[] Pdf, string FileName)> GenerateAttachmentConfirmationAsync(
+    string objectionNo, string rollSource,
+    int fileCount, List<string> fileNames)
+    {
+        var roll = _noticeSettings.For(rollSource);
+        var fileName = $"Attachment_{SanitiseName(objectionNo)}.pdf";
+        var header = Path.Combine(_env.WebRootPath, HEADER_IMAGE);
+
+        var pdf = Document.Create(container =>
+        {
+            container.Page(page =>
+            {
+                page.Size(PageSizes.A4);
+                page.Margin(1.5f, Unit.Centimetre);
+                page.DefaultTextStyle(t => t.FontFamily("Arial").FontSize(9));
+
+                page.Content().Column(col =>
+                {
+                    // Header
+                    if (File.Exists(header))
+                        col.Item().Width(500).Image(header);
+
+                    col.Item().Height(8);
+
+                    col.Item().AlignRight()
+                        .Text(DateTime.Now.ToString("dd MMMM yyyy HH:mm"))
+                        .FontSize(9);
+
+                    col.Item().Height(6);
+                    col.Item().BorderBottom(1).BorderColor("#555555");
+                    col.Item().Height(6);
+
+                    col.Item().AlignCenter()
+                        .Text("CITY OF JOHANNESBURG").FontSize(13).Bold();
+
+                    col.Item().Height(4);
+
+                    col.Item().AlignCenter()
+                        .Text("ATTACHMENT UPLOAD CONFIRMATION").FontSize(10).Bold();
+
+                    col.Item().Height(6);
+                    col.Item().BorderBottom(1).BorderColor("#555555");
+                    col.Item().Height(8);
+
+                    // Notice
+                    col.Item().PaddingBottom(6).Text(t =>
+                    {
+                        t.Span("This is to confirm that your documents have been " +
+                               "successfully uploaded. ");
+                        t.Span("IMPORTANT: ").Bold();
+                        t.Span("You have 48 hours from original submission to " +
+                               "upload outstanding evidence.");
+                    });
+
+                    // Reference box
+                    col.Item().Background("#F0F0F0").Border(1).BorderColor("#888888")
+                        .Padding(8).Column(box =>
+                        {
+                            box.Item().Text(t =>
+                            {
+                                t.Span("Objection/Appeal Number: ").Bold();
+                                t.Span(objectionNo);
+                            });
+                            box.Item().Text(t =>
+                            {
+                                t.Span("Roll: ").Bold();
+                                t.Span(roll.RollTitle);
+                            });
+                            box.Item().Text(t =>
+                            {
+                                t.Span("Upload Date/Time: ").Bold();
+                                t.Span(DateTime.Now.ToString("dd MMMM yyyy HH:mm"));
+                            });
+                            box.Item().Text(t =>
+                            {
+                                t.Span("Total Documents Uploaded: ").Bold();
+                                t.Span(fileCount.ToString());
+                            });
+                        });
+
+                    col.Item().Height(10);
+
+                    // File list
+                    col.Item().BorderBottom(1).BorderColor("#DDDDDD");
+                    col.Item().Height(4);
+
+                    col.Item().AlignCenter()
+                        .Text("UPLOADED DOCUMENTS").Bold().FontSize(9);
+
+                    col.Item().Height(6);
+
+                    col.Item().Table(table =>
+                    {
+                        table.ColumnsDefinition(c =>
+                        {
+                            c.ConstantColumn(30);   // #
+                            c.RelativeColumn();     // filename
+                        });
+
+                        // Header
+                        static IContainer TH(IContainer c) =>
+                            c.Background("#1a1a1a").Padding(6);
+
+                        table.Cell().Element(TH)
+                            .Text("#").FontColor(Colors.White).Bold().FontSize(8);
+                        table.Cell().Element(TH)
+                            .Text("File Name").FontColor(Colors.White).Bold().FontSize(8);
+
+                        bool alt = false;
+                        for (int i = 0; i < fileNames.Count; i++)
+                        {
+                           
+                            var bg = alt ? Colors.Grey.Lighten5 : Colors.White;
+                            alt = !alt;
+
+                            IContainer TD(IContainer c) =>
+                                c.Background(bg).BorderBottom(0.5f)
+                                 .BorderColor("#EEEEEE").Padding(5);
+
+                            table.Cell().Element(TD)
+                                .Text((i + 1).ToString()).FontSize(8);
+                            table.Cell().Element(TD)
+                                .Text(fileNames[i]).FontSize(8);
+                        }
+                    });
+
+                    col.Item().Height(14);
+
+                    // Footer
+                    col.Item().BorderTop(1).BorderColor("#AAAAAA").PaddingTop(6)
+                        .AlignCenter().Column(f =>
+                        {
+                            f.Item().Text(
+                            "Official document — City of Johannesburg " +
+                            "Valuation Services Department")
+                            .FontSize(7).FontColor("#666666");
+                            f.Item().Text(
+                            $"Generated: {DateTime.Now:dd MMMM yyyy HH:mm}")
+                            .FontSize(7).FontColor("#666666");
+                        });
+                });
+            });
+        }).GeneratePdf();
+
+        return Task.FromResult((pdf, fileName));
+    }
 }

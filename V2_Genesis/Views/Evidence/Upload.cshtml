@@ -1,0 +1,193 @@
+﻿@{
+    ViewData["Title"] = "Add Evidence";
+    Layout = "~/Views/Shared/_ClientLayout.cshtml";
+    bool isAppeal = (bool)(ViewBag.IsAppeal ?? false);
+    int remaining = (int)(ViewBag.Remaining ?? 10);
+    int current = (int)(ViewBag.CurrentCount ?? 0);
+}
+
+@section Styles {
+    <link href="~/css/views/evidence.css" rel="stylesheet" asp-append-version="true" />
+
+    <link href="~/css/views/clientdashboardcss.css" rel="stylesheet" asp-append-version="true" />
+}
+
+<div class="ev-page">
+    <div class="ev-card ev-card-wide">
+        <div class="ev-card-header">
+            <div class="ev-card-icon ev-icon-upload">
+                <i class="fa-solid fa-upload"></i>
+            </div>
+            <div>
+                <h1 class="ev-card-title">Upload Supporting Evidence</h1>
+                <p class="ev-card-sub">
+                    @(isAppeal ? "Appeal" : "Objection"):
+                    <strong>@ViewBag.ObjectionNo</strong>
+                </p>
+            </div>
+        </div>
+
+        <!-- Stats row -->
+        <div class="ev-stats-row">
+            <div class="ev-stat">
+                <span class="ev-stat-num">@current</span>
+                <span class="ev-stat-label">Already uploaded</span>
+            </div>
+            <div class="ev-stat ev-stat-remaining">
+                <span class="ev-stat-num">@remaining</span>
+                <span class="ev-stat-label">Remaining slots</span>
+            </div>
+            <div class="ev-stat">
+                <span class="ev-stat-num">3 MB</span>
+                <span class="ev-stat-label">Max per file</span>
+            </div>
+        </div>
+
+        @if (remaining == 0)
+        {
+            <div class="ev-error-banner">
+                <i class="fa-solid fa-circle-xmark"></i>
+                You have reached the maximum of 10 files.
+                No further uploads are permitted for this submission.
+            </div>
+        }
+        else
+        {
+            @if (ViewBag.Error is not null)
+            {
+                <div class="ev-error-banner">
+                    <i class="fa-solid fa-circle-xmark"></i>
+                    @ViewBag.Error
+                </div>
+            }
+
+            <form method="post" action="/evidence/upload"
+                  enctype="multipart/form-data" id="uploadForm">
+                @Html.AntiForgeryToken()
+
+                <!-- Drop zone -->
+                <div class="ev-dropzone" id="dropzone">
+                    <i class="fa-solid fa-cloud-arrow-up ev-drop-icon"></i>
+                    <p class="ev-drop-title">
+                        Drag &amp; drop files here
+                    </p>
+                    <p class="ev-drop-sub">
+                        or click to browse — PDF, JPG, PNG accepted
+                    </p>
+                    <input type="file"
+                           name="files"
+                           id="fileInput"
+                           multiple
+                           accept=".pdf,.jpg,.jpeg,.png"
+                           class="ev-file-input" />
+                    <button type="button"
+                            class="ev-btn ev-btn-outline"
+                            onclick="document.getElementById('fileInput').click()">
+                        <i class="fa-solid fa-folder-open"></i> Browse Files
+                    </button>
+                </div>
+
+                <!-- Selected files preview -->
+                <div class="ev-file-list" id="fileList"></div>
+
+                <!-- Guidance -->
+                <div class="ev-guidance">
+                    <div class="ev-guidance-item">
+                        <i class="fa-solid fa-lightbulb"></i>
+                        Save all your attachments in one folder, select them
+                        all and submit together.
+                    </div>
+                    <div class="ev-guidance-item">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        You may select up to <strong>@remaining</strong>
+                        more file(s) in this upload.
+                    </div>
+                </div>
+
+                <div class="ev-form-actions">
+                    <button type="submit" class="ev-btn ev-btn-primary"
+                            id="submitBtn" disabled>
+                        <i class="fa-solid fa-upload"></i> Upload Files
+                    </button>
+                    <a href="/dashboard" class="ev-btn ev-btn-ghost">
+                        <i class="fa-solid fa-arrow-left"></i> Back
+                    </a>
+                </div>
+            </form>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const MAX_REMAINING = @remaining;
+        const MAX_MB        = 3;
+        const fileInput     = document.getElementById('fileInput');
+        const fileList      = document.getElementById('fileList');
+        const submitBtn     = document.getElementById('submitBtn');
+        const dropzone      = document.getElementById('dropzone');
+
+        function renderFiles(files) {
+            fileList.innerHTML = '';
+            if (!files.length) { submitBtn.disabled = true; return; }
+
+            let valid = true;
+            Array.from(files).forEach((f, i) => {
+                const tooLarge = f.size > MAX_MB * 1024 * 1024;
+                const item = document.createElement('div');
+                item.className = 'ev-file-item' + (tooLarge ? ' ev-file-error' : '');
+                item.innerHTML = `
+                    <i class="fa-solid fa-file-pdf"></i>
+                    <span class="ev-file-name">${f.name}</span>
+                    <span class="ev-file-size">${(f.size/1024/1024).toFixed(2)} MB</span>
+                    ${tooLarge
+                        ? '<span class="ev-file-badge ev-badge-err">Too large</span>'
+                        : '<span class="ev-file-badge ev-badge-ok">Ready</span>'}
+                `;
+                fileList.appendChild(item);
+                if (tooLarge) valid = false;
+            });
+
+            if (files.length > MAX_REMAINING) {
+                valid = false;
+                fileList.insertAdjacentHTML('beforeend',
+                    `<div class="ev-error-banner" style="margin-top:8px">
+                        <i class="fa-solid fa-circle-xmark"></i>
+                        You selected ${files.length} files but only
+                        ${MAX_REMAINING} slot(s) remaining.
+                     </div>`);
+            }
+
+            submitBtn.disabled = !valid;
+        }
+
+        fileInput.addEventListener('change', () => renderFiles(fileInput.files));
+
+        // Drag and drop
+        ['dragover','dragenter'].forEach(e =>
+            dropzone.addEventListener(e, ev => {
+                ev.preventDefault();
+                dropzone.classList.add('ev-drag-over');
+            }));
+
+        ['dragleave','drop'].forEach(e =>
+            dropzone.addEventListener(e, () =>
+                dropzone.classList.remove('ev-drag-over')));
+
+        dropzone.addEventListener('drop', e => {
+            e.preventDefault();
+            const dt = new DataTransfer();
+            Array.from(e.dataTransfer.files).forEach(f => dt.items.add(f));
+            fileInput.files = dt.files;
+            renderFiles(fileInput.files);
+        });
+
+        // Loading state on submit
+        document.getElementById('uploadForm')
+            .addEventListener('submit', () => {
+                submitBtn.innerHTML =
+                    '<i class="fa-solid fa-spinner fa-spin"></i> Uploading...';
+                submitBtn.disabled = true;
+            });
+    </script>
+}
