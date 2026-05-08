@@ -278,14 +278,14 @@ else if (roll.IsQuery)
                                                                   @* Change the existing Object <a> tag: *@
                                                                             <a class="dropdown-item"
                                                                                href="/objection/check?rollSource=@roll.Source&sourceTable=@item.PropertyFrom&unitKey=@item.UnitKey&valuationKey=@item.ValuationKey&appealStatus=False">
-                                                                                🛑 Object
+                                                                                Object
                                                                             </a>
                                                                 </li>
                                                             }
                                                             <li>
                                                                 <a class="dropdown-item"
                                                                        href="/Home/Delete@(roll.ControllerName)?id=@item.Id">
-                                                                    🔗 Unlink
+                                                                   Unlink Property
                                                                 </a>
                                                             </li>
                                                         </ul>
@@ -346,18 +346,18 @@ else if (roll.IsQuery)
                                                             </button>
                                                             <ul class="dropdown-menu">
                                                                 <li><a class="dropdown-item" href="/Home/FormData@(roll.ControllerName)?propertyID=@item.Property_Type&objectionNo=@item.Objection_No&AppealStatus=False">👁️ View Form</a></li>
-                                                                <li><a class="dropdown-item" href="/@roll.ControllerName/DownloadAcknowledgement?objectionNo=@item.Objection_No">📄 Acknowledgement</a></li>
+                                                                <li><a class="dropdown-item" href="/@roll.ControllerName/DownloadAcknowledgement?objectionNo=@item.Objection_No"> Acknowledgement</a></li>
                                                                 @if (item.objection_Status == "Obj-Lodging")
                                                                 {
-                                                                    <li><a class="dropdown-item" href="/@roll.ControllerName/userDocuments?ObjectionNum=@item.Objection_No">📤 Add Evidence</a></li>
+                                                                    <li><a class="dropdown-item" href="/@roll.ControllerName/userDocuments?ObjectionNum=@item.Objection_No"> Add Evidence</a></li>
                                                                 }
                                                                 @if (item.objection_Status == "Notice-Sent")
                                                                 {
-                                                                    <li><a class="dropdown-item" href="/@roll.ControllerName/DownloadSection53?ObjectionNum=@item.Objection_No">📥 Download Decision</a></li>
+                                                                    <li><a class="dropdown-item" href="/@roll.ControllerName/DownloadSection53?ObjectionNum=@item.Objection_No"> Download Decision</a></li>
                                                                 }
                                                                 @if (item.objection_Status == "Obj-Lodging" || item.objection_Status == "Obj-Unallocated")
                                                                 {
-                                                                    <li><a class="dropdown-item" href="/@roll.ControllerName/Withdrawal?ObjectionNum=@item.Objection_No&Withdraw=O">❌ Withdraw</a></li>
+                                                                    <li><a class="dropdown-item" href="/@roll.ControllerName/Withdrawal?ObjectionNum=@item.Objection_No&Withdraw=O"> Withdraw</a></li>
                                                                 }
                                                             </ul>
                                                         </div>
@@ -418,14 +418,14 @@ else if (roll.IsQuery)
                                                             </button>
                                                             <ul class="dropdown-menu">
                                                                 <li><a class="dropdown-item" href="/Home/FormData@(roll.ControllerName)?propertyID=@item.Property_Type&objectionNo=@item.Objection_No&AppealStatus=True">👁️ View Form</a></li>
-                                                                <li><a class="dropdown-item" href="/@roll.ControllerName/DownloadAcknowledgement?objectionNo=@item.Objection_No">📄 Acknowledgement</a></li>
+                                                                <li><a class="dropdown-item" href="/@roll.ControllerName/DownloadAcknowledgement?objectionNo=@item.Objection_No"> Acknowledgement</a></li>
                                                                 @if (item.objection_Status == "App-Unallocated")
                                                                 {
-                                                                    <li><a class="dropdown-item" href="/@roll.ControllerName/userDocuments?ObjectionNum=@item.Objection_No">📤 Add Evidence</a></li>
+                                                                    <li><a class="dropdown-item" href="/@roll.ControllerName/userDocuments?ObjectionNum=@item.Objection_No"> Add Evidence</a></li>
                                                                 }
                                                                 @if (item.objection_Status == "App-Lodging" || item.objection_Status == "App-Unallocated")
                                                                 {
-                                                                    <li><a class="dropdown-item" href="/@roll.ControllerName/Withdrawal?ObjectionNum=@item.Objection_No&Withdraw=AppealSup1">❌ Withdraw</a></li>
+                                                                    <li><a class="dropdown-item" href="/@roll.ControllerName/Withdrawal?ObjectionNum=@item.Objection_No&Withdraw=AppealSup1">Withdraw</a></li>
                                                                 }
                                                             </ul>
                                                         </div>

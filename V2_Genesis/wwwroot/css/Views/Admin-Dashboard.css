@@ -1,0 +1,675 @@
+﻿/* ═══════════════════════════════════════════════
+   ADMIN DASHBOARD — mobile-first
+═══════════════════════════════════════════════ */
+.adm-topbar {
+    background: #1a1a1a;
+    border-bottom: 2px solid #e6b000;
+    padding: 10px 0;
+}
+
+.adm-topbar-inner {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.adm-topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.adm-admin-badge {
+    background: #e6b000;
+    color: #1a1a1a;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    padding: 4px 12px;
+    border-radius: 100px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.adm-email {
+    font-size: 13px;
+    color: #e6b000;
+    font-weight: 600;
+}
+
+.adm-sap {
+    font-size: 11px;
+    color: rgba(230,176,0,.6);
+    margin-left: 8px;
+}
+
+.adm-audit-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12.5px;
+    color: #e6b000;
+    font-weight: 600;
+    text-decoration: none;
+    opacity: .8;
+    transition: opacity .15s;
+}
+
+    .adm-audit-link:hover {
+        opacity: 1;
+        color: #e6b000;
+    }
+
+/* ── Page layout ──────────────────────────────── */
+.adm-page {
+    background: #f5f5f5;
+    min-height: calc(100vh - 64px);
+    padding: 24px 16px;
+    font-family: 'Poppins',sans-serif;
+}
+
+.adm-inner {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.adm-heading {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.adm-heading-icon {
+    width: 52px;
+    height: 52px;
+    background: #1a1a1a;
+    color: #e6b000;
+    border-radius: 12px;
+    font-size: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.adm-title {
+    font-size: 22px;
+    font-weight: 800;
+    color: #1a1a1a;
+    margin: 0 0 4px;
+}
+
+.adm-subtitle {
+    font-size: 13px;
+    color: #6b6b6b;
+    margin: 0;
+}
+
+/* ── Search card ──────────────────────────────── */
+.adm-search-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,.07);
+}
+
+.adm-search-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.adm-search-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.adm-search-main {
+    flex: 1;
+    min-width: 240px;
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.adm-search-icon {
+    position: absolute;
+    left: 14px;
+    color: #6b6b6b;
+    font-size: 14px;
+}
+
+.adm-search-input {
+    width: 100%;
+    padding: 11px 14px 11px 38px;
+    border: 1.5px solid #e8e8e8;
+    border-radius: 8px;
+    font-family: 'Poppins',sans-serif;
+    font-size: 13.5px;
+    transition: border .15s;
+}
+
+    .adm-search-input:focus {
+        border-color: #e6b000;
+        outline: none;
+    }
+
+.adm-filter-select {
+    padding: 11px 14px;
+    border: 1.5px solid #e8e8e8;
+    border-radius: 8px;
+    font-family: 'Poppins',sans-serif;
+    font-size: 13px;
+    color: #1a1a1a;
+    background: #fff;
+    cursor: pointer;
+    min-width: 140px;
+}
+
+.adm-search-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 11px 20px;
+    background: #e6b000;
+    color: #1a1a1a;
+    border: none;
+    border-radius: 8px;
+    font-family: 'Poppins',sans-serif;
+    font-size: 13.5px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background .15s;
+    white-space: nowrap;
+}
+
+    .adm-search-btn:hover {
+        background: #f5c200;
+    }
+
+.adm-clear-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 11px 16px;
+    background: #fff;
+    color: #6b6b6b;
+    border: 1.5px solid #e8e8e8;
+    border-radius: 8px;
+    font-family: 'Poppins',sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: all .15s;
+}
+
+    .adm-clear-btn:hover {
+        border-color: #e6b000;
+        color: #c49a00;
+    }
+
+.adm-search-info {
+    font-size: 12.5px;
+    color: #6b6b6b;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+    .adm-search-info i {
+        color: #e6b000;
+    }
+
+    .adm-search-info strong {
+        color: #1a1a1a;
+    }
+
+/* ── Stats row ────────────────────────────────── */
+.adm-stats-row {
+    display: grid;
+    grid-template-columns: repeat(4,1fr);
+    gap: 14px;
+}
+
+.adm-stat-card {
+    background: #1a1a1a;
+    border-radius: 12px;
+    padding: 16px 18px;
+}
+
+.adm-stat-roll {
+    font-size: 11px;
+    font-weight: 700;
+    color: #e6b000;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+}
+
+.adm-stat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.adm-stat-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.adm-stat-num {
+    font-size: 22px;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1;
+}
+
+.adm-stat-label {
+    font-size: 10.5px;
+    color: rgba(255,255,255,.45);
+    font-weight: 500;
+}
+
+.adm-stat-pending .adm-stat-num {
+    color: #fbbf24;
+}
+
+.adm-stat-progress .adm-stat-num {
+    color: #60a5fa;
+}
+
+.adm-stat-closed .adm-stat-num {
+    color: #4ade80;
+}
+
+/* ── Roll sections ────────────────────────────── */
+.adm-roll-section {
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0,0,0,.07);
+}
+
+.adm-roll-header {
+    background: #1a1a1a;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    user-select: none;
+    transition: background .15s;
+}
+
+    .adm-roll-header:hover {
+        background: #222;
+    }
+
+.adm-roll-header-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.adm-roll-icon {
+    width: 40px;
+    height: 40px;
+    background: #e6b000;
+    color: #1a1a1a;
+    border-radius: 8px;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.adm-roll-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: #fff;
+    margin: 0 0 2px;
+}
+
+.adm-roll-sub {
+    font-size: 11px;
+    color: rgba(255,255,255,.5);
+}
+
+.adm-roll-header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.adm-roll-count {
+    font-size: 11.5px;
+    color: rgba(230,176,0,.7);
+    font-weight: 600;
+}
+
+.adm-roll-chevron {
+    color: #e6b000;
+    transition: transform .3s ease;
+}
+
+.adm-roll-body {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height .35s ease;
+    background: #fff;
+}
+
+    .adm-roll-body.open {
+        max-height: 4000px;
+    }
+
+/* ── Widgets ──────────────────────────────────── */
+.adm-widget {
+    padding: 16px 20px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+    .adm-widget:last-child {
+        border-bottom: none;
+    }
+
+.adm-widget-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-bottom: 14px;
+}
+
+    .adm-widget-header i {
+        color: #e6b000;
+    }
+
+.adm-count-badge {
+    background: #e6b000;
+    color: #1a1a1a;
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 2px 9px;
+    border-radius: 100px;
+    margin-left: 4px;
+}
+
+.adm-count-red {
+    background: #ef4444;
+    color: #fff;
+}
+
+/* ── Table ────────────────────────────────────── */
+.adm-table {
+    font-size: 12.5px;
+}
+
+    .adm-table thead th {
+        background: #1a1a1a;
+        color: #e6b000;
+        font-size: 11px;
+        font-weight: 700;
+        white-space: nowrap;
+        padding: 10px 12px;
+    }
+
+    .adm-table tbody td {
+        padding: 10px 12px;
+        vertical-align: middle;
+    }
+
+    .adm-table tbody tr:hover {
+        background: #fdf6d8;
+    }
+
+.adm-empty {
+    text-align: center;
+    color: #6b6b6b;
+    font-style: italic;
+    padding: 24px !important;
+}
+
+/* ── Status pills ─────────────────────────────── */
+.adm-pill {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 100px;
+    font-size: 10.5px;
+    font-weight: 700;
+}
+
+.adm-pill-pending {
+    background: #fef3c7;
+    color: #b45309;
+}
+
+.adm-pill-progress {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.adm-pill-lodging {
+    background: #e0f2fe;
+    color: #0369a1;
+}
+
+.adm-pill-notice {
+    background: #f3e8ff;
+    color: #6d28d9;
+}
+
+.adm-pill-closed {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+/* ── Action button ────────────────────────────── */
+.adm-action-btn {
+    background: #e6b000;
+    color: #1a1a1a;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-family: 'Poppins',sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background .15s;
+}
+
+    .adm-action-btn:hover {
+        background: #f5c200;
+    }
+
+/* ── DataTable overrides ──────────────────────── */
+.adm-dt-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding-bottom: 12px;
+}
+
+.adm-dt-bot {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding-top: 10px;
+}
+
+.adm-dt-btn {
+    background: #1a1a1a !important;
+    color: #e6b000 !important;
+    border: none !important;
+    padding: 6px 12px !important;
+    border-radius: 6px !important;
+    font-size: 12px !important;
+}
+
+/* ── Responsive ───────────────────────────────── */
+@media (max-width:900px) {
+    .adm-stats-row {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width:600px) {
+    .adm-page {
+        padding: 12px 10px;
+    }
+
+    .adm-stats-row {
+        grid-template-columns: 1fr;
+    }
+
+    .adm-search-row {
+        flex-direction: column;
+    }
+
+    .adm-search-main, .adm-filter-select,
+    .adm-search-btn, .adm-clear-btn {
+        width: 100%;
+    }
+
+    .adm-topbar-inner {
+        flex-direction: column;
+        gap: 8px;
+        align-items: flex-start;
+    }
+
+    .adm-roll-header {
+        padding: 12px 14px;
+    }
+
+    .adm-widget {
+        padding: 12px 14px;
+    }
+}
+/* ── Admin top bar right ──────────────────────── */
+.adm-topbar-right {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.adm-topbar-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: 8px;
+    font-family: 'Poppins',sans-serif;
+    font-size: 12.5px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all .15s;
+}
+
+.adm-search-modal-btn {
+    background: #e6b000;
+    color: #1a1a1a;
+}
+
+    .adm-search-modal-btn:hover {
+        background: #f5c200;
+        color: #1a1a1a;
+    }
+
+.adm-audit-btn {
+    background: rgba(255,255,255,.08);
+    color: #e6b000;
+    border: 1px solid rgba(230,176,0,.3);
+}
+
+    .adm-audit-btn:hover {
+        background: rgba(255,255,255,.15);
+        color: #e6b000;
+    }
+
+.adm-badge-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: #e6b000;
+    color: #1a1a1a;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    padding: 3px 10px;
+    border-radius: 100px;
+    vertical-align: middle;
+    margin-left: 8px;
+}
+
+/* ── Make admin tables full width like client dashboard ── */
+
+/* Roll body takes full width */
+#admin-page .cd-roll-body,
+.adm-page .cd-roll-body {
+    width: 100%;
+}
+
+/* Widget body full width */
+.adm-page .cd-widget-body,
+.adm-page .cd-widget-body.open {
+    width: 100%;
+    padding: 0;
+}
+
+    /* Remove any max-width constraints on widget inner content */
+    .adm-page .cd-widget-body .table-responsive {
+        width: 100%;
+        overflow-x: auto;
+    }
+
+/* DataTables wrapper full width */
+.adm-page .dataTables_wrapper {
+    width: 100%;
+    padding: 12px 16px;
+}
+
+/* Table itself full width */
+.adm-page .cd-table,
+.adm-page table.dataTable {
+    width: 100% !important;
+}
+
+/* DataTables top bar full width */
+.adm-page .cd-dt-top,
+.adm-page .dataTables_length,
+.adm-page .dataTables_filter {
+    width: auto;
+}
+
+.adm-page .dataTables_scroll {
+    width: 100%;
+}
+
+/* Fix the roll section container */
+.adm-page .cd-roll-section {
+    width: 100%;
+}
+
+/* Widget toolbar padding */
+.adm-page .cd-widget-toolbar {
+    padding: 12px 16px;
+}

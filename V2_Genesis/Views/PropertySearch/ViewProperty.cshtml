@@ -270,9 +270,15 @@
                        href="/property/save?rollSource=@Model.Roll.Source&key=@d.Id&sourceTable=@Model.Roll.SourceTableCode">
                     <i class="fa-solid fa-link"></i> Link Property
                 </a>
+                @* Replace existing Section 49 links: *@
                 <a class="pd-btn pd-btn-secondary"
-                       href="/@roll.ControllerName/Section49Display?ukey=@d.UnitKey&vkey=@d.ValuationKey">
+                       href="/notice/section49?rollSource=@Model.Roll.Source&unitKey=@d.UnitKey&valuationKey=@d.ValuationKey">
                     <i class="fa-solid fa-eye"></i> View Section 49
+                </a>
+
+                <a class="pd-btn pd-btn-outline"
+                       href="/notice/section49/download?rollSource=@Model.Roll.Source&unitKey=@d.UnitKey&valuationKey=@d.ValuationKey">
+                    <i class="fa-solid fa-download"></i> Download Section 49
                 </a>
             }
             else

@@ -8,6 +8,7 @@ public class RollDateEntry
 {
     public DateTime OpenDate { get; set; }
     public DateTime VisibleUntil { get; set; }
+    public string? ExtendedPeriodText { get; set; }  
 }
 
 public class RollDatesSettings

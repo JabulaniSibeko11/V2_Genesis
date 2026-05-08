@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using QuestPDF.Infrastructure;
 using V2_Genesis.Data;
 using V2_Genesis.Data;
 using V2_Genesis.Models;
@@ -9,12 +10,14 @@ using V2_Genesis.Services;
 using V2_Genesis.Services;
 using V2_Genesis.Services.Implementations;
 using V2_Genesis.Services.Interfaces;
+using V2_Genesis.Services.Notice;
 using V2_Genesis.Services.Objection;
 using V2_Genesis.Services.PropertySearch;
 
 var builder = WebApplication.CreateBuilder(args);
 var cfg = builder.Configuration;
 
+QuestPDF.Settings.License = LicenseType.Community;
 // ── MVC ───────────────────────────────────────────────────────────────────────
 builder.Services.AddControllersWithViews();
 
@@ -71,7 +74,7 @@ builder.Services.Configure<ValuationRollSettings>(cfg.GetSection("ValuationRoll"
 builder.Services.Configure<DisclaimerSettings>(cfg.GetSection("Disclaimer"));
 builder.Services.Configure<RollDatesSettings>(opts =>builder.Configuration.GetSection("RollDates").Bind(opts.Dates));
 builder.Services.Configure<ObjectionRollSettings>(cfg => builder.Configuration.Bind(cfg));
-
+builder.Services.Configure<NoticeRollSettings>(opts =>builder.Configuration.GetSection("NoticeRolls").Bind(opts.NoticeRolls));
 // ── Custom Services ───────────────────────────────────────────────────────────
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IUserManagementService, UserManagementService>();
@@ -81,6 +84,9 @@ builder.Services.AddScoped<IPropertySearchService, PropertySearchService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IObjectionService, ObjectionService>();
 builder.Services.AddScoped<IObjectionFormService, ObjectionFormService>();
+builder.Services.AddScoped<IAdminDashboardService, AdminDashboardService>();
+builder.Services.AddScoped<IAuditService, AuditService>();
+builder.Services.AddScoped<INoticeService, NoticeService>();
 
 
 // ── App Pipeline ──────────────────────────────────────────────────────────────

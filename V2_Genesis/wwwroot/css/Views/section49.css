@@ -1,0 +1,392 @@
+﻿/* ═══════════════════════════════════════════════
+   SECTION 49 NOTICE — mobile-first
+═══════════════════════════════════════════════ */
+.s49-page {
+    background: #f5f5f5;
+    min-height: calc(100vh - 64px);
+    padding: 20px 16px;
+    font-family: 'Poppins',sans-serif;
+}
+
+.s49-inner {
+    max-width: 860px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* ── Top bar ─────────────────────────────────── */
+.s49-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.s49-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #6b6b6b;
+    text-decoration: none;
+    background: #fff;
+    border: 1.5px solid #e8e8e8;
+    padding: 8px 14px;
+    border-radius: 8px;
+    transition: all .15s;
+}
+
+    .s49-back:hover {
+        border-color: #e6b000;
+        color: #c49a00;
+    }
+
+.s49-download-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: #1a1a1a;
+    color: #e6b000;
+    padding: 9px 18px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: background .15s;
+}
+
+    .s49-download-btn:hover {
+        background: #333;
+        color: #e6b000;
+    }
+
+/* ── Notice container ────────────────────────── */
+.s49-notice {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 16px rgba(0,0,0,.09);
+    padding: 30px 32px;
+}
+
+/* ── Header image ────────────────────────────── */
+.s49-logo {
+    width: 100%;
+    max-width: 520px;
+    display: block;
+    margin: 0 auto 16px;
+}
+
+/* ── Titles ──────────────────────────────────── */
+.s49-title-block {
+    text-align: center;
+    margin-bottom: 14px;
+}
+
+    .s49-title-block h1 {
+        font-size: 16px;
+        font-weight: 800;
+        color: #1a1a1a;
+        margin: 0 0 6px;
+    }
+
+    .s49-title-block h2 {
+        font-size: 12px;
+        font-weight: 700;
+        color: #1a1a1a;
+        line-height: 1.5;
+        margin: 0;
+    }
+
+.s49-divider {
+    border: none;
+    border-top: 1.5px solid #ccc;
+    margin: 14px 0;
+}
+
+/* ── Body text ───────────────────────────────── */
+.s49-body {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+    .s49-body p {
+        font-size: 13px;
+        line-height: 1.7;
+        color: #333;
+        margin: 0;
+        text-align: justify;
+    }
+
+    .s49-body a {
+        color: #e6b000;
+    }
+
+/* ── Property box ────────────────────────────── */
+.s49-property-box {
+    border: 1px solid #4682B4;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 14px 0;
+}
+
+.s49-property-header {
+    background: #4682B4;
+    color: #fff;
+    padding: 10px 16px;
+    font-size: 11.5px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.s49-property-info {
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: #F0F7FF;
+}
+
+.s49-info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.s49-info-label {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #4682B4;
+    text-transform: uppercase;
+}
+
+.s49-info-value {
+    font-size: 13px;
+    color: #1a1a1a;
+}
+
+/* ── Valuation table ─────────────────────────── */
+.s49-table-wrap {
+    overflow-x: auto;
+    margin: 14px 0;
+}
+
+.s49-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+    min-width: 480px;
+}
+
+    .s49-table thead th {
+        background: #4682B4;
+        color: #fff;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 10px 12px;
+        text-align: center;
+    }
+
+    .s49-table tbody td {
+        padding: 9px 12px;
+        border-bottom: 1px solid #eee;
+        vertical-align: middle;
+    }
+
+    .s49-table tbody tr:nth-child(even) {
+        background: #F8FAFC;
+    }
+
+.s49-mv {
+    font-weight: 700;
+    color: #1a1a1a;
+}
+
+/* ── Closing date banner ─────────────────────── */
+.s49-closing-date {
+    background: #FFF5E6;
+    border: 1.5px solid #FF8C00;
+    border-radius: 8px;
+    padding: 14px 18px;
+    text-align: center;
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #8B4500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin: 14px 0;
+}
+
+/* ── Requirements two-column ─────────────────── */
+.s49-requirements {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin: 14px 0;
+}
+
+.s49-req-col {
+    border-radius: 8px;
+    padding: 14px;
+}
+
+    .s49-req-col h4 {
+        font-size: 12.5px;
+        font-weight: 700;
+        margin: 0 0 10px;
+        display: flex;
+        align-items: center;
+        gap: 7px;
+    }
+
+    .s49-req-col ul {
+        margin: 0 0 10px;
+        padding-left: 16px;
+    }
+
+    .s49-req-col li {
+        font-size: 12px;
+        line-height: 1.7;
+        color: #444;
+    }
+
+    .s49-req-col p {
+        font-size: 12px;
+        margin: 0;
+    }
+
+.s49-req-res {
+    background: #F0F8FF;
+    border: 1px solid #4682B4;
+}
+
+    .s49-req-res h4 {
+        color: #4682B4;
+    }
+
+.s49-req-bus {
+    background: #FFF8F0;
+    border: 1px solid #FF8C00;
+}
+
+    .s49-req-bus h4 {
+        color: #FF8C00;
+    }
+
+/* ── Representatives warning ─────────────────── */
+.s49-rep-warning {
+    background: #FFE0E0;
+    border: 2px solid #DC143C;
+    border-radius: 8px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    font-size: 13px;
+    margin: 14px 0;
+}
+
+    .s49-rep-warning i {
+        color: #DC143C;
+        font-size: 18px;
+        flex-shrink: 0;
+        margin-top: 2px;
+    }
+
+/* ── Contact ──────────────────────────────────── */
+.s49-contact {
+    font-size: 13px;
+    color: #444;
+    padding: 12px 0;
+}
+
+    .s49-contact h4 {
+        font-size: 13px;
+        font-weight: 700;
+        color: #1a1a1a;
+        margin: 0 0 6px;
+    }
+
+    .s49-contact a {
+        color: #e6b000;
+    }
+
+/* ── Action buttons ──────────────────────────── */
+.s49-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 4px 0;
+}
+
+.s49-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 12px 22px;
+    border-radius: 9px;
+    font-family: 'Poppins',sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: all .15s;
+}
+
+.s49-btn-primary {
+    background: #1a1a1a;
+    color: #e6b000;
+}
+
+    .s49-btn-primary:hover {
+        background: #333;
+        color: #e6b000;
+    }
+
+.s49-btn-outline {
+    background: #fff;
+    color: #1a1a1a;
+    border: 1.5px solid #e8e8e8;
+}
+
+    .s49-btn-outline:hover {
+        border-color: #e6b000;
+        color: #c49a00;
+    }
+
+/* ── Mobile ───────────────────────────────────── */
+@media (max-width:600px) {
+    .s49-notice {
+        padding: 18px 14px;
+    }
+
+    .s49-requirements {
+        grid-template-columns: 1fr;
+    }
+
+    .s49-actions {
+        flex-direction: column;
+    }
+
+    .s49-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .s49-topbar {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .s49-download-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}

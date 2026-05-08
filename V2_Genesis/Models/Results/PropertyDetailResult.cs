@@ -32,5 +32,14 @@
         public string? ValuationDate { get; set; }
         public string? LeaseDesc { get; set; }
         public string? Sector { get; set; }
+
+        // Add these to the existing PropertyDetailResult class:
+        public string? ADDR1 { get; set; }
+        public string? ADDR2 { get; set; }
+        public string? ADDR3 { get; set; }
+        public string? ADDR4 { get; set; }
+        public string? ADDR5 { get; set; }
+        public string? LeaseStatus { get; set; }
+        public string? AdditionalNotes { get; set; }
     }
 }

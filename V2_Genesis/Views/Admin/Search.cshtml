@@ -1,0 +1,176 @@
+﻿@{
+    ViewData["Title"] = "Search Enquiry";
+    Layout = "~/Views/Shared/_ClientLayout.cshtml";
+    var searchValue = TempData["SearchValue"];
+    var searchAppealValue = TempData["SearchAppealValue"];
+    var searchQuery = TempData["searchQuery"];
+}
+
+@section Styles {
+    <link href="~/css/views/admin-search.css" rel="stylesheet" asp-append-version="true" />
+     <link href="~/css/views/clientdashboardcss.css" rel="stylesheet" asp-append-version="true" />
+}
+
+<div class="srch-page">
+    <div class="srch-inner">
+
+        <div class="srch-header">
+            <a href="/admin" class="srch-back">
+                <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
+            </a>
+            <div class="srch-heading">
+                <div class="srch-heading-icon">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </div>
+                <div>
+                    <h1>Search Enquiry</h1>
+                    <p>Search for objections, appeals, queries or townships</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="srch-grid">
+
+            <!-- 1. Search Objection -->
+            <div class="srch-card">
+                <div class="srch-card-header">
+                    <i class="fa-solid fa-file-pen"></i> Search for Objection
+                </div>
+                <div class="srch-card-body">
+                    <form method="post" action="/admin/search/objection"
+                          onsubmit="handleSubmit(event, this)">
+                        @Html.AntiForgeryToken()
+                        <div class="srch-roll-row">
+                            <label>Roll</label>
+                            <select name="rollSource" class="srch-select">
+                                <option value="">All Rolls</option>
+                                @foreach (var roll in (ViewBag.GvList as List<V2_Genesis.Models.GvList> ?? new()).Where(r => !r.IsQuery))
+                                {
+                                    <option value="@roll.Source">@roll.Short</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="srch-field">
+                            <label>Objection Number</label>
+                            <input type="text" name="searchValue"
+                                   value="@searchValue"
+                                   placeholder="e.g. GV23-SUP3-123"
+                                   class="srch-input" required />
+                        </div>
+                        <button type="submit" class="srch-btn">
+                            <i class="fa-solid fa-search"></i> Search Objection
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 2. Search Appeal by Appeal No -->
+            <div class="srch-card">
+                <div class="srch-card-header">
+                    <i class="fa-solid fa-gavel"></i> Search for Appeal
+                </div>
+                <div class="srch-card-body">
+                    <form method="post" action="/admin/search/appeal"
+                          onsubmit="handleSubmit(event, this)">
+                        @Html.AntiForgeryToken()
+                        <div class="srch-roll-row">
+                            <label>Roll</label>
+                            <select name="rollSource" class="srch-select">
+                                <option value="">All Rolls</option>
+                                @foreach (var roll in (ViewBag.GvList as List<V2_Genesis.Models.GvList> ?? new()).Where(r => !r.IsQuery))
+                                {
+                                    <option value="@roll.Source">@roll.Short</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="srch-field">
+                            <label>Appeal Number</label>
+                            <input type="text" name="searchAppealValue"
+                                   value="@searchAppealValue"
+                                   placeholder="e.g. APP-GV23-SUP3-123"
+                                   class="srch-input" required />
+                        </div>
+                        <button type="submit" class="srch-btn">
+                            <i class="fa-solid fa-search"></i> Search Appeal
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 3. Search Appeal by Township -->
+            <div class="srch-card">
+                <div class="srch-card-header">
+                    <i class="fa-solid fa-city"></i> Search by Township
+                </div>
+                <div class="srch-card-body">
+                    <form method="post" action="/admin/search/appeal"
+                          onsubmit="handleSubmit(event, this)">
+                        @Html.AntiForgeryToken()
+                        <div class="srch-roll-row">
+                            <label>Roll</label>
+                            <select name="rollSource" class="srch-select">
+                                <option value="">All Rolls</option>
+                                @foreach (var roll in (ViewBag.GvList as List<V2_Genesis.Models.GvList> ?? new()).Where(r => !r.IsQuery))
+                                {
+                                    <option value="@roll.Source">@roll.Short</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="srch-field">
+                            <label>Township Name</label>
+                            <input type="text" name="searchAppealValue"
+                                   value="@searchAppealValue"
+                                   placeholder="Enter township name"
+                                   class="srch-input" required />
+                        </div>
+                        <button type="submit" class="srch-btn">
+                            <i class="fa-solid fa-search"></i> Search Township
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 4. Search Query -->
+            <div class="srch-card">
+                <div class="srch-card-header">
+                    <i class="fa-solid fa-circle-question"></i> Search for Query
+                </div>
+                <div class="srch-card-body">
+                    <form method="post" action="/admin/search/query"
+                          onsubmit="handleSubmit(event, this)">
+                        @Html.AntiForgeryToken()
+                        <div class="srch-field">
+                            <label>Query Number</label>
+                            <input type="text" name="searchQuery"
+                                   value="@searchQuery"
+                                   placeholder="e.g. QUE-GV23-123"
+                                   class="srch-input" required />
+                        </div>
+                        <button type="submit" class="srch-btn">
+                            <i class="fa-solid fa-search"></i> Search Query
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function handleSubmit(e, form) {
+            const input = form.querySelector('.srch-input');
+            if (!input.value.trim()) {
+                e.preventDefault();
+                input.focus();
+                input.style.borderColor = '#ef4444';
+                setTimeout(() => input.style.borderColor = '', 2000);
+                return false;
+            }
+            const btn = form.querySelector('.srch-btn');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Searching...';
+            btn.disabled = true;
+        }
+    </script>
+}
