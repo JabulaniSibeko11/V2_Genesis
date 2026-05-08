@@ -8,13 +8,46 @@
 
 
 <link href="~/account/login.css" rel="stylesheet" asp-append-version="true" />
+<style>
+    .login-brand-mark {
+        width: 70px;
+        height: 70px;
+        background: #e6b000;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        padding: 6px;
+    }
+
+    .reg-brand-logo {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+
+    input::-ms-reveal {
+        display: none;
+    }
+
+    /* Hide Chrome password clear/reveal decorations */
+    input::-webkit-credentials-auto-fill-button,
+    input::-webkit-textfield-decoration-container {
+        display: none !important;
+    }
+</style>
 <div class="login-page">
     <div class="login-wrap">
 
         <!-- ═══ LEFT PANEL ═══ -->
         <div class="login-left">
             <div class="login-brand">
-                <div class="login-brand-mark">COJ</div>
+                <div class="login-brand-mark">
+                    <img src="~/images/joburg_logo.png"
+                         class="reg-brand-logo"
+                         alt="City of Johannesburg Logo" />
+                </div>
                 <div>
                     <div class="login-brand-name">City of Johannesburg Valuation </div>
                     <div class="login-brand-sub">Portal</div>
@@ -135,7 +168,7 @@
         const inp = document.getElementById(id);
         const ico = btn.querySelector('i');
         inp.type = inp.type === 'password' ? 'text' : 'password';
-        ico.className = inp.type === 'password' ? 'fa-solid fa-eye' : 'fa-solid fa-eye-slash';
+         ico.className = inp.type === 'password' ? 'fa-solid fa-eye' : 'fa-solid fa-eye-slash';
         }
     </script>
 }

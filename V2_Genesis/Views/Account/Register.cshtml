@@ -6,6 +6,41 @@
 
 
 <link href="~/account/register.css" rel="stylesheet" asp-append-version="true" />
+<style>
+    .reg-brand-mark {
+        width: 70px;
+        height: 70px;
+        background: #e6b000;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        padding: 6px;
+    }
+
+    .reg-brand-logo {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+
+    .reg-brand-logo {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+
+    input::-ms-reveal {
+        display: none;
+    }
+
+    /* Hide Chrome password clear/reveal decorations */
+    input::-webkit-credentials-auto-fill-button,
+    input::-webkit-textfield-decoration-container {
+        display: none !important;
+    }
+</style>
 <div class="reg-page">
     <div class="container">
         <div class="reg-wrap">
@@ -13,11 +48,18 @@
             <!-- ═══ LEFT PANEL ═══ -->
             <div class="reg-left">
                 <div class="reg-brand">
-                    <div class="reg-brand-mark">COJ</div>
+
+                    <div class="reg-brand-mark">
+                        <img src="~/images/joburg_logo.png"
+                             class="reg-brand-logo"
+                             alt="City of Johannesburg Logo" />
+                    </div>
+
                     <div>
                         <div class="reg-brand-name">City of Johannesburg Valuation</div>
                         <div class="reg-brand-sub">Portal</div>
                     </div>
+
                 </div>
 
                 <h1 class="reg-headline">

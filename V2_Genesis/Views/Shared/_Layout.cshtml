@@ -16,6 +16,26 @@
     <!-- Global CSS -->
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 
+    <style>
+            .nav-brand-mark {
+                width: 60px;
+                height: 60px;
+                background: #e6b000;
+                border-radius: 10px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                overflow: hidden;
+                padding: 6px;
+            }
+
+            .brand-logo {
+                width: 100%;
+                height: 100%;
+                object-fit: contain;
+            }
+    </style>
+
     @await RenderSectionAsync("Styles", required: false)
 </head>
 <body class="@(User.IsInRole("Admin") ? "role-admin" : "role-client")">
@@ -25,14 +45,21 @@
         <div class="nav-inner">
 
             <!-- Brand -->
-            <a href="/" class="nav-brand">
-                <div class="nav-brand-mark">COJ</div>
+            <a asp-action="Index" asp-controller="Home" class="nav-brand">
+
+                <div class="nav-brand-mark">
+                    <img src="~/images/joburg_logo.png"
+                         class="brand-logo"
+                         alt="City of Johannesburg Logo" />
+                </div>
+
                 <div class="nav-brand-text">
                     <span class="nav-brand-name">City of Johannesburg</span>
                     <span class="nav-brand-sub">Portal</span>
                 </div>
-            </a>
 
+            </a>
+                
             <!-- Desktop Nav -->
             <ul class="nav-links" id="navLinks">
                 @if (User.Identity?.IsAuthenticated == true)
