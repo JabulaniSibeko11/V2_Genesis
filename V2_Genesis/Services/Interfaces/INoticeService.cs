@@ -20,5 +20,11 @@ namespace V2_Genesis.Services.Interfaces
     string rollSource,
     int fileCount,
     List<string> fileNames);
+
+        Task<(byte[] Pdf, string FileName)> GenerateSection51AcknowledgementAsync(
+    string objectionNo,
+    string rollSource,
+    int fileCount,
+    List<string> fileNames);
     }
 }

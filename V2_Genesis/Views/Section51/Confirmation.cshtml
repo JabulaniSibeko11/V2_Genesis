@@ -1,0 +1,73 @@
+﻿@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Section 51 — Submitted";
+    var fileNames = ViewBag.FileNames as List<string> ?? new();
+}
+@section Styles {
+    <link href="~/css/views/evidence1.css" rel="stylesheet" asp-append-version="true" />
+}
+
+<div class="ev-page">
+    <div class="ev-card ev-card-wide">
+
+        <div class="ev-success-header">
+            <div class="ev-success-icon">
+                <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <div>
+                <h1 class="ev-success-title">Section 51 Evidence Submitted</h1>
+                <p class="ev-success-sub">
+                    Reference: <strong>@ViewBag.ObjectionNo</strong>
+                </p>
+            </div>
+        </div>
+
+        <div class="ev-summary-box">
+            <div class="ev-summary-item">
+                <span class="ev-summary-label">Reference</span>
+                <span class="ev-summary-value">@ViewBag.ObjectionNo</span>
+            </div>
+            <div class="ev-summary-item">
+                <span class="ev-summary-label">Files</span>
+                <span class="ev-summary-value">@ViewBag.FileCount</span>
+            </div>
+            <div class="ev-summary-item">
+                <span class="ev-summary-label">Submitted</span>
+                <span class="ev-summary-value">
+                    @DateTime.Now.ToString("dd MMM yyyy HH:mm")
+                </span>
+            </div>
+        </div>
+
+        <div class="ev-confirm-files">
+            <h3 class="ev-confirm-files-title">
+                <i class="fa-solid fa-paperclip"></i> Uploaded Files
+            </h3>
+            @foreach (var (name, i) in fileNames.Select((n, i) => (n, i + 1)))
+            {
+                <div class="ev-confirm-file">
+                    <span class="ev-confirm-num">@i</span>
+                    <i class="fa-solid fa-file-pdf"></i>
+                    <span>@name</span>
+                </div>
+            }
+        </div>
+
+        <div class="ev-notice ev-notice-green">
+            <i class="fa-solid fa-circle-check"></i>
+            Your Section 51 evidence has been recorded. Download the
+            acknowledgement below and keep it as proof.
+        </div>
+
+        <div class="ev-form-actions">
+            <a href="/section51/download" class="ev-btn ev-btn-primary"
+                   style="background:#1d4ed8;">
+                <i class="fa-solid fa-file-pdf"></i> Download Acknowledgement
+            </a>
+            <a href="/" class="ev-btn ev-btn-ghost">
+                <i class="fa-solid fa-house"></i> Home
+            </a>
+        </div>
+
+    </div>
+</div>

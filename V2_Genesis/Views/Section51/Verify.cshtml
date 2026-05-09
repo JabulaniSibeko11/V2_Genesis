@@ -1,0 +1,115 @@
+﻿@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Section 51 Upload";
+}
+@section Styles {
+    <link href="~/css/views/evidence1.css" rel="stylesheet" asp-append-version="true" />
+}
+
+<div class="ev-page">
+    <div class="ev-card">
+
+        <div class="ev-card-header">
+            <div class="ev-card-icon" style="background:#06402B;">
+                <i class="fa-solid fa-file-circle-check"></i>
+            </div>
+            <div>
+                <h1 class="ev-card-title">Section 51 Evidence Upload</h1>
+                <p class="ev-card-sub">
+                    Upload supporting documents for your Section 51 review
+                </p>
+            </div>
+        </div>
+
+        <!-- Info notice -->
+        <div class="ev-notice" style="background:#eff6ff;border-color:#06402B;color:#1e3a5f;">
+            <i class="fa-solid fa-circle-info" style="color:#3b82f6;"></i>
+            Section 51 allows you to submit additional evidence for
+            objection. You may only submit once per objection.
+        </div>
+
+        <!-- Roll detection -->
+      @*   <div class="ev-detect-info">
+            <div class="ev-detect-title">
+                <i class="fa-solid fa-circle-info"></i>
+                Roll is auto-detected from your objection number
+            </div>
+            <div class="ev-detect-grid">
+                <div class="ev-detect-item">
+                    <span class="ev-detect-prefix ev-prefix-gv">OBJ-GV23-…</span>
+                    <span class="ev-detect-arrow">→</span>
+                    <span class="ev-detect-roll">General Valuation Roll</span>
+                </div>
+                <div class="ev-detect-item">
+                    <span class="ev-detect-prefix ev-prefix-s1">OBJ-GV23-SUP1-…</span>
+                    <span class="ev-detect-arrow">→</span>
+                    <span class="ev-detect-roll">Supplementary Roll 1</span>
+                </div>
+                <div class="ev-detect-item">
+                    <span class="ev-detect-prefix ev-prefix-s2">OBJ-GV23-SUP2-…</span>
+                    <span class="ev-detect-arrow">→</span>
+                    <span class="ev-detect-roll">Supplementary Roll 2</span>
+                </div>
+                <div class="ev-detect-item">
+                    <span class="ev-detect-prefix ev-prefix-s3">OBJ-GV23-SUP3-…</span>
+                    <span class="ev-detect-arrow">→</span>
+                    <span class="ev-detect-roll">Supplementary Roll 3</span>
+                </div>
+            </div>
+        </div>
+ *@
+        @if (ViewBag.Error is not null)
+        {
+            <div class="ev-error-banner">
+                <i class="fa-solid fa-circle-xmark"></i>
+                @ViewBag.Error
+            </div>
+        }
+
+        <form method="post" action="/section51/verify">
+            @Html.AntiForgeryToken()
+
+            <div class="ev-form-group">
+                <label class="ev-label">
+                    <i class="fa-solid fa-hashtag"></i>
+                    Objection Number
+                </label>
+                <input type="text"
+                       name="objectionNo"
+                       class="ev-input"
+                       placeholder="e.g. OBJ-GV23-SUP3-12345"
+                       autocomplete="off"
+                       autofocus
+                       required />
+            </div>
+
+            <div class="ev-form-group">
+                <label class="ev-label">
+                    <i class="fa-solid fa-key"></i> PIN
+                </label>
+                <input type="text"
+                       name="pin"
+                       class="ev-input"
+                       placeholder="Enter your PIN (case-sensitive)"
+                       autocomplete="off"
+                       required />
+                <p class="ev-hint">
+                    Your PIN was in the acknowledgement letter from your
+                    original objection submission.
+                </p>
+            </div>
+
+            <div class="ev-form-actions">
+                <button type="submit" class="ev-btn ev-btn-primary"
+                        style="background:#e6b000; color:black;">
+                    <i class="fa-solid fa-shield-check"></i>
+                    Verify &amp; Continue
+                </button>
+                <a href="/" class="ev-btn ev-btn-ghost">
+                    <i class="fa-solid fa-house"></i> Home
+                </a>
+            </div>
+        </form>
+
+    </div>
+</div>

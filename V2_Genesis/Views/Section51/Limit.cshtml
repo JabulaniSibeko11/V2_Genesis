@@ -1,0 +1,40 @@
+﻿@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Section 51 — Upload Unavailable";
+}
+@section Styles {
+    <link href="~/css/views/evidence1.css" rel="stylesheet" asp-append-version="true" />
+}
+
+<div class="ev-page">
+    <div class="ev-card">
+
+        <div class="ev-success-header" style="border-bottom:1.5px solid #f0f0f0;padding-bottom:20px;margin-bottom:24px;">
+            <div class="ev-success-icon" style="background:#fee2e2;color:#b91c1c;">
+                <i class="fa-solid fa-ban"></i>
+            </div>
+            <div>
+                <h1 class="ev-success-title" style="font-size:18px;">
+                    Upload Unavailable
+                </h1>
+                <p class="ev-success-sub">@ViewBag.Reason</p>
+            </div>
+        </div>
+
+        <div class="ev-notice" style="background:#fef2f2;border-color:#fca5a5;color:#b91c1c;">
+            <i class="fa-solid fa-circle-xmark"></i>
+            Section 51 evidence can only be submitted once per objection and
+            within the designated period.
+        </div>
+
+        <div class="ev-form-actions" style="margin-top:20px;">
+            <a href="/" class="ev-btn ev-btn-primary">
+                <i class="fa-solid fa-house"></i> Back to Home
+            </a>
+            <a href="/account/login" class="ev-btn ev-btn-ghost">
+                <i class="fa-solid fa-right-to-bracket"></i> Sign In
+            </a>
+        </div>
+
+    </div>
+</div>

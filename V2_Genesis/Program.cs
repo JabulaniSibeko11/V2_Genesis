@@ -89,7 +89,7 @@ builder.Services.AddScoped<IAuditService, AuditService>();
 builder.Services.AddScoped<INoticeService, NoticeService>();
 builder.Services.AddScoped<IAttributesDashboardService, AttributesDashboardService>();
 builder.Services.AddScoped<IEvidenceService, EvidenceService>();
-
+builder.Services.AddScoped<ISection51Service, Section51Service>();
 // ── App Pipeline ──────────────────────────────────────────────────────────────
 var app = builder.Build();
 

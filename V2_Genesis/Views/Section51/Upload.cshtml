@@ -1,0 +1,147 @@
+﻿@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Section 51 — Upload";
+}
+@section Styles {
+    <link href="~/css/views/evidence1.css" rel="stylesheet" asp-append-version="true" />
+}
+
+<div class="ev-page">
+    <div class="ev-card ev-card-wide">
+        <div class="ev-card-header">
+            <div class="ev-card-icon" style="background:#1d4ed8;">
+                <i class="fa-solid fa-cloud-arrow-up"></i>
+            </div>
+            <div>
+                <h1 class="ev-card-title">Upload Section 51 Evidence</h1>
+                <p class="ev-card-sub">
+                    Objection: <strong>@ViewBag.ObjectionNo</strong>
+                </p>
+            </div>
+        </div>
+
+        <!-- Reference box -->
+        <div class="ev-ref-box ev-ref-box-prefilled">
+            <div class="ev-ref-item">
+                <span class="ev-ref-label">Objection Number</span>
+                <span class="ev-ref-value ev-ref-readonly">
+                    <i class="fa-solid fa-lock" style="font-size:11px;color:#6b6b6b;"></i>
+                    @ViewBag.ObjectionNo
+                </span>
+            </div>
+            <div class="ev-ref-item">
+                <span class="ev-ref-label">Roll</span>
+                <span class="ev-ref-value">
+                    @ViewBag.RollSource?.Replace("_", " ")
+                </span>
+            </div>
+        </div>
+
+        <div class="ev-notice">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            You may only submit Section 51 evidence <strong>once</strong>.
+            Ensure all files are ready before submitting.
+        </div>
+
+        @if (ViewBag.Error is not null)
+        {
+            <div class="ev-error-banner">
+                <i class="fa-solid fa-circle-xmark"></i> @ViewBag.Error
+            </div>
+        }
+
+        <form method="post" action="/section51/upload"
+              enctype="multipart/form-data" id="s51Form">
+            @Html.AntiForgeryToken()
+
+            <div class="ev-dropzone" id="dropzone">
+                <i class="fa-solid fa-cloud-arrow-up ev-drop-icon"
+                   style="color:#1d4ed8;"></i>
+                <p class="ev-drop-title">Drag &amp; drop files here</p>
+                <p class="ev-drop-sub">PDF, JPG, PNG, HEIC — max 3 MB each, up to 10 files</p>
+                <input type="file" name="files" id="fileInput"
+                       multiple accept=".pdf,.jpg,.jpeg,.png,.heic"
+                       class="ev-file-input" />
+                <button type="button" class="ev-btn ev-btn-outline"
+                        onclick="document.getElementById('fileInput').click()">
+                    <i class="fa-solid fa-folder-open"></i> Browse Files
+                </button>
+            </div>
+
+            <div class="ev-file-list" id="fileList"></div>
+
+            <div class="ev-form-actions">
+                <button type="submit" class="ev-btn ev-btn-primary"
+                        id="submitBtn" disabled
+                        style="background:#1d4ed8;">
+                    <i class="fa-solid fa-upload"></i> Submit Evidence
+                </button>
+                <a href="/" class="ev-btn ev-btn-ghost">
+                    <i class="fa-solid fa-arrow-left"></i> Back
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const fileList  = document.getElementById('fileList');
+        const submitBtn = document.getElementById('submitBtn');
+
+        fileInput.addEventListener('change', () => renderFiles(fileInput.files));
+
+        function renderFiles(files) {
+            fileList.innerHTML = '';
+            if (!files.length) { submitBtn.disabled = true; return; }
+            let valid = true;
+            Array.from(files).forEach(f => {
+                const big = f.size > 3 * 1024 * 1024;
+                const item = document.createElement('div');
+                item.className = 'ev-file-item' + (big ? ' ev-file-error' : '');
+                item.innerHTML = `
+                    <i class="fa-solid fa-file-pdf"></i>
+                    <span class="ev-file-name">${f.name}</span>
+                    <span class="ev-file-size">${(f.size/1024/1024).toFixed(2)} MB</span>
+                    ${big
+                        ? '<span class="ev-file-badge ev-badge-err">Too large</span>'
+                        : '<span class="ev-file-badge ev-badge-ok">Ready</span>'}`;
+                fileList.appendChild(item);
+                if (big) valid = false;
+            });
+            if (files.length > 10) {
+                fileList.insertAdjacentHTML('beforeend',
+                    `<div class="ev-error-banner" style="margin-top:8px">
+                        <i class="fa-solid fa-circle-xmark"></i>
+                        Maximum 10 files allowed.
+                     </div>`);
+                valid = false;
+            }
+            submitBtn.disabled = !valid;
+        }
+
+        ['dragover','dragenter'].forEach(e =>
+            document.getElementById('dropzone').addEventListener(e, ev => {
+                ev.preventDefault();
+                document.getElementById('dropzone').classList.add('ev-drag-over');
+            }));
+        ['dragleave','drop'].forEach(e =>
+            document.getElementById('dropzone').addEventListener(e, () =>
+                document.getElementById('dropzone').classList.remove('ev-drag-over')));
+
+        document.getElementById('dropzone').addEventListener('drop', e => {
+            e.preventDefault();
+            const dt = new DataTransfer();
+            Array.from(e.dataTransfer.files).forEach(f => dt.items.add(f));
+            fileInput.files = dt.files;
+            renderFiles(fileInput.files);
+        });
+
+        document.getElementById('s51Form').addEventListener('submit', () => {
+            submitBtn.innerHTML =
+                '<i class="fa-solid fa-spinner fa-spin"></i> Submitting...';
+            submitBtn.disabled = true;
+        });
+    </script>
+}

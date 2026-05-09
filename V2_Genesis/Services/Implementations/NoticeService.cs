@@ -17,6 +17,7 @@ public class NoticeService : INoticeService
     private readonly NoticeRollSettings _noticeSettings;
     private readonly RollDatesSettings _rollDates;
     private readonly ILogger<NoticeService> _logger;
+    private  readonly IConfiguration _config;
 
     private const string HEADER_IMAGE = "Images/Obj_Header.PNG";
 
@@ -25,12 +26,14 @@ public class NoticeService : INoticeService
         IWebHostEnvironment env,
         IOptions<NoticeRollSettings> noticeOpts,
         IOptions<RollDatesSettings> rollDatesOpts,
-        ILogger<NoticeService> logger)
+        ILogger<NoticeService> logger,
+        IConfiguration config)
     {
         _search = search;
         _env = env;
         _noticeSettings = noticeOpts.Value;
         _rollDates = rollDatesOpts.Value;
+        _config= config;
         _logger = logger;
 
         // Set QuestPDF community licence (free for open-source / internal tools)
@@ -871,5 +874,172 @@ public class NoticeService : INoticeService
         }).GeneratePdf();
 
         return Task.FromResult((pdf, fileName));
+    }
+    public Task<(byte[] Pdf, string FileName)> GenerateSection51AcknowledgementAsync(
+    string objectionNo, string rollSource,
+    int fileCount, List<string> fileNames)
+    {
+        var roll = _noticeSettings.For(rollSource);
+        var header = Path.Combine(_env.WebRootPath, HEADER_IMAGE);
+        var fileName = $"Section51_{SanitiseName(objectionNo)}.pdf";
+
+        var pdf = Document.Create(container =>
+        {
+            container.Page(page =>
+            {
+                page.Size(PageSizes.A4);
+                page.Margin(1.5f, Unit.Centimetre);
+                page.DefaultTextStyle(t => t.FontFamily("Arial").FontSize(9));
+
+                page.Content().Column(col =>
+                {
+                    if (File.Exists(header))
+                        col.Item().Width(500).Image(header);
+
+                    col.Item().Height(8);
+                    col.Item().AlignRight()
+                        .Text(DateTime.Now.ToString("dd MMMM yyyy HH:mm"))
+                        .FontSize(9);
+                    col.Item().Height(6);
+                    col.Item().BorderBottom(1).BorderColor("#555555");
+                    col.Item().Height(6);
+
+                    col.Item().AlignCenter()
+                        .Text("CITY OF JOHANNESBURG").FontSize(13).Bold();
+                    col.Item().Height(4);
+                    col.Item().AlignCenter()
+                        .Text("SECTION 51 ACKNOWLEDGEMENT").FontSize(10).Bold();
+                    col.Item().Height(4);
+                    col.Item().AlignCenter()
+                        .Text("DOCUMENT UPLOAD CONFIRMATION").FontSize(9).Bold();
+                    col.Item().Height(8);
+                    col.Item().BorderBottom(1).BorderColor("#555555");
+                    col.Item().Height(8);
+
+                    // Success line
+                    col.Item().AlignCenter().PaddingBottom(10)
+                        .Text("✓ Your documents have been successfully uploaded.")
+                        .FontSize(10).Bold().FontColor("#166534");
+
+                    // Details box
+                    col.Item().Background("#F0F7FF").Border(1.5f).BorderColor("#4682B4")
+                        .Padding(10).Column(box =>
+                        {
+                            box.Item().Text(t => {
+                                t.Span("Objection Number: ").Bold();
+                                t.Span(objectionNo);
+                            });
+                            box.Item().Height(3);
+                            box.Item().Text(t => {
+                                t.Span("Roll: ").Bold();
+                                t.Span(roll.RollTitle);
+                            });
+                            box.Item().Height(3);
+                            box.Item().Text(t => {
+                                t.Span("Documents Uploaded: ").Bold();
+                                t.Span($"{fileCount} document(s)");
+                            });
+                            box.Item().Height(3);
+                            box.Item().Text(t => {
+                                t.Span("Upload Date/Time: ").Bold();
+                                t.Span(DateTime.Now.ToString("dd MMMM yyyy HH:mm"));
+                            });
+                        });
+
+                    col.Item().Height(10);
+
+                    // File list
+                    col.Item().AlignCenter()
+                        .Text("UPLOADED DOCUMENTS").Bold().FontSize(9);
+                    col.Item().Height(6);
+
+                    col.Item().Table(table =>
+                    {
+                        table.ColumnsDefinition(c =>
+                        {
+                            c.ConstantColumn(30);
+                            c.RelativeColumn();
+                        });
+
+                        static IContainer TH(IContainer c) =>
+                            c.Background("#4682B4").Padding(6);
+
+                        table.Cell().Element(TH)
+                            .Text("#").FontColor(Colors.White).Bold().FontSize(8);
+                        table.Cell().Element(TH)
+                            .Text("File Name").FontColor(Colors.White).Bold().FontSize(8);
+
+                        bool alt = false;
+                        for (int i = 0; i < fileNames.Count; i++)
+                        {
+                            var bg = alt ? Colors.Grey.Lighten5 : Colors.White;
+                            alt = !alt;
+                            IContainer TD(IContainer c) =>
+                                c.Background(bg).BorderBottom(0.5f)
+                                 .BorderColor("#EEEEEE").Padding(5);
+                            table.Cell().Element(TD).Text((i + 1).ToString()).FontSize(8);
+                            table.Cell().Element(TD).Text(fileNames[i]).FontSize(8);
+                        }
+                    });
+
+                    col.Item().Height(12);
+
+                    // Warning
+                    col.Item().Background("#FFF5E6").Border(1.5f).BorderColor("#FF8C00")
+                        .Padding(8).Column(w =>
+                        {
+                            w.Item().Text("⚠ IMPORTANT NOTE").Bold().FontSize(9)
+                            .FontColor("#8B4500");
+                            w.Item().Height(4);
+                            w.Item().Text(
+                            "Please keep this acknowledgement as proof of your Section 51 " +
+                            "document submission.")
+                            .FontSize(8);
+                        });
+
+                    col.Item().Height(10);
+                    col.Item()
+                          .DefaultTextStyle(x => x.FontSize(8))
+                          .Text(t =>
+                          {
+                              t.Span("For enquiries: ").Bold();
+                              t.Span("Tel. 011 407-6622  |  valuationenquiries@joburg.org.za");
+                          });
+
+                    col.Item().Height(14);
+                    col.Item().BorderTop(1).BorderColor("#AAAAAA").PaddingTop(6)
+                        .AlignCenter().Column(f =>
+                        {
+                            f.Item().Text("Official document — City of Johannesburg Valuation Services")
+                            .FontSize(7).FontColor("#666666");
+                            f.Item().Text($"Generated: {DateTime.Now:dd MMMM yyyy HH:mm}")
+                            .FontSize(7).FontColor("#666666");
+                        });
+                });
+            });
+        }).GeneratePdf();
+
+        // Save to disk
+        _ = SaveSection51ToDiskAsync(rollSource, objectionNo, pdf);
+
+        return Task.FromResult((pdf, fileName));
+    }
+
+    private async Task SaveSection51ToDiskAsync(
+        string rollSource, string objectionNo, byte[] pdf)
+    {
+        try
+        {
+            var path = _config[$"Section51Rolls:{rollSource}:FileRootPath"];
+            if (string.IsNullOrEmpty(path)) return;
+            var dir = Path.Combine(path, SanitiseName(objectionNo));
+            Directory.CreateDirectory(dir);
+            await File.WriteAllBytesAsync(
+                Path.Combine(dir, $"Section51_{SanitiseName(objectionNo)}.pdf"), pdf);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[Section51] Save PDF failed for {ObjNo}", objectionNo);
+        }
     }
 }
