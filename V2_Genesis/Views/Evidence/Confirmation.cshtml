@@ -1,11 +1,13 @@
 ﻿@{
     ViewData["Title"] = "Upload Confirmed";
-    Layout = "~/Views/Shared/_ClientLayout.cshtml";
+    Layout = User.Identity?.IsAuthenticated == true
+      ? "~/Views/Shared/_ClientLayout.cshtml"
+      : "~/Views/Shared/_Layout.cshtml";
     var fileNames = ViewBag.FileNames as List<string> ?? new();
 }
 
 @section Styles {
-    <link href="~/css/views/evidence.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/views/Evidence1.css" rel="stylesheet" asp-append-version="true" />
     <link href="~/css/views/clientdashboardcss.css" rel="stylesheet" asp-append-version="true" />
 }
 

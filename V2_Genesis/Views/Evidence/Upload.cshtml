@@ -1,13 +1,15 @@
 ﻿@{
     ViewData["Title"] = "Add Evidence";
-    Layout = "~/Views/Shared/_ClientLayout.cshtml";
+    Layout = User.Identity?.IsAuthenticated == true
+       ? "~/Views/Shared/_ClientLayout.cshtml"
+       : "~/Views/Shared/_Layout.cshtml";
     bool isAppeal = (bool)(ViewBag.IsAppeal ?? false);
     int remaining = (int)(ViewBag.Remaining ?? 10);
     int current = (int)(ViewBag.CurrentCount ?? 0);
 }
 
 @section Styles {
-    <link href="~/css/views/evidence.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/views/evidence1.css" rel="stylesheet" asp-append-version="true" />
 
     <link href="~/css/views/clientdashboardcss.css" rel="stylesheet" asp-append-version="true" />
 }

@@ -1,0 +1,215 @@
+﻿@{
+    Layout = User.Identity?.IsAuthenticated == true
+        ? "~/Views/Shared/_ClientLayout.cshtml"
+        : "~/Views/Shared/_Layout.cshtml";
+
+    ViewData["Title"] = "Add Evidence";
+
+    bool isAuth = User.Identity?.IsAuthenticated == true;
+    string? preRef = ViewBag.PrefilledRef as string;
+    string? preRoll = ViewBag.PrefilledRoll as string;
+    bool hasRef = !string.IsNullOrWhiteSpace(preRef);
+    bool isAppeal = preRef?.Trim().ToUpper().StartsWith("APP") == true;
+    string refLabel = isAppeal ? "Appeal Number" : "Objection Number";
+}
+
+@section Styles {
+    <link href="~/css/views/evidence1.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/views/clientdashboardcss.css" rel="stylesheet" asp-append-version="true" />
+}
+
+<div class="ev-page">
+    <div class="ev-card">
+
+        <!-- Header -->
+        <div class="ev-card-header">
+            <div class="ev-card-icon">
+                <i class="fa-solid fa-upload"></i>
+            </div>
+            <div>
+                <h1 class="ev-card-title">Add Supporting Evidence</h1>
+                <p class="ev-card-sub">
+                    @if (hasRef)
+                    {
+                        @(isAppeal ? "Upload documents for your appeal" : "Upload documents for your objection")
+                    }
+                    else
+                    {
+                        @:Upload additional documents for your objection or appeal
+                    }
+                </p>
+            </div>
+        </div>
+
+        @* ── LOGGED IN + reference pre-filled → show ref as read-only ── *@
+        @if (isAuth && hasRef)
+        {
+            <!-- Reference info box — read only -->
+            <div class="ev-ref-box ev-ref-box-prefilled">
+                <div class="ev-ref-item">
+                    <span class="ev-ref-label">@refLabel</span>
+                    <span class="ev-ref-value ev-ref-readonly">
+                        <i class="fa-solid fa-lock" style="font-size:11px;color:#6b6b6b;"></i>
+                        @preRef
+                    </span>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(preRoll))
+                {
+                    <div class="ev-ref-item">
+                        <span class="ev-ref-label">Roll</span>
+                        <span class="ev-ref-value">@preRoll?.Replace("_", " ")</span>
+                    </div>
+                }
+            </div>
+
+            <!-- Error -->
+            @if (ViewBag.Error is not null)
+            {
+                <div class="ev-error-banner">
+                    <i class="fa-solid fa-circle-xmark"></i>
+                    @ViewBag.Error
+                </div>
+            }
+
+            <!-- 48-hour notice -->
+            <div class="ev-notice">
+                <i class="fa-solid fa-clock"></i>
+                You have <strong>48 hours</strong> from your original submission
+                to upload evidence. The window closes automatically after that.
+            </div>
+
+            <!-- PIN only form -->
+            <form method="post" action="/evidence/verify">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="refNo" value="@preRef" />
+                <input type="hidden" name="rollSource" value="@preRoll" />
+
+                <div class="ev-form-group">
+                    <label class="ev-label">
+                        <i class="fa-solid fa-key"></i> PIN
+                    </label>
+                    <input type="text"
+                           name="pin"
+                           id="pinInput"
+                           class="ev-input ev-input-lg"
+                           placeholder="Enter your PIN (case-sensitive)"
+                           autocomplete="off"
+                           autofocus
+                           required />
+                    <p class="ev-hint">
+                        Your PIN was included in the acknowledgement letter
+                        you received when you submitted your
+                        @(isAppeal ? "appeal" : "objection").
+                    </p>
+                </div>
+
+                <div class="ev-form-actions">
+                    <button type="submit" class="ev-btn ev-btn-primary">
+                        <i class="fa-solid fa-shield-check"></i>
+                        Verify &amp; Upload
+                    </button>
+                    <a href="/dashboard" class="ev-btn ev-btn-ghost">
+                        <i class="fa-solid fa-arrow-left"></i> Back
+                    </a>
+                </div>
+            </form>
+        }
+
+        @* ── NOT LOGGED IN or no reference → full form ── *@
+        else
+        {
+            <!-- Roll detection guide -->
+            <div class="ev-detect-info">
+            @*     <div class="ev-detect-title">
+                    <i class="fa-solid fa-circle-info"></i>
+                    The system detects your roll automatically from the reference number
+                </div> *@
+                @* <div class="ev-detect-grid">
+                    <div class="ev-detect-item">
+                        <span class="ev-detect-prefix ev-prefix-gv">OBJ-GV23-…</span>
+                        <span class="ev-detect-arrow">→</span>
+                        <span class="ev-detect-roll">General Valuation Roll</span>
+                    </div>
+                    <div class="ev-detect-item">
+                        <span class="ev-detect-prefix ev-prefix-s1">OBJ-GV23-SUP1-…</span>
+                        <span class="ev-detect-arrow">→</span>
+                        <span class="ev-detect-roll">Supplementary Roll 1</span>
+                    </div>
+                    <div class="ev-detect-item">
+                        <span class="ev-detect-prefix ev-prefix-s2">OBJ-GV23-SUP2-…</span>
+                        <span class="ev-detect-arrow">→</span>
+                        <span class="ev-detect-roll">Supplementary Roll 2</span>
+                    </div>
+                    <div class="ev-detect-item">
+                        <span class="ev-detect-prefix ev-prefix-s3">OBJ-GV23-SUP3-…</span>
+                        <span class="ev-detect-arrow">→</span>
+                        <span class="ev-detect-roll">Supplementary Roll 3</span>
+                    </div>
+                </div> *@
+            </div>
+
+            @if (ViewBag.Error is not null)
+            {
+                <div class="ev-error-banner">
+                    <i class="fa-solid fa-circle-xmark"></i>
+                    @ViewBag.Error
+                </div>
+            }
+
+            <div class="ev-notice">
+                <i class="fa-solid fa-clock"></i>
+                You have <strong>48 hours</strong> from your original submission
+                to upload evidence. The window closes automatically after that.
+            </div>
+
+            <!-- Full form: reference + PIN -->
+            <form method="post" action="/evidence/verify">
+                @Html.AntiForgeryToken()
+
+                <div class="ev-form-group">
+                    <label class="ev-label">
+                        <i class="fa-solid fa-hashtag"></i>
+                        Objection / Appeal Number
+                    </label>
+                    <input type="text"
+                           name="refNo"
+                           class="ev-input"
+                           placeholder="e.g. OBJ-GV23-SUP3-12345 or APP-GV23-1234"
+                           autocomplete="off"
+                           autofocus
+                           required />
+                    <p class="ev-hint">
+                        The system will automatically detect which roll to search.
+                    </p>
+                </div>
+
+                <div class="ev-form-group">
+                    <label class="ev-label">
+                        <i class="fa-solid fa-key"></i> PIN
+                    </label>
+                    <input type="text"
+                           name="pin"
+                           class="ev-input"
+                           placeholder="Enter your PIN (case-sensitive)"
+                           autocomplete="off"
+                           required />
+                    <p class="ev-hint">
+                        Your PIN was included in the acknowledgement letter
+                        received when you submitted your objection or appeal.
+                    </p>
+                </div>
+
+                <div class="ev-form-actions">
+                    <button type="submit" class="ev-btn ev-btn-primary">
+                        <i class="fa-solid fa-shield-check"></i>
+                        Verify &amp; Continue
+                    </button>
+                    <a href="/" class="ev-btn ev-btn-ghost">
+                        <i class="fa-solid fa-house"></i> Home
+                    </a>
+                </div>
+            </form>
+        }
+
+    </div>
+</div>

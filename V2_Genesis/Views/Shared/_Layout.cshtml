@@ -3,179 +3,192 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] City of Johannesburg</title>
+    <title>@ViewData["Title"] – City of Johannesburg</title>
 
-    <!-- Poppins Font -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
     <link rel="icon" type="image/png" sizes="32x32" href="~/images/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="~/images/favicon-16x16.png">
-
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
-
-    <!-- Global CSS -->
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 
-    <style>
-            .nav-brand-mark {
-                width: 60px;
-                height: 60px;
-                background: #e6b000;
-                border-radius: 10px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                overflow: hidden;
-                padding: 6px;
-            }
-
-            .brand-logo {
-                width: 100%;
-                height: 100%;
-                object-fit: contain;
-            }
-    </style>
+    <link href="~/css/views/layout.css" rel="stylesheet" />
 
     @await RenderSectionAsync("Styles", required: false)
 </head>
 <body class="@(User.IsInRole("Admin") ? "role-admin" : "role-client")">
 
-    <!-- ═══════════════ NAVBAR ═══════════════ -->
-    <nav class="navbar" id="mainNav">
-        <div class="nav-inner">
+    @{
+        var currentPath = Context.Request.Path.Value?.ToLower() ?? "";
+        bool isAuth = User.Identity?.IsAuthenticated == true;
+        bool isAdmin = User.IsInRole("Admin");
+    }
+
+    <!-- ══════════════════════════════════════════
+         PUBLIC NAVBAR
+    ══════════════════════════════════════════ -->
+    <nav class="pub-nav" id="pubNav">
+        <div class="pub-nav-inner">
 
             <!-- Brand -->
-            <a asp-action="Index" asp-controller="Home" class="nav-brand">
-
+            <a asp-action="Index" asp-controller="Home" class="pub-brand">
                 <div class="nav-brand-mark">
                     <img src="~/images/joburg_logo.png"
-                         class="brand-logo"
-                         alt="City of Johannesburg Logo" />
+                         class="brand-logo" alt="Joburg" />
                 </div>
-
-                <div class="nav-brand-text">
-                    <span class="nav-brand-name">City of Johannesburg</span>
-                    <span class="nav-brand-sub">Portal</span>
+                <div class="pub-brand-text">
+                    <span class="pub-brand-name">City of Johannesburg</span>
+                    <span class="pub-brand-sub">Valuation Portal</span>
                 </div>
-
             </a>
-                
-            <!-- Desktop Nav -->
-            <ul class="nav-links" id="navLinks">
-                @if (User.Identity?.IsAuthenticated == true)
+
+            <!-- Desktop links -->
+            <ul class="pub-nav-links">
+                @if (isAuth && !isAdmin)
                 {
-                    @if (User.IsInRole("Admin"))
-                    {
-                        <li><a href="/admin" class="nav-link"><i class="fa-solid fa-gauge-high"></i> Dashboard</a></li>
-                        <li><a href="/admin/submissions" class="nav-link"><i class="fa-solid fa-inbox"></i> Submissions</a></li>
-                        <li><a href="/admin/properties" class="nav-link"><i class="fa-solid fa-building"></i> Properties</a></li>
-                        <li><a href="/admin/users" class="nav-link"><i class="fa-solid fa-users"></i> Users</a></li>
-                        <li><a href="/admin/reports" class="nav-link"><i class="fa-solid fa-chart-bar"></i> Reports</a></li>
-                    }
-                    else
-                    {
-                        <li><a href="/dashboard" class="nav-link"><i class="fa-solid fa-gauge-high"></i> Dashboard</a></li>
-                        <li><a href="/my-properties" class="nav-link"><i class="fa-solid fa-building"></i> My Properties</a></li>
-                        <li><a href="/my-submissions" class="nav-link"><i class="fa-solid fa-file-pen"></i> Submissions</a></li>
-                        <li><a href="/objections" class="nav-link"><i class="fa-solid fa-gavel"></i> Objections</a></li>
-                    }
+                    <li>
+                        <a href="/dashboard"
+                           class="pub-nav-link @(currentPath=="/dashboard" ? "active":"")">
+                            <i class="fa-solid fa-gauge-high"></i> Dashboard
+                        </a>
+                    </li>
                 }
-                else
+                @if (isAuth && isAdmin)
                 {
-                    <li><a href="/login" class="nav-link">Sign In</a></li>
-                    <li><a href="/register" class="nav-link nav-link-register">Register</a></li>
+                    <li>
+                        <a href="/admin"
+                           class="pub-nav-link @(currentPath=="/admin" ? "active":"")">
+                            <i class="fa-solid fa-shield-halved"></i> Admin
+                        </a>
+                    </li>
                 }
             </ul>
 
-            <!-- User menu (authenticated) -->
-            @if (User.Identity?.IsAuthenticated == true)
-            {
-                <div class="nav-user" id="navUser">
-                    <button class="nav-user-btn" onclick="toggleUserMenu()" aria-label="User menu">
-                        <div class="nav-avatar">
-                            @User.Identity.Name?.Substring(0, 1).ToUpper()
-                        </div>
-                        <span class="nav-user-name d-none d-md-inline">
-                            @(User.IsInRole("Admin") ? "Admin" : User.Identity.Name?.Split('@')[0])
-                        </span>
-                        <i class="fa-solid fa-chevron-down nav-chevron"></i>
-                    </button>
-                    <div class="nav-dropdown" id="userDropdown">
-                        @if (!User.IsInRole("Admin"))
-                        {
-                            <a href="/my-profile" class="nav-dd-item"><i class="fa-solid fa-user"></i> My Profile</a>
-                            <a href="/my-submissions" class="nav-dd-item"><i class="fa-solid fa-file-lines"></i> My Submissions</a>
-                            <div class="nav-dd-divider"></div>
-                        }
-                        <form asp-action="Logout" asp-controller="Account" method="post">
-                            @Html.AntiForgeryToken()
-                            <button type="submit" class="nav-dd-item nav-dd-logout">
-                                <i class="fa-solid fa-right-from-bracket"></i> Sign Out
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            }
+            @* ── Add Evidence — visible to EVERYONE ── *@
+            <a href="/evidence/verify" class="pub-nav-evidence">
+                <i class="fa-solid fa-upload"></i>
+                Add Evidence
+            </a>
 
-            <!-- Hamburger (mobile) -->
-            <button class="nav-hamburger" id="hamburger" onclick="toggleMobileNav()" aria-label="Toggle menu">
+            <!-- Right side — auth or sign in -->
+            <div class="pub-nav-right">
+                @if (isAuth)
+                {
+                    <div style="position:relative;" id="pubUserWrap">
+                        <button class="pub-user-btn" id="pubUserBtn">
+                            <div class="pub-avatar">
+                                @User.Identity!.Name?.Substring(0,1).ToUpper()
+                            </div>
+                            <span class="d-none d-md-inline">
+                                @(isAdmin ? "Admin" : User.Identity.Name?.Split('@')[0])
+                            </span>
+                            <i class="fa-solid fa-chevron-down" style="font-size:10px;"></i>
+                        </button>
+                        <div class="pub-user-menu" id="pubUserMenu">
+                            @if (!isAdmin)
+                            {
+                                <a href="/my-profile" class="pub-dd-item">
+                                    <i class="fa-solid fa-user"></i> My Profile
+                                </a>
+                                <div class="pub-dd-divider"></div>
+                            }
+                            <form asp-action="Logout" asp-controller="Account" method="post">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="pub-dd-item pub-dd-logout">
+                                    <i class="fa-solid fa-right-from-bracket"></i> Sign Out
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <a href="/account/login" class="pub-btn-signin">
+                        <i class="fa-solid fa-right-to-bracket"></i> Sign In
+                    </a>
+                    <a href="/account/register" class="pub-btn-register">
+                        <i class="fa-solid fa-user-plus"></i> Register
+                    </a>
+                }
+            </div>
+
+            <!-- Hamburger -->
+            <button class="pub-hamburger" id="pubHamburger">
                 <span></span><span></span><span></span>
             </button>
 
         </div>
     </nav>
 
-    <!-- Mobile Nav Overlay -->
-    <div class="mobile-nav-overlay" id="mobileOverlay" onclick="toggleMobileNav()"></div>
-    <div class="mobile-nav" id="mobileNav">
-        <div class="mobile-nav-header">
-            <span class="nav-brand-name" style="color:#e6b000;">CITY OF JOHANNESBURG VALUATION PORTAL</span>
-            <button onclick="toggleMobileNav()" class="mobile-nav-close"><i class="fa-solid fa-xmark"></i></button>
+    <!-- Mobile overlay + drawer -->
+    <div class="pub-mobile-overlay" id="pubOverlay"></div>
+    <div class="pub-mobile-drawer" id="pubDrawer">
+
+        <div class="pub-drawer-header">
+            <span style="font-size:11px;font-weight:800;letter-spacing:2px;color:#e6b000;">
+                CITY OF JOHANNESBURG
+            </span>
+            <button class="pub-drawer-close" id="pubDrawerClose">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
         </div>
-        @if (User.Identity?.IsAuthenticated == true)
+
+        @* Add Evidence — always at top of mobile menu *@
+        <a href="/evidence/verify" class="pub-drawer-link pub-drawer-evidence">
+            <i class="fa-solid fa-upload"></i> Add Evidence
+        </a>
+
+        <div class="pub-drawer-divider"></div>
+
+        @if (isAuth && !isAdmin)
         {
-            @if (User.IsInRole("Admin"))
-            {
-                <a href="/admin" class="mobile-nav-link"><i class="fa-solid fa-gauge-high"></i> Dashboard</a>
-                <a href="/admin/submissions" class="mobile-nav-link"><i class="fa-solid fa-inbox"></i> Submissions</a>
-                <a href="/admin/properties" class="mobile-nav-link"><i class="fa-solid fa-building"></i> Properties</a>
-                <a href="/admin/users" class="mobile-nav-link"><i class="fa-solid fa-users"></i> Users</a>
-            }
-            else
-            {
-                <a href="/dashboard" class="mobile-nav-link"><i class="fa-solid fa-gauge-high"></i> Dashboard</a>
-                <a href="/my-properties" class="mobile-nav-link"><i class="fa-solid fa-building"></i> My Properties</a>
-                <a href="/my-submissions" class="mobile-nav-link"><i class="fa-solid fa-file-pen"></i> Submissions</a>
-                <a href="/objections" class="mobile-nav-link"><i class="fa-solid fa-gavel"></i> Objections</a>
-                <a href="/my-profile" class="mobile-nav-link"><i class="fa-solid fa-user"></i> My Profile</a>
-            }
-            <div class="mobile-nav-divider"></div>
+            <a href="/dashboard" class="pub-drawer-link">
+                <i class="fa-solid fa-gauge-high"></i> Dashboard
+            </a>
+            <a href="/my-profile" class="pub-drawer-link">
+                <i class="fa-solid fa-user"></i> My Profile
+            </a>
+        }
+        @if (isAuth && isAdmin)
+        {
+            <a href="/admin" class="pub-drawer-link">
+                <i class="fa-solid fa-shield-halved"></i> Admin Dashboard
+            </a>
+        }
+        @if (!isAuth)
+        {
+            <a href="/account/login" class="pub-drawer-link">
+                <i class="fa-solid fa-right-to-bracket"></i> Sign In
+            </a>
+            <a href="/account/register" class="pub-drawer-link">
+                <i class="fa-solid fa-user-plus"></i> Register
+            </a>
+        }
+
+        @if (isAuth)
+        {
+            <div class="pub-drawer-divider"></div>
             <form asp-action="Logout" asp-controller="Account" method="post">
                 @Html.AntiForgeryToken()
-                <button type="submit" class="mobile-nav-link mobile-nav-logout">
+                <button type="submit" class="pub-drawer-link pub-drawer-logout">
                     <i class="fa-solid fa-right-from-bracket"></i> Sign Out
                 </button>
             </form>
         }
-        else
-        {
-            <a href="/login" class="mobile-nav-link"><i class="fa-solid fa-right-to-bracket"></i> Sign In</a>
-            <a href="/register" class="mobile-nav-link"><i class="fa-solid fa-user-plus"></i> Register</a>
-        }
+
     </div>
 
-    <!-- ═══════════════ MAIN CONTENT ═══════════════ -->
+    <!-- ═══════════ MAIN ═══════════ -->
     <main class="main-content">
         @RenderBody()
     </main>
 
-    <!-- ═══════════════ FOOTER ═══════════════ -->
+    <!-- ═══════════ FOOTER ═══════════ -->
     <footer class="site-footer">
         <div class="footer-inner">
             <div class="footer-brand">
-                <span class="footer-brand-name">City of Johannesburg Valuation </span>
+                <span class="footer-brand-name">City of Johannesburg Valuation</span>
                 <span class="footer-brand-sub">Portal</span>
             </div>
             <div class="footer-links">
@@ -189,28 +202,45 @@
         </div>
     </footer>
 
-    <!-- Scripts -->
     <script src="~/js/site.js" asp-append-version="true"></script>
 
-    @await RenderSectionAsync("Scripts", required: false)
-
     <script>
-            // User dropdown
-            function toggleUserMenu() {
-                document.getElementById('userDropdown').classList.toggle('open');
-            }
-            document.addEventListener('click', function(e) {
-                const d = document.getElementById('userDropdown');
-                const b = document.getElementById('navUser');
-                if (d && b && !b.contains(e.target)) d.classList.remove('open');
-            });
+        // ── User dropdown ──────────────────────────────────────────────
+        const pubUserBtn  = document.getElementById('pubUserBtn');
+        const pubUserMenu = document.getElementById('pubUserMenu');
 
-            // Mobile nav
-            function toggleMobileNav() {
-                document.getElementById('mobileNav').classList.toggle('open');
-                document.getElementById('mobileOverlay').classList.toggle('open');
-                document.body.classList.toggle('no-scroll');
-            }
+        if (pubUserBtn) {
+            pubUserBtn.addEventListener('click', e => {
+                e.stopPropagation();
+                pubUserMenu.classList.toggle('open');
+            });
+            document.addEventListener('click', () => {
+                pubUserMenu?.classList.remove('open');
+            });
+        }
+
+        // ── Mobile drawer ──────────────────────────────────────────────
+        const pubHam     = document.getElementById('pubHamburger');
+        const pubDrawer  = document.getElementById('pubDrawer');
+        const pubOverlay = document.getElementById('pubOverlay');
+        const pubClose   = document.getElementById('pubDrawerClose');
+
+        function openPubDrawer() {
+            pubDrawer?.classList.add('open');
+            pubOverlay?.classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
+        function closePubDrawer() {
+            pubDrawer?.classList.remove('open');
+            pubOverlay?.classList.remove('open');
+            document.body.style.overflow = '';
+        }
+
+        pubHam?.addEventListener('click',      openPubDrawer);
+        pubClose?.addEventListener('click',    closePubDrawer);
+        pubOverlay?.addEventListener('click',  closePubDrawer);
     </script>
+
+    @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

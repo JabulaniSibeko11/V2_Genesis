@@ -533,3 +533,45 @@
         justify-content: center;
     }
 }
+/* ── Pre-filled ref box (logged-in dashboard flow) ── */
+.ev-ref-box-prefilled {
+    background: #f0fdf4;
+    border: 1.5px solid #22c55e;
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin-bottom: 20px;
+}
+
+.ev-ref-readonly {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 15px;
+    font-weight: 800;
+    color: #1a1a1a;
+    letter-spacing: 0.5px;
+}
+
+/* Larger PIN input when it's the only field */
+.ev-input-lg {
+    font-size: 16px !important;
+    padding: 14px 16px !important;
+    letter-spacing: 2px;
+}
+
+/* Detect info grid */
+.ev-detect-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: #6b6b6b;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 10px;
+}
+
+.ev-detect-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}

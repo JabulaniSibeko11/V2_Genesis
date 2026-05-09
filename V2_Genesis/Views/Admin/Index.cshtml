@@ -342,10 +342,13 @@
                                                                 @if (item.objection_Status == "Obj-Lodging")
                                                                 {
                                                                     <li>
-                                                                        <a class="dropdown-item"
-                                                                              href="/evidence/verify?objectionNo=@item.Objection_No&rollSource=@roll.Source">
-                                                                           Add Evidence
-                                                                        </a>
+                                                                       @if (User.Identity?.IsAuthenticated == true)
+                                                                                            {
+                                                                                                <a class="btn btn-sm btn-primary"
+                                                                                                    href="/evidence/verify?objectionNo=@item.Objection_No&rollSource=@roll.Source">
+                                                                                                    <i class="fa-solid fa-upload"></i> Add Evidence
+                                                                                                </a>
+                                                                                            }
                                                                     </li>
                                                                 }
                                                                 @if (item.objection_Status == "Notice-Sent")

@@ -7,7 +7,7 @@ using V2_Genesis.Services.Interfaces;
 
 namespace V2_Genesis.Controllers;
 
-[Authorize]
+// ── No [Authorize] — evidence is public-access ────────────────────────
 public class EvidenceController : Controller
 {
     private readonly IEvidenceService _evidenceService;
@@ -31,43 +31,66 @@ public class EvidenceController : Controller
     }
 
     // ── GET /evidence/verify ──────────────────────────────────────────
+    // Replaces the old parameterless Verify() — DELETE the old one
     [HttpGet]
+    [AllowAnonymous]
     [Route("evidence/verify")]
-    public async Task<IActionResult> Verify(
-        string objectionNo, string rollSource)
+    public async Task<IActionResult> VerifyObj(
+        string? objectionNo = null,
+        string? rollSource = null)
     {
         ViewBag.GvList = await _db.GvList.OrderBy(r => r.ID).ToListAsync();
-        ViewBag.ObjectionNo = objectionNo;
-        ViewBag.RollSource = rollSource;
-        ViewBag.IsAppeal = objectionNo.Trim().ToUpper().StartsWith("APP");
+
+        if (!string.IsNullOrWhiteSpace(objectionNo) &&
+            string.IsNullOrWhiteSpace(rollSource))
+        {
+            rollSource = DetectRollSource(objectionNo);
+        }
+
+        ViewBag.PrefilledRef = objectionNo;
+        ViewBag.PrefilledRoll = rollSource;
+        ViewBag.IsAuthenticated = User.Identity?.IsAuthenticated == true;
+        ViewBag.IsAppeal = objectionNo?.Trim().ToUpper().StartsWith("APP") == true;
+
         return View();
     }
 
     // ── POST /evidence/verify ─────────────────────────────────────────
     [HttpPost]
+    [AllowAnonymous]
     [Route("evidence/verify")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Verify(
-        string objectionNo, string rollSource, string pin)
+    public async Task<IActionResult> Verify(string refNo, string pin)
     {
         ViewBag.GvList = await _db.GvList.OrderBy(r => r.ID).ToListAsync();
-        ViewBag.ObjectionNo = objectionNo;
-        ViewBag.RollSource = rollSource;
-        ViewBag.IsAppeal = objectionNo.Trim().ToUpper().StartsWith("APP");
+
+        if (string.IsNullOrWhiteSpace(refNo) || string.IsNullOrWhiteSpace(pin))
+        {
+            ViewBag.Error = "Please enter both the reference number and PIN.";
+            ViewBag.PrefilledRef = refNo;
+            ViewBag.PrefilledRoll = null;
+            return View();
+        }
+
+        var rollSource = DetectRollSource(refNo);
 
         var result = await _evidenceService.ValidateAsync(
-            rollSource, objectionNo, pin);
+            rollSource, refNo.Trim(), pin.Trim());
 
-        //if (!result.IsValid)
-        //{
-        //    ViewBag.Error = result.Error;
-        //    return View();
-        //}
+        // ── Restore the validation check ─────────────────────────────
+        if (!result.IsValid)
+        {
+            ViewBag.Error = result.Error;
+            ViewBag.PrefilledRef = refNo;
+            ViewBag.PrefilledRoll = rollSource;
+            ViewBag.IsAuthenticated = User.Identity?.IsAuthenticated == true;
+            ViewBag.IsAppeal = refNo.Trim().ToUpper().StartsWith("APP");
+            return View();
+        }
 
-        // Store validated state in session
         HttpContext.Session.SetString(SESSION_VALIDATED, "true");
         HttpContext.Session.SetString(SESSION_ROLL, rollSource);
-        HttpContext.Session.SetString(SESSION_OBJ, objectionNo);
+        HttpContext.Session.SetString(SESSION_OBJ, refNo.Trim());
         HttpContext.Session.SetInt32(SESSION_COUNT, result.CurrentCount);
         HttpContext.Session.SetString(SESSION_IS_APPEAL, result.IsAppeal.ToString());
 
@@ -76,36 +99,33 @@ public class EvidenceController : Controller
 
     // ── GET /evidence/upload ──────────────────────────────────────────
     [HttpGet]
+    [AllowAnonymous]
     [Route("evidence/upload")]
     public async Task<IActionResult> Upload()
     {
         if (HttpContext.Session.GetString(SESSION_VALIDATED) != "true")
-            return RedirectToAction("Index", "Dashboard");
-
-        var objNo = HttpContext.Session.GetString(SESSION_OBJ)!;
-        var roll = HttpContext.Session.GetString(SESSION_ROLL)!;
-        var count = HttpContext.Session.GetInt32(SESSION_COUNT) ?? 0;
-        bool appeal = bool.Parse(
-            HttpContext.Session.GetString(SESSION_IS_APPEAL) ?? "false");
+            return RedirectToAction(nameof(Verify));
 
         ViewBag.GvList = await _db.GvList.OrderBy(r => r.ID).ToListAsync();
-        ViewBag.ObjectionNo = objNo;
-        ViewBag.RollSource = roll;
-        ViewBag.CurrentCount = count;
-        ViewBag.Remaining = 10 - count;
-        ViewBag.IsAppeal = appeal;
+        ViewBag.ObjectionNo = HttpContext.Session.GetString(SESSION_OBJ);
+        ViewBag.RollSource = HttpContext.Session.GetString(SESSION_ROLL);
+        ViewBag.CurrentCount = HttpContext.Session.GetInt32(SESSION_COUNT) ?? 0;
+        ViewBag.Remaining = 10 - (HttpContext.Session.GetInt32(SESSION_COUNT) ?? 0);
+        ViewBag.IsAppeal = bool.Parse(
+            HttpContext.Session.GetString(SESSION_IS_APPEAL) ?? "false");
 
         return View();
     }
 
     // ── POST /evidence/upload ─────────────────────────────────────────
     [HttpPost]
+    [AllowAnonymous]
     [Route("evidence/upload")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Upload(List<IFormFile> files)
     {
         if (HttpContext.Session.GetString(SESSION_VALIDATED) != "true")
-            return RedirectToAction("Index", "Dashboard");
+            return RedirectToAction(nameof(Verify));
 
         var objNo = HttpContext.Session.GetString(SESSION_OBJ)!;
         var roll = HttpContext.Session.GetString(SESSION_ROLL)!;
@@ -137,27 +157,25 @@ public class EvidenceController : Controller
             return View();
         }
 
-        // Update session count
         HttpContext.Session.SetInt32(SESSION_COUNT, newCount);
 
-        // Pass confirmation data
         TempData["ev_objNo"] = objNo;
         TempData["ev_roll"] = roll;
         TempData["ev_newCount"] = newCount;
-        TempData["ev_fileNames"] = System.Text.Json.JsonSerializer
-            .Serialize(fileNames);
+        TempData["ev_fileNames"] = System.Text.Json.JsonSerializer.Serialize(fileNames);
 
         return RedirectToAction(nameof(Confirmation));
     }
 
     // ── GET /evidence/confirmation ────────────────────────────────────
     [HttpGet]
+    [AllowAnonymous]
     [Route("evidence/confirmation")]
     public async Task<IActionResult> Confirmation()
     {
         var objNo = TempData["ev_objNo"]?.ToString();
         if (string.IsNullOrEmpty(objNo))
-            return RedirectToAction("Index", "Dashboard");
+            return RedirectToAction(nameof(Verify));
 
         var fileNamesJson = TempData["ev_fileNames"]?.ToString() ?? "[]";
         var fileNames = System.Text.Json.JsonSerializer
@@ -175,25 +193,40 @@ public class EvidenceController : Controller
 
     // ── GET /evidence/download ────────────────────────────────────────
     [HttpGet]
+    [AllowAnonymous]
     [Route("evidence/download")]
     public async Task<IActionResult> Download()
     {
         var objNo = TempData["ev_objNo"]?.ToString();
-        var roll = TempData["ev_roll"]?.ToString();
+        var roll = TempData["ev_roll"]?.ToString() ?? "Objection_Supp3";
         var newCount = Convert.ToInt32(TempData["ev_newCount"] ?? "0");
-        var namesJson = TempData["ev_fileNames"]?.ToString() ?? "[]";
-        var fileNames = System.Text.Json.JsonSerializer
-            .Deserialize<List<string>>(namesJson) ?? new();
+        var names = System.Text.Json.JsonSerializer
+            .Deserialize<List<string>>(
+                TempData["ev_fileNames"]?.ToString() ?? "[]") ?? new();
 
         if (string.IsNullOrEmpty(objNo))
-            return RedirectToAction("Index", "Dashboard");
+            return RedirectToAction(nameof(Verify));
 
         TempData.Keep();
 
         var (pdf, fileName) = await _noticeService
-            .GenerateAttachmentConfirmationAsync(
-                objNo, roll ?? "Objection_Supp3", newCount, fileNames);
+            .GenerateAttachmentConfirmationAsync(objNo, roll, newCount, names);
 
         return File(pdf, "application/pdf", fileName);
+    }
+
+    // ── Roll detection ────────────────────────────────────────────────
+    private static string DetectRollSource(string refNo)
+    {
+        var u = refNo.Trim().ToUpper();
+
+        if (u.Contains("SUP3") || u.Contains("SUPP3"))
+            return "Objection_Supp3";
+        if (u.Contains("SUP2") || u.Contains("SUPP2"))
+            return "Objection_Supp2";
+        if (u.Contains("SUP1") || u.Contains("SUPP1"))
+            return "Objection_Supp1";
+
+        return "Objection";
     }
 }

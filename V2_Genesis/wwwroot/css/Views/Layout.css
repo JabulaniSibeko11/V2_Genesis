@@ -1,0 +1,206 @@
+﻿
+.nav-brand-mark {
+    width: 48px;
+    height: 48px;
+    background: #e6b000;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    padding: 5px;
+}
+
+.brand-logo {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+/* ── Public navbar — GOLD ──────────────── */
+.pub-nav {
+    position: sticky;
+    top: 0;
+    z-index: 500;
+    background: #e6b000; /* ← gold */
+    border-bottom: 2px solid #c49a00; /* ← darker gold border */
+    box-shadow: 0 2px 14px rgba(0,0,0,.15);
+}
+
+/* Brand text — dark on gold */
+.pub-brand-name {
+    font-size: 13px;
+    font-weight: 800;
+    color: #1a1a1a; /* ← dark */
+    white-space: nowrap;
+}
+
+.pub-brand-sub {
+    font-size: 10px;
+    font-weight: 600;
+    color: rgba(0,0,0,.55); /* ← dark muted */
+}
+
+/* Nav links — dark on gold */
+.pub-nav-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 14px;
+    height: 64px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(0,0,0,.65); /* ← dark */
+    text-decoration: none;
+    white-space: nowrap;
+    border-bottom: 2.5px solid transparent;
+    transition: color .15s, border-color .15s;
+}
+
+    .pub-nav-link:hover {
+        color: #1a1a1a;
+    }
+
+    .pub-nav-link.active {
+        color: #1a1a1a;
+        border-bottom-color: #1a1a1a;
+    }
+
+/* Add Evidence button — dark on gold background */
+.pub-nav-evidence {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 9px 18px;
+    border-radius: 8px;
+    background: #1a1a1a; /* ← dark button on gold nav */
+    color: #e6b000;
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: background .15s;
+    white-space: nowrap;
+    flex-shrink: 0;
+    margin-left: auto;
+}
+
+    .pub-nav-evidence:hover {
+        background: #333;
+        color: #e6b000;
+    }
+
+/* Auth buttons — dark style on gold */
+.pub-btn-signin {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    background: transparent;
+    color: rgba(0,0,0,.7);
+    border: 1.5px solid rgba(0,0,0,.25);
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all .15s;
+}
+
+    .pub-btn-signin:hover {
+        background: rgba(0,0,0,.08);
+        color: #1a1a1a;
+    }
+
+.pub-btn-register {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    background: #1a1a1a;
+    color: #e6b000;
+    border: none;
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: background .15s;
+}
+
+    .pub-btn-register:hover {
+        background: #333;
+        color: #e6b000;
+    }
+
+/* User pill — dark on gold */
+.pub-user-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 12px;
+    border-radius: 8px;
+    background: rgba(0,0,0,.12);
+    color: #1a1a1a;
+    border: 1px solid rgba(0,0,0,.2);
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .15s;
+    position: relative;
+}
+
+    .pub-user-btn:hover {
+        background: rgba(0,0,0,.2);
+    }
+
+.pub-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: #1a1a1a;
+    color: #e6b000;
+    font-size: 13px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Hamburger — dark spans on gold */
+.pub-hamburger span {
+    display: block;
+    width: 24px;
+    height: 2.5px;
+    background: #1a1a1a; /* ← dark */
+    border-radius: 2px;
+    transition: all .2s;
+}
+
+/* Mobile drawer — keep dark */
+.pub-mobile-drawer {
+    background: #1a1a1a;
+}
+
+/* Responsive — unchanged */
+@media (max-width: 768px) {
+    .pub-nav-links,
+    .pub-btn-signin,
+    .pub-btn-register {
+        display: none !important;
+    }
+
+    .pub-hamburger {
+        display: flex;
+    }
+
+    .pub-nav-evidence {
+        margin-left: auto;
+        padding: 8px 14px;
+        font-size: 12px;
+    }
+}
+
+

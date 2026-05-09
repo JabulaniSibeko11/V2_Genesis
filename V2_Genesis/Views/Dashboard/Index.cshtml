@@ -366,7 +366,7 @@ else if (roll.IsQuery)
                                                                 <li><a class="dropdown-item" href="/@roll.ControllerName/DownloadAcknowledgement?objectionNo=@item.Objection_No"> Acknowledgement</a></li>
                                                                 @if (item.objection_Status == "Obj-Lodging")
                                                                 {
-                                                                    <li><a class="dropdown-item" href="/evidence/verify?objectionNo=@item.Objection_No&rollSource=@roll.Source">> Add Evidence</a></li>
+                                                                    <li><a class="dropdown-item" href="/evidence/verifyObj?objectionNo=@item.Objection_No&rollSource=@roll.Source">> Add Evidence</a></li>
                                                                    
                                                                 }
                                                                 @if (item.objection_Status == "Notice-Sent")
