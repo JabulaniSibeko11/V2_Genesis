@@ -90,6 +90,13 @@ builder.Services.AddScoped<INoticeService, NoticeService>();
 builder.Services.AddScoped<IAttributesDashboardService, AttributesDashboardService>();
 builder.Services.AddScoped<IEvidenceService, EvidenceService>();
 builder.Services.AddScoped<ISection51Service, Section51Service>();
+builder.Services.AddScoped<ILisSearchService, LisSearchService>();
+builder.Services.AddScoped<IOmissionService, OmissionService>();
+builder.Services.AddMemoryCache();
+builder.Services.AddScoped<IHomeSearchService, HomeSearchService>();
+// Add this if not already present
+
+
 // ── App Pipeline ──────────────────────────────────────────────────────────────
 var app = builder.Build();
 

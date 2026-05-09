@@ -10,6 +10,26 @@
     <link href="~/css/views/objection.css" rel="stylesheet" asp-append-version="true" />
     <link href="~/css/views/clientdashboard.css" rel="stylesheet" asp-append-version="true" />
     <link href="~/css/views/property-search.css" rel="stylesheet" asp-append-version="true" />
+    <style>
+        .obj-prop-omission-badge {
+            grid-column: 1 / -1;
+        }
+
+        .obj-omission-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 6px 14px;
+            border-radius: 100px;
+            background: #fff7ed;
+            color: #c2410c;
+            border: 1.5px solid #fed7aa;
+            font-size: 12.5px;
+            font-weight: 700;
+        }
+    </style>
+
+   
 }
 
 <div class="obj-page">
@@ -114,7 +134,53 @@
                     </span>
                 </div>
                 <div class="obj-card-body obj-prop-grid">
-                    @if (d is not null)
+                    @if (Model.IsOmission)
+                    {
+                        <!-- Omission: show confirmed details, no DB values -->
+                        <div class="obj-prop-item obj-prop-omission-badge">
+                            <span class="obj-omission-tag">
+                                <i class="fa-solid fa-circle-exclamation"></i>
+                                Omitted Property — Not on Valuation Roll
+                            </span>
+                        </div>
+                        @if (!string.IsNullOrWhiteSpace(Model.OmittedTownName))
+                        {
+                            <div class="obj-prop-item">
+                                <span class="obj-prop-label">
+                                    <i class="fa-solid fa-map-pin"></i> Township
+                                </span>
+                                <span class="obj-prop-value">@Model.OmittedTownName</span>
+                            </div>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(Model.OmittedPropertyDesc))
+                        {
+                            <div class="obj-prop-item">
+                                <span class="obj-prop-label">
+                                    <i class="fa-solid fa-file-alt"></i> Property Description
+                                </span>
+                                <span class="obj-prop-value">@Model.OmittedPropertyDesc</span>
+                            </div>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(Model.OmittedAddress))
+                        {
+                            <div class="obj-prop-item">
+                                <span class="obj-prop-label">
+                                    <i class="fa-solid fa-road"></i> Address
+                                </span>
+                                <span class="obj-prop-value">@Model.OmittedAddress</span>
+                            </div>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(Model.OmittedStand))
+                        {
+                            <div class="obj-prop-item">
+                                <span class="obj-prop-label">
+                                    <i class="fa-solid fa-hashtag"></i> ERF / Stand
+                                </span>
+                                <span class="obj-prop-value">@Model.OmittedStand</span>
+                            </div>
+                        }
+                    }
+                    else if (d is not null)
                     {
                         <div class="obj-prop-item">
                             <span class="obj-prop-label">

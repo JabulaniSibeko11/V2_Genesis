@@ -2,12 +2,14 @@
 @{
     ViewData["Title"] = "Home";
     Layout = "_Layout";
-    var roll = Model.Roll;
     var ann = Model.Announcement;
 }
+<link href="~/css/site.css" rel="stylesheet" />
+<link href="~/css/views/homeindex1.css" rel="stylesheet" asp-append-version="true" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/datatables.net-bs5@1.13.6/css/dataTables.bootstrap5.min.css" />
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.bootstrap5.min.css" />
 
-<link href="~/css/views/homeindex.css" rel="stylesheet" asp-append-version="true" />
-@* ── Disclaimer Modal (only if cookie absent) ─────────────────────────────── *@
 @if (Model.ShowDisclaimer)
 {
     <div class="modal-backdrop-custom" id="disclaimerBackdrop"></div>
@@ -33,12 +35,9 @@
     </div>
 }
 
-@* ── Announcement Bar ─────────────────────────────────────────────────────── *@
 <div class="ann-bar @ann.BadgeCss">
     <div class="ann-inner">
-        <span class="ann-badge @ann.BadgeCss">
-            <span class="ann-dot"></span>@ann.BadgeText
-        </span>
+        <span class="ann-badge @ann.BadgeCss"><span class="ann-dot"></span>@ann.BadgeText</span>
         <span class="ann-text">@ann.Message</span>
         @if (ann.DaysLeft > 0)
         {
@@ -50,117 +49,191 @@
     </div>
 </div>
 
-@* ── Hero ─────────────────────────────────────────────────────────────────── *@
 <section class="hero">
     <div class="hero-inner">
         <div class="hero-text">
             <div class="hero-eyebrow">City of Johannesburg · Property Branch</div>
-            <h1 class="hero-heading">
-                Property Services<br />
-                <span>Valuation Portal</span>
-            </h1>
+            <h1 class="hero-heading">Property Services <span>Valuation Portal</span></h1>
             <p class="hero-desc">
-                Access the General Valuation Roll, submit property attributes, lodge objections,
-                and manage your property rights — transparently, securely, and all in one place.
+                Search the valuation roll, lodge objections, upload evidence
+                and manage your property rights — all in one place.
             </p>
-            <div class="hero-actions">
-                <a href="/register" class="hero-btn-primary">
-                    <i class="fa-solid fa-user-plus"></i> Register Free
-                </a>
-                <a href="/login" class="hero-btn-secondary">
-                    <i class="fa-solid fa-right-to-bracket"></i> Sign In
-                </a>
-            </div>
+            @if (User.Identity?.IsAuthenticated != true)
+            {
+                <div class="hero-actions">
+                    <a href="/account/register" class="hero-btn-primary">
+                        <i class="fa-solid fa-user-plus"></i> Register Free
+                    </a>
+                    <a href="/account/login" class="hero-btn-secondary">
+                        <i class="fa-solid fa-right-to-bracket"></i> Sign In
+                    </a>
+                </div>
+            }
+            else
+            {
+                <div class="hero-actions">
+                    <a href="/dashboard" class="hero-btn-primary">
+                        <i class="fa-solid fa-gauge-high"></i> My Dashboard
+                    </a>
+                </div>
+            }
         </div>
-        <div class="hero-visual">
-            <div class="hero-card-stack">
-                <div class="hero-stat">
-                    <i class="fa-solid fa-building"></i>
-                    <span class="hero-stat-num">900K+</span>
-                    <span class="hero-stat-label">Properties</span>
-                </div>
-                <div class="hero-stat">
-                    <i class="fa-solid fa-file-pen"></i>
-                    <span class="hero-stat-num">Digital</span>
-                    <span class="hero-stat-label">Submissions</span>
-                </div>
-                <div class="hero-stat">
-                    <i class="fa-solid fa-shield-halved"></i>
-                    <span class="hero-stat-num">Secure</span>
-                    <span class="hero-stat-label">POPIA Compliant</span>
-                </div>
+        <div class="hero-stats">
+            <div class="hero-stat">
+                <span class="hero-stat-num">900K+</span>
+                <span class="hero-stat-label">Properties</span>
+            </div>
+            <div class="hero-stat-div"></div>
+            <div class="hero-stat">
+                <span class="hero-stat-num">Digital</span>
+                <span class="hero-stat-label">Submissions</span>
+            </div>
+            <div class="hero-stat-div"></div>
+            <div class="hero-stat">
+                <span class="hero-stat-num">Secure</span>
+                <span class="hero-stat-label">POPIA Compliant</span>
             </div>
         </div>
     </div>
 </section>
 
-@* ── Service Tiles ─────────────────────────────────────────────────────────── *@
+<section class="hs-section">
+    <div class="hs-inner">
+        <div class="hs-card">
+            <div class="hs-card-header">
+                <div class="hs-card-header-icon">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </div>
+                <div>
+                    <h2 class="hs-card-title">Search Property Roll</h2>
+                    <p class="hs-card-sub">
+                        Searches across all active rolls —
+                        GV, Supplementary Roll 1, 2 and 3
+                    </p>
+                </div>
+                <span id="hsResultCount" class="hs-result-badge"
+                      style="display:none;"></span>
+            </div>
+
+            <div class="hs-form-body" id="hsFormBody">
+
+                <div class="hs-field hs-field-wide">
+                    <label class="hs-label" for="hs_town">
+                        <i class="fa-solid fa-map-pin"></i> Township
+                    </label>
+                    <select id="hs_town" name="SearchTownName"
+                            class="hs-input" disabled>
+                        <option value="">— Loading townships… —</option>
+                    </select>
+                </div>
+
+                <div class="hs-field">
+                    <label class="hs-label" for="hs_stand">
+                        <i class="fa-solid fa-hashtag"></i> ERF / Stand No.
+                    </label>
+                    <input type="text" id="hs_stand" name="SearchStand"
+                           class="hs-input" placeholder="e.g. 1234" />
+                </div>
+
+                <div class="hs-field">
+                    <label class="hs-label" for="hs_address">
+                        <i class="fa-solid fa-road"></i> Street Address
+                    </label>
+                    <input type="text" id="hs_address" name="SearchAddress"
+                           class="hs-input" placeholder="e.g. 123 Main Street" />
+                </div>
+
+                <div class="hs-field">
+                    <label class="hs-label" for="hs_scheme">
+                        <i class="fa-solid fa-building"></i> Scheme Name
+                    </label>
+                    <select id="hs_scheme" name="SearchScheme"
+                            class="hs-input" disabled>
+                        <option value="">— Loading schemes… —</option>
+                    </select>
+                </div>
+
+                <div class="hs-field">
+                    <label class="hs-label" for="hs_unit">
+                        <i class="fa-solid fa-door-open"></i> Unit No.
+                    </label>
+                    <input type="text" id="hs_unit" name="SearchUnit"
+                           class="hs-input" placeholder="e.g. 5" />
+                </div>
+
+                <div class="hs-field hs-field-action">
+                    <button type="button"
+                            class="hs-search-btn"
+                            id="hsSearchBtn"
+                            onclick="runHomeSearch()">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        Search All Rolls
+                    </button>
+                </div>
+
+            </div>
+
+            <div id="hsResults" class="hs-results-wrap" style="display:none;">
+                <div class="hs-results-divider"><span>Search Results</span></div>
+                <div id="hsResultsInner"></div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
 <section class="tiles-section">
     <div class="tiles-inner">
         <div class="tiles-header">
             <h2>Property Services</h2>
             <p>Everything you need to manage your property valuation rights</p>
         </div>
-
         <div class="tiles-grid">
 
-            @* ── Supplementary Roll 3 ── *@
-            <div class="tile tile-primary">
-                <div class="tile-status-row">
-                    <span class="tile-status @ann.BadgeCss">
-                        <span class="tile-status-dot"></span>
-                        @ann.BadgeText
-                    </span>
-                    @if (ann.DaysLeft > 0)
-                    {
-                        <span class="tile-days @ann.DaysCss">
-                            <i class="fa-solid fa-calendar-days"></i>
-                            @ann.DaysLeft days
-                        </span>
-                    }
-                </div>
-                <div class="tile-icon"><i class="fa-solid fa-scroll"></i></div>
-                <h3 class="tile-title">@roll.RollName @roll.RollNumber</h3>
-                <p class="tile-desc">
-                    Inspect the Supplementary Roll and lodge objections to your property entry.
-                    Open from <strong>@roll.OpenDate.ToString("dd MMM yyyy")</strong> to
-                    <strong>@roll.CloseDate.ToString("dd MMM yyyy")</strong> at 15:00.
-                </p>
-                <div class="tile-actions">
-                    <a href="/Sup3/PropertyIndex" class="tile-btn tile-btn-solid">
-                        <i class="fa-solid fa-magnifying-glass"></i> Search Property
-                    </a>
-                    <a href="/dashboard" class="tile-btn tile-btn-outline">
-                        <i class="fa-solid fa-chart-bar"></i> Dashboard
-                    </a>
-                </div>
-            </div>
-
-            @* ── Property Attributes (NEW V2) ── *@
-            <div class="tile tile-attributes">
+            <div class="tile tile-evidence">
                 <div class="tile-status-row">
                     <span class="tile-status badge-open">
-                        <span class="tile-status-dot"></span> NEW
+                        <span class="tile-status-dot"></span> OPEN
                     </span>
-                    <span class="tile-badge-v2">V2</span>
+                    <span class="tile-badge-public">Public</span>
                 </div>
-                <div class="tile-icon"><i class="fa-solid fa-clipboard-list"></i></div>
-                <h3 class="tile-title">Submit Property Attributes</h3>
+                <div class="tile-icon"><i class="fa-solid fa-upload"></i></div>
+                <h3 class="tile-title">Add Evidence</h3>
                 <p class="tile-desc">
-                    Search for your property, link it to your profile, and submit updated or
-                    additional property information for valuation roll preparation.
+                    Upload supporting documents for your objection or appeal
+                    within 48 hours of submission. No login required —
+                    just your reference number and PIN.
                 </p>
                 <div class="tile-actions">
-                    <a href="/login" class="tile-btn tile-btn-solid">
-                        <i class="fa-solid fa-arrow-right"></i> Get Started
-                    </a>
-                    <a href="/register" class="tile-btn tile-btn-outline">
-                        <i class="fa-solid fa-user-plus"></i> Register First
+                    <a href="/evidence/verify" class="tile-btn tile-btn-solid">
+                        <i class="fa-solid fa-upload"></i> Upload Evidence
                     </a>
                 </div>
             </div>
 
-            @* ── Rebates ── *@
+            <div class="tile tile-section51">
+                <div class="tile-status-row">
+                    <span class="tile-status badge-open">
+                        <span class="tile-status-dot"></span> OPEN
+                    </span>
+                    <span class="tile-badge-public">Public</span>
+                </div>
+                <div class="tile-icon">
+                    <i class="fa-solid fa-file-circle-check"></i>
+                </div>
+                <h3 class="tile-title">Section 51 Upload</h3>
+                <p class="tile-desc">
+                    Submit additional evidence under Section 51 of the
+                    Municipal Property Rates Act. One submission per
+                    objection — no login required.
+                </p>
+                <div class="tile-actions">
+                    <a href="/section51/verify" class="tile-btn tile-btn-solid">
+                        <i class="fa-solid fa-file-arrow-up"></i> Submit Section 51
+                    </a>
+                </div>
+            </div>
+
             <div class="tile tile-rebates">
                 <div class="tile-status-row">
                     <span class="tile-status badge-open">
@@ -170,8 +243,9 @@
                 <div class="tile-icon"><i class="fa-solid fa-percent"></i></div>
                 <h3 class="tile-title">Rebates Process</h3>
                 <p class="tile-desc">
-                    Apply or re-apply for rebate benefits if you own a residential property
-                    within the City of Johannesburg boundaries.
+                    Apply or re-apply for rebate benefits if you own a
+                    residential property within the City of Johannesburg
+                    boundaries. Requires account login.
                 </p>
                 <div class="tile-actions">
                     <a href="/Rebates/Index" class="tile-btn tile-btn-solid">
@@ -180,82 +254,232 @@
                 </div>
             </div>
 
-        </div>
-
-        @* ── Previous Rolls (collapsible) ── *@
-        <div class="prev-rolls">
-            <button class="prev-rolls-toggle" id="prevToggle" onclick="togglePrevRolls()">
-                <span><i class="fa-solid fa-clock-rotate-left"></i> Previous Supplementary Rolls</span>
-                <i class="fa-solid fa-chevron-down prev-chevron" id="prevChevron"></i>
-            </button>
-            <div class="prev-rolls-content" id="prevContent">
-                <div class="prev-rolls-grid">
-                    <div class="prev-tile">
-                        <span class="prev-tile-status">CLOSED</span>
-                        <h4>Supplementary Roll 1</h4>
-                        <p>Archived roll — closed for objections.</p>
-                        <a href="/Home/DashboardSup1" class="prev-tile-btn">
-                            <i class="fa-solid fa-chart-bar"></i> View Dashboard
-                        </a>
-                    </div>
-                    <div class="prev-tile">
-                        <span class="prev-tile-status">CLOSED</span>
-                        <h4>Supplementary Roll 2</h4>
-                        <p>Archived roll — closed for objections.</p>
-                        <a href="/Home/DashboardSup2" class="prev-tile-btn">
-                            <i class="fa-solid fa-chart-bar"></i> View Dashboard
-                        </a>
-                    </div>
+            <div class="tile tile-attributes">
+                <div class="tile-status-row">
+                    <span class="tile-status badge-open">
+                        <span class="tile-status-dot"></span> NEW
+                    </span>
+                    <span class="tile-badge-v2">V2</span>
+                </div>
+                <div class="tile-icon">
+                    <i class="fa-solid fa-clipboard-list"></i>
+                </div>
+                <h3 class="tile-title">Property Attributes</h3>
+                <p class="tile-desc">
+                    Submit updated or additional property information for
+                    valuation roll preparation. Search your property,
+                    link to your profile and fill in the attributes form.
+                </p>
+                <div class="tile-actions">
+                    <a href="/attributes/about" class="tile-btn tile-btn-solid">
+                        <i class="fa-solid fa-circle-info"></i> Learn More
+                    </a>
                 </div>
             </div>
-        </div>
 
+        </div>
     </div>
 </section>
 
 @section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/datatables.net@1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/datatables.net-bs5@1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/datatables.net-buttons@2.4.1/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/datatables.net-buttons-bs5@2.4.1/js/buttons.bootstrap5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+
     <script>
-        // ── Disclaimer (cookie-based, once per session) ───────────────────
-        (function () {
-            const backdrop = document.getElementById('disclaimerBackdrop');
-            const modal    = document.getElementById('disclaimerModal');
-            const btn      = document.getElementById('acceptDisclaimer');
-            if (!modal) return;
+        // ════════════════════════════════════════════════════════════════════
+        //  GLOBAL FUNCTIONS — must be outside DOMContentLoaded so onclick=""
+        //  attributes on HTML elements can reach them
+        // ════════════════════════════════════════════════════════════════════
 
-            // Show
-            document.body.style.overflow = 'hidden';
+        // ── Load townships + schemes on page load ────────────────────────────
+        function loadTownshipsAndSchemes() {
+        var townSel   = document.getElementById('hs_town');
+        var schemeSel = document.getElementById('hs_scheme');
+        if (!townSel || !schemeSel) return;
 
-            btn.addEventListener('click', async function () {
-                // POST to set cookie server-side
-                await fetch('/accept-disclaimer', {
-                    method: 'POST',
-                    headers: { 'RequestVerificationToken': getAntiForgeryToken() }
-                });
-                backdrop.classList.remove('show');
-                modal.classList.remove('show');
-                document.body.style.overflow = '';
-            });
+        townSel.disabled    = true;
+        schemeSel.disabled  = true;
+        townSel.innerHTML   = '<option value="">— Loading townships… —</option>';
+        schemeSel.innerHTML = '<option value="">— Loading schemes… —</option>';
 
-            // Trigger animation
-            requestAnimationFrame(() => {
-                backdrop.classList.add('show');
-                modal.classList.add('show');
-            });
-        })();
+        fetch('/home/townships')
+        .then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+        })
+        .then(function (data) {
+        var towns   = Array.isArray(data.towns)   ? data.towns   : [];
+        var schemes = Array.isArray(data.schemes) ? data.schemes : [];
 
-        function getAntiForgeryToken() {
-            const el = document.querySelector('input[name="__RequestVerificationToken"]');
-            return el ? el.value : '';
+        // Populate townships
+        townSel.innerHTML =
+        '<option value="">— Select Township (optional) —</option>';
+        towns.forEach(function (t) {
+        var o = document.createElement('option');
+        o.value = t; o.textContent = t;
+        townSel.appendChild(o);
+        });
+        townSel.disabled = false;
+
+        // Populate schemes
+        schemeSel.innerHTML =
+        '<option value="">— Select Scheme (optional) —</option>';
+        schemes.forEach(function (s) {
+        var o = document.createElement('option');
+        o.value = s; o.textContent = s;
+        schemeSel.appendChild(o);
+        });
+        schemeSel.disabled = false;
+
+        console.log('[HomeSearch] ' + towns.length +
+        ' towns + ' + schemes.length + ' schemes loaded');
+        })
+        .catch(function (err) {
+        console.error('[HomeSearch] Load error:', err);
+        townSel.innerHTML =
+        '<option value="">— Could not load —</option>';
+        schemeSel.innerHTML =
+        '<option value="">— Could not load —</option>';
+        townSel.disabled   = false;
+        schemeSel.disabled = false;
+
+        // Retry button under the town dropdown
+        var btn       = document.createElement('button');
+        btn.type      = 'button';
+        btn.className = 'hs-retry-btn';
+        btn.innerHTML = '<i class="fa-solid fa-rotate-right"></i> Retry';
+        btn.onclick   = function () { btn.remove(); loadTownshipsAndSchemes(); };
+        townSel.parentElement.appendChild(btn);
+        });
         }
 
-        // ── Previous rolls toggle ─────────────────────────────────────────
-        function togglePrevRolls() {
-            const content  = document.getElementById('prevContent');
-            const chevron  = document.getElementById('prevChevron');
-            const isOpen   = content.classList.contains('open');
-            content.classList.toggle('open', !isOpen);
-            chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+        // ── Search all rolls ─────────────────────────────────────────────────
+        function runHomeSearch() {
+        var town    = document.getElementById('hs_town').value.trim();
+        var stand   = document.getElementById('hs_stand').value.trim();
+        var address = document.getElementById('hs_address').value.trim();
+        var scheme  = document.getElementById('hs_scheme').value.trim();
+        var unit    = document.getElementById('hs_unit').value.trim();
+
+        if (!town && !stand && !address && !scheme && !unit) {
+        showHsError('Please enter at least one search field.');
+        return;
         }
+
+        var btn      = document.getElementById('hsSearchBtn');
+        btn.innerHTML= '<i class="fa-solid fa-spinner fa-spin"></i> Searching all rolls…';
+        btn.disabled = true;
+
+        var body = new URLSearchParams({
+        SearchTownName : town,
+        SearchStand    : stand,
+        SearchAddress  : address,
+        SearchScheme   : scheme,
+        SearchUnit     : unit
+        });
+
+        fetch('/home/search', {
+        method : 'POST',
+        headers: {
+        'Content-Type'             : 'application/x-www-form-urlencoded',
+        'RequestVerificationToken' : getToken(),
+        'X-Requested-With'         : 'XMLHttpRequest'
+        },
+        body: body.toString()
+        })
+        .then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.text();
+        })
+        .then(function (html) {
+        var wrap  = document.getElementById('hsResults');
+        var inner = document.getElementById('hsResultsInner');
+        inner.innerHTML    = html;
+        wrap.style.display = 'block';
+
+        var badge = document.getElementById('hsResultCount');
+        if (badge) badge.style.display = 'inline-flex';
+
+        wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        })
+        .catch(function (err) {
+        console.error('[HomeSearch]', err);
+        showHsError('Search failed. Please try again.');
+        })
+        .finally(function () {
+        btn.innerHTML= '<i class="fa-solid fa-magnifying-glass"></i> Search All Rolls';
+        btn.disabled = false;
+        });
+        }
+
+        // ── Show inline error ────────────────────────────────────────────────
+        function showHsError(msg) {
+        var old = document.getElementById('hsSearchErr');
+        if (old) old.remove();
+        var div       = document.createElement('div');
+        div.id        = 'hsSearchErr';
+        div.className = 'hs-search-error';
+        div.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> ' + msg;
+        document.getElementById('hsFormBody')
+        .insertAdjacentElement('afterend', div);
+        setTimeout(function () { div.remove(); }, 5000);
+        }
+
+        // ── Get antiforgery token ────────────────────────────────────────────
+        function getToken() {
+        var el = document.querySelector(
+        'input[name="__RequestVerificationToken"]');
+        return el ? el.value : '';
+        }
+
+        // ════════════════════════════════════════════════════════════════════
+        //  INIT — only wiring up, no function definitions here
+        // ════════════════════════════════════════════════════════════════════
+        document.addEventListener('DOMContentLoaded', function () {
+
+        // Load townships + schemes automatically
+        loadTownshipsAndSchemes();
+
+        // Enter key on text-only inputs triggers search
+        // (hs_town and hs_scheme are selects — no Enter needed there)
+        ['hs_stand', 'hs_address', 'hs_unit'].forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el) el.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') runHomeSearch();
+        });
+        });
+
+        // Disclaimer
+        var backdrop  = document.getElementById('disclaimerBackdrop');
+        var modal     = document.getElementById('disclaimerModal');
+        var acceptBtn = document.getElementById('acceptDisclaimer');
+        if (modal && acceptBtn) {
+        document.body.style.overflow = 'hidden';
+        acceptBtn.addEventListener('click', async function () {
+        await fetch('/accept-disclaimer', {
+        method : 'POST',
+        headers: { 'RequestVerificationToken': getToken() }
+        });
+        if (backdrop) backdrop.classList.remove('show');
+        modal.classList.remove('show');
+        document.body.style.overflow = '';
+        });
+        requestAnimationFrame(function () {
+        if (backdrop) backdrop.classList.add('show');
+        modal.classList.add('show');
+        });
+        }
+
+        });
     </script>
+
     @Html.AntiForgeryToken()
 }

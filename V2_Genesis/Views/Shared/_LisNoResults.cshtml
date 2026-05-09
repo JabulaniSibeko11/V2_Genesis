@@ -1,0 +1,411 @@
+﻿@using V2_Genesis.Models.LIS
+@{
+    var rollSource   = ViewBag.RollSource  as string       ?? "Objection_Supp3";
+    var rollName     = ViewBag.RollName    as string       ?? rollSource;
+    var towns        = ViewBag.Towns       as List<string> ?? new List<string>();
+    var schemes      = ViewBag.Schemes     as List<string> ?? new List<string>();
+    var sp           = ViewBag.SearchParams as
+                       LisSearchParams
+                       ?? new LisSearchParams();
+}
+
+<div class="omit-wrap">
+
+    <!-- ── Status banner ──────────────────────────────────── -->
+    <div class="omit-banner">
+        <div class="omit-banner-icon">
+            <i class="fa-solid fa-circle-xmark"></i>
+        </div>
+        <div>
+            <h3 class="omit-banner-title">
+                Property Not Found in LIS
+            </h3>
+            <p class="omit-banner-sub">
+                We searched the Land Information System for
+                <strong>@rollName</strong> but could not locate this
+                property. If the property exists but is missing from the
+                roll, you can lodge it as an <strong>omission</strong>.
+            </p>
+        </div>
+    </div>
+
+    <!-- ── What is an omission? ───────────────────────────── -->
+    <div class="omit-info">
+        <i class="fa-solid fa-circle-info"></i>
+        <div>
+            <strong>What is an omission?</strong>
+            An omission is when a property exists physically but has
+            not been included on the valuation roll. Lodging an omission
+            objection notifies the City so the property can be added
+            and correctly valued.
+        </div>
+    </div>
+
+    <!-- ── Omission form ──────────────────────────────────── -->
+    <div class="omit-card">
+        <div class="omit-card-header">
+            <i class="fa-solid fa-pen-to-square"></i>
+            Confirm Property Details
+            <span class="omit-card-sub">
+                Review and edit the details below before proceeding
+            </span>
+        </div>
+
+        <form method="post"
+              action="/search/@rollSource/omission"
+              id="omissionForm">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="rollSource" value="@rollSource" />
+
+            <div class="omit-form-body">
+
+                <!-- Town dropdown (from propertyDetailsTown SP) -->
+                <div class="omit-field omit-field-full">
+                    <label class="omit-label" for="FH_Town">
+                        <i class="fa-solid fa-map-pin"></i>
+                        Township <span class="omit-required">*</span>
+                    </label>
+                    <select name="FH_Town" id="FH_Town"
+                            class="omit-input" required>
+                        <option value="">— Select Township —</option>
+                        @foreach (var town in towns)
+                        {
+                            var match = string.Equals(town,
+                                sp.SearchTownName?.Trim(),
+                                StringComparison.OrdinalIgnoreCase);
+                           <option value="@town" selected="@(match ? "selected" : null)">
+    @town
+</option>
+                        }
+                    </select>
+                    <p class="omit-hint">
+                        Select the township where the property is located
+                    </p>
+                </div>
+
+                <!-- Address -->
+                <div class="omit-field">
+                    <label class="omit-label" for="FH_Address">
+                        <i class="fa-solid fa-road"></i>
+                        Street Address
+                    </label>
+                    <input type="text"
+                           name="FH_Address" id="FH_Address"
+                           class="omit-input"
+                           placeholder="e.g. 123 Main Street"
+                           value="@(sp.SearchAddress ?? "")" />
+                </div>
+
+                <!-- Stand / ERF -->
+                <div class="omit-field">
+                    <label class="omit-label" for="FH_Stand">
+                        <i class="fa-solid fa-hashtag"></i>
+                        ERF / Stand Number
+                    </label>
+                    <input type="text"
+                           name="FH_Stand" id="FH_Stand"
+                           class="omit-input"
+                           placeholder="e.g. 1234"
+                           value="@(sp.SearchStand ?? "")" />
+                </div>
+
+                <!-- Scheme (dropdown from propertyDetailsScheme SP) -->
+                <div class="omit-field">
+                    <label class="omit-label" for="FH_Scheme">
+                        <i class="fa-solid fa-building"></i>
+                        Scheme Name
+                    </label>
+                    @if (schemes.Any())
+                    {
+                        <select name="FH_Scheme" id="FH_Scheme"
+                                class="omit-input">
+                            <option value="">— Select Scheme (optional) —</option>
+                            @foreach (var scheme in schemes)
+                            {
+                                var match = string.Equals(scheme,
+                                    sp.SearchScheme?.Trim(),
+                                    StringComparison.OrdinalIgnoreCase);
+                             
+                                
+
+                                <option value="@scheme" selected="@(match ? "selected" : null)">
+    @scheme
+</option>
+                            }
+                        </select>
+                    }
+                    else
+                    {
+                        <input type="text"
+                               name="FH_Scheme" id="FH_Scheme"
+                               class="omit-input"
+                               placeholder="Scheme name (optional)"
+                               value="@(sp.SearchScheme ?? "")" />
+                    }
+                </div>
+
+                <!-- Unit number -->
+                <div class="omit-field">
+                    <label class="omit-label" for="FH_Unit">
+                        <i class="fa-solid fa-door-open"></i>
+                        Unit Number
+                    </label>
+                    <input type="text"
+                           name="FH_Unit" id="FH_Unit"
+                           class="omit-input"
+                           placeholder="e.g. 5 (optional)"
+                           value="@(sp.SearchUnit ?? "")" />
+                </div>
+
+                <!-- Optional description -->
+                <div class="omit-field omit-field-full">
+                    <label class="omit-label" for="FH_Description">
+                        <i class="fa-solid fa-file-lines"></i>
+                        Additional Description
+                        <span class="omit-optional">(optional)</span>
+                    </label>
+                    <input type="text"
+                           name="FH_Description" id="FH_Description"
+                           class="omit-input"
+                           placeholder="Any other identifying details about the property" />
+                    <p class="omit-hint">
+                        If none entered, a description will be built from the fields above
+                    </p>
+                </div>
+
+            </div>
+
+            <!-- Actions -->
+            <div class="omit-actions">
+                <button type="submit" class="omit-btn-primary"
+                        id="omitSubmitBtn">
+                    <i class="fa-solid fa-file-signature"></i>
+                    Lodge as Omission
+                </button>
+                <button type="button"
+                        class="omit-btn-ghost"
+                        onclick="resetLisSearch()">
+                    <i class="fa-solid fa-rotate-left"></i>
+                    Refine Search
+                </button>
+            </div>
+
+        </form>
+    </div>
+
+    <!-- ── Important notice ───────────────────────────────── -->
+    <div class="omit-notice">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <div>
+            <strong>Important:</strong> Lodging an omission objection
+            does not guarantee the property will be added to the roll.
+            The City will investigate and determine the appropriate
+            valuation. If you need assistance, contact the Valuation
+            Office on <strong>011 407-6622</strong>.
+        </div>
+    </div>
+
+</div>
+
+<script>
+function resetLisSearch() {
+    // Hide the LIS no-results and restore the original search results container
+    document.getElementById('lisResultsContainer').innerHTML = '';
+    // Scroll back up to the search form
+    var searchForm = document.querySelector('.ps-search-form, .ps-form, form[action*="/search/"]');
+    if (searchForm) {
+        searchForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+}
+
+// Client-side validation before submit
+document.getElementById('omissionForm')?.addEventListener('submit', function(e) {
+    var town = document.getElementById('FH_Town').value.trim();
+    var addr = document.getElementById('FH_Address').value.trim();
+    var stand= document.getElementById('FH_Stand').value.trim();
+
+    if (!town) {
+        e.preventDefault();
+        document.getElementById('FH_Town').focus();
+        showOmitError('Please select a township before proceeding.');
+        return;
+    }
+
+    if (!addr && !stand) {
+        e.preventDefault();
+        showOmitError('Please provide at least an address or ERF number.');
+        return;
+    }
+
+    // Show loading state
+    var btn = document.getElementById('omitSubmitBtn');
+    btn.innerHTML =
+        '<i class="fa-solid fa-spinner fa-spin"></i> Processing…';
+    btn.disabled = true;
+});
+
+function showOmitError(msg) {
+    var existing = document.getElementById('omitValidationError');
+    if (existing) existing.remove();
+
+    var err = document.createElement('div');
+    err.id = 'omitValidationError';
+    err.className = 'omit-validation-error';
+    err.innerHTML =
+        '<i class="fa-solid fa-circle-xmark"></i> ' + msg;
+
+    document.querySelector('.omit-actions').insertAdjacentElement(
+        'beforebegin', err);
+
+    err.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    setTimeout(function() { err.remove(); }, 5000);
+}
+</script>
+
+<style>
+/* ════════════════════════════════════════════════════════
+   LIS NO RESULTS / OMISSION
+════════════════════════════════════════════════════════ */
+.omit-wrap {
+    font-family: 'Poppins', sans-serif;
+    display: flex; flex-direction: column; gap: 16px;
+    margin-top: 20px;
+}
+
+/* ── Status banner ──────────────────────────────────────── */
+.omit-banner {
+    display: flex; align-items: flex-start; gap: 14px;
+    padding: 18px 20px;
+    background: #fef2f2;
+    border: 1.5px solid #fca5a5;
+    border-radius: 12px;
+}
+.omit-banner-icon {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: #fee2e2; color: #b91c1c;
+    font-size: 20px; display: flex;
+    align-items: center; justify-content: center; flex-shrink: 0;
+}
+.omit-banner-title {
+    font-size: 16px; font-weight: 800; color: #1a1a1a;
+    margin: 0 0 5px;
+}
+.omit-banner-sub {
+    font-size: 13px; color: #6b6b6b; line-height: 1.6; margin: 0;
+}
+
+/* ── Info box ───────────────────────────────────────────── */
+.omit-info {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 13px 16px;
+    background: #eff6ff; border: 1px solid #bfdbfe;
+    border-radius: 9px; font-size: 13px; color: #1e40af;
+    line-height: 1.6;
+}
+.omit-info i { color: #3b82f6; flex-shrink: 0; margin-top: 2px; }
+
+/* ── Form card ──────────────────────────────────────────── */
+.omit-card {
+    background: #fff;
+    border: 1.5px solid #e8e8e8;
+    border-radius: 12px; overflow: hidden;
+    box-shadow: 0 2px 12px rgba(0,0,0,.07);
+}
+.omit-card-header {
+    display: flex; align-items: center; gap: 10px;
+    padding: 14px 20px;
+    background: #1a1a1a; color: #e6b000;
+    font-size: 14px; font-weight: 700;
+}
+.omit-card-sub {
+    font-size: 11.5px; color: rgba(255,255,255,.5);
+    font-weight: 400; margin-left: 4px;
+}
+.omit-form-body {
+    padding: 20px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+.omit-field        { display: flex; flex-direction: column; gap: 5px; }
+.omit-field-full   { grid-column: 1 / -1; }
+
+.omit-label {
+    font-size: 12.5px; font-weight: 700; color: #1a1a1a;
+    display: flex; align-items: center; gap: 6px;
+}
+.omit-required { color: #e53e3e; }
+.omit-optional { font-weight: 400; color: #6b6b6b; font-size: 11px; }
+
+.omit-input {
+    padding: 10px 12px;
+    border: 1.5px solid #e8e8e8; border-radius: 8px;
+    font-family: 'Poppins', sans-serif; font-size: 13.5px;
+    color: #1a1a1a; outline: none; width: 100%;
+    transition: border-color .15s;
+    background: #fff;
+}
+.omit-input:focus { border-color: #e6b000; }
+
+.omit-hint {
+    font-size: 11px; color: #6b6b6b; margin: 0;
+}
+
+/* ── Actions ────────────────────────────────────────────── */
+.omit-actions {
+    display: flex; gap: 12px; flex-wrap: wrap;
+    padding: 16px 20px;
+    border-top: 1px solid #f0f0f0;
+    background: #fafafa;
+}
+.omit-btn-primary {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 12px 22px; border-radius: 9px;
+    background: #1a1a1a; color: #e6b000;
+    border: none; cursor: pointer;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px; font-weight: 700;
+    transition: background .15s;
+}
+.omit-btn-primary:hover    { background: #333; }
+.omit-btn-primary:disabled {
+    opacity: .5; cursor: not-allowed;
+}
+.omit-btn-ghost {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 12px 22px; border-radius: 9px;
+    background: #f5f5f5; color: #6b6b6b;
+    border: none; cursor: pointer;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px; font-weight: 600;
+    transition: background .15s;
+}
+.omit-btn-ghost:hover { background: #ebebeb; color: #1a1a1a; }
+
+/* ── Validation error ───────────────────────────────────── */
+.omit-validation-error {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 16px; margin: 0 20px 8px;
+    background: #fef2f2; border: 1px solid #fca5a5;
+    border-radius: 8px; font-size: 13px; color: #b91c1c;
+}
+
+/* ── Important notice ───────────────────────────────────── */
+.omit-notice {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 12px 16px;
+    background: #fffbeb; border: 1px solid #fde68a;
+    border-radius: 9px; font-size: 12.5px; color: #92400e;
+    line-height: 1.6;
+}
+.omit-notice i { color: #f59e0b; flex-shrink: 0; margin-top: 1px; }
+
+/* ── Mobile ─────────────────────────────────────────────── */
+@@media (max-width: 600px) {
+    .omit-form-body   { grid-template-columns: 1fr; }
+    .omit-field-full  { grid-column: 1; }
+    .omit-actions     { flex-direction: column; }
+    .omit-btn-primary,
+    .omit-btn-ghost   { width: 100%; justify-content: center; }
+}
+</style>

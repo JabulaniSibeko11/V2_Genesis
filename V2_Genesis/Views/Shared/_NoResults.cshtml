@@ -1,13 +1,18 @@
 ﻿@model V2_Genesis.Models.GvList
+
 <div class="ps-card ps-no-results-card">
     <div class="ps-no-results-body">
+
         <div class="ps-no-results-icon">
             <i class="fa-solid fa-magnifying-glass"></i>
         </div>
+
         <h3>No Properties Found</h3>
         <p>
-            No properties matched your search criteria on <strong>@Model?.Name</strong>.
+            No properties matched your search criteria on
+            <strong>@Model?.Name</strong>.
         </p>
+
         <div class="ps-no-results-tips">
             <p><strong>Try:</strong></p>
             <ul>
@@ -17,8 +22,123 @@
                 <li>Searching on LIS for the latest property data</li>
             </ul>
         </div>
-        <a href="/@Model?.ControllerName/PropertyIndex" class="ps-btn-primary" style="display:inline-flex;margin-top:16px;">
-            <i class="fa-solid fa-database"></i> Search on LIS
-        </a>
+
+        <!-- Search LIS button — reads original form values, no re-entry -->
+        <button type="button"
+                id="searchLisBtn"
+                class="ps-btn-lis"
+                data-roll="@Model?.Source"
+                onclick="triggerLisSearch(this)">
+            <i class="fa-solid fa-database"></i>
+            Search on LIS
+        </button>
+
+        <div id="lisSearching" class="lis-searching" style="display:none;">
+            <i class="fa-solid fa-spinner fa-spin"></i>
+            Searching Land Information System…
+        </div>
+
     </div>
 </div>
+
+@* LIS results will be injected here by triggerLisSearch() *@
+<div id="lisResultsContainer"></div>
+
+<script>
+function triggerLisSearch(btn) {
+    var rollSource = btn.getAttribute('data-roll');
+
+    // ── Read params from the original search form ─────────────────────
+    // The search form is on the same page — grab values by name
+    function getVal(name) {
+        var el = document.querySelector(
+            'input[name="' + name + '"], select[name="' + name + '"]');
+        return el ? el.value.trim() : '';
+    }
+
+    var params = new URLSearchParams({
+        SearchTownName : getVal('SearchTownName'),
+        SearchStand    : getVal('SearchStand'),
+        SearchAddress  : getVal('SearchAddress'),
+        SearchScheme   : getVal('SearchScheme'),
+        SearchUnit     : getVal('SearchUnit'),
+        SearchOwner    : getVal('SearchOwner'),
+    });
+
+    // Show spinner, hide button
+    btn.style.display = 'none';
+    document.getElementById('lisSearching').style.display = 'flex';
+
+    // ── Get antiforgery token ─────────────────────────────────────────
+    var token = document.querySelector(
+        'input[name="__RequestVerificationToken"]')?.value ?? '';
+
+    // ── POST to LIS endpoint ──────────────────────────────────────────
+    fetch('/search/' + rollSource + '/lis', {
+        method : 'POST',
+        headers: {
+            'Content-Type'               : 'application/x-www-form-urlencoded',
+            'RequestVerificationToken'   : token,
+            'X-Requested-With'           : 'XMLHttpRequest'
+        },
+        body: params.toString()
+    })
+    .then(function(res) { return res.text(); })
+    .then(function(html) {
+        document.getElementById('lisSearching').style.display = 'none';
+        document.getElementById('lisResultsContainer').innerHTML = html;
+
+        // Re-init DataTables if results came back with the standard table
+        if (typeof $ !== 'undefined' && $.fn.DataTable) {
+            if ($('#psResultsTable').length &&
+                !$.fn.DataTable.isDataTable('#psResultsTable')) {
+                // DataTable init is inside the partial — let it run
+            }
+        }
+
+        // Scroll smoothly to results
+        document.getElementById('lisResultsContainer')
+            .scrollIntoView({ behavior: 'smooth', block: 'start' });
+    })
+    .catch(function(err) {
+        document.getElementById('lisSearching').style.display = 'none';
+        btn.style.display = 'inline-flex';
+        document.getElementById('lisResultsContainer').innerHTML =
+            '<div class="lis-fetch-error">' +
+            '<i class="fa-solid fa-circle-xmark"></i> ' +
+            'LIS search failed. Please try again.' +
+            '</div>';
+        console.error('[LIS]', err);
+    });
+}
+</script>
+
+<style>
+/* ── LIS search button ─────────────────────────────────── */
+.ps-btn-lis {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 12px 24px; border-radius: 9px;
+    background: #15803d; color: #fff;
+    border: none; cursor: pointer;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px; font-weight: 700;
+    margin-top: 16px; transition: background .15s;
+}
+.ps-btn-lis:hover { background: #166534; }
+
+/* ── Searching spinner ─────────────────────────────────── */
+.lis-searching {
+    display: flex; align-items: center; gap: 10px;
+    margin-top: 16px; font-size: 13.5px;
+    color: #15803d; font-weight: 600;
+}
+.lis-searching i { font-size: 18px; }
+
+/* ── Fetch error ───────────────────────────────────────── */
+.lis-fetch-error {
+    display: flex; align-items: center; gap: 8px;
+    margin-top: 16px; padding: 12px 16px;
+    background: #fef2f2; border: 1px solid #fca5a5;
+    border-radius: 8px; font-size: 13px; color: #b91c1c;
+}
+</style>

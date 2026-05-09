@@ -9,7 +9,9 @@ using System.Data;
 using System.Security.Claims;
 using V2_Genesis.Data;
 using V2_Genesis.Models;
+using V2_Genesis.Models.LIS;
 using V2_Genesis.Models.Results;
+using V2_Genesis.Services.Implementations;
 using V2_Genesis.Services.Interfaces;
 using V2_Genesis.Services.PropertySearch;
 
@@ -22,12 +24,14 @@ public class PropertySearchController : Controller
     private readonly ApplicationDbContext _db;
     private readonly RollDatesSettings _rollDates;
     private readonly IConfiguration _config;
+    private readonly ILisSearchService _lisSearchService;
+    private readonly IOmissionService _omissionService;
     private readonly ILogger<PropertySearchController> _logger;
 
     public PropertySearchController(
         IPropertySearchService search,
         ApplicationDbContext db,
-      IOptions<RollDatesSettings> rollDatesOpts,IConfiguration config,
+      IOptions<RollDatesSettings> rollDatesOpts,IConfiguration config,ILisSearchService lisSearchService,IOmissionService omissionService,
   ILogger<PropertySearchController> logger)
     {
         _search = search;
@@ -35,6 +39,8 @@ public class PropertySearchController : Controller
         _rollDates = rollDatesOpts.Value;
         _config = config;
         _logger = logger;
+        _lisSearchService = lisSearchService;
+        _omissionService = omissionService;
     }
 
     // ── GET /search/{rollSource} ──────────────────────────────────────
@@ -168,5 +174,126 @@ public class PropertySearchController : Controller
         }
 
         return RedirectToAction("Index", "Dashboard");
+    }
+    [HttpPost]
+    [Authorize]
+    [Route("search/{rollSource}/lis")]
+    public async Task<IActionResult> SearchLis(
+    string rollSource,
+    string? SearchTownName,
+    string? SearchStand,
+    string? SearchAddress,
+    string? SearchScheme,
+    string? SearchUnit,
+    string? SearchOwner)
+    {
+        var p = new LisSearchParams
+        {
+            SearchTownName = SearchTownName,
+            SearchStand = SearchStand,
+            SearchAddress = SearchAddress,
+            SearchScheme = SearchScheme,
+            SearchUnit = SearchUnit,
+            SearchOwner = SearchOwner,
+        };
+
+        var lisResults = await _lisSearchService.SearchAsync(rollSource, p);
+
+        if (!lisResults.Any())
+        {
+            // Load towns + schemes in parallel so the omission form
+            // is ready without a second round-trip
+            var townsTask = _omissionService.GetTownsAsync(rollSource);
+            var schemesTask = _omissionService.GetSchemesAsync(rollSource);
+            await Task.WhenAll(townsTask, schemesTask);
+
+            var roll = await _db.GvList
+                .FirstOrDefaultAsync(r => r.Source == rollSource);
+
+            ViewBag.RollSource = rollSource;
+            ViewBag.RollName = roll?.Name ?? rollSource;
+            ViewBag.Towns = townsTask.Result;
+            ViewBag.Schemes = schemesTask.Result;
+            ViewBag.SearchParams = p;          // pre-fill editable fields
+
+            return PartialView("_LisNoResults");
+        }
+
+        // Map and return results in the standard partial
+        var mapped = lisResults.Select(l => new PropertySearchResult
+        {
+            TownNameDesc = l.TownNameDescription,
+            LisStreetAddress = l.LisStreetAddress,
+            Erf = l.Erf,
+            Ptn = l.Ptn,
+            Re = l.Re,
+            CatDesc = l.CATDescription,
+            RateableArea = l.RateableArea,
+            MarketValue = l.MarketValue,
+            SchemeName = l.SchemeName,
+            SchemeNumber = l.SchemeNumber,
+            SchemeYear = l.SchemeYear,
+            Lease = l.Lease,
+            UnitNo = int.TryParse(l.UnitNo, out var u) ? u : 0,
+            Reason = l.Reason,
+            UnitKey = l.UnitKey,
+            ValuationKey = l.ValuationKey,
+        }).ToList();
+
+        var rollRecord = await _db.GvList
+            .FirstOrDefaultAsync(r => r.Source == rollSource);
+
+        ViewBag.Roll = rollRecord;
+        ViewBag.IsLisSearch = true;
+
+        return PartialView("_PropertySearchResults", mapped);
+    }
+
+
+    // ── POST /search/{rollSource}/omission ────────────────────────────────
+    // Called when client confirms their details and clicks "Lodge as Omission"
+    [HttpPost]
+    [Authorize]
+    [Route("search/{rollSource}/omission")]
+    [ValidateAntiForgeryToken]
+    public IActionResult SubmitOmission(
+        string rollSource,
+        string? FH_Town,
+        string? FH_Address,
+        string? FH_Stand,
+        string? FH_Scheme,
+        string? FH_Unit,
+        string? FH_Description)
+    {
+        // Build a human-readable description of the omitted property
+        var parts = new List<string>();
+        if (!string.IsNullOrWhiteSpace(FH_Stand))
+            parts.Add($"ERF {FH_Stand}");
+        if (!string.IsNullOrWhiteSpace(FH_Address))
+            parts.Add(FH_Address);
+        if (!string.IsNullOrWhiteSpace(FH_Scheme))
+            parts.Add($"Scheme: {FH_Scheme}");
+        if (!string.IsNullOrWhiteSpace(FH_Unit))
+            parts.Add($"Unit {FH_Unit}");
+
+        var propertyDesc = string.IsNullOrWhiteSpace(FH_Description)
+            ? string.Join(" | ", parts)
+            : FH_Description.Trim();
+
+        // Set omission flags — CheckProperty reads these from TempData
+        TempData["OmissionStatus"] = "True";
+        TempData["OmittedTownName"] = FH_Town?.Trim();
+        TempData["OmittedPropertyDesc"] = propertyDesc;
+        TempData["RollSource"] = rollSource;
+
+        // Store all fields so CheckProperty / objection form can access them
+        TempData["Omission_Address"] = FH_Address?.Trim();
+        TempData["Omission_Stand"] = FH_Stand?.Trim();
+        TempData["Omission_Scheme"] = FH_Scheme?.Trim();
+        TempData["Omission_Unit"] = FH_Unit?.Trim();
+
+        // Redirect to the V2 CheckProperty flow with omission source
+        return RedirectToAction("CheckProperty", "Objection",
+            new { rollSource, PropertyFrom = rollSource, omission = true });
     }
 }

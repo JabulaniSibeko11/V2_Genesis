@@ -1,6 +1,8 @@
 ﻿@model List<V2_Genesis.Models.PropertySearchResult>
 @{
-    var roll = ViewBag.Roll as V2_Genesis.Models.GvList;
+    var roll       = ViewBag.Roll as V2_Genesis.Models.GvList;
+    var isLis      = ViewBag.IsLisSearch as bool? ?? false;
+    var propFrom   = isLis ? "LIS" : (roll?.Source ?? "");
 
     string[] headers = {
         "TOWNSHIP", "ADDRESS", "ERF", "PTN", "RE",
@@ -8,6 +10,19 @@
         "SCHEME NAME", "SCHEME NO.", "SCHEME YEAR",
         "LEASE (Y/N)", "UNIT NO.", "REMARKS"
     };
+
+
+}
+
+
+@if (isLis)
+{
+    <!-- LIS results banner -->
+    <div class="lis-results-banner">
+        <i class="fa-solid fa-database"></i>
+        Results from the <strong>Land Information System (LIS)</strong>
+        — @Model.Count propert@(Model.Count == 1 ? "y" : "ies") found
+    </div>
 }
 
 <table id="psResultsTable" class="display table ps-table">
@@ -23,18 +38,20 @@
         @foreach (var item in Model)
         {
             <tr>
-                <!-- Township — clickable link to view & link property -->
-               @*  <td>
-                    <a class="ps-town-link"
-                           href="/@roll?.ControllerName/CheckProperty?sourceTable=@roll?.Source&UnitKey=@item.UnitKey&ValuationKey=@item.ValuationKey&AppealStatus=False">
-                        @item.TownNameDesc
-                    </a>
-                </td>
- *@
-                @* Change the township <td> to point to /property/view *@
                 <td>
-                    <a class="ps-town-link"
-                           href="/property/view?rollSource=@roll?.Source&unitKey=@item.UnitKey&valuationKey=@item.ValuationKey">
+                    @* LIS search: pass PropertyFrom=LIS so CheckProperty
+                       knows this came from the Land Information System   *@
+
+                     @{
+                    var viewUrl = $"/property/view?rollSource={roll?.Source?.Trim()}" +
+                                  $"&unitKey={item.UnitKey}" +
+                                  $"&valuationKey={item.ValuationKey}" +
+                                  $"&propertyFrom={propFrom?.Trim()}";
+                        }
+
+                    <a  class="ps-town-link" href="@viewUrl">
+                  
+                     
                         @item.TownNameDesc
                     </a>
                 </td>
@@ -59,10 +76,11 @@
 <script>
     $(document).ready(function () {
         if (!$.fn.DataTable.isDataTable('#psResultsTable')) {
-            var table = $('#psResultsTable').DataTable({
-                responsive : false,   // off — horizontal scroll handles mobile
+            $('#psResultsTable').DataTable({
+                responsive : false,
                 scrollX    : true,
                 autoWidth  : false,
+                destroy    : true,
                 dom        : '<"ps-dt-top"lBf>rt<"ps-dt-bottom"ip>',
                 lengthMenu : [[10, 25, 50, -1], [10, 25, 50, 'All']],
                 pageLength : 10,
@@ -84,25 +102,28 @@
                     lengthMenu       : 'Show _MENU_ entries',
                     info             : 'Showing _START_ to _END_ of _TOTAL_',
                     infoEmpty        : 'No properties found',
-                    infoFiltered     : '(filtered from _MAX_ total)'
+                    infoFiltered     : '(filtered from _MAX_ total)',
+                    emptyTable       : 'No properties found'
                 },
                 columnDefs: [
-                    { width: '160px', targets: 0  },  // Township
-                    { width: '190px', targets: 1  },  // Address
-                    { width: '65px',  targets: [2,3,4] },
-                    { width: '120px', targets: 5  },  // Category
+                    { width: '160px', targets: 0  },
+                    { width: '190px', targets: 1  },
+                    { width: '65px',  targets: [2, 3, 4] },
+                    { width: '120px', targets: 5  },
                     { orderable: false, targets: 13 }
                 ],
                 drawCallback : function () { formatMarketValues(); },
                 initComplete : function () {
                     formatMarketValues();
-                    const count = this.api().rows().count();
-                    // Update the modal header count badge
-                    const badge = document.getElementById('psmCount');
-                    if (badge) badge.textContent = count + ' ' + (count === 1 ? 'property' : 'properties');
+                    var count = this.api().rows().count();
+                    var badge = document.getElementById('psmCount');
+                    if (badge)
+                        badge.textContent =
+                            count + ' ' + (count === 1 ? 'property' : 'properties');
                     showSearchToaster(
-                        'Search Complete 🎉',
-                        'Found ' + count + ' matching ' + (count === 1 ? 'property' : 'properties'),
+                        '@(isLis ? "LIS Search Complete 🗄️" : "Search Complete 🎉")',
+                        'Found ' + count + ' matching ' +
+                        (count === 1 ? 'property' : 'properties'),
                         4000
                     );
                 }
@@ -112,7 +133,7 @@
 
     function formatMarketValues() {
         document.querySelectorAll('.ps-market-val').forEach(function (el) {
-            const raw = parseFloat(el.textContent.replace(/[^0-9.-]+/g, ''));
+            var raw = parseFloat(el.textContent.replace(/[^0-9.-]+/g, ''));
             if (!isNaN(raw) && raw > 0) {
                 el.textContent = raw.toLocaleString('en-ZA', {
                     style: 'currency', currency: 'ZAR',
@@ -123,22 +144,33 @@
     }
 
     function showSearchToaster(title, message, duration) {
-        let c = document.querySelector('.toaster-container');
+        var c = document.querySelector('.toaster-container');
         if (!c) {
             c = document.createElement('div');
             c.className = 'toaster-container';
             document.body.appendChild(c);
         }
-        const t = document.createElement('div');
+        var t = document.createElement('div');
         t.className = 'toaster';
-        t.innerHTML = `
-            <div class="toaster-icon">🎉</div>
-            <div class="toaster-content">
-                <div class="toaster-title">${title}</div>
-                <div class="toaster-message">${message}</div>
-            </div>
-            <button class="toaster-close" onclick="this.closest('.toaster').remove()">×</button>`;
+        t.innerHTML =
+            '<div class="toaster-icon">🎉</div>' +
+            '<div class="toaster-content">' +
+                '<div class="toaster-title">' + title + '</div>' +
+                '<div class="toaster-message">' + message + '</div>' +
+            '</div>' +
+            '<button class="toaster-close" ' +
+            'onclick="this.closest(\'.toaster\').remove()">×</button>';
         c.appendChild(t);
-        setTimeout(() => t.remove(), duration);
+        setTimeout(function () { t.remove(); }, duration);
     }
 </script>
+
+<style>
+.lis-results-banner {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 16px; margin-bottom: 12px;
+    background: #f0fdf4; border: 1.5px solid #bbf7d0;
+    border-radius: 8px; font-size: 13px; color: #15803d;
+}
+.lis-results-banner i { font-size: 15px; }
+</style>

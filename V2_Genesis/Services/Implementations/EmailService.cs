@@ -1,6 +1,12 @@
-﻿using Microsoft.Extensions.Options;
+﻿using Dapper;
+using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Options;
+using QuestPDF.Fluent;
+using QuestPDF.Helpers;
+using QuestPDF.Infrastructure;
 using System.Net;
 using System.Net.Mail;
+using System.Net.Mime;
 using V2_Genesis.Models.Emails;
 using V2_Genesis.Services.Interfaces;
 
@@ -11,16 +17,33 @@ namespace V2_Genesis.Services.Implementations
         private readonly EmailSettings _cfg;
         private readonly AppSettings _app;
         private readonly ILogger<EmailService> _logger;
+        private readonly IConfiguration _config;
 
         public EmailService(
             IOptions<EmailSettings> emailOpts,
             IOptions<AppSettings> appOpts,
-            ILogger<EmailService> logger)
+            ILogger<EmailService> logger,
+            IConfiguration config)
         {
             _cfg = emailOpts.Value;
             _app = appOpts.Value;
             _logger = logger;
+            _config = config;
         }
+        private static readonly Dictionary<string, string> RollConnections = new()
+        {
+            ["Objection"] = "DefaultConnection",
+            ["Objection_Supp1"] = "Sup1Connection",
+            ["Objection_Supp2"] = "Sup2Connection",
+            ["Objection_Supp3"] = "Sup3Connection",
+        };
+        private static readonly Dictionary<string, string> RollTitles = new()
+        {
+            ["Objection"] = "General Valuation Roll (GV23)",
+            ["Objection_Supp1"] = "Supplementary Roll 1",
+            ["Objection_Supp2"] = "Supplementary Roll 2",
+            ["Objection_Supp3"] = "Supplementary Roll 3",
+        };
 
         public async Task SendEmailAsync(string toEmail, string subject, string htmlBody)
         {
@@ -118,6 +141,486 @@ namespace V2_Genesis.Services.Implementations
   </table>
 </body>
 </html>";
+
+
+        public async Task SendObjectionAcknowledgementAsync(
+       string objectionRef,
+       string rollSource,
+       bool isAppeal,
+       byte[] acknowledgementPdf,
+       string folderPath)
+        {
+            try
+            {
+                // 1. Resolve recipients from Obj_Section1
+                var recipients = await ResolveRecipientsAsync(objectionRef, rollSource);
+                if (!recipients.Any())
+                {
+                    _logger.LogWarning(
+                        "[Email] No valid email addresses found for {ObjRef} — skipping.",
+                        objectionRef);
+                    return;
+                }
+
+                var rollTitle = RollTitles.GetValueOrDefault(rollSource, rollSource);
+                var actionWord = isAppeal ? "Appeal" : "Objection";
+                var subject = $"City of Johannesburg — {actionWord} Acknowledgement: {objectionRef}";
+
+                // 2. Build HTML body
+                var htmlBody = BuildHtmlBody(
+                    objectionRef, rollTitle, isAppeal, recipients);
+
+                // 3. Build PDF copy of email notification
+                var emailRecordPdf = BuildEmailRecordPdf(
+                    objectionRef, rollTitle, isAppeal, recipients);
+
+                // 4. Save PDF copy to folder (non-blocking, don't fail on error)
+                _ = SaveEmailCopyAsync(folderPath, objectionRef, isAppeal, emailRecordPdf);
+
+                // 5. Send email to each recipient
+                foreach (var recipient in recipients)
+                {
+                    await SendMailAsync(
+                        recipient, subject, htmlBody,
+                        acknowledgementPdf, objectionRef, isAppeal);
+                }
+
+                _logger.LogInformation(
+                    "[Email] Sent {Count} acknowledgement email(s) for {ObjRef}",
+                    recipients.Count, objectionRef);
+            }
+            catch (Exception ex)
+            {
+                // Never crash the caller — email is best-effort
+                _logger.LogError(ex,
+                    "[Email] Failed sending acknowledgement for {ObjRef}", objectionRef);
+            }
+        }
+
+        // ════════════════════════════════════════════════════════════
+        //  RESOLVE RECIPIENTS from Obj_Section1
+        // ════════════════════════════════════════════════════════════
+        private async Task<List<EmailRecipient>> ResolveRecipientsAsync(
+            string objectionRef, string rollSource)
+        {
+            var connKey = RollConnections.GetValueOrDefault(
+                rollSource, "DefaultConnection");
+            var connStr = _config.GetConnectionString(connKey)!;
+
+            try
+            {
+                await using var conn = new SqlConnection(connStr);
+
+                var section1 = await conn.QueryFirstOrDefaultAsync(
+                    @"SELECT TOP 1
+                    Owner_Name, Owner_Email,
+                    Objector_Name, Objector_Email, Objector_Status,
+                    Representative_name, Rep_Email
+                  FROM dbo.Obj_Section1
+                  WHERE Objection_Ref_S1 = @Ref",
+                    new { Ref = objectionRef.Trim() });
+
+                if (section1 is null)
+                {
+                    _logger.LogWarning(
+                        "[Email] Obj_Section1 not found for {ObjRef}", objectionRef);
+                    return new();
+                }
+
+                var status = section1.Objector_Status?.ToString()?.Trim() ?? string.Empty;
+                var list = new List<EmailRecipient>();
+
+                // ── Owner ─────────────────────────────────────────────
+                if (status.Equals("Owner", StringComparison.OrdinalIgnoreCase))
+                {
+                    TryAdd(list,
+                        section1.Owner_Name?.ToString(),
+                        section1.Owner_Email?.ToString());
+                }
+
+                // ── Third Party ────────────────────────────────────────
+                else if (status.Equals("Third_Party", StringComparison.OrdinalIgnoreCase))
+                {
+                    TryAdd(list,
+                        section1.Objector_Name?.ToString(),
+                        section1.Objector_Email?.ToString());
+                }
+
+                // ── Representative ─────────────────────────────────────
+                // → send to owner AND representative
+                else if (status.Equals("Representative", StringComparison.OrdinalIgnoreCase))
+                {
+                    TryAdd(list,
+                        section1.Owner_Name?.ToString(),
+                        section1.Owner_Email?.ToString());
+
+                    TryAdd(list,
+                        section1.Representative_name?.ToString(),
+                        section1.Rep_Email?.ToString());
+                }
+
+                // ── Fallback (if Objector_Status is not set) ──────────
+                else
+                {
+                    TryAdd(list,
+                        section1.Owner_Name?.ToString(),
+                        section1.Owner_Email?.ToString());
+                }
+
+                return list;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex,
+                    "[Email] Error reading Obj_Section1 for {ObjRef}", objectionRef);
+                return new();
+            }
+        }
+
+        private static void TryAdd(List<EmailRecipient> list, string? name, string? email)
+        {
+            if (!string.IsNullOrWhiteSpace(email) &&
+                email.Contains('@'))  // basic guard
+            {
+                list.Add(new EmailRecipient(
+                    name?.Trim() ?? email.Trim(),
+                    email.Trim()));
+            }
+        }
+
+        // ════════════════════════════════════════════════════════════
+        //  HTML EMAIL BODY
+        // ════════════════════════════════════════════════════════════
+        private static string BuildHtmlBody(
+            string objectionRef,
+            string rollTitle,
+            bool isAppeal,
+            List<EmailRecipient> recipients)
+        {
+            var actionWord = isAppeal ? "appeal" : "objection";
+            var ActionWord = isAppeal ? "Appeal" : "Objection";
+            var ActorWord = isAppeal ? "Appellant" : "Objector";
+            var toName = recipients.FirstOrDefault()?.Name ?? "Valued Ratepayer";
+            var now = DateTime.Now.ToString("dd MMMM yyyy HH:mm");
+
+            return $@"
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+<meta charset='UTF-8' />
+<meta name='viewport' content='width=device-width, initial-scale=1.0' />
+<title>{ActionWord} Acknowledgement</title>
+<style>
+  body      {{ font-family: Arial, sans-serif; margin: 0; padding: 0;
+               background: #f5f5f5; color: #1a1a1a; }}
+  .wrapper  {{ max-width: 640px; margin: 32px auto; background: #fff;
+               border-radius: 10px; overflow: hidden;
+               box-shadow: 0 4px 20px rgba(0,0,0,.10); }}
+  .header   {{ background: #e6b000; padding: 28px 32px;
+               text-align: center; }}
+  .header h1{{ margin: 0; font-size: 18px; color: #1a1a1a;
+               font-weight: 800; letter-spacing: 1px; }}
+  .header p {{ margin: 6px 0 0; font-size: 12px; color: rgba(0,0,0,.6); }}
+  .body     {{ padding: 28px 32px; }}
+  .greeting {{ font-size: 15px; font-weight: 700; margin-bottom: 10px; }}
+  .intro    {{ font-size: 13.5px; color: #444; line-height: 1.7;
+               margin-bottom: 20px; }}
+  .ref-box  {{ background: #f7f7f7; border-radius: 8px;
+               padding: 16px 20px; margin-bottom: 20px;
+               border-left: 4px solid #e6b000; }}
+  .ref-box table{{ width: 100%; border-collapse: collapse; }}
+  .ref-box td   {{ padding: 5px 0; font-size: 13px; }}
+  .ref-box td:first-child {{ font-weight: 700; width: 180px; color: #555; }}
+  .notice   {{ background: #fffbeb; border: 1px solid #f59e0b;
+               border-radius: 8px; padding: 14px 18px; font-size: 13px;
+               color: #92400e; margin-bottom: 20px; line-height: 1.6; }}
+  .footer   {{ background: #1a1a1a; padding: 20px 32px; text-align: center;
+               color: rgba(255,255,255,.5); font-size: 11.5px; }}
+  .footer a {{ color: #e6b000; text-decoration: none; }}
+  .divider  {{ border: none; border-top: 1px solid #eeeeee; margin: 20px 0; }}
+</style>
+</head>
+<body>
+<div class='wrapper'>
+ 
+  <!-- Header -->
+  <div class='header'>
+    <h1>City of Johannesburg</h1>
+    <p>Valuation Services Department — {ActionWord} Acknowledgement</p>
+  </div>
+ 
+  <!-- Body -->
+  <div class='body'>
+    <p class='greeting'>Dear {toName},</p>
+    <p class='intro'>
+      Thank you for submitting your property {actionWord} through the
+      City of Johannesburg Valuation Portal. This email confirms that
+      your {actionWord} has been successfully received and recorded.
+    </p>
+ 
+    <!-- Reference details -->
+    <div class='ref-box'>
+      <table>
+        <tr>
+          <td>{ActionWord} Reference:</td>
+          <td><strong>{objectionRef}</strong></td>
+        </tr>
+        <tr>
+          <td>Valuation Roll:</td>
+          <td>{rollTitle}</td>
+        </tr>
+        <tr>
+          <td>Submission Date:</td>
+          <td>{now}</td>
+        </tr>
+        <tr>
+          <td>{ActorWord} Type:</td>
+          <td>{(recipients.Count > 1 ? "Representative" : "See attached")}</td>
+        </tr>
+      </table>
+    </div>
+ 
+    <hr class='divider' />
+ 
+    <!-- Important notice -->
+    <div class='notice'>
+      <strong>⏰ Important:</strong> You have <strong>48 hours</strong>
+      from your submission time to upload any additional supporting evidence.
+      Log into the portal and use the <em>Add Evidence</em> function.
+    </div>
+ 
+    <p style='font-size:13px;color:#444;line-height:1.7;'>
+      Please find your official acknowledgement document attached to this email.
+      Keep it for your records as proof of submission.
+    </p>
+ 
+    <p style='font-size:13px;color:#444;margin-top:16px;'>
+      For enquiries please contact us:<br />
+      <strong>Tel:</strong> 011 407-6622 / 011 407-6597<br />
+      <strong>Email:</strong>
+      <a href='mailto:valuationenquiries@joburg.org.za'>
+        valuationenquiries@joburg.org.za
+      </a>
+    </p>
+  </div>
+ 
+  <!-- Footer -->
+  <div class='footer'>
+    City of Johannesburg Valuation Services Department<br />
+    This is an automated email — please do not reply directly.<br />
+    &copy; {DateTime.Now.Year} City of Johannesburg. All rights reserved.
+  </div>
+ 
+</div>
+</body>
+</html>";
+        }
+
+        // ════════════════════════════════════════════════════════════
+        //  SEND INDIVIDUAL EMAIL via System.Net.Mail
+        // ════════════════════════════════════════════════════════════
+        private async Task SendMailAsync(
+            EmailRecipient recipient,
+            string subject,
+            string htmlBody,
+            byte[] pdfAttachment,
+            string objectionRef,
+            bool isAppeal)
+        {
+            using var msg = new MailMessage();
+
+            msg.From = new MailAddress(_cfg.FromAddress, _cfg.FromName);
+            msg.To.Add(new MailAddress(recipient.Address, recipient.Name));
+            msg.Subject = subject;
+            msg.IsBodyHtml = true;
+            msg.Body = htmlBody;
+
+            // Attach the acknowledgement PDF
+            var pdfName = $"{(isAppeal ? "Appeal" : "Objection")}_Acknowledgement_{objectionRef}.pdf";
+            var pdfStream = new MemoryStream(pdfAttachment);
+            var attachment = new Attachment(pdfStream, pdfName, MediaTypeNames.Application.Pdf);
+            msg.Attachments.Add(attachment);
+
+            using var client = new SmtpClient(_cfg.Host, _cfg.Port)
+            {
+                EnableSsl = _cfg.EnableSsl,
+                Credentials = new NetworkCredential(_cfg.SmtpUser, _cfg.Password)
+            };
+
+            await client.SendMailAsync(msg);
+
+            _logger.LogInformation(
+                "[Email] Sent {Action} acknowledgement to {Addr} for {Ref}",
+                isAppeal ? "Appeal" : "Objection",
+                recipient.Address, objectionRef);
+        }
+
+        // ════════════════════════════════════════════════════════════
+        //  BUILD EMAIL RECORD PDF (QuestPDF) — saved to folder
+        // ════════════════════════════════════════════════════════════
+        private byte[] BuildEmailRecordPdf(
+            string objectionRef,
+            string rollTitle,
+            bool isAppeal,
+            List<EmailRecipient> recipients)
+        {
+            var actionWord = isAppeal ? "Appeal" : "Objection";
+
+            return Document.Create(container =>
+            {
+                container.Page(page =>
+                {
+                    page.Size(PageSizes.A4);
+                    page.Margin(1.5f, Unit.Centimetre);
+                    page.DefaultTextStyle(t => t.FontFamily("Arial").FontSize(9));
+
+                    page.Content().Column(col =>
+                    {
+                        // Header bar
+                        col.Item().Background("#e6b000").Padding(16).Row(row =>
+                        {
+                            row.RelativeItem().Column(c =>
+                            {
+                                c.Item().Text("CITY OF JOHANNESBURG")
+                                    .FontSize(14).Bold().FontColor("#1a1a1a");
+                                c.Item().Text("Valuation Services — Email Notification Record")
+                                    .FontSize(9).FontColor(Colors.Black);
+                            });
+                        });
+
+                        col.Item().Height(12);
+
+                        // Title
+                        col.Item().AlignCenter()
+                            .Text($"{actionWord.ToUpper()} ACKNOWLEDGEMENT EMAIL RECORD")
+                            .FontSize(11).Bold();
+
+                        col.Item().Height(6);
+                        col.Item().BorderBottom(1).BorderColor("#cccccc");
+                        col.Item().Height(10);
+
+                        // Email metadata box
+                        col.Item().Background("#f7f7f7").BorderLeft(4).BorderColor("#e6b000")
+                            .Padding(10).Column(meta =>
+                            {
+                                void Row(string label, string value)
+                                {
+                                    meta.Item().Row(r =>
+                                    {
+                                        r.ConstantItem(150)
+                                        .Text(label).Bold().FontSize(9);
+                                        r.RelativeItem()
+                                        .Text(value).FontSize(9);
+                                    });
+                                    meta.Item().Height(3);
+                                }
+
+                                Row($"{actionWord} Reference:", objectionRef);
+                                Row("Valuation Roll:", rollTitle);
+                                Row("Sent Date/Time:", DateTime.Now.ToString("dd MMMM yyyy HH:mm"));
+                                Row("Sent From:", _cfg.FromAddress);
+                            });
+
+                        col.Item().Height(12);
+
+                        // Recipients table
+                        col.Item().Text("EMAIL RECIPIENTS").Bold().FontSize(9);
+                        col.Item().Height(6);
+
+                        col.Item().Table(table =>
+                        {
+                            table.ColumnsDefinition(c =>
+                            {
+                                c.ConstantColumn(30);
+                                c.RelativeColumn(2);
+                                c.RelativeColumn(3);
+                            });
+
+                            static IContainer TH(IContainer c) =>
+                                c.Background("#1a1a1a").Padding(6);
+
+                            table.Cell().Element(TH)
+                                .Text("#").FontColor(Colors.White).Bold().FontSize(8);
+                            table.Cell().Element(TH)
+                                .Text("Name").FontColor(Colors.White).Bold().FontSize(8);
+                            table.Cell().Element(TH)
+                                .Text("Email Address").FontColor(Colors.White).Bold().FontSize(8);
+
+                            bool alt = false;
+                            for (int i = 0; i < recipients.Count; i++)
+                            {
+                                var bg = alt ? Colors.Grey.Lighten5 : Colors.White;
+                                alt = !alt;
+                                IContainer TD(IContainer c) =>
+                                    c.Background(bg).BorderBottom(0.5f)
+                                     .BorderColor("#eeeeee").Padding(5);
+
+                                table.Cell().Element(TD).Text((i + 1).ToString()).FontSize(8);
+                                table.Cell().Element(TD).Text(recipients[i].Name).FontSize(8);
+                                table.Cell().Element(TD).Text(recipients[i].Address).FontSize(8);
+                            }
+                        });
+
+                        col.Item().Height(12);
+
+                        // Note
+                        col.Item().Background("#fffbeb").Border(1)
+                            .BorderColor("#f59e0b").Padding(8)
+                           
+                          .DefaultTextStyle(x => x.FontSize(8))
+                            .Text(t =>
+                            {
+                                t.Span("Note: ").Bold();
+                                t.Span("The official acknowledgement PDF was attached to each " +
+                                       "email listed above. This document serves as a record " +
+                                       "that the notification was dispatched.");
+                            });
+
+                        col.Item().Height(14);
+
+                        // Footer
+                        col.Item().BorderTop(1).BorderColor("#cccccc").PaddingTop(6)
+                            .AlignCenter()
+                            .Text($"Generated by Genesis V2 — City of Johannesburg " +
+                                  $"Valuation Services — {DateTime.Now:dd MMMM yyyy HH:mm}")
+                            .FontSize(7).FontColor("#888888");
+                    });
+                });
+            }).GeneratePdf();
+        }
+
+        // ════════════════════════════════════════════════════════════
+        //  SAVE PDF COPY TO FOLDER
+        // ════════════════════════════════════════════════════════════
+        private async Task SaveEmailCopyAsync(
+            string folderPath,
+            string objectionRef,
+            bool isAppeal,
+            byte[] emailPdf)
+        {
+            try
+            {
+                Directory.CreateDirectory(folderPath);
+
+                var safe = string.Join("_",
+                    objectionRef.Split(Path.GetInvalidFileNameChars()));
+                var action = isAppeal ? "Appeal" : "Objection";
+                var fileName = $"{safe}_{action}_EmailNotification.pdf";
+                var fullPath = Path.Combine(folderPath, fileName);
+
+                await File.WriteAllBytesAsync(fullPath, emailPdf);
+
+                _logger.LogInformation(
+                    "[Email] Email record PDF saved to {Path}", fullPath);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex,
+                    "[Email] Failed saving email record PDF for {Ref}", objectionRef);
+            }
+        }
     }
 
 }
+
+
