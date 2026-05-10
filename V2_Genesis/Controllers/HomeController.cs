@@ -14,17 +14,19 @@ public class HomeController : Controller
     private readonly DisclaimerSettings _disclaimer;
     private readonly ValuationRollSettings _roll;
     private readonly IHomeSearchService _homeSearchService;
+    private readonly ILogger<HomeController> _logger;
 
     public HomeController(
         IAnnouncementService announcement,
         IOptions<DisclaimerSettings> disclaimerOpts,
         IOptions<ValuationRollSettings> rollOpts,
-        IHomeSearchService homeSearchService)
+        IHomeSearchService homeSearchService,ILogger<HomeController> logger)
     {
         _announcement = announcement;
         _disclaimer = disclaimerOpts.Value;
         _roll = rollOpts.Value;
         _homeSearchService = homeSearchService;
+        _logger = logger;
     }
 
     [HttpGet]
@@ -74,16 +76,22 @@ public class HomeController : Controller
     //  Inject IHomeSearchService in constructor
     // ════════════════════════════════════════════════════════
 
-    // Replace GET /home/towns with GET /home/townships
     [HttpGet]
     [AllowAnonymous]
     [Route("home/townships")]
     public async Task<IActionResult> GetTownships()
     {
         var (towns, schemes) = await _homeSearchService.GetTownsAndSchemesAsync();
+
+        _logger.LogInformation(
+            "[HomeController] /home/townships → {T} towns, {S} schemes",
+            towns.Count, schemes.Count);
+
         return Json(new { towns, schemes });
     }
-    // ── POST /home/search — searches all rolls, returns results partial ───
+
+    // ── POST /home/search ────────────────────────────────────────────────
+    // Searches all rolls and returns the results partial.
     [HttpPost]
     [AllowAnonymous]
     [Route("home/search")]
@@ -94,13 +102,14 @@ public class HomeController : Controller
         string? SearchScheme,
         string? SearchUnit)
     {
+        // At least one field required
         if (string.IsNullOrWhiteSpace(SearchTownName) &&
             string.IsNullOrWhiteSpace(SearchStand) &&
             string.IsNullOrWhiteSpace(SearchAddress) &&
             string.IsNullOrWhiteSpace(SearchScheme) &&
             string.IsNullOrWhiteSpace(SearchUnit))
         {
-            return PartialView("_HomeSearchEmpty");
+            return Content(string.Empty);
         }
 
         var p = new HomeSearchParams
@@ -113,10 +122,8 @@ public class HomeController : Controller
         };
 
         var results = await _homeSearchService.SearchAllRollsAsync(p);
-        var isAuth = User.Identity?.IsAuthenticated == true;
 
-        ViewBag.IsAuthenticated = isAuth;
-        ViewBag.ResultCount = results.Count;
+        ViewBag.IsAuthenticated = User.Identity?.IsAuthenticated == true;
 
         if (!results.Any())
             return PartialView("_HomeSearchNoResults");

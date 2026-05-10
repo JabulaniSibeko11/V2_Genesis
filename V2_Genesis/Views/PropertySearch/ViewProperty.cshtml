@@ -1,7 +1,13 @@
 ﻿@model V2_Genesis.Models.Results.PropertyDetailViewModel
 @{
     ViewData["Title"] = "Property Details";
-    Layout = "~/Views/Shared/_ClientLayout.cshtml";
+    bool isAuth = User.Identity?.IsAuthenticated == true;
+
+    // Anonymous users get the public layout, logged-in get the client layout
+    Layout = isAuth
+        ? "~/Views/Shared/_ClientLayout.cshtml"
+        : "~/Views/Shared/_Layout.cshtml";
+
     var d = Model.Main;
     var roll = Model.Roll;
 }
@@ -11,8 +17,8 @@
     <link href="~/css/views/clientdashboardcss.css" rel="stylesheet" asp-append-version="true" />
     <link href="~/css/views/property-search.css" rel="stylesheet" asp-append-version="true" />
     <link href="~/css/views/searchpropertycss.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/views/viewpropertysearch.css" rel="stylesheet" asp-append-version="true" />
 }
-
 
 @if (d is null)
 {
@@ -34,7 +40,7 @@
 <div class="pd-page">
     <div class="pd-inner">
 
-        <!-- ── Roll indicator + back ──────────────────────────────── -->
+        <!-- ── Roll indicator + back ──────────────────────────── -->
         <div class="pd-topbar">
             <a href="javascript:history.back()" class="pd-back">
                 <i class="fa-solid fa-arrow-left"></i> Back to Search
@@ -46,7 +52,23 @@
             </div>
         </div>
 
-        <!-- ── Page heading ──────────────────────────────────────── -->
+        <!-- ── Anonymous banner ───────────────────────────────── -->
+        @if (!isAuth)
+        {
+            <div class="pd-anon-notice">
+                <i class="fa-solid fa-circle-info"></i>
+                <div>
+                    You are viewing public property data.
+                    <a href="/account/login?returnUrl=@Context.Request.Path@Context.Request.QueryString">
+                        Sign in
+                    </a>
+                    to see owner details, link this property to your profile
+                    and download Section 49.
+                </div>
+            </div>
+        }
+
+        <!-- ── Page heading ───────────────────────────────────── -->
         <div class="pd-heading">
             <div class="pd-heading-icon">
                 <i class="fa-solid fa-building"></i>
@@ -58,7 +80,7 @@
         </div>
 
         <!-- ══════════════════════════════════════════════════════
-             SECTION 1 — Basic Information (always visible)
+             SECTION 1 — Basic Information
         ══════════════════════════════════════════════════════ -->
         <div class="pd-card">
             <div class="pd-card-header">
@@ -82,7 +104,6 @@
                     <input class="pd-input" disabled value="@d.TownNameDesc" />
                 </div>
 
-                <!-- Stand / Portion / Re — horizontal on desktop, stacked on mobile -->
                 <div class="pd-field-row">
                     <span class="pd-field-label">
                         <i class="fa-solid fa-home"></i> Stand / Portion / Re
@@ -117,6 +138,29 @@
                     <input class="pd-input" disabled value="@(d.LeaseDesc ?? "–")" />
                 </div>
 
+                <!-- ── Owner — hidden for anonymous users ────── -->
+                <div class="pd-field-row">
+                    <span class="pd-field-label">
+                        <i class="fa-solid fa-user"></i> Owner
+                    </span>
+                    @if (isAuth)
+                    {
+                        <input class="pd-input" disabled
+                               value="@(d.OwnerName ?? "–")" />
+                    }
+                    else
+                    {
+                        <div class="pd-locked-field">
+                            <i class="fa-solid fa-lock"></i>
+                            <span>Sign in to view owner details</span>
+                            <a href="/account/login?returnUrl=@Context.Request.Path@Context.Request.QueryString"
+                                   class="pd-locked-link">
+                                Sign In
+                            </a>
+                        </div>
+                    }
+                </div>
+
             </div>
         </div>
 
@@ -124,11 +168,15 @@
              SECTION 2 — Categories & Valuations (collapsible)
         ══════════════════════════════════════════════════════ -->
         <div class="pd-collapsible">
-            <button class="pd-collapse-toggle" onclick="togglePdSection('valuation', this)">
+            <button class="pd-collapse-toggle"
+                    onclick="togglePdSection('valuation', this)">
                 <span>
                     <i class="fa-solid fa-chart-line"></i>
                     Property Categories &amp; Valuations
-                    <span class="pd-item-count">@Model.Items.Count @(Model.Items.Count == 1 ? "item" : "items")</span>
+                    <span class="pd-item-count">
+                        @Model.Items.Count
+                        @(Model.Items.Count == 1 ? "item" : "items")
+                    </span>
                 </span>
                 <i class="fa-solid fa-chevron-down pd-chevron"></i>
             </button>
@@ -140,7 +188,8 @@
                             <span class="pd-field-label">
                                 <i class="fa-solid fa-tag"></i> Property Category
                             </span>
-                            <input class="pd-input" disabled value="@(item.CatDesc ?? "–")" />
+                            <input class="pd-input" disabled
+                                   value="@(item.CatDesc ?? "–")" />
                         </div>
                         <div class="pd-field-row">
                             <span class="pd-field-label">
@@ -151,19 +200,22 @@
                                     <label class="pd-inline-label">
                                         <i class="fa-solid fa-ruler-combined"></i> Extent
                                     </label>
-                                    <input class="pd-input pd-rateable" disabled value="@(item.RateableArea ?? "–")" />
+                                    <input class="pd-input pd-rateable" disabled
+                                           value="@(item.RateableArea ?? "–")" />
                                 </div>
                                 <div class="pd-inline-field">
                                     <label class="pd-inline-label">
                                         <i class="fa-solid fa-calendar"></i> Effective Date
                                     </label>
-                                    <input class="pd-input" disabled value="@(item.WefDate ?? "–")" />
+                                    <input class="pd-input" disabled
+                                           value="@(item.WefDate ?? "–")" />
                                 </div>
                                 <div class="pd-inline-field">
                                     <label class="pd-inline-label">
                                         <i class="fa-solid fa-money-bill-wave"></i> Market Value
                                     </label>
-                                    <input class="pd-input pd-market-val" disabled value="@(item.MarketValue ?? "–")" />
+                                    <input class="pd-input pd-market-val" disabled
+                                           value="@(item.MarketValue ?? "–")" />
                                 </div>
                             </div>
                         </div>
@@ -176,7 +228,8 @@
              SECTION 3 — Additional Details (collapsible)
         ══════════════════════════════════════════════════════ -->
         <div class="pd-collapsible">
-            <button class="pd-collapse-toggle pd-collapsed" onclick="togglePdSection('additional', this)">
+            <button class="pd-collapse-toggle pd-collapsed"
+                    onclick="togglePdSection('additional', this)">
                 <span>
                     <i class="fa-solid fa-clipboard-list"></i>
                     Additional Details
@@ -185,24 +238,22 @@
             </button>
             <div class="pd-collapse-body" id="additional">
                 <div class="pd-card pd-inner-card">
+
                     <div class="pd-field-row">
                         <span class="pd-field-label">
                             <i class="fa-solid fa-comment"></i> Remarks
                         </span>
                         <input class="pd-input" disabled value="@(d.Reason ?? "–")" />
                     </div>
-                    <div class="pd-field-row">
-                        <span class="pd-field-label">
-                            <i class="fa-solid fa-user"></i> Owner
-                        </span>
-                        <input class="pd-input" disabled value="@(d.OwnerName ?? "–")" />
-                    </div>
+
                     <div class="pd-field-row">
                         <span class="pd-field-label">
                             <i class="fa-solid fa-calendar-day"></i> Valuation Date
                         </span>
-                        <input class="pd-input" disabled value="@(d.ValuationDate ?? "–")" />
+                        <input class="pd-input" disabled
+                               value="@(d.ValuationDate ?? "–")" />
                     </div>
+
                 </div>
             </div>
         </div>
@@ -211,7 +262,8 @@
              SECTION 4 — Scheme Details (collapsible)
         ══════════════════════════════════════════════════════ -->
         <div class="pd-collapsible">
-            <button class="pd-collapse-toggle pd-collapsed" onclick="togglePdSection('scheme', this)">
+            <button class="pd-collapse-toggle pd-collapsed"
+                    onclick="togglePdSection('scheme', this)">
                 <span>
                     <i class="fa-solid fa-building"></i>
                     Scheme Details
@@ -232,21 +284,17 @@
                         </span>
                         <div class="pd-inline-group">
                             <div class="pd-inline-field">
-                                <label class="pd-inline-label">
-                                    <i class="fa-solid fa-hashtag"></i> Scheme No.
-                                </label>
-                                <input class="pd-input" disabled value="@(d.SchemeNumber ?? "–")" />
+                                <label class="pd-inline-label">Scheme No.</label>
+                                <input class="pd-input" disabled
+                                       value="@(d.SchemeNumber ?? "–")" />
                             </div>
                             <div class="pd-inline-field">
-                                <label class="pd-inline-label">
-                                    <i class="fa-solid fa-calendar"></i> Scheme Year
-                                </label>
-                                <input class="pd-input" disabled value="@(d.SchemeYear ?? "–")" />
+                                <label class="pd-inline-label">Scheme Year</label>
+                                <input class="pd-input" disabled
+                                       value="@(d.SchemeYear ?? "–")" />
                             </div>
                             <div class="pd-inline-field">
-                                <label class="pd-inline-label">
-                                    <i class="fa-solid fa-door-open"></i> Unit No.
-                                </label>
+                                <label class="pd-inline-label">Unit No.</label>
                                 <input class="pd-input" disabled
                                        value="@(d.UnitNo > 0 ? d.UnitNo.ToString() : "–")" />
                             </div>
@@ -260,22 +308,42 @@
              ACTION BUTTONS
         ══════════════════════════════════════════════════════ -->
         <div class="pd-actions">
-            @if (Model.IsWithinObjectionPeriod)
+            @if (!isAuth)
             {
+                @* ── Anonymous: show sign-in prompts ── *@
+                <div class="pd-anon-actions">
+                    <div class="pd-anon-action-notice">
+                        <i class="fa-solid fa-lock"></i>
+                        Sign in to link this property, lodge an objection
+                        and access Section 49.
+                    </div>
+                    <a href="/account/login?returnUrl=@Context.Request.Path@Context.Request.QueryString"
+                           class="pd-btn pd-btn-primary">
+                        <i class="fa-solid fa-right-to-bracket"></i> Sign In
+                    </a>
+                    <a href="/account/register"
+                           class="pd-btn pd-btn-outline">
+                        <i class="fa-solid fa-user-plus"></i> Register Free
+                    </a>
+                    <button class="pd-btn pd-btn-outline" onclick="history.back()">
+                        <i class="fa-solid fa-arrow-left"></i> Back
+                    </button>
+                </div>
+            }
+            else if (Model.IsWithinObjectionPeriod)
+            {
+                @* ── Logged in + period open ── *@
                 <button class="pd-btn pd-btn-outline" onclick="history.back()">
                     <i class="fa-solid fa-arrow-left"></i> Cancel
                 </button>
-                @* Replace the existing Link Property <a> tag: *@
                 <a class="pd-btn pd-btn-primary"
                        href="/property/save?rollSource=@Model.Roll.Source&key=@d.Id&sourceTable=@Model.Roll.SourceTableCode">
                     <i class="fa-solid fa-link"></i> Link Property
                 </a>
-                @* Replace existing Section 49 links: *@
                 <a class="pd-btn pd-btn-secondary"
                        href="/notice/section49?rollSource=@Model.Roll.Source&unitKey=@d.UnitKey&valuationKey=@d.ValuationKey">
                     <i class="fa-solid fa-eye"></i> View Section 49
                 </a>
-
                 <a class="pd-btn pd-btn-outline"
                        href="/notice/section49/download?rollSource=@Model.Roll.Source&unitKey=@d.UnitKey&valuationKey=@d.ValuationKey">
                     <i class="fa-solid fa-download"></i> Download Section 49
@@ -283,10 +351,11 @@
             }
             else
             {
+                @* ── Logged in + period ended ── *@
                 <div class="pd-period-ended">
                     <i class="fa-solid fa-triangle-exclamation"></i>
-                    The objection period for <strong>@roll.Short</strong> has ended.
-                    You can still view property details.
+                    The objection period for <strong>@roll.Short</strong>
+                    has ended. You can still view property details.
                 </div>
                 <button class="pd-btn pd-btn-outline" onclick="history.back()">
                     <i class="fa-solid fa-arrow-left"></i> Back
@@ -299,20 +368,18 @@
 
 @section Scripts {
     <script>
-        // ── Collapsible sections ──────────────────────────────────────────
         function togglePdSection(id, btn) {
             const body    = document.getElementById(id);
             const chevron = btn.querySelector('.pd-chevron');
             const isOpen  = body.classList.toggle('open');
             chevron.style.transform = isOpen ? 'rotate(180deg)' : 'rotate(0deg)';
             btn.classList.toggle('pd-collapsed', !isOpen);
-            if (isOpen) {
-                setTimeout(() => body.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 300);
-            }
+            if (isOpen)
+                setTimeout(() => body.scrollIntoView({ behavior:'smooth', block:'nearest' }), 300);
         }
 
-        // Auto-open first section on load
         document.addEventListener('DOMContentLoaded', function () {
+            // Auto-open valuations section
             const first = document.getElementById('valuation');
             const btn   = first?.previousElementSibling;
             if (first && btn) {
@@ -326,8 +393,8 @@
                 const raw = parseFloat(el.value.replace(/[^0-9.-]+/g, ''));
                 if (!isNaN(raw) && raw > 0) {
                     el.value = raw.toLocaleString('en-ZA', {
-                        style: 'currency', currency: 'ZAR',
-                        minimumFractionDigits: 0, maximumFractionDigits: 0
+                        style:'currency', currency:'ZAR',
+                        minimumFractionDigits:0, maximumFractionDigits:0
                     });
                 }
             });
@@ -335,9 +402,8 @@
             // Format rateable areas
             document.querySelectorAll('.pd-rateable').forEach(function (el) {
                 const raw = el.value.trim();
-                if (raw && raw !== '–') {
+                if (raw && raw !== '–')
                     el.value = raw.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-                }
             });
         });
     </script>

@@ -1,25 +1,26 @@
 ﻿using Dapper;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Caching.Memory;
-using V2_Genesis.Models.Lis;
-using V2_Genesis.Models.LIS;
+using System.Data;
+using V2_Genesis.Models;
 using V2_Genesis.Models.Results.Home;
 using V2_Genesis.Models.ViewModels.Home;
 using V2_Genesis.Services.Interfaces;
 
 namespace V2_Genesis.Services.Implementations;
 
+// ── Standalone result model — no inheritance, no naming assumptions ──
+
+
 public class HomeSearchService : IHomeSearchService
 {
-    private readonly IConfiguration _config;
-    private readonly ILisSearchService _lisService;
+    private readonly IPropertySearchService _searchService;
     private readonly IMemoryCache _cache;
     private readonly ILogger<HomeSearchService> _logger;
+    private readonly string _defaultConn;
 
-    // SP names only — no 3-part qualifier.
-    // CommandType.StoredProcedure + DefaultConnection targets Objection DB.
-    private const string SP_TOWNS = "propertyDetailsTown";
-    private const string SP_SCHEMES = "propertyDetailsScheme";
+    private const string SP_TOWNSHIPS = "Objection.dbo.propertyDetailsTown";
+    private const string SP_SCHEMES = "Objection.dbo.propertyDetailsScheme";
     private const string CACHE_KEY = "home_towns_schemes";
 
     private static readonly (string Source, string Name)[] Rolls =
@@ -31,105 +32,62 @@ public class HomeSearchService : IHomeSearchService
     };
 
     public HomeSearchService(
-        IConfiguration config,
-        ILisSearchService lisService,
+        IPropertySearchService searchService,
         IMemoryCache cache,
-        ILogger<HomeSearchService> logger)
+        ILogger<HomeSearchService> logger,
+        IConfiguration config)
     {
-        _config = config;
-        _lisService = lisService;
+        _searchService = searchService
+            ?? throw new ArgumentNullException(nameof(searchService));
         _cache = cache;
         _logger = logger;
+        _defaultConn = config.GetConnectionString("DefaultConnection")
+            ?? throw new InvalidOperationException("DefaultConnection missing");
     }
 
     // ════════════════════════════════════════════════════════════════
-    //  GET TOWNS + SCHEMES
-    //  Two separate SP calls on the Objection (DefaultConnection) DB
+    //  TOWNS + SCHEMES — same as PropertySearchService pattern
     // ════════════════════════════════════════════════════════════════
     public async Task<(List<string> Towns, List<string> Schemes)>
         GetTownsAndSchemesAsync()
     {
-        // Return cached if available
         if (_cache.TryGetValue(CACHE_KEY,
-                out (List<string> Towns, List<string> Schemes) hit)
-            && hit.Towns.Count > 0)
-        {
-            _logger.LogDebug("[HomeSearch] Cache hit — {T} towns {S} schemes",
-                hit.Towns.Count, hit.Schemes.Count);
-            return hit;
-        }
-
-        var connStr = _config.GetConnectionString("DefaultConnection");
-        if (string.IsNullOrWhiteSpace(connStr))
-        {
-            _logger.LogError("[HomeSearch] DefaultConnection missing from config");
-            return (new(), new());
-        }
+                out (List<string> T, List<string> S) hit)
+            && hit.T.Count > 0)
+            return (hit.T, hit.S);
 
         var towns = new List<string>();
         var schemes = new List<string>();
 
-        // Re-use one open connection for both calls
-        await using var conn = new SqlConnection(connStr);
-        await conn.OpenAsync();
-
-        // ── Towns via propertyDetailsTown ─────────────────────────────
         try
         {
-            var rows = await conn.QueryAsync(
-                SP_TOWNS,
-                commandType: System.Data.CommandType.StoredProcedure,
-                commandTimeout: 30);
-
-            foreach (var row in rows)
-            {
-                var d = (IDictionary<string, object>)row;
-                if (d.TryGetValue("Town_Name_Description", out var v)
-                    && v is not DBNull
-                    && !string.IsNullOrWhiteSpace(v.ToString()))
-                {
-                    towns.Add(v.ToString()!.Trim());
-                }
-            }
-
-            towns = towns
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .OrderBy(t => t)
+            await using var conn = new SqlConnection(_defaultConn);
+            var rows = await conn.QueryAsync<string>(
+                SP_TOWNSHIPS,
+                commandType: CommandType.StoredProcedure);
+            towns = rows
+                .Where(r => !string.IsNullOrWhiteSpace(r))
+                .OrderBy(r => r)
                 .ToList();
-
-            _logger.LogInformation("[HomeSearch] {SP} returned {N} towns",
-                SP_TOWNS, towns.Count);
+            _logger.LogInformation("[HomeSearch] {SP} → {N} towns",
+                SP_TOWNSHIPS, towns.Count);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "[HomeSearch] {SP} failed", SP_TOWNS);
+            _logger.LogError(ex, "[HomeSearch] {SP} failed", SP_TOWNSHIPS);
         }
 
-        // ── Schemes via propertyDetailsScheme ─────────────────────────
         try
         {
-            var rows = await conn.QueryAsync(
+            await using var conn = new SqlConnection(_defaultConn);
+            var rows = await conn.QueryAsync<string>(
                 SP_SCHEMES,
-                commandType: System.Data.CommandType.StoredProcedure,
-                commandTimeout: 30);
-
-            foreach (var row in rows)
-            {
-                var d = (IDictionary<string, object>)row;
-                if (d.TryGetValue("Scheme_Name", out var v)
-                    && v is not DBNull
-                    && !string.IsNullOrWhiteSpace(v.ToString()))
-                {
-                    schemes.Add(v.ToString()!.Trim());
-                }
-            }
-
-            schemes = schemes
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .OrderBy(s => s)
+                commandType: CommandType.StoredProcedure);
+            schemes = rows
+                .Where(r => !string.IsNullOrWhiteSpace(r))
+                .OrderBy(r => r)
                 .ToList();
-
-            _logger.LogInformation("[HomeSearch] {SP} returned {N} schemes",
+            _logger.LogInformation("[HomeSearch] {SP} → {N} schemes",
                 SP_SCHEMES, schemes.Count);
         }
         catch (Exception ex)
@@ -137,33 +95,37 @@ public class HomeSearchService : IHomeSearchService
             _logger.LogError(ex, "[HomeSearch] {SP} failed", SP_SCHEMES);
         }
 
-        var result = (towns, schemes);
-
-        // Only cache when we actually got data
         if (towns.Count > 0 || schemes.Count > 0)
-        {
-            _cache.Set(CACHE_KEY, result, new MemoryCacheEntryOptions
-            {
-                AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(2),
-                SlidingExpiration = TimeSpan.FromMinutes(30)
-            });
-        }
+            _cache.Set(CACHE_KEY, (towns, schemes),
+                new MemoryCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(2),
+                    SlidingExpiration = TimeSpan.FromMinutes(30)
+                });
 
-        return result;
+        return (towns, schemes);
     }
 
     // ════════════════════════════════════════════════════════════════
-    //  SEARCH ALL ROLLS — sequential, early exit at 200 rows
+    //  SEARCH ALL ROLLS
+    //  Uses PropertySearchService.SearchAsync — same SPs as PropertyIndex
     // ════════════════════════════════════════════════════════════════
-    public async Task<List<HomeSearchResult>> SearchAllRollsAsync(HomeSearchParams p)
+    public async Task<List<HomeSearchResult>> SearchAllRollsAsync(
+        HomeSearchParams p)
     {
-        var lisP = new LisSearchParams
+        if (p is null)
         {
-            SearchTownName = p.SearchTownName?.Trim(),
-            SearchStand = p.SearchStand?.Trim(),
-            SearchAddress = p.SearchAddress?.Trim(),
-            SearchScheme = p.SearchScheme?.Trim(),
-            SearchUnit = p.SearchUnit?.Trim(),
+            _logger.LogWarning("[HomeSearch] SearchAllRollsAsync called with null params");
+            return new();
+        }
+
+        var searchParams = new PropertySearchParams
+        {
+            TownName = p.SearchTownName?.Trim() ?? string.Empty,
+            Stand = string.IsNullOrWhiteSpace(p.SearchStand) ? null : p.SearchStand.Trim(),
+            Address = string.IsNullOrWhiteSpace(p.SearchAddress) ? null : p.SearchAddress.Trim(),
+            Scheme = string.IsNullOrWhiteSpace(p.SearchScheme) ? null : p.SearchScheme.Trim(),
+            Unit = string.IsNullOrWhiteSpace(p.SearchUnit) ? null : p.SearchUnit.Trim(),
         };
 
         var combined = new List<HomeSearchResult>();
@@ -172,39 +134,56 @@ public class HomeSearchService : IHomeSearchService
         {
             try
             {
-                var results = await _lisService.SearchAsync(roll.Source, lisP);
+                var results = await _searchService.SearchAsync(
+                    roll.Source, searchParams);
 
-                combined.AddRange(results.Select(r => new HomeSearchResult
+                if (results is null || !results.Any())
                 {
-                    RollSource = roll.Source,
-                    RollName = roll.Name,
-                    TownNameDesc = r.TownNameDescription,
-                    LisStreetAddress = r.LisStreetAddress,
-                    Erf = r.Erf,
-                    Ptn = r.Ptn,
-                    Re = r.Re,
-                    CatDesc = r.CATDescription,
-                    RateableArea = r.RateableArea,
-                    MarketValue = r.MarketValue,
-                    SchemeName = r.SchemeName,
-                    SchemeNumber = r.SchemeNumber,
-                    SchemeYear = r.SchemeYear,
-                    Lease = r.Lease,
-                    UnitNo = int.TryParse(r.UnitNo, out var u) ? u : 0,
-                    Reason = r.Reason,
-                    UnitKey = r.UnitKey,
-                    ValuationKey = r.ValuationKey,
-                }));
+                    _logger.LogDebug("[HomeSearch] {Roll} → 0 results", roll.Source);
+                    continue;
+                }
+
+                foreach (var r in results)
+                {
+                    if (r is null) continue;
+
+                    combined.Add(new HomeSearchResult
+                    {
+                        RollSource = roll.Source,
+                        RollName = roll.Name,
+                        // Use safe property access — matches PropertySearchResult fields
+                        TownNameDesc = r.TownNameDesc,
+                        LisStreetAddress = r.LisStreetAddress,
+                        Erf = r.Erf,
+                        Ptn = r.Ptn,
+                        Re = r.Re,
+                        CatDesc = r.CatDesc,
+                        RateableArea = r.RateableArea,
+                        MarketValue = r.MarketValue,
+                        SchemeName = r.SchemeName,
+                        SchemeNumber = r.SchemeNumber,
+                        SchemeYear = r.SchemeYear,
+                        Lease = r.Lease,
+                        UnitNo = r.UnitNo,
+                        Reason = r.Reason,
+                        UnitKey = r.UnitKey,
+                        ValuationKey = r.ValuationKey,
+                    });
+                }
+
+                _logger.LogDebug("[HomeSearch] {Roll} → {N} results",
+                    roll.Source, results.Count);
 
                 if (combined.Count >= 200) break;
             }
             catch (Exception ex)
             {
                 _logger.LogWarning(ex,
-                    "[HomeSearch] Roll {Roll} failed — skipping", roll.Source);
+                    "[HomeSearch] {Roll} failed — skipping", roll.Source);
             }
         }
 
+        _logger.LogInformation("[HomeSearch] Total: {N} results", combined.Count);
         return combined;
     }
 }

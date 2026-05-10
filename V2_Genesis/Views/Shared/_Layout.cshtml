@@ -12,7 +12,7 @@
     <link rel="icon" type="image/png" sizes="32x32" href="~/images/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="~/images/favicon-16x16.png">
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-
+    <link href="~/css/views/homeindex1.css" rel="stylesheet" asp-append-version="true" />
     <link href="~/css/views/layout.css" rel="stylesheet" />
 
     @await RenderSectionAsync("Styles", required: false)
@@ -107,10 +107,10 @@
                 }
                 else
                 {
-                    <a href="/account/login" class="pub-btn-signin">
+                    <a href="/login" class="pub-btn-signin">
                         <i class="fa-solid fa-right-to-bracket"></i> Sign In
                     </a>
-                    <a href="/account/register" class="pub-btn-register">
+                    <a href="/register" class="pub-btn-register">
                         <i class="fa-solid fa-user-plus"></i> Register
                     </a>
                 }
@@ -163,10 +163,10 @@
         }
         @if (!isAuth)
         {
-            <a href="/account/login" class="pub-drawer-link">
+            <a href="/login" class="pub-drawer-link">
                 <i class="fa-solid fa-right-to-bracket"></i> Sign In
             </a>
-            <a href="/account/register" class="pub-drawer-link">
+            <a href="/register" class="pub-drawer-link">
                 <i class="fa-solid fa-user-plus"></i> Register
             </a>
         }

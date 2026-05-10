@@ -14,7 +14,7 @@
         </span>
     </div>
 }
-
+<div class="table-responsive">
 <table id="homeResultsTable"
        class="display table hs-table">
     <thead>
@@ -51,34 +51,22 @@
                 <td class="hs-value">@item.MarketValue</td>
                 <td>@(item.SchemeName ?? "–")</td>
                 <td>@(item.UnitNo > 0 ? item.UnitNo.ToString() : "–")</td>
-                <td>
-                    @if (isAuth)
-                    {
-                    
-                            var url = $"/property/view?rollSource={item.RollSource}" +
-                                      $"&unitKey={item.UnitKey}" +
-                                      $"&valuationKey={item.ValuationKey}" +
-                                      $"&propertyFrom={item.RollSource}";
-                        
-                        <a href="@url" class="hs-view-btn">
-                            <i class="fa-solid fa-circle-arrow-right"></i>
-                            View
-                        </a>
-                    }
-                    else
-                    {
-                        <a href="/account/login?returnUrl=/property/view%3FrollSource=@item.RollSource%26unitKey=@item.UnitKey%26valuationKey=@item.ValuationKey"
-                           class="hs-view-btn hs-view-locked">
-                            <i class="fa-solid fa-lock"></i>
-                            Sign In
-                        </a>
-                    }
-                </td>
+                
+                        <td>
+                            @{
+                                var url = $"/property/view?rollSource={item.RollSource}&unitKey={item.UnitKey}&valuationKey={item.ValuationKey}&propertyFrom={item.RollSource}";
+                            }
+                            <a href="@url" class="hs-view-btn">
+                                <i class="fa-solid fa-circle-arrow-right"></i> View
+                            </a>
+                        </td>
+                   
+                
             </tr>
         }
     </tbody>
 </table>
-
+        </div>
 <script>
 $(document).ready(function () {
     if (!$.fn.DataTable.isDataTable('#homeResultsTable')) {

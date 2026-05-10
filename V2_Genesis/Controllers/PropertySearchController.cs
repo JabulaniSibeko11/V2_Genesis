@@ -94,6 +94,7 @@ public class PropertySearchController : Controller
     }
     [HttpGet]
     [Route("property/view")]
+    [AllowAnonymous]
     public async Task<IActionResult> ViewProperty(
     string rollSource,
     string unitKey,
