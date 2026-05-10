@@ -94,7 +94,7 @@ builder.Services.AddScoped<ILisSearchService, LisSearchService>();
 builder.Services.AddScoped<IOmissionService, OmissionService>();
 builder.Services.AddMemoryCache();
 builder.Services.AddScoped<IHomeSearchService, HomeSearchService>();
-// Add this if not already present
+builder.Services.AddScoped<IAttributesSearchService, AttributesSearchService>();
 
 
 // ── App Pipeline ──────────────────────────────────────────────────────────────

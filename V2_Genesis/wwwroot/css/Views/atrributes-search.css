@@ -1,0 +1,438 @@
+﻿/* ═══════════════════════════════════════════════════════════════
+   ATTRIBUTES SEARCH — attributes-search.css
+   Same gold/black colour scheme as PropertyIndex
+   but a distinctly different card layout and feel
+═══════════════════════════════════════════════════════════════ */
+
+/* ── Page wrapper ─────────────────────────────────────────────── */
+.as-page {
+    background: #f4f4f4;
+    min-height: 100vh;
+    padding: 32px 24px 48px;
+    font-family: 'Poppins', sans-serif;
+}
+
+.as-inner {
+    max-width: 1280px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+/* ── Page heading ─────────────────────────────────────────────── */
+.as-heading {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.as-heading-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    background: #1a1a1a;
+    color: #e6b000;
+    font-size: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.as-title {
+    font-size: 24px;
+    font-weight: 800;
+    color: #1a1a1a;
+    margin: 0;
+}
+
+.as-subtitle {
+    font-size: 13px;
+    color: #6b6b6b;
+    margin: 0;
+}
+
+.as-about-link {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 9px 18px;
+    border-radius: 8px;
+    background: transparent;
+    border: 1.5px solid #1a1a1a;
+    color: #1a1a1a;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all .15s;
+}
+
+    .as-about-link:hover {
+        background: #1a1a1a;
+        color: #e6b000;
+    }
+
+/* ── Search card ──────────────────────────────────────────────── */
+.as-card {
+    background: #fff;
+    border-radius: 16px;
+    border: 1.5px solid #e8e8e8;
+    box-shadow: 0 2px 16px rgba(0,0,0,.07);
+    overflow: hidden;
+}
+
+.as-card-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 18px 28px;
+    background: #1a1a1a;
+    color: #e6b000;
+    font-size: 15px;
+    font-weight: 800;
+    border-bottom: 3px solid #e6b000;
+}
+
+.as-card-sub {
+    font-size: 12px;
+    color: rgba(255,255,255,.45);
+    font-weight: 400;
+    margin-left: 4px;
+}
+
+/* ── Error banner ─────────────────────────────────────────────── */
+.as-error-banner {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 20px 28px 0;
+    padding: 11px 16px;
+    background: #fef2f2;
+    border: 1px solid #fca5a5;
+    border-radius: 8px;
+    font-size: 13px;
+    color: #b91c1c;
+}
+
+/* ── Search form grid ─────────────────────────────────────────── */
+.as-form-grid {
+    padding: 24px 28px;
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr 1fr auto;
+    gap: 14px;
+    align-items: end;
+}
+
+.as-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.as-field-wide {
+    grid-column: span 2;
+}
+
+.as-field-btn {
+    align-self: end;
+}
+
+.as-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #1a1a1a;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+    .as-label i {
+        color: #e6b000;
+    }
+
+.as-input {
+    padding: 10px 13px;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 9px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 13.5px;
+    color: #1a1a1a;
+    background: #fafafa;
+    outline: none;
+    width: 100%;
+    transition: border-color .15s, background .15s;
+}
+
+    .as-input:focus {
+        border-color: #e6b000;
+        background: #fff;
+    }
+
+select.as-input {
+    cursor: pointer;
+}
+
+.as-search-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 11px 24px;
+    border-radius: 9px;
+    background: #e6b000;
+    color: #1a1a1a;
+    border: none;
+    cursor: pointer;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    white-space: nowrap;
+    width: 100%;
+    justify-content: center;
+    transition: background .15s;
+}
+
+    .as-search-btn:hover {
+        background: #f5c200;
+    }
+
+/* ── Results wrapper ──────────────────────────────────────────── */
+.as-results-wrap {
+    background: #fff;
+    border-radius: 16px;
+    border: 1.5px solid #e8e8e8;
+    box-shadow: 0 2px 16px rgba(0,0,0,.07);
+    overflow: hidden;
+}
+
+.as-results-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    background: #1a1a1a;
+    border-bottom: 3px solid #e6b000;
+}
+
+.as-results-count {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #e6b000;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+/* ── No results ───────────────────────────────────────────────── */
+.as-no-results {
+    padding: 56px 24px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+    .as-no-results i {
+        font-size: 40px;
+        color: #d0d0d0;
+    }
+
+    .as-no-results h3 {
+        font-size: 18px;
+        font-weight: 700;
+        color: #1a1a1a;
+        margin: 0;
+    }
+
+    .as-no-results p {
+        font-size: 13.5px;
+        color: #6b6b6b;
+        max-width: 400px;
+        margin: 0;
+    }
+
+/* ── Results table ────────────────────────────────────────────── */
+.table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 20px 24px;
+}
+
+.as-table {
+    font-family: 'Poppins', sans-serif !important;
+    font-size: 13px;
+    width: 100% !important;
+}
+
+    .as-table thead {
+        background: #1a1a1a;
+    }
+
+        .as-table thead th {
+            color: #e6b000;
+            font-family: 'Poppins', sans-serif !important;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: .5px;
+            white-space: nowrap;
+            padding: 11px 14px;
+            border: none !important;
+        }
+
+    .as-table tbody tr:hover {
+        background: #fffbeb;
+    }
+
+    .as-table tbody td {
+        font-family: 'Poppins', sans-serif !important;
+        font-size: 13px;
+        vertical-align: middle;
+        padding: 10px 14px;
+        border-color: #f0f0f0;
+    }
+
+.as-value {
+    font-weight: 600;
+    color: #1a1a1a;
+}
+
+/* ── Row action buttons ───────────────────────────────────────── */
+.as-row-actions {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    flex-wrap: nowrap;
+}
+
+.as-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 13px;
+    border-radius: 7px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all .15s;
+}
+
+.as-btn-view {
+    background: #f5f5f5;
+    color: #1a1a1a;
+    border: 1.5px solid #e0e0e0;
+}
+
+    .as-btn-view:hover {
+        background: #1a1a1a;
+        color: #e6b000;
+        border-color: #1a1a1a;
+    }
+
+.as-btn-link {
+    background: #e6b000;
+    color: #1a1a1a;
+}
+
+    .as-btn-link:hover {
+        background: #f5c200;
+    }
+
+/* ── DataTable controls ───────────────────────────────────────── */
+.as-dt-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding-bottom: 12px;
+    font-family: 'Poppins', sans-serif !important;
+}
+
+    .as-dt-top *,
+    .as-dt-bottom * {
+        font-family: 'Poppins', sans-serif !important;
+    }
+
+.as-dt-btn {
+    background: #1a1a1a !important;
+    color: #e6b000 !important;
+    border: none !important;
+    border-radius: 7px !important;
+    font-family: 'Poppins', sans-serif !important;
+    font-size: 12px !important;
+    padding: 6px 14px !important;
+}
+
+.as-dt-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    padding-top: 10px;
+    font-size: 12.5px;
+}
+
+.dataTables_filter input {
+    border: 1.5px solid #e0e0e0 !important;
+    border-radius: 8px !important;
+    padding: 6px 12px !important;
+    font-family: 'Poppins', sans-serif !important;
+    outline: none;
+}
+
+    .dataTables_filter input:focus {
+        border-color: #e6b000 !important;
+    }
+
+/* ── Responsive ───────────────────────────────────────────────── */
+@media (max-width: 1100px) {
+    .as-form-grid {
+        grid-template-columns: 1fr 1fr 1fr;
+    }
+
+    .as-field-wide {
+        grid-column: 1 / -1;
+    }
+
+    .as-field-btn {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 700px) {
+    .as-page {
+        padding: 16px 12px 40px;
+    }
+
+    .as-card-header {
+        padding: 14px 16px;
+    }
+
+    .as-form-grid {
+        grid-template-columns: 1fr;
+        padding: 16px;
+    }
+
+    .as-field-wide {
+        grid-column: 1;
+    }
+
+    .table-responsive {
+        padding: 12px;
+    }
+
+    .as-heading {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .as-about-link {
+        margin-left: 0;
+    }
+}

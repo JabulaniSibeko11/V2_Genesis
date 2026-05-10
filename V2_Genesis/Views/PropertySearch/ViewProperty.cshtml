@@ -1,17 +1,21 @@
 ﻿@model V2_Genesis.Models.Results.PropertyDetailViewModel
 @{
     ViewData["Title"] = "Property Details";
-    bool isAuth = User.Identity?.IsAuthenticated == true;
 
-    // Anonymous users get the public layout, logged-in get the client layout
+    bool isAuth = User?.Identity?.IsAuthenticated ?? false;
+
     Layout = isAuth
         ? "~/Views/Shared/_ClientLayout.cshtml"
         : "~/Views/Shared/_Layout.cshtml";
 
     var d = Model.Main;
     var roll = Model.Roll;
-}
 
+    // Detect Attributes flow from query string
+    var propertyFrom = Context.Request.Query["propertyFrom"].FirstOrDefault() ?? "";
+    bool isAttributes = propertyFrom.Equals("Attributes",
+                            StringComparison.OrdinalIgnoreCase);
+}
 @section Styles {
     <link href="~/css/views/property-detail.css" rel="stylesheet" asp-append-version="true" />
     <link href="~/css/views/clientdashboardcss.css" rel="stylesheet" asp-append-version="true" />
@@ -307,22 +311,24 @@
         <!-- ══════════════════════════════════════════════════════
              ACTION BUTTONS
         ══════════════════════════════════════════════════════ -->
+        <!-- ══════════════════════════════════════════════════════
+     ACTION BUTTONS
+══════════════════════════════════════════════════════ -->
         <div class="pd-actions">
+
             @if (!isAuth)
             {
-                @* ── Anonymous: show sign-in prompts ── *@
+                @* ── Anonymous: sign-in prompts ─────────────────── *@
                 <div class="pd-anon-actions">
                     <div class="pd-anon-action-notice">
                         <i class="fa-solid fa-lock"></i>
-                        Sign in to link this property, lodge an objection
-                        and access Section 49.
+                        Sign in to link this property@(isAttributes ? "" : ", lodge an objection and access Section 49") .
                     </div>
                     <a href="/account/login?returnUrl=@Context.Request.Path@Context.Request.QueryString"
                            class="pd-btn pd-btn-primary">
                         <i class="fa-solid fa-right-to-bracket"></i> Sign In
                     </a>
-                    <a href="/account/register"
-                           class="pd-btn pd-btn-outline">
+                    <a href="/account/register" class="pd-btn pd-btn-outline">
                         <i class="fa-solid fa-user-plus"></i> Register Free
                     </a>
                     <button class="pd-btn pd-btn-outline" onclick="history.back()">
@@ -330,9 +336,25 @@
                     </button>
                 </div>
             }
+            else if (isAttributes)
+            {
+                @* ── Attributes flow: Link only, no Section 49 ───── *@
+                <button class="pd-btn pd-btn-outline" onclick="history.back()">
+                    <i class="fa-solid fa-arrow-left"></i> Back to Search
+                </button>
+
+                <form method="post" action="/attributes/link" style="display:inline;">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="idProperty" value="@d.Id" />
+                    <input type="hidden" name="propertyFrom" value="Attributes" />
+                    <button type="submit" class="pd-btn pd-btn-primary">
+                        <i class="fa-solid fa-link"></i> Link to My Attributes
+                    </button>
+                </form>
+            }
             else if (Model.IsWithinObjectionPeriod)
             {
-                @* ── Logged in + period open ── *@
+                @* ── Regular objection flow: period open ────────── *@
                 <button class="pd-btn pd-btn-outline" onclick="history.back()">
                     <i class="fa-solid fa-arrow-left"></i> Cancel
                 </button>
@@ -351,7 +373,7 @@
             }
             else
             {
-                @* ── Logged in + period ended ── *@
+                @* ── Regular objection flow: period ended ───────── *@
                 <div class="pd-period-ended">
                     <i class="fa-solid fa-triangle-exclamation"></i>
                     The objection period for <strong>@roll.Short</strong>
@@ -361,6 +383,7 @@
                     <i class="fa-solid fa-arrow-left"></i> Back
                 </button>
             }
+
         </div>
 
     </div>

@@ -2,6 +2,7 @@
     var reqPath  = Context.Request.Path.Value?.ToLower() ?? "";
     bool isAttr  = reqPath.StartsWith("/attributes");
     bool isAbout = reqPath == "/attributes/about";
+  bool isAuth  = User?.Identity?.IsAuthenticated ?? false;
 }
 
 <!DOCTYPE html>
@@ -48,49 +49,138 @@
     @* ══════════════════════════════════════════════════════
        ATTRIBUTES NAV — replaces entire navbar on /attributes/*
     ══════════════════════════════════════════════════════ *@
-    @if (isAttr)
-    {
-        <nav class="attr-nav-full" id="attrNavFull">
-            <div class="attr-nav-full-inner">
+   @if (isAttr)
+{
+    <nav class="cl-navbar" id="clientNav">
+        <div class="cl-nav-inner">
 
-                <a href="/dashboard" class="attr-nav-logo">
-                    <img src="~/Images/joburg-logo.png" alt="Joburg"
-                         class="attr-nav-logo-img"
-                         onerror="this.style.display='none'" />
-                    <div class="attr-nav-logo-text">
-                        <span class="attr-nav-logo-name">City of Johannesburg</span>
-                        <span class="attr-nav-logo-sub">Property Attributes</span>
-                    </div>
-                </a>
+            <!-- Brand — same as regular nav -->
+            <a href="/" class="nav-brand">
+                <div class="nav-brand-mark">
+                    <img src="~/images/joburg_logo.png"
+                         class="brand-logo" alt="City of Johannesburg" />
+                </div>
+                <div class="nav-brand-text">
+                    <span class="nav-brand-name">City of Johannesburg</span>
+                    <span class="nav-brand-sub">Property Attributes</span>
+                </div>
+            </a>
 
-                @if (!isAbout)
+            <!-- Centre links — About / Search / My Submissions -->
+            <ul class="cl-nav-links" id="clNavLinks">
+                <li class="cl-nav-item">
+                    <a class="cl-nav-link @(reqPath == "/attributes/about"   ? "active" : "")"
+                       href="/attributes/about">
+                        About
+                    </a>
+                </li>
+                <li class="cl-nav-item">
+                    <a class="cl-nav-link @(reqPath == "/attributes/search"  ? "active" : "")"
+                       href="/attributes/search">
+                        Search
+                    </a>
+                </li>
+                @if (isAuth)
                 {
-                    <div class="attr-nav-links">
-                        <a href="/attributes/about"
-                           class="attr-nav-link @(reqPath=="/attributes/about"  ? "active":"")">About</a>
-                        <a href="/attributes/search"
-                           class="attr-nav-link @(reqPath=="/attributes/search" ? "active":"")">Search</a>
-                        <a href="/my-submissions"
-                           class="attr-nav-link @(reqPath=="/my-submissions"    ? "active":"")">My Submissions</a>
-                    </div>
-                }
+                    <li class="cl-nav-item">
+                        <a class="cl-nav-link @(reqPath == "/my-submissions" ? "active" : "")"
+                           href="/my-submissions">
+                            My Submissions
+                        </a>
+                    </li>
+                    <li class="cl-nav-item">
 
-                <div class="attr-nav-right">
-                    <a href="/attributes/search" class="attr-nav-cta">
-                        <i class="fa-solid fa-magnifying-glass"></i> Get Started
+                         <a href="/dashboard" class="cl-nav-link">
+                         Dashboard
                     </a>
-                    <a href="/dashboard" class="attr-nav-back">
-                        <i class="fa-solid fa-arrow-left"></i> <span>Dashboard</span>
-                    </a>
-                    <div class="attr-nav-avatar">
-                        @(User.FindFirst(System.Security.Claims.ClaimTypes.Name)
-                            ?.Value?.Substring(0,1).ToUpper() ?? "?")
+                    </li>
+                }
+            </ul>
+
+            <!-- Right side -->
+            @if (isAuth)
+            {
+                      <!-- User pill -->
+                <div class="cl-user" id="clUser">
+                    <button class="cl-user-btn" id="clUserBtn">
+                        <div class="cl-avatar">
+                            @User.Identity?.Name?.Substring(0, 1).ToUpper()
+                        </div>
+                        <span class="cl-user-name d-none d-lg-inline">
+                            @User.Identity?.Name?.Split('@')[0]
+                        </span>
+                        <i class="fa-solid fa-chevron-down" style="font-size:11px;"></i>
+                    </button>
+                    <div class="cl-user-menu" id="clUserMenu">
+                        <a href="/my-profile" class="cl-user-item">
+                            <i class="fa-solid fa-user"></i> My Profile
+                        </a>
+                        <div class="cl-dd-divider"></div>
+                        <form asp-action="Logout" asp-controller="Account" method="post">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="cl-user-item cl-logout">
+                                <i class="fa-solid fa-right-from-bracket"></i> Sign Out
+                            </button>
+                        </form>
                     </div>
                 </div>
+            }
+            else
+            {
+                <!-- Anonymous: Sign In + Register -->
+                <div class="cl-user">
+                    <a href="/account/login?returnUrl=@Context.Request.Path@Context.Request.QueryString"
+                       class="cl-nav-link">
+                        <i class="fa-solid fa-right-to-bracket"></i> Sign In
+                    </a>
+                    <a href="/account/register" class="cl-nav-link cl-nav-evidence">
+                        <i class="fa-solid fa-user-plus"></i> Register
+                    </a>
+                </div>
+            }
 
-            </div>
-        </nav>
-    }
+            <!-- Hamburger for mobile -->
+            <button class="cl-hamburger" id="clHamburger">
+                <span></span><span></span><span></span>
+            </button>
+
+        </div>
+    </nav>
+
+    <!-- Mobile drawer for attributes pages -->
+    <div class="cl-mobile-backdrop" id="clBackdrop"></div>
+    <div class="cl-mobile-drawer" id="clDrawer">
+        <div class="cl-drawer-header">
+            <span style="font-weight:800;letter-spacing:2px;color:var(--gold);">
+                PROPERTY ATTRIBUTES
+            </span>
+            <button id="clDrawerClose">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <a href="/attributes/about"   class="cl-drawer-link"><i class="fa-solid fa-circle-info"></i> About</a>
+        <a href="/attributes/search"  class="cl-drawer-link"><i class="fa-solid fa-magnifying-glass"></i> Search Property</a>
+        @if (isAuth)
+        {
+            <a href="/my-submissions" class="cl-drawer-link"><i class="fa-solid fa-list"></i> My Submissions</a>
+            <div class="cl-dd-divider" style="margin:8px 0;"></div>
+            <a href="/dashboard"      class="cl-drawer-link"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
+            <a href="/my-profile"     class="cl-drawer-link"><i class="fa-solid fa-user"></i> My Profile</a>
+            <form asp-action="Logout" asp-controller="Account" method="post">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="cl-drawer-link cl-drawer-logout">
+                    <i class="fa-solid fa-right-from-bracket"></i> Sign Out
+                </button>
+            </form>
+        }
+        else
+        {
+            <div class="cl-dd-divider" style="margin:8px 0;"></div>
+            <a href="/account/login"    class="cl-drawer-link"><i class="fa-solid fa-right-to-bracket"></i> Sign In</a>
+            <a href="/account/register" class="cl-drawer-link cl-drawer-evidence"><i class="fa-solid fa-user-plus"></i> Register</a>
+        }
+    </div>
+}
     else
     {
         @* ══════════════════════════════════════════════════════
