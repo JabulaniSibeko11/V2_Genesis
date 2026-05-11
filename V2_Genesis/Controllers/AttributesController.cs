@@ -1,9 +1,10 @@
-﻿using System.Security.Claims;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 using V2_Genesis.Data;
 using V2_Genesis.Models;
+using V2_Genesis.Models.ViewModels.Attributes;
 using V2_Genesis.Services.Interfaces;
 
 namespace V2_Genesis.Controllers;
@@ -15,17 +16,18 @@ public class AttributesController : Controller
     private readonly IPropertySearchService _propSearch;
     private readonly ApplicationDbContext _db;
     private readonly ILogger<AttributesController> _logger;
-
+    private readonly IAttributeSubmissionService _attributeService;
     public AttributesController(
         IAttributesSearchService attrSearch,
         IPropertySearchService propSearch,
         ApplicationDbContext db,
-        ILogger<AttributesController> logger)
+        ILogger<AttributesController> logger,IAttributeSubmissionService attributeService)
     {
         _attrSearch = attrSearch;
         _propSearch = propSearch;
         _db = db;
         _logger = logger;
+        _attributeService = attributeService;
     }
 
     [HttpGet]
@@ -108,5 +110,52 @@ public class AttributesController : Controller
             TempData["AttrLinkError"] = "Could not link this property. Please try again.";
         }
         return RedirectToAction("Index", "Dashboard");
+    }
+    [HttpGet]
+    [Authorize]
+    [Route("attributes/form")]
+    public IActionResult Form(string idProperty, string formType = "Residential")
+    {
+        if (string.IsNullOrWhiteSpace(idProperty))
+        {
+            TempData["AttrLinkError"] = "Property reference was not supplied.";
+            return RedirectToAction("Index", "Dashboard");
+        }
+
+        var model = _attributeService.CreateNew(formType);
+
+        model.PropertyDetails.PropertyId = idProperty;
+       // model.PropertyDetails.PremiseId = idProperty;
+
+        return View("Create", model);
+    }
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Create(AttributeSubmissionViewModel model)
+    {
+        if (!ModelState.IsValid)
+        {
+            return View(model);
+        }
+
+        var userId = User.Identity?.Name ?? "anonymous";
+        var userName = User.Identity?.Name ?? "Client";
+
+        var attrId = await _attributeService.SubmitAsync(model, userId, userName);
+
+        TempData["Success"] = "Attribute submission saved successfully.";
+
+        return RedirectToAction("Details", new { id = attrId });
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> Details(long id)
+    {
+        var model = await _attributeService.GetForReviewAsync(id);
+
+        if (model == null)
+            return NotFound();
+
+        return View(model);
     }
 }

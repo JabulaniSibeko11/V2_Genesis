@@ -68,6 +68,8 @@ public class DashboardController : Controller
         var rollData = rollDataTasks.ToDictionary(
             kvp => kvp.Key,
             kvp => kvp.Value.Result);
+        // New — load Attributes linked properties
+   
 
         foreach (var roll in rolls.Where(r => r.IsQuery))
             rollData[roll.Source] = new RollData();
@@ -81,9 +83,11 @@ public class DashboardController : Controller
             Rolls = rolls,
             RollData = rollData,
             RollDates = _rollDates.Dates ,
-            AttributesData = attributesData
+            AttributesData = attributesData,
+            AttributesLinked = await _dashboardService
+       .GetAttributesLinkedAsync(userId)
         };
-
+       
         return View(vm);
     }
 

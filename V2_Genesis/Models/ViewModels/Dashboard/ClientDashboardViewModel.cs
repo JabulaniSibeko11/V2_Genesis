@@ -1,6 +1,8 @@
 ﻿
 using V2_Genesis.Models;
+using V2_Genesis.Models.Attributes;
 using V2_Genesis.Models.Results;
+using V2_Genesis.Models.Results.Atrributes;
 using V2_Genesis.Services;
 using V2_Genesis.Services.Attributes;
 using V2_Genesis.Services.PropertySearch;
@@ -28,6 +30,9 @@ public class ClientDashboardViewModel
 
     // Add to existing properties:
     public AttributesDashboardData AttributesData { get; set; } = new();
+
+    // New — Attributes linked properties
+    public List<AttrLinkedPropertyResult> AttributesLinked { get; set; } = new();
 }
 
 /// <summary>Data bucket for one roll's three tables.</summary>

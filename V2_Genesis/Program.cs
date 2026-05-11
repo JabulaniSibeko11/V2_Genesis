@@ -36,6 +36,12 @@ builder.Services.AddSession(o =>
 builder.Services.AddDbContext<ApplicationDbContext>(o =>
     o.UseSqlServer(cfg.GetConnectionString("DefaultConnection")));
 
+builder.Services.AddDbContext<AttributesDbContext>(options =>
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("AttributesConnection")));
+
+
+
 // ── Identity ─────────────────────────────────────────────────────────────────
 var idCfg = cfg.GetSection("Identity");
 builder.Services
@@ -95,7 +101,7 @@ builder.Services.AddScoped<IOmissionService, OmissionService>();
 builder.Services.AddMemoryCache();
 builder.Services.AddScoped<IHomeSearchService, HomeSearchService>();
 builder.Services.AddScoped<IAttributesSearchService, AttributesSearchService>();
-
+builder.Services.AddScoped<IAttributeSubmissionService, AttributeSubmissionService>();
 
 // ── App Pipeline ──────────────────────────────────────────────────────────────
 var app = builder.Build();

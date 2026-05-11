@@ -1,4 +1,6 @@
-﻿using V2_Genesis.Models.Results.Admin;
+﻿using V2_Genesis.Models.Attributes;
+using V2_Genesis.Models.Results.Admin;
+using V2_Genesis.Models.Results.Atrributes;
 using V2_Genesis.Services.Attributes;
 using V2_Genesis.Services.PropertySearch;
 
@@ -39,7 +41,9 @@ namespace V2_Genesis.Models.ViewModels.Dashboard
 
         public List<AdminAppealResult> AppealsFor(string rollSource) =>
             SearchAppeals.TryGetValue(rollSource, out var a) ? a : new();
-
+        // New — Attributes linked properties
+     
+        public List<AttrLinkedPropertyResult> AttributesLinked { get; set; } = new();
         string PeriodStatus(RollDateEntry? d)
         {
             if (d is null) return "unknown";

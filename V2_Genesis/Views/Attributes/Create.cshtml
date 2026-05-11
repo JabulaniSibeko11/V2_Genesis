@@ -1,0 +1,1281 @@
+﻿@model V2_Genesis.Models.ViewModels.Attributes.AttributeSubmissionViewModel
+
+@{
+    ViewData["Title"] = "Attribute Property Submission";
+
+    bool isResidential = Model.FormType == "Residential";
+    bool isBusiness = Model.FormType == "BusinessCommercial";
+    bool isDrc = Model.FormType == "DRCMethod";
+    bool isSt = Model.FormType == "ResidentialST";
+
+    string formTitle = Model.FormType switch
+    {
+        "Residential" => "Residential",
+        "BusinessCommercial" => "Business and Commercial / Non-Residential",
+        "DRCMethod" => "DRC Method",
+        "ResidentialST" => "Residential - ST",
+        _ => "Attribute Property Submission"
+    };
+}
+
+<style>
+    .attr-page {
+        max-width: 1250px;
+        margin: 20px auto;
+        font-family: Arial, sans-serif;
+        font-size: 13px;
+        color: #111;
+    }
+
+    .attr-card {
+        background: #fff;
+        border: 1px solid #b7cccc;
+        margin-bottom: 18px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .attr-title {
+        text-align: center;
+        font-size: 22px;
+        font-weight: 700;
+        padding: 12px;
+        border-bottom: 1px solid #b7cccc;
+        background: #f8fbfb;
+    }
+
+    .attr-section-title {
+        background: #cfe3e3;
+        border-top: 1px solid #b7cccc;
+        border-bottom: 1px solid #b7cccc;
+        padding: 8px 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .3px;
+    }
+
+    .attr-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .attr-table th,
+    .attr-table td {
+        border: 1px solid #b7cccc;
+        padding: 6px 8px;
+        vertical-align: middle;
+    }
+
+    .attr-table th {
+        background: #eef6f6;
+        font-weight: 700;
+        text-align: left;
+    }
+
+    .attr-label {
+        width: 18%;
+        background: #f7fbfb;
+        font-weight: 700;
+    }
+
+    .attr-input-cell {
+        width: 32%;
+    }
+
+    .attr-input,
+    .attr-select,
+    .attr-textarea {
+        width: 100%;
+        border: 1px solid #d6e1e1;
+        border-radius: 3px;
+        padding: 6px 7px;
+        font-size: 13px;
+        background: #fff;
+    }
+
+    .attr-input:focus,
+    .attr-select:focus,
+    .attr-textarea:focus {
+        outline: none;
+        border-color: #1f6f78;
+        background: #fffef0;
+    }
+
+    .attr-textarea {
+        min-height: 70px;
+        resize: vertical;
+    }
+
+    .attr-radio-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 14px;
+        align-items: center;
+    }
+
+    .attr-radio-row label {
+        font-weight: 400;
+        white-space: nowrap;
+    }
+
+    .attr-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin: 18px 0 40px;
+    }
+
+    .btn-attr-primary {
+        background: #1f6f78;
+        color: #fff;
+        border: none;
+        padding: 10px 22px;
+        border-radius: 4px;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .btn-attr-secondary {
+        background: #eef6f6;
+        color: #111;
+        border: 1px solid #b7cccc;
+        padding: 10px 18px;
+        border-radius: 4px;
+        font-weight: 700;
+        text-decoration: none;
+    }
+
+    .btn-attr-primary:hover {
+        background: #15535a;
+    }
+
+    .small-note {
+        font-size: 12px;
+        color: #555;
+        margin-top: 5px;
+    }
+
+    .file-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        padding: 12px;
+    }
+
+    .file-box {
+        border: 1px solid #d6e1e1;
+        padding: 10px;
+        border-radius: 4px;
+        background: #fbfefe;
+    }
+
+    .file-box label {
+        font-weight: 700;
+        display: block;
+        margin-bottom: 5px;
+    }
+
+    .validation-summary-errors {
+        color: #b00020;
+        background: #fff2f2;
+        border: 1px solid #ffc4c4;
+        padding: 10px;
+        margin-bottom: 15px;
+    }
+
+    @@media (max-width: 768px) {
+        .file-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .attr-table,
+        .attr-table tbody,
+        .attr-table tr,
+        .attr-table td {
+            display: block;
+            width: 100%;
+        }
+
+        .attr-label {
+            width: 100%;
+        }
+    }
+</style>
+
+<div class="attr-page">
+
+    <form asp-action="Create"
+          asp-controller="Attributes"
+          method="post"
+          enctype="multipart/form-data">
+
+        @Html.AntiForgeryToken()
+
+        <input asp-for="FormType" type="hidden" />
+        <input asp-for="AttrId" type="hidden" />
+        <input asp-for="AttrNo" type="hidden" />
+        <input asp-for="FormType" type="hidden" />
+
+
+        <input asp-for="PropertyDetails.PropertyId" type="hidden" />
+        @* <input asp-for="PropertyDetails.PremiseId" type="hidden" /> *@
+
+        <div asp-validation-summary="All"></div>
+
+        <div class="attr-card">
+            <div class="attr-title">@formTitle</div>
+
+            <!-- PROPERTY HEADER DETAILS -->
+            <table class="attr-table">
+                <tr>
+                    <td class="attr-label">H Area</td>
+                    <td class="attr-input-cell">
+                        <input asp-for="PropertyDetails.HArea" class="attr-input" />
+                    </td>
+
+                    <td class="attr-label">Data Controller</td>
+                    <td class="attr-input-cell">
+                        <input asp-for="PropertyDetails.DataController" class="attr-input" />
+                    </td>
+                </tr>
+
+                <tr>
+                    <td class="attr-label">Collection Block</td>
+                    <td>
+                        <input asp-for="PropertyDetails.CollectionBlock" class="attr-input" />
+                    </td>
+
+                    <td class="attr-label">Data Collector</td>
+                    <td>
+                        <input asp-for="PropertyDetails.DataCollector" class="attr-input" />
+                    </td>
+                </tr>
+
+                <tr>
+                    <td class="attr-label">SG Number</td>
+                    <td>
+                        <input asp-for="PropertyDetails.SGNumber" class="attr-input" />
+                    </td>
+
+                    <td class="attr-label">Centroid</td>
+                    <td>
+                        <input asp-for="PropertyDetails.Centroid" class="attr-input" />
+                    </td>
+                </tr>
+
+                <tr>
+                    <td class="attr-label">Erf</td>
+                    <td>
+                        <input asp-for="PropertyDetails.Erf" class="attr-input" />
+                    </td>
+
+                    <td class="attr-label">Extent</td>
+                    <td>
+                        <input asp-for="PropertyDetails.Extent" class="attr-input" />
+                    </td>
+                </tr>
+
+                <tr>
+                    <td class="attr-label">Sectional Title</td>
+                    <td>
+                        <input asp-for="PropertyDetails.SectionalTitle" class="attr-input" />
+                    </td>
+
+                    <td class="attr-label">Land Use Financials</td>
+                    <td>
+                        <input asp-for="PropertyDetails.LandUseFinancials" class="attr-input" />
+                    </td>
+                </tr>
+
+                <tr>
+                    <td class="attr-label">Municipality</td>
+                    <td>
+                        <input asp-for="PropertyDetails.Municipality" class="attr-input" />
+                    </td>
+
+                    <td class="attr-label">Ward</td>
+                    <td>
+                        <input asp-for="PropertyDetails.Ward" class="attr-input" />
+                    </td>
+                </tr>
+
+                <tr>
+                    <td class="attr-label">Township</td>
+                    <td>
+                        <input asp-for="PropertyDetails.Township" class="attr-input" />
+                    </td>
+
+                    <td class="attr-label">Zoning</td>
+                    <td>
+                        <input asp-for="PropertyDetails.Zoning" class="attr-input" />
+                    </td>
+                </tr>
+
+                <tr>
+                    <td class="attr-label">Sources</td>
+                    <td>
+                        <input asp-for="PropertyDetails.Sources" class="attr-input" />
+                    </td>
+
+                    <td class="attr-label">Address</td>
+                    <td>
+                        <input asp-for="PropertyDetails.Address" class="attr-input" />
+                    </td>
+                </tr>
+            </table>
+
+            <div class="attr-section-title">Property Details</div>
+
+            <table class="attr-table">
+                <tr>
+                    <td class="attr-label">Valuation Category on Roll</td>
+                    <td colspan="3">
+                        <select asp-for="ValuationDetails.ValuationCategoryOnRoll" class="attr-select">
+                            <option value="">-- Select --</option>
+                            <option>Residential</option>
+                            <option>Residential with Consent Use</option>
+                            <option>Business and Commercial</option>
+                            <option>Multiple Purposes</option>
+                            <option>Public Service Purposes</option>
+                            <option>Public Service Infrastructure</option>
+                            <option>Agricultural</option>
+                            <option>Mining</option>
+                            <option>Municipal</option>
+                            <option>Private Open Space</option>
+                            <option>Public Open Space</option>
+                            <option>Religious</option>
+                        </select>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td class="attr-label">Actual Use</td>
+                    <td colspan="3">
+                        <input asp-for="ValuationDetails.ActualUse" class="attr-input" />
+                    </td>
+                </tr>
+
+                <tr>
+                    <td class="attr-label">Mixed Use?</td>
+                    <td>
+                        <div class="attr-radio-row">
+                            <label>
+                                <input type="radio" asp-for="ValuationDetails.IsMixedUse" value="true" />
+                                Yes
+                            </label>
+                            <label>
+                                <input type="radio" asp-for="ValuationDetails.IsMixedUse" value="false" />
+                                No
+                            </label>
+                        </div>
+                    </td>
+
+                    <td class="attr-label">If mixed use, specify alternate usages</td>
+                    <td>
+                        <input asp-for="ValuationDetails.AlternateUsages" class="attr-input" />
+                    </td>
+                </tr>
+
+                <tr>
+                    <td class="attr-label">Owners Title Deeds</td>
+                    <td colspan="3">
+                        <textarea asp-for="ValuationDetails.OwnersTitleDeeds" class="attr-textarea"></textarea>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td class="attr-label">Owners Financials</td>
+                    <td colspan="3">
+                        <textarea asp-for="ValuationDetails.OwnersFinancials" class="attr-textarea"></textarea>
+                    </td>
+                </tr>
+            </table>
+
+            <div class="attr-section-title">System Property Reference</div>
+
+            <table class="attr-table">
+                <tr>
+                    <td class="attr-label">Property Description</td>
+                    <td>
+                        <input asp-for="PropertyDetails.PropertyDesc" class="attr-input" />
+                    </td>
+
+                    <td class="attr-label">Premise ID</td>
+                    <td>
+                        <input asp-for="PropertyDetails.PremiseId" class="attr-input" />
+                    </td>
+                </tr>
+
+                <tr>
+                    <td class="attr-label">Unit Key</td>
+                    <td>
+                        <input asp-for="PropertyDetails.UnitKey" class="attr-input" />
+                    </td>
+
+                    <td class="attr-label">Property ID</td>
+                    <td>
+                        <input asp-for="PropertyDetails.PropertyId" class="attr-input" />
+                    </td>
+                </tr>
+
+                <tr>
+                    <td class="attr-label">Valuation Key</td>
+                    <td>
+                        <input asp-for="PropertyDetails.ValuationKey" class="attr-input" />
+                    </td>
+
+                    <td class="attr-label">Sector</td>
+                    <td>
+                        <input asp-for="PropertyDetails.Sector" class="attr-input" />
+                    </td>
+                </tr>
+
+                <tr>
+                    <td class="attr-label">Roll Type</td>
+                    <td>
+                        <input asp-for="PropertyDetails.RollType" class="attr-input" />
+                    </td>
+
+                    <td class="attr-label">Roll Description</td>
+                    <td>
+                        <input asp-for="PropertyDetails.RollDescription" class="attr-input" />
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- ACCESS -->
+        <div class="attr-card">
+            <div class="attr-section-title">Access</div>
+
+            <table class="attr-table">
+                <tr>
+                    <td class="attr-label">Access Type</td>
+                    <td colspan="3">
+                        <div class="attr-radio-row">
+                            <label><input type="radio" asp-for="Access.AccessType" value="None" /> None</label>
+                            <label><input type="radio" asp-for="Access.AccessType" value="Garden Only" /> Garden Only</label>
+                            <label><input type="radio" asp-for="Access.AccessType" value="House Only" /> House Only</label>
+                            <label><input type="radio" asp-for="Access.AccessType" value="Partial" /> Partial</label>
+                            <label><input type="radio" asp-for="Access.AccessType" value="Full" /> Full</label>
+                        </div>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td class="attr-label">Permission</td>
+                    <td colspan="3">
+                        <div class="attr-radio-row">
+                            <label><input type="radio" asp-for="Access.PermissionStatus" value="Granted" /> Granted</label>
+                            <label><input type="radio" asp-for="Access.PermissionStatus" value="Refused" /> Refused</label>
+                            <label><input type="radio" asp-for="Access.PermissionStatus" value="No-one home" /> No-one home</label>
+                            <label><input type="radio" asp-for="Access.PermissionStatus" value="Unoccupied" /> Unoccupied</label>
+                        </div>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td class="attr-label">Comments</td>
+                    <td colspan="3">
+                        <textarea asp-for="Access.Comments" class="attr-textarea"></textarea>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- CONTACT INFO -->
+        <div class="attr-card">
+            <div class="attr-section-title">Contact Info</div>
+
+            @for (int i = 0; i < Model.ContactInfos.Count; i++)
+            {
+                <table class="attr-table">
+                    <tr>
+                        <th colspan="4">Contact @(i + 1)</th>
+                    </tr>
+
+                    <tr>
+                        <td class="attr-label">Contact Type</td>
+                        <td>
+                            <select asp-for="ContactInfos[i].ContactType" class="attr-select">
+                                <option>Owner</option>
+                                <option>Representative</option>
+                                <option>Company</option>
+                                <option>Tenant</option>
+                                <option>Other</option>
+                            </select>
+                        </td>
+
+                        <td class="attr-label">Is Company?</td>
+                        <td>
+                            <div class="attr-radio-row">
+                                <label>
+                                    <input type="radio" asp-for="ContactInfos[i].IsCompany" value="true" />
+                                    Yes
+                                </label>
+                                <label>
+                                    <input type="radio" asp-for="ContactInfos[i].IsCompany" value="false" />
+                                    No
+                                </label>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td class="attr-label">Company Name</td>
+                        <td>
+                            <input asp-for="ContactInfos[i].CompanyName" class="attr-input" />
+                        </td>
+
+                        <td class="attr-label">Company Registration Number</td>
+                        <td>
+                            <input asp-for="ContactInfos[i].CompanyRegistrationNumber" class="attr-input" />
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td class="attr-label">First Names</td>
+                        <td>
+                            <input asp-for="ContactInfos[i].FirstNames" class="attr-input" />
+                        </td>
+
+                        <td class="attr-label">Last Name</td>
+                        <td>
+                            <input asp-for="ContactInfos[i].LastName" class="attr-input" />
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td class="attr-label">Maiden Name</td>
+                        <td>
+                            <input asp-for="ContactInfos[i].MaidenName" class="attr-input" />
+                        </td>
+
+                        <td class="attr-label">ID Number</td>
+                        <td>
+                            <input asp-for="ContactInfos[i].IDNumber" class="attr-input" />
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td class="attr-label">Date of Birth</td>
+                        <td>
+                            <input asp-for="ContactInfos[i].DateOfBirth" type="date" class="attr-input" />
+                        </td>
+
+                        <td class="attr-label">Gender</td>
+                        <td>
+                            <div class="attr-radio-row">
+                                <label><input type="radio" asp-for="ContactInfos[i].Gender" value="Male" /> Male</label>
+                                <label><input type="radio" asp-for="ContactInfos[i].Gender" value="Female" /> Female</label>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td class="attr-label">Marital Status</td>
+                        <td colspan="3">
+                            <div class="attr-radio-row">
+                                <label><input type="radio" asp-for="ContactInfos[i].MaritalStatus" value="Single" /> Single</label>
+                                <label><input type="radio" asp-for="ContactInfos[i].MaritalStatus" value="Married" /> Married</label>
+                                <label><input type="radio" asp-for="ContactInfos[i].MaritalStatus" value="Trad Marriage" /> Trad Marriage</label>
+                                <label><input type="radio" asp-for="ContactInfos[i].MaritalStatus" value="Co-Habiting" /> Co-Habiting</label>
+                                <label><input type="radio" asp-for="ContactInfos[i].MaritalStatus" value="Divorced" /> Divorced</label>
+                                <label><input type="radio" asp-for="ContactInfos[i].MaritalStatus" value="Widowed" /> Widowed</label>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td class="attr-label">Citizenship</td>
+                        <td colspan="3">
+                            <div class="attr-radio-row">
+                                <label><input type="radio" asp-for="ContactInfos[i].Citizenship" value="RSA" /> RSA</label>
+                                <label><input type="radio" asp-for="ContactInfos[i].Citizenship" value="Botswana" /> Botswana</label>
+                                <label><input type="radio" asp-for="ContactInfos[i].Citizenship" value="Lesotho" /> Lesotho</label>
+                                <label><input type="radio" asp-for="ContactInfos[i].Citizenship" value="Mozambique" /> Mozambique</label>
+                                <label><input type="radio" asp-for="ContactInfos[i].Citizenship" value="Namibia" /> Namibia</label>
+                                <label><input type="radio" asp-for="ContactInfos[i].Citizenship" value="Swaziland" /> Swaziland</label>
+                                <label><input type="radio" asp-for="ContactInfos[i].Citizenship" value="Zimbabwe" /> Zimbabwe</label>
+                                <label><input type="radio" asp-for="ContactInfos[i].Citizenship" value="Other" /> Other</label>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td class="attr-label">Physical Address</td>
+                        <td colspan="3">
+                            <textarea asp-for="ContactInfos[i].PhysicalAddress" class="attr-textarea"></textarea>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td class="attr-label">Postal Address</td>
+                        <td colspan="3">
+                            <textarea asp-for="ContactInfos[i].PostalAddress" class="attr-textarea"></textarea>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td class="attr-label">Email</td>
+                        <td>
+                            <input asp-for="ContactInfos[i].Email" type="email" class="attr-input" />
+                        </td>
+
+                        <td class="attr-label">Home Phone No</td>
+                        <td>
+                            <input asp-for="ContactInfos[i].HomePhoneNo" class="attr-input" />
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td class="attr-label">Work Phone No</td>
+                        <td>
+                            <input asp-for="ContactInfos[i].WorkPhoneNo" class="attr-input" />
+                        </td>
+
+                        <td class="attr-label">Cell No</td>
+                        <td>
+                            <input asp-for="ContactInfos[i].CellNo" class="attr-input" />
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td class="attr-label">Fax No</td>
+                        <td>
+                            <input asp-for="ContactInfos[i].FaxNo" class="attr-input" />
+                        </td>
+
+                        <td class="attr-label">Interviewed</td>
+                        <td>
+                            <div class="attr-radio-row">
+                                <label><input type="radio" asp-for="ContactInfos[i].Interviewed" value="true" /> Yes</label>
+                                <label><input type="radio" asp-for="ContactInfos[i].Interviewed" value="false" /> No</label>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td class="attr-label">Comments</td>
+                        <td colspan="3">
+                            <textarea asp-for="ContactInfos[i].Comments" class="attr-textarea"></textarea>
+                        </td>
+                    </tr>
+                </table>
+            }
+        </div>
+
+        @if (isResidential || isSt)
+        {
+            <!-- PRIMARY ATTRIBUTES -->
+            <div class="attr-card">
+                <div class="attr-section-title">Primary Attributes</div>
+
+                <table class="attr-table">
+                    @if (isResidential)
+                    {
+                        <tr>
+                            <td class="attr-label">Tla1</td>
+                            <td><input asp-for="PrimaryAttributes.Tla1" class="attr-input" /></td>
+
+                            <td class="attr-label">Tla2</td>
+                            <td><input asp-for="PrimaryAttributes.Tla2" class="attr-input" /></td>
+                        </tr>
+
+                        <tr>
+                            <td class="attr-label">Tla3</td>
+                            <td><input asp-for="PrimaryAttributes.Tla3" class="attr-input" /></td>
+
+                            <td class="attr-label">Garage</td>
+                            <td><input asp-for="PrimaryAttributes.Garage" class="attr-input" /></td>
+                        </tr>
+
+                        <tr>
+                            <td class="attr-label">Carport CP</td>
+                            <td><input asp-for="PrimaryAttributes.CarportCp" class="attr-input" /></td>
+
+                            <td class="attr-label">Granny Flat GF</td>
+                            <td><input asp-for="PrimaryAttributes.GrannyFlatGf" class="attr-input" /></td>
+                        </tr>
+
+                        <tr>
+                            <td class="attr-label">Staff Quarters SQ</td>
+                            <td><input asp-for="PrimaryAttributes.StaffQuartersSq" class="attr-input" /></td>
+
+                            <td class="attr-label">Storage</td>
+                            <td><input asp-for="PrimaryAttributes.Storage" class="attr-input" /></td>
+                        </tr>
+
+                        <tr>
+                            <td class="attr-label">Adjustment Factor</td>
+                            <td colspan="3">
+                                <input asp-for="PrimaryAttributes.AdjustmentFactor" class="attr-input" />
+                            </td>
+                        </tr>
+                    }
+
+                    @if (isSt)
+                    {
+                        <tr>
+                            <td class="attr-label">ST Main</td>
+                            <td><input asp-for="PrimaryAttributes.STMain" class="attr-input" /></td>
+
+                            <td class="attr-label">Garage</td>
+                            <td><input asp-for="PrimaryAttributes.Garage" class="attr-input" /></td>
+                        </tr>
+
+                        <tr>
+                            <td class="attr-label">Carport CP</td>
+                            <td><input asp-for="PrimaryAttributes.CarportCp" class="attr-input" /></td>
+
+                            <td class="attr-label">Storage</td>
+                            <td><input asp-for="PrimaryAttributes.Storage" class="attr-input" /></td>
+                        </tr>
+                    }
+                </table>
+            </div>
+
+            <!-- SECONDARY ATTRIBUTES -->
+            <div class="attr-card">
+                <div class="attr-section-title">Secondary Attributes</div>
+
+                <table class="attr-table">
+                    @if (isResidential)
+                    {
+                        <tr>
+                            <td class="attr-label">Storeys</td>
+                            <td>
+                                <select asp-for="SecondaryAttributes.Storeys" class="attr-select">
+                                    <option value="">-- Select --</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                </select>
+                            </td>
+
+                            <td class="attr-label">Security</td>
+                            <td>
+                                <select asp-for="SecondaryAttributes.Security" class="attr-select">
+                                    <option value="">-- Select --</option>
+                                    <option>High</option>
+                                    <option>Medium</option>
+                                    <option>Low</option>
+                                    <option>None</option>
+                                </select>
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <td class="attr-label">Noise</td>
+                            <td>
+                                <select asp-for="SecondaryAttributes.Noise" class="attr-select">
+                                    <option value="">-- Select --</option>
+                                    <option>Freeway</option>
+                                    <option>Major Road</option>
+                                    <option>Side Street</option>
+                                    <option>Cul-de-sac</option>
+                                    <option>Entertainment</option>
+                                </select>
+                            </td>
+
+                            <td class="attr-label">Topography</td>
+                            <td>
+                                <select asp-for="SecondaryAttributes.Topography" class="attr-select">
+                                    <option value="">-- Select --</option>
+                                    <option>Level</option>
+                                    <option>Average</option>
+                                    <option>Slope</option>
+                                    <option>Steep</option>
+                                </select>
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <td class="attr-label">Quality</td>
+                            <td>
+                                <select asp-for="SecondaryAttributes.Quality" class="attr-select">
+                                    <option value="">-- Select --</option>
+                                    <option>Excellent</option>
+                                    <option>Good</option>
+                                    <option>Average</option>
+                                    <option>Poor</option>
+                                </select>
+                            </td>
+
+                            <td class="attr-label">Condition</td>
+                            <td>
+                                <select asp-for="SecondaryAttributes.Condition" class="attr-select">
+                                    <option value="">-- Select --</option>
+                                    <option>Excellent</option>
+                                    <option>Good</option>
+                                    <option>Average</option>
+                                    <option>Poor</option>
+                                </select>
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <td class="attr-label">Swimming Pool</td>
+                            <td>
+                                <div class="attr-radio-row">
+                                    <label><input type="radio" asp-for="SecondaryAttributes.SwimmingPool" value="true" /> Yes</label>
+                                    <label><input type="radio" asp-for="SecondaryAttributes.SwimmingPool" value="false" /> No</label>
+                                </div>
+                            </td>
+
+                            <td class="attr-label">Tennis Court</td>
+                            <td>
+                                <div class="attr-radio-row">
+                                    <label><input type="radio" asp-for="SecondaryAttributes.TennisCourt" value="true" /> Yes</label>
+                                    <label><input type="radio" asp-for="SecondaryAttributes.TennisCourt" value="false" /> No</label>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+
+                    @if (isSt)
+                    {
+                        <tr>
+                            <td class="attr-label">ST Condition</td>
+                            <td>
+                                <select asp-for="SecondaryAttributes.STCondition" class="attr-select">
+                                    <option value="">-- Select --</option>
+                                    <option value="1">1 - Excellent</option>
+                                    <option value="2">2 - Good</option>
+                                    <option value="3">3 - Average</option>
+                                    <option value="4">4 - Fair</option>
+                                    <option value="5">5 - Poor</option>
+                                </select>
+                            </td>
+
+                            <td class="attr-label">ST Floor</td>
+                            <td>
+                                <input asp-for="SecondaryAttributes.STFloor" class="attr-input" />
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <td class="attr-label">Quality</td>
+                            <td colspan="3">
+                                <div class="attr-radio-row">
+                                    <label><input type="radio" asp-for="SecondaryAttributes.Quality" value="Excellent" /> Excellent</label>
+                                    <label><input type="radio" asp-for="SecondaryAttributes.Quality" value="Good" /> Good</label>
+                                    <label><input type="radio" asp-for="SecondaryAttributes.Quality" value="Average" /> Average</label>
+                                    <label><input type="radio" asp-for="SecondaryAttributes.Quality" value="Poor" /> Poor</label>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </table>
+            </div>
+        }
+
+        @if (isBusiness)
+        {
+            <!-- BUSINESS BUILDINGS -->
+            <div class="attr-card">
+                <div class="attr-section-title">Buildings</div>
+
+                <table class="attr-table">
+                    <thead>
+                        <tr>
+                            <th>Building Nr</th>
+                            <th>Quality</th>
+                            <th>Condition</th>
+                            <th>Year Built</th>
+                            <th>Storeys</th>
+                            <th>Depreciation</th>
+                            <th>GBA</th>
+                            <th>Cost</th>
+                            <th>DRC</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (int i = 0; i < Model.BusinessBuildings.Count; i++)
+                        {
+                            <tr>
+                                <td><input asp-for="BusinessBuildings[i].BuildingNr" class="attr-input" /></td>
+                                <td><input asp-for="BusinessBuildings[i].Quality" class="attr-input" /></td>
+                                <td><input asp-for="BusinessBuildings[i].Condition" class="attr-input" /></td>
+                                <td><input asp-for="BusinessBuildings[i].YearBuilt" class="attr-input" /></td>
+                                <td><input asp-for="BusinessBuildings[i].Storeys" class="attr-input" /></td>
+                                <td><input asp-for="BusinessBuildings[i].Depreciation" class="attr-input" /></td>
+                                <td><input asp-for="BusinessBuildings[i].GBA" class="attr-input" /></td>
+                                <td><input asp-for="BusinessBuildings[i].Cost" class="attr-input" /></td>
+                                <td><input asp-for="BusinessBuildings[i].DRC" class="attr-input" /></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- BUSINESS SECTIONS -->
+            <div class="attr-card">
+                <div class="attr-section-title">Sections</div>
+
+                <table class="attr-table">
+                    <thead>
+                        <tr>
+                            <th>Building Nr</th>
+                            <th>Usage</th>
+                            <th>Market Group</th>
+                            <th>Quality</th>
+                            <th>GBA</th>
+                            <th>NLA</th>
+                            <th>Cost Rate</th>
+                            <th>Cost</th>
+                            <th>Rental</th>
+                            <th>Vac</th>
+                            <th>Exp</th>
+                            <th>Cap</th>
+                            <th>Gross</th>
+                            <th>Normalised</th>
+                            <th>Nett</th>
+                            <th>Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (int i = 0; i < Model.BusinessSections.Count; i++)
+                        {
+                            <tr>
+                                <td><input asp-for="BusinessSections[i].BuildingNr" class="attr-input" /></td>
+                                <td><input asp-for="BusinessSections[i].Usage" class="attr-input" /></td>
+                                <td><input asp-for="BusinessSections[i].MarketGroup" class="attr-input" /></td>
+                                <td><input asp-for="BusinessSections[i].Quality" class="attr-input" /></td>
+                                <td><input asp-for="BusinessSections[i].GBA" class="attr-input" /></td>
+                                <td><input asp-for="BusinessSections[i].NLA" class="attr-input" /></td>
+                                <td><input asp-for="BusinessSections[i].CostRate" class="attr-input" /></td>
+                                <td><input asp-for="BusinessSections[i].Cost" class="attr-input" /></td>
+                                <td><input asp-for="BusinessSections[i].Rental" class="attr-input" /></td>
+                                <td><input asp-for="BusinessSections[i].Vac" class="attr-input" /></td>
+                                <td><input asp-for="BusinessSections[i].Exp" class="attr-input" /></td>
+                                <td><input asp-for="BusinessSections[i].Cap" class="attr-input" /></td>
+                                <td><input asp-for="BusinessSections[i].Gross" class="attr-input" /></td>
+                                <td><input asp-for="BusinessSections[i].Normalised" class="attr-input" /></td>
+                                <td><input asp-for="BusinessSections[i].Nett" class="attr-input" /></td>
+                                <td><input asp-for="BusinessSections[i].Value" class="attr-input" /></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- BUSINESS GENERAL -->
+            <div class="attr-card">
+                <div class="attr-section-title">General</div>
+
+                <table class="attr-table">
+                    <tr>
+                        <td class="attr-label">Unutilised Land Extent</td>
+                        <td>
+                            <input asp-for="BusinessGeneral.UnutilisedLandExtent" class="attr-input" />
+                        </td>
+
+                        <td class="attr-label">Unutilised Land Rate</td>
+                        <td>
+                            <input asp-for="BusinessGeneral.UnutilisedLandRate" class="attr-input" />
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        }
+
+        @if (isDrc)
+        {
+            <!-- DRC BUILDINGS -->
+            <div class="attr-card">
+                <div class="attr-section-title">Buildings</div>
+
+                <table class="attr-table">
+                    <thead>
+                        <tr>
+                            <th>Building Description</th>
+                            <th>Quality</th>
+                            <th>Gross Building Area</th>
+                            <th>Condition</th>
+                            <th>Depreciation %</th>
+                            <th>Rate per SQM</th>
+                            <th>Depreciated Rate</th>
+                            <th>Replacement Cost</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (int i = 0; i < Model.DrcBuildings.Count; i++)
+                        {
+                            <tr>
+                                <td><input asp-for="DrcBuildings[i].BuildingDescription" class="attr-input" /></td>
+                                <td><input asp-for="DrcBuildings[i].Quality" class="attr-input" /></td>
+                                <td><input asp-for="DrcBuildings[i].GrossBuildingArea" class="attr-input" /></td>
+                                <td><input asp-for="DrcBuildings[i].Condition" class="attr-input" /></td>
+                                <td><input asp-for="DrcBuildings[i].DepreciationPercentage" class="attr-input" /></td>
+                                <td><input asp-for="DrcBuildings[i].RatePerSQM" class="attr-input" /></td>
+                                <td><input asp-for="DrcBuildings[i].DepreciatedRate" class="attr-input" /></td>
+                                <td><input asp-for="DrcBuildings[i].ReplacementCost" class="attr-input" /></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- DRC IMPROVEMENTS -->
+            <div class="attr-card">
+                <div class="attr-section-title">Improvements</div>
+
+                <table class="attr-table">
+                    <thead>
+                        <tr>
+                            <th>Improvement Description</th>
+                            <th>Quality</th>
+                            <th>Area / Unit</th>
+                            <th>Condition</th>
+                            <th>Depreciation %</th>
+                            <th>Rate per SQM</th>
+                            <th>Depreciated Rate</th>
+                            <th>Replacement Cost</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (int i = 0; i < Model.DrcImprovements.Count; i++)
+                        {
+                            <tr>
+                                <td><input asp-for="DrcImprovements[i].ImprovementDescription" class="attr-input" /></td>
+                                <td><input asp-for="DrcImprovements[i].Quality" class="attr-input" /></td>
+                                <td><input asp-for="DrcImprovements[i].AreaUnit" class="attr-input" /></td>
+                                <td><input asp-for="DrcImprovements[i].Condition" class="attr-input" /></td>
+                                <td><input asp-for="DrcImprovements[i].DepreciationPercentage" class="attr-input" /></td>
+                                <td><input asp-for="DrcImprovements[i].RatePerSQM" class="attr-input" /></td>
+                                <td><input asp-for="DrcImprovements[i].DepreciatedRate" class="attr-input" /></td>
+                                <td><input asp-for="DrcImprovements[i].ReplacementCost" class="attr-input" /></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- DRC VACANT LAND -->
+            <div class="attr-card">
+                <div class="attr-section-title">Vacant Land</div>
+
+                <table class="attr-table">
+                    <thead>
+                        <tr>
+                            <th>Region</th>
+                            <th>Min R/sqm</th>
+                            <th>Mid R/sqm</th>
+                            <th>Max R/sqm</th>
+                            <th>Area</th>
+                            <th>Rate</th>
+                            <th>Vacant Land Cost</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (int i = 0; i < Model.DrcVacantLands.Count; i++)
+                        {
+                            <tr>
+                                <td><input asp-for="DrcVacantLands[i].Region" class="attr-input" /></td>
+                                <td><input asp-for="DrcVacantLands[i].MinRatePerSQM" class="attr-input" /></td>
+                                <td><input asp-for="DrcVacantLands[i].MidRatePerSQM" class="attr-input" /></td>
+                                <td><input asp-for="DrcVacantLands[i].MaxRatePerSQM" class="attr-input" /></td>
+                                <td><input asp-for="DrcVacantLands[i].Area" class="attr-input" /></td>
+                                <td><input asp-for="DrcVacantLands[i].Rate" class="attr-input" /></td>
+                                <td><input asp-for="DrcVacantLands[i].VacantLandCost" class="attr-input" /></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- MARKET VALUE AND DEMOLITION -->
+            <div class="attr-card">
+                <div class="attr-section-title">Market Value and Demolition</div>
+
+                <table class="attr-table">
+                    <tr>
+                        <td class="attr-label">Demolition Rate</td>
+                        <td>
+                            <input asp-for="DrcMarketValueDemolition.DemolitionRate" class="attr-input" />
+                        </td>
+
+                        <td class="attr-label">Market Value</td>
+                        <td>
+                            <input asp-for="DrcMarketValueDemolition.MarketValue" class="attr-input" />
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td class="attr-label">Market Value After Demolition</td>
+                        <td colspan="3">
+                            <input asp-for="DrcMarketValueDemolition.MarketValueAfterDemolition" class="attr-input" />
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        }
+
+        <!-- CALCULATIONS -->
+        <div class="attr-card">
+            <div class="attr-section-title">Calculations - Do Not Capture</div>
+
+            <table class="attr-table">
+                @if (isResidential || isSt)
+                {
+                    <tr>
+                        <td class="attr-label">Calc Update TLA</td>
+                        <td>
+                            <input asp-for="Calculations.CalcUpdateTla" class="attr-input" readonly value="TO BE CALCULATED" />
+                        </td>
+
+                        <td class="attr-label">TLA</td>
+                        <td>
+                            <input asp-for="Calculations.Tla" class="attr-input" readonly />
+                        </td>
+                    </tr>
+                }
+
+                @if (isResidential)
+                {
+                    <tr>
+                        <td class="attr-label">Calc Update WGBA</td>
+                        <td>
+                            <input asp-for="Calculations.CalcUpdateWgba" class="attr-input" readonly value="TO BE CALCULATED" />
+                        </td>
+
+                        <td class="attr-label">Adjusted WGBA</td>
+                        <td>
+                            <input asp-for="Calculations.AdjustedWgba" class="attr-input" readonly />
+                        </td>
+                    </tr>
+                }
+
+                @if (isBusiness)
+                {
+                    <tr>
+                        <td class="attr-label">Total Value - Non Res</td>
+                        <td>
+                            <input asp-for="Calculations.TotalValueNonRes" class="attr-input" readonly />
+                        </td>
+
+                        <td class="attr-label">Total Value - Unutilised Land</td>
+                        <td>
+                            <input asp-for="Calculations.TotalValueUnutilisedLand" class="attr-input" readonly />
+                        </td>
+                    </tr>
+                }
+
+                @if (isDrc)
+                {
+                    <tr>
+                        <td class="attr-label">DRC Final Value</td>
+                        <td colspan="3">
+                            <input asp-for="Calculations.DRCFinalValue" class="attr-input" readonly />
+                        </td>
+                    </tr>
+                }
+
+                <tr>
+                    <td class="attr-label">Calculation Status</td>
+                    <td colspan="3">
+                        <input asp-for="Calculations.CalculationStatus" class="attr-input" readonly value="TO BE CALCULATED" />
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- CLIENT COMMENT -->
+        <div class="attr-card">
+            <div class="attr-section-title">Client Comment</div>
+
+            <table class="attr-table">
+                <tr>
+                    <td class="attr-label">Comment</td>
+                    <td>
+                        <textarea asp-for="ClientComment" class="attr-textarea"></textarea>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- EVIDENCE FILES -->
+        <div class="attr-card">
+            <div class="attr-section-title">Evidence Uploads - Maximum 10 Files</div>
+
+            <div class="file-grid">
+                <div class="file-box">
+                    <label>File 1</label>
+                    <input asp-for="Files.Files1" type="file" class="attr-input" />
+                </div>
+
+                <div class="file-box">
+                    <label>File 2</label>
+                    <input asp-for="Files.Files2" type="file" class="attr-input" />
+                </div>
+
+                <div class="file-box">
+                    <label>File 3</label>
+                    <input asp-for="Files.Files3" type="file" class="attr-input" />
+                </div>
+
+                <div class="file-box">
+                    <label>File 4</label>
+                    <input asp-for="Files.Files4" type="file" class="attr-input" />
+                </div>
+
+                <div class="file-box">
+                    <label>File 5</label>
+                    <input asp-for="Files.Files5" type="file" class="attr-input" />
+                </div>
+
+                <div class="file-box">
+                    <label>File 6</label>
+                    <input asp-for="Files.Files6" type="file" class="attr-input" />
+                </div>
+
+                <div class="file-box">
+                    <label>File 7</label>
+                    <input asp-for="Files.Files7" type="file" class="attr-input" />
+                </div>
+
+                <div class="file-box">
+                    <label>File 8</label>
+                    <input asp-for="Files.Files8" type="file" class="attr-input" />
+                </div>
+
+                <div class="file-box">
+                    <label>File 9</label>
+                    <input asp-for="Files.Files9" type="file" class="attr-input" />
+                </div>
+
+                <div class="file-box">
+                    <label>File 10</label>
+                    <input asp-for="Files.Files10" type="file" class="attr-input" />
+                </div>
+
+                <div class="file-box">
+                    <label>Representative / Authorisation Letter</label>
+                    <input asp-for="Files.RepLetter" type="file" class="attr-input" />
+                </div>
+            </div>
+
+            <div class="small-note" style="padding: 0 12px 12px;">
+                Upload supporting documents such as photos, plans, rates information, title documents, authorisation letter, or other evidence.
+            </div>
+        </div>
+
+        <div class="attr-actions">
+            <a asp-action="Create"
+                   asp-controller="AttributeSubmission"
+                   asp-route-formType="@Model.FormType"
+                   class="btn-attr-secondary">
+                Clear
+            </a>
+
+            <button type="submit" class="btn-attr-primary">
+                Submit Attribute Information
+            </button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
