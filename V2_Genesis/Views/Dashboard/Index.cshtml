@@ -609,11 +609,11 @@ else if (roll.IsQuery)
 
 
                                                                     <li>
-                                                                        <a class="dropdown-item"
-                                                                               asp-controller="Attributes"
-                                                                               asp-action="Form"
-                                                                               asp-route-id="@item.IDProperty"
-                                                                               asp-route-formType="@item.FormType">
+                                                                       <a class="dropdown-item"
+                                                                           asp-controller="Attributes"
+                                                                   asp-action="Check"
+                                                                   asp-route-idProperty="@item.Id"
+                                                                           asp-route-formType="@item.FormType">
                                                                             Submit Attributes
                                                                         </a>
                                                                     </li>

@@ -1,0 +1,288 @@
+﻿
+.rep-page {
+    background: #f4f4f4;
+    min-height: 100vh;
+    padding: 32px 24px 56px;
+    font-family: 'Poppins',sans-serif;
+}
+
+.rep-inner {
+    max-width: 780px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+}
+
+/* Progress steps */
+.rep-steps {
+    display: flex;
+    align-items: center;
+}
+
+.rep-step {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #b0b0b0;
+}
+
+    .rep-step.done {
+        color: #15803d;
+    }
+
+    .rep-step.active {
+        color: #1a1a1a;
+    }
+
+.rep-step-num {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #e8e8e8;
+    color: #6b6b6b;
+    font-size: 12px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.rep-step.done .rep-step-num {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.rep-step.active .rep-step-num {
+    background: #1a1a1a;
+    color: #e6b000;
+}
+
+.rep-step-div {
+    flex: 1;
+    height: 2px;
+    background: #e8e8e8;
+    margin: 0 8px;
+}
+
+    .rep-step-div.done {
+        background: #15803d;
+    }
+
+/* Property banner */
+.rep-prop-banner {
+    padding: 14px 18px;
+    border-radius: 10px;
+    background: #1a1a1a;
+    color: #e6b000;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+    .rep-prop-banner strong {
+        color: #fff;
+    }
+
+/* Heading */
+.rep-heading {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.rep-heading-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 13px;
+    background: #1a1a1a;
+    color: #e6b000;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.rep-title {
+    font-size: 22px;
+    font-weight: 800;
+    color: #1a1a1a;
+    margin: 0;
+}
+
+.rep-subtitle {
+    font-size: 13px;
+    color: #6b6b6b;
+    margin: 0;
+}
+
+/* Card */
+.rep-card {
+    background: #fff;
+    border-radius: 14px;
+    border: 1.5px solid #e8e8e8;
+    box-shadow: 0 2px 14px rgba(0,0,0,.07);
+    overflow: hidden;
+}
+
+.rep-card-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 15px 22px;
+    background: #1a1a1a;
+    border-bottom: 3px solid #e6b000;
+    color: #e6b000;
+    font-size: 14px;
+    font-weight: 800;
+}
+
+.rep-form-grid {
+    padding: 22px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.rep-field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.rep-field-full {
+    grid-column: 1/-1;
+}
+
+.rep-label {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #1a1a1a;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+    .rep-label i {
+        color: #e6b000;
+    }
+
+    .rep-label .req {
+        color: #e53e3e;
+    }
+
+.rep-input {
+    padding: 10px 12px;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 8px;
+    font-family: 'Poppins',sans-serif;
+    font-size: 13.5px;
+    color: #1a1a1a;
+    background: #fafafa;
+    outline: none;
+    width: 100%;
+    transition: border-color .15s;
+}
+
+    .rep-input:focus {
+        border-color: #e6b000;
+        background: #fff;
+    }
+
+/* Auth letter notice */
+.rep-auth-notice {
+    padding: 14px 18px;
+    border-radius: 10px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    font-size: 13px;
+    color: #1e3a5f;
+    line-height: 1.6;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+    .rep-auth-notice i {
+        color: #3b82f6;
+        flex-shrink: 0;
+        margin-top: 2px;
+    }
+
+/* Actions */
+.rep-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.rep-btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 13px 28px;
+    border-radius: 9px;
+    background: #e6b000;
+    color: #1a1a1a;
+    border: none;
+    cursor: pointer;
+    font-family: 'Poppins',sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    transition: background .15s;
+}
+
+    .rep-btn-primary:hover {
+        background: #f5c200;
+    }
+
+.rep-btn-outline {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 13px 22px;
+    border-radius: 9px;
+    background: #fff;
+    color: #1a1a1a;
+    border: 1.5px solid #e0e0e0;
+    cursor: pointer;
+    font-family: 'Poppins',sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all .15s;
+}
+
+    .rep-btn-outline:hover {
+        border-color: #1a1a1a;
+    }
+
+@media(max-width:640px) {
+    .rep-form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .rep-field-full {
+        grid-column: 1;
+    }
+
+    .rep-actions {
+        flex-direction: column;
+    }
+
+    .rep-btn-primary, .rep-btn-outline {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .rep-steps {
+        display: none;
+    }
+}
+
+

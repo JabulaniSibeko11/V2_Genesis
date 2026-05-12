@@ -17,6 +17,10 @@ namespace V2_Genesis.Data
         public DbSet<AttrSecondaryAttributes> AttrSecondaryAttributes { get; set; }
         public DbSet<AttrCalculations> AttrCalculations { get; set; }
 
+        public DbSet<AttrRepresentative> AttrRepresentatives { get; set; } = null!;
+
+
+
         public DbSet<AttrBusinessBuildings> AttrBusinessBuildings { get; set; }
         public DbSet<AttrBusinessSections> AttrBusinessSections { get; set; }
         public DbSet<AttrBusinessGeneral> AttrBusinessGeneral { get; set; }

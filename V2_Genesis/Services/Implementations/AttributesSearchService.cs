@@ -1,7 +1,7 @@
 ﻿using Dapper;
 using GenesisV2.Services.PropertySearch;
-using Microsoft.Data.SqlClient;
 using System.Data;
+using System.Data.SqlClient;
 using V2_Genesis.Data;
 using V2_Genesis.Models;
 using V2_Genesis.Models.Attributes;
@@ -15,7 +15,6 @@ public class AttributesSearchService : IAttributesSearchService
     private readonly AttributesDbContext _attrDb;
     private readonly string _attrConn;
 
-    // Same SP names as GV PropertyIndex — Attributes DB has the same SPs
     private static readonly RollSearchConfig GvConfig =
         RollSearchRegistry.Configs["Objection"];
 
@@ -30,9 +29,29 @@ public class AttributesSearchService : IAttributesSearchService
                 "AttributesConnection missing from appsettings");
     }
 
-    // ── Search — Dapper, same SPs as GV, AttributesConnection ────────
-    public async Task<List<PropertySearchResult>> SearchAsync(
-        PropertySearchParams p)
+    // ── Get full property detail from LIS + SAP ───────────────────
+    public async Task<LisPropertyDetail?> GetPropertyDetailAsync(string unitKey)
+    {
+        try
+        {
+            await using var conn = new SqlConnection(_attrConn);
+
+            return await conn.QueryFirstOrDefaultAsync<LisPropertyDetail>(
+                "Attr_GetPropertyForCheck",
+                new { UnitKey = unitKey },
+                commandType: CommandType.StoredProcedure,
+                commandTimeout: 30);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine(
+                $"[Attributes] GetPropertyDetail failed for {unitKey}: {ex.Message}");
+            return null;
+        }
+    }
+
+    // ── Search ────────────────────────────────────────────────────
+    public async Task<List<PropertySearchResult>> SearchAsync(PropertySearchParams p)
     {
         var sp = ResolveSp(GvConfig, p);
         var args = BuildParams(p);
@@ -40,25 +59,19 @@ public class AttributesSearchService : IAttributesSearchService
         await using var conn = new SqlConnection(_attrConn);
 
         var results = await conn.QueryAsync<PropertySearchResult>(
-            sp, args,
-            commandType: CommandType.StoredProcedure);
+            sp, args, commandType: CommandType.StoredProcedure);
 
         return results.ToList();
     }
 
-    // ── Link — EF Core, inserts into LinkedProperties_Attr ───────────
+    // ── Link ──────────────────────────────────────────────────────
     public async Task<LinkResult> LinkPropertyAsync(
-        string idProperty,
-        string userId,
-        string propertyFrom)
+        string idProperty, string userId, string propertyFrom)
     {
-        // Check for existing link before inserting
         var exists = await _attrDb.LinkedProperties
-            .AnyAsync(p => p.IDProperty == idProperty
-                        && p.UserID == userId);
+            .AnyAsync(p => p.IDProperty == idProperty && p.UserID == userId);
 
-        if (exists)
-            return LinkResult.Duplicate();
+        if (exists) return LinkResult.Duplicate();
 
         _attrDb.LinkedProperties.Add(new LinkedPropertyAttr
         {
@@ -71,7 +84,6 @@ public class AttributesSearchService : IAttributesSearchService
         return LinkResult.Ok();
     }
 
-    // ── SP selection — mirrors PropertySearchService.ResolveSp ───────
     private static string ResolveSp(RollSearchConfig cfg, PropertySearchParams p)
     {
         if (p.HasStand && !p.HasAddress && !p.HasScheme) return cfg.SpStand;
@@ -85,7 +97,6 @@ public class AttributesSearchService : IAttributesSearchService
         return cfg.SpTown;
     }
 
-    // ── Dapper params ─────────────────────────────────────────────────
     private static DynamicParameters BuildParams(PropertySearchParams p)
     {
         var dp = new DynamicParameters();

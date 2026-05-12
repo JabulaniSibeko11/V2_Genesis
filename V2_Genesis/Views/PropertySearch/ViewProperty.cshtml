@@ -329,7 +329,7 @@
                         <i class="fa-solid fa-right-to-bracket"></i> Sign In
                     </a>
                     <a href="/account/register" class="pd-btn pd-btn-outline">
-                        <i class="fa-solid fa-user-plus"></i> Register Free
+                        <i class="fa-solid fa-user-plus"></i> Register
                     </a>
                     <button class="pd-btn pd-btn-outline" onclick="history.back()">
                         <i class="fa-solid fa-arrow-left"></i> Back
@@ -345,7 +345,7 @@
 
                 <form method="post" action="/attributes/link" style="display:inline;">
                     @Html.AntiForgeryToken()
-                    <input type="hidden" name="idProperty" value="@d.Id" />
+                    <input type="hidden" name="idProperty" value="@d.UnitKey" />
                     <input type="hidden" name="propertyFrom" value="Attributes" />
                     <button type="submit" class="pd-btn pd-btn-primary">
                         <i class="fa-solid fa-link"></i> Link to My Attributes

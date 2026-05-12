@@ -123,19 +123,27 @@ public class DashboardService : IDashboardService
 
         var cat = catDesc.Trim().ToLower();
 
-        if (cat.Contains("sectional") || cat.Contains("residential-st") ||
+        // Sectional title — form expects "ResidentialST"
+        if (cat.Contains("sectional") ||
+            cat.Contains("residential-st") ||
             cat.Contains("st ") || cat.Contains("unit"))
-            return "Residential-ST";
+            return "ResidentialST";
 
-        if (cat.Contains("business") || cat.Contains("commercial") ||
-            cat.Contains("industrial") || cat.Contains("retail") ||
+        // Business / commercial — form expects "BusinessCommercial"
+        if (cat.Contains("business") ||
+            cat.Contains("commercial") ||
+            cat.Contains("industrial") ||
+            cat.Contains("retail") ||
             cat.Contains("office"))
-            return "Business";
+            return "BusinessCommercial";
 
-        if (cat.Contains("drc") || cat.Contains("public service") ||
+        // DRC — form expects "DRCMethod"
+        if (cat.Contains("drc") ||
+            cat.Contains("public service") ||
             cat.Contains("institutional"))
-            return "DRC";
+            return "DRCMethod";
 
+        // Default
         return "Residential";
     }
 }

@@ -1,0 +1,316 @@
+﻿
+/* ── Check Attributes Page ─────────────────────────────────────── */
+.ca-page {
+    background: #f4f4f4;
+    min-height: 100vh;
+    padding: 32px 24px 56px;
+    font-family: 'Poppins',sans-serif;
+}
+
+.ca-inner {
+    max-width: 860px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+}
+
+/* Back link */
+.ca-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #6b6b6b;
+    text-decoration: none;
+    transition: color .15s;
+}
+
+    .ca-back:hover {
+        color: #1a1a1a;
+    }
+
+/* Heading */
+.ca-heading {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.ca-heading-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 13px;
+    background: #1a1a1a;
+    color: #e6b000;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ca-title {
+    font-size: 22px;
+    font-weight: 800;
+    color: #1a1a1a;
+    margin: 0;
+}
+
+.ca-subtitle {
+    font-size: 13px;
+    color: #6b6b6b;
+    margin: 0;
+}
+
+/* Form type badge */
+.ca-form-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    border-radius: 9px;
+    background: #fffbeb;
+    border: 1.5px solid #fde68a;
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #92400e;
+}
+
+    .ca-form-badge i {
+        color: #f59e0b;
+    }
+
+/* Property card */
+.ca-card {
+    background: #fff;
+    border-radius: 14px;
+    border: 1.5px solid #e8e8e8;
+    box-shadow: 0 2px 14px rgba(0,0,0,.07);
+    overflow: hidden;
+}
+
+.ca-card-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 15px 22px;
+    background: #1a1a1a;
+    border-bottom: 3px solid #e6b000;
+    color: #e6b000;
+    font-size: 14px;
+    font-weight: 800;
+}
+
+.ca-card-body {
+    padding: 22px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+}
+
+.ca-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.ca-field-full {
+    grid-column: 1/-1;
+}
+
+.ca-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #6b6b6b;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.ca-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1a1a1a;
+    padding: 9px 12px;
+    background: #f7f7f7;
+    border-radius: 7px;
+    border: 1px solid #eeeeee;
+}
+
+/* Declaration card */
+.ca-decl-card {
+    background: #fff;
+    border-radius: 14px;
+    border: 1.5px solid #e8e8e8;
+    box-shadow: 0 2px 14px rgba(0,0,0,.07);
+    overflow: hidden;
+}
+
+.ca-decl-header {
+    padding: 15px 22px;
+    background: #1a1a1a;
+    border-bottom: 3px solid #e6b000;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #e6b000;
+    font-size: 14px;
+    font-weight: 800;
+}
+
+.ca-decl-body {
+    padding: 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.ca-decl-option {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 16px 18px;
+    border-radius: 10px;
+    border: 2px solid #e8e8e8;
+    cursor: pointer;
+    transition: all .15s;
+    background: #fff;
+}
+
+    .ca-decl-option:has(input:checked) {
+        border-color: #e6b000;
+        background: #fffbeb;
+    }
+
+    .ca-decl-option input[type="radio"] {
+        width: 18px;
+        height: 18px;
+        accent-color: #e6b000;
+        margin-top: 1px;
+        flex-shrink: 0;
+        cursor: pointer;
+    }
+
+.ca-decl-text h4 {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin: 0 0 4px;
+}
+
+.ca-decl-text p {
+    font-size: 12.5px;
+    color: #6b6b6b;
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* Disclaimer */
+.ca-disclaimer {
+    padding: 18px 20px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 10px;
+    font-size: 13px;
+    color: #1e3a5f;
+    line-height: 1.7;
+}
+
+    .ca-disclaimer strong {
+        color: #1a1a1a;
+    }
+
+.ca-disclaimer-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #1e40af;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 8px;
+}
+
+/* Error */
+.ca-error {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 11px 16px;
+    border-radius: 8px;
+    background: #fef2f2;
+    border: 1px solid #fca5a5;
+    font-size: 13px;
+    color: #b91c1c;
+}
+
+/* Actions */
+.ca-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.ca-btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 13px 28px;
+    border-radius: 9px;
+    background: #e6b000;
+    color: #1a1a1a;
+    border: none;
+    cursor: pointer;
+    font-family: 'Poppins',sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    transition: background .15s;
+}
+
+    .ca-btn-primary:hover {
+        background: #f5c200;
+    }
+
+.ca-btn-outline {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 13px 22px;
+    border-radius: 9px;
+    background: #fff;
+    color: #1a1a1a;
+    border: 1.5px solid #e0e0e0;
+    cursor: pointer;
+    font-family: 'Poppins',sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all .15s;
+}
+
+    .ca-btn-outline:hover {
+        border-color: #1a1a1a;
+        color: #1a1a1a;
+    }
+
+@media(max-width:640px) {
+    .ca-card-body {
+        grid-template-columns: 1fr;
+    }
+
+    .ca-field-full {
+        grid-column: 1;
+    }
+
+    .ca-actions {
+        flex-direction: column;
+    }
+
+    .ca-btn-primary, .ca-btn-outline {
+        width: 100%;
+        justify-content: center;
+    }
+}
+

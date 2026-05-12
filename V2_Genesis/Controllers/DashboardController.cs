@@ -55,6 +55,10 @@ public class DashboardController : Controller
 
         var rolls = await _db.GvList.OrderBy(r => r.ID).ToListAsync();
         var attributesData = await _attributesService.GetDashboardDataAsync(userId);
+
+        // Load attributes linked — IDProperty is UnitKey stored at link time
+        var attributesLinked = await _dashboardService.GetAttributesLinkedAsync(userId);
+
         ViewBag.GvList = rolls;
 
         var rollDataTasks = rolls
@@ -84,8 +88,7 @@ public class DashboardController : Controller
             RollData = rollData,
             RollDates = _rollDates.Dates ,
             AttributesData = attributesData,
-            AttributesLinked = await _dashboardService
-       .GetAttributesLinkedAsync(userId)
+            AttributesLinked = attributesLinked
         };
        
         return View(vm);

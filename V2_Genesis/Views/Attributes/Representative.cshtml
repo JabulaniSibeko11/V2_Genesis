@@ -1,0 +1,231 @@
+﻿@model V2_Genesis.Models.ViewModels.Attributes.RepresentativeViewModel
+@{
+    ViewData["Title"] = "Representative Details — Attributes";
+    Layout = "~/Views/Shared/_ClientLayout.cshtml";
+}
+
+@section Styles {
+    <link href="~/css/views/attributes-search.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/views/attributes-repr.css" rel="stylesheet" asp-append-version="true" />
+}
+
+<div class="rep-page">
+    <div class="rep-inner">
+
+        <!-- Progress -->
+        <div class="rep-steps">
+            <div class="rep-step done">
+                <div class="rep-step-num">
+                    <i class="fa-solid fa-check"></i>
+                </div>
+                <span>Confirm Property</span>
+            </div>
+            <div class="rep-step-div done"></div>
+            <div class="rep-step active">
+                <div class="rep-step-num">2</div>
+                <span>Representative Details</span>
+            </div>
+            <div class="rep-step-div"></div>
+            <div class="rep-step">
+                <div class="rep-step-num">3</div>
+                <span>Submit Attributes</span>
+            </div>
+        </div>
+
+        <!-- Property banner -->
+        <div class="rep-prop-banner">
+            <i class="fa-solid fa-building"></i>
+            <span>
+                <strong>@(Model.PropertyDesc ?? Model.IDProperty)</strong>
+                @if (!string.IsNullOrWhiteSpace(Model.TownNameDesc))
+                {
+                    <span style="color:rgba(230,176,0,.7);">
+                        — @Model.TownNameDesc
+                    </span>
+                }
+            </span>
+        </div>
+
+        <!-- Heading -->
+        <div class="rep-heading">
+            <div class="rep-heading-icon">
+                <i class="fa-solid fa-user-tie"></i>
+            </div>
+            <div>
+                <h1 class="rep-title">Representative Details</h1>
+                <p class="rep-subtitle">
+                    Provide your contact details — the authorisation letter
+                    will be uploaded with the attribute form on the next page
+                </p>
+            </div>
+        </div>
+
+        @* ── POST to RepresentativeSubmit action (not Representative) ── *@
+        <form method="post"
+              asp-controller="Attributes"
+              asp-action="RepresentativeSubmit"
+              id="repForm">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="IDProperty" />
+            <input type="hidden" asp-for="FormType" />
+            <input type="hidden" asp-for="PropertyDesc" />
+            <input type="hidden" asp-for="TownNameDesc" />
+            <input type="hidden" asp-for="LisStreetAddress" />
+            <input type="hidden" asp-for="CatDesc" />
+
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div style="padding:14px 18px; border-radius:10px;
+                            background:#fef2f2; border:1px solid #fca5a5;
+                            color:#b91c1c; font-size:13px; display:flex;
+                            align-items:center; gap:8px;">
+                    <i class="fa-solid fa-circle-xmark"></i>
+                    <div asp-validation-summary="ModelOnly"></div>
+                </div>
+            }
+
+            <div class="rep-card">
+                <div class="rep-card-header">
+                    <i class="fa-solid fa-address-card"></i>
+                    Your Contact Details
+                </div>
+                <div class="rep-form-grid">
+
+                    <div class="rep-field rep-field-full">
+                        <label class="rep-label" for="Representative_Name">
+                            <i class="fa-solid fa-user"></i>
+                            Full Name <span class="req">*</span>
+                        </label>
+                        <input asp-for="Representative_Name"
+                               class="rep-input"
+                               placeholder="Your full legal name" />
+                        <span asp-validation-for="Representative_Name"
+                              style="color:#e53e3e; font-size:12px;"></span>
+                    </div>
+
+                    <div class="rep-field">
+                        <label class="rep-label">
+                            <i class="fa-solid fa-envelope"></i>
+                            Postal Address Line 1
+                        </label>
+                        <input asp-for="Rep_Postal_1" class="rep-input"
+                               placeholder="Address line 1" />
+                    </div>
+
+                    <div class="rep-field">
+                        <label class="rep-label">
+                            <i class="fa-solid fa-envelope"></i>
+                            Postal Address Line 2
+                        </label>
+                        <input asp-for="Rep_Postal_2" class="rep-input"
+                               placeholder="Address line 2" />
+                    </div>
+
+                    <div class="rep-field">
+                        <label class="rep-label">
+                            <i class="fa-solid fa-envelope"></i>
+                            Postal Address Line 3
+                        </label>
+                        <input asp-for="Rep_Postal_3" class="rep-input"
+                               placeholder="Suburb / City" />
+                    </div>
+
+                    <div class="rep-field">
+                        <label class="rep-label">
+                            <i class="fa-solid fa-envelope"></i>
+                            Postal Address Line 4
+                        </label>
+                        <input asp-for="Rep_Postal_4" class="rep-input"
+                               placeholder="Province" />
+                    </div>
+
+                    <div class="rep-field">
+                        <label class="rep-label">
+                            <i class="fa-solid fa-hashtag"></i>
+                            Postal Code
+                        </label>
+                        <input asp-for="Rep_Postal_5" class="rep-input"
+                               placeholder="e.g. 2000" maxlength="10" />
+                    </div>
+
+                    <div class="rep-field">
+                        <label class="rep-label">
+                            <i class="fa-solid fa-mobile-alt"></i>
+                            Cell Phone
+                        </label>
+                        <input asp-for="Rep_Cell_Phone" class="rep-input"
+                               placeholder="e.g. 082 000 0000" />
+                    </div>
+
+                    <div class="rep-field">
+                        <label class="rep-label">
+                            <i class="fa-solid fa-phone"></i>
+                            Home Phone
+                        </label>
+                        <input asp-for="Rep_Home_Phone" class="rep-input"
+                               placeholder="e.g. 011 000 0000" />
+                    </div>
+
+                    <div class="rep-field">
+                        <label class="rep-label">
+                            <i class="fa-solid fa-phone-office"></i>
+                            Work Phone
+                        </label>
+                        <input asp-for="Rep_Work_Phone" class="rep-input"
+                               placeholder="e.g. 011 000 0000" />
+                    </div>
+
+                    <div class="rep-field">
+                        <label class="rep-label">
+                            <i class="fa-solid fa-fax"></i>
+                            Fax
+                        </label>
+                        <input asp-for="Rep_Fax_Phone" class="rep-input"
+                               placeholder="e.g. 011 000 0000" />
+                    </div>
+
+                    <div class="rep-field rep-field-full">
+                        <label class="rep-label">
+                            <i class="fa-solid fa-envelope-open-text"></i>
+                            Email Address
+                        </label>
+                        <input asp-for="Rep_Email" type="email"
+                               class="rep-input"
+                               placeholder="your@email.com" />
+                        <span asp-validation-for="Rep_Email"
+                              style="color:#e53e3e; font-size:12px;"></span>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Auth letter reminder -->
+            <div class="rep-auth-notice">
+                <i class="fa-solid fa-circle-info"></i>
+                <div>
+                    <strong>Authorisation Letter</strong> — You will upload the
+                    signed authorisation letter from the registered property owner
+                    on the <strong>next page</strong> together with the attribute
+                    form evidence files.
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="rep-actions">
+                <button type="submit" class="rep-btn-primary">
+                    <i class="fa-solid fa-arrow-right"></i>
+                    Continue to Attribute Form
+                </button>
+                <a href="/attributes/check?idProperty=@Model.IDProperty&formType=@Model.FormType"
+                   class="rep-btn-outline">
+                    <i class="fa-solid fa-arrow-left"></i> Back
+                </a>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
