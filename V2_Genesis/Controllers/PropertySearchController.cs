@@ -9,6 +9,7 @@ using System.Data;
 using System.Security.Claims;
 using V2_Genesis.Data;
 using V2_Genesis.Models;
+using V2_Genesis.Models.Attributes;
 using V2_Genesis.Models.LIS;
 using V2_Genesis.Models.Results;
 using V2_Genesis.Services.Implementations;
@@ -27,11 +28,12 @@ public class PropertySearchController : Controller
     private readonly ILisSearchService _lisSearchService;
     private readonly IOmissionService _omissionService;
     private readonly ILogger<PropertySearchController> _logger;
+    private readonly IAttributesSearchService _attributesService;
 
     public PropertySearchController(
         IPropertySearchService search,
         ApplicationDbContext db,
-      IOptions<RollDatesSettings> rollDatesOpts,IConfiguration config,ILisSearchService lisSearchService,IOmissionService omissionService,
+      IOptions<RollDatesSettings> rollDatesOpts,IConfiguration config,ILisSearchService lisSearchService,IOmissionService omissionService,IAttributesSearchService attributesService,
   ILogger<PropertySearchController> logger)
     {
         _search = search;
@@ -41,6 +43,7 @@ public class PropertySearchController : Controller
         _logger = logger;
         _lisSearchService = lisSearchService;
         _omissionService = omissionService;
+        _attributesService = attributesService;
     }
 
     // ── GET /search/{rollSource} ──────────────────────────────────────
@@ -96,27 +99,73 @@ public class PropertySearchController : Controller
     [Route("property/view")]
     [AllowAnonymous]
     public async Task<IActionResult> ViewProperty(
-    string rollSource,
-    string unitKey,
-    string valuationKey)
+     string rollSource,
+     string unitKey,
+     string valuationKey)
     {
+        if (string.IsNullOrWhiteSpace(rollSource))
+            return BadRequest("Roll source is required.");
+
+        if (string.IsNullOrWhiteSpace(unitKey))
+            return BadRequest("Unit key is required.");
+
+        // ============================================================
+        // ATTRIBUTES FLOW
+        // Attributes is NOT in GvList, so do not check GvList
+        // ============================================================
+        if (rollSource.Equals("Attributes", StringComparison.OrdinalIgnoreCase))
+        {
+            var attrItem = await _attributesService.GetPropertyDetailAsync(unitKey);
+
+            if (attrItem == null)
+                return NotFound("Attribute property details not found.");
+
+            HttpContext.Session.SetString("UnitKey", unitKey ?? string.Empty);
+            HttpContext.Session.SetString("ValuationKey", valuationKey ?? string.Empty);
+            HttpContext.Session.SetString("RollSource", "Attributes");
+
+            ViewBag.GvList = await _db.GvList.OrderBy(r => r.ID).ToListAsync();
+
+            var attrVm = new PropertyDetailViewModel
+            {
+                Items = new List<PropertyDetailResult>
+            {
+                MapAttributePropertyToResult(attrItem)
+            },
+
+                Roll = null,
+                
+                IsAttributes = true
+            };
+
+            
+            return View(attrVm);
+        }
+
+        // ============================================================
+        // NORMAL ROLL FLOW
+        // GV23 / SUPP / QUERY etc.
+        // ============================================================
         var roll = await _db.GvList
             .FirstOrDefaultAsync(r => r.Source == rollSource);
 
-        if (roll is null) return NotFound($"Roll '{rollSource}' not found.");
+        if (roll is null)
+            return NotFound($"Roll '{rollSource}' not found.");
 
         var items = await _search.GetPropertyDetailsAsync(
-            rollSource, unitKey, valuationKey);
+            rollSource,
+            unitKey,
+            valuationKey);
 
-        if (!items.Any()) return NotFound("Property details not found.");
+        if (!items.Any())
+            return NotFound("Property details not found.");
 
-        HttpContext.Session.SetString("UnitKey", unitKey);
-        HttpContext.Session.SetString("ValuationKey", valuationKey);
+        HttpContext.Session.SetString("UnitKey", unitKey ?? string.Empty);
+        HttpContext.Session.SetString("ValuationKey", valuationKey ?? string.Empty);
         HttpContext.Session.SetString("RollSource", rollSource);
 
         ViewBag.GvList = await _db.GvList.OrderBy(r => r.ID).ToListAsync();
 
-        // ── Look up this roll's specific dates ────────────────────────────
         var dates = _rollDates.For(rollSource);
 
         var vm = new PropertyDetailViewModel
@@ -124,11 +173,48 @@ public class PropertySearchController : Controller
             Items = items,
             Roll = roll,
             OpenDate = dates.OpenDate,
-            VisibleUntil = dates.VisibleUntil
+            VisibleUntil = dates.VisibleUntil,
+            IsAttributes = false
         };
 
         return View(vm);
     }
+
+    private static PropertyDetailResult MapAttributePropertyToResult(LisPropertyDetail item)
+    {
+        return new PropertyDetailResult
+        {
+            PropertyId = item.PropertyId,
+            UnitKey = item.UnitKey,
+            ValuationKey = item.ValuationKey,
+
+           TownNameDesc = item.TownNameDesc,    
+           OwnerName = item.OwnerName,
+           Erf = item.Erf,
+           Ptn = item.Ptn,
+           Re = item.Re,
+           LisStreetAddress=item.LisStreetAddress,
+           CatDesc=item.CatDesc,
+           RateableArea=item.RateableArea,
+              MarketValue=item.MarketValue, 
+              WefDate=item.WefDate,
+              Reason=item.Reason,
+              SchemeName=item.SchemeName,
+              SchemeNumber=item.SchemeNumber,
+              SchemeYear=item.SchemeYear,
+              UnitNo=item.UnitNo,
+              PropertyDesc=item.PropertyDesc,
+                PremiseId=item.PremiseId,
+                ValuationDate=item.ValuationDate,
+                
+                ADDR1=item.ADDR1,
+                ADDR2=item.ADDR2,
+                ADDR3=item.ADDR3,
+                ADDR4=item.ADDR4,
+                ADDR5=item.ADDR5,
+        };
+    }
+
     [HttpGet]
     [Route("property/save")]
     [Authorize]

@@ -2,19 +2,37 @@
 @{
     ViewData["Title"] = "Property Details";
 
-    bool isAuth = User?.Identity?.IsAuthenticated ?? false;
+    bool isAuth = User?.Identity?.IsAuthenticated == true;
 
     Layout = isAuth
         ? "~/Views/Shared/_ClientLayout.cshtml"
         : "~/Views/Shared/_Layout.cshtml";
 
-    var d = Model.Main;
-    var roll = Model.Roll;
+    var items = Model?.Items ?? new List<V2_Genesis.Models.Results.PropertyDetailResult>();
+    var d = Model?.Main ?? items.FirstOrDefault();
+    var roll = Model?.Roll;
 
-    // Detect Attributes flow from query string
-    var propertyFrom = Context.Request.Query["propertyFrom"].FirstOrDefault() ?? "";
-    bool isAttributes = propertyFrom.Equals("Attributes",
-                            StringComparison.OrdinalIgnoreCase);
+    bool isAttributes =
+        Model?.IsAttributes == true ||
+        string.Equals(Context?.Request?.Query["rollSource"].FirstOrDefault(), "Attributes", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(Context?.Request?.Query["propertyFrom"].FirstOrDefault(), "Attributes", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(Context?.Session?.GetString("RollSource"), "Attributes", StringComparison.OrdinalIgnoreCase);
+
+    string rollName = isAttributes
+        ? "Attributes Property Information"
+        : roll?.Name ?? "Property Information";
+
+    string rollShort = isAttributes
+        ? "Attributes"
+        : roll?.Short ?? "";
+
+    string rollSource = isAttributes
+        ? "Attributes"
+        : roll?.Source ?? "";
+
+    string sourceTableCode = roll?.SourceTableCode ?? "";
+
+    string returnUrl = $"{Context?.Request?.Path}{Context?.Request?.QueryString}";
 }
 @section Styles {
     <link href="~/css/views/property-detail.css" rel="stylesheet" asp-append-version="true" />
@@ -51,27 +69,38 @@
             </a>
             <div class="pd-roll-badge">
                 <i class="fa-solid fa-scroll"></i>
-                @roll.Name
-                <span class="pd-roll-code">@roll.Short</span>
+                @rollName
+                <span class="pd-roll-code">@rollShort</span>
             </div>
         </div>
 
         <!-- ── Anonymous banner ───────────────────────────────── -->
-        @if (!isAuth)
+        @* @if (!isAuth)
         {
             <div class="pd-anon-notice">
                 <i class="fa-solid fa-circle-info"></i>
                 <div>
                     You are viewing public property data.
-                    <a href="/account/login?returnUrl=@Context.Request.Path@Context.Request.QueryString">
+
+                    <a href="/account/login?returnUrl=@returnUrl">
                         Sign in
                     </a>
-                    to see owner details, link this property to your profile
-                    and download Section 49.
+
+                    @if (isAttributes)
+                    {
+                        <span>
+                            to link this property to your profile and submit attribute information.
+                        </span>
+                    }
+                    else
+                    {
+                        <span>
+                            to see owner details, link this property to your profile and download Section 49.
+                        </span>
+                    }
                 </div>
             </div>
-        }
-
+        } *@
         <!-- ── Page heading ───────────────────────────────────── -->
         <div class="pd-heading">
             <div class="pd-heading-icon">
@@ -345,8 +374,15 @@
 
                 <form method="post" action="/attributes/link" style="display:inline;">
                     @Html.AntiForgeryToken()
-                    <input type="hidden" name="idProperty" value="@d.UnitKey" />
-                    <input type="hidden" name="propertyFrom" value="Attributes" />
+
+                    <input type="hidden"
+                           name="idProperty"
+                           value="@(d.UnitKey ?? d.ValuationKey.ToString())" />
+
+                    <input type="hidden"
+                           name="propertyFrom"
+                           value="Attributes" />
+
                     <button type="submit" class="pd-btn pd-btn-primary">
                         <i class="fa-solid fa-link"></i> Link to My Attributes
                     </button>
@@ -358,18 +394,23 @@
                 <button class="pd-btn pd-btn-outline" onclick="history.back()">
                     <i class="fa-solid fa-arrow-left"></i> Cancel
                 </button>
-                <a class="pd-btn pd-btn-primary"
-                       href="/property/save?rollSource=@Model.Roll.Source&key=@d.Id&sourceTable=@Model.Roll.SourceTableCode">
-                    <i class="fa-solid fa-link"></i> Link Property
-                </a>
-                <a class="pd-btn pd-btn-secondary"
-                       href="/notice/section49?rollSource=@Model.Roll.Source&unitKey=@d.UnitKey&valuationKey=@d.ValuationKey">
-                    <i class="fa-solid fa-eye"></i> View Section 49
-                </a>
-                <a class="pd-btn pd-btn-outline"
-                       href="/notice/section49/download?rollSource=@Model.Roll.Source&unitKey=@d.UnitKey&valuationKey=@d.ValuationKey">
-                    <i class="fa-solid fa-download"></i> Download Section 49
-                </a>
+                @if (!string.IsNullOrWhiteSpace(rollSource) && !string.IsNullOrWhiteSpace(sourceTableCode))
+                {
+                    <a class="pd-btn pd-btn-primary"
+                           href="/property/save?rollSource=@rollSource&key=@d.Id&sourceTable=@sourceTableCode">
+                        <i class="fa-solid fa-link"></i> Link Property
+                    </a>
+
+                    <a class="pd-btn pd-btn-secondary"
+                           href="/notice/section49?rollSource=@rollSource&unitKey=@d.UnitKey&valuationKey=@d.ValuationKey">
+                        <i class="fa-solid fa-eye"></i> View Section 49
+                    </a>
+
+                    <a class="pd-btn pd-btn-outline"
+                           href="/notice/section49/download?rollSource=@rollSource&unitKey=@d.UnitKey&valuationKey=@d.ValuationKey">
+                        <i class="fa-solid fa-download"></i> Download Section 49
+                    </a>
+                }
             }
             else
             {

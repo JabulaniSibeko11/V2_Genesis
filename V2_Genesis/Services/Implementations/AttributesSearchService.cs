@@ -1,5 +1,4 @@
 ﻿using Dapper;
-using GenesisV2.Services.PropertySearch;
 using System.Data;
 using System.Data.SqlClient;
 using V2_Genesis.Data;
@@ -8,15 +7,28 @@ using V2_Genesis.Models.Attributes;
 using V2_Genesis.Services;
 using V2_Genesis.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
-
 public class AttributesSearchService : IAttributesSearchService
 {
     private readonly IConfiguration _config;
     private readonly AttributesDbContext _attrDb;
     private readonly string _attrConn;
 
-    private static readonly RollSearchConfig GvConfig =
-        RollSearchRegistry.Configs["Objection"];
+
+    // ── GenesisAttributes SP names ────────────────────────────────
+    // These SPs exist in the GenesisAttributes DB and query LIS_20260116
+    private const string SP_TOWN = "SearchTown";
+    private const string SP_STAND = "SearchTownStandNumber";
+    private const string SP_STAND_ADDRESS = "SearchTownStandNumberAddress";
+    private const string SP_ADDRESS = "SearchTownAddress";
+    private const string SP_SCHEME = "SearchTownScheme";
+    private const string SP_UNIT = "SearchTownUnit";
+    private const string SP_SCHEME_UNIT = "SearchTownSchemeUnit";
+    private const string SP_STAND_SCHEME = "SearchTownErfScheme";
+    private const string SP_ADDRESS_SCHEME = "SearchTownAddressScheme";
+
+    // Township/Scheme SPs — same pattern as Objection DB
+    private const string SP_TOWNSHIPS = "propertyDetailsTown";
+    private const string SP_SCHEMES = "propertyDetailsScheme";
 
     public AttributesSearchService(
         IConfiguration config,
@@ -29,7 +41,66 @@ public class AttributesSearchService : IAttributesSearchService
                 "AttributesConnection missing from appsettings");
     }
 
-    // ── Get full property detail from LIS + SAP ───────────────────
+    // ── Search — GenesisAttributes DB, LIS_20260116 ───────────────
+    public async Task<List<PropertySearchResult>> SearchAsync(
+        PropertySearchParams p)
+    {
+        var sp = ResolveSp(p);
+        var args = BuildParams(p);
+
+        await using var conn = new SqlConnection(_attrConn);
+
+        var results = await conn.QueryAsync<PropertySearchResult>(
+            sp, args, commandType: CommandType.StoredProcedure);
+
+        return results.ToList();
+    }
+
+    // ── Townships — GenesisAttributes DB ─────────────────────────
+    public async Task<List<string>> GetTownshipsAsync()
+    {
+        try
+        {
+            await using var conn = new SqlConnection(_attrConn);
+
+            var towns = await conn.QueryAsync<string>(
+                SP_TOWNSHIPS,
+                commandType: CommandType.StoredProcedure,
+                commandTimeout: 30);
+
+            return towns.ToList();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine(
+                $"[Attributes] GetTownships failed: {ex.Message}");
+            return new();
+        }
+    }
+
+    // ── Schemes — GenesisAttributes DB ───────────────────────────
+    public async Task<List<string>> GetSchemesAsync()
+    {
+        try
+        {
+            await using var conn = new SqlConnection(_attrConn);
+
+            var schemes = await conn.QueryAsync<string>(
+                SP_SCHEMES,
+                commandType: CommandType.StoredProcedure,
+                commandTimeout: 30);
+
+            return schemes.ToList();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine(
+                $"[Attributes] GetSchemes failed: {ex.Message}");
+            return new();
+        }
+    }
+
+    // ── Property detail — LIS_20260116 + SAP_Contact0126 ─────────
     public async Task<LisPropertyDetail?> GetPropertyDetailAsync(string unitKey)
     {
         try
@@ -50,21 +121,7 @@ public class AttributesSearchService : IAttributesSearchService
         }
     }
 
-    // ── Search ────────────────────────────────────────────────────
-    public async Task<List<PropertySearchResult>> SearchAsync(PropertySearchParams p)
-    {
-        var sp = ResolveSp(GvConfig, p);
-        var args = BuildParams(p);
-
-        await using var conn = new SqlConnection(_attrConn);
-
-        var results = await conn.QueryAsync<PropertySearchResult>(
-            sp, args, commandType: CommandType.StoredProcedure);
-
-        return results.ToList();
-    }
-
-    // ── Link ──────────────────────────────────────────────────────
+    // ── Link property — EF Core, LinkedProperties_Attr ───────────
     public async Task<LinkResult> LinkPropertyAsync(
         string idProperty, string userId, string propertyFrom)
     {
@@ -84,19 +141,21 @@ public class AttributesSearchService : IAttributesSearchService
         return LinkResult.Ok();
     }
 
-    private static string ResolveSp(RollSearchConfig cfg, PropertySearchParams p)
+    // ── SP resolver ───────────────────────────────────────────────
+    private static string ResolveSp(PropertySearchParams p)
     {
-        if (p.HasStand && !p.HasAddress && !p.HasScheme) return cfg.SpStand;
-        if (p.HasStand && p.HasAddress && !p.HasScheme) return cfg.SpStandAddress;
-        if (!p.HasStand && !p.HasAddress && p.HasScheme && !p.HasUnit) return cfg.SpScheme;
-        if (!p.HasStand && p.HasAddress && !p.HasScheme) return cfg.SpAddress;
-        if (!p.HasStand && !p.HasAddress && !p.HasScheme && p.HasUnit) return cfg.SpUnit;
-        if (p.HasScheme && p.HasUnit) return cfg.SpSchemeUnit;
-        if (p.HasStand && !p.HasAddress && p.HasScheme) return cfg.SpStandScheme;
-        if (!p.HasStand && p.HasAddress && p.HasScheme) return cfg.SpAddressScheme;
-        return cfg.SpTown;
+        if (p.HasStand && !p.HasAddress && !p.HasScheme) return SP_STAND;
+        if (p.HasStand && p.HasAddress && !p.HasScheme) return SP_STAND_ADDRESS;
+        if (!p.HasStand && !p.HasAddress && p.HasScheme && !p.HasUnit) return SP_SCHEME;
+        if (!p.HasStand && p.HasAddress && !p.HasScheme) return SP_ADDRESS;
+        if (!p.HasStand && !p.HasAddress && !p.HasScheme && p.HasUnit) return SP_UNIT;
+        if (p.HasScheme && p.HasUnit) return SP_SCHEME_UNIT;
+        if (p.HasStand && !p.HasAddress && p.HasScheme) return SP_STAND_SCHEME;
+        if (!p.HasStand && p.HasAddress && p.HasScheme) return SP_ADDRESS_SCHEME;
+        return SP_TOWN;
     }
 
+    // ── Dapper params ─────────────────────────────────────────────
     private static DynamicParameters BuildParams(PropertySearchParams p)
     {
         var dp = new DynamicParameters();
@@ -108,3 +167,4 @@ public class AttributesSearchService : IAttributesSearchService
         return dp;
     }
 }
+

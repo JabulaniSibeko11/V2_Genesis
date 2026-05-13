@@ -9,14 +9,15 @@ namespace V2_Genesis.Services.Implementations
     public class AttributeSubmissionService : IAttributeSubmissionService
     {
         private readonly AttributesDbContext _context;
-        private readonly IWebHostEnvironment _environment;
 
+        private readonly IAttributeDocumentService _documentService;
         public AttributeSubmissionService(
             AttributesDbContext context,
-            IWebHostEnvironment environment)
+           IAttributeDocumentService documentService)
         {
             _context = context;
-            _environment = environment;
+
+            _documentService = documentService;
         }
 
         public AttributeSubmissionViewModel CreateNew(string formType)
@@ -111,17 +112,127 @@ namespace V2_Genesis.Services.Implementations
             _context.AttrPropertyInfo.Add(propertyInfo);
             await _context.SaveChangesAsync();
 
-            await SaveCommonSectionsAsync(model, propertyDetails.Id, userId);
+            // Required so computed Attr_No is available immediately
+            await _context.Entry(propertyInfo).ReloadAsync();
 
+            await SaveCommonSectionsAsync(model, propertyDetails.Id, userId);
             await SaveFormSpecificSectionsAsync(model, propertyDetails.Id, userId);
 
-            var fileRecord = await SaveFilesAsync(model, propertyInfo, userId, userName);
+            // Creates:
+            // C:\Attributes\ATTR-GV23-1
+            // C:\Attributes\ATTR-GV23-1\Representative Documentations
+            // C:\Attributes\ATTR-GV23-1\Attribute Lodged Evidence
+            // and generates the PDF form.
+            var documentResult = await _documentService.CreateSubmissionPackageAsync(model, propertyInfo);
 
-            if (fileRecord != null)
+            var evidencePin = GenerateEvidencePin();
+            var evidenceDeadline = DateTime.Now.AddHours(48);
+
+            model.GeneratedEvidencePin = evidencePin;
+            model.GeneratedEvidenceDeadline = evidenceDeadline;
+
+
+
+            _context.AttrDeclarations.Add(new AttrDeclaration
             {
-                propertyInfo.Evidence_Count = fileRecord.Evidence_Count ?? 0;
-                propertyInfo.Has_Client_Evidence = propertyInfo.Evidence_Count > 0;
-                propertyInfo.Last_Evidence_Uploaded_DateTime = DateTime.Now;
+                Attr_ID = propertyInfo.Attr_ID,
+                Attr_No = propertyInfo.Attr_No,
+                Attr_Ref_Signature = propertyInfo.Attr_No,
+
+                Declaration_Text = model.Declaration.DeclarationText,
+                Declaration_Accepted = model.Declaration.DeclarationAccepted,
+                Declaration_Date = DateTime.Now,
+
+                Signature_Picture = model.Declaration.SignaturePicture,
+                Signature_Name = model.Declaration.SignatureName,
+
+                RandomPin = evidencePin,
+                EvidencePin = evidencePin,
+
+                PinGeneratedDateTime = DateTime.Now,
+                PinExpiryDateTime = evidenceDeadline,
+                PinIsActive = true,
+
+                AdditionalEvidenceAllowed = true,
+                AdditionalEvidenceDeadline = evidenceDeadline,
+
+                DeclaredByUserId = userId,
+                DeclaredByName = userName,
+                DeclaredByRole = model.RepresentativeDetails?.IsRepresentative == true ? "Representative" : "Client",
+
+                CreatedBy = userId,
+                CreatedDate = DateTime.Now
+            });
+            _context.AttrFiles.Add(new AttrFiles
+            {
+                Attr_ID = propertyInfo.Attr_ID,
+                Attr_No = propertyInfo.Attr_No,
+                Attr_Ref_Files = propertyInfo.Attr_No,
+
+                Files1 = documentResult.Files1,
+                Files2 = documentResult.Files2,
+                Files3 = documentResult.Files3,
+                Files4 = documentResult.Files4,
+                Files5 = documentResult.Files5,
+                Files6 = documentResult.Files6,
+                Files7 = documentResult.Files7,
+                Files8 = documentResult.Files8,
+                Files9 = documentResult.Files9,
+                Files10 = documentResult.Files10,
+
+                Rep_Letter = documentResult.RepLetterFileName,
+
+                Bulk_File_Name = documentResult.PdfFileName,
+
+                // Add this if your AttrFiles model/table has this column
+                Acknowledgement_FileName = documentResult.AcknowledgementFileName,
+
+                Evidence_Count = documentResult.EvidenceCount,
+                RootFolder = documentResult.AttrFolderPath,
+
+                UploadedByUserId = userId,
+                UploadedByName = userName,
+                UploadedByRole = "Client",
+
+                CreatedBy = userId,
+                CreatedDate = DateTime.Now
+            });
+
+            propertyInfo.Evidence_Count = documentResult.EvidenceCount;
+            propertyInfo.Has_Client_Evidence = documentResult.EvidenceCount > 0;
+            propertyInfo.Last_Evidence_Uploaded_DateTime =
+                documentResult.EvidenceCount > 0 ? DateTime.Now : null;
+
+            propertyInfo.ClientEvidencePath = documentResult.AttrFolderPath;
+
+            if (model.RepresentativeDetails?.IsRepresentative == true &&
+                !string.IsNullOrWhiteSpace(model.RepresentativeDetails.Representative_Name))
+            {
+                _context.AttrRepresentatives.Add(new AttrRepresentative
+                {
+                    Attr_ID = propertyInfo.Attr_ID,
+                    Attr_No = propertyInfo.Attr_No,
+                    IDProperty = model.PropertyDetails.UnitKey ?? model.PropertyDetails.PropertyId ?? model.PropertyDetails.PremiseId,
+                    UserID = userId,
+
+                    Representative_Name = model.RepresentativeDetails.Representative_Name,
+                    Rep_Postal_1 = model.RepresentativeDetails.Rep_Postal_1,
+                    Rep_Postal_2 = model.RepresentativeDetails.Rep_Postal_2,
+                    Rep_Postal_3 = model.RepresentativeDetails.Rep_Postal_3,
+                    Rep_Postal_4 = model.RepresentativeDetails.Rep_Postal_4,
+                    Rep_Postal_5 = model.RepresentativeDetails.Rep_Postal_5,
+
+                    Rep_Home_Phone = model.RepresentativeDetails.Rep_Home_Phone,
+                    Rep_Cell_Phone = model.RepresentativeDetails.Rep_Cell_Phone,
+                    Rep_Work_Phone = model.RepresentativeDetails.Rep_Work_Phone,
+                    Rep_Fax_Phone = model.RepresentativeDetails.Rep_Fax_Phone,
+                    Rep_Email = model.RepresentativeDetails.Rep_Email,
+
+                    Auth_Letter_FileName = documentResult.RepLetterFileName,
+
+                    CreatedBy = userId,
+                    CreatedDate = DateTime.Now
+                });
             }
 
             await AddAuditAsync(
@@ -135,12 +246,43 @@ namespace V2_Genesis.Services.Implementations
                 "Client",
                 "Client submitted attribute property information.");
 
+            await AddAuditAsync(
+                propertyInfo.Attr_ID,
+                propertyInfo.Attr_No,
+                "PDF and Evidence Saved",
+                "Submitted",
+                "Submitted",
+                userId,
+                userName,
+                "Client",
+                $"PDF saved as {documentResult.PdfFileName}. Evidence files uploaded: {documentResult.EvidenceCount}.");
+
+            await AddAuditAsync(
+    propertyInfo.Attr_ID,
+    propertyInfo.Attr_No,
+    "Declaration Submitted",
+    "Submitted",
+    "Submitted",
+    userId,
+    userName,
+    "Client",
+    "Client accepted declaration and signature was captured. Evidence PIN generated for 48 hours.");
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
 
             return propertyInfo.Attr_ID;
         }
 
+        private static string GenerateEvidencePin()
+        {
+            const string chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
+            var random = new Random();
+
+            return new string(Enumerable
+                .Repeat(chars, 10)
+                .Select(s => s[random.Next(s.Length)])
+                .ToArray());
+        }
         private async Task SaveCommonSectionsAsync(AttributeSubmissionViewModel model, int propertyDetailsId, string userId)
         {
             _context.AttrValuationDetails.Add(new AttrValuationDetails
@@ -395,87 +537,8 @@ namespace V2_Genesis.Services.Implementations
             await _context.SaveChangesAsync();
         }
 
-        private async Task<AttrFiles?> SaveFilesAsync(
-            AttributeSubmissionViewModel model,
-            AttrPropertyInfo propertyInfo,
-            string userId,
-            string userName)
-        {
-            var attrNo = propertyInfo.Attr_No ?? $"ATTR-GV23-{propertyInfo.Attr_ID}";
-            var root = Path.Combine(_environment.WebRootPath, "AttributeEvidence", attrNo);
 
-            Directory.CreateDirectory(root);
 
-            var fileRecord = new AttrFiles
-            {
-                Attr_ID = propertyInfo.Attr_ID,
-                Attr_No = attrNo,
-                Attr_Ref_Files = attrNo,
-                RootFolder = root,
-                UploadedByUserId = userId,
-                UploadedByName = userName,
-                UploadedByRole = "Client",
-                CreatedBy = userId,
-                CreatedDate = DateTime.Now
-            };
-
-            int count = 0;
-
-            fileRecord.Files1 = await SaveOneFileAsync(model.Files.Files1, root, attrNo, "Evidence_1", () => count++);
-            fileRecord.Files2 = await SaveOneFileAsync(model.Files.Files2, root, attrNo, "Evidence_2", () => count++);
-            fileRecord.Files3 = await SaveOneFileAsync(model.Files.Files3, root, attrNo, "Evidence_3", () => count++);
-            fileRecord.Files4 = await SaveOneFileAsync(model.Files.Files4, root, attrNo, "Evidence_4", () => count++);
-            fileRecord.Files5 = await SaveOneFileAsync(model.Files.Files5, root, attrNo, "Evidence_5", () => count++);
-            fileRecord.Files6 = await SaveOneFileAsync(model.Files.Files6, root, attrNo, "Evidence_6", () => count++);
-            fileRecord.Files7 = await SaveOneFileAsync(model.Files.Files7, root, attrNo, "Evidence_7", () => count++);
-            fileRecord.Files8 = await SaveOneFileAsync(model.Files.Files8, root, attrNo, "Evidence_8", () => count++);
-            fileRecord.Files9 = await SaveOneFileAsync(model.Files.Files9, root, attrNo, "Evidence_9", () => count++);
-            fileRecord.Files10 = await SaveOneFileAsync(model.Files.Files10, root, attrNo, "Evidence_10", () => count++);
-
-            fileRecord.Rep_Letter = await SaveOneFileAsync(model.Files.RepLetter, root, attrNo, "Representative_Letter", () => count++);
-
-            fileRecord.Evidence_Count = count;
-
-            if (count == 0)
-                return null;
-
-            _context.AttrFiles.Add(fileRecord);
-
-            await AddAuditAsync(
-                propertyInfo.Attr_ID,
-                attrNo,
-                "Evidence Uploaded",
-                "Submitted",
-                "Submitted",
-                userId,
-                userName,
-                "Client",
-                $"Client uploaded {count} file(s).");
-
-            return fileRecord;
-        }
-
-        private static async Task<string?> SaveOneFileAsync(
-            Microsoft.AspNetCore.Http.IFormFile? file,
-            string folder,
-            string attrNo,
-            string label,
-            Action incrementCount)
-        {
-            if (file == null || file.Length == 0)
-                return null;
-
-            var extension = Path.GetExtension(file.FileName);
-            var safeFileName = $"{attrNo}_{label}_{DateTime.Now:yyyyMMddHHmmssfff}{extension}";
-            var path = Path.Combine(folder, safeFileName);
-
-            await using var stream = new FileStream(path, FileMode.Create);
-            await file.CopyToAsync(stream);
-
-            incrementCount();
-
-            return safeFileName;
-        }
 
         public async Task<AttributeSubmissionViewModel?> GetForReviewAsync(long attrId)
         {
@@ -740,6 +803,60 @@ namespace V2_Genesis.Services.Implementations
                    && x.Area == null
                    && x.Rate == null
                    && x.VacantLandCost == null;
+        }
+    
+
+    public async Task<AttributeAcknowledgementVm?> GetAcknowledgementAsync(long attrId)
+        {
+            var info = await _context.AttrPropertyInfo
+                .Include(x => x.PropertyDetails)
+                    .ThenInclude(x => x!.ValuationDetails)
+                .Include(x => x.PropertyDetails)
+                    .ThenInclude(x => x!.Calculations)
+                .FirstOrDefaultAsync(x => x.Attr_ID == attrId);
+
+            if (info == null)
+                return null;
+
+            var declaration = await _context.AttrDeclarations
+                .FirstOrDefaultAsync(x => x.Attr_ID == attrId);
+
+            var files = await _context.AttrFiles
+                .FirstOrDefaultAsync(x => x.Attr_ID == attrId);
+
+            var uploadedDocs = new List<string>();
+
+            if (!string.IsNullOrWhiteSpace(files?.Files1)) uploadedDocs.Add(files.Files1);
+            if (!string.IsNullOrWhiteSpace(files?.Files2)) uploadedDocs.Add(files.Files2);
+            if (!string.IsNullOrWhiteSpace(files?.Files3)) uploadedDocs.Add(files.Files3);
+            if (!string.IsNullOrWhiteSpace(files?.Files4)) uploadedDocs.Add(files.Files4);
+            if (!string.IsNullOrWhiteSpace(files?.Files5)) uploadedDocs.Add(files.Files5);
+            if (!string.IsNullOrWhiteSpace(files?.Files6)) uploadedDocs.Add(files.Files6);
+            if (!string.IsNullOrWhiteSpace(files?.Files7)) uploadedDocs.Add(files.Files7);
+            if (!string.IsNullOrWhiteSpace(files?.Files8)) uploadedDocs.Add(files.Files8);
+            if (!string.IsNullOrWhiteSpace(files?.Files9)) uploadedDocs.Add(files.Files9);
+            if (!string.IsNullOrWhiteSpace(files?.Files10)) uploadedDocs.Add(files.Files10);
+
+            return new AttributeAcknowledgementVm
+            {
+                AttrId = info.Attr_ID,
+                AttrNo = info.Attr_No,
+                PropertyDescription = info.Property_Desc,
+                PropertyCategory = info.PropertyDetails?.ValuationDetails?.ValuationCategoryOnRoll,
+                PhysicalAddress = info.PropertyDetails?.Address,
+                MarketValue = info.PropertyDetails?.Calculations?.Tla?.ToString(),
+                Extent = info.PropertyDetails?.Extent,
+                OwnerName = info.PropertyDetails?.ValuationDetails?.OwnersFinancials ?? info.PropertyDetails?.ValuationDetails?.OwnersTitleDeeds,
+                Pin = declaration?.EvidencePin ?? declaration?.RandomPin,
+                SubmissionDate = info.SubmissionDateTime,
+                EvidenceDeadline = declaration?.AdditionalEvidenceDeadline,
+                EvidenceCount = files?.Evidence_Count ?? 0,
+                AcknowledgementFileName = files?.Acknowledgement_FileName,
+                AcknowledgementPath = files == null || string.IsNullOrWhiteSpace(files.Acknowledgement_FileName)
+                    ? null
+                    : Path.Combine(files.RootFolder ?? "", files.Acknowledgement_FileName),
+                UploadedDocuments = uploadedDocs
+            };
         }
     }
 }

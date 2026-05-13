@@ -1,0 +1,233 @@
+﻿@model V2_Genesis.Models.ViewModels.Attributes.AttributeAcknowledgementVm
+
+@{
+    ViewData["Title"] = "Attribute Acknowledgement";
+}
+
+<style>
+    .ack-page {
+        max-width: 980px;
+        margin: 25px auto;
+        font-family: Arial, sans-serif;
+        color: #111;
+    }
+
+    .ack-card {
+        background: #fff;
+        border: 1px solid #b7cccc;
+        box-shadow: 0 2px 8px rgba(0,0,0,.06);
+        padding: 20px;
+    }
+
+    .ack-header {
+        display: flex;
+        justify-content: space-between;
+        border-bottom: 2px solid #333;
+        padding-bottom: 10px;
+        margin-bottom: 18px;
+    }
+
+    .ack-logo {
+        font-size: 32px;
+        font-weight: 800;
+    }
+
+    .ack-title {
+        background: #1f6f78;
+        color: #fff;
+        text-align: center;
+        padding: 12px;
+        font-size: 22px;
+        font-weight: 800;
+        margin-bottom: 20px;
+        text-transform: uppercase;
+    }
+
+    .ack-message {
+        font-size: 15px;
+        margin-bottom: 18px;
+        line-height: 1.5;
+    }
+
+    .ack-message em {
+        color: #c20000;
+        font-weight: 600;
+    }
+
+    .ack-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+    }
+
+    .ack-table td,
+    .ack-table th {
+        border: 1px solid #b7cccc;
+        padding: 10px;
+        vertical-align: top;
+    }
+
+    .ack-table .label {
+        background: #eaf5f6;
+        font-weight: 700;
+        width: 32%;
+    }
+
+    .section-title {
+        background: #1f6f78;
+        color: #fff;
+        padding: 10px;
+        font-weight: 800;
+        text-align: center;
+        margin-top: 25px;
+        text-transform: uppercase;
+    }
+
+    .docs-list {
+        margin-top: 10px;
+        padding-left: 20px;
+    }
+
+    .ack-actions {
+        margin-top: 22px;
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+    }
+
+    .btn-download {
+        background: #1f6f78;
+        color: white;
+        padding: 10px 18px;
+        border-radius: 4px;
+        text-decoration: none;
+        font-weight: 700;
+    }
+
+    .btn-dashboard {
+        background: #eef6f6;
+        color: #111;
+        padding: 10px 18px;
+        border-radius: 4px;
+        border: 1px solid #b7cccc;
+        text-decoration: none;
+        font-weight: 700;
+    }
+</style>
+
+<div class="ack-page">
+    <div class="ack-card">
+
+        <div class="ack-header">
+            <div>
+                <div class="ack-logo">Joburg</div>
+                <div style="font-size:12px;">a world class African city</div>
+            </div>
+
+            <div>
+                <strong>City of Johannesburg</strong><br />
+                Property Branch: Valuation Services<br />
+                Valuation Administrations<br />
+                66 Jorissen Street<br />
+                Braamfontein
+            </div>
+
+            <div style="text-align:right;">
+                <strong>Email:</strong> propertydata@joburg.org.za<br />
+                www.joburg.org.za
+            </div>
+        </div>
+
+        <div class="ack-title">
+            Attribute Submission Acknowledgement
+        </div>
+
+        <div class="ack-message">
+            <strong>Your attribute submission has been successfully lodged.</strong>
+            Thank you for submitting your property information.
+            <em>Please note you have 48 hours to upload any outstanding evidence.</em>
+        </div>
+
+        <table class="ack-table">
+            <tr>
+                <td class="label">Property Description:</td>
+                <td>@Model.PropertyDescription</td>
+            </tr>
+            <tr>
+                <td class="label">ATTRIBUTE NUMBER:</td>
+                <td><strong style="color:#1f6f78;">@Model.AttrNo</strong></td>
+            </tr>
+            <tr>
+                <td class="label">PIN:</td>
+                <td>@Model.Pin</td>
+            </tr>
+            <tr>
+                <td class="label">Date:</td>
+                <td>@Model.SubmissionDate.ToString("yyyy-MM-dd HH:mm")</td>
+            </tr>
+            <tr>
+                <td class="label">Evidence Deadline:</td>
+                <td>@Model.EvidenceDeadline?.ToString("yyyy-MM-dd HH:mm")</td>
+            </tr>
+        </table>
+
+        <div class="section-title">
+            Property Details as Submitted
+        </div>
+
+        <table class="ack-table">
+            <thead>
+                <tr>
+                    <th>Property Description</th>
+                    <th>Property Category</th>
+                    <th>Physical Address</th>
+                    <th>Market Value</th>
+                    <th>Extent</th>
+                    <th>Name of Owner</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>@Model.PropertyDescription</td>
+                    <td>@Model.PropertyCategory</td>
+                    <td>@Model.PhysicalAddress</td>
+                    <td>@Model.MarketValue</td>
+                    <td>@Model.Extent</td>
+                    <td>@Model.OwnerName</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Uploaded Documents</h3>
+        <p>You have uploaded @Model.EvidenceCount document(s)</p>
+
+        @if (Model.UploadedDocuments.Any())
+        {
+            <ul class="docs-list">
+                @foreach (var doc in Model.UploadedDocuments)
+                {
+                    <li>@doc</li>
+                }
+            </ul>
+        }
+        else
+        {
+            <p>No evidence documents uploaded.</p>
+        }
+
+        <div class="ack-actions">
+            <a asp-controller="Dashboard"
+                   asp-action="Index"
+                   class="btn-dashboard">
+                Back to Dashboard
+            </a>
+
+            <a asp-controller="Attributes"
+                   asp-action="DownloadAcknowledgement"
+                   asp-route-id="@Model.AttrId"
+                   class="btn-download">
+                Download Acknowledgement
+            </a>
+        </div>
+    </div>
+</div>

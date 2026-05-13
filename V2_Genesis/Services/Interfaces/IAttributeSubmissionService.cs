@@ -15,5 +15,7 @@ namespace V2_Genesis.Services.Interfaces
         Task ValuerDecisionAsync(long attrId, string decision, string valuerUserId, string valuerName, string? comment, string? rejectionReason);
 
         Task WithdrawAsync(long attrId, string userId, string userName, string reason);
+
+        Task<AttributeAcknowledgementVm?> GetAcknowledgementAsync(long attrId);
     }
 }

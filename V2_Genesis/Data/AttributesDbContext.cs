@@ -19,7 +19,7 @@ namespace V2_Genesis.Data
 
         public DbSet<AttrRepresentative> AttrRepresentatives { get; set; } = null!;
 
-
+        public DbSet<AttrDeclaration> AttrDeclarations { get; set; }
 
         public DbSet<AttrBusinessBuildings> AttrBusinessBuildings { get; set; }
         public DbSet<AttrBusinessSections> AttrBusinessSections { get; set; }

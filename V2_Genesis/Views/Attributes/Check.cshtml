@@ -5,29 +5,26 @@
 
     var formLabel = Model.FormType switch
     {
-        "Residential"       => "Residential",
-        "ResidentialST"     => "Residential — Sectional Title",
-        "BusinessCommercial"=> "Business and Commercial",
-        "DRCMethod"         => "DRC Method",
-        _                   => Model.FormType
+        "Residential" => "Residential",
+        "ResidentialST" => "Residential — Sectional Title",
+        "BusinessCommercial" => "Business and Commercial",
+        "DRCMethod" => "DRC Method",
+        _ => Model.FormType
     };
 }
 
 @section Styles {
     <link href="~/css/views/attributes-search.css" rel="stylesheet" asp-append-version="true" />
     <link href="~/css/views/attributes-check.css" rel="stylesheet" asp-append-version="true" />
-  
 }
 
 <div class="ca-page">
     <div class="ca-inner">
 
-        <!-- Back -->
         <a href="/dashboard" class="ca-back">
             <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
         </a>
 
-        <!-- Heading -->
         <div class="ca-heading">
             <div class="ca-heading-icon">
                 <i class="fa-solid fa-clipboard-check"></i>
@@ -41,14 +38,11 @@
             </div>
         </div>
 
-        <!-- Auto-detected form type -->
         <div class="ca-form-badge">
             <i class="fa-solid fa-file-alt"></i>
-            Form Type Detected:
-            <span>@formLabel</span>
+            Form Type Detected: <span>@formLabel</span>
         </div>
 
-        @* Error from redirect *@
         @if (TempData["AttrCheckError"] is not null)
         {
             <div class="ca-error">
@@ -148,7 +142,7 @@
         <form method="post" action="/attributes/check" id="checkForm">
             @Html.AntiForgeryToken()
             <input type="hidden" name="idProperty" value="@Model.IDProperty" />
-            <input type="hidden" name="formType"   value="@Model.FormType" />
+            <input type="hidden" name="formType" value="@Model.FormType" />
 
             <div class="ca-decl-card">
                 <div class="ca-decl-header">
@@ -157,13 +151,18 @@
                 </div>
                 <div class="ca-decl-body">
 
+                    <!-- Owner — no ID entry needed, goes straight to form -->
                     <label class="ca-decl-option">
-                        <input type="radio" name="declarationType"
-                               value="Owner" id="declOwner" required
-                               onchange="toggleOwnerIdField()" />
+                        <input type="radio"
+                               name="declarationType"
+                               value="Owner"
+                               id="declOwner"
+                               required
+                               onchange="updateContinueBtn()" />
                         <div class="ca-decl-text">
                             <h4>
-                                <i class="fa-solid fa-house-user" style="color:#e6b000;"></i>
+                                <i class="fa-solid fa-house-user"
+                                   style="color:#e6b000;"></i>
                                 I am the Owner
                             </h4>
                             <p>
@@ -173,44 +172,24 @@
                         </div>
                     </label>
 
-                    @* Owner ID field — shown only when Owner is selected *@
-                    <div id="ownerIdSection"
-                         style="display:none; padding:0 4px;">
-                        <div class="ca-field" style="max-width:400px;">
-                            <label class="ca-label" for="ownerIdNumber">
-                                <i class="fa-solid fa-id-card" style="color:#e6b000;"></i>
-                                Your ID Number
-                                <span style="color:#e53e3e;"> *</span>
-                            </label>
-                            <input type="text"
-                                   id="ownerIdNumber"
-                                   name="ownerIdNumber"
-                                   class="ca-value"
-                                   style="background:#fff; border:1.5px solid #e0e0e0;
-                            border-radius:7px; padding:10px 12px;
-                            font-size:14px; font-weight:400;
-                            font-family:'Poppins',sans-serif;"
-                                   placeholder="Enter your South African ID number"
-                                   maxlength="13" />
-                            <p style="font-size:11.5px; color:#6b6b6b; margin:4px 0 0;">
-                                This must match the registered owner ID on our records.
-                            </p>
-                        </div>
-                    </div>
-
+                    <!-- Representative -->
                     <label class="ca-decl-option">
-                        <input type="radio" name="declarationType"
-                               value="Representative" id="declRep" required
-                               onchange="toggleOwnerIdField()" />
+                        <input type="radio"
+                               name="declarationType"
+                               value="Representative"
+                               id="declRep"
+                               required
+                               onchange="updateContinueBtn()" />
                         <div class="ca-decl-text">
                             <h4>
-                                <i class="fa-solid fa-user-tie" style="color:#e6b000;"></i>
+                                <i class="fa-solid fa-user-tie"
+                                   style="color:#e6b000;"></i>
                                 I am an Authorised Representative
                             </h4>
                             <p>
                                 I am authorised to act on behalf of the property owner.
-                                You will be asked to provide your details and upload an
-                                authorisation letter on the next page.
+                                You will be asked to provide your contact details and
+                                upload an authorisation letter on the next page.
                             </p>
                         </div>
                     </label>
@@ -225,26 +204,32 @@
                     Important Notice
                 </div>
                 <strong>Submission does not imply acceptance.</strong>
-                All submitted property information is subject to professional review and
-                validation by a City of Johannesburg Valuer. Existing system data remains
-                unchanged until submissions are explicitly reviewed and approved.
+                All submitted property information is subject to professional review
+                and validation by a City of Johannesburg Valuer. Existing system data
+                remains unchanged until submissions are explicitly reviewed and approved.
                 <br /><br />
-                By clicking <strong>"Continue to Form"</strong>, you confirm that:
+                By continuing, you confirm that:
                 <ul style="margin:8px 0 0 16px; padding:0;">
-                    <li>The information you are about to submit is true and correct
-                        to the best of your knowledge</li>
-                    <li>You are either the registered owner or an authorised
-                        representative of the above property</li>
-                    <li>You understand that submission does not guarantee any changes
-                        to the valuation roll</li>
+                    <li>
+                        The information you are about to submit is true and correct
+                        to the best of your knowledge
+                    </li>
+                    <li>
+                        You are either the registered owner or an authorised
+                        representative of the above property
+                    </li>
+                    <li>
+                        You understand that submission does not guarantee any changes
+                        to the valuation roll
+                    </li>
                 </ul>
             </div>
 
             <!-- Actions -->
             <div class="ca-actions" style="margin-top:4px;">
                 <button type="submit" class="ca-btn-primary" id="continueBtn">
-                    <i class="fa-solid fa-arrow-right"></i>
-                    Continue to Form
+                    <i class="fa-solid fa-arrow-right" id="continueBtnIcon"></i>
+                    <span id="continueBtnText">Continue to Form</span>
                 </button>
                 <a href="/dashboard" class="ca-btn-outline">
                     <i class="fa-solid fa-xmark"></i> Cancel
@@ -252,50 +237,49 @@
             </div>
 
         </form>
-
     </div>
 </div>
 
 @section Scripts {
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    // Format market value
-    document.querySelectorAll('.ca-market-val').forEach(function (el) {
-        var raw = parseFloat(el.textContent.replace(/[^0-9.-]+/g, ''));
-        if (!isNaN(raw) && raw > 0) {
-            el.textContent = raw.toLocaleString('en-ZA', {
-                style: 'currency', currency: 'ZAR',
-                minimumFractionDigits: 0, maximumFractionDigits: 0
-            });
-        }
-    });
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
 
-            function toggleOwnerIdField() {
-            var ownerSelected = document.getElementById('declOwner').checked;
-            var section = document.getElementById('ownerIdSection');
-            var input   = document.getElementById('ownerIdNumber');
-            section.style.display = ownerSelected ? 'block' : 'none';
-            input.required        = ownerSelected;
-        }
-    // Validate declaration before submit
-           document.getElementById('checkForm')
-            .addEventListener('submit', function (e) {
-                var selected = document.querySelector(
-                    'input[name="declarationType"]:checked');
-                if (!selected) {
-                    e.preventDefault();
-                    alert('Please select whether you are the Owner or Representative.');
-                    return;
-                }
-                if (selected.value === 'Owner') {
-                    var id = document.getElementById('ownerIdNumber').value.trim();
-                    if (!id) {
-                        e.preventDefault();
-                        document.getElementById('ownerIdNumber').focus();
-                        alert('Please enter your ID number.');
-                    }
+            // Format market value
+            document.querySelectorAll('.ca-market-val').forEach(function (el) {
+                var raw = parseFloat(el.textContent.replace(/[^0-9.-]+/g, ''));
+                if (!isNaN(raw) && raw > 0) {
+                    el.textContent = raw.toLocaleString('en-ZA', {
+                        style: 'currency', currency: 'ZAR',
+                        minimumFractionDigits: 0, maximumFractionDigits: 0
+                    });
                 }
             });
-});
-</script>
+
+            // Validate before submit
+            document.getElementById('checkForm')
+                .addEventListener('submit', function (e) {
+                    var selected = document.querySelector(
+                        'input[name="declarationType"]:checked');
+                    if (!selected) {
+                        e.preventDefault();
+                        alert('Please select whether you are the Owner or Representative.');
+                    }
+                });
+        });
+
+        // Update button text based on selection
+        function updateContinueBtn() {
+            var isRep  = document.getElementById('declRep').checked;
+            var text   = document.getElementById('continueBtnText');
+            var icon   = document.getElementById('continueBtnIcon');
+
+            if (isRep) {
+                text.textContent   = 'Fill Representative Details';
+                icon.className     = 'fa-solid fa-user-tie';
+            } else {
+                text.textContent   = 'Continue to Form';
+                icon.className     = 'fa-solid fa-arrow-right';
+            }
+        }
+    </script>
 }

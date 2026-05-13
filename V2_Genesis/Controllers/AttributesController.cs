@@ -16,17 +16,19 @@ public class AttributesController : Controller
     private readonly IAttributesSearchService _attrSearch;
     private readonly IPropertySearchService _propSearch;
     private readonly ApplicationDbContext _db;
+    private readonly AttributesDbContext _attrDb;
     private readonly ILogger<AttributesController> _logger;
     private readonly IAttributeSubmissionService _attributeService;
     public AttributesController(
         IAttributesSearchService attrSearch,
         IPropertySearchService propSearch,
-        ApplicationDbContext db,
+        ApplicationDbContext db,AttributesDbContext attributesDb,
         ILogger<AttributesController> logger,IAttributeSubmissionService attributeService)
     {
         _attrSearch = attrSearch;
         _propSearch = propSearch;
         _db = db;
+        _attrDb = attributesDb;
         _logger = logger;
         _attributeService = attributeService;
     }
@@ -46,8 +48,8 @@ public class AttributesController : Controller
     public async Task<IActionResult> Search()
     {
         ViewBag.GvList = await _db.GvList.OrderBy(r => r.ID).ToListAsync();
-        ViewBag.Townships = await _propSearch.GetTownshipsAsync();
-        ViewBag.Schemes = await _propSearch.GetSchemesAsync();
+        ViewBag.Townships = await _attrSearch.GetTownshipsAsync();
+        ViewBag.Schemes = await _attrSearch.GetSchemesAsync();
         return View();
     }
 
@@ -56,12 +58,12 @@ public class AttributesController : Controller
     [Route("attributes/search")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Search(
-        string? SearchTownName, string? SearchStand,
-        string? SearchAddress, string? SearchScheme, string? SearchUnit)
+     string? SearchTownName, string? SearchStand,
+     string? SearchAddress, string? SearchScheme, string? SearchUnit)
     {
         ViewBag.GvList = await _db.GvList.OrderBy(r => r.ID).ToListAsync();
-        ViewBag.Townships = await _propSearch.GetTownshipsAsync();
-        ViewBag.Schemes = await _propSearch.GetSchemesAsync();
+        ViewBag.Townships = await _attrSearch.GetTownshipsAsync();
+        ViewBag.Schemes = await _attrSearch.GetSchemesAsync();
         ViewBag.IsAuth = User.Identity?.IsAuthenticated == true;
 
         if (string.IsNullOrWhiteSpace(SearchTownName) &&
@@ -181,10 +183,9 @@ public class AttributesController : Controller
     [Route("attributes/check")]
     [ValidateAntiForgeryToken]
     public IActionResult CheckConfirm(
-      string idProperty,
-      string formType,
-      string declarationType,
-      string? ownerIdNumber)       // ← NEW: only sent when Owner selected
+     string idProperty,
+     string formType,
+     string declarationType)
     {
         if (string.IsNullOrWhiteSpace(declarationType))
         {
@@ -193,41 +194,17 @@ public class AttributesController : Controller
             return RedirectToAction("Check", new { idProperty, formType });
         }
 
-        // ── Owner: validate ID number against LIS ─────────────────────
-        if (declarationType == "Owner")
-        {
-            var lisOwnerId = TempData.Peek("Attr_OwnerId")?.ToString();
-
-            if (!string.IsNullOrWhiteSpace(lisOwnerId) &&
-                !string.IsNullOrWhiteSpace(ownerIdNumber))
-            {
-                // Compare trimmed, case-insensitive
-                if (!string.Equals(
-                        lisOwnerId.Trim(),
-                        ownerIdNumber.Trim(),
-                        StringComparison.OrdinalIgnoreCase))
-                {
-                    TempData["AttrCheckError"] =
-                        "The ID number entered does not match our records " +
-                        "for this property. Please verify and try again.";
-                    TempData.Keep("Attr_Detail_Json");
-                    TempData.Keep("Attr_OwnerId");
-                    return RedirectToAction("Check", new { idProperty, formType });
-                }
-            }
-        }
-
         TempData["AttrDeclaration"] = declarationType;
         TempData["AttrRepRequired"] =
             declarationType == "Representative" ? "true" : "false";
         TempData.Keep("Attr_Detail_Json");
         TempData.Keep("Attr_OwnerId");
 
-        // Representative → separate page first
+        // Representative → separate rep details page
         if (declarationType == "Representative")
             return RedirectToAction("Representative", new { idProperty, formType });
 
-        // Owner → straight to form
+        // Owner → straight to form (no ID validation)
         return RedirectToAction("Form", new { idProperty, formType });
     }
 
@@ -256,15 +233,14 @@ public class AttributesController : Controller
 
         var model = _attributeService.CreateNew(formType);
 
-        // Pre-fill from LIS + SAP data stored in TempData
-        var json = TempData["Attr_Detail_Json"]?.ToString();
-        if (!string.IsNullOrWhiteSpace(json))
+        // Pre-fill property details from LIS data
+        var detailJson = TempData["Attr_Detail_Json"]?.ToString();
+        if (!string.IsNullOrWhiteSpace(detailJson))
         {
             try
             {
                 var d = System.Text.Json.JsonSerializer
-                    .Deserialize<V2_Genesis.Models.Attributes.LisPropertyDetail>(json);
-
+                    .Deserialize<V2_Genesis.Models.Attributes.LisPropertyDetail>(detailJson);
                 if (d is not null)
                 {
                     model.PropertyDetails.PropertyId = d.PropertyId ?? idProperty;
@@ -280,23 +256,23 @@ public class AttributesController : Controller
                     model.PropertyDetails.RollType = d.RollType;
                     model.PropertyDetails.RollDescription = d.RollType;
                     model.PropertyDetails.Extent = d.RateableAreaVal ?? d.RateableArea;
-                    model.PropertyDetails.Sector = d.TpsCode;
                     model.PropertyDetails.SectionalTitle = d.UnitType;
-                    
-                    // Pre-fill first contact from SAP data
+
+                    // Pre-fill contact 0 with owner data
                     if (model.ContactInfos.Any())
                     {
-                        model.ContactInfos[0].FirstNames = d.OwnerFirstNames;   // pre-filled
-                        model.ContactInfos[0].LastName = d.OwnerLastName;     // pre-filled
-                        model.ContactInfos[0].IDNumber = d.OwnerId;           // auto-populated
+                        model.ContactInfos[0].FirstNames = d.OwnerFirstNames;
+                        model.ContactInfos[0].LastName = d.OwnerLastName;
+                        model.ContactInfos[0].IDNumber = d.OwnerId;
                         model.ContactInfos[0].Email = d.Email;
                         model.ContactInfos[0].CellNo = d.CellNo;
                         model.ContactInfos[0].HomePhoneNo = d.TelNo;
-                        model.ContactInfos[0].ContactType = "Owner";
+                        model.ContactInfos[0].ContactType =
+                            declaration == "Representative" ? "Representative" : "Owner";
                     }
                 }
             }
-            catch { /* open form blank on error */ }
+            catch { /* open form blank */ }
         }
         else
         {
@@ -304,14 +280,39 @@ public class AttributesController : Controller
             model.PropertyDetails.UnitKey = idProperty;
         }
 
+        // Pre-fill representative details if they exist in TempData
+        var repJson = TempData["AttrRepDetails"]?.ToString();
+        if (!string.IsNullOrWhiteSpace(repJson))
+        {
+            try
+            {
+                var rep = System.Text.Json.JsonSerializer
+                    .Deserialize<System.Text.Json.JsonElement>(repJson);
+
+                model.RepresentativeDetails = new RepresentativeDetailsVm
+                {
+                    IsRepresentative = true,
+                    Representative_Name = rep.GetProperty("Representative_Name").GetString(),
+                    Rep_Postal_1 = rep.GetProperty("Rep_Postal_1").GetString(),
+                    Rep_Postal_2 = rep.GetProperty("Rep_Postal_2").GetString(),
+                    Rep_Postal_3 = rep.GetProperty("Rep_Postal_3").GetString(),
+                    Rep_Postal_4 = rep.GetProperty("Rep_Postal_4").GetString(),
+                    Rep_Postal_5 = rep.GetProperty("Rep_Postal_5").GetString(),
+                    Rep_Home_Phone = rep.GetProperty("Rep_Home_Phone").GetString(),
+                    Rep_Cell_Phone = rep.GetProperty("Rep_Cell_Phone").GetString(),
+                    Rep_Work_Phone = rep.GetProperty("Rep_Work_Phone").GetString(),
+                    Rep_Fax_Phone = rep.GetProperty("Rep_Fax_Phone").GetString(),
+                    Rep_Email = rep.GetProperty("Rep_Email").GetString(),
+                };
+            }
+            catch { /* rep section stays empty */ }
+        }
+
         ViewBag.Declaration = declaration;
-        ViewBag.RepRequired = TempData["AttrRepRequired"]?.ToString() == "true";
+        ViewBag.RepRequired = declaration == "Representative";
 
         return View("Create", model);
     }
-
-  
-
     // ── Helper — same logic as DashboardService.ResolveFormType ───────
     private static string? ResolveFormType(string? catDesc)
     {
@@ -344,14 +345,24 @@ public class AttributesController : Controller
     //  UPDATE Form action — read declaration from TempData
     // ════════════════════════════════════════════════════════════════════
 
-    
 
-   
-   
+
+
+
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(AttributeSubmissionViewModel model)
     {
+        if (!model.Declaration.DeclarationAccepted)
+        {
+            ModelState.AddModelError("Declaration.DeclarationAccepted", "You must accept the declaration before submitting.");
+        }
+
+        if (string.IsNullOrWhiteSpace(model.Declaration.SignatureName))
+        {
+            ModelState.AddModelError("Declaration.SignatureName", "Signature name is required.");
+        }
+
         if (!ModelState.IsValid)
         {
             return View(model);
@@ -370,12 +381,30 @@ public class AttributesController : Controller
     [HttpGet]
     public async Task<IActionResult> Details(long id)
     {
-        var model = await _attributeService.GetForReviewAsync(id);
+        var model = await _attributeService.GetAcknowledgementAsync(id);
 
         if (model == null)
             return NotFound();
 
         return View(model);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> DownloadAcknowledgement(long id)
+    {
+        var model = await _attributeService.GetAcknowledgementAsync(id);
+
+        if (model == null || string.IsNullOrWhiteSpace(model.AcknowledgementPath))
+            return NotFound();
+
+        if (!System.IO.File.Exists(model.AcknowledgementPath))
+            return NotFound();
+
+        var fileName = model.AcknowledgementFileName ?? $"{model.AttrNo}_Acknowledgement.pdf";
+
+        var bytes = await System.IO.File.ReadAllBytesAsync(model.AcknowledgementPath);
+
+        return File(bytes, "application/pdf", fileName);
     }
 
 
@@ -387,40 +416,145 @@ public class AttributesController : Controller
     {
         ViewBag.GvList = await _db.GvList.OrderBy(r => r.ID).ToListAsync();
 
-        // Must have come from Check page
+        // Guard: must have come through Check page
         var declaration = TempData.Peek("AttrDeclaration")?.ToString();
-        if (declaration != "Representative")
+        if (string.IsNullOrWhiteSpace(declaration) || declaration != "Representative")
+        {
+            TempData["AttrCheckError"] = "Please complete the check step first.";
             return RedirectToAction("Check", new { idProperty, formType });
+        }
 
-        // Build summary from stored detail
         var vm = new RepresentativeViewModel
         {
             IDProperty = idProperty,
-            FormType = formType,
+            FormType = formType
         };
 
+        // Pre-fill from LIS SAP data stored in TempData
         var json = TempData.Peek("Attr_Detail_Json")?.ToString();
         if (!string.IsNullOrWhiteSpace(json))
         {
             try
             {
                 var d = System.Text.Json.JsonSerializer
-                    .Deserialize<LisPropertyDetail>(json);
+                    .Deserialize<V2_Genesis.Models.Attributes.LisPropertyDetail>(json);
                 if (d is not null)
                 {
                     vm.PropertyDesc = d.PropertyDesc;
                     vm.TownNameDesc = d.TownNameDesc;
                     vm.LisStreetAddress = d.LisStreetAddress;
                     vm.CatDesc = d.CatDesc;
-                    // Pre-fill email from SAP if available
                     vm.Rep_Email = d.Email;
                     vm.Rep_Cell_Phone = d.CellNo;
                     vm.Rep_Home_Phone = d.TelNo;
                 }
             }
-            catch { }
+            catch { /* use empty vm */ }
         }
 
         return View(vm);
     }
+
+    [HttpPost]
+    [Authorize(Roles = "Client")]
+    [Route("attributes/representative")]
+    [ValidateAntiForgeryToken]
+    public IActionResult RepresentativeSubmit(RepresentativeViewModel vm)
+    {
+        // Re-validate required fields manually
+        if (string.IsNullOrWhiteSpace(vm.Representative_Name))
+        {
+            ModelState.AddModelError("Representative_Name",
+                "Representative name is required.");
+            ViewBag.GvList = _db.GvList.OrderBy(r => r.ID).ToList();
+            return View("Representative", vm);
+        }
+
+        // Store rep details as JSON in TempData
+        // They travel through to Form, then into SubmitAsync
+        var repData = new
+        {
+            vm.Representative_Name,
+            vm.Rep_Postal_1,
+            vm.Rep_Postal_2,
+            vm.Rep_Postal_3,
+            vm.Rep_Postal_4,
+            vm.Rep_Postal_5,
+            vm.Rep_Home_Phone,
+            vm.Rep_Cell_Phone,
+            vm.Rep_Work_Phone,
+            vm.Rep_Fax_Phone,
+            vm.Rep_Email
+        };
+
+        TempData["AttrRepDetails"] = System.Text.Json.JsonSerializer.Serialize(repData);
+        TempData.Keep("AttrDeclaration");
+        TempData.Keep("Attr_Detail_Json");
+
+        return RedirectToAction("Form",
+            new { idProperty = vm.IDProperty, formType = vm.FormType });
+    }
+
+    [HttpGet]
+    [Authorize(Roles = "Client")]
+    [Route("attributes/unlink")]
+    public async Task<IActionResult> Unlink(string id)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+
+        // Load the linked record — only the owner can unlink
+        var linked = await _attrDb.LinkedProperties
+            .FirstOrDefaultAsync(p => p.IDProperty == id && p.UserID == userId);
+
+        if (linked is null)
+        {
+            TempData["AttrLinkError"] = "Property not found or already removed.";
+            return RedirectToAction("Index", "Dashboard");
+        }
+
+        // Optionally load property details for the confirmation page
+        var detail = await _attrSearch.GetPropertyDetailAsync(linked.IDProperty);
+
+        var vm = new UnlinkViewModel
+        {
+            Id = linked.ID,
+            IDProperty = linked.IDProperty,
+            PropertyDesc = detail?.PropertyDesc ?? linked.IDProperty,
+            TownNameDesc = detail?.TownNameDesc,
+            CatDesc = detail?.CatDesc,
+            MarketValue = detail?.MarketValue,
+            Address = detail?.LisStreetAddress
+        };
+
+        return View(vm);
+    }
+
+    // ── POST /attributes/unlink — permanent delete ────────────────────
+    [HttpPost]
+    [Authorize(Roles = "Client")]
+    [Route("attributes/unlink")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UnlinkConfirm(long id)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+
+        var linked = await _attrDb.LinkedProperties
+            .FirstOrDefaultAsync(p => p.ID == id && p.UserID == userId);
+
+        if (linked is null)
+        {
+            TempData["AttrLinkError"] = "Property not found or already removed.";
+            return RedirectToAction("Index", "Dashboard");
+        }
+
+        _attrDb.LinkedProperties.Remove(linked);
+        await _attrDb.SaveChangesAsync();
+
+        TempData["AttrUnlinkSuccess"] =
+            "Property has been removed from your profile. " +
+            "You can search and link it again at any time.";
+
+        return RedirectToAction("Index", "Dashboard");
+    }
+
 }

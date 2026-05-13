@@ -1,0 +1,13 @@
+﻿using V2_Genesis.Models.Attributes;
+using V2_Genesis.Models.Results.Atrributes;
+using V2_Genesis.Models.ViewModels.Attributes;
+
+namespace V2_Genesis.Services.Interfaces
+{
+    public interface IAttributeDocumentService
+    {
+        Task<AttributeDocumentSaveResult> CreateSubmissionPackageAsync(
+           AttributeSubmissionViewModel model,
+           AttrPropertyInfo propertyInfo);
+    }
+}

@@ -78,5 +78,7 @@ public static class RollSearchRegistry
                 DetailSp: "IndexObjection_Sup3",
                 ConnectionKey: "Sup3Connection"
             ),
+
+
         };
 }

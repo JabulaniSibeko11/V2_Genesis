@@ -16,5 +16,7 @@ namespace V2_Genesis.Models.Results
         // ── Decides which action buttons to show ──────────────────────────
         public bool IsWithinObjectionPeriod =>
             DateTime.Now > OpenDate && DateTime.Now < VisibleUntil;
+
+        public bool IsAttributes { get; set; }
     }
 }

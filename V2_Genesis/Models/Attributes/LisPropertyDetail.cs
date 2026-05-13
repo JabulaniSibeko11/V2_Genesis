@@ -51,5 +51,11 @@
         public string? OwnerFirstNames { get; set; }   // "FIRSTNAME MIDDLENAME"
         public string? OwnerLastName { get; set; }   // "SURNAME"
                                                      // OwnerId already exists
+
+        public string? ADDR1 { get; set; }
+        public string? ADDR2 { get; set; }
+        public string? ADDR3 { get; set; }
+        public string? ADDR4 { get; set; }
+        public string? ADDR5 { get; set; }
     }
 }

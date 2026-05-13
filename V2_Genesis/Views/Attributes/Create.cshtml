@@ -1260,7 +1260,44 @@
                 Upload supporting documents such as photos, plans, rates information, title documents, authorisation letter, or other evidence.
             </div>
         </div>
+        <div class="attr-card">
+            <div class="attr-section-title">Declaration and Signature</div>
 
+            <table class="attr-table">
+                <tr>
+                    <td class="attr-label">Declaration</td>
+                    <td colspan="3">
+                        <textarea asp-for="Declaration.DeclarationText"
+                                  class="attr-textarea"
+                                      readonly>
+I declare that the information submitted is true and correct to the best of my knowledge. I understand that submitting this information does not mean it is automatically accepted and that it is subject to review by the City of Johannesburg valuation team.
+                </textarea>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td class="attr-label">I Accept</td>
+                        <td colspan="3">
+                            <label>
+                                <input asp-for="Declaration.DeclarationAccepted" type="checkbox" />
+                                I confirm and accept this declaration.
+                            </label>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td class="attr-label">Signature Name</td>
+                        <td>
+                            <input asp-for="Declaration.SignatureName" class="attr-input" />
+                        </td>
+
+                        <td class="attr-label">Signature Picture / Base64</td>
+                        <td>
+                            <input asp-for="Declaration.SignaturePicture" class="attr-input" />
+                        </td>
+                    </tr>
+                </table>
+            </div>
         <div class="attr-actions">
             <a asp-action="Create"
                    asp-controller="AttributeSubmission"

@@ -48,5 +48,29 @@
         public AttributeFilesVm Files { get; set; } = new();
 
         public string? ClientComment { get; set; }
+
+        public RepresentativeDetailsVm RepresentativeDetails { get; set; } = new();
+        public AttributeDeclarationVm Declaration { get; set; } = new();
+        public string? GeneratedEvidencePin { get; set; }
+
+        public DateTime? GeneratedEvidenceDeadline { get; set; }
     }
+
+
+    public class RepresentativeDetailsVm
+    {
+        public bool IsRepresentative { get; set; }
+        public string? Representative_Name { get; set; }
+        public string? Rep_Postal_1 { get; set; }
+        public string? Rep_Postal_2 { get; set; }
+        public string? Rep_Postal_3 { get; set; }
+        public string? Rep_Postal_4 { get; set; }
+        public string? Rep_Postal_5 { get; set; }
+        public string? Rep_Home_Phone { get; set; }
+        public string? Rep_Cell_Phone { get; set; }
+        public string? Rep_Work_Phone { get; set; }
+        public string? Rep_Fax_Phone { get; set; }
+        public string? Rep_Email { get; set; }
+    }
+
 }

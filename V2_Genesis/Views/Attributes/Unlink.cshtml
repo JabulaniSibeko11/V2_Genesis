@@ -1,0 +1,137 @@
+﻿@* Views/Attributes/Unlink.cshtml *@
+@model V2_Genesis.Models.ViewModels.Attributes.UnlinkViewModel
+@{
+    ViewData["Title"] = "Remove Property — Attributes";
+    Layout = "~/Views/Shared/_ClientLayout.cshtml";
+}
+
+<link href="~/css/views/attributes-unlink.css" rel="stylesheet" asp-append-version="true" />
+
+<div class="ul-page">
+    <div class="ul-inner">
+
+        <a href="/dashboard" class="ul-back">
+            <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
+        </a>
+
+        <!-- Warning heading -->
+        <div class="ul-warning-header">
+            <div class="ul-warning-icon">
+                <i class="fa-solid fa-link-slash"></i>
+            </div>
+            <div>
+                <h1 class="ul-warning-title">Remove Linked Property</h1>
+                <p class="ul-warning-subtitle">
+                    Please review before confirming this action
+                </p>
+            </div>
+        </div>
+
+        <!-- Property being removed -->
+        <div class="ul-prop-card">
+            <div class="ul-prop-header">
+                <i class="fa-solid fa-building"></i>
+                Property to be Removed
+            </div>
+            <div class="ul-prop-body">
+
+                <div class="ul-prop-field">
+                    <span class="ul-prop-label">
+                        <i class="fa-solid fa-file-alt"></i>
+                        Property Description
+                    </span>
+                    <span class="ul-prop-value">
+                        @(Model.PropertyDesc ?? Model.IDProperty)
+                    </span>
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(Model.TownNameDesc))
+                {
+                    <div class="ul-prop-field">
+                        <span class="ul-prop-label">
+                            <i class="fa-solid fa-city"></i> Township
+                        </span>
+                        <span class="ul-prop-value">@Model.TownNameDesc</span>
+                    </div>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(Model.Address))
+                {
+                    <div class="ul-prop-field">
+                        <span class="ul-prop-label">
+                            <i class="fa-solid fa-map-pin"></i> Address
+                        </span>
+                        <span class="ul-prop-value">@Model.Address</span>
+                    </div>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(Model.CatDesc))
+                {
+                    <div class="ul-prop-field">
+                        <span class="ul-prop-label">
+                            <i class="fa-solid fa-tag"></i> Category
+                        </span>
+                        <span class="ul-prop-value">@Model.CatDesc</span>
+                    </div>
+                }
+
+            </div>
+        </div>
+
+        <!-- Warning notice -->
+        <div class="ul-notice">
+            <div class="ul-notice-title">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                Before you proceed — please read carefully
+            </div>
+            <ul>
+                <li>
+                    <strong>This action is permanent.</strong>
+                    The property will be immediately removed from your profile.
+                </li>
+                <li>
+                    Any <strong>incomplete attribute submissions</strong> for
+                    this property will no longer appear on your dashboard.
+                </li>
+                <li>
+                    To submit attributes for this property again you will need to
+                    <strong>search and re-link it</strong> from the Attributes
+                    search page.
+                </li>
+                <li>
+                    Already submitted and approved attribute information
+                    <strong>will not be affected</strong> by removing the link.
+                </li>
+            </ul>
+        </div>
+
+        <!-- Actions -->
+        <form method="post" action="/attributes/unlink" id="unlinkForm">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" value="@Model.Id" />
+
+            <div class="ul-actions">
+                <button type="submit" class="ul-btn-danger" id="unlinkBtn">
+                    <i class="fa-solid fa-link-slash"></i>
+                    Yes, Remove This Property
+                </button>
+                <a href="/dashboard" class="ul-btn-cancel">
+                    <i class="fa-solid fa-xmark"></i> Cancel
+                </a>
+            </div>
+        </form>
+
+    </div>
+</div>
+
+@section Scripts {
+<script>
+document.getElementById('unlinkForm')
+    .addEventListener('submit', function () {
+        var btn = document.getElementById('unlinkBtn');
+        btn.disabled    = true;
+        btn.innerHTML   =
+            '<i class="fa-solid fa-spinner fa-spin"></i> Removing...';
+    });
+</script>
+}

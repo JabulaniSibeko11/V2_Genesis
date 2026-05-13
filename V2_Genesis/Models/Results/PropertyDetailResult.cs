@@ -12,7 +12,7 @@
         public string? TownNameDesc { get; set; }
         public string? OwnerName { get; set; }
         public int Erf { get; set; }
-        public int Ptn { get; set; }
+        public string? Ptn { get; set; }
         public string? Re { get; set; }
         public string? LisStreetAddress { get; set; }
         public string? CatDesc { get; set; }
