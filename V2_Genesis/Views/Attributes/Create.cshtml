@@ -16,190 +16,10 @@
         "ResidentialST" => "Residential - ST",
         _ => "Attribute Property Submission"
     };
+    Layout = "~/Views/Shared/_ClientLayout.cshtml";
 }
+<link href="~/css/views/attribute-create.css" rel="stylesheet" asp-append-version="true" />
 
-<style>
-    .attr-page {
-        max-width: 1250px;
-        margin: 20px auto;
-        font-family: Arial, sans-serif;
-        font-size: 13px;
-        color: #111;
-    }
-
-    .attr-card {
-        background: #fff;
-        border: 1px solid #b7cccc;
-        margin-bottom: 18px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    }
-
-    .attr-title {
-        text-align: center;
-        font-size: 22px;
-        font-weight: 700;
-        padding: 12px;
-        border-bottom: 1px solid #b7cccc;
-        background: #f8fbfb;
-    }
-
-    .attr-section-title {
-        background: #cfe3e3;
-        border-top: 1px solid #b7cccc;
-        border-bottom: 1px solid #b7cccc;
-        padding: 8px 10px;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: .3px;
-    }
-
-    .attr-table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-
-    .attr-table th,
-    .attr-table td {
-        border: 1px solid #b7cccc;
-        padding: 6px 8px;
-        vertical-align: middle;
-    }
-
-    .attr-table th {
-        background: #eef6f6;
-        font-weight: 700;
-        text-align: left;
-    }
-
-    .attr-label {
-        width: 18%;
-        background: #f7fbfb;
-        font-weight: 700;
-    }
-
-    .attr-input-cell {
-        width: 32%;
-    }
-
-    .attr-input,
-    .attr-select,
-    .attr-textarea {
-        width: 100%;
-        border: 1px solid #d6e1e1;
-        border-radius: 3px;
-        padding: 6px 7px;
-        font-size: 13px;
-        background: #fff;
-    }
-
-    .attr-input:focus,
-    .attr-select:focus,
-    .attr-textarea:focus {
-        outline: none;
-        border-color: #1f6f78;
-        background: #fffef0;
-    }
-
-    .attr-textarea {
-        min-height: 70px;
-        resize: vertical;
-    }
-
-    .attr-radio-row {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 14px;
-        align-items: center;
-    }
-
-    .attr-radio-row label {
-        font-weight: 400;
-        white-space: nowrap;
-    }
-
-    .attr-actions {
-        display: flex;
-        justify-content: flex-end;
-        gap: 10px;
-        margin: 18px 0 40px;
-    }
-
-    .btn-attr-primary {
-        background: #1f6f78;
-        color: #fff;
-        border: none;
-        padding: 10px 22px;
-        border-radius: 4px;
-        font-weight: 700;
-        cursor: pointer;
-    }
-
-    .btn-attr-secondary {
-        background: #eef6f6;
-        color: #111;
-        border: 1px solid #b7cccc;
-        padding: 10px 18px;
-        border-radius: 4px;
-        font-weight: 700;
-        text-decoration: none;
-    }
-
-    .btn-attr-primary:hover {
-        background: #15535a;
-    }
-
-    .small-note {
-        font-size: 12px;
-        color: #555;
-        margin-top: 5px;
-    }
-
-    .file-grid {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 10px;
-        padding: 12px;
-    }
-
-    .file-box {
-        border: 1px solid #d6e1e1;
-        padding: 10px;
-        border-radius: 4px;
-        background: #fbfefe;
-    }
-
-    .file-box label {
-        font-weight: 700;
-        display: block;
-        margin-bottom: 5px;
-    }
-
-    .validation-summary-errors {
-        color: #b00020;
-        background: #fff2f2;
-        border: 1px solid #ffc4c4;
-        padding: 10px;
-        margin-bottom: 15px;
-    }
-
-    @@media (max-width: 768px) {
-        .file-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .attr-table,
-        .attr-table tbody,
-        .attr-table tr,
-        .attr-table td {
-            display: block;
-            width: 100%;
-        }
-
-        .attr-label {
-            width: 100%;
-        }
-    }
-</style>
 
 <div class="attr-page">
 
@@ -289,7 +109,7 @@
                 <tr>
                     <td class="attr-label">Municipality</td>
                     <td>
-                        <input asp-for="PropertyDetails.Municipality" class="attr-input" />
+                        <input asp-for="PropertyDetails.Municipality" class="attr-input" value="City Of Johannesburg"/>
                     </td>
 
                     <td class="attr-label">Ward</td>
@@ -872,245 +692,277 @@
 
         @if (isBusiness)
         {
-            <!-- BUSINESS BUILDINGS -->
+            <!-- BUSINESS BUILDINGS — 2 rows + Add Row -->
             <div class="attr-card">
                 <div class="attr-section-title">Buildings</div>
-
-                <table class="attr-table">
-                    <thead>
-                        <tr>
-                            <th>Building Nr</th>
-                            <th>Quality</th>
-                            <th>Condition</th>
-                            <th>Year Built</th>
-                            <th>Storeys</th>
-                            <th>Depreciation</th>
-                            <th>GBA</th>
-                            <th>Cost</th>
-                            <th>DRC</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @for (int i = 0; i < Model.BusinessBuildings.Count; i++)
-                        {
+                <div class="table-responsive">
+                    <table class="attr-table" id="tbl-bus-buildings">
+                        <thead>
                             <tr>
-                                <td><input asp-for="BusinessBuildings[i].BuildingNr" class="attr-input" /></td>
-                                <td><input asp-for="BusinessBuildings[i].Quality" class="attr-input" /></td>
-                                <td><input asp-for="BusinessBuildings[i].Condition" class="attr-input" /></td>
-                                <td><input asp-for="BusinessBuildings[i].YearBuilt" class="attr-input" /></td>
-                                <td><input asp-for="BusinessBuildings[i].Storeys" class="attr-input" /></td>
-                                <td><input asp-for="BusinessBuildings[i].Depreciation" class="attr-input" /></td>
-                                <td><input asp-for="BusinessBuildings[i].GBA" class="attr-input" /></td>
-                                <td><input asp-for="BusinessBuildings[i].Cost" class="attr-input" /></td>
-                                <td><input asp-for="BusinessBuildings[i].DRC" class="attr-input" /></td>
+                                <th style="min-width:80px;">Building Nr</th>
+                                <th style="min-width:90px;">Quality</th>
+                                <th style="min-width:90px;">Condition</th>
+                                <th style="min-width:80px;">Year Built</th>
+                                <th style="min-width:70px;">Storeys</th>
+                                <th style="min-width:90px;">Depreciation</th>
+                                <th style="min-width:70px;">GBA</th>
+                                <th style="min-width:80px;">Cost</th>
+                                <th style="min-width:80px;">DRC</th>
+                                <th style="width:36px;"></th>
                             </tr>
-                        }
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody id="body-bus-buildings">
+                            @for (int i = 0; i < 2; i++)
+                            {
+                                <tr>
+                                    <td><input name="BusinessBuildings[@i].BuildingNr" class="attr-input" /></td>
+                                    <td><input name="BusinessBuildings[@i].Quality" class="attr-input" /></td>
+                                    <td><input name="BusinessBuildings[@i].Condition" class="attr-input" /></td>
+                                    <td><input name="BusinessBuildings[@i].YearBuilt" class="attr-input" type="number" /></td>
+                                    <td><input name="BusinessBuildings[@i].Storeys" class="attr-input" type="number" /></td>
+                                    <td><input name="BusinessBuildings[@i].Depreciation" class="attr-input" type="number" step="0.01" /></td>
+                                    <td><input name="BusinessBuildings[@i].GBA" class="attr-input" type="number" step="0.01" /></td>
+                                    <td><input name="BusinessBuildings[@i].Cost" class="attr-input" type="number" step="0.01" /></td>
+                                    <td><input name="BusinessBuildings[@i].DRC" class="attr-input" type="number" step="0.01" /></td>
+                                    <td><button type="button" class="dyn-del-btn" onclick="delRow(this)" title="Remove row"><i class="fa-solid fa-xmark"></i></button></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <div class="dyn-add-bar">
+                    <button type="button" class="dyn-add-btn"
+                            onclick="addRow('body-bus-buildings', busBuildingTemplate)">
+                        <i class="fa-solid fa-plus"></i> Add Row
+                    </button>
+                </div>
             </div>
 
-            <!-- BUSINESS SECTIONS -->
+            <!-- BUSINESS SECTIONS — 2 rows + Add Row -->
             <div class="attr-card">
                 <div class="attr-section-title">Sections</div>
-
-                <table class="attr-table">
-                    <thead>
-                        <tr>
-                            <th>Building Nr</th>
-                            <th>Usage</th>
-                            <th>Market Group</th>
-                            <th>Quality</th>
-                            <th>GBA</th>
-                            <th>NLA</th>
-                            <th>Cost Rate</th>
-                            <th>Cost</th>
-                            <th>Rental</th>
-                            <th>Vac</th>
-                            <th>Exp</th>
-                            <th>Cap</th>
-                            <th>Gross</th>
-                            <th>Normalised</th>
-                            <th>Nett</th>
-                            <th>Value</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @for (int i = 0; i < Model.BusinessSections.Count; i++)
-                        {
+                <div class="table-responsive">
+                    <table class="attr-table" id="tbl-bus-sections">
+                        <thead>
                             <tr>
-                                <td><input asp-for="BusinessSections[i].BuildingNr" class="attr-input" /></td>
-                                <td><input asp-for="BusinessSections[i].Usage" class="attr-input" /></td>
-                                <td><input asp-for="BusinessSections[i].MarketGroup" class="attr-input" /></td>
-                                <td><input asp-for="BusinessSections[i].Quality" class="attr-input" /></td>
-                                <td><input asp-for="BusinessSections[i].GBA" class="attr-input" /></td>
-                                <td><input asp-for="BusinessSections[i].NLA" class="attr-input" /></td>
-                                <td><input asp-for="BusinessSections[i].CostRate" class="attr-input" /></td>
-                                <td><input asp-for="BusinessSections[i].Cost" class="attr-input" /></td>
-                                <td><input asp-for="BusinessSections[i].Rental" class="attr-input" /></td>
-                                <td><input asp-for="BusinessSections[i].Vac" class="attr-input" /></td>
-                                <td><input asp-for="BusinessSections[i].Exp" class="attr-input" /></td>
-                                <td><input asp-for="BusinessSections[i].Cap" class="attr-input" /></td>
-                                <td><input asp-for="BusinessSections[i].Gross" class="attr-input" /></td>
-                                <td><input asp-for="BusinessSections[i].Normalised" class="attr-input" /></td>
-                                <td><input asp-for="BusinessSections[i].Nett" class="attr-input" /></td>
-                                <td><input asp-for="BusinessSections[i].Value" class="attr-input" /></td>
+                                <th style="min-width:80px;">Building Nr</th>
+                                <th style="min-width:90px;">Usage</th>
+                                <th style="min-width:100px;">Market Group</th>
+                                <th style="min-width:80px;">Quality</th>
+                                <th style="min-width:70px;">GBA</th>
+                                <th style="min-width:70px;">NLA</th>
+                                <th style="min-width:80px;">Cost Rate</th>
+                                <th style="min-width:70px;">Cost</th>
+                                <th style="min-width:70px;">Rental</th>
+                                <th style="min-width:55px;">Vac</th>
+                                <th style="min-width:55px;">Exp</th>
+                                <th style="min-width:55px;">Cap</th>
+                                <th style="min-width:70px;">Gross</th>
+                                <th style="min-width:90px;">Normalised</th>
+                                <th style="min-width:70px;">Nett</th>
+                                <th style="min-width:70px;">Value</th>
+                                <th style="width:36px;"></th>
                             </tr>
-                        }
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody id="body-bus-sections">
+                            @for (int i = 0; i < 2; i++)
+                            {
+                                <tr>
+                                    <td><input name="BusinessSections[@i].BuildingNr" class="attr-input" /></td>
+                                    <td><input name="BusinessSections[@i].Usage" class="attr-input" /></td>
+                                    <td><input name="BusinessSections[@i].MarketGroup" class="attr-input" /></td>
+                                    <td><input name="BusinessSections[@i].Quality" class="attr-input" /></td>
+                                    <td><input name="BusinessSections[@i].GBA" class="attr-input" type="number" step="0.01" /></td>
+                                    <td><input name="BusinessSections[@i].NLA" class="attr-input" type="number" step="0.01" /></td>
+                                    <td><input name="BusinessSections[@i].CostRate" class="attr-input" type="number" step="0.01" /></td>
+                                    <td><input name="BusinessSections[@i].Cost" class="attr-input" type="number" step="0.01" /></td>
+                                    <td><input name="BusinessSections[@i].Rental" class="attr-input" type="number" step="0.01" /></td>
+                                    <td><input name="BusinessSections[@i].Vac" class="attr-input" type="number" step="0.01" /></td>
+                                    <td><input name="BusinessSections[@i].Exp" class="attr-input" type="number" step="0.01" /></td>
+                                    <td><input name="BusinessSections[@i].Cap" class="attr-input" type="number" step="0.01" /></td>
+                                    <td><input name="BusinessSections[@i].Gross" class="attr-input" type="number" step="0.01" /></td>
+                                    <td><input name="BusinessSections[@i].Normalised" class="attr-input" type="number" step="0.01" /></td>
+                                    <td><input name="BusinessSections[@i].Nett" class="attr-input" type="number" step="0.01" /></td>
+                                    <td><input name="BusinessSections[@i].Value" class="attr-input" type="number" step="0.01" /></td>
+                                    <td><button type="button" class="dyn-del-btn" onclick="delRow(this)" title="Remove row"><i class="fa-solid fa-xmark"></i></button></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <div class="dyn-add-bar">
+                    <button type="button" class="dyn-add-btn"
+                            onclick="addRow('body-bus-sections', busSectionTemplate)">
+                        <i class="fa-solid fa-plus"></i> Add Row
+                    </button>
+                </div>
             </div>
 
-            <!-- BUSINESS GENERAL -->
+            <!-- BUSINESS GENERAL — unchanged, single row -->
             <div class="attr-card">
                 <div class="attr-section-title">General</div>
-
                 <table class="attr-table">
                     <tr>
                         <td class="attr-label">Unutilised Land Extent</td>
-                        <td>
-                            <input asp-for="BusinessGeneral.UnutilisedLandExtent" class="attr-input" />
-                        </td>
-
+                        <td><input asp-for="BusinessGeneral.UnutilisedLandExtent" class="attr-input" /></td>
                         <td class="attr-label">Unutilised Land Rate</td>
-                        <td>
-                            <input asp-for="BusinessGeneral.UnutilisedLandRate" class="attr-input" />
-                        </td>
+                        <td><input asp-for="BusinessGeneral.UnutilisedLandRate" class="attr-input" /></td>
                     </tr>
                 </table>
             </div>
         }
+
 
         @if (isDrc)
         {
-            <!-- DRC BUILDINGS -->
+            <!-- DRC BUILDINGS — 2 rows + Add Row -->
             <div class="attr-card">
                 <div class="attr-section-title">Buildings</div>
-
-                <table class="attr-table">
-                    <thead>
-                        <tr>
-                            <th>Building Description</th>
-                            <th>Quality</th>
-                            <th>Gross Building Area</th>
-                            <th>Condition</th>
-                            <th>Depreciation %</th>
-                            <th>Rate per SQM</th>
-                            <th>Depreciated Rate</th>
-                            <th>Replacement Cost</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @for (int i = 0; i < Model.DrcBuildings.Count; i++)
-                        {
+                <div class="table-responsive">
+                    <table class="attr-table" id="tbl-drc-buildings">
+                        <thead>
                             <tr>
-                                <td><input asp-for="DrcBuildings[i].BuildingDescription" class="attr-input" /></td>
-                                <td><input asp-for="DrcBuildings[i].Quality" class="attr-input" /></td>
-                                <td><input asp-for="DrcBuildings[i].GrossBuildingArea" class="attr-input" /></td>
-                                <td><input asp-for="DrcBuildings[i].Condition" class="attr-input" /></td>
-                                <td><input asp-for="DrcBuildings[i].DepreciationPercentage" class="attr-input" /></td>
-                                <td><input asp-for="DrcBuildings[i].RatePerSQM" class="attr-input" /></td>
-                                <td><input asp-for="DrcBuildings[i].DepreciatedRate" class="attr-input" /></td>
-                                <td><input asp-for="DrcBuildings[i].ReplacementCost" class="attr-input" /></td>
+                                <th style="min-width:150px;">Building Description</th>
+                                <th style="min-width:80px;">Quality</th>
+                                <th style="min-width:110px;">Gross Building Area</th>
+                                <th style="min-width:90px;">Condition</th>
+                                <th style="min-width:100px;">Depreciation %</th>
+                                <th style="min-width:100px;">Rate per SQM</th>
+                                <th style="min-width:110px;">Depreciated Rate</th>
+                                <th style="min-width:120px;">Replacement Cost</th>
+                                <th style="width:36px;"></th>
                             </tr>
-                        }
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody id="body-drc-buildings">
+                            @for (int i = 0; i < 2; i++)
+                            {
+                                <tr>
+                                    <td><input name="DrcBuildings[@i].BuildingDescription" class="attr-input" /></td>
+                                    <td><input name="DrcBuildings[@i].Quality" class="attr-input" /></td>
+                                    <td><input name="DrcBuildings[@i].GrossBuildingArea" class="attr-input" type="number" step="0.01" /></td>
+                                    <td><input name="DrcBuildings[@i].Condition" class="attr-input" /></td>
+                                    <td><input name="DrcBuildings[@i].DepreciationPercentage" class="attr-input" type="number" step="0.01" /></td>
+                                    <td><input name="DrcBuildings[@i].RatePerSQM" class="attr-input" type="number" step="0.01" /></td>
+                                    <td><input name="DrcBuildings[@i].DepreciatedRate" class="attr-input" type="number" step="0.01" /></td>
+                                    <td><input name="DrcBuildings[@i].ReplacementCost" class="attr-input" type="number" step="0.01" /></td>
+                                    <td><button type="button" class="dyn-del-btn" onclick="delRow(this)" title="Remove row"><i class="fa-solid fa-xmark"></i></button></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <div class="dyn-add-bar">
+                    <button type="button" class="dyn-add-btn"
+                            onclick="addRow('body-drc-buildings', drcBuildingTemplate)">
+                        <i class="fa-solid fa-plus"></i> Add Row
+                    </button>
+                </div>
             </div>
 
-            <!-- DRC IMPROVEMENTS -->
+            <!-- DRC IMPROVEMENTS — 2 rows + Add Row -->
             <div class="attr-card">
                 <div class="attr-section-title">Improvements</div>
-
-                <table class="attr-table">
-                    <thead>
-                        <tr>
-                            <th>Improvement Description</th>
-                            <th>Quality</th>
-                            <th>Area / Unit</th>
-                            <th>Condition</th>
-                            <th>Depreciation %</th>
-                            <th>Rate per SQM</th>
-                            <th>Depreciated Rate</th>
-                            <th>Replacement Cost</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @for (int i = 0; i < Model.DrcImprovements.Count; i++)
-                        {
+                <div class="table-responsive">
+                    <table class="attr-table" id="tbl-drc-improvements">
+                        <thead>
                             <tr>
-                                <td><input asp-for="DrcImprovements[i].ImprovementDescription" class="attr-input" /></td>
-                                <td><input asp-for="DrcImprovements[i].Quality" class="attr-input" /></td>
-                                <td><input asp-for="DrcImprovements[i].AreaUnit" class="attr-input" /></td>
-                                <td><input asp-for="DrcImprovements[i].Condition" class="attr-input" /></td>
-                                <td><input asp-for="DrcImprovements[i].DepreciationPercentage" class="attr-input" /></td>
-                                <td><input asp-for="DrcImprovements[i].RatePerSQM" class="attr-input" /></td>
-                                <td><input asp-for="DrcImprovements[i].DepreciatedRate" class="attr-input" /></td>
-                                <td><input asp-for="DrcImprovements[i].ReplacementCost" class="attr-input" /></td>
+                                <th style="min-width:160px;">Improvement Description</th>
+                                <th style="min-width:80px;">Quality</th>
+                                <th style="min-width:90px;">Area / Unit</th>
+                                <th style="min-width:90px;">Condition</th>
+                                <th style="min-width:100px;">Depreciation %</th>
+                                <th style="min-width:100px;">Rate per SQM</th>
+                                <th style="min-width:110px;">Depreciated Rate</th>
+                                <th style="min-width:120px;">Replacement Cost</th>
+                                <th style="width:36px;"></th>
                             </tr>
-                        }
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody id="body-drc-improvements">
+                            @for (int i = 0; i < 2; i++)
+                            {
+                                <tr>
+                                    <td><input name="DrcImprovements[@i].ImprovementDescription" class="attr-input" /></td>
+                                    <td><input name="DrcImprovements[@i].Quality" class="attr-input" /></td>
+                                    <td><input name="DrcImprovements[@i].AreaUnit" class="attr-input" type="number" step="0.01" /></td>
+                                    <td><input name="DrcImprovements[@i].Condition" class="attr-input" /></td>
+                                    <td><input name="DrcImprovements[@i].DepreciationPercentage" class="attr-input" type="number" step="0.01" /></td>
+                                    <td><input name="DrcImprovements[@i].RatePerSQM" class="attr-input" type="number" step="0.01" /></td>
+                                    <td><input name="DrcImprovements[@i].DepreciatedRate" class="attr-input" type="number" step="0.01" /></td>
+                                    <td><input name="DrcImprovements[@i].ReplacementCost" class="attr-input" type="number" step="0.01" /></td>
+                                    <td><button type="button" class="dyn-del-btn" onclick="delRow(this)" title="Remove row"><i class="fa-solid fa-xmark"></i></button></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <div class="dyn-add-bar">
+                    <button type="button" class="dyn-add-btn"
+                            onclick="addRow('body-drc-improvements', drcImprovementTemplate)">
+                        <i class="fa-solid fa-plus"></i> Add Row
+                    </button>
+                </div>
             </div>
 
-            <!-- DRC VACANT LAND -->
+            <!-- DRC VACANT LAND — 2 rows + Add Row -->
             <div class="attr-card">
                 <div class="attr-section-title">Vacant Land</div>
-
-                <table class="attr-table">
-                    <thead>
-                        <tr>
-                            <th>Region</th>
-                            <th>Min R/sqm</th>
-                            <th>Mid R/sqm</th>
-                            <th>Max R/sqm</th>
-                            <th>Area</th>
-                            <th>Rate</th>
-                            <th>Vacant Land Cost</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @for (int i = 0; i < Model.DrcVacantLands.Count; i++)
-                        {
+                <div class="table-responsive">
+                    <table class="attr-table" id="tbl-drc-vacant">
+                        <thead>
                             <tr>
-                                <td><input asp-for="DrcVacantLands[i].Region" class="attr-input" /></td>
-                                <td><input asp-for="DrcVacantLands[i].MinRatePerSQM" class="attr-input" /></td>
-                                <td><input asp-for="DrcVacantLands[i].MidRatePerSQM" class="attr-input" /></td>
-                                <td><input asp-for="DrcVacantLands[i].MaxRatePerSQM" class="attr-input" /></td>
-                                <td><input asp-for="DrcVacantLands[i].Area" class="attr-input" /></td>
-                                <td><input asp-for="DrcVacantLands[i].Rate" class="attr-input" /></td>
-                                <td><input asp-for="DrcVacantLands[i].VacantLandCost" class="attr-input" /></td>
+                                <th style="min-width:120px;">Region</th>
+                                <th style="min-width:90px;">Min R/sqm</th>
+                                <th style="min-width:90px;">Mid R/sqm</th>
+                                <th style="min-width:90px;">Max R/sqm</th>
+                                <th style="min-width:80px;">Area</th>
+                                <th style="min-width:80px;">Rate</th>
+                                <th style="min-width:110px;">Vacant Land Cost</th>
+                                <th style="width:36px;"></th>
                             </tr>
-                        }
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody id="body-drc-vacant">
+                            @for (int i = 0; i < 2; i++)
+                            {
+                                <tr>
+                                    <td><input name="DrcVacantLands[@i].Region" class="attr-input" /></td>
+                                    <td><input name="DrcVacantLands[@i].MinRatePerSQM" class="attr-input" type="number" step="0.01" /></td>
+                                    <td><input name="DrcVacantLands[@i].MidRatePerSQM" class="attr-input" type="number" step="0.01" /></td>
+                                    <td><input name="DrcVacantLands[@i].MaxRatePerSQM" class="attr-input" type="number" step="0.01" /></td>
+                                    <td><input name="DrcVacantLands[@i].Area" class="attr-input" type="number" step="0.01" /></td>
+                                    <td><input name="DrcVacantLands[@i].Rate" class="attr-input" type="number" step="0.01" /></td>
+                                    <td><input name="DrcVacantLands[@i].VacantLandCost" class="attr-input" type="number" step="0.01" /></td>
+                                    <td><button type="button" class="dyn-del-btn" onclick="delRow(this)" title="Remove row"><i class="fa-solid fa-xmark"></i></button></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <div class="dyn-add-bar">
+                    <button type="button" class="dyn-add-btn"
+                            onclick="addRow('body-drc-vacant', drcVacantTemplate)">
+                        <i class="fa-solid fa-plus"></i> Add Row
+                    </button>
+                </div>
             </div>
 
-            <!-- MARKET VALUE AND DEMOLITION -->
+            <!-- DRC MARKET VALUE — unchanged -->
             <div class="attr-card">
                 <div class="attr-section-title">Market Value and Demolition</div>
-
                 <table class="attr-table">
                     <tr>
                         <td class="attr-label">Demolition Rate</td>
-                        <td>
-                            <input asp-for="DrcMarketValueDemolition.DemolitionRate" class="attr-input" />
-                        </td>
-
+                        <td><input asp-for="DrcMarketValueDemolition.DemolitionRate" class="attr-input" /></td>
                         <td class="attr-label">Market Value</td>
-                        <td>
-                            <input asp-for="DrcMarketValueDemolition.MarketValue" class="attr-input" />
-                        </td>
+                        <td><input asp-for="DrcMarketValueDemolition.MarketValue" class="attr-input" /></td>
                     </tr>
-
                     <tr>
                         <td class="attr-label">Market Value After Demolition</td>
-                        <td colspan="3">
-                            <input asp-for="DrcMarketValueDemolition.MarketValueAfterDemolition" class="attr-input" />
-                        </td>
+                        <td colspan="3"><input asp-for="DrcMarketValueDemolition.MarketValueAfterDemolition" class="attr-input" /></td>
                     </tr>
                 </table>
             </div>
         }
+
 
         <!-- CALCULATIONS -->
         <div class="attr-card">
@@ -1196,108 +1048,235 @@
         </div>
 
         <!-- EVIDENCE FILES -->
-        <div class="attr-card">
-            <div class="attr-section-title">Evidence Uploads - Maximum 10 Files</div>
+        <!-- EVIDENCE FILES -->
+        <div class="attr-card ev-card">
+            <div class="attr-section-title">
+                Evidence Uploads
+                <span style="font-weight:400; font-size:11px; text-transform:none; margin-left:8px;">
+                    Maximum 10 files
+                </span>
+            </div>
 
-            <div class="file-grid">
-                <div class="file-box">
-                    <label>File 1</label>
-                    <input asp-for="Files.Files1" type="file" class="attr-input" />
+            @* ── Representative authorisation letter (shown only when IsRepresentative) ── *@
+            @if (ViewBag.RepRequired == true)
+            {
+                <div class="ev-rep-notice">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <div>
+                        <strong>Authorisation Letter Required</strong> —
+                        Upload the signed letter from the registered owner
+                        authorising you to act as their representative.
+                    </div>
                 </div>
-
-                <div class="file-box">
-                    <label>File 2</label>
-                    <input asp-for="Files.Files2" type="file" class="attr-input" />
+                <div class="ev-rep-upload">
+                    <div class="ev-rep-label">
+                        <i class="fa-solid fa-file-signature"></i>
+                        Authorisation Letter
+                        <span style="color:#e53e3e;">*</span>
+                    </div>
+                    <input asp-for="Files.RepLetter"
+                           type="file"
+                           class="ev-rep-input"
+                           accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                           required />
                 </div>
-
-                <div class="file-box">
-                    <label>File 3</label>
-                    <input asp-for="Files.Files3" type="file" class="attr-input" />
+            }
+            else
+            {
+                @* Optional rep letter even for owners *@
+                <div class="ev-rep-upload" style="background:#f7fbfb; border-bottom:1px solid #e8e8e8;">
+                    <div class="ev-rep-label" style="color:#555;">
+                        <i class="fa-solid fa-file-signature" style="color:#6b6b6b;"></i>
+                        Authorisation Letter <span style="font-weight:400;">(optional)</span>
+                    </div>
+                    <input asp-for="Files.RepLetter"
+                           type="file"
+                           class="ev-rep-input"
+                           style="border-color:#d0d0d0;"
+                           accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" />
                 </div>
+            }
 
-                <div class="file-box">
-                    <label>File 4</label>
-                    <input asp-for="Files.Files4" type="file" class="attr-input" />
+            @* ── Hidden file inputs — populated by JS ── *@
+            @* These bind EvidenceFiles list to the form POST *@
+            <div id="evHiddenInputs" style="display:none;"></div>
+
+            @* ── Drag and drop zone ── *@
+            <div class="ev-dropzone" id="evDropzone"
+                 onclick="document.getElementById('evFileInput').click()">
+                <div class="ev-dropzone-icon">
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
                 </div>
-
-                <div class="file-box">
-                    <label>File 5</label>
-                    <input asp-for="Files.Files5" type="file" class="attr-input" />
+                <div class="ev-dropzone-title">Drag files here to upload</div>
+                <div class="ev-dropzone-sub">
+                    PDF, Word, Images, Plans, Rates Information, Title Documents
                 </div>
+                <button type="button" class="ev-browse-btn"
+                        onclick="event.stopPropagation();
+                    document.getElementById('evFileInput').click()">
+                    <i class="fa-solid fa-folder-open"></i> Browse Files
+                </button>
+            </div>
 
-                <div class="file-box">
-                    <label>File 6</label>
-                    <input asp-for="Files.Files6" type="file" class="attr-input" />
-                </div>
+            @* Real hidden input — multiple *@
+            <input type="file"
+                   id="evFileInput"
+                   name="Files.EvidenceFiles"
+                   multiple
+                   accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xls,.xlsx" />
 
-                <div class="file-box">
-                    <label>File 7</label>
-                    <input asp-for="Files.Files7" type="file" class="attr-input" />
-                </div>
-
-                <div class="file-box">
-                    <label>File 8</label>
-                    <input asp-for="Files.Files8" type="file" class="attr-input" />
-                </div>
-
-                <div class="file-box">
-                    <label>File 9</label>
-                    <input asp-for="Files.Files9" type="file" class="attr-input" />
-                </div>
-
-                <div class="file-box">
-                    <label>File 10</label>
-                    <input asp-for="Files.Files10" type="file" class="attr-input" />
-                </div>
-
-                <div class="file-box">
-                    <label>Representative / Authorisation Letter</label>
-                    <input asp-for="Files.RepLetter" type="file" class="attr-input" />
+            @* Counter bar *@
+            <div class="ev-counter">
+                <span id="evCountText">0 / 10 files selected</span>
+                <div class="ev-counter-bar">
+                    <div class="ev-counter-fill" id="evCountFill"></div>
                 </div>
             </div>
 
-            <div class="small-note" style="padding: 0 12px 12px;">
-                Upload supporting documents such as photos, plans, rates information, title documents, authorisation letter, or other evidence.
+            @* File list *@
+            <div class="ev-file-list" id="evFileList"></div>
+
+            <div class="ev-note">
+                <i class="fa-solid fa-circle-info"></i>
+                Supported: PDF, Word, Excel, JPG, PNG &nbsp;|&nbsp;
+                Max 10 files &nbsp;|&nbsp;
+                Max 20MB per file
             </div>
         </div>
+
+        <!-- DECLARATION AND SIGNATURE -->
         <div class="attr-card">
             <div class="attr-section-title">Declaration and Signature</div>
 
+            @* Hidden input — canvas writes Base64 here on submit *@
+            <input asp-for="Declaration.SignaturePicture" type="hidden" id="signatureData" />
+
             <table class="attr-table">
+
+                @* Declaration text *@
                 <tr>
                     <td class="attr-label">Declaration</td>
                     <td colspan="3">
                         <textarea asp-for="Declaration.DeclarationText"
-                                  class="attr-textarea"
-                                      readonly>
-I declare that the information submitted is true and correct to the best of my knowledge. I understand that submitting this information does not mean it is automatically accepted and that it is subject to review by the City of Johannesburg valuation team.
-                </textarea>
-                        </td>
-                    </tr>
+                                  class="attr-textarea" readonly
+                                  style="min-height:80px; background:#f7fbfb;
+                        color:#333; font-size:12px;">I declare that the information submitted is true and correct to the best of my knowledge. I understand that submitting this information does not mean it is automatically accepted and that it is subject to review by the City of Johannesburg valuation team.</textarea>
+                    </td>
+                </tr>
 
-                    <tr>
-                        <td class="attr-label">I Accept</td>
-                        <td colspan="3">
-                            <label>
-                                <input asp-for="Declaration.DeclarationAccepted" type="checkbox" />
-                                I confirm and accept this declaration.
-                            </label>
-                        </td>
-                    </tr>
+                @* Accept checkbox *@
+                <tr>
+                    <td class="attr-label">I Accept <span style="color:#e53e3e;">*</span></td>
+                    <td colspan="3">
+                        <label style="display:flex; align-items:center; gap:10px;
+                            font-size:13px; cursor:pointer;">
+                            <input asp-for="Declaration.DeclarationAccepted"
+                                   type="checkbox"
+                                   id="declAccepted"
+                                   style="width:18px; height:18px; accent-color:#e6b000;"
+                                   required />
+                            <span>
+                                I confirm that I have read, understood and accept this declaration.
+                            </span>
+                        </label>
+                    </td>
+                </tr>
 
-                    <tr>
-                        <td class="attr-label">Signature Name</td>
-                        <td>
-                            <input asp-for="Declaration.SignatureName" class="attr-input" />
-                        </td>
+                @* Capacity *@
+                <tr>
+                    <td class="attr-label">Capacity</td>
+                    <td colspan="3">
+                        <input class="attr-input"
+                               value="@(ViewBag.Declaration?.ToString() ?? "Owner")"
+                               readonly
+                               style="background:#f7fbfb; font-weight:700;
+                        color:#e6b000;" />
+                    </td>
+                </tr>
 
-                        <td class="attr-label">Signature Picture / Base64</td>
-                        <td>
-                            <input asp-for="Declaration.SignaturePicture" class="attr-input" />
-                        </td>
-                    </tr>
-                </table>
+                @* Typed name *@
+                <tr>
+                    <td class="attr-label">
+                        Full Name <span style="color:#e53e3e;">*</span>
+                    </td>
+                    <td>
+                        <input asp-for="Declaration.SignatureName"
+                               class="attr-input"
+                               placeholder="Type your full name"
+                               required />
+                        <span asp-validation-for="Declaration.SignatureName"
+                              style="color:#e53e3e; font-size:12px;"></span>
+                    </td>
+
+                    @* Date auto-populated *@
+                    <td class="attr-label">Date</td>
+                    <td>
+                        <input id="declDate"
+                               class="attr-input"
+                               readonly
+                               style="background:#f7fbfb; font-weight:600;" />
+                    </td>
+                </tr>
+
+            </table>
+
+            @* ── Canvas signature ──────────────────────────────────────── *@
+            <div style="padding:14px;">
+
+                <div style="font-weight:700; font-size:12px; text-transform:uppercase;
+                    letter-spacing:.4px; color:#1a1a1a; margin-bottom:8px;
+                    display:flex; align-items:center; gap:8px;">
+                    <i class="fa-solid fa-pen-nib" style="color:#e6b000;"></i>
+                    Draw Signature Below
+                    <span style="color:#e53e3e; font-weight:400;">*</span>
+                    <span style="font-weight:400; text-transform:none; font-size:11px;
+                        color:#6b6b6b; margin-left:4px;">
+                        (use mouse or finger on touchscreen)
+                    </span>
+                </div>
+
+                <div style="position:relative; border:2px solid #d0d0d0;
+                    border-radius:6px; background:#fff;
+                    max-width:600px;">
+
+                    <canvas id="sigCanvas"
+                            width="598" height="160"
+                            style="display:block; width:100%; height:160px;
+                        border-radius:4px; cursor:crosshair;
+                        touch-action:none;">
+                    </canvas>
+
+                    @* Watermark line *@
+                    <div style="position:absolute; bottom:40px; left:20px; right:20px;
+                        border-bottom:1px dashed #d0d0d0; pointer-events:none;">
+                    </div>
+                    <div style="position:absolute; bottom:20px; left:20px;
+                        font-size:11px; color:#ccc; pointer-events:none;">
+                        Sign here
+                    </div>
+                </div>
+
+                @* Controls *@
+                <div style="margin-top:8px; display:flex; gap:10px; align-items:center;">
+                    <button type="button"
+                            id="sigClearBtn"
+                            onclick="clearSignature()"
+                            style="padding:6px 16px; border-radius:4px;
+                        background:#f7f7f7; border:1px solid #d0d0d0;
+                        font-size:12px; font-weight:700; cursor:pointer;
+                        font-family:inherit; color:#1a1a1a;">
+                        <i class="fa-solid fa-rotate-left"></i> Clear
+                    </button>
+                    <span id="sigStatus"
+                          style="font-size:12px; color:#6b6b6b;">
+                        No signature drawn
+                    </span>
+                </div>
+
             </div>
+        </div>
+
+
         <div class="attr-actions">
             <a asp-action="Create"
                    asp-controller="AttributeSubmission"
@@ -1315,4 +1294,215 @@ I declare that the information submitted is true and correct to the best of my k
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+
+        <script src="~/js/attribute-create.js"></script>
+    @* ════════════════════════════════════════════════════════════════
+   REPLACE the entire evidence upload <script> block
+   in EvidenceFilesSection.cshtml / Create.cshtml
+   
+   Root cause of null files:
+   fileInput.value = '' clears the input AFTER DataTransfer assigns files,
+   so the form always submits with zero files.
+   
+   Fix: intercept form submit → manually append from selectedFiles array
+════════════════════════════════════════════════════════════════ *@
+
+    <script>
+        (function () {
+            const MAX_FILES = 10;
+            const MAX_MB    = 20;
+            let selectedFiles = [];   // JS File objects — ground truth
+
+            const dropzone  = document.getElementById('evDropzone');
+            const fileInput = document.getElementById('evFileInput');
+            const fileList  = document.getElementById('evFileList');
+            const countText = document.getElementById('evCountText');
+            const countFill = document.getElementById('evCountFill');
+            const form      = fileInput?.closest('form');
+
+            if (!fileInput) return;
+
+            // ── Drag events ──────────────────────────────────────────────
+            dropzone.addEventListener('dragover', function (e) {
+                e.preventDefault();
+                if (selectedFiles.length < MAX_FILES)
+                    dropzone.classList.add('dragover');
+            });
+
+            dropzone.addEventListener('dragleave', function () {
+                dropzone.classList.remove('dragover');
+            });
+
+            dropzone.addEventListener('drop', function (e) {
+                e.preventDefault();
+                dropzone.classList.remove('dragover');
+                addFiles(Array.from(e.dataTransfer.files));
+            });
+
+            // ── Browse click ─────────────────────────────────────────────
+            fileInput.addEventListener('change', function () {
+                addFiles(Array.from(this.files));
+                // DO NOT clear this.value — we need files to stay accessible
+                // DataTransfer is rebuilt here to keep input in sync
+                syncInputFiles();
+            });
+
+            // ── Add files ────────────────────────────────────────────────
+            function addFiles(newFiles) {
+                const remaining = MAX_FILES - selectedFiles.length;
+                if (remaining <= 0) {
+                    alert('Maximum 10 files allowed. Remove a file first.');
+                    return;
+                }
+
+                const toAdd     = newFiles.slice(0, remaining);
+                const oversized = toAdd.filter(f => f.size > MAX_MB * 1024 * 1024);
+
+                if (oversized.length) {
+                    alert(
+                        oversized.map(f => f.name).join(', ') +
+                        (oversized.length === 1 ? ' exceeds' : ' exceed') +
+                        ' the 20 MB limit and was skipped.'
+                    );
+                }
+
+                const valid = toAdd.filter(f => f.size <= MAX_MB * 1024 * 1024);
+                selectedFiles = [...selectedFiles, ...valid];
+
+                renderList();
+                syncInputFiles();
+            }
+
+            // ── Remove file ──────────────────────────────────────────────
+            window.removeFile = function (index) {
+                selectedFiles.splice(index, 1);
+                renderList();
+                syncInputFiles();
+            };
+
+            // ── Sync fileInput.files via DataTransfer ────────────────────
+            // Keeps the native input in sync so it shows correct file count
+            // BUT we also use FormData on submit as a safety fallback
+            function syncInputFiles() {
+                try {
+                    const dt = new DataTransfer();
+                    selectedFiles.forEach(f => dt.items.add(f));
+                    fileInput.files = dt.files;
+                } catch (e) {
+                    // DataTransfer not supported — FormData submit handles it
+                }
+            }
+
+            // ── Intercept form submit — RELIABLE file injection ──────────
+            // This is the definitive fix: regardless of DataTransfer support,
+            // we inject files into FormData manually before sending.
+            if (form) {
+                form.addEventListener('submit', function (e) {
+                    // Let standard validation run first
+                    if (!form.checkValidity()) return;
+
+                    e.preventDefault();
+
+                    // Build FormData from the whole form
+                    const fd = new FormData(form);
+
+                    // Remove any Files.EvidenceFiles entries the browser may have
+                    // added (could be empty or stale) and re-add from selectedFiles
+                    fd.delete('Files.EvidenceFiles');
+                    selectedFiles.forEach(function (file) {
+                        fd.append('Files.EvidenceFiles', file);
+                    });
+
+                    // Disable submit button to prevent double-submit
+                    var submitBtn = form.querySelector('[type="submit"]');
+                    if (submitBtn) {
+                        submitBtn.disabled = true;
+                        submitBtn.innerHTML =
+                            '<i class="fa-solid fa-spinner fa-spin"></i> Submitting…';
+                    }
+
+                    fetch(form.action || window.location.href, {
+                        method : 'POST',
+                        body   : fd,
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    })
+                    .then(function (response) {
+                        // ASP.NET redirects after success — follow the redirect
+                        if (response.redirected) {
+                            window.location.href = response.url;
+                            return;
+                        }
+                        // Validation error — replace page content
+                        return response.text().then(function (html) {
+                            document.open();
+                            document.write(html);
+                            document.close();
+                        });
+                    })
+                    .catch(function (err) {
+                        console.error('Submit error:', err);
+                        if (submitBtn) {
+                            submitBtn.disabled = false;
+                            submitBtn.innerHTML =
+                                'Submit Attribute Information';
+                        }
+                        alert('Submission failed. Please try again.');
+                    });
+                });
+            }
+
+            // ── Render file list UI ──────────────────────────────────────
+            function renderList() {
+                fileList.innerHTML = '';
+
+                selectedFiles.forEach(function (file, index) {
+                    const item = document.createElement('div');
+                    item.className = 'ev-file-item';
+                    item.innerHTML =
+                        '<i class="fa-solid ' + getFileIcon(file.name) +
+                        ' ev-file-icon"></i>' +
+                        '<span class="ev-file-name" title="' + escHtml(file.name) + '">' +
+                            escHtml(file.name) +
+                        '</span>' +
+                        '<span class="ev-file-size">' + formatSize(file.size) + '</span>' +
+                        '<button type="button" class="ev-file-remove" ' +
+                            'onclick="removeFile(' + index + ')" title="Remove">' +
+                            '<i class="fa-solid fa-xmark"></i>' +
+                        '</button>';
+                    fileList.appendChild(item);
+                });
+
+                const count  = selectedFiles.length;
+                const pct    = (count / MAX_FILES) * 100;
+                const isFull = count >= MAX_FILES;
+
+                countText.textContent   = count + ' / ' + MAX_FILES + ' files selected';
+                countFill.style.width   = pct + '%';
+                countFill.classList.toggle('full', isFull);
+                dropzone.classList.toggle('full', isFull);
+            }
+
+            // ── Helpers ──────────────────────────────────────────────────
+            function getFileIcon(name) {
+                const ext = (name.split('.').pop() || '').toLowerCase();
+                const map = {
+                    pdf: 'fa-file-pdf', doc: 'fa-file-word', docx: 'fa-file-word',
+                    xls: 'fa-file-excel', xlsx: 'fa-file-excel',
+                    jpg: 'fa-file-image', jpeg: 'fa-file-image', png: 'fa-file-image'
+                };
+                return map[ext] || 'fa-file';
+            }
+
+            function formatSize(bytes) {
+                if (bytes < 1024)     return bytes + ' B';
+                if (bytes < 1048576)  return (bytes / 1024).toFixed(1) + ' KB';
+                return (bytes / 1048576).toFixed(1) + ' MB';
+            }
+
+            function escHtml(str) {
+                return str.replace(/&/g,'&amp;').replace(/</g,'&lt;')
+                          .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+            }
+        })();
+    </script>
 }

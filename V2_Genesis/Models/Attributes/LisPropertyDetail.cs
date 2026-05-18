@@ -2,7 +2,7 @@
 {
     public class LisPropertyDetail
     {
-        public string UnitKey { get; set; } = string.Empty;
+        public string? UnitKey { get; set; }
         public string? PremiseId { get; set; }
         public string? PropertyId { get; set; }
         public string? ValuationKey { get; set; }

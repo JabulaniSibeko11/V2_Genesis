@@ -209,11 +209,11 @@
                                             <div class="as-row-actions">
                                                 @* View full detail *@
                                                 @{
-                                                    var viewUrl =
-                                                        $"/property/view?rollSource=attributes" +
-                                                        $"&unitKey={item.UnitKey}" +
-                                                        $"&valuationKey={item.ValuationKey}" +
-                                                        $"&propertyFrom=Attributes";
+                                                                                                 var viewUrl =
+                                                    $"/property/view?rollSource=Attributes" +
+                                                    $"&unitKey={item.UnitKey}" +
+                                                    $"&valuationKey={item.ValuationKey}" +
+                                                    $"&propertyFrom=Attributes";
                                                 }
                                                 <a href="@viewUrl"
                                                    class="as-btn as-btn-view">

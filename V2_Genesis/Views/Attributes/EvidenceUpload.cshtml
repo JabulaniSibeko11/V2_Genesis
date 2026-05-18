@@ -1,0 +1,212 @@
+﻿@* ════════════════════════════════════════════════════════════════
+   Views/Attributes/EvidenceUpload.cshtml
+════════════════════════════════════════════════════════════════ *@
+@{
+    ViewData["Title"] = "Upload Evidence — Attributes";
+    bool isAuth = User?.Identity?.IsAuthenticated ?? false;
+    Layout = isAuth
+        ? "~/Views/Shared/_ClientLayout.cshtml"
+        : "~/Views/Shared/_Layout.cshtml";
+
+    string attrNo      = ViewBag.AttrNo       ?? "";
+    string propDesc    = ViewBag.PropertyDesc  ?? attrNo;
+    int    current     = ViewBag.Current       ?? 0;
+    int    slots       = ViewBag.Slots         ?? 0;
+    string expiryStr   = ViewBag.Expiry        ?? "";
+    DateTime? expiry   = DateTime.TryParse(expiryStr, out var dt) ? dt : null;
+}
+
+<link href="~/css/views/attribute-evidence.css" rel="stylesheet" asp-append-version="true" />
+
+<div class="ev-page">
+    <div class="ev-inner">
+
+        <div style="display:flex; align-items:center; gap:14px;">
+            <div style="width:52px; height:52px; border-radius:13px;
+                        background:#1a1a1a; color:#e6b000; font-size:22px;
+                        display:flex; align-items:center; justify-content:center;">
+                <i class="fa-solid fa-cloud-arrow-up"></i>
+            </div>
+            <div>
+                <h1 style="font-size:22px; font-weight:800; margin:0;">Upload Evidence</h1>
+                <p style="font-size:13px; color:#6b6b6b; margin:0;">@propDesc</p>
+            </div>
+        </div>
+
+        <!-- Slot meter -->
+        <div class="ev-slots">
+            <i class="fa-solid fa-folder-open" style="color:#e6b000; font-size:20px;"></i>
+            <div style="flex:1;">
+                <div style="font-size:12px; color:#6b6b6b; margin-bottom:4px;">
+                    Evidence files used
+                </div>
+                <div class="ev-slots-bar">
+                    <div class="ev-slots-fill @(current >= 8 ? "warn" : "") @(current >= 10 ? "full" : "")"
+                         style="width:@(current * 10)%;"></div>
+                </div>
+            </div>
+            <div class="ev-slots-text">
+                @current / 10
+                <span style="font-weight:400; color:#6b6b6b; font-size:12px;">
+                    (@slots remaining)
+                </span>
+            </div>
+        </div>
+
+        @if (expiry.HasValue)
+        {
+            <div class="ev-expiry">
+                <i class="fa-solid fa-clock"></i>
+                Upload window closes:
+                <strong>@expiry.Value.ToString("dd MMM yyyy HH:mm")</strong>
+            </div>
+        }
+
+        <div class="ev-card">
+            <div class="ev-card-header">
+                <i class="fa-solid fa-paperclip"></i>
+                Select Files to Upload
+                <span style="font-size:12px; font-weight:400; margin-left:6px;">
+                    Max @slots more file@(slots == 1 ? "" : "s")
+                </span>
+            </div>
+            <div class="ev-body">
+
+                @if (ViewBag.Error is not null)
+                {
+                    <div class="ev-error">
+                        <i class="fa-solid fa-circle-xmark"></i>
+                        @ViewBag.Error
+                    </div>
+                }
+
+                <form method="post" action="/attributes/evidence/upload"
+                      enctype="multipart/form-data" id="evUploadForm">
+                    @Html.AntiForgeryToken()
+
+                    <input type="file" id="evFiles" name="evidenceFiles"
+                           multiple style="display:none;"
+                           accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xls,.xlsx" />
+
+                    <div class="ev-dropzone" id="evDrop"
+                         onclick="document.getElementById('evFiles').click()">
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                        <div class="ev-dropzone-title">Drag files here</div>
+                        <div class="ev-dropzone-sub">PDF, Word, Images, Plans</div>
+                        <button type="button" class="ev-browse"
+                                onclick="event.stopPropagation();
+                                         document.getElementById('evFiles').click()">
+                            <i class="fa-solid fa-folder-open"></i> Browse
+                        </button>
+                    </div>
+
+                    <div class="ev-file-list" id="evList"></div>
+
+                    <div style="margin-top:16px; font-size:12px; color:#6b6b6b;">
+                        Max 3 MB per file &nbsp;|&nbsp; Max @slots more file@(slots == 1 ? "" : "s")
+                    </div>
+
+                    <div style="margin-top:16px;">
+                        <button type="submit" class="ev-btn" id="evSubmit" disabled>
+                            <i class="fa-solid fa-cloud-arrow-up"></i>
+                            Upload Files
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@section Scripts {
+<script>
+(function () {
+    const MAX_SLOTS = @slots;
+    let selected = [];
+
+    const drop    = document.getElementById('evDrop');
+    const input   = document.getElementById('evFiles');
+    const list    = document.getElementById('evList');
+    const submitBtn = document.getElementById('evSubmit');
+    const form    = document.getElementById('evUploadForm');
+
+    drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('dragover'); });
+    drop.addEventListener('dragleave', ()  => drop.classList.remove('dragover'));
+    drop.addEventListener('drop', e => {
+        e.preventDefault(); drop.classList.remove('dragover');
+        addFiles(Array.from(e.dataTransfer.files));
+    });
+
+    input.addEventListener('change', function () {
+        addFiles(Array.from(this.files));
+    });
+
+    function addFiles(files) {
+        const remaining = MAX_SLOTS - selected.length;
+        if (remaining <= 0) { alert('No slots remaining.'); return; }
+        files.slice(0, remaining).forEach(f => {
+            if (f.size > 3 * 1024 * 1024) {
+                alert(f.name + ' exceeds 3 MB and was skipped.');
+                return;
+            }
+            selected.push(f);
+        });
+        render();
+        syncInput();
+    }
+
+    window.removeEv = function(i) {
+        selected.splice(i, 1);
+        render();
+        syncInput();
+    };
+
+    function render() {
+        list.innerHTML = '';
+        selected.forEach(function(f, i) {
+            const item = document.createElement('div');
+            item.className = 'ev-file-item';
+            item.innerHTML =
+                '<i class="fa-solid fa-file ev-file-icon" style="color:#e6b000;"></i>' +
+                '<span class="ev-file-name">' + f.name + '</span>' +
+                '<span class="ev-file-size">' + (f.size/1024).toFixed(0) + ' KB</span>' +
+                '<button type="button" class="ev-file-del" onclick="removeEv(' + i + ')">' +
+                    '<i class="fa-solid fa-xmark"></i></button>';
+            list.appendChild(item);
+        });
+        submitBtn.disabled = selected.length === 0;
+    }
+
+    function syncInput() {
+        try {
+            const dt = new DataTransfer();
+            selected.forEach(f => dt.items.add(f));
+            input.files = dt.files;
+        } catch(e) {}
+    }
+
+    // FormData inject on submit
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        if (!selected.length) return;
+
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Uploading…';
+
+        const fd = new FormData(form);
+        fd.delete('evidenceFiles');
+        selected.forEach(f => fd.append('evidenceFiles', f));
+
+        fetch(form.action, { method:'POST', body:fd })
+        .then(r => { if (r.redirected) window.location.href = r.url;
+                     else return r.text().then(h => { document.open(); document.write(h); document.close(); }); })
+        .catch(() => {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Upload Files';
+            alert('Upload failed. Please try again.');
+        });
+    });
+})();
+</script>
+}

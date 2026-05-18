@@ -1,0 +1,116 @@
+﻿@* Views/Attributes/EvidenceAcknowledgement.cshtml *@
+@{
+    ViewData["Title"] = "Evidence Uploaded — Attributes";
+    bool isAuth = User?.Identity?.IsAuthenticated ?? false;
+    Layout = isAuth
+        ? "~/Views/Shared/_ClientLayout.cshtml"
+        : "~/Views/Shared/_Layout.cshtml";
+
+    string attrNo    = ViewBag.AttrNo   ?? "";
+    string propDesc  = ViewBag.PropDesc ?? attrNo;
+    int    newCount  = ViewBag.NewCount ?? 0;
+    int    uploaded  = ViewBag.Uploaded ?? 0;
+    var    fileNames = ViewBag.FileNames as List<string> ?? new();
+}
+
+
+<link href="~/css/views/attribute-evidence-ack.css" rel="stylesheet" asp-append-version="true" />
+
+<div class="ack-page">
+    <div class="ack-inner">
+
+        <div class="ack-icon">
+            <i class="fa-solid fa-check"></i>
+        </div>
+
+        <h1 class="ack-title">Evidence Uploaded</h1>
+        <p class="ack-sub">
+            @uploaded file@(uploaded == 1 ? "" : "s") added to your submission
+        </p>
+
+        <!-- Summary -->
+        <div class="ack-card">
+            <div class="ack-card-header">
+                <i class="fa-solid fa-clipboard-check"></i>
+                Upload Summary
+            </div>
+            <div class="ack-body">
+                <div class="ack-row">
+                    <span class="ack-row-label">Attribute Number</span>
+                    <span class="ack-row-val">@attrNo</span>
+                </div>
+                <div class="ack-row">
+                    <span class="ack-row-label">Property</span>
+                    <span class="ack-row-val" style="font-size:12.5px;">@propDesc</span>
+                </div>
+                <div class="ack-row">
+                    <span class="ack-row-label">Files Uploaded Now</span>
+                    <span class="ack-row-val" style="color:#15803d;">
+                        +@uploaded file@(uploaded == 1 ? "" : "s")
+                    </span>
+                </div>
+                <div class="ack-row">
+                    <span class="ack-row-label">Total Files on Record</span>
+                    <span class="ack-row-val">@newCount / 10</span>
+                </div>
+                <div class="ack-row">
+                    <span class="ack-row-label">Slots Remaining</span>
+                    <span class="ack-row-val"
+                          style="color:@(10 - newCount == 0 ? "#dc2626" : "#1a1a1a");">
+                        @(10 - newCount) remaining
+                    </span>
+                </div>
+                <div class="ack-row">
+                    <span class="ack-row-label">Upload Date</span>
+                    <span class="ack-row-val">@DateTime.Now.ToString("dd MMM yyyy HH:mm")</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Uploaded file names -->
+        @if (fileNames.Any())
+        {
+            <div class="ack-files">
+                <div style="font-size:12px; font-weight:700; text-transform:uppercase;
+                            letter-spacing:.4px; color:#6b6b6b; margin-bottom:8px;">
+                    Files Added
+                </div>
+                @foreach (var f in fileNames)
+                {
+                    <div class="ack-file-item">
+                        <i class="fa-solid fa-file-circle-check"></i>
+                        @f
+                    </div>
+                }
+            </div>
+        }
+
+        @* More files remaining — show upload again link *@
+        @if (10 - newCount > 0)
+        {
+            <div style="font-size:13px; color:#6b6b6b; text-align:center;">
+                You can still add <strong>@(10 - newCount)</strong> more file@(10 - newCount == 1 ? "" : "s")
+                within the 48-hour window.
+            </div>
+        }
+
+        <div class="ack-btns">
+            @if (isAuth)
+            {
+                <a href="/dashboard" class="ack-btn">
+                    <i class="fa-solid fa-house"></i> Back to Dashboard
+                </a>
+            }
+            @if (10 - newCount > 0)
+            {
+                <a href="/attributes/evidence?attrNo=@attrNo" class="ack-btn-outline">
+                    <i class="fa-solid fa-plus"></i> Add More Files
+                </a>
+            }
+            <a href="/attributes/about" class="ack-btn-outline">
+                <i class="fa-solid fa-circle-info"></i> About Attributes
+            </a>
+        </div>
+
+    </div>
+</div>

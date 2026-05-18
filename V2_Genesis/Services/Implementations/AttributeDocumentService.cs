@@ -70,18 +70,29 @@ namespace V2_Genesis.Services.Attributes
                 repFolder,
                 safeAttrNo,
                 "Representative_Letter");
+            var evidenceFiles = model.Files.EvidenceFiles
+                .Where(f => f is { Length: > 0 })
+                .Take(10)
+                .ToList();
 
-            result.Files1 = await SaveEvidenceFileAsync(model.Files.Files1, evidenceFolder, safeAttrNo, "Evidence_1", result);
-            result.Files2 = await SaveEvidenceFileAsync(model.Files.Files2, evidenceFolder, safeAttrNo, "Evidence_2", result);
-            result.Files3 = await SaveEvidenceFileAsync(model.Files.Files3, evidenceFolder, safeAttrNo, "Evidence_3", result);
-            result.Files4 = await SaveEvidenceFileAsync(model.Files.Files4, evidenceFolder, safeAttrNo, "Evidence_4", result);
-            result.Files5 = await SaveEvidenceFileAsync(model.Files.Files5, evidenceFolder, safeAttrNo, "Evidence_5", result);
-            result.Files6 = await SaveEvidenceFileAsync(model.Files.Files6, evidenceFolder, safeAttrNo, "Evidence_6", result);
-            result.Files7 = await SaveEvidenceFileAsync(model.Files.Files7, evidenceFolder, safeAttrNo, "Evidence_7", result);
-            result.Files8 = await SaveEvidenceFileAsync(model.Files.Files8, evidenceFolder, safeAttrNo, "Evidence_8", result);
-            result.Files9 = await SaveEvidenceFileAsync(model.Files.Files9, evidenceFolder, safeAttrNo, "Evidence_9", result);
-            result.Files10 = await SaveEvidenceFileAsync(model.Files.Files10, evidenceFolder, safeAttrNo, "Evidence_10", result);
+            var fileProps = new string?[10];
 
+            for (int i = 0; i < evidenceFiles.Count; i++)
+            {
+                fileProps[i] = await SaveEvidenceFileAsync(
+                    evidenceFiles[i], evidenceFolder, safeAttrNo, $"Evidence_{i + 1}", result);
+            }
+
+            result.Files1 = fileProps[0];
+            result.Files2 = fileProps[1];
+            result.Files3 = fileProps[2];
+            result.Files4 = fileProps[3];
+            result.Files5 = fileProps[4];
+            result.Files6 = fileProps[5];
+            result.Files7 = fileProps[6];
+            result.Files8 = fileProps[7];
+            result.Files9 = fileProps[8];
+            result.Files10 = fileProps[9];
             return result;
         }
 
@@ -738,22 +749,11 @@ namespace V2_Genesis.Services.Attributes
             var formBlue = "#1f6f78";
             var lightBlue = "#eaf5f6";
 
-            var uploadedFiles = new List<string?>()
-    {
-        model.Files.Files1?.FileName,
-        model.Files.Files2?.FileName,
-        model.Files.Files3?.FileName,
-        model.Files.Files4?.FileName,
-        model.Files.Files5?.FileName,
-        model.Files.Files6?.FileName,
-        model.Files.Files7?.FileName,
-        model.Files.Files8?.FileName,
-        model.Files.Files9?.FileName,
-        model.Files.Files10?.FileName
-    }
-            .Where(x => !string.IsNullOrWhiteSpace(x))
-            .Select(x => x!)
-            .ToList();
+            var uploadedFiles = model.Files.EvidenceFiles
+     .Where(f => f is { Length: > 0 })
+     .Select(f => f.FileName)
+     .Take(10)
+     .ToList();
 
             var evidencePin = model.GeneratedEvidencePin ?? "";
             var evidenceDeadline = model.GeneratedEvidenceDeadline;

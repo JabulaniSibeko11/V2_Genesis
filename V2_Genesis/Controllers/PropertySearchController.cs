@@ -120,6 +120,10 @@ public class PropertySearchController : Controller
             if (attrItem == null)
                 return NotFound("Attribute property details not found.");
 
+            // ── Also read propertyFrom query param ────────────────
+            var propertyFrom = Request.Query["propertyFrom"]
+                                      .FirstOrDefault() ?? "Attributes";
+
             HttpContext.Session.SetString("UnitKey", unitKey ?? string.Empty);
             HttpContext.Session.SetString("ValuationKey", valuationKey ?? string.Empty);
             HttpContext.Session.SetString("RollSource", "Attributes");
@@ -129,16 +133,13 @@ public class PropertySearchController : Controller
             var attrVm = new PropertyDetailViewModel
             {
                 Items = new List<PropertyDetailResult>
-            {
-                MapAttributePropertyToResult(attrItem)
-            },
-
+        {
+            MapAttributePropertyToResult(attrItem)
+        },
                 Roll = null,
-                
                 IsAttributes = true
             };
 
-            
             return View(attrVm);
         }
 
@@ -180,38 +181,40 @@ public class PropertySearchController : Controller
         return View(vm);
     }
 
-    private static PropertyDetailResult MapAttributePropertyToResult(LisPropertyDetail item)
+    private static PropertyDetailResult MapAttributePropertyToResult(
+       LisPropertyDetail d)
     {
         return new PropertyDetailResult
         {
-            PropertyId = item.PropertyId,
-            UnitKey = item.UnitKey,
-            ValuationKey = item.ValuationKey,
+            // ── Identifiers ───────────────────────────────────────
+            UnitKey = d.UnitKey,           // ← CRITICAL for link form
+            ValuationKey = d.ValuationKey ?? string.Empty,
+            Id =  d.UnitKey,
+            PremiseId = d.PremiseId,
 
-           TownNameDesc = item.TownNameDesc,    
-           OwnerName = item.OwnerName,
-           Erf = item.Erf,
-           Ptn = item.Ptn,
-           Re = item.Re,
-           LisStreetAddress=item.LisStreetAddress,
-           CatDesc=item.CatDesc,
-           RateableArea=item.RateableArea,
-              MarketValue=item.MarketValue, 
-              WefDate=item.WefDate,
-              Reason=item.Reason,
-              SchemeName=item.SchemeName,
-              SchemeNumber=item.SchemeNumber,
-              SchemeYear=item.SchemeYear,
-              UnitNo=item.UnitNo,
-              PropertyDesc=item.PropertyDesc,
-                PremiseId=item.PremiseId,
-                ValuationDate=item.ValuationDate,
-                
-                ADDR1=item.ADDR1,
-                ADDR2=item.ADDR2,
-                ADDR3=item.ADDR3,
-                ADDR4=item.ADDR4,
-                ADDR5=item.ADDR5,
+            // ── Property ──────────────────────────────────────────
+            PropertyDesc = d.PropertyDesc,
+            TownNameDesc = d.TownNameDesc,
+            Erf = d.Erf,
+            Ptn = d.Ptn,
+            Re = d.Re,
+            LisStreetAddress = d.LisStreetAddress,
+            OwnerName = d.OwnerName,
+            LeaseDesc = null,
+
+            // ── Valuation ─────────────────────────────────────────
+            CatDesc = d.CatDesc,
+            RateableArea = d.RateableAreaVal ?? d.RateableArea,
+            MarketValue = d.MarketValue,
+            WefDate = d.WefDate,
+            ValuationDate = d.ValuationDate,
+            Reason = d.Reason,
+
+            // ── Scheme ────────────────────────────────────────────
+            SchemeName = d.SchemeName,
+            SchemeNumber = d.SchemeNumber,
+            SchemeYear = d.SchemeYear,
+            UnitNo = d.UnitNo,
         };
     }
 

@@ -8,10 +8,12 @@
         public string? FormType { get; set; }
         public DateTime SubmittedAt { get; set; }
         public string? Status { get; set; }  // Pending / Under Review / Approved / Rejected
-        public bool IsEditable => Status == "Pending"
-                                         && SubmittedAt.AddHours(48) > DateTime.Now;
+        public bool IsEditable =>
+            Status is not ("Approved" or "Rejected" or "Withdrawn" or "Extracted to OVVIO")
+            && SubmittedAt.AddHours(48) > DateTime.Now;
+
         public TimeSpan? EditTimeLeft => IsEditable
-                                         ? SubmittedAt.AddHours(48) - DateTime.Now
-                                         : null;
+            ? SubmittedAt.AddHours(48) - DateTime.Now
+            : null;
     }
 }

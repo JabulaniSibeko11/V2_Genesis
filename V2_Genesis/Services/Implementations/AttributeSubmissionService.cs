@@ -267,7 +267,23 @@ namespace V2_Genesis.Services.Implementations
     userName,
     "Client",
     "Client accepted declaration and signature was captured. Evidence PIN generated for 48 hours.");
+
+            var unitKey = model.PropertyDetails.UnitKey
+              ?? model.PropertyDetails.PropertyId
+              ?? model.PropertyDetails.PremiseId;
+
+            if (!string.IsNullOrWhiteSpace(unitKey))
+            {
+                var linkedRecord = await _context.LinkedProperties
+                    .FirstOrDefaultAsync(lp => lp.IDProperty == unitKey
+                                             && lp.UserID == userId);
+
+                if (linkedRecord != null)
+                    _context.LinkedProperties.Remove(linkedRecord);
+            }
             await _context.SaveChangesAsync();
+
+
             await transaction.CommitAsync();
 
             return propertyInfo.Attr_ID;

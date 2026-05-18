@@ -48,7 +48,7 @@ public class AttributesDashboardService : IAttributesDashboardService
             {
                 var subs = await conn.QueryAsync<AttributeSubmission>(
                     "Attr_DashboardSubmissions",
-                    new { UserId = userId },
+                    new { UserName = userId },
                     commandType: CommandType.StoredProcedure);
                 data.Submissions = subs.ToList();
             }

@@ -8,7 +8,7 @@
     /// </summary>
     public class PropertyDetailResult
     {
-        public int Id { get; set; }
+        public string? Id { get; set; }
         public string? TownNameDesc { get; set; }
         public string? OwnerName { get; set; }
         public int Erf { get; set; }

@@ -6,6 +6,7 @@ using V2_Genesis.Data;
 using V2_Genesis.Models;
 using V2_Genesis.Models.Attributes;
 using V2_Genesis.Models.ViewModels.Attributes;
+using V2_Genesis.Services.Implementations;
 using V2_Genesis.Services.Interfaces;
 
 namespace V2_Genesis.Controllers;
@@ -19,11 +20,13 @@ public class AttributesController : Controller
     private readonly AttributesDbContext _attrDb;
     private readonly ILogger<AttributesController> _logger;
     private readonly IAttributeSubmissionService _attributeService;
+    private readonly IEvidenceService _evidenceService;
     public AttributesController(
         IAttributesSearchService attrSearch,
         IPropertySearchService propSearch,
-        ApplicationDbContext db,AttributesDbContext attributesDb,
-        ILogger<AttributesController> logger,IAttributeSubmissionService attributeService)
+        ApplicationDbContext db, AttributesDbContext attributesDb,
+        ILogger<AttributesController> logger, IAttributeSubmissionService attributeService,
+        IEvidenceService evidenceSe)
     {
         _attrSearch = attrSearch;
         _propSearch = propSearch;
@@ -31,6 +34,7 @@ public class AttributesController : Controller
         _attrDb = attributesDb;
         _logger = logger;
         _attributeService = attributeService;
+        _evidenceService = evidenceSe;
     }
 
     [HttpGet]
@@ -368,7 +372,9 @@ public class AttributesController : Controller
             return View(model);
         }
 
-        var userId = User.Identity?.Name ?? "anonymous";
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)
+                       ?? throw new InvalidOperationException("User not authenticated.");
+
         var userName = User.Identity?.Name ?? "Client";
 
         var attrId = await _attributeService.SubmitAsync(model, userId, userName);
@@ -556,5 +562,213 @@ public class AttributesController : Controller
 
         return RedirectToAction("Index", "Dashboard");
     }
+    [HttpGet]
+    [AllowAnonymous]
+    [Route("attributes/evidence")]
+    public async Task<IActionResult> Evidence(string? attrNo)
+    {
+        ViewBag.GvList = await _db.GvList.OrderBy(r => r.ID).ToListAsync();
+        ViewBag.AttrNo = attrNo; // pre-fill from dashboard link
 
+        // Logged-in: load their submissions for dropdown
+        if (User.Identity?.IsAuthenticated == true)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+
+            var submissions = await _attrDb.AttrPropertyInfo
+                .Where(p => p.SubmittedByUserId == userId && p.IsActive)
+                .OrderByDescending(p => p.SubmissionDateTime)
+                .Select(p => new { p.Attr_No, p.Property_Desc })
+                .ToListAsync();
+
+            ViewBag.Submissions = submissions;
+        }
+
+        return View();
+    }
+
+    [HttpPost]
+    [AllowAnonymous]
+    [Route("attributes/evidence")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EvidenceValidate(
+    string attrNo, string pin)
+    {
+        ViewBag.GvList = await _db.GvList.OrderBy(r => r.ID).ToListAsync();
+        ViewBag.AttrNo = attrNo;
+
+        if (User.Identity?.IsAuthenticated == true)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+            var submissions = await _attrDb.AttrPropertyInfo
+                .Where(p => p.SubmittedByUserId == userId && p.IsActive)
+                .OrderByDescending(p => p.SubmissionDateTime)
+                .Select(p => new { p.Attr_No, p.Property_Desc })
+                .ToListAsync();
+            ViewBag.Submissions = submissions;
+        }
+
+        if (string.IsNullOrWhiteSpace(attrNo) || string.IsNullOrWhiteSpace(pin))
+        {
+            ViewBag.Error = "Please enter both the Attribute Number and PIN.";
+            return View("Evidence");
+        }
+
+        var result = await _evidenceService.ValidateAttributeAsync(attrNo, pin);
+
+        if (!result.IsValid)
+        {
+            ViewBag.Error = result.Error;
+            ViewBag.Expired = result.IsExpired;
+            return View("Evidence");
+        }
+
+        // Valid — store in TempData and show upload form
+        TempData["AttrEv_AttrNo"] = result.AttrNo;
+        TempData["AttrEv_PropertyDesc"] = result.PropertyDesc;
+        TempData["AttrEv_Current"] = result.CurrentCount;
+        TempData["AttrEv_Expiry"] = result.ExpiryDate?.ToString("o");
+        TempData["AttrEv_Slots"] = result.SlotsRemaining;
+
+        return RedirectToAction("EvidenceUpload");
+    }
+
+    // ── GET /attributes/evidence/upload ─────────────────────────────
+    [HttpGet]
+    [AllowAnonymous]
+    [Route("attributes/evidence/upload")]
+    public async Task<IActionResult> EvidenceUpload()
+    {
+        ViewBag.GvList = await _db.GvList.OrderBy(r => r.ID).ToListAsync();
+
+        var attrNo = TempData.Peek("AttrEv_AttrNo")?.ToString();
+        if (string.IsNullOrWhiteSpace(attrNo))
+            return RedirectToAction("Evidence");
+
+        ViewBag.AttrNo = attrNo;
+        ViewBag.PropertyDesc = TempData.Peek("AttrEv_PropertyDesc")?.ToString();
+        ViewBag.Current = TempData.Peek("AttrEv_Current") as int? ?? 0;
+        ViewBag.Slots = TempData.Peek("AttrEv_Slots") as int? ?? 0;
+        ViewBag.Expiry = TempData.Peek("AttrEv_Expiry")?.ToString();
+
+        return View();
+    }
+
+    // ── POST /attributes/evidence/upload ────────────────────────────
+    [HttpPost]
+    [AllowAnonymous]
+    [Route("attributes/evidence/upload")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EvidenceUpload(List<IFormFile> evidenceFiles)
+    {
+        ViewBag.GvList = await _db.GvList.OrderBy(r => r.ID).ToListAsync();
+
+        var attrNo = TempData["AttrEv_AttrNo"]?.ToString();
+        int current = TempData["AttrEv_Current"] as int? ?? 0;
+        int slots = TempData["AttrEv_Slots"] as int? ?? 0;
+
+        if (string.IsNullOrWhiteSpace(attrNo))
+            return RedirectToAction("Evidence");
+
+        if (!evidenceFiles.Any())
+        {
+            ViewBag.Error = "Please select at least one file to upload.";
+            ViewBag.AttrNo = attrNo;
+            ViewBag.PropertyDesc = TempData["AttrEv_PropertyDesc"]?.ToString();
+            ViewBag.Current = current;
+            ViewBag.Slots = slots;
+            ViewBag.Expiry = TempData["AttrEv_Expiry"]?.ToString();
+            TempData.Keep();
+            return View();
+        }
+
+        if (evidenceFiles.Count > slots)
+        {
+            ViewBag.Error = $"You selected {evidenceFiles.Count} file(s) " +
+                                   $"but only {slots} slot(s) remain. " +
+                                   $"Please select fewer files.";
+            ViewBag.AttrNo = attrNo;
+            ViewBag.PropertyDesc = TempData["AttrEv_PropertyDesc"]?.ToString();
+            ViewBag.Current = current;
+            ViewBag.Slots = slots;
+            ViewBag.Expiry = TempData["AttrEv_Expiry"]?.ToString();
+            TempData.Keep();
+            return View();
+        }
+
+        var (success, error, newCount, savedNames) =
+            await _evidenceService.UploadAttributeEvidenceAsync(
+                attrNo, current, evidenceFiles);
+
+        if (!success)
+        {
+            ViewBag.Error = error;
+            ViewBag.AttrNo = attrNo;
+            ViewBag.PropertyDesc = TempData["AttrEv_PropertyDesc"]?.ToString();
+            ViewBag.Current = current;
+            ViewBag.Slots = slots;
+            ViewBag.Expiry = TempData["AttrEv_Expiry"]?.ToString();
+            TempData.Keep();
+            return View();
+        }
+        // Pass acknowledgement data
+        TempData["AttrEv_NewCount"] = newCount;
+        TempData["AttrEv_Uploaded"] = savedNames.Count;
+        TempData["AttrEv_FileNames"] = System.Text.Json.JsonSerializer.Serialize(savedNames);
+        TempData["AttrEv_AttrNo"] = attrNo;
+        TempData["AttrEv_PropDesc"] = TempData["AttrEv_PropertyDesc"]?.ToString();
+
+        return RedirectToAction("EvidenceAcknowledgement");
+    }
+    [HttpGet]
+    [AllowAnonymous]
+    [Route("attributes/evidence/acknowledgement")]
+    public async Task<IActionResult> EvidenceAcknowledgement()
+    {
+        ViewBag.GvList = await _db.GvList.OrderBy(r => r.ID).ToListAsync();
+
+        // Peek — reads without marking for deletion
+        ViewBag.AttrNo = TempData.Peek("AttrEv_AttrNo")?.ToString();
+        ViewBag.PropDesc = TempData.Peek("AttrEv_PropDesc")?.ToString();
+        ViewBag.NewCount = Convert.ToInt32(TempData.Peek("AttrEv_NewCount") ?? 0);
+        ViewBag.Uploaded = Convert.ToInt32(TempData.Peek("AttrEv_Uploaded") ?? 0);
+
+        var json = TempData.Peek("AttrEv_FileNames")?.ToString();
+        ViewBag.FileNames = string.IsNullOrWhiteSpace(json)
+            ? new List<string>()
+            : System.Text.Json.JsonSerializer.Deserialize<List<string>>(json);
+
+        if (string.IsNullOrWhiteSpace(ViewBag.AttrNo as string))
+            return RedirectToAction("Evidence");
+
+        return View();
+    }
+
+    [HttpGet]
+    [AllowAnonymous]
+    [Route("attributes/acknowledgement/download")]
+    public async Task<IActionResult> DownloadAcknowledgement(string attrNo)
+    {
+        if (string.IsNullOrWhiteSpace(attrNo))
+            return BadRequest("Attribute number is required.");
+
+        var files = await _attrDb.AttrFiles
+            .FirstOrDefaultAsync(f => f.Attr_No == attrNo.Trim());
+
+        if (files is null || string.IsNullOrWhiteSpace(files.RootFolder))
+            return NotFound("Acknowledgement record not found.");
+
+        // Acknowledgement_FileName is a DB computed column:
+        // Attr_Ref_Files + '_Acknowledgement.pdf'
+        var fileName = files.Acknowledgement_FileName
+                       ?? $"{attrNo.Trim()}_Acknowledgement.pdf";
+
+        var filePath = Path.Combine(files.RootFolder, fileName);
+
+        if (!System.IO.File.Exists(filePath))
+            return NotFound("Acknowledgement PDF not found on server.");
+
+        var bytes = await System.IO.File.ReadAllBytesAsync(filePath);
+        return File(bytes, "application/pdf", fileName);
+    }
 }

@@ -65,7 +65,7 @@
 @section Styles {
    
     <link href="~/css/views/clientdashboardcss.css" rel="stylesheet" asp-append-version="true" />
-   
+    <link href="~/css/site.css" rel="stylesheet" asp-append-version="true"/>
 }
 
 <!-- ── Welcome strip ──────────────────────────────────────────────────── -->
@@ -584,7 +584,7 @@ else if (roll.IsQuery)
                                         <td>@item.PropertyDesc</td>
                                         <td>@item.CatDesc</td>
                                         <td>@item.TownNameDesc</td>
-                                        <td>@FormatZAR(item.MarketValue)</td>
+                                        <td>@item.MarketValue</td>
                                         <td>
                                             <span class="attr-form-pill attr-pill-@(item.FormType.ToLower()
                                                                                         .Replace(" ", "").Replace("&", "").Replace("/", ""))">
@@ -612,7 +612,7 @@ else if (roll.IsQuery)
                                                                        <a class="dropdown-item"
                                                                            asp-controller="Attributes"
                                                                    asp-action="Check"
-                                                                   asp-route-idProperty="@item.Id"
+                                                                   asp-route-idProperty="@item.IDProperty"
                                                                            asp-route-formType="@item.FormType">
                                                                             Submit Attributes
                                                                         </a>
@@ -718,17 +718,25 @@ else if (roll.IsQuery)
                                                             👁️ View Submission
                                                         </a>
                                                     </li>
+                                                    <li>
+                                                        <a class="dropdown-item"
+                                                               href="/attributes/acknowledgement/download?attrNo=@item.SubmissionRef"
+                                                               target="_blank">
+                                                            <i class="fa-solid fa-file-pdf" style="color:#dc2626;"></i>
+                                                            Download Acknowledgement
+                                                        </a>
+                                                    </li>
                                                     @if (item.IsEditable)
                                                     {
-                                                        <li>
+                                                       @*  <li>
                                                             <a class="dropdown-item"
                                                                    href="/attributes/edit/@item.Id">
                                                                 ✏️ Edit Submission
                                                             </a>
-                                                        </li>
+                                                        </li> *@
                                                         <li>
                                                             <a class="dropdown-item"
-                                                                   href="/attributes/evidence/@item.Id">
+                                                                   href="/attributes/evidence?attrNo=@item.SubmissionRef">
                                                                 📎 Add Evidence
                                                             </a>
                                                         </li>
