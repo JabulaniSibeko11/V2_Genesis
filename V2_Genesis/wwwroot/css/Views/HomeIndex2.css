@@ -268,3 +268,19 @@
         font-size: 12px;
     }
 }
+.tile-section78 {
+    border-top: 3px solid #0ea5e9; /* sky blue — distinct from others */
+}
+
+    .tile-section78 .tile-icon {
+        color: #0ea5e9;
+    }
+
+    .tile-section78 .tile-btn-solid {
+        background: #0ea5e9;
+        color: #fff;
+    }
+
+        .tile-section78 .tile-btn-solid:hover {
+            background: #0284c7;
+        }

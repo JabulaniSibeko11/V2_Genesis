@@ -17,11 +17,11 @@
     <div class="modal-backdrop-custom" id="disclaimerBackdrop"></div>
     <div class="disclaimer-modal" id="disclaimerModal" role="dialog" aria-modal="true">
         <div class="disclaimer-card">
-            <div class="disclaimer-header">
+            <div class="disclaimer-header" style="font-family:'Poppins', sans-serif">
                 <div class="disclaimer-header-icon"><i class="fa-solid fa-building-columns"></i></div>
                 <h2>@Model.Disclaimer.Title</h2>
             </div>
-            <div class="disclaimer-body">
+            <div class="disclaimer-body" style="font-family:'Poppins', sans-serif">
                 <p>@Model.Disclaimer.Text1</p>
                 <p>@Model.Disclaimer.Text2</p>
                 <p>@Model.Disclaimer.Text3</p>
@@ -29,7 +29,7 @@
                 <p>@Model.Disclaimer.Text5</p>
             </div>
             <div class="disclaimer-footer">
-                <button class="disclaimer-accept-btn" id="acceptDisclaimer">
+                <button class="disclaimer-accept-btn" style="font-family:'Poppins', sans-serif" id="acceptDisclaimer">
                     <i class="fa-solid fa-circle-check"></i> Accept &amp; Continue
                 </button>
             </div>
@@ -235,7 +235,28 @@
                     </a>
                 </div>
             </div>
-
+            <div class="tile tile-section78">
+                <div class="tile-status-row">
+                    <span class="tile-status badge-open">
+                        <span class="tile-status-dot"></span> OPEN
+                    </span>
+                    <span class="tile-badge-public">Public</span>
+                </div>
+                <div class="tile-icon">
+                    <i class="fa-solid fa-file-magnifying-glass"></i>
+                </div>
+                <h3 class="tile-title">Section 78 Query</h3>
+                <p class="tile-desc">
+                    Query your property valuation under Section 78 of the
+                    Municipal Property Rates Act. Search your property and
+                    submit a formal query for review.
+                </p>
+                <div class="tile-actions">
+                    <a href="/Section78/PropertyIndex" class="tile-btn tile-btn-solid">
+                        <i class="fa-solid fa-magnifying-glass"></i> Search Property
+                    </a>
+                </div>
+            </div>
             <div class="tile tile-rebates">
                 <div class="tile-status-row">
                     <span class="tile-status badge-open">

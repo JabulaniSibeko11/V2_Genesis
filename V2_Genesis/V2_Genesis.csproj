@@ -24,4 +24,10 @@
     <PackageReference Include="QuestPDF" Version="2026.5.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Models\Results\Section78\" />
+    <Folder Include="Models\Section78\" />
+    <Folder Include="Services\Section78\" />
+  </ItemGroup>
+
 </Project>

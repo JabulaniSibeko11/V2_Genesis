@@ -67,18 +67,51 @@
             <!-- Replace the Section 51, Add Evidence, Attr Evidence block with this -->
 
             <div class="pub-nav-actions">
-                <a href="/section51/verify" class="pub-nav-action-link">
-                    <i class="fa-solid fa-file-circle-check"></i>
-                    Section 51
+
+                <!-- Evidence dropdown -->
+                <div class="pub-nav-dropdown" id="pubEvidenceDrop">
+                    <button class="pub-nav-action-link pub-nav-dropdown-toggle"
+                            id="pubEvidenceBtn"
+                            onclick="togglePubDrop('pubEvidenceDrop')">
+                        <i class="fa-solid fa-upload"></i>
+                        Add Evidence
+                        <i class="fa-solid fa-chevron-down"
+                           style="font-size:10px; margin-left:2px;"></i>
+                    </button>
+                    <ul class="pub-nav-drop-menu">
+                        <li>
+                            <a href="/evidence/verify" class="pub-nav-drop-item">
+                                <i class="fa-solid fa-upload"></i>
+                                Objection Evidence
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/section51/verify" class="pub-nav-drop-item">
+                                <i class="fa-solid fa-file-circle-check"></i>
+                                Section 51
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/attributes/evidence" class="pub-nav-drop-item">
+                                <i class="fa-solid fa-paperclip"></i>
+                                Attribute Evidence
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/section78/verify" class="pub-nav-drop-item">
+                                <i class="fa-solid fa-file-alt"></i>
+                                Section 78 Evidence
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Rebates — standalone -->
+                <a href="/Rebates/Index" class="pub-nav-action-link">
+                    <i class="fa-solid fa-percent"></i>
+                    Rebates
                 </a>
-                <a href="/evidence/verify" class="pub-nav-action-link">
-                    <i class="fa-solid fa-upload"></i>
-                    Add Evidence
-                </a>
-                <a href="/attributes/evidence" class="pub-nav-action-link">
-                    <i class="fa-solid fa-paperclip"></i>
-                    Attribute Evidence
-                </a>
+
             </div>
             <!-- Right side — auth or sign in -->
             <div class="pub-nav-right">
@@ -142,19 +175,22 @@
                 <i class="fa-solid fa-xmark"></i>
             </button>
         </div>
-        <a href="/section51/verify" class="pub-drawer-link">
-            <i class="fa-solid fa-file-circle-check"></i> Section 51 Upload
-        </a>
-        @* Add Evidence — always at top of mobile menu *@
         <a href="/evidence/verify" class="pub-drawer-link pub-drawer-evidence">
-            <i class="fa-solid fa-upload"></i> Add Evidence
+            <i class="fa-solid fa-upload"></i> Objection Evidence
+        </a>
+        <a href="/section51/verify" class="pub-drawer-link pub-drawer-evidence">
+            <i class="fa-solid fa-file-circle-check"></i> Section 51 upload
         </a>
         <a href="/attributes/evidence" class="pub-drawer-link pub-drawer-evidence">
-            <i class="fa-solid fa-paperclip"></i> Add Attributes Evidence
+            <i class="fa-solid fa-paperclip"></i> Attribute Evidence
         </a>
-
+        <a href="/section78/verify" class="pub-drawer-link pub-drawer-evidence">
+            <i class="fa-solid fa-file-alt"></i> Section 78 Evidence
+        </a>
         <div class="pub-drawer-divider"></div>
-
+        <a href="/Rebates/Index" class="pub-drawer-link">
+            <i class="fa-solid fa-percent"></i> Rebates
+        </a>
         @if (isAuth && !isAdmin)
         {
             <a href="/dashboard" class="pub-drawer-link">
@@ -249,10 +285,25 @@
             pubOverlay?.classList.remove('open');
             document.body.style.overflow = '';
         }
+                    function togglePubDrop(id) {
+                const el = document.getElementById(id);
+                el.classList.toggle('open');
+                // close others
+                document.querySelectorAll('.pub-nav-dropdown.open')
+                    .forEach(d => { if (d.id !== id) d.classList.remove('open'); });
+            }
 
+            // Close on outside click
+            document.addEventListener('click', function (e) {
+                if (!e.target.closest('.pub-nav-dropdown'))
+                    document.querySelectorAll('.pub-nav-dropdown.open')
+                        .forEach(d => d.classList.remove('open'));
+            });
         pubHam?.addEventListener('click',      openPubDrawer);
         pubClose?.addEventListener('click',    closePubDrawer);
         pubOverlay?.addEventListener('click',  closePubDrawer);
+
+
     </script>
 
     @await RenderSectionAsync("Scripts", required: false)
