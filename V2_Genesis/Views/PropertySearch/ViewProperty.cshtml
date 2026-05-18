@@ -15,8 +15,13 @@
     bool isAttributes =
         Model?.IsAttributes == true ||
         string.Equals(Context?.Request?.Query["rollSource"].FirstOrDefault(), "Attributes", StringComparison.OrdinalIgnoreCase) ||
+
         string.Equals(Context?.Request?.Query["propertyFrom"].FirstOrDefault(), "Attributes", StringComparison.OrdinalIgnoreCase) ||
         string.Equals(Context?.Session?.GetString("RollSource"), "Attributes", StringComparison.OrdinalIgnoreCase);
+
+    bool isQuery = string.Equals(Context?.Request?.Query["rollSource"].FirstOrDefault(), "Query", StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(Context?.Request?.Query["propertyFrom"].FirstOrDefault(), "Query", StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(Context?.Session?.GetString("RollSource"), "Query", StringComparison.OrdinalIgnoreCase);
 
     string rollName = isAttributes
         ? "Attributes Property Information"
@@ -388,7 +393,32 @@
                     </button>
                 </form>
             }
+           
+            else if (rollSource.Contains("Query", StringComparison.OrdinalIgnoreCase))
+            {
+                @* ── Regular objection flow: period open ────────── *@
+                <button class="pd-btn pd-btn-outline" onclick="history.back()">
+                    <i class="fa-solid fa-arrow-left"></i> Cancel
+                </button>
+             
+                    <a class="pd-btn pd-btn-primary"
+                           href="/property/save?rollSource=@rollSource&key=@d.Id&sourceTable=@sourceTableCode">
+                        <i class="fa-solid fa-link"></i> Link Property
+                    </a>
+
+                 @*    <a class="pd-btn pd-btn-secondary"
+                           href="/notice/section49?rollSource=@rollSource&unitKey=@d.UnitKey&valuationKey=@d.ValuationKey">
+                        <i class="fa-solid fa-eye"></i> View Section 49
+                    </a>
+
+                    <a class="pd-btn pd-btn-outline"
+                           href="/notice/section49/download?rollSource=@rollSource&unitKey=@d.UnitKey&valuationKey=@d.ValuationKey">
+                        <i class="fa-solid fa-download"></i> Download Section 49
+                    </a> *@
+                
+            }
             else if (Model.IsWithinObjectionPeriod)
+            
             {
                 @* ── Regular objection flow: period open ────────── *@
                 <button class="pd-btn pd-btn-outline" onclick="history.back()">
@@ -412,7 +442,7 @@
                     </a>
                 }
             }
-            else
+            else 
             {
                 @* ── Regular objection flow: period ended ───────── *@
                 <div class="pd-period-ended">

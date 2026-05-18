@@ -143,6 +143,8 @@ public class PropertySearchController : Controller
             return View(attrVm);
         }
 
+
+
         // ============================================================
         // NORMAL ROLL FLOW
         // GV23 / SUPP / QUERY etc.
@@ -169,12 +171,19 @@ public class PropertySearchController : Controller
 
         var dates = _rollDates.For(rollSource);
 
+
         var vm = new PropertyDetailViewModel
         {
+
             Items = items,
             Roll = roll,
-            OpenDate = dates.OpenDate,
-            VisibleUntil = dates.VisibleUntil,
+            OpenDate = rollSource.Equals("Query", StringComparison.OrdinalIgnoreCase)
+        ? null
+        : dates?.OpenDate,
+
+            VisibleUntil = rollSource.Equals("Query", StringComparison.OrdinalIgnoreCase)
+        ? null
+        : dates?.VisibleUntil,
             IsAttributes = false
         };
 

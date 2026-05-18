@@ -673,3 +673,56 @@
 .adm-page .cd-widget-toolbar {
     padding: 12px 16px;
 }
+
+
+/* Roll body takes full width */
+#admin-page .cd-roll-body,
+.adm-page .cd-roll-body {
+    width: 100%;
+}
+
+/* Widget body full width */
+.adm-page .cd-widget-body,
+.adm-page .cd-widget-body.open {
+    width: 100%;
+    padding: 0;
+}
+
+    /* Remove any max-width constraints on widget inner content */
+    .adm-page .cd-widget-body .table-responsive {
+        width: 100%;
+        overflow-x: auto;
+    }
+
+/* DataTables wrapper full width */
+.adm-page .dataTables_wrapper {
+    width: 100%;
+    padding: 12px 16px;
+}
+
+/* Table itself full width */
+.adm-page .cd-table,
+.adm-page table.dataTable {
+    width: 100% !important;
+}
+
+/* DataTables top bar full width */
+.adm-page .cd-dt-top,
+.adm-page .dataTables_length,
+.adm-page .dataTables_filter {
+    width: auto;
+}
+
+.adm-page .dataTables_scroll {
+    width: 100%;
+}
+
+/* Fix the roll section container */
+.adm-page .cd-roll-section {
+    width: 100%;
+}
+
+/* Widget toolbar padding */
+.adm-page .cd-widget-toolbar {
+    padding: 12px 16px;
+}

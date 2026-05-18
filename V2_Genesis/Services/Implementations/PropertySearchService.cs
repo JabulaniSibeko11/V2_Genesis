@@ -141,15 +141,19 @@ public class PropertySearchService : IPropertySearchService
 
         try
         {
+
             await using var conn = new SqlConnection(connString);
 
+            var propertySource = rollSource.Equals("Query", StringComparison.OrdinalIgnoreCase)
+    ? null
+    : propertyFrom;
             await conn.ExecuteAsync(
                 "InsertLinkedProperty",
                 new
                 {
                     IDProperty = idProperty,
                     UserID = userId,
-                    PropertyFrom = propertyFrom
+                    PropertyFrom = propertySource
                 },
                 commandType: CommandType.StoredProcedure);
 

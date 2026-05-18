@@ -11,7 +11,8 @@ public record RollSearchConfig(
     string SpStandScheme,
     string SpAddressScheme,
     string DetailSp,
-    string ConnectionKey   // ← used for BOTH search SPs and detail SP
+    string ConnectionKey,
+    bool IsQuery = false     // ← default false, only Query overrides
 );
 
 public static class RollSearchRegistry
@@ -19,7 +20,6 @@ public static class RollSearchRegistry
     public static readonly IReadOnlyDictionary<string, RollSearchConfig> Configs =
         new Dictionary<string, RollSearchConfig>
         {
-            // ── GV Roll — SPs use explicit Objection.dbo. prefix → DefaultConnection
             ["Objection"] = new(
                 SpTown: "Objection.dbo.SearchTown",
                 SpStand: "Objection.dbo.SearchTownStandNumber",
@@ -34,7 +34,6 @@ public static class RollSearchRegistry
                 ConnectionKey: "DefaultConnection"
             ),
 
-            // ── Sup1 — SPs live in Objection_Supp1 database
             ["Objection_Supp1"] = new(
                 SpTown: "SearchTown_Sup1",
                 SpStand: "SearchTownStandNumber_Sup1",
@@ -49,7 +48,6 @@ public static class RollSearchRegistry
                 ConnectionKey: "Sup1Connection"
             ),
 
-            // ── Sup2 — SPs live in Objection_Supp2 database
             ["Objection_Supp2"] = new(
                 SpTown: "SearchTown_Sup2",
                 SpStand: "SearchTownStandNumber",
@@ -64,7 +62,6 @@ public static class RollSearchRegistry
                 ConnectionKey: "Sup2Connection"
             ),
 
-            // ── Sup3 — SPs live in Objection_Supp3 database
             ["Objection_Supp3"] = new(
                 SpTown: "SearchTown",
                 SpStand: "SearchTownStandNumber",
@@ -79,6 +76,20 @@ public static class RollSearchRegistry
                 ConnectionKey: "Sup3Connection"
             ),
 
-
+            // ── Section 78 Query roll ─────────────────────────────────
+            ["Objection_Query"] = new(
+                SpTown: "SearchTown",
+                SpStand: "SearchTownStandNumber",
+                SpStandAddress: "StandTownStandNumberAddress",
+                SpAddress: "SearchTownAddress",
+                SpScheme: "SearchTownScheme",
+                SpUnit: "SearchTownUnit",
+                SpSchemeUnit: "SearchTownSchemeUnit",
+                SpStandScheme: "SearchTownERFScheme",
+                SpAddressScheme: "SearchTownAddressScheme",
+                DetailSp: "IndexObjection",
+                ConnectionKey: "QueryConnection",
+                IsQuery: true               // ← only one that is true
+            ),
         };
 }

@@ -18,7 +18,10 @@ public class DashboardService : IDashboardService
     private const string SP_APPEALS = "DashboardAppeal";
     private const string SP_NOTIFICATIONS = "DashboardNotification";
     private const string SP_ATTR_LINKED = "Attr_DashboardLinked";
-
+    private readonly string SP_QUERY_LINKED = "DashboardLinkedQ";
+    private readonly string SP_QUERY_OBJECTED = "DashboardObjectionQ";
+    private readonly string SP_QUERY_APPEAL = "DashboardAppeal";
+    private readonly string SP_QUERY_NOTIFICATION = "DashboardNotification";
     public DashboardService(
         IConfiguration config,
         AttributesDbContext attrDb)
@@ -29,9 +32,7 @@ public class DashboardService : IDashboardService
 
     // ── Roll data — unchanged ─────────────────────────────────────────
     public async Task<RollData> GetRollDataAsync(
-        string rollSource,
-        string userId,
-        string userEmail)
+          string rollSource, string userId, string userEmail)
     {
         var rollData = new RollData();
 
@@ -41,44 +42,79 @@ public class DashboardService : IDashboardService
         var connString = _config.GetConnectionString(config.ConnectionKey)
                          ?? _config.GetConnectionString("DefaultConnection")!;
 
+        // ── Detect if this is a Section 78 Query roll ─────────────────
+        bool isQuery = config.IsQuery;   // flag on RollSearchConfig
+                                         // OR: rollSource.Contains("Query")
+
+        var spLinked = isQuery ? SP_QUERY_LINKED : SP_LINKED;
+        var spObjected = isQuery ? SP_QUERY_OBJECTED : SP_OBJECTED;
+
         await using var conn = new SqlConnection(connString);
         await conn.OpenAsync();
 
+        // ── Linked properties ─────────────────────────────────────────
         try
         {
             var linked = await conn.QueryAsync<LinkedPropertyResult>(
-                SP_LINKED, new { userName = userId },
-                commandType: CommandType.StoredProcedure, commandTimeout: 60);
+                spLinked,
+                new { userName = userId },
+                commandType: CommandType.StoredProcedure,
+                commandTimeout: 60);
             rollData.LinkedProperties = linked.ToList();
         }
-        catch (Exception ex) { Console.Error.WriteLine($"[Dashboard] {SP_LINKED} failed for {rollSource}: {ex.Message}"); }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine(
+                $"[Dashboard] {spLinked} failed for {rollSource}: {ex.Message}");
+        }
 
+        // ── Submitted queries / objections ────────────────────────────
         try
         {
             var objected = await conn.QueryAsync<ObjectedPropertyResult>(
-                SP_OBJECTED, new { userName = userId },
-                commandType: CommandType.StoredProcedure, commandTimeout: 60);
+                spObjected,
+                new { userName = userId },
+                commandType: CommandType.StoredProcedure,
+                commandTimeout: 60);
             rollData.ObjectedProperties = objected.ToList();
         }
-        catch (Exception ex) { Console.Error.WriteLine($"[Dashboard] {SP_OBJECTED} failed for {rollSource}: {ex.Message}"); }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine(
+                $"[Dashboard] {spObjected} failed for {rollSource}: {ex.Message}");
+        }
 
+        // ── Appeals — same SP for both roll types ─────────────────────
         try
         {
             var appeals = await conn.QueryAsync<AppealResult>(
-                SP_APPEALS, new { userName = userId },
-                commandType: CommandType.StoredProcedure, commandTimeout: 60);
+                SP_APPEALS,
+                new { userName = userId },
+                commandType: CommandType.StoredProcedure,
+                commandTimeout: 60);
             rollData.Appeals = appeals.ToList();
         }
-        catch (Exception ex) { Console.Error.WriteLine($"[Dashboard] {SP_APPEALS} failed for {rollSource}: {ex.Message}"); }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine(
+                $"[Dashboard] {SP_APPEALS} failed for {rollSource}: {ex.Message}");
+        }
 
+        // ── Notifications — uses email, same SP for both ───────────────
         try
         {
             var notifications = await conn.QueryAsync<NotificationResult>(
-                SP_NOTIFICATIONS, new { userEmail = userEmail },
-                commandType: CommandType.StoredProcedure, commandTimeout: 60);
+                SP_NOTIFICATIONS,
+                new { userEmail = userEmail },
+                commandType: CommandType.StoredProcedure,
+                commandTimeout: 60);
             rollData.Notifications = notifications.ToList();
         }
-        catch (Exception ex) { Console.Error.WriteLine($"[Dashboard] {SP_NOTIFICATIONS} failed for {rollSource}: {ex.Message}"); }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine(
+                $"[Dashboard] {SP_NOTIFICATIONS} failed for {rollSource}: {ex.Message}");
+        }
 
         return rollData;
     }
@@ -146,4 +182,7 @@ public class DashboardService : IDashboardService
         // Default
         return "Residential";
     }
+
+
+
 }
