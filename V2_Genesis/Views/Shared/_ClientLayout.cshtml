@@ -80,6 +80,13 @@
                         Search
                     </a>
                 </li>
+                 <li class="cl-nav-item">
+        <a class="cl-nav-link cl-nav-evidence
+                  @(reqPath == "/attributes/evidence" ? "active" : "")"
+           href="/attributes/evidence">
+            <i class="fa-solid fa-paperclip"></i> Add Evidence
+        </a>
+    </li>
                 @if (isAuth)
                 {
                     <li class="cl-nav-item">

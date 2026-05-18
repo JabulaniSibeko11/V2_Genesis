@@ -38,8 +38,8 @@
                          class="brand-logo" alt="Joburg" />
                 </div>
                 <div class="pub-brand-text">
-                    <span class="pub-brand-name">City of Johannesburg</span>
-                    <span class="pub-brand-sub">Valuation Portal</span>
+                    <span class="pub-brand-name" style="font-family:'Poppins', sans-serif">City of Johannesburg</span>
+                    <span class="pub-brand-sub" style="font-family:'Poppins', sans-serif">Valuation Portal</span>
                 </div>
             </a>
 
@@ -64,16 +64,22 @@
                     </li>
                 }
             </ul>
-            <a href="/section51/verify" class="pub-nav-evidence">
-                <i class="fa-solid fa-file-circle-check"></i>
-                Section 51
-            </a>
-            @* ── Add Evidence — visible to EVERYONE ── *@
-            <a href="/evidence/verify" class="pub-nav-evidence">
-                <i class="fa-solid fa-upload"></i>
-                Add Evidence
-            </a>
+            <!-- Replace the Section 51, Add Evidence, Attr Evidence block with this -->
 
+            <div class="pub-nav-actions">
+                <a href="/section51/verify" class="pub-nav-action-link">
+                    <i class="fa-solid fa-file-circle-check"></i>
+                    Section 51
+                </a>
+                <a href="/evidence/verify" class="pub-nav-action-link">
+                    <i class="fa-solid fa-upload"></i>
+                    Add Evidence
+                </a>
+                <a href="/attributes/evidence" class="pub-nav-action-link">
+                    <i class="fa-solid fa-paperclip"></i>
+                    Attribute Evidence
+                </a>
+            </div>
             <!-- Right side — auth or sign in -->
             <div class="pub-nav-right">
                 @if (isAuth)
@@ -142,6 +148,9 @@
         @* Add Evidence — always at top of mobile menu *@
         <a href="/evidence/verify" class="pub-drawer-link pub-drawer-evidence">
             <i class="fa-solid fa-upload"></i> Add Evidence
+        </a>
+        <a href="/attributes/evidence" class="pub-drawer-link pub-drawer-evidence">
+            <i class="fa-solid fa-paperclip"></i> Add Attributes Evidence
         </a>
 
         <div class="pub-drawer-divider"></div>
