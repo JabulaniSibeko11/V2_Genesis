@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query;
 using QuestPDF.Infrastructure;
 using V2_Genesis.Data;
 
@@ -41,7 +42,9 @@ builder.Services.AddDbContext<AttributesDbContext>(options =>
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("AttributesConnection")));
 
-
+builder.Services.AddDbContext<QueryDbContext>(o =>
+              o.UseSqlServer(builder.Configuration
+                 .GetConnectionString("QueryConnection")));
 
 // ── Identity ─────────────────────────────────────────────────────────────────
 var idCfg = cfg.GetSection("Identity");
@@ -108,6 +111,7 @@ builder.Services.AddScoped<IHomeSearchService, HomeSearchService>();
 builder.Services.AddScoped<IAttributesSearchService, AttributesSearchService>();
 builder.Services.AddScoped<IAttributeSubmissionService, AttributeSubmissionService>();
 builder.Services.AddScoped<IAttributeDocumentService, AttributeDocumentService>();
+builder.Services.AddScoped<ISection78Service, Section78Service>();
 // ── App Pipeline ──────────────────────────────────────────────────────────────
 var app = builder.Build();
 

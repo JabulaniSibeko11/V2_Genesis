@@ -1285,3 +1285,10 @@
     color: #c0392b;
     border-left: 4px solid #c0392b;
 }
+.cd-stat-card-query {
+    border-top: 3px solid #0ea5e9; /* sky blue — matches Section 78 tile */
+}
+
+    .cd-stat-card-query .cd-stat-label {
+        color: #0ea5e9;
+    }

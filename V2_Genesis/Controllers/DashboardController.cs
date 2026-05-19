@@ -55,14 +55,11 @@ public class DashboardController : Controller
 
         var rolls = await _db.GvList.OrderBy(r => r.ID).ToListAsync();
         var attributesData = await _attributesService.GetDashboardDataAsync(userId);
-
-        // Load attributes linked — IDProperty is UnitKey stored at link time
         var attributesLinked = await _dashboardService.GetAttributesLinkedAsync(userId);
 
         ViewBag.GvList = rolls;
 
         var rollDataTasks = rolls
-            .Where(r => !r.IsQuery)
             .ToDictionary(
                 r => r.Source,
                 r => _dashboardService.GetRollDataAsync(r.Source, userId, userEmail));
@@ -72,11 +69,10 @@ public class DashboardController : Controller
         var rollData = rollDataTasks.ToDictionary(
             kvp => kvp.Key,
             kvp => kvp.Value.Result);
-        // New — load Attributes linked properties
-   
 
-        foreach (var roll in rolls.Where(r => r.IsQuery))
-            rollData[roll.Source] = new RollData();
+        // ── REMOVED: foreach (var roll in rolls.Where(r => r.IsQuery))
+        //                 rollData[roll.Source] = new RollData();
+        // This line was overwriting the Query data loaded above with empty data.
 
         var vm = new ClientDashboardViewModel
         {
@@ -86,15 +82,13 @@ public class DashboardController : Controller
             Announcement = _announcement.GetAnnouncement(),
             Rolls = rolls,
             RollData = rollData,
-            RollDates = _rollDates.Dates ,
+            RollDates = _rollDates.Dates,
             AttributesData = attributesData,
             AttributesLinked = attributesLinked
         };
-       
+
         return View(vm);
     }
-
-
     // ── STUB — replace each case with real DB query when ready ─────────────
     private Task<RollData> GetRollDataAsync(GvList roll, string userId)
     {

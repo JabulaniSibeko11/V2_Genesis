@@ -10,7 +10,7 @@ namespace V2_Genesis.Models
 
         [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
         [StringLength(100)]
-        public string Query_No { get; set; }
+        public string? Query_No { get; set; }
 
         [StringLength(100)]
         public string? Query_Type { get; set; }

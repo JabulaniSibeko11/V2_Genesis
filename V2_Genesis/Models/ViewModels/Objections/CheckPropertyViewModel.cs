@@ -1,4 +1,5 @@
 ﻿using V2_Genesis.Models.Objections;
+using V2_Genesis.Models.Results.Section78;
 
 namespace V2_Genesis.Models.ViewModels.Objections
 {
@@ -12,6 +13,10 @@ namespace V2_Genesis.Models.ViewModels.Objections
 
         public bool IsAppeal { get; set; }
         public bool IsLis => SourceTable == "LIS";
+        public List<Section78PropertyDetail> Queitems { get; set; } = new();
+
+        public bool IsQuery =>
+            RollSource?.Contains("Query", StringComparison.OrdinalIgnoreCase) == true;
         public bool IsOmission { get; set; }
         public string? PropertyFrom { get; set; }
         public CheckPropertyResult? Main => Items.FirstOrDefault();

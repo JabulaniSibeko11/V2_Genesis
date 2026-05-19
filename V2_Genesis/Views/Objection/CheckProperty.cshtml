@@ -1,34 +1,29 @@
 ﻿@model V2_Genesis.Models.ViewModels.Objections.CheckPropertyViewModel
+
 @{
     ViewData["Title"] = Model.IsAppeal ? "Property Appeal" : "Property Objection";
     Layout = "~/Views/Shared/_ClientLayout.cshtml";
+
     var d = Model.Main;
+
+    // QUERY CHANGE
+    var q = Model.Queitems?.FirstOrDefault();
+
     var src = Model.SourceTable;
+
+    bool isQuery = Model.IsQuery;
+
+    if (isQuery)
+    {
+        ViewData["Title"] = "Property Query System";
+    }
 }
 
 @section Styles {
     <link href="~/css/views/objection.css" rel="stylesheet" asp-append-version="true" />
     <link href="~/css/views/clientdashboard.css" rel="stylesheet" asp-append-version="true" />
     <link href="~/css/views/property-search.css" rel="stylesheet" asp-append-version="true" />
-    <style>
-        .obj-prop-omission-badge {
-            grid-column: 1 / -1;
-        }
-
-        .obj-omission-tag {
-            display: inline-flex;
-            align-items: center;
-            gap: 7px;
-            padding: 6px 14px;
-            border-radius: 100px;
-            background: #fff7ed;
-            color: #c2410c;
-            border: 1.5px solid #fed7aa;
-            font-size: 12.5px;
-            font-weight: 700;
-        }
-    </style>
-
+  
    
 }
 
@@ -38,34 +33,44 @@
         <!-- ── Page heading ─────────────────────────────────── -->
         <div class="obj-heading">
             <div class="obj-heading-icon">
-                <i class="fa-solid @(Model.IsAppeal ? "fa-gavel" : "fa-file-pen")"></i>
+                <i class="fa-solid @(isQuery ? "fa-magnifying-glass-chart" : Model.IsAppeal ? "fa-gavel" : "fa-file-pen")"></i>
             </div>
             <div>
                 <h1 class="obj-title" id="pageTitle">
-                    @(Model.IsAppeal ? "Property Appeal System" : "Property Objection System")
+                    @(isQuery ? "Property Query System" : Model.IsAppeal ? "Property Appeal System" : "Property Objection System")
                 </h1>
                 <p class="obj-subtitle" id="pageSubtitle">
-                    @(Model.IsAppeal
-                        ? "Submit your property appeal online"
-                        : "Submit your property objection online")
+                    @(isQuery ? "Submit your Section 78 query or review online" : Model.IsAppeal ? "Submit your property appeal online" : "Submit your property objection online")
                 </p>
             </div>
         </div>
-
         <!-- ══════════════════════════════════════════════════
              STEP 1 — Disclaimer
         ══════════════════════════════════════════════════ -->
         <div class="obj-card" id="disclaimerSection">
-            <div class="obj-card-header">
-                <i class="fa-solid fa-triangle-exclamation"></i>
-                <span id="disclaimerTitle">
+            <span id="disclaimerTitle">
+                @if (isQuery)
+                {
+                    @:Disclaimer | Online Section 78 Query
+                }
+                else
+                {
                     @(Model.IsAppeal ? "Disclaimer | Online Appeal" : "Disclaimer | Online Objection")
-                </span>
-            </div>
+                }
+            </span>
             <div class="obj-card-body">
                 <p id="disclaimerIntro">
                     You are about to commence with the online
-                    <strong id="actionWord">@(Model.IsAppeal ? "appeal" : "objection")</strong> process.
+                    <strong id="actionWord">
+                        @(isQuery ? "Section 78 query" : Model.IsAppeal ? "appeal" : "objection")
+                    </strong> process.
+                    @if (isQuery)
+                    {
+                        <span>
+                            If you wish to upload supporting documents, please ensure
+                            your evidence is ready and meets the following criteria.
+                        </span>
+                    }
                 </p>
                 <p>If you wish to upload supporting documents, please ensure your evidence is ready:</p>
 
@@ -180,6 +185,36 @@
                             </div>
                         }
                     }
+                    else if (isQuery && q is not null)
+                    {
+                        <div class="obj-prop-item">
+                            <span class="obj-prop-label">
+                                <i class="fa-solid fa-file-alt"></i> Property Description
+                            </span>
+                            <span class="obj-prop-value">@(q.PropertyDesc ?? "N/A")</span>
+                        </div>
+
+                        <div class="obj-prop-item">
+                            <span class="obj-prop-label">
+                                <i class="fa-solid fa-home"></i> Address
+                            </span>
+                            <span class="obj-prop-value">@(q.LisStreetAddress ?? "N/A")</span>
+                        </div>
+
+                        <div class="obj-prop-item">
+                            <span class="obj-prop-label">
+                                <i class="fa-solid fa-tag"></i> Category
+                            </span>
+                            <span class="obj-prop-value">@(q.CatDesc ?? "N/A")</span>
+                        </div>
+
+                        <div class="obj-prop-item">
+                            <span class="obj-prop-label">
+                                <i class="fa-solid fa-city"></i> Township
+                            </span>
+                            <span class="obj-prop-value">@(q.TownNameDesc ?? "N/A")</span>
+                        </div>
+                    }
                     else if (d is not null)
                     {
                         <div class="obj-prop-item">
@@ -226,11 +261,13 @@
                         <label class="obj-radio-card" id="card-res">
                             <input type="radio" name="propertyType" value="Res"
                                    onchange="onTypeSelect('propertyType','res-feedback')" />
+
                             <div class="obj-radio-content">
                                 <i class="fa-solid fa-house-chimney"></i>
                                 <strong>Residential</strong>
                                 <small>Full Title and Sectional Title used for Residential Purposes</small>
                             </div>
+
                             <div class="obj-radio-check">
                                 <i class="fa-solid fa-circle-check"></i>
                             </div>
@@ -305,19 +342,22 @@
                                 <i class="fa-solid fa-circle-check"></i>
                             </div>
                         </label>
+                          @* Third Party — hidden for Query *@
+                        @if (!isQuery)
+                        {
 
-                        <label class="obj-radio-card">
-                            <input type="radio" name="objectorType" value="Third_Party"
-                                   onchange="onTypeSelect('objectorType','obj-feedback')" />
-                            <div class="obj-radio-content">
-                                <i class="fa-solid fa-users"></i>
-                                <strong>Third Party</strong>
-                            </div>
-                            <div class="obj-radio-check">
-                                <i class="fa-solid fa-circle-check"></i>
-                            </div>
-                        </label>
-
+                            <label class="obj-radio-card">
+                                <input type="radio" name="objectorType" value="Third_Party"
+                                onchange="onTypeSelect('objectorType','obj-feedback')" />
+                                <div class="obj-radio-content">
+                                    <i class="fa-solid fa-users"></i>
+                                    <strong>Third Party</strong>
+                                </div>
+                                <div class="obj-radio-check">
+                                    <i class="fa-solid fa-circle-check"></i>
+                                </div>
+                            </label>
+                        }
                         <label class="obj-radio-card">
                             <input type="radio" name="objectorType" value="Representative"
                                    onchange="onTypeSelect('objectorType','obj-feedback')" />
@@ -332,14 +372,135 @@
 
                     </div>
                     <div class="obj-selection-feedback" id="obj-feedback"></div>
+                    <input type="hidden" id="objector_type" />
+                    <div id="o_type" class="obj-selection-feedback" style="display:none;"></div>
+
                 </div>
             </div>
 
+            @if (isQuery)
+            {
+                <div class="obj-card">
+                    <div class="obj-card-header">
+                        <i class="fa-solid fa-file-magnifying-glass"></i>
+                        Submission Type
+                        <span class="obj-card-sub">Choose the type of submission</span>
+                    </div>
+                    <div class="obj-card-body">
+                        <div class="obj-radio-grid obj-radio-grid-2">
+
+                            <label class="obj-radio-card">
+                                <input type="radio" name="submissionType"
+                                       id="btn_checkq1" value="Query"
+                                       onchange="onQueryTypeSelect('Query')" />
+                                <div class="obj-radio-content">
+                                    <i class="fa-solid fa-question-circle"></i>
+                                    <strong>Query</strong>
+                                    <small>Submit a formal query about your property valuation</small>
+                                </div>
+                                <div class="obj-radio-check">
+                                    <i class="fa-solid fa-circle-check"></i>
+                                </div>
+                            </label>
+
+                            <label class="obj-radio-card">
+                                <input type="radio" name="submissionType"
+                                       id="btn_checkq3" value="Review"
+                                       onchange="onQueryTypeSelect('Review')" />
+                                <div class="obj-radio-content">
+                                    <i class="fa-solid fa-magnifying-glass"></i>
+                                    <strong>Review</strong>
+                                    <small>Request a review of your property valuation</small>
+                                </div>
+                                <div class="obj-radio-check">
+                                    <i class="fa-solid fa-circle-check"></i>
+                                </div>
+                            </label>
+
+                        </div>
+                        <input type="hidden" id="sub_type" />
+                        <div id="q_type" class="obj-selection-feedback" style="display:none;"></div>
+                    </div>
+                </div>
+            }
             <!-- Lodge button (hidden until both types selected) -->
             <div id="lodgeSection" style="display:none;">
                 <div class="obj-card obj-lodge-card">
                     <div class="obj-card-body obj-lodge-body">
+
                         <div class="obj-lodge-summary" id="lodgeSummary"></div>
+                        @if (isQuery)
+                        {
+                            <input type="hidden" id="Direct" value="" />
+
+                            @* Normal — Query *@
+                            <a asp-controller="Section78"
+                                   asp-action="Section78Query"
+                                   asp-route-qtype="Query"
+                                   asp-route-Direct=""
+                                   asp-route-PropDesc="@(isQuery ? q?.PropertyDesc : d?.PropertyDesc)"
+                                   asp-route-addr="@(isQuery ? q?.LisStreetAddress : d?.LisStreetAddress)"
+                                   asp-route-cat="@(isQuery ? q?.CatDesc : d?.CatDesc)"
+                                   asp-route-UKey="@(isQuery ? q?.UnitKey : d?.UnitKey)"
+                                   asp-route-VKey="@(isQuery ? q?.ValuationKey : d?.ValuationKey)"
+                                   id="btn_choice"
+                                   class="obj-lodge-btn"
+                                   hidden>
+                                <i class="fa-solid fa-file-magnifying-glass"></i>
+                                Lodge Section 78 Query
+                            </a>
+
+                            @* Normal — Review *@
+                            <a asp-controller="Section78"
+                                   asp-action="Section78Query"
+                                   asp-route-qtype="Review"
+                                   asp-route-Direct=""
+                                   asp-route-PropDesc="@(isQuery ? q?.PropertyDesc : d?.PropertyDesc)"
+                                   asp-route-addr="@(isQuery ? q?.LisStreetAddress : d?.LisStreetAddress)"
+                                   asp-route-cat="@(isQuery ? q?.CatDesc : d?.CatDesc)"
+                                   asp-route-UKey="@(isQuery ? q?.UnitKey : d?.UnitKey)"
+                                   asp-route-VKey="@(isQuery ? q?.ValuationKey : d?.ValuationKey)"
+                                   id="btn_choice1"
+                                   class="obj-lodge-btn"
+                                   hidden>
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                                Lodge Section 78 Review
+                            </a>
+
+                            @* Multi — Query *@
+                            <a asp-controller="Section78"
+                                   asp-action="Section78Query"
+                                   asp-route-qtype="Query"
+                                   asp-route-Direct="Multi"
+                                   asp-route-PropDesc="@(isQuery ? q?.PropertyDesc : d?.PropertyDesc)"
+                                   asp-route-addr="@(isQuery ? q?.LisStreetAddress : d?.LisStreetAddress)"
+                                   asp-route-cat="@(isQuery ? q?.CatDesc : d?.CatDesc)"
+                                   asp-route-UKey="@(isQuery ? q?.UnitKey : d?.UnitKey)"
+                                   asp-route-VKey="@(isQuery ? q?.ValuationKey : d?.ValuationKey)"
+                                   id="btn_choiceM"
+                                   class="obj-lodge-btn"
+                                   hidden>
+                                <i class="fa-solid fa-file-magnifying-glass"></i>
+                                Lodge Section 78 Query (Multi)
+                            </a>
+
+                            @* Multi — Review *@
+                            <a asp-controller="Section78"
+                                   asp-action="Section78Query"
+                                   asp-route-qtype="Review"
+                                   asp-route-Direct="Multi"
+                                   asp-route-PropDesc="@(isQuery ? q?.PropertyDesc : d?.PropertyDesc)"
+                                   asp-route-addr="@(isQuery ? q?.LisStreetAddress : d?.LisStreetAddress)"
+                                   asp-route-cat="@(isQuery ? q?.CatDesc : d?.CatDesc)"
+                                   asp-route-UKey="@(isQuery ? q?.UnitKey : d?.UnitKey)"
+                                   asp-route-VKey="@(isQuery ? q?.ValuationKey : d?.ValuationKey)"
+                                   id="btn_choiceM1"
+                                   class="obj-lodge-btn"
+                                   hidden>
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                                Lodge Section 78 Review (Multi)
+                            </a>
+                        }
                         <a href="#" id="btn_choice" class="obj-lodge-btn" hidden>
                             <i class="fa-solid fa-file-signature"></i>
                             <span id="lodgeBtnText">
@@ -479,287 +640,466 @@
 
 @section Scripts {
     <script>
-        // ════════════════════════════════════════════════════════════
-        //  CheckProperty — V2 inline script
-        //  All logic self-contained, no external index.js dependency
-        // ════════════════════════════════════════════════════════════
+    @* ════════════════════════════════════════════════════════════════
+   REPLACE entire @section Scripts in CheckProperty.cshtml with this
+   
+   Contains:
+   - All existing V2 CheckProperty JS (appeal labels, radio cards, modal)
+   - V1 QueryIndex.js logic (merged, activated only when IS_QUERY = true)
+════════════════════════════════════════════════════════════════ *@
 
-        // ── Config injected from Razor ────────────────────────────────
-        var CONTROLLER  = '@Model.ControllerName';
-        var SOURCE      = '@Model.SourceTable';
-        var IS_LIS      = SOURCE === 'LIS';
 
-        // ── Appeal status: prefer Razor model, fall back to URL/session ──
-        var IS_APPEAL = (function () {
-            // 1. Razor model is authoritative
-            var fromRazor = '@Model.AppealStatus';
-            if (fromRazor === 'True' || fromRazor === 'False')
-                return fromRazor === 'True';
+<script>
+// ════════════════════════════════════════════════════════════════
+//  CONFIG — injected from Razor
+// ════════════════════════════════════════════════════════════════
+var CONTROLLER = '@Model.ControllerName';
+var SOURCE     = '@Model.SourceTable';
+var IS_LIS     = SOURCE === 'LIS';
+var IS_QUERY   = @(Model.IsQuery ? "true" : "false");
 
-            // 2. URL param fallback (for pages arriving without model)
-            var urlParam = new URLSearchParams(window.location.search)
-                .get('AppealStatus');
-            if (urlParam !== null) {
-                sessionStorage.setItem('AppealStatus', urlParam);
-                return urlParam === 'True';
+var IS_APPEAL = (function () {
+    var fromRazor = '@Model.AppealStatus';
+    if (fromRazor === 'True' || fromRazor === 'False')
+        return fromRazor === 'True';
+    var urlParam = new URLSearchParams(window.location.search).get('AppealStatus');
+    if (urlParam !== null) {
+        sessionStorage.setItem('AppealStatus', urlParam);
+        return urlParam === 'True';
+    }
+    return sessionStorage.getItem('AppealStatus') === 'True';
+})();
+
+sessionStorage.setItem('AppealStatus', IS_APPEAL ? 'True' : 'False');
+
+// ════════════════════════════════════════════════════════════════
+//  V1 QUERY JS — activated when IS_QUERY = true
+//  Copied from QueryIndex.js and adapted for V2 HTML structure
+// ════════════════════════════════════════════════════════════════
+if (IS_QUERY) {
+
+    var property_type  = "";
+    var objector_type  = "";
+    var query_type     = "";
+    var x, y, z, x1, y1, z1, w1, q1, q2;
+    var direction      = "Normal";
+    var submission_type = "";
+
+    $(document).ready(function () {
+
+        $("#form_key").hide();
+
+        // ── Restore direction from session ──────────────────────────
+        $(function () {
+            const dir = sessionStorage.getItem('direction');
+            if (dir === "Multi") {
+                $("#Direct").val("Multi");
             }
+        });
 
-            // 3. sessionStorage fallback
-            return sessionStorage.getItem('AppealStatus') === 'True';
-        })();
+        // ── Property Type ───────────────────────────────────────────
+        $("#btncheck1").click(function () {
+            document.getElementById("obj_type").value = "Res";
+            property_type = "Res";
+            sessionStorage.setItem('property_choice', property_type);
+            document.getElementById("p_type").innerHTML =
+                "Residential (Full Title and Sectional Title used for Residential Purposes)";
+            w1 = document.getElementById("btncheck4").checked;
+            q1 = document.getElementById("btn_checkq1").checked;
+            q2 = document.getElementById("btn_checkq3").checked;
+            direction = w1 ? "Multi" : "Normal";
+            sessionStorage.setItem('direction', direction);
+            checkQueryFormCompletion();
+        });
 
-        // Store for other pages
-        sessionStorage.setItem('AppealStatus', IS_APPEAL ? 'True' : 'False');
+        $("#btncheck2").click(function () {
+            document.getElementById("obj_type").value = "Agric";
+            property_type = "Agric";
+            sessionStorage.setItem('property_choice', property_type);
+            document.getElementById("p_type").innerHTML = "Agricultural Holdings or Farms";
+            w1 = document.getElementById("btncheck4").checked;
+            q1 = document.getElementById("btn_checkq1").checked;
+            q2 = document.getElementById("btn_checkq3").checked;
+            direction = w1 ? "Multi" : "Normal";
+            sessionStorage.setItem('direction', direction);
+            checkQueryFormCompletion();
+        });
 
-        // ── State ─────────────────────────────────────────────────────
-        var selectedProperty = '';
-        var selectedObjector = '';
-        var pendingUrl       = '';
+        $("#btncheck3").click(function () {
+            document.getElementById("obj_type").value = "Bus";
+            property_type = "Bus";
+            sessionStorage.setItem('property_choice', property_type);
+            document.getElementById("p_type").innerHTML =
+                "Properties other than Residential or Agricultural (e.g. Business, Factories, Offices, Schools)";
+            w1 = document.getElementById("btncheck4").checked;
+            q1 = document.getElementById("btn_checkq1").checked;
+            q2 = document.getElementById("btn_checkq3").checked;
+            direction = w1 ? "Multi" : "Normal";
+            sessionStorage.setItem('direction', direction);
+            checkQueryFormCompletion();
+        });
 
-        // ════════════════════════════════════════════════════════════
-        //  APPEAL LABEL SWAP
-        //  Handles pages that may arrive without the model populated
-        //  (Razor already renders correct text, this updates any DOM
-        //   element that Razor missed or that was hydrated later)
-        // ════════════════════════════════════════════════════════════
-        function updateAppealLabels() {
-            if (!IS_APPEAL) return;   // nothing to change — Razor already set text
+        $("#btncheck4").click(function () {
+            document.getElementById("obj_type").value = "Multi";
+            property_type = "Multi";
+            sessionStorage.setItem('direction', 'Multi');
+            document.getElementById("p_type").innerHTML =
+                "Multiple Purpose (The use of a property for more than one purpose)";
+            direction = "Multi";
+            q1 = document.getElementById("btn_checkq1").checked;
+            q2 = document.getElementById("btn_checkq3").checked;
+            checkQueryFormCompletion();
+        });
 
-            var action    = 'appeal';
-            var Action    = 'Appeal';
-            var actor     = 'appellant';
-            var Actor     = 'Appellant';
+        // ── Objector Type ───────────────────────────────────────────
+        $("#btn_check1").click(function () {
+            document.getElementById("objector_type").value = "Owner";
+            objector_type = "Owner";
+            sessionStorage.setItem('objector_choice', objector_type);
+            document.getElementById("o_type").innerHTML = "Objector is the Owner";
+            $("#o_type").show();
+            direction = document.getElementById("btncheck4").checked ? "Multi" : "Normal";
+            sessionStorage.setItem('direction', direction);
+            checkQueryFormCompletion();
+        });
 
-            // Page heading
-            setText('pageTitle',          'Property Appeal System');
-            setText('pageSubtitle',       'Submit your property appeal online');
+        $("#btn_check3").click(function () {
+            document.getElementById("objector_type").value = "Representative";
+            objector_type = "Representative";
+            sessionStorage.setItem('objector_choice', objector_type);
+            document.getElementById("o_type").innerHTML =
+                "Authorised Representative of the Objector";
+            $("#o_type").show();
+            direction = document.getElementById("btncheck4").checked ? "Multi" : "Normal";
+            sessionStorage.setItem('direction', direction);
+            checkQueryFormCompletion();
+        });
 
-            // Disclaimer
-            setText('disclaimerTitle',    'Disclaimer | Online Appeal');
-            setText('actionWord',         action);
-            setText('continueBtnText',    'Continue to Appeal Form');
+        // ── Submission Type — Query ─────────────────────────────────
+        $("#btn_checkq1").click(function () {
+            document.getElementById("sub_type").value = "Query";
+            query_type = "Query";
+            submission_type = "Query";
+            sessionStorage.setItem('query_choice', query_type);
+            document.getElementById("q_type").innerHTML = "Lodging A Query";
+            $("#q_type").show();
+            direction = document.getElementById("btncheck4").checked ? "Multi" : "Normal";
+            sessionStorage.setItem('direction', direction);
+            checkQueryFormCompletion();
+        });
 
-            // Property card sub-label
-            setText('propTypeSub',        'Choose the property type you want to appeal on');
-            setText('propInfoSub',        'Details of the property you are appealing');
+        // ── Submission Type — Review ────────────────────────────────
+        $("#btn_checkq3").click(function () {
+            document.getElementById("sub_type").value = "Review";
+            query_type = "Review";
+            submission_type = "Review";
+            sessionStorage.setItem('query_choice', query_type);
+            document.getElementById("q_type").innerHTML = "Lodging A Review";
+            $("#q_type").show();
+            direction = document.getElementById("btncheck4").checked ? "Multi" : "Normal";
+            sessionStorage.setItem('direction', direction);
+            checkQueryFormCompletion();
+        });
 
-            // Objector → Appellant
-            setText('objectorTypeHeader', Actor + ' Type');
-            setText('objectorTypeSub',    'Choose the type of ' + actor);
+    }); // end document.ready
 
-            // Lodge buttons
-            setText('lodgeBtnText',       'Lodge Appeal');
-            setText('lodgeBtnText1',      'Lodge Appeal');
+    // ── Check all three selections made → show lodge button ────────
+    function checkQueryFormCompletion() {
+        var propOk      = property_type  !== "";
+        var objectorOk  = objector_type  !== "";
+        var submissionOk= submission_type !== "";
 
-            // Modal
-            setText('modalTitle',         'Appeal Form Instructions');
-            setText('modalSubtitle',      'Please read all instructions carefully before starting your appeal');
-            setText('instrSection2Title', Actor + ' Type Requirements');
-            setText('startBtnWord',       Action);
+        if (propOk && objectorOk && submissionOk) {
+            document.getElementById("lodgeSection").style.display = "block";
+            updateQueryButtonVisibility();
+            updateLodgeSummary();
+        } else {
+            document.getElementById("lodgeSection").style.display = "none";
+        }
+    }
 
-            // Inline spans with class .instr-action-word
-            document.querySelectorAll('.instr-action-word').forEach(function (el) {
-                el.textContent = el.textContent
-                    .replace(/objection/gi, action)
-                    .replace(/objector/gi,  actor)
-                    .replace(/object to/gi, action);
-            });
-            document.querySelectorAll('.instr-action-word-cap').forEach(function (el) {
-                el.textContent = Action;
-            });
+    // ── Show correct lodge button based on direction + type ─────────
+    function updateQueryButtonVisibility() {
+        var isMulti = sessionStorage.getItem('direction') === "Multi";
+
+        $("#btn_choice, #btn_choice1, #btn_choiceM, #btn_choiceM1")
+            .attr("hidden", true);
+
+        if (isMulti) {
+            if (submission_type === "Query")  $("#btn_choiceM").removeAttr("hidden");
+            else                              $("#btn_choiceM1").removeAttr("hidden");
+        } else {
+            if (submission_type === "Query")  $("#btn_choice").removeAttr("hidden");
+            else                              $("#btn_choice1").removeAttr("hidden");
         }
 
-        function setText(id, text) {
-            var el = document.getElementById(id);
-            if (el) el.textContent = text;
-        }
+        // Inject Direct param into visible button href
+        var directVal = isMulti ? "Multi" : "";
+        $("#form_key a:visible, #lodgeSection a:not([hidden])").each(function () {
+            try {
+                var href = new URL(this.href);
+                href.searchParams.set("Direct", directVal);
+                href.searchParams.set("objectorType", objector_type);
+                this.href = href.toString();
+            } catch(e) {}
+        });
+    }
 
-        // ════════════════════════════════════════════════════════════
-        //  STEP 1 — DISCLAIMER
-        // ════════════════════════════════════════════════════════════
-        function onAgreeChange(cb) {
-            document.getElementById('continueBtn').disabled = !cb.checked;
-        }
+    // ── Summary line above lodge button ────────────────────────────
+    function updateLodgeSummary() {
+        var propLabels = {
+            Res: 'Residential', Agric: 'Agricultural',
+            Bus: 'Business / Other', Multi: 'Multiple Purposes'
+        };
+        var subLabel = submission_type === "Query" ? "Section 78 Query" : "Section 78 Review";
+        var typeLabel = objector_type === "Owner" ? "Owner" : "Representative";
 
-        function showMainForm() {
-            document.getElementById('disclaimerSection').style.display = 'none';
-            var f = document.getElementById('mainForm');
-            f.style.display = 'flex';
-        }
-
-        // ════════════════════════════════════════════════════════════
-        //  STEP 2 — RADIO CARD SELECTION
-        // ════════════════════════════════════════════════════════════
-        function onTypeSelect(name, feedbackId) {
-            var selected = document.querySelector('input[name="' + name + '"]:checked');
-            if (!selected) return;
-
-            // Mark selected card
-            document.querySelectorAll('input[name="' + name + '"]').forEach(function (r) {
-                r.closest('.obj-radio-card').classList.remove('selected');
-            });
-            selected.closest('.obj-radio-card').classList.add('selected');
-
-            if (name === 'propertyType') {
-                selectedProperty = selected.value;
-                sessionStorage.setItem('property_choice', selectedProperty);
-            }
-            if (name === 'objectorType') {
-                selectedObjector = selected.value;
-                sessionStorage.setItem('objector_choice', selectedObjector);
-                localStorage.setItem('objectorType', selectedObjector);
-            }
-
-            // Update feedback label
-            var feedback = document.getElementById(feedbackId);
-            if (feedback) {
-                var labels = {
-                    Res          : 'Residential',
-                    Agric        : 'Agricultural',
-                    Bus          : 'Business / Other',
-                    Multi        : 'Multiple Purposes',
-                    Owner        : 'Owner',
-                    Third_Party  : 'Third Party',
-                    Representative: 'Representative'
-                };
-                feedback.innerHTML =
-                    '<i class="fa-solid fa-circle-check" style="color:#22c55e;"></i> ' +
-                    'Selected: <strong>' + (labels[selected.value] || selected.value) + '</strong>';
-            }
-
-            checkBothSelected();
-        }
-
-        // ════════════════════════════════════════════════════════════
-        //  LODGE URL BUILDER — V2 unified routes
-        // ════════════════════════════════════════════════════════════
-        function buildLodgeUrl(isMulti) {
-            var qs = '?PropertyFrom=' + encodeURIComponent(SOURCE) +
-                     '&objectorType=' + encodeURIComponent(selectedObjector) +
-                     '&appeal='       + (IS_APPEAL ? 'True' : 'False');
-
-            if (IS_LIS) {
-                return isMulti
-                    ? '/LIS/ViewMultiPurposeFormSup3' + qs
-                    : '/LIS/ViewResidentialFormSup3'  + qs;
-            }
-
-            return isMulti
-                ? '/objection/multipurpose' + qs
-                : '/objection/form'         + qs;
-        }
-
-        // ════════════════════════════════════════════════════════════
-        //  CHECK BOTH SELECTED → show lodge button
-        // ════════════════════════════════════════════════════════════
-        function checkBothSelected() {
-            if (!selectedProperty || !selectedObjector) return;
-
-            var isMulti = selectedProperty === 'Multi';
-            var url     = buildLodgeUrl(isMulti);
-
-            // Store for downstream form pages
-            localStorage.setItem('propertyType', selectedProperty);
-            localStorage.setItem('sourceTable',  SOURCE);
-
-            document.getElementById('lodgeSection').style.display = 'block';
-
-            // Summary line
-            var propLabels = {
-                Res  : 'Residential', Agric : 'Agricultural',
-                Bus  : 'Business / Other', Multi : 'Multiple Purposes'
-            };
-            var objLabels = {
-                Owner: 'Owner', Third_Party: 'Third Party',
-                Representative: 'Representative'
-            };
-            var actionLabel = IS_APPEAL ? 'Appeal' : 'Objection';
-
-            document.getElementById('lodgeSummary').innerHTML =
+        var el = document.getElementById("lodgeSummary");
+        if (el) {
+            el.innerHTML =
                 '<i class="fa-solid fa-circle-check" style="color:#22c55e;"></i> ' +
-                actionLabel + ' as <strong>' + (objLabels[selectedObjector] || selectedObjector) +
-                '</strong> on a <strong>' + (propLabels[selectedProperty] || selectedProperty) +
-                '</strong> property';
+                subLabel + ' as <strong>' + typeLabel + '</strong> on a ' +
+                '<strong>' + (propLabels[property_type] || property_type) + '</strong> property';
+        }
+    }
 
-            // Hide both buttons, show the correct one
-            ['btn_choice', 'btn_choice1'].forEach(function (id) {
-                var el = document.getElementById(id);
-                if (el) el.setAttribute('hidden', true);
-            });
+    // ── Expose for onchange on radio cards ─────────────────────────
+    window.onQueryTypeSelect = function (type) {
+        submission_type = type;
+        query_type      = type;
+        document.getElementById("sub_type").value = type;
+        sessionStorage.setItem('query_choice', type);
+        document.getElementById("q_type").innerHTML =
+            type === "Query" ? "Lodging A Query" : "Lodging A Review";
+        $("#q_type").show();
 
-            var target = document.getElementById(isMulti ? 'btn_choice1' : 'btn_choice');
-            if (target) {
-                target.href = url;
-                target.removeAttribute('hidden');
+        direction = document.getElementById("btncheck4")?.checked ? "Multi" : "Normal";
+        sessionStorage.setItem('direction', direction);
+
+        checkQueryFormCompletion();
+    };
+
+} // end IS_QUERY block
+
+
+// ════════════════════════════════════════════════════════════════
+//  V2 EXISTING JS — used for Objection / Appeal flows
+// ════════════════════════════════════════════════════════════════
+
+// ── State ────────────────────────────────────────────────────────
+var selectedProperty = '';
+var selectedObjector = '';
+var pendingUrl       = '';
+
+// ── Appeal label swap ────────────────────────────────────────────
+function updateAppealLabels() {
+    if (!IS_APPEAL || IS_QUERY) return;
+
+    setText('pageTitle',          'Property Appeal System');
+    setText('pageSubtitle',       'Submit your property appeal online');
+    setText('disclaimerTitle',    'Disclaimer | Online Appeal');
+    setText('actionWord',         'appeal');
+    setText('continueBtnText',    'Continue to Appeal Form');
+    setText('propTypeSub',        'Choose the property type you want to appeal on');
+    setText('propInfoSub',        'Details of the property you are appealing');
+    setText('objectorTypeHeader', 'Appellant Type');
+    setText('objectorTypeSub',    'Choose the type of appellant');
+    setText('lodgeBtnText',       'Lodge Appeal');
+    setText('lodgeBtnText1',      'Lodge Appeal');
+    setText('modalTitle',         'Appeal Form Instructions');
+    setText('modalSubtitle',
+        'Please read all instructions carefully before starting your appeal');
+    setText('instrSection2Title', 'Appellant Type Requirements');
+    setText('startBtnWord',       'Appeal');
+
+    document.querySelectorAll('.instr-action-word').forEach(function (el) {
+        el.textContent = el.textContent
+            .replace(/objection/gi, 'appeal')
+            .replace(/objector/gi,  'appellant')
+            .replace(/object to/gi, 'appeal');
+    });
+    document.querySelectorAll('.instr-action-word-cap').forEach(function (el) {
+        el.textContent = 'Appeal';
+    });
+}
+
+function setText(id, text) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = text;
+}
+
+// ── Disclaimer ───────────────────────────────────────────────────
+function onAgreeChange(cb) {
+    document.getElementById('continueBtn').disabled = !cb.checked;
+}
+
+function showMainForm() {
+    document.getElementById('disclaimerSection').style.display = 'none';
+    var f = document.getElementById('mainForm');
+    f.style.display = 'flex';
+}
+
+// ── Radio cards — Objection / Appeal flow ───────────────────────
+function onTypeSelect(name, feedbackId) {
+    if (IS_QUERY) return;   // Query uses V1 JS handlers above
+
+    var selected = document.querySelector('input[name="' + name + '"]:checked');
+    if (!selected) return;
+
+    document.querySelectorAll('input[name="' + name + '"]').forEach(function (r) {
+        r.closest('.obj-radio-card').classList.remove('selected');
+    });
+    selected.closest('.obj-radio-card').classList.add('selected');
+
+    if (name === 'propertyType') {
+        selectedProperty = selected.value;
+        sessionStorage.setItem('property_choice', selectedProperty);
+    }
+    if (name === 'objectorType') {
+        selectedObjector = selected.value;
+        sessionStorage.setItem('objector_choice', selectedObjector);
+        localStorage.setItem('objectorType', selectedObjector);
+    }
+
+    var feedback = document.getElementById(feedbackId);
+    if (feedback) {
+        var labels = {
+            Res: 'Residential', Agric: 'Agricultural',
+            Bus: 'Business / Other', Multi: 'Multiple Purposes',
+            Owner: 'Owner', Third_Party: 'Third Party',
+            Representative: 'Representative'
+        };
+        feedback.innerHTML =
+            '<i class="fa-solid fa-circle-check" style="color:#22c55e;"></i> ' +
+            'Selected: <strong>' + (labels[selected.value] || selected.value) + '</strong>';
+    }
+
+    checkBothSelected();
+}
+
+// ── Build lodge URL (Objection / Appeal) ─────────────────────────
+function buildLodgeUrl(isMulti) {
+    var qs = '?PropertyFrom=' + encodeURIComponent(SOURCE) +
+             '&objectorType=' + encodeURIComponent(selectedObjector) +
+             '&appeal='       + (IS_APPEAL ? 'True' : 'False');
+
+    if (IS_LIS)
+        return isMulti ? '/LIS/ViewMultiPurposeFormSup3' + qs
+                       : '/LIS/ViewResidentialFormSup3'  + qs;
+
+    return isMulti ? '/objection/multipurpose' + qs
+                   : '/objection/form'         + qs;
+}
+
+// ── Check both selected → show lodge ────────────────────────────
+function checkBothSelected() {
+    if (IS_QUERY) return;
+    if (!selectedProperty || !selectedObjector) return;
+
+    var isMulti = selectedProperty === 'Multi';
+    var url     = buildLodgeUrl(isMulti);
+
+    localStorage.setItem('propertyType', selectedProperty);
+    localStorage.setItem('sourceTable',  SOURCE);
+
+    document.getElementById('lodgeSection').style.display = 'block';
+
+    var propLabels = { Res:'Residential', Agric:'Agricultural',
+                       Bus:'Business / Other', Multi:'Multiple Purposes' };
+    var objLabels  = { Owner:'Owner', Third_Party:'Third Party',
+                       Representative:'Representative' };
+    var actionLabel = IS_APPEAL ? 'Appeal' : 'Objection';
+
+    document.getElementById('lodgeSummary').innerHTML =
+        '<i class="fa-solid fa-circle-check" style="color:#22c55e;"></i> ' +
+        actionLabel + ' as <strong>' + (objLabels[selectedObjector] || selectedObjector) +
+        '</strong> on a <strong>' + (propLabels[selectedProperty] || selectedProperty) +
+        '</strong> property';
+
+    ['btn_choice', 'btn_choice1'].forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el) el.setAttribute('hidden', true);
+    });
+
+    var target = document.getElementById(isMulti ? 'btn_choice1' : 'btn_choice');
+    if (target) {
+        target.href = url;
+        target.removeAttribute('hidden');
+    }
+
+    setTimeout(function () {
+        document.getElementById('lodgeSection')
+            .scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 200);
+}
+
+// ── Lodge button → instructions modal ───────────────────────────
+document.addEventListener('click', function (e) {
+    var btn = e.target.closest(
+        '#btn_choice, #btn_choice1, #btn_choiceM, #btn_choiceM1');
+    if (!btn) return;
+    e.preventDefault();
+
+    pendingUrl = btn.href;
+    document.getElementById('instrAgree').checked = false;
+    document.getElementById('startFormBtn').disabled = true;
+    document.getElementById('instrBackdrop').classList.add('show');
+    document.getElementById('instrModal').classList.add('show');
+    document.body.style.overflow = 'hidden';
+});
+
+function onInstrAgree(cb) {
+    document.getElementById('startFormBtn').disabled = !cb.checked;
+}
+
+function closeInstrModal() {
+    document.getElementById('instrBackdrop').classList.remove('show');
+    document.getElementById('instrModal').classList.remove('show');
+    document.body.style.overflow = '';
+    pendingUrl = '';
+}
+
+function proceedToForm() {
+    if (!pendingUrl) return;
+    window.location.href = pendingUrl;
+}
+
+document.getElementById('instrBackdrop')
+    ?.addEventListener('click', closeInstrModal);
+document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') closeInstrModal();
+});
+
+// ── INIT ─────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function () {
+    updateAppealLabels();
+
+    // Radio card click → trigger change event
+    document.querySelectorAll('.obj-radio-card').forEach(function (card) {
+        card.addEventListener('click', function () {
+            var radio = card.querySelector('input[type="radio"]');
+            if (radio) radio.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+    });
+
+    // Query: restore session selections if any
+    if (IS_QUERY) {
+        var savedProp = sessionStorage.getItem('property_choice');
+        var savedObj  = sessionStorage.getItem('objector_choice');
+        var savedQry  = sessionStorage.getItem('query_choice');
+
+        if (savedProp) {
+            var propInput = document.getElementById('btn' + savedProp.toLowerCase()) ||
+                            document.querySelector('input[value="' + savedProp + '"]');
+            if (propInput) {
+                propInput.checked = true;
+                property_type = savedProp;
             }
-
-            // Smooth scroll to lodge section
-            setTimeout(function () {
-                document.getElementById('lodgeSection')
-                    .scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            }, 200);
         }
+    }
+});
+</script>
+}
 
-        // ════════════════════════════════════════════════════════════
-        //  INTERCEPT LODGE BUTTON → show instructions modal first
-        // ════════════════════════════════════════════════════════════
-        document.addEventListener('click', function (e) {
-            var btn = e.target.closest('#btn_choice, #btn_choice1');
-            if (!btn) return;
-            e.preventDefault();
-
-            pendingUrl = btn.href;
-
-            // Reset modal state
-            document.getElementById('instrAgree').checked = false;
-            document.getElementById('startFormBtn').disabled = true;
-            document.getElementById('instrBackdrop').classList.add('show');
-            document.getElementById('instrModal').classList.add('show');
-            document.body.style.overflow = 'hidden';
-        });
-
-        // ════════════════════════════════════════════════════════════
-        //  INSTRUCTIONS MODAL
-        // ════════════════════════════════════════════════════════════
-        function onInstrAgree(cb) {
-            document.getElementById('startFormBtn').disabled = !cb.checked;
-        }
-
-        function closeInstrModal() {
-            document.getElementById('instrBackdrop').classList.remove('show');
-            document.getElementById('instrModal').classList.remove('show');
-            document.body.style.overflow = '';
-            pendingUrl = '';
-        }
-
-        function proceedToForm() {
-            if (!pendingUrl) return;
-            window.location.href = pendingUrl;
-        }
-
-        // Close modal on backdrop click
-        document.getElementById('instrBackdrop')
-            .addEventListener('click', closeInstrModal);
-
-        // Close modal on Escape key
-        document.addEventListener('keydown', function (e) {
-            if (e.key === 'Escape') closeInstrModal();
-        });
-
-        // ════════════════════════════════════════════════════════════
-        //  INIT
-        // ════════════════════════════════════════════════════════════
-        document.addEventListener('DOMContentLoaded', function () {
-            // Apply appeal label swap if needed
-            updateAppealLabels();
-
-            // Radio card: clicking the card label also triggers the radio
-            document.querySelectorAll('.obj-radio-card').forEach(function (card) {
-                card.addEventListener('click', function () {
-                    var radio = card.querySelector('input[type="radio"]');
-                    if (radio) radio.dispatchEvent(new Event('change', { bubbles: true }));
-                });
-            });
-        });
     </script>
 }

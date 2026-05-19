@@ -5,6 +5,8 @@ using System.Security.Claims;
 using System.Xml.Linq;
 using V2_Genesis.Data;
 using V2_Genesis.Models;
+using V2_Genesis.Models.Objections;
+using V2_Genesis.Models.Results.Section78;
 using V2_Genesis.Models.ViewModels.Objections;
 using V2_Genesis.Services.Implementations;
 using V2_Genesis.Services.Interfaces;
@@ -18,6 +20,7 @@ public class ObjectionController : Controller
     private readonly IObjectionService _objectionService;
     private readonly ApplicationDbContext _db;
     private readonly IObjectionFormService _objectionFormService;
+    private readonly ISection78Service _section78Service;
 
 
     private readonly IEmailService _emailService;
@@ -28,7 +31,7 @@ public class ObjectionController : Controller
     public ObjectionController(
         IObjectionService objectionService,
         ApplicationDbContext db,
-        IObjectionFormService objectionFormService, INoticeService noticeService,IEmailService emailService, IConfiguration config, ILogger<ObjectionController> logger)
+        IObjectionFormService objectionFormService,ISection78Service section78Service, INoticeService noticeService,IEmailService emailService, IConfiguration config, ILogger<ObjectionController> logger)
     {
         _objectionService = objectionService;
         _db = db;
@@ -36,13 +39,13 @@ public class ObjectionController : Controller
         _emailService = emailService;
         _config = config;
         _noticeService = noticeService;
-     
+     _section78Service= section78Service;
       _logger = logger; 
     }
 
     [HttpGet]
     [Route("objection/check")]
-    public async Task<IActionResult> CheckProperty1(
+    public async Task<IActionResult> CheckProperty(
         string rollSource,
         string sourceTable,
         string? unitKey = null,
@@ -111,19 +114,34 @@ public class ObjectionController : Controller
         // ══════════════════════════════════════════════════════════════════
         //  NORMAL PATH — fetch property from DB
         // ══════════════════════════════════════════════════════════════════
-        List<V2_Genesis.Models.Objections.CheckPropertyResult> items;
+        List<CheckPropertyResult> items = new();
+        List<Section78PropertyDetail> Queitems = new();
 
-        if (appealStatus == "True" && !string.IsNullOrEmpty(objectionNo))
+        if (rollSource.Contains("Query", StringComparison.OrdinalIgnoreCase))
         {
-            items = await _objectionService
-                .GetPropertyForAppealAsync(rollSource, objectionNo);
+            var queItem = await _section78Service
+                .GetPropertyDetailAsync(unitKey, valuationKey);
+
+            Queitems = queItem != null
+                ? new List<Section78PropertyDetail> { queItem }
+                : new List<Section78PropertyDetail>();
         }
         else
         {
-            items = await _objectionService
-                .GetPropertyForObjectionAsync(sourceTable, unitKey, valuationKey);
+            if (appealStatus == "True" && !string.IsNullOrEmpty(objectionNo))
+            {
+                items = await _objectionService
+                    .GetPropertyForAppealAsync(rollSource, objectionNo);
+            }
+            else
+            {
+                items = await _objectionService
+                    .GetPropertyForObjectionAsync(
+                        sourceTable,
+                        unitKey,
+                        valuationKey);
+            }
         }
-
         // ── TempData for old controllers' objection forms ─────────────────
         if (items.Any())
         {
@@ -180,9 +198,13 @@ public class ObjectionController : Controller
             RollSource = rollSource,
             AppealStatus = appealStatus,
             IsAppeal = appealStatus == "True",
-            PropertyFrom = PropertyFrom ?? sourceTable,
-            ControllerName = ObjectionService.SourceToController
-                                 .GetValueOrDefault(sourceTable, "Sup3"),
+            PropertyFrom = PropertyFrom
+    ?? sourceTable
+    ?? rollSource,
+            ControllerName = rollSource.Contains("Query", StringComparison.OrdinalIgnoreCase)
+    ? "Query"
+    : ObjectionService.SourceToController
+        .GetValueOrDefault(sourceTable ?? string.Empty, "Sup3"),
 
             // Not an omission
             IsOmission = false,

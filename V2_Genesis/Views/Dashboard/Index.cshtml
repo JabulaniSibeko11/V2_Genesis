@@ -114,12 +114,37 @@
                 <span title="Linked"><i class="fa-solid fa-link"></i> @rd.LinkedCount</span>
                 @if (roll.HasObjection)
                 {
-                    <span title="Objections"><i class="fa-solid fa-file-pen"></i> @rd.ObjectedCount</span>
+                    <span title="Objections">
+                        <i class="fa-solid fa-file-pen"></i> @rd.ObjectedCount
+                    </span>
                 }
                 @if (roll.HasAppeal)
                 {
-                    <span title="Appeals"><i class="fa-solid fa-gavel"></i> @rd.AppealsCount</span>
+                    <span title="Appeals">
+                        <i class="fa-solid fa-gavel"></i> @rd.AppealsCount
+                    </span>
                 }
+            </div>
+        </div>
+    }
+
+    @* ── Section 78 Query stat card ── *@
+    @foreach (var roll in Model.Rolls.Where(r => r.IsQuery))
+    {
+        var rd = Model.RollData.GetValueOrDefault(roll.Source) ?? new();
+        <div class="cd-stat-card cd-stat-card-query">
+            <div class="cd-stat-label">
+                <i class="fa-solid fa-magnifying-glass-chart"
+                   style="color:#0ea5e9; margin-right:4px;"></i>
+                @roll.Short
+            </div>
+            <div class="cd-stat-nums">
+                <span title="Linked Properties">
+                    <i class="fa-solid fa-link"></i> @rd.LinkedCount
+                </span>
+                <span title="Queries Submitted">
+                    <i class="fa-solid fa-file-magnifying-glass"></i> @rd.ObjectedCount
+                </span>
             </div>
         </div>
     }
@@ -283,12 +308,7 @@ else if (roll.IsQuery)
                                                             Actions
                                                         </button>
                                                         <ul class="dropdown-menu">
-                                                            <li>
-                                                                <a class="dropdown-item"
-                                                                       href="/property/view?rollSource=@roll.Source&unitKey=@item.UnitKey&valuationKey=@item.ValuationKey">
-                                                                    <i class="fa-solid fa-eye"></i> View Property
-                                                                </a>
-                                                            </li>
+                                                            
                                                             <li>
                                                                 <a class="dropdown-item"
                                                                        href="/objection/check?rollSource=@roll.Source&sourceTable=@item.PropertyFrom&unitKey=@item.UnitKey&valuationKey=@item.ValuationKey&appealStatus=False">
@@ -983,6 +1003,7 @@ else if (roll.IsQuery)
 @functions {
     string GetStatusPill(string? status) => status switch
     {
+        // ── Objection statuses ────────────────────────────────────
         "Obj-Unallocated" or "Obj-Section51"
             => "<span class='cd-pill cd-pill-pending'>Obj-Pending</span>",
         "Obj-Inprogress" or "Obj-Pending-Approval" or "Obj-Rejected"
@@ -991,10 +1012,25 @@ else if (roll.IsQuery)
             => "<span class='cd-pill cd-pill-lodging'>Obj-Lodging</span>",
         "Obj-PenTest"
             => "<span class='cd-pill cd-pill-rejected'>Invalid</span>",
+
+        // ── Appeal statuses ───────────────────────────────────────
         "App-Unallocated" or "App-Lodging"
-            => "<span class='cd-pill cd-pill-pending'>@status</span>",
+            => $"<span class='cd-pill cd-pill-pending'>{status}</span>",
         "App-Finalized"
             => "<span class='cd-pill cd-pill-completed'>App-Finalized</span>",
+
+        // ── Section 78 Query statuses ─────────────────────────────
+        "Query-Lodging"
+            => "<span class='cd-pill cd-pill-lodging'>Query-Lodging</span>",
+        "Query-Unallocated"
+            => "<span class='cd-pill cd-pill-pending'>Query-Pending</span>",
+        "Query-Inprogress"
+            => "<span class='cd-pill cd-pill-inprogress'>Query-InProgress</span>",
+        "Query-Finalized" or "Notice-Sent"
+            => "<span class='cd-pill cd-pill-completed'>Finalised</span>",
+        "Query-Withdrawn"
+            => "<span class='cd-pill cd-pill-rejected'>Withdrawn</span>",
+
         null or ""
             => "<span class='cd-pill cd-pill-pending'>Pending</span>",
         _ => $"<span class='cd-pill cd-pill-completed'>{status}</span>"

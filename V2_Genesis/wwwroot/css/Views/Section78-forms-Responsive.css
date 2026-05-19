@@ -1,0 +1,459 @@
+﻿/* ================================================================
+   section78-form.css
+   Smartphone-responsive overrides for Section 78 Query/Review forms.
+   Targets all divX containers, section cards, and Bootstrap col grids.
+   Place in: wwwroot/css/views/section78-form.css
+   Reference in Section78Query.cshtml: 
+       <link href="~/css/views/section78-form.css" rel="stylesheet" />
+================================================================ */
+
+.alert-notice {
+    background: #fff3cd;
+    border: 2px solid #e6b000;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+.alert-notice p {
+    font-size: 16px;
+    color: #006570;
+    font-weight: 600;
+    margin: 0;
+    font-family: 'Poppins', sans-serif;
+}
+
+.alert-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.alert-icon {
+    font-size: 32px;
+    animation: pulse 2s infinite;
+}
+
+.instruction-box {
+    background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+    border-left: 4px solid #e6b000;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 16px;
+}
+
+    .instruction-box p {
+        margin: 0 0 12px 0;
+        color: #2c3e50;
+        font-size: 15px;
+        line-height: 1.6;
+        display: flex;
+        align-items: flex-start;
+        gap: 5px;
+        font-family: 'Poppins', sans-serif;
+    }
+
+        .instruction-box p:last-child {
+            margin-bottom: 0;
+        }
+
+.bullet {
+    color: #006572;
+    font-weight: 600;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.warning-box {
+    background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+    border-left: 4px solid #ff9800;
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 16px;
+}
+
+    .warning-box p {
+        margin: 0;
+        color: #e65100;
+        font-size: 15px;
+        line-height: 1.6;
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        font-family: 'Poppins', sans-serif;
+    }
+
+.warning-icon {
+    font-size: 20px;
+    flex-shrink: 0;
+    animation: shake 3s infinite;
+}
+
+.form-header-container {
+    max-width: 1200px;
+    margin: 0 auto 30px;
+    background: white;
+    border: 3px solid #e6b000;
+    border-radius: 12px;
+    padding: 24px 32px;
+    box-shadow: 0 4px 20px rgba(230, 176, 0, 0.15);
+    position: relative;
+    overflow: hidden;
+}
+
+    .form-header-container::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 6px;
+        background: linear-gradient(90deg, #e6b000 0%, #ffd700 50%, #e6b000 100%);
+    }
+
+    .form-header-container h4 {
+        color: #006572;
+        font-size: 22px;
+        font-weight: 600;
+        text-align: center;
+        margin: 0;
+        line-height: 1.5;
+        letter-spacing: 0.3px;
+    }
+
+.form-icon {
+    display: inline-block;
+    margin-right: 12px;
+    font-size: 26px;
+    vertical-align: middle;
+}
+
+.declaration-text {
+    font-family: 'Poppins', sans-serif;
+    margin-bottom: 20px;
+    line-height: 1.8;
+}
+
+#myForm, #myForm input, #myForm select, #myForm textarea, #myForm button {
+    font-family: 'Poppins', sans-serif;
+}
+
+
+/* ── Base mobile-first resets ──────────────────────────────────── */
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+/* ── Form header ────────────────────────────────────────────────── */
+.form-header-container {
+    margin: 0 8px 20px;
+    padding: 16px;
+}
+
+    .form-header-container h4 {
+        font-size: 16px;
+    }
+
+/* ── Top banner / description card ─────────────────────────────── */
+/* The inline `width: 1050px` containers — override to fluid */
+div[style*="width: 1050px"],
+div[style*="width:1050px"],
+.div1, .div2, .div3_R, .div3_A, .div3_B,
+.div4_R, .div4_B, .div5, .div6, .div7,
+.div781, .divU {
+    width: 100% !important;
+    max-width: 1050px !important;
+    padding: 12px !important;
+}
+
+/* Outer justify-center flex rows */
+div[style*="display:flex"][style*="justify-content: center"],
+div[style*="display: flex"][style*="justify-content: center"] {
+    padding: 0 4px;
+}
+
+/* ── Section header (teal bar + section title) ──────────────────── */
+.div1 h4[id="s_head"],
+.div2 h4[id="s_head"],
+.div3_R h4[id="s_head"],
+.div3_A h4[id="s_head"],
+.div3_B h4[id="s_head"],
+.div4_R h4[id="s_head"],
+.div4_B h4[id="s_head"],
+.div5 h4[id="s_head"],
+.div7 h4[id="s_head"],
+h4#section6_head {
+    font-size: 14px !important;
+    line-height: 1.4;
+}
+
+/* ── Section 6 — two-column → single-column on mobile ──────────── */
+@media (max-width: 768px) {
+    #section6 .row.mt-4,
+    #section6 > div > div[style*="display: flex"] {
+        flex-direction: column !important;
+    }
+
+    #section6 .col-md-6 {
+        width: 100% !important;
+        min-width: unset !important;
+    }
+}
+
+/* ── Bootstrap col overrides on small screens ───────────────────── */
+@media (max-width: 576px) {
+    /* All col-sm-* → full width */
+    [class*="col-sm-"] {
+        width: 100% !important;
+        max-width: 100% !important;
+        flex: 0 0 100% !important;
+    }
+
+    /* col-md-* used inside .d-flex rows */
+    [class*="col-md-"] {
+        width: 100% !important;
+        max-width: 100% !important;
+        flex: 0 0 100% !important;
+    }
+
+    /* d-flex rows → wrap */
+    .d-flex {
+        flex-wrap: wrap !important;
+    }
+
+    /* fieldsets inside .d-flex */
+    fieldset[class*="col-"] {
+        width: 100% !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+}
+
+/* ── Inputs, selects, textareas → full width ─────────────────────── */
+@media (max-width: 768px) {
+    .form-control,
+    input.form-control,
+    select,
+    textarea.form-control {
+        width: 100% !important;
+        font-size: 14px !important;
+    }
+
+    /* Section 6 left/right panels — inline style overrides */
+    #section6 input[style*="width: 100%"],
+    #section6 select[style*="width: 100%"] {
+        font-size: 13px !important;
+    }
+}
+
+/* ── Navigation buttons (Previous / Next) ───────────────────────── */
+@media (max-width: 576px) {
+    .btn_n1, .btn_p1,
+    .btn_n2, .btn_p2,
+    .btn_n3, .btn_p3,
+    .btn_n4, .btn_p4,
+    .btn_n5, .btn_p5,
+    .btn_n6, .btn_p6,
+    .btn_n7, .btn_p7,
+    .btn_nS78, .btn_pS78,
+    .btn_nS782, .btn_pS782,
+    .btn_nU, .btn_pU,
+    .btn_R_n3, .btn_R_p3,
+    .btn_R_n4, .btn_R_p4,
+    .btn_A_n3, .btn_A_p3,
+    .btn_A_n4, .btn_A_p4,
+    .btn_B_n3, .btn_B_p3,
+    .btn_B_n4, .btn_B_p4,
+    #submitForm,
+    #form_back,
+    .btn_n1.btn, .btn_n2.btn {
+        width: 48% !important;
+        font-size: 13px !important;
+        padding: 10px 8px !important;
+        margin: 4px 1% !important;
+        float: none !important;
+        display: inline-block !important;
+    }
+
+    /* Submit button — full width on mobile */
+    #submitForm {
+        width: 96% !important;
+        float: none !important;
+        display: block !important;
+        margin: 8px auto !important;
+    }
+}
+
+/* ── Section 78 supplementary table (A-H) ───────────────────────── */
+@media (max-width: 768px) {
+    #section78_1 .div781 {
+        padding: 8px !important;
+    }
+
+    #section78_1 table {
+        font-size: 13px;
+    }
+
+        #section78_1 table td:first-child,
+        #section78_1 table th:first-child {
+            width: 36px !important;
+            min-width: 36px !important;
+            padding: 8px 4px !important;
+        }
+
+        #section78_1 table td:last-child,
+        #section78_1 table th:last-child {
+            width: 44px !important;
+            min-width: 44px !important;
+        }
+}
+
+/* Horizontal scroll for all tables on small screens */
+@media (max-width: 600px) {
+    .div781 div[style*="overflow-x"],
+    .div781 > div:has(table),
+    .div4_R .row.mt-4,
+    .div4_B .row.mt-4 {
+        overflow-x: auto;
+    }
+
+    table {
+        min-width: 480px;
+    }
+}
+
+/* ── Section headers (teal bar labels) ──────────────────────────── */
+@media (max-width: 576px) {
+    div[style*="background-color: #006572"] span,
+    div[style*="background-color:#006572"] span {
+        font-size: 13px !important;
+        letter-spacing: 0 !important;
+    }
+}
+
+/* ── Property description banner (top card) ─────────────────────── */
+@media (max-width: 768px) {
+    div[style*="display: flex; align-items: center; width: 100%; gap: 15px"] {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 8px !important;
+    }
+
+    /* Property desc value pill */
+    span[style*="flex: 1; background-color: #ffffff; padding: 12px"] {
+        width: 100% !important;
+    }
+}
+
+/* ── Section 6 instruction box ───────────────────────────────────── */
+@media (max-width: 576px) {
+    .alert-notice {
+        padding: 12px !important;
+    }
+
+    .instruction-box,
+    .warning-box {
+        padding: 12px !important;
+    }
+}
+
+/* ── Signature canvas ────────────────────────────────────────────── */
+@media (max-width: 576px) {
+    #signature,
+    #savetarget {
+        max-width: 100% !important;
+        height: auto !important;
+    }
+
+    div[style*="max-width:100%;padding:10px"] {
+        padding: 4px !important;
+    }
+
+    /* Signature button row */
+    div[style*="display:flex;flex-wrap:wrap;gap:10px;margin-top:15px"] {
+        justify-content: space-between !important;
+    }
+
+        div[style*="display:flex;flex-wrap:wrap;gap:10px;margin-top:15px"] button {
+            min-width: 48% !important;
+            max-width: 48% !important;
+            padding: 10px 6px !important;
+            font-size: 13px !important;
+        }
+}
+
+/* ── Common property / exclusive areas cards (section 4) ────────── */
+@media (max-width: 768px) {
+    .div4_R .row.mt-4 .col-md-6,
+    .div4_B .row.mt-4 .col-md-6 {
+        width: 100% !important;
+        margin-bottom: 16px;
+    }
+}
+
+/* ── Form title (📋 SECTION 78...) ──────────────────────────────── */
+@media (max-width: 576px) {
+    div[style*="border-radius: 12px; border: 3px solid #e6b000; padding: 30px; width: 1050px"] {
+        padding: 16px !important;
+    }
+
+        div[style*="border-radius: 12px; border: 3px solid #e6b000; padding: 30px; width: 1050px"] h6 {
+            font-size: 13px !important;
+        }
+}
+
+/* ── Section 1 — owner/rep address rows ─────────────────────────── */
+@media (max-width: 576px) {
+    .row.mb-2 {
+        margin-bottom: 8px !important;
+    }
+
+    .Div1-1,
+    .Div1-3 {
+        padding: 0 !important;
+    }
+
+    /* Rep letter upload */
+    .card.mt-4 {
+        padding: 12px !important;
+    }
+}
+
+/* ── Section 5 — market info flex rows ──────────────────────────── */
+@media (max-width: 576px) {
+    div[style*="display: flex; margin-bottom: 20px"] {
+        flex-direction: column !important;
+    }
+
+    div[style*="flex: 3; margin-right: 15px"],
+    div[style*="flex: 1"] {
+        flex: unset !important;
+        width: 100% !important;
+        margin-right: 0 !important;
+        margin-bottom: 10px !important;
+    }
+}
+
+/* ── Preloader ───────────────────────────────────────────────────── */
+#preloader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 9999;
+}
+
+/* ── Toaster container mobile ────────────────────────────────────── */
+@media (max-width: 480px) {
+    .toaster-container {
+        bottom: 8px !important;
+        right: 8px !important;
+        left: 8px !important;
+        max-width: calc(100vw - 16px) !important;
+    }
+}

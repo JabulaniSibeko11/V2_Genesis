@@ -233,3 +233,22 @@
         padding: 10px 12px;
     }
 }
+
+
+.obj-prop-omission-badge {
+    grid-column: 1 / -1;
+}
+
+.obj-omission-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 14px;
+    border-radius: 100px;
+    background: #fff7ed;
+    color: #c2410c;
+    border: 1.5px solid #fed7aa;
+    font-size: 12.5px;
+    font-weight: 700;
+}
+
