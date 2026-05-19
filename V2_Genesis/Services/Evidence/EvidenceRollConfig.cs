@@ -20,7 +20,8 @@
                 config[$"ObjectionRolls:{key}:FileRootPath"] ?? string.Empty;
             string AppPath(string key) =>
                 config[$"ObjectionRolls:{key}:AppealRootPath"] ?? string.Empty;
-
+            string QueryPath(string key) =>
+                config[$"ObjectionRolls:{key}:QueryRootPath"] ?? string.Empty;
             return new Dictionary<string, EvidenceRollConfig>
             {
                 ["Objection"] = new(
@@ -62,6 +63,16 @@
                     FileRootPath: ObjPath("Objection_Supp3"),
                     AppealRootPath: AppPath("Objection_Supp3"),
                     ConnectionKey: "Sup3Connection"),
+
+                ["Objection_Query"] = new(
+                    ValidateSp: "userDocuments",
+                    EvidenceCountSp: "userDocumentsEvidence",
+                    UpdateFileSp: "UpdateObjFiles",
+                    UpdateCountSp: "UpdateEvidenceCount",
+                    EvidenceSp: "Evidence",
+                    FileRootPath: QueryPath("Objection_Query"),
+                    AppealRootPath: AppPath("Objection"),
+                    ConnectionKey: "DefaultConnection"),
             };
         }
     }
