@@ -30,6 +30,15 @@
     --shadow-md: 0 4px 20px rgba(0,0,0,.10);
     --shadow-lg: 0 8px 40px rgba(0,0,0,.13);
     --transition: 0.2s ease;
+    --coj-gold-light: #fdf6d8;
+    --coj-green: #36626d; /* Evening Green — primary dark */
+    --coj-green-mid: #4a7d8a; /* lighter tint for hovers      */
+    --coj-green-pale: #e8f3f4; /* very light tint              */
+    --coj-turq: #89b7b2; /* African Turquoise            */
+    --coj-orange: #bb4722; /* Breakfast Orange             */
+    --coj-grey: #645a50; /* CoJ Grey                     */
+    --coj-warm-bg: #f7f5f2; /* warm off-white page bg       */
+    --coj-white: #ffffff;
 }
 
 /* ── Reset & Base ──────────────────────────────────── */

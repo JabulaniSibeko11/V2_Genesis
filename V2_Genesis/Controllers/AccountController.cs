@@ -502,6 +502,14 @@ namespace V2_Genesis.Controllers
 
             return RedirectToUserDashboard();
         }
+    
+    [HttpGet]
+        [Route("access-denied")]
+        [AllowAnonymous]
+        public IActionResult AccessDenied(string? ReturnUrl)
+        {
+            ViewBag.ReturnUrl = ReturnUrl;
+            return View();
+        }
     }
-
 }

@@ -1,8 +1,7 @@
 ﻿@{
     var reqPath  = Context.Request.Path.Value?.ToLower() ?? "";
     bool isAttr  = reqPath.StartsWith("/attributes");
-    bool isAbout = reqPath == "/attributes/about";
-  bool isAuth  = User?.Identity?.IsAuthenticated ?? false;
+    bool isAuth  = User?.Identity?.IsAuthenticated ?? false;
 }
 
 <!DOCTYPE html>
@@ -10,118 +9,142 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] –City of Johannesburg Portal</title>
+    <title>@ViewData["Title"] – City of Johannesburg Portal</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
-    <link rel="icon" type="image/png" sizes="32x32" href="~/images/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="~/images/favicon-16x16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="~/images/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="~/images/favicon-16x16.png" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/datatables.net-bs5@1.13.6/css/dataTables.bootstrap5.min.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/datatables.net-responsive-bs5@2.4.1/css/responsive.bootstrap5.min.css" />
     <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.bootstrap5.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/views/client-dashboard.css" asp-append-version="true" />
-    <link href="~/css/views/clientdashboardcss.css" rel="stylesheet" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/views/client-dashboard-light.css" asp-append-version="true" />
     <style>
+        .nav-brand {
+            display: flex; align-items: center; gap: 10px;
+            text-decoration: none; flex-shrink: 0; margin-right: 24px;
+        }
         .nav-brand-mark {
-            width: 60px; height: 60px;
-            background: #e6b000; border-radius: 10px;
-            display: flex; align-items: center;
-            justify-content: center; overflow: hidden; padding: 6px;
+            width: 44px; height: 44px; background: #fff;
+            border-radius: 8px; display: flex; align-items: center;
+            justify-content: center; overflow: hidden; padding: 4px; flex-shrink: 0;
         }
         .brand-logo { width: 100%; height: 100%; object-fit: contain; }
+        .nav-brand-text { display: flex; flex-direction: column; line-height: 1.2; }
+        .nav-brand-name { font-size: 13px; font-weight: 700; color: #1a1a1a; letter-spacing: 1.5px; }
+        .nav-brand-sub  { font-size: 9.5px; color: rgba(0,0,0,.5); letter-spacing: .5px; }
+        .cl-nav-link.active {
+            background: rgba(0,0,0,.1);
+            border-bottom: 2px solid #1a1a1a;
+        }
+        .cl-drawer-section-title {
+            padding: 10px 20px 4px;
+            font-size: 10px; font-weight: 700;
+            letter-spacing: 1.5px; color: #999;
+            text-transform: uppercase;
+        }
     </style>
 
     @await RenderSectionAsync("Styles", required: false)
 </head>
 <body>
 
-    @{
-        var gvList     = ViewBag.GvList as List<V2_Genesis.Models.GvList> ?? new();
-        var gvRolls    = gvList.Where(r => r.Roll_Type == "GV").ToList();
-        var suppRolls  = gvList.Where(r => r.Roll_Type == "Supp").ToList();
-        var queryRolls = gvList.Where(r => r.Roll_Type == "Query").ToList();
-    }
-
-    @* ══════════════════════════════════════════════════════
-       ATTRIBUTES NAV — replaces entire navbar on /attributes/*
-    ══════════════════════════════════════════════════════ *@
-   @if (isAttr)
-{
+    <!-- ══ NAVBAR ══════════════════════════════════════════════════ -->
     <nav class="cl-navbar" id="clientNav">
         <div class="cl-nav-inner">
 
-            <!-- Brand — same as regular nav -->
+            <!-- Brand -->
             <a href="/" class="nav-brand">
                 <div class="nav-brand-mark">
-                    <img src="~/images/joburg_logo.png"
-                         class="brand-logo" alt="City of Johannesburg" />
+                    <img src="~/images/joburg_logo.png" class="brand-logo" alt="City of Johannesburg" />
                 </div>
                 <div class="nav-brand-text">
                     <span class="nav-brand-name">City of Johannesburg</span>
-                    <span class="nav-brand-sub">Property Attributes</span>
+                    <span class="nav-brand-sub">@(isAttr ? "Property Attributes" : "Valuation Portal")</span>
                 </div>
             </a>
 
-            <!-- Centre links — About / Search / My Submissions -->
+            <!-- Desktop links -->
             <ul class="cl-nav-links" id="clNavLinks">
-                <li class="cl-nav-item">
-                    <a class="cl-nav-link @(reqPath == "/attributes/about"   ? "active" : "")"
-                       href="/attributes/about">
-                        About
-                    </a>
-                </li>
-                <li class="cl-nav-item">
-                    <a class="cl-nav-link @(reqPath == "/attributes/search"  ? "active" : "")"
-                       href="/attributes/search">
-                        Search
-                    </a>
-                </li>
-                 <li class="cl-nav-item">
-        <a class="cl-nav-link cl-nav-evidence
-                  @(reqPath == "/attributes/evidence" ? "active" : "")"
-           href="/attributes/evidence">
-            <i class="fa-solid fa-paperclip"></i> Add Evidence
-        </a>
-    </li>
-                @if (isAuth)
-                {
-                    <li class="cl-nav-item">
-                        <a class="cl-nav-link @(reqPath == "/my-submissions" ? "active" : "")"
-                           href="/my-submissions">
-                            My Submissions
-                        </a>
-                    </li>
-                    <li class="cl-nav-item">
 
-                         <a href="/dashboard" class="cl-nav-link">
-                         Dashboard
+                <li class="cl-nav-item">
+                    <a class="cl-nav-link @(reqPath == "/dashboard" ? "active" : "")" href="/dashboard">
+                        <i class="fa-solid fa-gauge-high"></i> Dashboard
                     </a>
-                    </li>
-                }
+                </li>
+
+                <li class="cl-nav-item">
+                    <a class="cl-nav-link cl-nav-evidence @(reqPath.StartsWith("/evidence") || reqPath.StartsWith("/attributes/evidence") ? "active" : "")"
+                       href="@(isAttr ? "/attributes/evidence" : "/evidence/verifyObj")">
+                        <i class="fa-solid fa-paperclip"></i> Add Evidence
+                    </a>
+                </li>
+
+                <li class="cl-nav-item">
+                    <a class="cl-nav-link @(reqPath.StartsWith("/rebates") ? "active" : "")" href="/Rebates/Index">
+                        <i class="fa-solid fa-percent"></i> Rebates
+                    </a>
+                </li>
+
+                <li class="cl-nav-item cl-dropdown">
+                    <button class="cl-nav-link cl-dropdown-toggle">
+                        <i class="fa-solid fa-circle-question"></i> Help
+                        <i class="fa-solid fa-chevron-down cl-dd-chevron"></i>
+                    </button>
+                    <ul class="cl-dropdown-menu">
+                        <li>
+                            <a class="cl-dd-item" href="/Sup1/ViewGuide">
+                                <i class="fa-solid fa-book-open"></i> User Guidelines
+                            </a>
+                        </li>
+                        <li class="cl-dd-divider"></li>
+                        <li>
+                            <a class="cl-dd-item" href="/Sup1/viewFAQ">
+                                <i class="fa-solid fa-comments"></i> FAQ
+                            </a>
+                        </li>
+                        <li class="cl-dd-divider"></li>
+                        <li>
+                            <a class="cl-dd-item" href="/Home/ContactUs">
+                                <i class="fa-solid fa-headset"></i> Contact Support
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
+                <li class="cl-nav-item">
+                    <a class="cl-nav-link @(reqPath == "/home/privacy" ? "active" : "")" href="/Home/Privacy">
+                        <i class="fa-solid fa-shield-halved"></i> Privacy
+                    </a>
+                </li>
+
             </ul>
 
-            <!-- Right side -->
+            <!-- User pill -->
             @if (isAuth)
             {
-                      <!-- User pill -->
                 <div class="cl-user" id="clUser">
                     <button class="cl-user-btn" id="clUserBtn">
-                        <div class="cl-avatar">
-                            @User.Identity?.Name?.Substring(0, 1).ToUpper()
-                        </div>
-                        <span class="cl-user-name d-none d-lg-inline">
-                            @User.Identity?.Name?.Split('@')[0]
-                        </span>
+                        <div class="cl-avatar">@(User.Identity?.Name?.Substring(0,1).ToUpper() ?? "?")</div>
+                        <span class="cl-user-name d-none d-lg-inline">@User.Identity?.Name?.Split('@')[0]</span>
                         <i class="fa-solid fa-chevron-down" style="font-size:11px;"></i>
                     </button>
                     <div class="cl-user-menu" id="clUserMenu">
-                        <a href="/my-profile" class="cl-user-item">
-                            <i class="fa-solid fa-user"></i> My Profile
-                        </a>
+                        <div style="padding:12px 16px 8px; border-bottom:1px solid #f0f0f0;">
+                            <div style="font-size:11px; color:#888;">Signed in as</div>
+                            <div style="font-size:13px; font-weight:600; color:#1a1a1a;
+                                        white-space:nowrap; overflow:hidden;
+                                        text-overflow:ellipsis; max-width:180px;">
+                                @User.Identity?.Name
+                            </div>
+                        </div>
+                        <a href="/my-profile" class="cl-user-item"><i class="fa-solid fa-user"></i> My Profile</a>
+                        <a href="/dashboard"  class="cl-user-item"><i class="fa-solid fa-gauge-high"></i> Dashboard</a>
                         <div class="cl-dd-divider"></div>
                         <form asp-action="Logout" asp-controller="Account" method="post">
                             @Html.AntiForgeryToken()
@@ -134,10 +157,8 @@
             }
             else
             {
-                <!-- Anonymous: Sign In + Register -->
-                <div class="cl-user">
-                    <a href="/account/login?returnUrl=@Context.Request.Path@Context.Request.QueryString"
-                       class="cl-nav-link">
+                <div style="display:flex; gap:6px; margin-left:auto; flex-shrink:0;">
+                    <a href="/account/login?returnUrl=@Context.Request.Path@Context.Request.QueryString" class="cl-nav-link">
                         <i class="fa-solid fa-right-to-bracket"></i> Sign In
                     </a>
                     <a href="/account/register" class="cl-nav-link cl-nav-evidence">
@@ -146,33 +167,67 @@
                 </div>
             }
 
-            <!-- Hamburger for mobile -->
-            <button class="cl-hamburger" id="clHamburger">
+            <!-- Hamburger -->
+            <button class="cl-hamburger" id="clHamburger" aria-label="Open menu">
                 <span></span><span></span><span></span>
             </button>
 
         </div>
     </nav>
 
-    <!-- Mobile drawer for attributes pages -->
+    <!-- ══ MOBILE DRAWER ═══════════════════════════════════════════ -->
     <div class="cl-mobile-backdrop" id="clBackdrop"></div>
     <div class="cl-mobile-drawer" id="clDrawer">
+
         <div class="cl-drawer-header">
-            <span style="font-weight:800;letter-spacing:2px;color:var(--gold);">
-                PROPERTY ATTRIBUTES
-            </span>
-            <button id="clDrawerClose">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <img src="~/images/joburg_logo.png"
+                     style="width:32px; height:32px; object-fit:contain;
+                            background:#e6b000; border-radius:6px; padding:3px;" />
+                <span style="font-weight:700; font-size:12px; letter-spacing:1.5px; color:#fff;">
+                    CITY OF JOHANNESBURG
+                </span>
+            </div>
+            <button id="clDrawerClose" aria-label="Close menu">
                 <i class="fa-solid fa-xmark"></i>
             </button>
         </div>
-        <a href="/attributes/about"   class="cl-drawer-link"><i class="fa-solid fa-circle-info"></i> About</a>
-        <a href="/attributes/search"  class="cl-drawer-link"><i class="fa-solid fa-magnifying-glass"></i> Search Property</a>
+
         @if (isAuth)
         {
-            <a href="/my-submissions" class="cl-drawer-link"><i class="fa-solid fa-list"></i> My Submissions</a>
-            <div class="cl-dd-divider" style="margin:8px 0;"></div>
-            <a href="/dashboard"      class="cl-drawer-link"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
-            <a href="/my-profile"     class="cl-drawer-link"><i class="fa-solid fa-user"></i> My Profile</a>
+            <div style="padding:14px 20px; background:#f7f5f2; border-bottom:1px solid #ede9e3;">
+                <div style="font-size:11px; color:#888; margin-bottom:2px;">Signed in as</div>
+                <div style="font-size:13px; font-weight:600; color:#1a1a1a; word-break:break-all;">
+                    @User.Identity?.Name
+                </div>
+            </div>
+        }
+
+        <div class="cl-drawer-section-title">Navigation</div>
+        <a href="/dashboard" class="cl-drawer-link @(reqPath == "/dashboard" ? "active" : "")">
+            <i class="fa-solid fa-gauge-high"></i> Dashboard
+        </a>
+
+        <div class="cl-drawer-section-title">Services</div>
+        <a href="@(isAttr ? "/attributes/evidence" : "/evidence/verifyObj")"
+           class="cl-drawer-link cl-drawer-evidence">
+            <i class="fa-solid fa-paperclip"></i> Add Evidence
+        </a>
+        <a href="/Rebates/Index" class="cl-drawer-link">
+            <i class="fa-solid fa-percent"></i> Rebates
+        </a>
+
+        <div class="cl-drawer-section-title">Support</div>
+        <a href="/Sup1/ViewGuide"  class="cl-drawer-link"><i class="fa-solid fa-book-open"></i> User Guidelines</a>
+        <a href="/Sup1/viewFAQ"    class="cl-drawer-link"><i class="fa-solid fa-comments"></i> FAQ</a>
+        <a href="/Home/ContactUs"  class="cl-drawer-link"><i class="fa-solid fa-headset"></i> Contact Support</a>
+        <a href="/Home/Privacy"    class="cl-drawer-link"><i class="fa-solid fa-shield-halved"></i> Privacy Policy</a>
+
+        <div class="cl-dd-divider" style="margin:8px 0;"></div>
+
+        @if (isAuth)
+        {
+            <a href="/my-profile" class="cl-drawer-link"><i class="fa-solid fa-user"></i> My Profile</a>
             <form asp-action="Logout" asp-controller="Account" method="post">
                 @Html.AntiForgeryToken()
                 <button type="submit" class="cl-drawer-link cl-drawer-logout">
@@ -182,300 +237,27 @@
         }
         else
         {
-            <div class="cl-dd-divider" style="margin:8px 0;"></div>
             <a href="/account/login"    class="cl-drawer-link"><i class="fa-solid fa-right-to-bracket"></i> Sign In</a>
             <a href="/account/register" class="cl-drawer-link cl-drawer-evidence"><i class="fa-solid fa-user-plus"></i> Register</a>
         }
+
     </div>
-}
-    else
-    {
-        @* ══════════════════════════════════════════════════════
-           REGULAR CLIENT NAVBAR
-        ══════════════════════════════════════════════════════ *@
-        <nav class="cl-navbar" id="clientNav">
-            <div class="cl-nav-inner">
 
-                <!-- Brand -->
-                <a asp-action="Index" asp-controller="Home" class="nav-brand">
-                    <div class="nav-brand-mark">
-                        <img src="~/images/joburg_logo.png"
-                             class="brand-logo" alt="City of Johannesburg" />
-                    </div>
-                    <div class="nav-brand-text">
-                        <span class="nav-brand-name">City of Johannesburg</span>
-                        <span class="nav-brand-sub">Portal</span>
-                    </div>
-                </a>
+    <!-- ══ MAIN ════════════════════════════════════════════════════ -->
+    <main class="cl-main">@RenderBody()</main>
 
-                <!-- Desktop links -->
-                <ul class="cl-nav-links" id="clNavLinks">
-
-                    @* ── GV Rolls ── *@
-                    @foreach (var roll in gvRolls)
-                    {
-                        <li class="cl-nav-item cl-dropdown">
-                            <button class="cl-nav-link cl-dropdown-toggle">
-                                @roll.Short
-                                <i class="fa-solid fa-chevron-down cl-dd-chevron"></i>
-                            </button>
-                            <ul class="cl-dropdown-menu">
-                                <li>
-                                    <a class="cl-dd-item"
-                                       href="/search/@roll.Source">
-                                        <i class="fa-solid fa-magnifying-glass"></i>
-                                        Search Property
-                                    </a>
-                                </li>
-                                <li class="cl-dd-divider"></li>
-                                <li>
-                                    <a class="cl-dd-item" href="/dashboard">
-                                        <i class="fa-solid fa-gauge-high"></i>
-                                        Dashboard
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-                    }
-
-                    @* ── Supplementary Rolls ── *@
-                    @if (suppRolls.Any())
-                    {
-                        <li class="cl-nav-item cl-dropdown">
-                            <button class="cl-nav-link cl-dropdown-toggle">
-                                Supplementary Rolls
-                                <i class="fa-solid fa-chevron-down cl-dd-chevron"></i>
-                            </button>
-                            <ul class="cl-dropdown-menu">
-                                @foreach (var roll in suppRolls)
-                                {
-                                    <li class="cl-submenu-item">
-                                        <button class="cl-dd-item cl-submenu-toggle">
-                                            @roll.Name
-                                            <i class="fa-solid fa-chevron-right"></i>
-                                        </button>
-                                        <ul class="cl-submenu">
-                                            <li>
-                                                <a class="cl-dd-item"
-                                                   href="/search/@roll.Source">
-                                                    <i class="fa-solid fa-magnifying-glass"></i>
-                                                    Search Property
-                                                </a>
-                                            </li>
-                                            <li class="cl-dd-divider"></li>
-                                            <li>
-                                                <a class="cl-dd-item" href="/dashboard">
-                                                    <i class="fa-solid fa-gauge-high"></i>
-                                                    Dashboard
-                                                </a>
-                                            </li>
-                                        </ul>
-                                    </li>
-                                    @if (roll != suppRolls.Last())
-                                    {
-                                        <li class="cl-dd-divider"></li>
-                                    }
-                                }
-                            </ul>
-                        </li>
-                    }
-
-                    @* ── Query / Review ── *@
-                    @foreach (var roll in queryRolls)
-                    {
-                        <li class="cl-nav-item">
-                            <a class="cl-nav-link"
-                               href="/@roll.ControllerName/PropertyIndex">
-                                @roll.Short
-                            </a>
-                        </li>
-                    }
-
-                    @* ── Section 78 ── *@
-                    <li class="cl-nav-item cl-dropdown">
-                        <button class="cl-nav-link cl-dropdown-toggle">
-                            Section 78
-                            <i class="fa-solid fa-chevron-down cl-dd-chevron"></i>
-                        </button>
-                        <ul class="cl-dropdown-menu">
-                            <li>
-                                <a class="cl-dd-item" href="/Section78/PropertyIndex">
-                                    <i class="fa-solid fa-magnifying-glass"></i>
-                                    Property Search
-                                </a>
-                            </li>
-                            <li class="cl-dd-divider"></li>
-                            <li>
-                                <a class="cl-dd-item" href="/Dashboard78/DashBoard">
-                                    <i class="fa-solid fa-gauge-high"></i>
-                                    Dashboard
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
-
-                    @* ── Rebates ── *@
-                    <li class="cl-nav-item cl-dropdown">
-                        <button class="cl-nav-link cl-dropdown-toggle">
-                            Rebates
-                            <i class="fa-solid fa-chevron-down cl-dd-chevron"></i>
-                        </button>
-                        <ul class="cl-dropdown-menu">
-                            <li>
-                                <a class="cl-dd-item" href="/Rebates/Index">
-                                    <i class="fa-solid fa-file-pen"></i>
-                                    Apply for Rebates
-                                </a>
-                            </li>
-                            <li class="cl-dd-divider"></li>
-                            <li>
-                                <a class="cl-dd-item" href="/Rebates/RebatesDashboard">
-                                    <i class="fa-solid fa-gauge-high"></i>
-                                    Dashboard
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
-
-                    @* ── Add Evidence (replaces Upload Documents) ── *@
-                    <li class="cl-nav-item">
-                        <a class="cl-nav-link cl-nav-evidence" href="/evidence/verifyObj">
-                            <i class="fa-solid fa-upload"></i>
-                            Add Evidence
-                        </a>
-                    </li>
-
-                    @* ── Help ── *@
-                    <li class="cl-nav-item cl-dropdown">
-                        <button class="cl-nav-link cl-dropdown-toggle">
-                            Help
-                            <i class="fa-solid fa-chevron-down cl-dd-chevron"></i>
-                        </button>
-                        <ul class="cl-dropdown-menu">
-                            <li>
-                                <a class="cl-dd-item" href="/Sup1/ViewGuide">
-                                    <i class="fa-solid fa-book"></i>
-                                    User Guidelines
-                                </a>
-                            </li>
-                            <li class="cl-dd-divider"></li>
-                            <li>
-                                <a class="cl-dd-item" href="/Sup1/viewFAQ">
-                                    <i class="fa-solid fa-circle-question"></i>
-                                    FAQ
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
-
-                </ul>
-
-                <!-- User pill -->
-                <div class="cl-user" id="clUser">
-                    <button class="cl-user-btn" id="clUserBtn">
-                        <div class="cl-avatar">
-                            @User.Identity?.Name?.Substring(0, 1).ToUpper()
-                        </div>
-                        <span class="cl-user-name d-none d-lg-inline">
-                            @User.Identity?.Name?.Split('@')[0]
-                        </span>
-                        <i class="fa-solid fa-chevron-down" style="font-size:11px;"></i>
-                    </button>
-                    <div class="cl-user-menu" id="clUserMenu">
-                        <a href="/my-profile" class="cl-user-item">
-                            <i class="fa-solid fa-user"></i> My Profile
-                        </a>
-                        <div class="cl-dd-divider"></div>
-                        <form asp-action="Logout" asp-controller="Account" method="post">
-                            @Html.AntiForgeryToken()
-                            <button type="submit" class="cl-user-item cl-logout">
-                                <i class="fa-solid fa-right-from-bracket"></i> Sign Out
-                            </button>
-                        </form>
-                    </div>
-                </div>
-
-                <!-- Hamburger -->
-                <button class="cl-hamburger" id="clHamburger">
-                    <span></span><span></span><span></span>
-                </button>
-
-            </div>
-        </nav>
-
-        <!-- Mobile drawer -->
-        <div class="cl-mobile-backdrop" id="clBackdrop"></div>
-        <div class="cl-mobile-drawer" id="clDrawer">
-            <div class="cl-drawer-header">
-                <span style="font-weight:800;letter-spacing:2px;color:var(--gold);">
-                    CITY OF JOHANNESBURG VALUATION PORTAL
-                </span>
-                <button id="clDrawerClose">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-            </div>
-
-            @* GV rolls *@
-            @foreach (var roll in gvRolls)
-            {
-                <a href="/search/@roll.Source" class="cl-drawer-link">
-                    <i class="fa-solid fa-magnifying-glass"></i>
-                    @roll.Short — Search Property
-                </a>
-            }
-
-            @* Supp rolls *@
-            @foreach (var roll in suppRolls)
-            {
-                <a href="/search/@roll.Source" class="cl-drawer-link">
-                    <i class="fa-solid fa-scroll"></i>
-                    @roll.Short — Search Property
-                </a>
-            }
-
-            <div class="cl-dd-divider" style="margin:8px 0;"></div>
-
-            <a href="/Section78/PropertyIndex" class="cl-drawer-link">
-                <i class="fa-solid fa-file"></i> Section 78
-            </a>
-            <a href="/Rebates/Index" class="cl-drawer-link">
-                <i class="fa-solid fa-percent"></i> Rebates
-            </a>
-
-            @* Add Evidence — highlighted *@
-            <a href="/evidence/verify" class="cl-drawer-link cl-drawer-evidence">
-                <i class="fa-solid fa-upload"></i> Add Evidence
-            </a>
-
-            <div class="cl-dd-divider" style="margin:8px 0;"></div>
-
-            <a href="/my-profile" class="cl-drawer-link">
-                <i class="fa-solid fa-user"></i> My Profile
-            </a>
-            <form asp-action="Logout" asp-controller="Account" method="post">
-                @Html.AntiForgeryToken()
-                <button type="submit" class="cl-drawer-link cl-drawer-logout">
-                    <i class="fa-solid fa-right-from-bracket"></i> Sign Out
-                </button>
-            </form>
-        </div>
-
-    }  @* ← end of isAttr else *@
-
-    <!-- ═══════════ MAIN ═══════════ -->
-    <main class="cl-main">
-        @RenderBody()
-    </main>
-
-    <!-- ═══════════ FOOTER ═══════════ -->
+    <!-- ══ FOOTER ══════════════════════════════════════════════════ -->
     <footer class="cl-footer">
         <div class="cl-footer-inner">
-            <span class="cl-footer-brand">City of Johannesburg Valuation Portal</span>
-            <span class="cl-footer-copy">© @DateTime.Now.Year City of Johannesburg</span>
+            <span class="cl-footer-brand">
+                <i class="fa-solid fa-city" style="margin-right:6px;"></i>
+                City of Johannesburg Valuation Portal
+            </span>
+            <span class="cl-footer-copy">© @DateTime.Now.Year City of Johannesburg. All rights reserved.</span>
         </div>
     </footer>
 
-    <!-- Scripts (always loaded) -->
+    <!-- ══ SCRIPTS ═════════════════════════════════════════════════ -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/datatables.net@1.13.6/js/jquery.dataTables.min.js"></script>
@@ -488,85 +270,51 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
     <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
 
-    @* Navbar JS — only on non-attributes pages *@
-    @if (!isAttr)
-    {
-        <script>
-            // ── Dropdowns ──────────────────────────────────────────────────
-            document.querySelectorAll('.cl-dropdown').forEach(dd => {
-                const toggle = dd.querySelector('.cl-dropdown-toggle');
-                const menu   = dd.querySelector('.cl-dropdown-menu');
-                if (!toggle || !menu) return;
-
-                toggle.addEventListener('click', e => {
-                    e.stopPropagation();
-                    // Close all other open menus first
-                    document.querySelectorAll('.cl-dropdown-menu.open')
-                        .forEach(m => { if (m !== menu) m.classList.remove('open'); });
-                    menu.classList.toggle('open');
-                    // Rotate chevron
-                    const chev = toggle.querySelector('.cl-dd-chevron');
-                    if (chev) chev.style.transform =
-                        menu.classList.contains('open') ? 'rotate(180deg)' : '';
-                });
+    <script>
+    // ── Dropdowns ──────────────────────────────────────────────────
+    document.querySelectorAll('.cl-dropdown').forEach(dd => {
+        const toggle = dd.querySelector('.cl-dropdown-toggle');
+        const menu   = dd.querySelector('.cl-dropdown-menu');
+        if (!toggle || !menu) return;
+        toggle.addEventListener('click', e => {
+            e.stopPropagation();
+            document.querySelectorAll('.cl-dropdown-menu.open').forEach(m => {
+                if (m !== menu) m.classList.remove('open');
             });
-
-            // ── Sub-menus ──────────────────────────────────────────────────
-            document.querySelectorAll('.cl-submenu-item').forEach(item => {
-                const toggle  = item.querySelector('.cl-submenu-toggle');
-                const submenu = item.querySelector('.cl-submenu');
-                if (!toggle || !submenu) return;
-
-                toggle.addEventListener('click', e => {
-                    e.stopPropagation();
-                    // Close sibling submenus
-                    item.closest('.cl-dropdown-menu')
-                        ?.querySelectorAll('.cl-submenu.open')
-                        .forEach(s => { if (s !== submenu) s.classList.remove('open'); });
-                    submenu.classList.toggle('open');
-                });
+            document.querySelectorAll('.cl-dd-chevron').forEach(c => {
+                if (c !== toggle.querySelector('.cl-dd-chevron')) c.style.transform = '';
             });
+            menu.classList.toggle('open');
+            const chev = toggle.querySelector('.cl-dd-chevron');
+            if (chev) chev.style.transform = menu.classList.contains('open') ? 'rotate(180deg)' : '';
+        });
+    });
 
-            // ── Close all on outside click ─────────────────────────────────
-            document.addEventListener('click', () => {
-                document.querySelectorAll('.cl-dropdown-menu.open, .cl-submenu.open')
-                    .forEach(m => m.classList.remove('open'));
-                document.querySelectorAll('.cl-dd-chevron')
-                    .forEach(c => c.style.transform = '');
-            });
+    // ── Close on outside click ──────────────────────────────────────
+    document.addEventListener('click', () => {
+        document.querySelectorAll('.cl-dropdown-menu.open').forEach(m => m.classList.remove('open'));
+        document.querySelectorAll('.cl-dd-chevron').forEach(c => c.style.transform = '');
+        document.getElementById('clUserMenu')?.classList.remove('open');
+    });
 
-            // ── User menu ──────────────────────────────────────────────────
-            const clUserBtn  = document.getElementById('clUserBtn');
-            const clUserMenu = document.getElementById('clUserMenu');
-            if (clUserBtn) {
-                clUserBtn.addEventListener('click', e => {
-                    e.stopPropagation();
-                    clUserMenu.classList.toggle('open');
-                });
-            }
+    // ── User pill ───────────────────────────────────────────────────
+    document.getElementById('clUserBtn')?.addEventListener('click', e => {
+        e.stopPropagation();
+        document.getElementById('clUserMenu')?.classList.toggle('open');
+    });
 
-            // ── Mobile drawer ──────────────────────────────────────────────
-            const ham      = document.getElementById('clHamburger');
-            const drawer   = document.getElementById('clDrawer');
-            const backdrop = document.getElementById('clBackdrop');
-            const dClose   = document.getElementById('clDrawerClose');
+    // ── Mobile drawer ───────────────────────────────────────────────
+    const drawer   = document.getElementById('clDrawer');
+    const backdrop = document.getElementById('clBackdrop');
 
-            function openDrawer() {
-                drawer?.classList.add('open');
-                backdrop?.classList.add('open');
-                document.body.style.overflow = 'hidden';
-            }
-            function closeDrawer() {
-                drawer?.classList.remove('open');
-                backdrop?.classList.remove('open');
-                document.body.style.overflow = '';
-            }
+    function openDrawer()  { drawer?.classList.add('open'); backdrop?.classList.add('open'); document.body.style.overflow = 'hidden'; }
+    function closeDrawer() { drawer?.classList.remove('open'); backdrop?.classList.remove('open'); document.body.style.overflow = ''; }
 
-            ham?.addEventListener('click',      openDrawer);
-            dClose?.addEventListener('click',   closeDrawer);
-            backdrop?.addEventListener('click', closeDrawer);
-        </script>
-    }
+    document.getElementById('clHamburger')?.addEventListener('click', openDrawer);
+    document.getElementById('clDrawerClose')?.addEventListener('click', closeDrawer);
+    backdrop?.addEventListener('click', closeDrawer);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
+    </script>
 
     @await RenderSectionAsync("Scripts", required: false)
 </body>

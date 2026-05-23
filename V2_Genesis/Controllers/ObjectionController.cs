@@ -55,6 +55,10 @@ public class ObjectionController : Controller
         string? PropertyFrom = null,
         bool omission = false)
     {
+
+        unitKey = NormalizeKey(unitKey);
+        valuationKey = NormalizeKey(valuationKey);
+
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrEmpty(userId))
             return RedirectToAction("Login", "Account");
@@ -211,6 +215,25 @@ public class ObjectionController : Controller
         };
 
         return View(vm);
+    }
+
+    private static string? NormalizeKey(string? key)
+    {
+        if (string.IsNullOrWhiteSpace(key)) return key;
+
+        // "1.05632e+007" → "10563200"
+        if (key.Contains('e', StringComparison.OrdinalIgnoreCase))
+        {
+            if (double.TryParse(key,
+                System.Globalization.NumberStyles.Float,
+                System.Globalization.CultureInfo.InvariantCulture,
+                out double parsed))
+            {
+                return ((long)parsed).ToString();
+            }
+        }
+
+        return key.Trim();
     }
 
     // ── GET /objection/form ───────────────────────────────────────────────
