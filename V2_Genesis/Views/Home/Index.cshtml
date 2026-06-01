@@ -8,6 +8,7 @@
 <link href="~/css/views/homeindex1.css" rel="stylesheet" asp-append-version="true" />
 <link href="~/css/views/layout.css" rel="stylesheet" asp-append-version="true" />
 <link href="~/css/views/homeindex2.css" rel="stylesheet" asp-append-version="true" />
+<link href="~/css/views/info-carousel.css" rel="stylesheet" />
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/datatables.net-bs5@1.13.6/css/dataTables.bootstrap5.min.css" />
 <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.bootstrap5.min.css" />
@@ -37,7 +38,8 @@
     </div>
 }
 
-<div class="ann-bar @ann.BadgeCss">
+@await Html.PartialAsync("_InfoCarousel")
+@* <div class="ann-bar @ann.BadgeCss">
     <div class="ann-inner">
         <span class="ann-badge @ann.BadgeCss"><span class="ann-dot"></span>@ann.BadgeText</span>
         <span class="ann-text">@ann.Message</span>
@@ -97,7 +99,7 @@
             </div>
         </div>
     </div>
-</section>
+</section> *@
 
 <section class="hs-section">
     <div class="hs-inner">

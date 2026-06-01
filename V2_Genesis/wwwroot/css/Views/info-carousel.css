@@ -1,0 +1,337 @@
+﻿/* ═══════════════════════════════════════════════
+   INFO CAROUSEL — info-carousel.css
+   CoJ brand colours · premium slider
+═══════════════════════════════════════════════ */
+.ic-root {
+    font-family: 'Poppins', sans-serif;
+    width: 100%;
+    background: #1e3a40;
+    overflow: hidden;
+    position: relative;
+}
+
+.ic-slides {
+    display: flex;
+    transition: transform .55s cubic-bezier(.4, 0, .2, 1);
+    will-change: transform;
+}
+
+.ic-slide {
+    min-width: 100%;
+    padding: 36px 48px 36px;
+    display: flex;
+    align-items: center;
+    gap: 40px;
+    position: relative;
+}
+
+    /* Subtle diagonal line texture */
+    .ic-slide::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        opacity: .04;
+        background: repeating-linear-gradient( 45deg, #fff 0, #fff 1px, transparent 0, transparent 50% );
+        background-size: 24px 24px;
+        pointer-events: none;
+    }
+
+/* Slide 1 — Objection & Appeal */
+.ic-slide-1 {
+    background: linear-gradient(135deg, #1e3a40, #0f2a30);
+}
+
+/* Slide 2 — Section 78 */
+.ic-slide-2 {
+    background: linear-gradient(135deg, #1a3540, #0e2430);
+}
+
+/* Slide 3 — Rebates */
+.ic-slide-3 {
+    background: linear-gradient(135deg, #2a1f1a, #1a1210);
+}
+
+/* Slide 4 — Attributes */
+.ic-slide-4 {
+    background: linear-gradient(135deg, #1a2d32, #101e22);
+}
+
+/* ── Left content ──────────────────────────── */
+.ic-left {
+    flex: 1;
+    min-width: 0;
+    z-index: 1;
+}
+
+.ic-eyebrow {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ic-eyebrow-line {
+    display: inline-block;
+    width: 24px;
+    height: 2px;
+    border-radius: 1px;
+}
+
+.ic-title {
+    font-size: 28px;
+    font-weight: 800;
+    line-height: 1.15;
+    color: #fff;
+    margin-bottom: 10px;
+}
+
+    .ic-title em {
+        font-style: normal;
+    }
+
+.ic-desc {
+    font-size: 13.5px;
+    line-height: 1.7;
+    color: rgba(255,255,255,.6);
+    margin-bottom: 18px;
+    max-width: 480px;
+}
+
+.ic-points {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 22px;
+    list-style: none;
+    padding: 0;
+}
+
+.ic-point {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: rgba(255,255,255,.75);
+    background: rgba(255,255,255,.07);
+    padding: 5px 12px;
+    border-radius: 100px;
+    border: 1px solid rgba(255,255,255,.1);
+}
+
+.ic-point-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.ic-footer {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+}
+
+.ic-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 11px 22px;
+    border-radius: 8px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: opacity .15s, transform .15s;
+}
+
+    .ic-btn:hover {
+        opacity: .88;
+        transform: translateY(-1px);
+    }
+
+.ic-counter {
+    font-size: 12px;
+    font-weight: 700;
+    color: rgba(255,255,255,.3);
+    letter-spacing: 1px;
+}
+
+/* ── Right decoration ──────────────────────── */
+.ic-right {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 1;
+}
+
+.ic-deco {
+    width: 148px;
+    height: 148px;
+    border-radius: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 60px;
+    position: relative;
+}
+
+.ic-ring-1 {
+    position: absolute;
+    width: 190px;
+    height: 190px;
+    border-radius: 50%;
+    border: 1px solid;
+    opacity: .08;
+}
+
+.ic-ring-2 {
+    position: absolute;
+    width: 240px;
+    height: 240px;
+    border-radius: 50%;
+    border: 1px solid;
+    opacity: .05;
+}
+
+/* ── Arrow buttons ─────────────────────────── */
+.ic-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.07);
+    border: 1px solid rgba(255,255,255,.12);
+    color: rgba(255,255,255,.8);
+    font-size: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background .15s;
+    z-index: 10;
+}
+
+    .ic-arrow:hover {
+        background: rgba(255,255,255,.15);
+    }
+
+.ic-prev {
+    left: 16px;
+}
+
+.ic-next {
+    right: 16px;
+}
+
+/* ── Dot navigation ────────────────────────── */
+.ic-nav {
+    position: absolute;
+    bottom: 16px;
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    z-index: 10;
+}
+
+.ic-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 100px;
+    background: rgba(255,255,255,.22);
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    transition: all .3s ease;
+}
+
+    .ic-dot.active {
+        width: 24px;
+        background: #e6b000;
+    }
+
+/* ── Progress bar ──────────────────────────── */
+.ic-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: rgba(255,255,255,.07);
+}
+
+.ic-bar {
+    height: 100%;
+    background: #e6b000;
+    width: 0;
+    transition: width 6s linear;
+}
+
+/* ── Responsive ────────────────────────────── */
+@media (max-width: 900px) {
+    .ic-slide {
+        padding: 28px 32px 44px;
+        gap: 24px;
+    }
+
+    .ic-title {
+        font-size: 22px;
+    }
+}
+
+@media (max-width: 600px) {
+    .ic-right {
+        display: none;
+    }
+
+    .ic-slide {
+        padding: 24px 20px 44px;
+    }
+
+    .ic-title {
+        font-size: 20px;
+    }
+
+    .ic-points {
+        display: none;
+    }
+}
+.ic-pause-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.1);
+    border: 1px solid rgba(255,255,255,.2);
+    color: rgba(255,255,255,.8);
+    font-size: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background .15s;
+    margin-right: 4px; /* small gap before the dots */
+    flex-shrink: 0;
+}
+
+    .ic-pause-btn:hover {
+        background: rgba(255,255,255,.2);
+    }
+
+    .ic-pause-btn.is-paused {
+        background: #e6b000;
+        color: #1a1a1a;
+        border-color: #e6b000;
+    }

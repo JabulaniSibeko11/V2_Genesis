@@ -3,6 +3,18 @@
    V2 Genesis — City of Johannesburg
 ═══════════════════════════════════════════════ */
 
+:root {
+    --coj-gold: #e6b000;
+    --coj-gold-light: #fdf6d8;
+    --coj-green: #36626d; /* Evening Green — primary dark */
+    --coj-green-mid: #4a7d8a; /* lighter tint for hovers      */
+    --coj-green-pale: #e8f3f4; /* very light tint              */
+    --coj-turq: #89b7b2; /* African Turquoise            */
+    --coj-orange: #bb4722; /* Breakfast Orange             */
+    --coj-grey: #645a50; /* CoJ Grey                     */
+    --coj-warm-bg: #f7f5f2; /* warm off-white page bg       */
+    --coj-white: #ffffff;
+}
 /* ── Announcement Bar ─────────────────────────── */
 .ann-bar {
     padding: 10px 0;
@@ -16,7 +28,7 @@
     display: flex;
     align-items: center;
     gap: 14px;
-    flex-wrap: wrap;
+    flex-wrap: wrap; 
 }
 
 .ann-badge {
@@ -146,7 +158,7 @@
 .modal-backdrop-custom {
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,.65);
+    background: var(--coj-green);
     backdrop-filter: blur(4px);
     z-index: 1200;
     opacity: 0;
@@ -262,7 +274,7 @@
 
 /* ── COMPACT HERO ─────────────────────────────── */
 .hero {
-    background: var(--black);
+    background: var(--coj-green);
     padding: 40px 24px 36px;
 }
 
