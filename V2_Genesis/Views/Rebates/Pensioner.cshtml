@@ -1,0 +1,173 @@
+﻿@{
+    ViewData["Title"] = "Pensioner Rebate";
+    Layout = "~/Views/Shared/_ClientLayout.cshtml";
+}
+
+@section Styles {
+    <link href="~/css/views/rebates-pensioner.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/views/clientdashboardcss.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/site.css" rel="stylesheet" asp-append-version="true" />
+}
+
+<div class="pen-page">
+
+    <section class="pen-hero">
+        <div class="pen-hero-inner">
+            <div class="pen-eyebrow">Rates Rebates</div>
+            <h1>Pensioner <span>Rebate</span></h1>
+            <p>
+                The City of Johannesburg offers a rates rebate to qualifying pensioners.
+                Select the age group that applies to you.
+            </p>
+        </div>
+    </section>
+
+    <div class="pen-notice">
+        <div class="pen-notice-inner">
+            <i class="fa-solid fa-circle-info"></i>
+            <span>
+                <strong>Period: From 1 July 2023.</strong>
+                Please have your ID or Passport, property account number, and supporting documents
+                ready before completing the application form.
+            </span>
+        </div>
+    </div>
+
+    <div class="pen-body">
+
+        <div class="pen-section-label">Select Your Age Group</div>
+
+        <div class="pen-grid">
+
+           
+            <div class="pen-card">
+                <div class="pen-card-header">
+                    <div class="pen-card-icon pen-icon-gold">
+                        <i class="fa-solid fa-person-cane"></i>
+                    </div>
+                    <div>
+                        <div class="pen-card-badge pen-badge-gold">Age 60 – 69</div>
+                        <h2 class="pen-card-title">Pensioner Rebate</h2>
+                        <p class="pen-card-sub">For pensioners between 60 and 69 years old</p>
+                    </div>
+                </div>
+
+                <div class="pen-card-body">
+                    <ul class="pen-conditions">
+                        <li>You own and personally occupy the property</li>
+                        <li>You are between 60 and 69 years of age</li>
+                        <li>First R1.5 million of property value is exempt from rating</li>
+                        <li>Monthly income below R11 531 — 100% rebate</li>
+                        <li>Monthly income R11 531 – R19 765 — 50% rebate</li>
+                        <li>Monthly income above R19 765 — does not qualify</li>
+                    </ul>
+                    <div class="pen-card-info">
+                        <strong>Note:</strong> Pensioners dependent on a National Social Grant
+                        qualify for a 100% rebate on successful application.
+                        The rebate applies to one property only.
+                    </div>
+                </div>
+
+                <div class="pen-card-footer">
+                    <a asp-controller="Rebates" asp-action="ViewForm60"
+                       class="pen-apply-btn pen-btn-gold">
+                        <i class="fa-solid fa-file-pen"></i>
+                        Apply — Age 60 to 69
+                    </a>
+                </div>
+            </div>
+
+            
+            <div class="pen-card">
+                <div class="pen-card-header">
+                    <div class="pen-card-icon pen-icon-green">
+                        <i class="fa-solid fa-person-cane"></i>
+                    </div>
+                    <div>
+                        <div class="pen-card-badge pen-badge-green">Age 70 and Older</div>
+                        <h2 class="pen-card-title">Pensioner Rebate</h2>
+                        <p class="pen-card-sub">For pensioners 70 years old and above</p>
+                    </div>
+                </div>
+
+                <div class="pen-card-body">
+                    <ul class="pen-conditions">
+                        <li>You own the property and personally live on it</li>
+                        <li>You are 70 years of age or older</li>
+                        <li>R2 million of the property value is exempt regardless of income</li>
+                        <li>100% rebate — no income test required</li>
+                        <li>Property market value must not exceed R2.5 million</li>
+                        <li>Rebate applies to one property only</li>
+                    </ul>
+                    <div class="pen-card-info">
+                        <strong>Note:</strong> This is not an automatic rebate —
+                        you must apply. Only a certified copy of your Identity Document
+                        is required.
+                    </div>
+                </div>
+
+                <div class="pen-card-footer">
+                    <a asp-controller="Rebates" asp-action="ViewForm70"
+                       class="pen-apply-btn pen-btn-green">
+                        <i class="fa-solid fa-file-pen"></i>
+                        Apply — Age 70 and Older
+                    </a>
+                </div>
+            </div>
+
+        </div>
+
+       
+        <div class="pen-docs">
+            <h3 class="pen-docs-title">
+                <i class="fa-solid fa-paperclip"></i>
+                Documents Required
+            </h3>
+            <div class="pen-docs-grid">
+                <div class="pen-doc-item">
+                    <i class="fa-solid fa-id-card"></i>
+                    <span>
+                        Certified copy of RSA Identity Document or Passport
+                        <span class="pen-doc-tag pen-doc-req">Required</span>
+                    </span>
+                </div>
+                <div class="pen-doc-item">
+                    <i class="fa-solid fa-file-invoice-dollar"></i>
+                    <span>
+                        Proof of income (payslip, pension statement)
+                        <span class="pen-doc-tag pen-doc-opt">60–69 Only</span>
+                    </span>
+                </div>
+                <div class="pen-doc-item">
+                    <i class="fa-solid fa-credit-card"></i>
+                    <span>
+                        SASSA Card copy
+                        <span class="pen-doc-tag pen-doc-opt">If applicable</span>
+                    </span>
+                </div>
+                <div class="pen-doc-item">
+                    <i class="fa-solid fa-building-columns"></i>
+                    <span>
+                        3-month bank statement
+                        <span class="pen-doc-tag pen-doc-opt">60–69 Only</span>
+                    </span>
+                </div>
+                <div class="pen-doc-item">
+                    <i class="fa-solid fa-receipt"></i>
+                    <span>
+                        SARS income tax certificate
+                        <span class="pen-doc-tag pen-doc-opt">60–69 Only</span>
+                    </span>
+                </div>
+                <div class="pen-doc-item">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <span>
+                        All documents must be in <strong>PDF format</strong>,
+                        maximum <strong>20 MB</strong> per file.
+                    </span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>

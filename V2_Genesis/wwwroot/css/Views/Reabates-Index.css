@@ -1,0 +1,397 @@
+﻿
+/* ── Page base ─────────────────────────────────────────── */
+.reb-page {
+    background: #f7f5f2;
+    min-height: 100vh;
+    font-family: 'Poppins', sans-serif;
+}
+
+/* ── Hero banner ───────────────────────────────────────── */
+.reb-hero {
+    background: #36626d;
+    padding: 40px 24px 36px;
+}
+
+.reb-hero-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+.reb-hero-eyebrow {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: #e6b000;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+    .reb-hero-eyebrow::before {
+        content: '';
+        display: inline-block;
+        width: 24px;
+        height: 2px;
+        background: #e6b000;
+        border-radius: 1px;
+    }
+
+.reb-hero h1 {
+    font-size: 30px;
+    font-weight: 800;
+    color: #fff;
+    margin: 0 0 10px;
+    line-height: 1.2;
+}
+
+    .reb-hero h1 span {
+        color: #e6b000;
+    }
+
+.reb-hero-desc {
+    font-size: 15px;
+    color: rgba(255,255,255,.7);
+    max-width: 640px;
+    line-height: 1.7;
+    margin: 0;
+}
+
+/* ── Notice bar ────────────────────────────────────────── */
+.reb-notice {
+    background: #fff8e6;
+    border-bottom: 2px solid #e6b000;
+    padding: 14px 24px;
+}
+
+.reb-notice-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    font-size: 14px;
+    color: #5a3e00;
+    line-height: 1.6;
+}
+
+    .reb-notice-inner i {
+        color: #e6b000;
+        font-size: 18px;
+        margin-top: 1px;
+        flex-shrink: 0;
+    }
+
+/* ── Main content ──────────────────────────────────────── */
+.reb-body {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 36px 24px 60px;
+}
+
+/* ── Section label ─────────────────────────────────────── */
+.reb-section-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #645a50;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+    .reb-section-label::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background: #ede9e3;
+    }
+
+/* ── FEATURED card — Pensioner (most used) ─────────────── */
+.reb-featured {
+    background: #fff;
+    border-radius: 16px;
+    border: 2px solid #e6b000;
+    box-shadow: 0 4px 20px rgba(230,176,0,.12);
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 28px;
+    padding: 28px 32px;
+    margin-bottom: 32px;
+    text-decoration: none;
+    color: inherit;
+    transition: box-shadow .2s, transform .2s;
+}
+
+    .reb-featured:hover {
+        box-shadow: 0 8px 32px rgba(230,176,0,.2);
+        transform: translateY(-2px);
+        color: inherit;
+    }
+
+.reb-featured-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 20px;
+    background: #e6b000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+    color: #1a1a1a;
+    flex-shrink: 0;
+}
+
+.reb-featured-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: #e6b000;
+    color: #1a1a1a;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    padding: 4px 12px;
+    border-radius: 100px;
+    margin-bottom: 8px;
+}
+
+.reb-featured h2 {
+    font-size: 22px;
+    font-weight: 800;
+    color: #1a1a1a;
+    margin: 0 0 6px;
+}
+
+.reb-featured-desc {
+    font-size: 14px;
+    color: #645a50;
+    line-height: 1.65;
+    margin: 0;
+}
+
+.reb-featured-action {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.reb-featured-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #36626d;
+    color: #fff;
+    padding: 14px 28px;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 700;
+    white-space: nowrap;
+    transition: background .15s;
+}
+
+    .reb-featured-btn:hover {
+        background: #4a7d8a;
+        color: #fff;
+    }
+
+.reb-featured-note {
+    font-size: 11.5px;
+    color: #999;
+    text-align: center;
+}
+
+/* ── Rebate card grid ──────────────────────────────────── */
+.reb-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+}
+
+.reb-card {
+    background: #fff;
+    border-radius: 14px;
+    border: 1.5px solid #ede9e3;
+    padding: 26px 24px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    text-decoration: none;
+    color: inherit;
+    transition: box-shadow .2s, transform .2s, border-color .2s;
+    position: relative;
+    overflow: hidden;
+}
+
+    .reb-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: var(--card-accent, #89b7b2);
+    }
+
+    .reb-card:hover {
+        box-shadow: 0 6px 24px rgba(0,0,0,.09);
+        transform: translateY(-3px);
+        border-color: var(--card-accent, #89b7b2);
+        color: inherit;
+    }
+
+.reb-card-icon {
+    width: 58px;
+    height: 58px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    flex-shrink: 0;
+    background: var(--card-icon-bg, #e8f3f4);
+    color: var(--card-accent, #36626d);
+}
+
+.reb-card-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: #1a1a1a;
+    line-height: 1.25;
+    margin: 0;
+}
+
+.reb-card-desc {
+    font-size: 13.5px;
+    color: #645a50;
+    line-height: 1.65;
+    flex: 1;
+    margin: 0;
+}
+
+.reb-card-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--card-accent, #36626d);
+    margin-top: 4px;
+}
+
+    .reb-card-cta i {
+        font-size: 12px;
+        transition: transform .15s;
+    }
+
+.reb-card:hover .reb-card-cta i {
+    transform: translateX(4px);
+}
+
+/* ── Help section ──────────────────────────────────────── */
+.reb-help {
+    margin-top: 40px;
+    background: #fff;
+    border-radius: 14px;
+    border: 1.5px solid #ede9e3;
+    padding: 28px 32px;
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+}
+
+.reb-help-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 12px;
+    background: #e8f3f4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    color: #36626d;
+    flex-shrink: 0;
+}
+
+.reb-help-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin: 0 0 6px;
+}
+
+.reb-help-text {
+    font-size: 14px;
+    color: #645a50;
+    line-height: 1.7;
+    margin: 0 0 12px;
+}
+
+.reb-help-contacts {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+}
+
+.reb-help-contact {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 14px;
+    color: #1a1a1a;
+    font-weight: 600;
+}
+
+    .reb-help-contact i {
+        color: #36626d;
+    }
+
+/* ── Responsive ────────────────────────────────────────── */
+@media (max-width: 900px) {
+    .reb-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .reb-featured {
+        grid-template-columns: auto 1fr;
+    }
+
+    .reb-featured-action {
+        display: none;
+    }
+}
+
+@media (max-width: 600px) {
+    .reb-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .reb-featured {
+        grid-template-columns: 1fr;
+        text-align: center;
+    }
+
+    .reb-featured-icon {
+        margin: 0 auto;
+    }
+
+    .reb-featured-action {
+        display: flex;
+    }
+
+    .reb-featured-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .reb-hero h1 {
+        font-size: 22px;
+    }
+}
+

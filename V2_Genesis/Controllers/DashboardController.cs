@@ -27,20 +27,25 @@ public class DashboardController : Controller
 
     private readonly IDashboardService _dashboardService;
     private readonly IAttributesDashboardService _attributesService;
+    private readonly IRebatesService _rebates;
+    private readonly ILogger<DashboardController> _logger;
     public DashboardController(
         ApplicationDbContext db,
         UserManager<ApplicationUser> userManager,
         IAnnouncementService announcement,
         IDashboardService dashboardService,
         IOptions<RollDatesSettings> rollDatesOpts,
-        IAttributesDashboardService attributesService)      // ← NEW
+        IAttributesDashboardService attributesService,IRebatesService rebates,
+        ILogger<DashboardController> logger)     
     {
         _db = db;
         _userManager = userManager;
         _announcement = announcement;
         _dashboardService = dashboardService;
-        _rollDates = rollDatesOpts.Value;           // ← NEW
+        _rollDates = rollDatesOpts.Value;           
         _attributesService = attributesService;
+        _rebates = rebates;
+        _logger = logger;
     }
 
     [HttpGet]
@@ -87,6 +92,15 @@ public class DashboardController : Controller
             AttributesLinked = attributesLinked
         };
 
+        try
+        {
+            vm.Rebates = await _rebates.GetDashboardAsync(userId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "[Dashboard] Failed loading rebates for {UserId}", userId);
+            vm.Rebates = new();
+        }
         return View(vm);
     }
     // ── STUB — replace each case with real DB query when ready ─────────────

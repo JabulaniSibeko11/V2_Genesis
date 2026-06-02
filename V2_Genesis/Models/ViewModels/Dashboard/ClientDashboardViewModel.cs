@@ -28,6 +28,7 @@ public class ClientDashboardViewModel
     /// </summary>
     public Dictionary<string, RollData> RollData { get; set; } = new();
 
+    public List<Rebate_View_Model> Rebates { get; set; } = new();
     // Add to existing properties:
     public AttributesDashboardData AttributesData { get; set; } = new();
 

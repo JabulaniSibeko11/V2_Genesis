@@ -1,0 +1,365 @@
+﻿
+/* ── Page ─────────────────────────────────────── */
+.pen-page {
+    background: #f7f5f2;
+    min-height: 100vh;
+    font-family: 'Poppins',sans-serif;
+}
+
+/* ── Hero ─────────────────────────────────────── */
+.pen-hero {
+    background: #36626d;
+    padding: 36px 24px 32px;
+}
+
+.pen-hero-inner {
+    max-width: 960px;
+    margin: 0 auto;
+}
+
+.pen-eyebrow {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: #e6b000;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+    .pen-eyebrow::before {
+        content: '';
+        display: inline-block;
+        width: 24px;
+        height: 2px;
+        background: #e6b000;
+        border-radius: 1px;
+    }
+
+.pen-hero h1 {
+    font-size: 26px;
+    font-weight: 800;
+    color: #fff;
+    margin: 0 0 8px;
+}
+
+    .pen-hero h1 span {
+        color: #e6b000;
+    }
+
+.pen-hero p {
+    font-size: 15px;
+    color: rgba(255,255,255,.7);
+    line-height: 1.7;
+    margin: 0;
+}
+
+/* ── Notice ──────────────────────────────────── */
+.pen-notice {
+    background: #fff8e6;
+    border-bottom: 2px solid #e6b000;
+    padding: 14px 24px;
+}
+
+.pen-notice-inner {
+    max-width: 960px;
+    margin: 0 auto;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    font-size: 14px;
+    color: #5a3e00;
+    line-height: 1.6;
+}
+
+    .pen-notice-inner i {
+        color: #e6b000;
+        font-size: 18px;
+        flex-shrink: 0;
+        margin-top: 1px;
+    }
+
+/* ── Body ────────────────────────────────────── */
+.pen-body {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 36px 24px 60px;
+}
+
+.pen-section-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #645a50;
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+    .pen-section-label::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background: #ede9e3;
+    }
+
+/* ── Option cards ────────────────────────────── */
+.pen-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+}
+
+.pen-card {
+    background: #fff;
+    border-radius: 16px;
+    border: 2px solid #ede9e3;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: box-shadow .2s, border-color .2s;
+}
+
+    .pen-card:hover {
+        box-shadow: 0 8px 32px rgba(0,0,0,.1);
+    }
+
+.pen-card-header {
+    padding: 24px 28px 20px;
+    border-bottom: 1px solid #f0f0f0;
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+}
+
+.pen-card-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    flex-shrink: 0;
+}
+
+.pen-icon-gold {
+    background: #fdf6d8;
+    color: #c49a00;
+    border: 2px solid #e6b000;
+}
+
+.pen-icon-green {
+    background: #e8f3f4;
+    color: #36626d;
+    border: 2px solid #89b7b2;
+}
+
+.pen-card-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    padding: 3px 10px;
+    border-radius: 100px;
+    margin-bottom: 6px;
+}
+
+.pen-badge-gold {
+    background: #fdf6d8;
+    color: #7a5800;
+    border: 1px solid #e6b000;
+}
+
+.pen-badge-green {
+    background: #e8f3f4;
+    color: #36626d;
+    border: 1px solid #89b7b2;
+}
+
+.pen-card-title {
+    font-size: 19px;
+    font-weight: 800;
+    color: #1a1a1a;
+    margin: 0 0 4px;
+}
+
+.pen-card-sub {
+    font-size: 13px;
+    color: #645a50;
+    margin: 0;
+}
+
+/* ── Conditions list ─────────────────────────── */
+.pen-card-body {
+    padding: 22px 28px;
+    flex: 1;
+}
+
+.pen-conditions {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+    .pen-conditions li {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        font-size: 14px;
+        color: #333;
+        line-height: 1.6;
+    }
+
+        .pen-conditions li::before {
+            content: '✓';
+            font-size: 13px;
+            font-weight: 700;
+            color: #36626d;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+.pen-card-info {
+    background: #f7f5f2;
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 20px;
+    font-size: 13px;
+    color: #645a50;
+    line-height: 1.65;
+    border-left: 3px solid #e6b000;
+}
+
+    .pen-card-info strong {
+        color: #1a1a1a;
+    }
+
+/* ── CTA button ──────────────────────────────── */
+.pen-card-footer {
+    padding: 0 28px 24px;
+}
+
+.pen-apply-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 15px 20px;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: opacity .15s, transform .15s;
+    width: 100%;
+}
+
+    .pen-apply-btn:hover {
+        opacity: .88;
+        transform: translateY(-1px);
+    }
+
+.pen-btn-gold {
+    background: #e6b000;
+    color: #1a1a1a;
+}
+
+.pen-btn-green {
+    background: #36626d;
+    color: #fff;
+}
+
+/* ── Docs required ───────────────────────────── */
+.pen-docs {
+    margin-top: 36px;
+    background: #fff;
+    border-radius: 14px;
+    border: 1.5px solid #ede9e3;
+    padding: 26px 28px;
+}
+
+.pen-docs-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin: 0 0 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+    .pen-docs-title i {
+        color: #36626d;
+    }
+
+.pen-docs-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.pen-doc-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    background: #f7f5f2;
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-size: 13.5px;
+    color: #333;
+    line-height: 1.5;
+}
+
+    .pen-doc-item i {
+        color: #e6b000;
+        font-size: 16px;
+        flex-shrink: 0;
+        margin-top: 1px;
+    }
+
+.pen-doc-tag {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    margin-left: 6px;
+    vertical-align: middle;
+}
+
+.pen-doc-req {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.pen-doc-opt {
+    background: #e8f3f4;
+    color: #36626d;
+}
+
+/* ── Responsive ──────────────────────────────── */
+@media (max-width:700px) {
+    .pen-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .pen-docs-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .pen-hero h1 {
+        font-size: 20px;
+    }
+}
+
+

@@ -1,0 +1,437 @@
+﻿@model V2_Genesis.Models.Rebates.RebateFormBinding
+@{
+    ViewData["Title"] = "Pensioner Rebate — Age 70+";
+    Layout = "~/Views/Shared/_ClientLayout.cshtml";
+    bool isForm60 = false;
+ 
+}
+@section Styles {
+    <link href="~/css/views/rebates-form.css" rel="stylesheet" asp-append-version="true" />
+    
+    <link href="~/css/views/clientdashboardcss.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/site.css" rel="stylesheet" asp-append-version="true" />
+}
+
+<div class="rf-page">
+
+   
+    <div class="rf-header">
+        <div class="rf-header-inner">
+            <a asp-controller="Rebates" asp-action="Pensioner" class="rf-back-btn">
+                <i class="fa-solid fa-arrow-left"></i> Back
+            </a>
+            <div>
+                <div class="rf-eyebrow">Pensioner Rebate — Age 70 and Older</div>
+                <h1 class="rf-title">Application for Pensioner Rebate on Property Rates</h1>
+            </div>
+        </div>
+    </div>
+
+ 
+    <div class="rf-conditions">
+        <div class="rf-conditions-inner">
+            <i class="fa-solid fa-circle-info"></i>
+            <div>
+                <strong>Period: From 1 July 2023 &nbsp;|&nbsp; Conditions:</strong>
+                Pensioners must be 70 years or older, own the property and personally occupy it.
+                The first <strong>R2 million</strong> of the property value is exempt from rating
+                regardless of income. Property value must not exceed <strong>R2.5 million</strong>.
+                One property only. A certified copy of your Identity Document is required.
+            </div>
+        </div>
+    </div>
+
+    <div class="rf-body">
+
+        <form id="rebateForm"
+              method="post"
+              enctype="multipart/form-data"
+              asp-controller="Rebates"
+              asp-action="ViewForm70">
+
+            @Html.AntiForgeryToken()
+
+         
+            <div class="rf-section">
+                <div class="rf-section-head">
+                    <div class="rf-section-num">1</div>
+                    <h2 class="rf-section-title">Personal Details</h2>
+                </div>
+                <div class="rf-section-body">
+
+                 
+                    <div class="rf-field rf-field-half">
+                        <label class="rf-label rf-required">Account Number</label>
+                        <input asp-for="S1.AccountNumber"
+                               class="rf-input" minlength="9" maxlength="9"
+                               placeholder="9-digit account number"
+                               onkeypress="return isNumericKey(event)"
+                               onpaste="return false" required />
+                        <span asp-validation-for="S1.AccountNumber" class="rf-error"></span>
+                    </div>
+
+               
+                    <div class="rf-field rf-field-half">
+                        <label class="rf-label rf-required">Gender</label>
+                        <div class="rf-radio-group">
+                            <label class="rf-radio-label">
+                                <input type="radio" asp-for="S1.Gender" value="Male" required />
+                                <span>Male</span>
+                            </label>
+                            <label class="rf-radio-label">
+                                <input type="radio" asp-for="S1.Gender" value="Female" required />
+                                <span>Female</span>
+                            </label>
+                        </div>
+                        <span asp-validation-for="S1.Gender" class="rf-error"></span>
+                    </div>
+
+                 
+                    <div class="rf-field rf-field-half">
+                        <label class="rf-label rf-required">Marital Status</label>
+                        <select asp-for="S1.MaritalStatus" class="rf-input" id="maritalStatus" required>
+                            <option value="">Select...</option>
+                            <option value="Single">Single</option>
+                            <option value="Married">Married</option>
+                            <option value="Widow">Widow</option>
+                            <option value="Widower">Widower</option>
+                        </select>
+                        <span asp-validation-for="S1.MaritalStatus" class="rf-error"></span>
+                    </div>
+
+                   
+                    <div class="rf-field rf-field-half">
+                        <label class="rf-label rf-required">Surname</label>
+                        <input asp-for="S1.Surname" class="rf-input" id="Surname"
+                               maxlength="50" placeholder="Your surname" required />
+                        <span asp-validation-for="S1.Surname" class="rf-error"></span>
+                    </div>
+
+              
+                    <div class="rf-field rf-field-half">
+                        <label class="rf-label rf-required">First Names</label>
+                        <input asp-for="S1.FirstNames" class="rf-input" id="FirstNames"
+                               maxlength="50" placeholder="Your first names" required />
+                        <span asp-validation-for="S1.FirstNames" class="rf-error"></span>
+                    </div>
+
+                   
+                    <div class="rf-field rf-field-full">
+                        <label class="rf-label rf-required">Identification Type</label>
+                        <div class="rf-radio-group">
+                            <label class="rf-radio-label">
+                                <input type="radio" name="identificationType" value="IDNumber" required />
+                                <span>RSA ID Number</span>
+                            </label>
+                            <label class="rf-radio-label">
+                                <input type="radio" name="identificationType" value="PassportNumber" />
+                                <span>Passport</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="rf-field rf-field-half" id="idNumberGroup" style="display:none;">
+                        <label class="rf-label rf-required">RSA ID Number</label>
+                        <input asp-for="S1.IDNumber" class="rf-input" id="RSAIDNumber"
+                               minlength="13" maxlength="13" placeholder="13-digit ID number"
+                               onkeypress="return isNumericKey(event)" onpaste="return false" />
+                        <span asp-validation-for="S1.IDNumber" class="rf-error"></span>
+                    </div>
+
+                    <div class="rf-field rf-field-half" id="passportGroup" style="display:none;">
+                        <label class="rf-label rf-required">Passport Number</label>
+                        <input asp-for="S1.PassportNumber" class="rf-input" id="PassportNumber"
+                               maxlength="30" placeholder="Passport number" />
+                        <span asp-validation-for="S1.PassportNumber" class="rf-error"></span>
+                    </div>
+
+                  
+                    <div id="spouseFields" class="rf-field-full rf-spouse-group" style="display:none;">
+                        <div class="rf-spouse-banner">
+                            <i class="fa-solid fa-user-group"></i>
+                            Spouse Details
+                        </div>
+                        <div class="rf-fields-row">
+                            <div class="rf-field rf-field-third">
+                                <label class="rf-label rf-required">Spouse Surname</label>
+                                <input asp-for="S1.SpouseSurname" class="rf-input" id="SpouseSurname"
+                                       maxlength="50" placeholder="Spouse's surname" />
+                                <span asp-validation-for="S1.SpouseSurname" class="rf-error"></span>
+                            </div>
+                            <div class="rf-field rf-field-third">
+                                <label class="rf-label rf-required">Spouse First Names</label>
+                                <input asp-for="S1.SpouseFirstNames" class="rf-input" id="SpouseFirstNames"
+                                       maxlength="50" placeholder="Spouse's first names" />
+                                <span asp-validation-for="S1.SpouseFirstNames" class="rf-error"></span>
+                            </div>
+                            <div class="rf-field rf-field-third">
+                                <label class="rf-label">Spouse ID Number</label>
+                                <input asp-for="S1.SpouseIDNumber" class="rf-input" id="SpouseIDNumber"
+                                       minlength="13" maxlength="13"
+                                       onkeypress="return isNumericKey(event)" onpaste="return false"
+                                       placeholder="13-digit ID" />
+                                <span asp-validation-for="S1.SpouseIDNumber" class="rf-error"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+           
+            <div class="rf-section">
+                <div class="rf-section-head">
+                    <div class="rf-section-num">2</div>
+                    <h2 class="rf-section-title">Address Details</h2>
+                </div>
+                <div class="rf-section-body">
+
+                    <div class="rf-address-group-label">Physical Address</div>
+
+                    <div class="rf-field rf-field-full">
+                        <label class="rf-label rf-required">Street Address</label>
+                        <input asp-for="S2.StreetAddress" class="rf-input" id="StreetAddress"
+                               maxlength="50" placeholder="e.g. 15 Main Street" required />
+                        <span asp-validation-for="S2.StreetAddress" class="rf-error"></span>
+                    </div>
+                    <div class="rf-field rf-field-half">
+                        <label class="rf-label rf-required">City / Suburb</label>
+                        <input asp-for="S2.CitySuburb" class="rf-input" id="CitySuburb"
+                               maxlength="50" placeholder="e.g. Soweto" required />
+                        <span asp-validation-for="S2.CitySuburb" class="rf-error"></span>
+                    </div>
+                    <div class="rf-field rf-field-quarter">
+                        <label class="rf-label rf-required">Postal Code</label>
+                        <input asp-for="S2.PostalCode" class="rf-input" id="PostalCode"
+                               maxlength="4" placeholder="0000"
+                               onkeypress="return isNumericKey(event)" onpaste="return false" required />
+                        <span asp-validation-for="S2.PostalCode" class="rf-error"></span>
+                    </div>
+
+                  
+                    <div class="rf-field rf-field-full">
+                        <label class="rf-checkbox-label">
+                            <input type="checkbox" id="sameAddress" onchange="copyAddress(this)" />
+                            <span>Postal address is the same as physical address</span>
+                        </label>
+                    </div>
+
+                    <div class="rf-address-group-label">Postal Address</div>
+
+                    <div class="rf-field rf-field-full">
+                        <label class="rf-label">Postal Address</label>
+                        <input asp-for="S2.PostalAddress" class="rf-input" id="PostalAddress"
+                               maxlength="50" placeholder="e.g. P.O. Box 123 or street address" />
+                        <span asp-validation-for="S2.PostalAddress" class="rf-error"></span>
+                    </div>
+                    <div class="rf-field rf-field-half">
+                        <label class="rf-label">City / Suburb</label>
+                        <input asp-for="S2.PostalAddressCitySuburb" class="rf-input"
+                               id="PostalAddressCitySuburb" maxlength="50" />
+                        <span asp-validation-for="S2.PostalAddressCitySuburb" class="rf-error"></span>
+                    </div>
+                    <div class="rf-field rf-field-quarter">
+                        <label class="rf-label">Postal Code</label>
+                        <input asp-for="S2.PostalAddressPostalCode" class="rf-input"
+                               id="PostalAddressPostalCode" maxlength="4"
+                               onkeypress="return isNumericKey(event)" onpaste="return false" />
+                        <span asp-validation-for="S2.PostalAddressPostalCode" class="rf-error"></span>
+                    </div>
+
+                </div>
+            </div>
+
+            
+            <div class="rf-section">
+                <div class="rf-section-head">
+                    <div class="rf-section-num">3</div>
+                    <h2 class="rf-section-title">Contact Details</h2>
+                </div>
+                <div class="rf-section-body">
+                    <div class="rf-field rf-field-quarter">
+                        <label class="rf-label">Home Telephone</label>
+                        <input asp-for="S3.HomeTel" class="rf-input"
+                               maxlength="14" placeholder="011 000 0000"
+                               onkeypress="return isNumericKey(event)" onpaste="return false" />
+                        <span asp-validation-for="S3.HomeTel" class="rf-error"></span>
+                    </div>
+                    <div class="rf-field rf-field-quarter">
+                        <label class="rf-label rf-required">Cell Number</label>
+                        <input asp-for="S3.CellNo" class="rf-input" id="CellNo"
+                               maxlength="14" placeholder="0XX XXX XXXX"
+                               onkeypress="return isNumericKey(event)" onpaste="return false" required />
+                        <span asp-validation-for="S3.CellNo" class="rf-error"></span>
+                    </div>
+                    <div class="rf-field rf-field-quarter">
+                        <label class="rf-label">Work Telephone</label>
+                        <input asp-for="S3.WorkTel" class="rf-input"
+                               maxlength="14" placeholder="011 000 0000"
+                               onkeypress="return isNumericKey(event)" onpaste="return false" />
+                        <span asp-validation-for="S3.WorkTel" class="rf-error"></span>
+                    </div>
+                    <div class="rf-field rf-field-half">
+                        <label class="rf-label rf-required">Email Address</label>
+                        <input asp-for="S3.Email" class="rf-input" id="Email"
+                               type="email" maxlength="50"
+                               placeholder="your@@email.com" required />
+                        <span asp-validation-for="S3.Email" class="rf-error"></span>
+                    </div>
+                </div>
+            </div>
+
+       
+            <div class="rf-section">
+                <div class="rf-section-head">
+                    <div class="rf-section-num">4</div>
+                    <h2 class="rf-section-title">Property Details</h2>
+                </div>
+                <div class="rf-section-body">
+                    <div class="rf-field rf-field-half">
+                        <label class="rf-label rf-required">Do you occupy the mentioned property?</label>
+                        <select asp-for="S1.OccupyMentionedProperty" class="rf-input" required>
+                            <option value="">Select...</option>
+                            <option value="Yes">Yes</option>
+                            <option value="No">No</option>
+                        </select>
+                        <span asp-validation-for="S1.OccupyMentionedProperty" class="rf-error"></span>
+                    </div>
+                    <div class="rf-field rf-field-quarter">
+                        <label class="rf-label">Stand Number</label>
+                        <input asp-for="S4.StandNumber" class="rf-input" maxlength="50" />
+                        <span asp-validation-for="S4.StandNumber" class="rf-error"></span>
+                    </div>
+                    <div class="rf-field rf-field-quarter">
+                        <label class="rf-label">Portion Number</label>
+                        <input asp-for="S4.PortionNumber" class="rf-input" maxlength="50" />
+                        <span asp-validation-for="S4.PortionNumber" class="rf-error"></span>
+                    </div>
+                    <div class="rf-field rf-field-third">
+                        <label class="rf-label">Suburb</label>
+                        <input asp-for="S4.Suburb" class="rf-input" maxlength="50" />
+                        <span asp-validation-for="S4.Suburb" class="rf-error"></span>
+                    </div>
+                    <div class="rf-field rf-field-third">
+                        <label class="rf-label">Name of Body Corporate</label>
+                        <input asp-for="S4.NameOfBodyCorporate" class="rf-input" maxlength="50" />
+                        <span asp-validation-for="S4.NameOfBodyCorporate" class="rf-error"></span>
+                    </div>
+                    <div class="rf-field rf-field-third">
+                        <label class="rf-label">Unit / Door Number</label>
+                        <input asp-for="S4.DoorNumber" class="rf-input" maxlength="50" />
+                        <span asp-validation-for="S4.DoorNumber" class="rf-error"></span>
+                    </div>
+                </div>
+            </div>
+
+           
+            <div class="rf-section">
+                <div class="rf-section-head">
+                    <div class="rf-section-num">5</div>
+                    <h2 class="rf-section-title">Supporting Documents</h2>
+                </div>
+                <div class="rf-section-body">
+
+                    <div class="rf-upload-notice">
+                        <i class="fa-solid fa-circle-exclamation"></i>
+                        All documents must be in <strong>PDF format only</strong>.
+                        Maximum file size: <strong>20 MB</strong> per document.
+                    </div>
+
+                  
+                    <div class="rf-field rf-field-upload">
+                        <label class="rf-label rf-required">
+                            Certified Copy of ID / Passport
+                        </label>
+                        <input type="file" id="Att1" name="files" class="rf-file"
+                               accept=".pdf" onchange="validatePdf(this)" required />
+                        <span class="rf-file-help">Required — Certified copy only</span>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="rf-submit-bar">
+                <a asp-controller="Rebates" asp-action="Pensioner" class="rf-cancel-btn">
+                    <i class="fa-solid fa-arrow-left"></i> Back
+                </a>
+                <button type="submit" class="rf-submit-btn" id="submitBtn">
+                    <i class="fa-solid fa-paper-plane"></i> Submit Application
+                </button>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            // ── Numeric input only ─────────────────────────────────────────
+            window.isNumericKey = function (e) {
+                var c = e.which ?? e.keyCode;
+                return !(c > 31 && (c < 48 || c > 57));
+            };
+
+            // ── Marital status — spouse fields ─────────────────────────────
+            var marital      = document.getElementById('maritalStatus');
+            var spouseFields = document.getElementById('spouseFields');
+
+            function updateSpouse() {
+                var show = marital?.value === 'Married';
+                if (spouseFields) spouseFields.style.display = show ? 'block' : 'none';
+                ['SpouseSurname','SpouseFirstNames'].forEach(function (id) {
+                    var el = document.getElementById(id);
+                    if (el) el.required = show;
+                });
+            }
+            marital?.addEventListener('change', updateSpouse);
+
+            // ── ID / Passport toggle ────────────────────────────────────────
+            document.querySelectorAll('input[name="identificationType"]')
+                .forEach(function (r) {
+                    r.addEventListener('change', function () {
+                        var id  = document.getElementById('idNumberGroup');
+                        var pp  = document.getElementById('passportGroup');
+                        var idI = document.getElementById('RSAIDNumber');
+                        var ppI = document.getElementById('PassportNumber');
+                        if (this.value === 'IDNumber') {
+                            id.style.display = 'block'; pp.style.display = 'none';
+                            idI.required = true; if (ppI) ppI.required = false;
+                        } else {
+                            id.style.display = 'none'; pp.style.display = 'block';
+                            if (ppI) ppI.required = true; idI.required = false;
+                        }
+                    });
+                });
+
+            // ── Same address checkbox ───────────────────────────────────────
+            window.copyAddress = function (cb) {
+                var fields = [
+                    ['StreetAddress',  'PostalAddress'],
+                    ['CitySuburb',     'PostalAddressCitySuburb'],
+                    ['PostalCode',     'PostalAddressPostalCode']
+                ];
+                fields.forEach(function (pair) {
+                    var src = document.getElementById(pair[0]);
+                    var dst = document.getElementById(pair[1]);
+                    if (dst) dst.value = cb.checked && src ? src.value : '';
+                });
+            };
+
+            // ── PDF validation ──────────────────────────────────────────────
+            window.validatePdf = function (input) {
+                var file = input.files[0];
+                if (file && !file.name.toLowerCase().endsWith('.pdf')) {
+                    alert('Please select a PDF file only.');
+                    input.value = '';
+                }
+            };
+
+            // ── Submit guard ────────────────────────────────────────────────
+            document.getElementById('rebateForm')?.addEventListener('submit', function (e) {
+                var btn = document.getElementById('submitBtn');
+                if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting...'; }
+            });
+        })();
+    </script>
+}

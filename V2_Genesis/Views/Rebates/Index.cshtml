@@ -1,0 +1,236 @@
+﻿@{
+    ViewData["Title"] = "Apply for a Rates Rebate";
+    Layout = "~/Views/Shared/_ClientLayout.cshtml";
+}
+
+@section Styles {
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link href="~/css/views/reabates-index.css" rel="stylesheet" asp-append-version="true"/>
+    <link href="~/css/views/clientdashboardcss.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/site.css" rel="stylesheet" asp-append-version="true" />
+}
+
+<div class="reb-page">
+
+   
+    <section class="reb-hero">
+        <div class="reb-hero-inner">
+            <div class="reb-hero-eyebrow">Rates Rebates</div>
+            <h1>Apply for a <span>Property Rebate</span></h1>
+            <p class="reb-hero-desc">
+                Qualifying property owners may apply for a reduction in their
+                municipal rates. Select the rebate type that applies to your situation.
+            </p>
+        </div>
+    </section>
+
+  
+    <div class="reb-notice">
+        <div class="reb-notice-inner">
+            <i class="fa-solid fa-circle-info"></i>
+            <span>
+                <strong>Before you apply:</strong> Please have your South African ID number,
+                property account number and supporting documents ready.
+                All documents must be uploaded in PDF or image format.
+            </span>
+        </div>
+    </div>
+
+    <div class="reb-body">
+
+        
+        <div class="reb-section-label">Most Applied For</div>
+
+        <a asp-controller="Rebates" asp-action="Pensioner" class="reb-featured">
+            <div class="reb-featured-icon">
+                <i class="fa-solid fa-person-cane"></i>
+            </div>
+            <div>
+                <div class="reb-featured-badge">
+                    <i class="fa-solid fa-star" style="font-size:9px;"></i>
+                    Most Common
+                </div>
+                <h2>Pensioner Rebate</h2>
+                <p class="reb-featured-desc">
+                    Available to South African citizens aged 60 years and older who
+                    occupy the rated property as their primary residence.
+                    Two categories apply: <strong>Age 60–69</strong> and <strong>Age 70+</strong>.
+                </p>
+            </div>
+            <div class="reb-featured-action">
+                <span class="reb-featured-btn">
+                    <i class="fa-solid fa-arrow-right"></i> Apply Now
+                </span>
+                <span class="reb-featured-note">Click to select age group</span>
+            </div>
+        </a>
+
+      
+        <div class="reb-section-label">All Rebate Types</div>
+
+        <div class="reb-grid">
+
+       
+            <a asp-controller="Rebates" asp-action="ChildHeadedHouseHold"
+                   class="reb-card"
+                   style="--card-accent:#89b7b2; --card-icon-bg:#e8f3f4;">
+                <div class="reb-card-icon">
+                    <i class="fa-solid fa-children"></i>
+                </div>
+                <h3 class="reb-card-title">Child Headed Household</h3>
+                <p class="reb-card-desc">
+                    For households where a minor child is the head of the household
+                    and primary occupant of the property.
+                </p>
+                <span class="reb-card-cta">
+                    Apply <i class="fa-solid fa-arrow-right"></i>
+                </span>
+            </a>
+
+        
+            <a asp-controller="Rebates" asp-action="HighDensity"
+                   class="reb-card"
+                   style="--card-accent:#36626d; --card-icon-bg:#e8f3f4;">
+                <div class="reb-card-icon">
+                    <i class="fa-solid fa-building"></i>
+                </div>
+                <h3 class="reb-card-title">High Density Rebate</h3>
+                <p class="reb-card-desc">
+                    Applicable to owners of high-density residential properties
+                    such as schemes and multiple-unit buildings.
+                </p>
+                <span class="reb-card-cta">
+                    Apply <i class="fa-solid fa-arrow-right"></i>
+                </span>
+            </a>
+
+           
+            <a asp-controller="Rebates" asp-action="SportsClubRebate"
+                   class="reb-card"
+                   style="--card-accent:#36626d; --card-icon-bg:#e8f3f4;">
+                <div class="reb-card-icon">
+                    <i class="fa-solid fa-futbol"></i>
+                </div>
+                <h3 class="reb-card-title">Sports Club Rebate</h3>
+                <p class="reb-card-desc">
+                    For registered sports clubs and organisations
+                    operating on the rated property and registered with SARS.
+                </p>
+                <span class="reb-card-cta">
+                    Apply <i class="fa-solid fa-arrow-right"></i>
+                </span>
+            </a>
+
+        
+            <a asp-controller="Rebates" asp-action="ProtectionAnimal"
+                   class="reb-card"
+                   style="--card-accent:#bb4722; --card-icon-bg:#fdf0eb;">
+                <div class="reb-card-icon">
+                    <i class="fa-solid fa-paw"></i>
+                </div>
+                <h3 class="reb-card-title">Protection of Animals</h3>
+                <p class="reb-card-desc">
+                    For organisations registered with SARS whose primary
+                    purpose is the protection or care of animals.
+                </p>
+                <span class="reb-card-cta">
+                    Apply <i class="fa-solid fa-arrow-right"></i>
+                </span>
+            </a>
+
+          
+            <a asp-controller="Rebates" asp-action="EducationRebate"
+                   class="reb-card"
+                   style="--card-accent:#36626d; --card-icon-bg:#e8f3f4;">
+                <div class="reb-card-icon">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                </div>
+                <h3 class="reb-card-title">Education Rebate</h3>
+                <p class="reb-card-desc">
+                    Available to qualifying educational institutions
+                    operating on the rated property and registered with SARS.
+                </p>
+                <span class="reb-card-cta">
+                    Apply <i class="fa-solid fa-arrow-right"></i>
+                </span>
+            </a>
+
+            
+            <a asp-controller="Rebates" asp-action="HeritageSites"
+                   class="reb-card"
+                   style="--card-accent:#89b7b2; --card-icon-bg:#e8f3f4;">
+                <div class="reb-card-icon">
+                    <i class="fa-solid fa-landmark"></i>
+                </div>
+                <h3 class="reb-card-title">Heritage Rebate</h3>
+                <p class="reb-card-desc">
+                    For properties officially declared as national, provincial
+                    or local heritage sites under applicable legislation.
+                </p>
+                <span class="reb-card-cta">
+                    Apply <i class="fa-solid fa-arrow-right"></i>
+                </span>
+            </a>
+
+          
+            <a asp-controller="Rebates" asp-action="LifeRights"
+                   class="reb-card"
+                   style="--card-accent:#e6b000; --card-icon-bg:#fdf6d8;">
+                <div class="reb-card-icon">
+                    <i class="fa-solid fa-file-signature"></i>
+                </div>
+                <h3 class="reb-card-title">Life Rights Rebate</h3>
+                <p class="reb-card-desc">
+                    For holders of life right agreements who occupy
+                    the property as their primary residence.
+                </p>
+                <span class="reb-card-cta">
+                    Apply <i class="fa-solid fa-arrow-right"></i>
+                </span>
+            </a>
+
+            <a asp-controller="Rebates" asp-action="PBO"
+                   class="reb-card"
+                   style="--card-accent:#bb4722; --card-icon-bg:#fdf0eb;">
+                <div class="reb-card-icon">
+                    <i class="fa-solid fa-hand-holding-heart"></i>
+                </div>
+                <h3 class="reb-card-title">Public Benefit Organisation</h3>
+                <p class="reb-card-desc">
+                    For PBOs registered with SARS whose primary
+                    activities qualify under the Rates Act.
+                </p>
+                <span class="reb-card-cta">
+                    Apply <i class="fa-solid fa-arrow-right"></i>
+                </span>
+            </a>
+
+        </div>
+
+       
+        <div class="reb-help">
+            <div class="reb-help-icon">
+                <i class="fa-solid fa-headset"></i>
+            </div>
+            <div>
+                <h3 class="reb-help-title">Need Help?</h3>
+                <p class="reb-help-text">
+                    If you are unsure which rebate applies to you, or need assistance
+                    completing your application, please contact the Valuation Services
+                    Department. Our staff will be happy to assist you.
+                </p>
+                <div class="reb-help-contacts">
+                    <span class="reb-help-contact">
+                        <i class="fa-solid fa-phone"></i>
+                        011 407-6622 / 011 407-6597
+                    </span>
+                    <span class="reb-help-contact">
+                        <i class="fa-solid fa-envelope"></i>
+                        valuationenquiries@joburg.org.za
+                    </span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>

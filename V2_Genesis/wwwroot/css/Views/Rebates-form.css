@@ -1,0 +1,797 @@
+﻿/* ================================================================
+   rebate-form.css
+   Shared styles for all Rebate application forms
+   Path: wwwroot/css/views/rebate-form.css
+   Designed for pensioners: large text, high contrast, clear layout
+================================================================ */
+
+/* ── Page ─────────────────────────────────────────────────── */
+.rf-page {
+    background: #f7f5f2;
+    min-height: 100vh;
+    font-family: 'Poppins',sans-serif;
+}
+
+/* ── Header ──────────────────────────────────────────────── */
+.rf-header {
+    background: #36626d;
+    padding: 28px 24px;
+}
+
+.rf-header-inner {
+    max-width: 960px;
+    margin: 0 auto;
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+}
+
+.rf-back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: rgba(255,255,255,.1);
+    border: 1px solid rgba(255,255,255,.2);
+    color: #fff;
+    padding: 9px 16px;
+    border-radius: 8px;
+    font-size: 13.5px;
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+    flex-shrink: 0;
+    margin-top: 4px;
+    transition: background .15s;
+}
+
+    .rf-back-btn:hover {
+        background: rgba(255,255,255,.18);
+        color: #fff;
+    }
+
+.rf-eyebrow {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #89b7b2;
+    margin-bottom: 6px;
+}
+
+.rf-title {
+    font-size: 20px;
+    font-weight: 800;
+    color: #fff;
+    margin: 0;
+    line-height: 1.25;
+}
+
+/* ── Conditions bar ──────────────────────────────────────── */
+.rf-conditions {
+    background: #fff8e6;
+    border-bottom: 2px solid #e6b000;
+    padding: 14px 24px;
+}
+
+.rf-conditions-inner {
+    max-width: 960px;
+    margin: 0 auto;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    font-size: 14px;
+    color: #5a3e00;
+    line-height: 1.65;
+}
+
+    .rf-conditions-inner i {
+        color: #e6b000;
+        font-size: 18px;
+        flex-shrink: 0;
+        margin-top: 2px;
+    }
+
+/* ── Body ────────────────────────────────────────────────── */
+.rf-body {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 28px 24px 60px;
+}
+
+/* ── Section card ────────────────────────────────────────── */
+.rf-section {
+    background: #fff;
+    border-radius: 14px;
+    border: 1.5px solid #ede9e3;
+    margin-bottom: 20px;
+    overflow: hidden;
+}
+
+.rf-section-head {
+    background: #36626d;
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.rf-section-num {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: #e6b000;
+    color: #1a1a1a;
+    font-size: 16px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.rf-section-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+    margin: 0;
+}
+
+.rf-section-body {
+    padding: 24px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+    align-items: flex-start;
+}
+
+/* ── Field widths ────────────────────────────────────────── */
+.rf-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.rf-field-full {
+    width: 100%;
+}
+
+.rf-field-half {
+    width: calc(50% - 9px);
+    min-width: 200px;
+}
+
+.rf-field-third {
+    width: calc(33.33% - 12px);
+    min-width: 180px;
+}
+
+.rf-field-quarter {
+    width: calc(25% - 14px);
+    min-width: 140px;
+}
+
+/* ── Labels ──────────────────────────────────────────────── */
+.rf-label {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1a1a1a;
+    line-height: 1.4;
+}
+
+    .rf-label.rf-required::after {
+        content: ' *';
+        color: #dc2626;
+        font-size: 14px;
+    }
+
+/* ── Inputs ──────────────────────────────────────────────── */
+.rf-input {
+    padding: 12px 14px;
+    border: 2px solid #d8d3cc;
+    border-radius: 9px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 15px;
+    color: #1a1a1a;
+    background: #fff;
+    outline: none;
+    width: 100%;
+    transition: border-color .15s;
+}
+
+    .rf-input:focus {
+        border-color: #36626d;
+        box-shadow: 0 0 0 3px rgba(54,98,109,.12);
+    }
+
+    .rf-input:required:invalid:not(:placeholder-shown) {
+        border-color: #dc2626;
+    }
+
+select.rf-input {
+    cursor: pointer;
+}
+
+/* ── Radio group ─────────────────────────────────────────── */
+.rf-radio-group {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    padding: 10px 0;
+}
+
+.rf-radio-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 15px;
+    font-weight: 500;
+    color: #1a1a1a;
+    cursor: pointer;
+}
+
+    .rf-radio-label input[type="radio"] {
+        width: 20px;
+        height: 20px;
+        accent-color: #36626d;
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+
+/* ── Checkbox ────────────────────────────────────────────── */
+.rf-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14.5px;
+    color: #333;
+    cursor: pointer;
+}
+
+    .rf-checkbox-label input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+        accent-color: #36626d;
+        flex-shrink: 0;
+    }
+
+/* ── Address group label ─────────────────────────────────── */
+.rf-address-group-label {
+    width: 100%;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #645a50;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #ede9e3;
+}
+
+/* ── Spouse group ────────────────────────────────────────── */
+.rf-spouse-group {
+    width: 100%;
+}
+
+.rf-spouse-banner {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #e8f3f4;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #36626d;
+    margin-bottom: 14px;
+    border-left: 3px solid #89b7b2;
+}
+
+.rf-fields-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    width: 100%;
+}
+
+/* ── Income table (Form 60) ──────────────────────────────── */
+.rf-income-note {
+    width: 100%;
+    font-size: 13.5px;
+    color: #645a50;
+    background: #f7f5f2;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 0;
+    border-left: 3px solid #e6b000;
+    line-height: 1.6;
+}
+
+.rf-income-table-wrap {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.rf-income-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 15px;
+    min-width: 500px;
+}
+
+    .rf-income-table thead tr {
+        background: #36626d;
+    }
+
+    .rf-income-table thead th {
+        padding: 13px 16px;
+        color: #e6b000;
+        font-weight: 700;
+        font-size: 13.5px;
+        text-align: left;
+        border: none;
+    }
+
+    .rf-income-table tbody tr:nth-child(even) {
+        background: #f7f5f2;
+    }
+
+    .rf-income-table tbody tr:hover {
+        background: #e8f3f4;
+    }
+
+    .rf-income-table td {
+        padding: 10px 16px;
+        border-bottom: 1px solid #ede9e3;
+        vertical-align: middle;
+    }
+
+.rf-it-label {
+    font-size: 14.5px;
+    font-weight: 600;
+    color: #333;
+    white-space: nowrap;
+}
+
+.rf-currency {
+    font-size: 15px;
+}
+
+/* ── File upload ─────────────────────────────────────────── */
+.rf-upload-notice {
+    width: 100%;
+    background: #fff0eb;
+    border-left: 3px solid #bb4722;
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 14px;
+    color: #7a2010;
+    line-height: 1.6;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+    .rf-upload-notice i {
+        color: #bb4722;
+        font-size: 16px;
+        flex-shrink: 0;
+        margin-top: 1px;
+    }
+
+.rf-field-upload {
+    width: calc(50% - 9px);
+    min-width: 240px;
+}
+
+.rf-file {
+    padding: 10px 12px;
+    border: 2px dashed #d8d3cc;
+    border-radius: 9px;
+    font-size: 14px;
+    width: 100%;
+    background: #fafaf8;
+    cursor: pointer;
+    transition: border-color .15s;
+}
+
+    .rf-file:hover {
+        border-color: #36626d;
+    }
+
+.rf-file-help {
+    font-size: 12px;
+    color: #888;
+}
+
+/* ── Error message ───────────────────────────────────────── */
+.rf-error {
+    font-size: 12.5px;
+    color: #dc2626;
+}
+
+/* ── Submit bar ──────────────────────────────────────────── */
+.rf-submit-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    background: #fff;
+    border-radius: 14px;
+    border: 1.5px solid #ede9e3;
+    padding: 20px 24px;
+}
+
+.rf-cancel-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: #f7f5f2;
+    color: #645a50;
+    padding: 13px 22px;
+    border-radius: 9px;
+    font-size: 15px;
+    font-weight: 600;
+    text-decoration: none;
+    border: 1.5px solid #ede9e3;
+    transition: background .15s;
+}
+
+    .rf-cancel-btn:hover {
+        background: #ede9e3;
+        color: #1a1a1a;
+    }
+
+.rf-submit-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #36626d;
+    color: #fff;
+    padding: 14px 32px;
+    border-radius: 9px;
+    font-family: 'Poppins',sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    transition: background .15s, opacity .15s;
+}
+
+    .rf-submit-btn:hover {
+        background: #4a7d8a;
+    }
+
+    .rf-submit-btn:disabled {
+        opacity: .65;
+        cursor: not-allowed;
+    }
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width:700px) {
+    .rf-field-half,
+    .rf-field-third,
+    .rf-field-quarter,
+    .rf-field-upload {
+        width: 100% !important;
+        min-width: unset !important;
+    }
+
+    .rf-section-body {
+        padding: 18px;
+        gap: 14px;
+    }
+
+    .rf-title {
+        font-size: 17px;
+    }
+
+    .rf-header-inner {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .rf-income-table {
+        font-size: 13.5px;
+    }
+
+        .rf-income-table thead th,
+        .rf-income-table td {
+            padding: 9px 10px;
+        }
+
+    .rf-submit-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .rf-cancel-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* ── Scheme details highlight ─────────────────── */
+.rf-scheme-banner {
+    width: 100%;
+    background: #fdf6d8;
+    border-left: 4px solid #e6b000;
+    border-radius: 10px;
+    padding: 14px 18px;
+    font-size: 14px;
+    color: #5a3e00;
+    line-height: 1.7;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+}
+
+.rf-scheme-banner i {
+    color: #c49a00;
+    flex-shrink: 0;
+    margin-top: 2px;
+    font-size: 16px;
+}
+.rf-reject-warning {
+    display: none;
+    width: 100%;
+    background: #fdf0eb;
+    border-left: 4px solid #bb4722;
+    border-radius: 10px;
+    padding: 14px 18px;
+    font-size: 14px;
+    color: #7a2010;
+    line-height: 1.65;
+}
+
+.rf-conditions-list {
+    width: 100%;
+    background: #e8f3f4;
+    border-left: 4px solid #36626d;
+    border-radius: 10px;
+    padding: 16px 20px;
+    font-size: 14px;
+    color: #1a1a1a;
+    line-height: 1.7;
+}
+
+.rf-conditions-list-title {
+    font-weight: 700;
+    color: #36626d;
+    font-size: 15px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.rf-info-card {
+    width: 100%;
+    background: #e8f3f4;
+    border-left: 4px solid #36626d;
+    border-radius: 10px;
+    padding: 16px 20px;
+    font-size: 14px;
+    color: #1a1a1a;
+    line-height: 1.7;
+}
+
+.rf-info-card-title {
+    font-weight: 700;
+    color: #36626d;
+    font-size: 15px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.rf-info-card ul {
+    margin: 6px 0 0;
+    padding-left: 20px;
+}
+
+    .rf-info-card ul li {
+        margin-bottom: 4px;
+    }
+.rf-conditions-list ol {
+    margin: 6px 0 0;
+    padding-left: 20px;
+}
+
+    .rf-conditions-list ol li {
+        margin-bottom: 5px;
+    }
+
+.rf-info-card {
+    width: 100%;
+    background: #e8f3f4;
+    border-left: 4px solid #36626d;
+    border-radius: 10px;
+    padding: 16px 20px;
+    font-size: 14px;
+    color: #1a1a1a;
+    line-height: 1.7;
+}
+
+.rf-info-card-title {
+    font-weight: 700;
+    color: #36626d;
+    font-size: 15px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.rf-info-card ul {
+    margin: 6px 0 0;
+    padding-left: 20px;
+}
+
+    .rf-info-card ul li {
+        margin-bottom: 4px;
+    }
+
+.rf-reject-warning {
+    display: none;
+    width: 100%;
+    background: #fdf0eb;
+    border-left: 4px solid #bb4722;
+    border-radius: 10px;
+    padding: 14px 18px;
+    font-size: 14px;
+    color: #7a2010;
+    line-height: 1.65;
+}
+
+/* ── Protection status selector ──────────────────── */
+.rf-protection-grid {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.rf-protection-option {
+    flex: 1;
+    min-width: 160px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #f7f5f2;
+    border: 2px solid #d8d3cc;
+    border-radius: 10px;
+    padding: 13px 16px;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 500;
+    color: #1a1a1a;
+    transition: all .15s;
+}
+
+    .rf-protection-option:hover {
+        border-color: #89b7b2;
+        background: #e8f3f4;
+    }
+
+    .rf-protection-option input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+        accent-color: #36626d;
+        flex-shrink: 0;
+        cursor: pointer;
+    }
+
+    .rf-protection-option.selected {
+        border-color: #36626d;
+        background: #e8f3f4;
+        color: #36626d;
+    }
+/* ── Other specify reveal ────────────────────────── */
+#specifyOtherGroup {
+    display: none;
+}
+/* ── Gazette detail fields ───────────────────────── */
+.rf-gazette-note {
+    width: 100%;
+    background: #fdf6d8;
+    border-left: 4px solid #e6b000;
+    border-radius: 10px;
+    padding: 14px 18px;
+    font-size: 14px;
+    color: #5a3e00;
+    line-height: 1.6;
+}
+
+/* ── Scholar stats grid ──────────────────────── */
+.rf-stats-grid {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2,1fr);
+    gap: 16px;
+}
+/* ── Financial summary table (4-col) ─────────── */
+.rf-fin-wrap {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.rf-fin-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    min-width: 620px;
+}
+
+    .rf-fin-table thead tr.rf-fin-head-group {
+        background: #36626d;
+    }
+
+        .rf-fin-table thead tr.rf-fin-head-group th {
+            padding: 12px 14px;
+            color: #e6b000;
+            font-weight: 700;
+            font-size: 13px;
+            text-align: left;
+            border: none;
+        }
+
+    .rf-fin-table thead tr.rf-fin-sub-head {
+        background: #2a4e58;
+    }
+
+        .rf-fin-table thead tr.rf-fin-sub-head th {
+            padding: 9px 14px;
+            color: rgba(255,255,255,.8);
+            font-weight: 600;
+            font-size: 12px;
+            border-bottom: 2px solid #e6b000;
+        }
+
+    .rf-fin-table tbody tr:nth-child(even) {
+        background: #f7f5f2;
+    }
+
+    .rf-fin-table tbody tr:hover {
+        background: #e8f3f4;
+    }
+
+    .rf-fin-table td {
+        padding: 9px 12px;
+        border-bottom: 1px solid #ede9e3;
+        vertical-align: middle;
+    }
+
+        .rf-fin-table td.rf-fin-label {
+            font-size: 13.5px;
+            font-weight: 600;
+            color: #333;
+            white-space: nowrap;
+            background: #fafaf8;
+            border-right: 2px solid #ede9e3;
+        }
+
+        .rf-fin-table td input.rf-input {
+            font-size: 13.5px;
+            padding: 8px 10px;
+        }
+
+.rf-fin-section-row td {
+    background: #36626d !important;
+    color: #e6b000;
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 8px 14px;
+}
+
+/* ── Large org reveal ─────────────────────────── */
+#largeOrgDescGroup {
+    display: none;
+}
+
+@media(max-width:600px) {
+    .rf-stats-grid {
+        grid-template-columns: 1fr;
+    }
+}

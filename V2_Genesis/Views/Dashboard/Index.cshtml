@@ -27,6 +27,9 @@
 
         return "R " + num.ToString("N0",
             new System.Globalization.CultureInfo("en-ZA"));
+
+
+      
     }
 
    RollDateEntry? GetDates(string rollSource)
@@ -59,6 +62,16 @@
         "Completed" => "<span class='cd-pill cd-pill-completed'>Completed</span>",
         "Cancelled" => "<span class='cd-pill cd-pill-lodging'>Cancelled</span>",
         _ => $"<span class='cd-pill cd-pill-pending'>{status}</span>"
+    };
+
+    string GetRebateStatusPill(string? status) => status switch
+    {
+        "Acknowledge" => "<span class='cd-pill cd-pill-lodging'>Acknowledged</span>",
+        "Auto Reject" => "<span class='cd-pill cd-pill-rejected'>Auto Rejected</span>",
+        "Under Review" => "<span class='cd-pill cd-pill-inprogress'>Under Review</span>",
+        "Approved" => "<span class='cd-pill cd-pill-completed'>Approved</span>",
+        "Rejected" => "<span class='cd-pill cd-pill-rejected'>Rejected</span>",
+        _ => $"<span class='cd-pill cd-pill-pending'>{status ?? "Pending"}</span>"
     };
 }
 
@@ -641,51 +654,160 @@ else if (roll.IsQuery)
 
     }
     @* ── Rebates ──────────────────────────────────────────────────────────── *@
+    @{
+        var rebateCount = Model.Rebates?.Count ?? 0;
+    }
+
     <div class="cd-roll-section">
+
+   
         <div class="cd-roll-header cd-roll-rebates" onclick="toggleRoll('rebates')">
             <div class="cd-roll-header-left">
-                <div class="cd-roll-icon"><i class="fa-solid fa-percent"></i></div>
+                <div class="cd-roll-icon">
+                    <i class="fa-solid fa-percent"></i>
+                </div>
                 <div>
-                    <h2 class="cd-roll-name">Rebates Process</h2>
-                    <span class="cd-roll-short">Apply or re-apply for property rate rebates</span>
+                    <h2 class="cd-roll-name">Rebates</h2>
+                    <span class="cd-roll-short">Apply or track your property rate rebates</span>
                 </div>
             </div>
             <div class="cd-roll-header-right">
+                <a href="/Rebates/Index"
+                       class="cd-roll-search-btn"
+                       onclick="event.stopPropagation()">
+                    <i class="fa-solid fa-file-pen"></i> Apply
+                </a>
                 <span class="cd-roll-badge cd-badge-open">OPEN</span>
                 <i class="fa-solid fa-chevron-down cd-roll-chevron" id="chevron-rebates"></i>
             </div>
         </div>
 
+        
         <div class="cd-roll-body" id="rollbody-rebates">
-            <div class="cd-cta-card">
-                <div class="cd-cta-icon cd-cta-icon-gold">
-                    <i class="fa-solid fa-percent"></i>
-                </div>
-                <div class="cd-cta-body">
-                    <h3>Apply for Property Rebates</h3>
-                    <p>
-                        The City of Johannesburg offers rebate benefits to qualifying property owners —
-                        including pensioners, disabled persons, child-headed households and public benefit
-                        organisations. Apply or re-apply below.
-                    </p>
-                    <div class="cd-cta-actions">
-                        <a href="/Rebates/Index" class="cd-cta-btn cd-cta-btn-primary">
-                            <i class="fa-solid fa-file-pen"></i> Apply for Rebates
-                        </a>
-                        <a href="/Rebates/RebatesDashboard" class="cd-cta-btn cd-cta-btn-outline">
-                            <i class="fa-solid fa-gauge-high"></i> View My Rebates
-                        </a>
+
+            @if (rebateCount == 0)
+            {
+    
+                <div class="cd-cta-card">
+                    <div class="cd-cta-icon cd-cta-icon-gold">
+                        <i class="fa-solid fa-percent"></i>
+                    </div>
+                    <div class="cd-cta-body">
+                        <h3>Apply for Property Rebates</h3>
+                        <p>
+                            The City of Johannesburg offers rebate benefits to qualifying property
+                            owners — including pensioners, disabled persons, child-headed households
+                            and public benefit organisations.
+                        </p>
+                        <div class="cd-cta-actions">
+                            <a href="/Rebates/Index" class="cd-cta-btn cd-cta-btn-primary">
+                                <i class="fa-solid fa-file-pen"></i> Apply for Rebates
+                            </a>
+                        </div>
+                    </div>
+                    <div class="cd-cta-chips">
+                        <span class="cd-chip"><i class="fa-solid fa-person-cane"></i> Pensioner</span>
+                        <span class="cd-chip"><i class="fa-solid fa-wheelchair"></i> Disability</span>
+                        <span class="cd-chip"><i class="fa-solid fa-children"></i> Child-Headed</span>
+                        <span class="cd-chip"><i class="fa-solid fa-hand-holding-heart"></i> PBO</span>
                     </div>
                 </div>
-                <div class="cd-cta-chips">
-                    <span class="cd-chip"><i class="fa-solid fa-person-cane"></i> Pensioner</span>
-                    <span class="cd-chip"><i class="fa-solid fa-wheelchair"></i> Disability</span>
-                    <span class="cd-chip"><i class="fa-solid fa-child"></i> Child-Headed</span>
-                    <span class="cd-chip"><i class="fa-solid fa-hands-holding-child"></i> PBO</span>
+            }
+            else
+            {
+                
+                <div style="padding:14px 22px; background:#f7f5f2;
+                    border-bottom:1px solid #ede9e3;
+                    display:flex; align-items:center;
+                    justify-content:space-between; flex-wrap:wrap; gap:12px;">
+                    <span style="font-size:13px; color:#645a50;">
+                        <i class="fa-solid fa-circle-info" style="color:#89b7b2; margin-right:6px;"></i>
+                        You have <strong>@rebateCount</strong>
+                        rebate application@(rebateCount == 1 ? "" : "s") on record.
+                    </span>
+                    <a href="/Rebates/Index" class="cd-add-btn">
+                        <i class="fa-solid fa-plus"></i> New Application
+                    </a>
                 </div>
-            </div>
+
+                <div class="cd-widget">
+                    <div class="cd-widget-toggle"
+                         onclick="toggleWidget('rebates-applications')">
+                        <div class="cd-widget-toggle-left">
+                            <i class="fa-solid fa-file-pen"></i>
+                            <h3>My Applications</h3>
+                            <span class="cd-count-badge cd-count-orange">@rebateCount</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-down cd-widget-chevron"
+                           id="wchev-rebates-applications"></i>
+                    </div>
+
+                    <div class="cd-widget-body open" id="widget-rebates-applications">
+                        <div class="table-responsive">
+                            <table class="cd-table table table-bordered table-hover"
+                                  
+                                   id="tbl-rebates-applications">
+                                <thead>
+                                    <tr>
+                                        <th>Application No.</th>
+                                        <th>Account Number</th>
+                                        <th>Full Name</th>
+                                        <th>Rebate Type</th>
+                                        <th>Status</th>
+                                        <th>Options</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model.Rebates)
+                                    {
+                                        <tr>
+                                            <td><strong>@item.Rebate_No</strong></td>
+                                            <td>@item.AccountNumber</td>
+                                            <td>@item.FirstNames @item.Surname</td>
+                                            <td>@item.Rebate_Type</td>
+                                            <td>@Html.Raw(GetRebateStatusPill(item.Status))</td>
+                                            <td>
+                                                <div class="dropdown">
+                                                    <button class="cd-action-btn dropdown-toggle"
+                                                            data-bs-toggle="dropdown">
+                                                        Actions
+                                                    </button>
+                                                    <ul class="dropdown-menu">
+                                                        <li>
+                                                            <a class="dropdown-item"
+                                                                   asp-controller="Rebates"
+                                                                   asp-action="ViewData"
+                                                                   asp-route-RebateType="@item.Rebate_Type"
+                                                                   asp-route-RebateNo="@item.Rebate_No">
+                                                                <i class="fa-solid fa-eye"></i>
+                                                                View Form
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a class="dropdown-item"
+                                                                   asp-controller="Rebates"
+                                                                   asp-action="Download"
+                                                                   asp-route-rebateNo="@item.Rebate_No">
+                                                                <i class="fa-solid fa-file-pdf"
+                                                                   style="color:#dc2626;"></i>
+                                                                Download Acknowledgement
+                                                            </a>
+                                                        </li>
+                                                    </ul>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            }
+
         </div>
     </div>
+
 
     @* ── Property Attributes ───────────────────────────────────────────────── *@
     <div class="cd-roll-section">

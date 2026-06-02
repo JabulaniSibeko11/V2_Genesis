@@ -1,0 +1,359 @@
+﻿@model V2_Genesis.Models.Rebates.RebateFormBinding
+@{
+    ViewData["Title"] = "Sports Club Rebate";
+    Layout = "~/Views/Shared/_ClientLayout.cshtml";
+}
+@section Styles {
+    <link href="~/css/views/rebates-form.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/views/rebates-sport.css" rel="stylesheet"asp-append-version="true" />
+    <link href="~/css/views/clientdashboardcss.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/site.css" rel="stylesheet" asp-append-version="true" />
+}
+
+<div class="rf-page">
+
+  
+    <div class="rf-header">
+        <div class="rf-header-inner">
+            <a asp-controller="Rebates" asp-action="Index" class="rf-back-btn">
+                <i class="fa-solid fa-arrow-left"></i> Back
+            </a>
+            <div>
+                <div class="rf-eyebrow">Rates Rebates</div>
+                <h1 class="rf-title">Application for Sports Club Rebate</h1>
+            </div>
+        </div>
+    </div>
+
+  
+    <div class="rf-conditions">
+        <div class="rf-conditions-inner">
+            <i class="fa-solid fa-circle-info"></i>
+            <div>
+                <strong>Period: From 1 July 2023 &nbsp;|&nbsp; Conditions:</strong>
+                The membership of the club must be open to previously disadvantaged persons.
+                The club must be registered with SARS and actively involved in sports
+                development programmes for previously disadvantaged communities.
+            </div>
+        </div>
+    </div>
+
+    <div class="rf-body">
+
+        <form id="rebateForm"
+              method="post"
+              enctype="multipart/form-data"
+              asp-controller="Rebates"
+              asp-action="SportsClubRebate">
+
+            @Html.AntiForgeryToken()
+
+       
+            <div class="rf-section">
+                <div class="rf-section-head">
+                    <div class="rf-section-num">1</div>
+                    <h2 class="rf-section-title">Account &amp; Property Details</h2>
+                </div>
+                <div class="rf-section-body">
+
+                    <div class="rf-field rf-field-half">
+                        <label class="rf-label rf-required">Account Number</label>
+                        <input asp-for="S1.AccountNumber" class="rf-input"
+                               minlength="9" maxlength="9" id="AccountNumber"
+                               placeholder="9-digit account number"
+                               onkeypress="return isNumericKey(event)"
+                               onpaste="return false" required />
+                        <span asp-validation-for="S1.AccountNumber" class="rf-error"></span>
+                    </div>
+
+                    <div class="rf-field rf-field-half">
+                        <label class="rf-label rf-required">Erf and Township</label>
+                        <input asp-for="S9.ErfandTownship" class="rf-input"
+                               id="ErfandTownship" maxlength="50"
+                               placeholder="e.g. Erf 1234 Soweto" required />
+                        <span asp-validation-for="S9.ErfandTownship" class="rf-error"></span>
+                    </div>
+
+                    <div class="rf-field rf-field-full">
+                        <label class="rf-label rf-required">Street Address of Property</label>
+                        <input asp-for="S2.StreetAddress" class="rf-input"
+                               id="StreetAddress" maxlength="50"
+                               placeholder="Physical address of the sports club property" required />
+                        <span asp-validation-for="S2.StreetAddress" class="rf-error"></span>
+                    </div>
+
+                </div>
+            </div>
+
+      
+            <div class="rf-section">
+                <div class="rf-section-head">
+                    <div class="rf-section-num">2</div>
+                    <h2 class="rf-section-title">Organisation Details</h2>
+                </div>
+                <div class="rf-section-body">
+
+                    <div class="rf-field rf-field-full">
+                        <label class="rf-label rf-required">Name of Organisation / Club</label>
+                        <input asp-for="S10.NameOfTheOrganisation" class="rf-input"
+                               id="NameOfTheOrganisation" maxlength="100"
+                               placeholder="Full legal name of the sports club" required />
+                        <span asp-validation-for="S10.NameOfTheOrganisation" class="rf-error"></span>
+                    </div>
+
+                    <div class="rf-field rf-field-half">
+                        <label class="rf-label rf-required">Registration Number</label>
+                        <input asp-for="S10.RegistrationNumber" class="rf-input"
+                               id="RegistrationNumber" maxlength="50"
+                               placeholder="e.g. 2004/012345/08" required />
+                        <span asp-validation-for="S10.RegistrationNumber" class="rf-error"></span>
+                    </div>
+
+                    <div class="rf-field rf-field-half">
+                        <label class="rf-label rf-required">Name, Surname &amp; Designation of Applicant</label>
+                        <input asp-for="S10.NameSurnameDesignation" class="rf-input"
+                               id="NameSurnameDesignation" maxlength="100"
+                               placeholder="e.g. John Smith — Chairperson" required />
+                        <span asp-validation-for="S10.NameSurnameDesignation" class="rf-error"></span>
+                    </div>
+
+                </div>
+            </div>
+
+        
+            <div class="rf-section">
+                <div class="rf-section-head">
+                    <div class="rf-section-num">3</div>
+                    <h2 class="rf-section-title">Contact Details</h2>
+                </div>
+                <div class="rf-section-body">
+
+                    <div class="rf-field rf-field-half">
+                        <label class="rf-label rf-required">Email Address</label>
+                        <input asp-for="S3.Email" class="rf-input" id="Email"
+                               type="email" maxlength="100"
+                               placeholder="club@@email.com" required />
+                        <span asp-validation-for="S3.Email" class="rf-error"></span>
+                    </div>
+
+                    <div class="rf-field rf-field-quarter">
+                        <label class="rf-label rf-required">Cell / Contact Number</label>
+                        <input asp-for="S3.CellNo" class="rf-input" id="CellNo"
+                               maxlength="14" placeholder="0XX XXX XXXX"
+                               onkeypress="return isNumericKey(event)"
+                               onpaste="return false" required />
+                        <span asp-validation-for="S3.CellNo" class="rf-error"></span>
+                    </div>
+
+                </div>
+            </div>
+
+        
+            <div class="rf-section">
+                <div class="rf-section-head">
+                    <div class="rf-section-num">4</div>
+                    <h2 class="rf-section-title">SARS Registration</h2>
+                </div>
+                <div class="rf-section-body">
+
+                    <div class="rf-field rf-field-half">
+                        <label class="rf-label rf-required">Is the organisation registered with SARS?</label>
+                        <select asp-for="S10.RegisteredWithSARS" class="rf-input"
+                                id="sarsSelect" onchange="handleSarsChange(this)" required>
+                            <option value="">Select...</option>
+                            <option value="Yes">Yes</option>
+                            <option value="No">No</option>
+                        </select>
+                        <span asp-validation-for="S10.RegisteredWithSARS" class="rf-error"></span>
+                    </div>
+
+                
+                    <div class="rf-reject-warning" id="sarsWarning">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        <strong>Does not qualify.</strong>
+                        The organisation must be registered with SARS to qualify
+                        for the Sports Club Rebate. Your application will be
+                        automatically declined.
+                    </div>
+
+                </div>
+            </div>
+
+        
+            <div class="rf-section">
+                <div class="rf-section-head">
+                    <div class="rf-section-num">5</div>
+                    <h2 class="rf-section-title">Supporting Documents</h2>
+                </div>
+                <div class="rf-section-body">
+
+                    <div class="rf-upload-notice">
+                        <i class="fa-solid fa-circle-exclamation"></i>
+                        All documents must be in <strong>PDF format only</strong>.
+                        Maximum file size: <strong>20 MB</strong> per document.
+                    </div>
+
+                  
+                    <div class="rf-eligibility">
+                        <div class="rf-eligibility-title">
+                            <i class="fa-solid fa-clipboard-list"></i>
+                            Required &amp; Supporting Documents
+                        </div>
+                        <ul>
+                            <li><strong>SARS Certificate</strong> — required if registered with SARS</li>
+                            <li><strong>3-Year Audited Financial Statements</strong> — required</li>
+                            <li><strong>Proof of open membership</strong> to previously disadvantaged persons — required</li>
+                            <li><strong>Sports development programme evidence</strong> — optional but recommended</li>
+                        </ul>
+                    </div>
+
+                  
+                    <div class="rf-field rf-field-upload">
+                        <label class="rf-label" id="sarsLabel">
+                            SARS Certificate
+                            <span id="sarsReqTag" style="display:none;"
+                                  class="rf-required-tag">Required</span>
+                        </label>
+                        <input type="file" id="sarsFile" name="files" class="rf-file"
+                               accept=".pdf" onchange="validatePdf(this)" />
+                        <span class="rf-file-help" id="sarsFileHelp">
+                            Required when registered with SARS
+                        </span>
+                    </div>
+
+                 
+                    <div class="rf-field rf-field-upload">
+                        <label class="rf-label rf-required">
+                            3-Year Audited Financial Statements
+                        </label>
+                        <input type="file" name="files" class="rf-file"
+                               accept=".pdf" onchange="validatePdf(this)" required />
+                        <span class="rf-file-help">Required</span>
+                    </div>
+
+                    
+                    <div class="rf-field rf-field-upload">
+                        <label class="rf-label rf-required">
+                            Proof: Membership Open to Previously Disadvantaged Persons
+                        </label>
+                        <input type="file" name="files" class="rf-file"
+                               accept=".pdf" onchange="validatePdf(this)" required />
+                        <span class="rf-file-help">Required</span>
+                    </div>
+
+                
+                    <div class="rf-field rf-field-upload">
+                        <label class="rf-label">
+                            Sports Development Programme Evidence
+                        </label>
+                        <input type="file" name="files" class="rf-file"
+                               accept=".pdf" onchange="validatePdf(this)" />
+                        <span class="rf-file-help">Optional — recommended</span>
+                    </div>
+
+                </div>
+            </div>
+
+  
+            <div class="rf-submit-bar">
+                <a asp-controller="Rebates" asp-action="Index" class="rf-cancel-btn">
+                    <i class="fa-solid fa-arrow-left"></i> Back
+                </a>
+                <button type="submit" class="rf-submit-btn" id="submitBtn">
+                    <i class="fa-solid fa-paper-plane"></i> Submit Application
+                </button>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+(function () {
+
+    // ── Numeric key guard ────────────────────────────────────────
+    window.isNumericKey = function (e) {
+        var c = e.which ?? e.keyCode;
+        return !(c > 31 && (c < 48 || c > 57));
+    };
+
+    // ── SARS registration toggle ─────────────────────────────────
+    // - Shows warning when No
+    // - Makes SARS certificate required when Yes
+    window.handleSarsChange = function (sel) {
+        var warning  = document.getElementById('sarsWarning');
+        var sarsFile = document.getElementById('sarsFile');
+        var reqTag   = document.getElementById('sarsReqTag');
+        var helpText = document.getElementById('sarsFileHelp');
+        var label    = document.getElementById('sarsLabel');
+
+        if (sel.value === 'Yes') {
+            warning.style.display  = 'none';
+            sarsFile.required      = true;
+            reqTag.style.display   = 'inline';
+            helpText.textContent   = 'Required — SARS registration certificate';
+            sarsFile.closest('.rf-field').querySelector('.rf-label').classList.add('rf-required');
+        } else if (sel.value === 'No') {
+            warning.style.display  = 'block';
+            sarsFile.required      = false;
+            reqTag.style.display   = 'none';
+            helpText.textContent   = 'Not required (not registered with SARS)';
+        } else {
+            warning.style.display  = 'none';
+            sarsFile.required      = false;
+        }
+    };
+
+    // ── PDF validation ───────────────────────────────────────────
+    window.validatePdf = function (input) {
+        var file = input.files[0];
+        if (file && !file.name.toLowerCase().endsWith('.pdf')) {
+            alert('Please select a PDF file only.');
+            input.value = '';
+        }
+    };
+
+    // ── Submit guard ─────────────────────────────────────────────
+    document.getElementById('rebateForm')
+        ?.addEventListener('submit', function () {
+            var btn = document.getElementById('submitBtn');
+            if (btn) {
+                btn.disabled    = true;
+                btn.innerHTML   =
+                    '<i class="fa-solid fa-spinner fa-spin"></i> Submitting...';
+            }
+        });
+
+    // ── Required field red border on submit attempt ──────────────
+    document.getElementById('rebateForm')
+        ?.addEventListener('submit', function (e) {
+            var ids = [
+                'AccountNumber', 'ErfandTownship', 'StreetAddress',
+                'NameOfTheOrganisation', 'RegistrationNumber',
+                'NameSurnameDesignation', 'Email', 'CellNo'
+            ];
+            var failed = false;
+            ids.forEach(function (id) {
+                var el = document.getElementById(id);
+                if (el && el.value.trim() === '') {
+                    el.style.borderColor = '#dc2626';
+                    el.focus();
+                    failed = true;
+                } else if (el) {
+                    el.style.borderColor = '';
+                }
+            });
+            if (failed) {
+                e.preventDefault();
+                var btn = document.getElementById('submitBtn');
+                if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Submit Application'; }
+                // Scroll to first red field
+                var first = document.querySelector('input[style*="dc2626"]');
+                if (first) first.scrollIntoView({ behavior:'smooth', block:'center' });
+            }
+        });
+
+})();
+</script>
+}

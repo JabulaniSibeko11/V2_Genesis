@@ -26,6 +26,6 @@ namespace V2_Genesis.Services.Interfaces
 
         Task<List<Rebate_View_Model>> GetDashboardAsync(string userId);
         Task<List<Rebate_View_Model>> GetRebateDataAsync(string rebateNo);
-        void WriteAcknoeledgement(RebatesSubmitResult result);
+        void WriteAcknowledgement(RebatesSubmitResult result);
     }
 }

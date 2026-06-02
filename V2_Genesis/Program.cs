@@ -38,6 +38,9 @@ builder.Services.AddSession(o =>
 builder.Services.AddDbContext<ApplicationDbContext>(o =>
     o.UseSqlServer(cfg.GetConnectionString("DefaultConnection")));
 
+builder.Services.AddDbContext<RebateDBContext>(o =>
+    o.UseSqlServer(cfg.GetConnectionString("DefaultConnection")));
+
 builder.Services.AddDbContext<AttributesDbContext>(options =>
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("AttributesConnection")));
@@ -112,6 +115,7 @@ builder.Services.AddScoped<IAttributesSearchService, AttributesSearchService>();
 builder.Services.AddScoped<IAttributeSubmissionService, AttributeSubmissionService>();
 builder.Services.AddScoped<IAttributeDocumentService, AttributeDocumentService>();
 builder.Services.AddScoped<ISection78Service, Section78Service>();
+builder.Services.AddScoped<IRebatesService, RebatesService>();
 // ── App Pipeline ──────────────────────────────────────────────────────────────
 var app = builder.Build();
 
