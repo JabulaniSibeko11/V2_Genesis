@@ -85,7 +85,7 @@
                         <label class="rf-label rf-required">Surname</label>
                         <input asp-for="S1.Surname" class="rf-input" id="Surname" maxlength="50" required />
                     </div>
-                    <div class="rf-field rf-field-half">
+                    <div class="rf-field rf-field-full">
                         <label class="rf-label rf-required">First Names</label>
                         <input asp-for="S1.FirstNames" class="rf-input" id="FirstNames" maxlength="50" required />
                     </div>
@@ -144,11 +144,11 @@
                         <label class="rf-label rf-required">Street Address</label>
                         <input asp-for="S2.StreetAddress" class="rf-input" id="StreetAddress" maxlength="50" required />
                     </div>
-                    <div class="rf-field rf-field-half">
+                    <div class="rf-field " style="flex:2; min-width:180px;">
                         <label class="rf-label rf-required">City / Suburb</label>
                         <input asp-for="S2.CitySuburb" class="rf-input" id="CitySuburb" maxlength="50" required />
                     </div>
-                    <div class="rf-field rf-field-quarter">
+                    <div class="rf-field" style="flex:1; min-width:100px;">
                         <label class="rf-label rf-required">Postal Code</label>
                         <input asp-for="S2.PostalCode" class="rf-input" id="PostalCode" maxlength="4"
                                onkeypress="return isNumericKey(event)" onpaste="return false" required />
@@ -164,11 +164,11 @@
                         <label class="rf-label">Postal Address</label>
                         <input asp-for="S2.PostalAddress" class="rf-input" id="PostalAddress" maxlength="50" />
                     </div>
-                    <div class="rf-field rf-field-half">
+                    <div class="rf-field" style="flex:2; min-width:180px;">
                         <label class="rf-label">City / Suburb</label>
                         <input asp-for="S2.PostalAddressCitySuburb" class="rf-input" id="PostalAddressCitySuburb" maxlength="50" />
                     </div>
-                    <div class="rf-field rf-field-quarter">
+                    <div class="rf-field" style="flex:1; min-width:100px;">
                         <label class="rf-label">Postal Code</label>
                         <input asp-for="S2.PostalAddressPostalCode" class="rf-input" id="PostalAddressPostalCode" maxlength="4"
                                onkeypress="return isNumericKey(event)" onpaste="return false" />
@@ -183,22 +183,22 @@
                     <h2 class="rf-section-title">Contact Details</h2>
                 </div>
                 <div class="rf-section-body">
-                    <div class="rf-field rf-field-quarter">
+                    <div class="rf-field rf-field-third">
                         <label class="rf-label">Home Telephone</label>
                         <input asp-for="S3.HomeTel" class="rf-input" maxlength="14"
                                onkeypress="return isNumericKey(event)" onpaste="return false" />
                     </div>
-                    <div class="rf-field rf-field-quarter">
+                    <div class="rf-field rf-field-third">
                         <label class="rf-label rf-required">Cell Number</label>
                         <input asp-for="S3.CellNo" class="rf-input" id="CellNo" maxlength="14"
                                onkeypress="return isNumericKey(event)" onpaste="return false" required />
                     </div>
-                    <div class="rf-field rf-field-quarter">
+                    <div class="rf-field rf-field-third">
                         <label class="rf-label">Work Telephone</label>
                         <input asp-for="S3.WorkTel" class="rf-input" maxlength="14"
                                onkeypress="return isNumericKey(event)" onpaste="return false" />
                     </div>
-                    <div class="rf-field rf-field-half">
+                    <div class="rf-field rf-field-full">
                         <label class="rf-label rf-required">Email Address</label>
                         <input asp-for="S3.Email" class="rf-input" id="Email" type="email" maxlength="50" required />
                     </div>

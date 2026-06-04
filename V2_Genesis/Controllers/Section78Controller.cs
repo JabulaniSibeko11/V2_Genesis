@@ -129,9 +129,10 @@ public class Section78Controller : Controller
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)
                          ?? throw new InvalidOperationException("Not authenticated.");
         var reviewStat = TempData["ReviewStat"]?.ToString() ?? "Q";
-        var uploadRoot = _config["AppSettings:QueryRooTPath"]
-                         ?? throw new InvalidOperationException(
-                             "QueryRooTPath missing from appsettings.");
+
+        var uploadRoot = _config["ObjectionRolls:Objection_Query:QueryRootPath"]
+                  ?? throw new InvalidOperationException(
+                      "ObjectionRolls:Objection_Query:QueryRootPath missing from appsettings.");
 
         // ── Wire query-type from objector type if not set ───────────
         if (string.IsNullOrEmpty(que.Query_Type))

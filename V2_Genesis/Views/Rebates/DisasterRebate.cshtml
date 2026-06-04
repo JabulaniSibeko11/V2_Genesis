@@ -1,17 +1,16 @@
 ﻿@model V2_Genesis.Models.Rebates.RebateFormBinding
 @{
-    ViewData["Title"] = "High Density Residential Rebate";
+    ViewData["Title"] = "Disaster Rebate";
     Layout = "~/Views/Shared/_ClientLayout.cshtml";
 }
 @section Styles {
     <link href="~/css/views/rebates-form.css" rel="stylesheet" asp-append-version="true" />
-      
+        
     <link href="~/css/views/clientdashboardcss.css" rel="stylesheet" asp-append-version="true" />
     <link href="~/css/site.css" rel="stylesheet" asp-append-version="true" />
 }
 
 <div class="rf-page">
-
     <div class="rf-header">
         <div class="rf-header-inner">
             <a asp-controller="Rebates" asp-action="Index" class="rf-back-btn">
@@ -19,7 +18,7 @@
             </a>
             <div>
                 <div class="rf-eyebrow">Rates Rebates</div>
-                <h1 class="rf-title">Application for High Density Residential Rebate</h1>
+                <h1 class="rf-title">Application for Disaster Rebate</h1>
             </div>
         </div>
     </div>
@@ -28,31 +27,29 @@
         <div class="rf-conditions-inner">
             <i class="fa-solid fa-circle-info"></i>
             <div>
-                <strong>Period: From 1 July 2023 &nbsp;|&nbsp; Rebate: 5% of current monthly rates.</strong>
-                Applicable to properties developed with a minimum density of
-                <strong>80 dwelling units per hectare</strong>.
-                A duly authorised representative or trustee may apply on behalf of the Body Corporate.
-                The City's Department of Development Planning will confirm that the
-                property meets high-density requirements.
+                <strong>Period: From 1 July 2023 &nbsp;|&nbsp; Maximum rebate: 100%.</strong>
+                Applicable to properties situated within an area affected by a disaster
+                under the <strong>Disaster Management Act 57 of 2002</strong>.
+                The property owner must apply and submit proof as required by Council.
+                The rebate duration and limitations are determined by Council per specific event.
             </div>
         </div>
     </div>
 
     <div class="rf-body">
         <form id="rebateForm" method="post" enctype="multipart/form-data"
-              asp-controller="Rebates" asp-action="HighDensity">
+              asp-controller="Rebates" asp-action="DisasterRebate">
             @Html.AntiForgeryToken()
 
-           
             <div class="rf-section">
                 <div class="rf-section-head">
                     <div class="rf-section-num">1</div>
-                    <h2 class="rf-section-title">Personal Details of Applicant</h2>
+                    <h2 class="rf-section-title">Personal Details</h2>
                 </div>
                 <div class="rf-section-body">
                     <div class="rf-field rf-field-half">
                         <label class="rf-label rf-required">Account Number</label>
-                        <input asp-for="S1.AccountNumber" class="rf-input"
+                        <input asp-for="S1.AccountNumber" class="rf-input" id="AccountNumber"
                                minlength="9" maxlength="9" placeholder="9-digit account number"
                                onkeypress="return isNumericKey(event)" onpaste="return false" required />
                         <span asp-validation-for="S1.AccountNumber" class="rf-error"></span>
@@ -60,12 +57,8 @@
                     <div class="rf-field rf-field-half">
                         <label class="rf-label rf-required">Gender</label>
                         <div class="rf-radio-group">
-                            <label class="rf-radio-label">
-                                <input type="radio" asp-for="S1.Gender" value="Male" required /><span>Male</span>
-                            </label>
-                            <label class="rf-radio-label">
-                                <input type="radio" asp-for="S1.Gender" value="Female" required /><span>Female</span>
-                            </label>
+                            <label class="rf-radio-label"><input type="radio" asp-for="S1.Gender" value="Male" required /><span>Male</span></label>
+                            <label class="rf-radio-label"><input type="radio" asp-for="S1.Gender" value="Female" required /><span>Female</span></label>
                         </div>
                     </div>
                     <div class="rf-field rf-field-half">
@@ -82,26 +75,21 @@
                         <label class="rf-label rf-required">Surname</label>
                         <input asp-for="S1.Surname" class="rf-input" id="Surname" maxlength="50" required />
                     </div>
-                    <div class="rf-field rf-field-full">
+                    <div class="rf-field rf-field-half">
                         <label class="rf-label rf-required">First Names</label>
                         <input asp-for="S1.FirstNames" class="rf-input" id="FirstNames" maxlength="50" required />
                     </div>
                     <div class="rf-field rf-field-full">
                         <label class="rf-label rf-required">Identification Type</label>
                         <div class="rf-radio-group">
-                            <label class="rf-radio-label">
-                                <input type="radio" name="identificationType" value="IDNumber" required /><span>RSA ID Number</span>
-                            </label>
-                            <label class="rf-radio-label">
-                                <input type="radio" name="identificationType" value="PassportNumber" /><span>Passport</span>
-                            </label>
+                            <label class="rf-radio-label"><input type="radio" name="identificationType" value="IDNumber" required /><span>RSA ID Number</span></label>
+                            <label class="rf-radio-label"><input type="radio" name="identificationType" value="PassportNumber" /><span>Passport</span></label>
                         </div>
                     </div>
                     <div class="rf-field rf-field-half" id="idNumberGroup" style="display:none;">
                         <label class="rf-label rf-required">RSA ID Number</label>
                         <input asp-for="S1.IDNumber" class="rf-input" id="RSAIDNumber"
-                               minlength="13" maxlength="13" placeholder="13-digit ID"
-                               onkeypress="return isNumericKey(event)" onpaste="return false" />
+                               minlength="13" maxlength="13" onkeypress="return isNumericKey(event)" onpaste="return false" />
                     </div>
                     <div class="rf-field rf-field-half" id="passportGroup" style="display:none;">
                         <label class="rf-label rf-required">Passport Number</label>
@@ -121,15 +109,13 @@
                             <div class="rf-field rf-field-third">
                                 <label class="rf-label">Spouse ID Number</label>
                                 <input asp-for="S1.SpouseIDNumber" class="rf-input" id="SpouseIDNumber"
-                                       minlength="13" maxlength="13"
-                                       onkeypress="return isNumericKey(event)" onpaste="return false" />
+                                       minlength="13" maxlength="13" onkeypress="return isNumericKey(event)" onpaste="return false" />
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-          
             <div class="rf-section">
                 <div class="rf-section-head">
                     <div class="rf-section-num">2</div>
@@ -141,11 +127,11 @@
                         <label class="rf-label rf-required">Street Address</label>
                         <input asp-for="S2.StreetAddress" class="rf-input" id="StreetAddress" maxlength="50" required />
                     </div>
-                    <div class="rf-field" style="flex:2; min-width:180px;">
+                    <div class="rf-field rf-field-half">
                         <label class="rf-label rf-required">City / Suburb</label>
                         <input asp-for="S2.CitySuburb" class="rf-input" id="CitySuburb" maxlength="50" required />
                     </div>
-                    <div class="rf-field" style="flex:1; min-width:100px;">
+                    <div class="rf-field rf-field-quarter">
                         <label class="rf-label rf-required">Postal Code</label>
                         <input asp-for="S2.PostalCode" class="rf-input" id="PostalCode" maxlength="4"
                                onkeypress="return isNumericKey(event)" onpaste="return false" required />
@@ -158,87 +144,79 @@
                     </div>
                     <div class="rf-address-group-label">Postal Address</div>
                     <div class="rf-field rf-field-full">
-                        <label class="rf-label">Postal Address</label>
-                        <input asp-for="S2.PostalAddress" class="rf-input" id="PostalAddress" maxlength="50" />
+                        <label class="rf-label rf-required">Postal Address</label>
+                        <input asp-for="S2.PostalAddress" class="rf-input" id="PostalAddress" maxlength="50" required />
                     </div>
-                    <div class="rf-field" style="flex:2; min-width:180px;">
-                        <label class="rf-label">City / Suburb</label>
-                        <input asp-for="S2.PostalAddressCitySuburb" class="rf-input" id="PostalAddressCitySuburb" maxlength="50" />
+                    <div class="rf-field rf-field-half">
+                        <label class="rf-label rf-required">City / Suburb</label>
+                        <input asp-for="S2.PostalAddressCitySuburb" class="rf-input" id="PostalAddressCitySuburb" maxlength="50" required />
                     </div>
-                    <div class="rf-field" style="flex:1; min-width:100px;">
-                        <label class="rf-label">Postal Code</label>
+                    <div class="rf-field rf-field-quarter">
+                        <label class="rf-label rf-required">Postal Code</label>
                         <input asp-for="S2.PostalAddressPostalCode" class="rf-input" id="PostalAddressPostalCode" maxlength="4"
-                               onkeypress="return isNumericKey(event)" onpaste="return false" />
+                               onkeypress="return isNumericKey(event)" onpaste="return false" required />
                     </div>
                 </div>
             </div>
 
-          
             <div class="rf-section">
                 <div class="rf-section-head">
                     <div class="rf-section-num">3</div>
                     <h2 class="rf-section-title">Contact Details</h2>
                 </div>
                 <div class="rf-section-body">
-                    <div class="rf-field rf-field-third">
+                    <div class="rf-field rf-field-quarter">
                         <label class="rf-label">Home Telephone</label>
-                        <input asp-for="S3.HomeTel" class="rf-input" maxlength="14"
-                               onkeypress="return isNumericKey(event)" onpaste="return false" />
+                        <input asp-for="S3.HomeTel" class="rf-input" maxlength="14" onkeypress="return isNumericKey(event)" onpaste="return false" />
                     </div>
-                    <div class="rf-field rf-field-third">
+                    <div class="rf-field rf-field-quarter">
                         <label class="rf-label rf-required">Cell Number</label>
-                        <input asp-for="S3.CellNo" class="rf-input" id="CellNo" maxlength="14"
-                               onkeypress="return isNumericKey(event)" onpaste="return false" required />
+                        <input asp-for="S3.CellNo" class="rf-input" id="CellNo" maxlength="14" onkeypress="return isNumericKey(event)" onpaste="return false" required />
                     </div>
-                    <div class="rf-field rf-field-third">
+                    <div class="rf-field rf-field-quarter">
                         <label class="rf-label">Work Telephone</label>
-                        <input asp-for="S3.WorkTel" class="rf-input" maxlength="14"
-                               onkeypress="return isNumericKey(event)" onpaste="return false" />
+                        <input asp-for="S3.WorkTel" class="rf-input" maxlength="14" onkeypress="return isNumericKey(event)" onpaste="return false" />
                     </div>
-                    <div class="rf-field rf-field-full">
+                    <div class="rf-field rf-field-half">
                         <label class="rf-label rf-required">Email Address</label>
-                        <input asp-for="S3.Email" class="rf-input" id="Email"
-                               type="email" maxlength="100" required />
+                        <input asp-for="S3.Email" class="rf-input" id="Email" type="email" maxlength="100" required />
                     </div>
                 </div>
             </div>
 
-         
+           
             <div class="rf-section">
                 <div class="rf-section-head">
                     <div class="rf-section-num">4</div>
-                    <h2 class="rf-section-title">Building / Scheme Details</h2>
+                    <h2 class="rf-section-title">Property / Scheme Details</h2>
                 </div>
                 <div class="rf-section-body">
-                    <div class="rf-info-card">
-                        <div class="rf-info-card-title">
-                            <i class="fa-solid fa-building"></i> High Density Criteria
+                    <div class="rf-disaster-alert">
+                        <div class="rf-disaster-alert-title">
+                            <i class="fa-solid fa-triangle-exclamation"></i> Disaster Rebate Requirements
                         </div>
                         <ul>
-                            <li>Minimum <strong>80 dwelling units per hectare</strong> (10 000 m²)</li>
-                            <li>A representative or trustee may apply on behalf of the Body Corporate or owners</li>
-                            <li>Development Planning Department will confirm high-density compliance</li>
-                            <li>Rebate: <strong>5%</strong> of current monthly rates</li>
+                            <li>The property must be in an area declared a disaster under the Disaster Management Act 57 of 2002</li>
+                            <li>Proof of the disaster impact on the property must be submitted</li>
+                            <li>The rebate duration and percentage are determined by Council per specific event</li>
                         </ul>
                     </div>
                     <div class="rf-field rf-field-half">
                         <label class="rf-label">Name of Scheme / Building</label>
-                        <input asp-for="S8.SchemeBuilding" class="rf-input" maxlength="50"
-                               placeholder="e.g. Harmony Heights" />
+                        <input asp-for="S8.SchemeBuilding" class="rf-input" maxlength="50" placeholder="If applicable" />
                     </div>
                     <div class="rf-field rf-field-half">
                         <label class="rf-label">Account Number — Multiple Units</label>
-                        <input asp-for="S8.AccountNo_MultipleUnits" class="rf-input"
-                               placeholder="Account number for scheme if multiple units" />
+                        <input asp-for="S8.AccountNo_MultipleUnits" class="rf-input" placeholder="If applicable" />
                     </div>
-                    <div class="rf-field rf-field-full">
+                    <div class="rf-field rf-field-quarter">
                         <label class="rf-label">Scheme Contact Cell Number</label>
-                        <input asp-for="S8.Contact_CellNo" class="rf-input" maxlength="14"
-                               onkeypress="return isNumericKey(event)" onpaste="return false" />
+                        <input asp-for="S8.Contact_CellNo" class="rf-input" maxlength="14" onkeypress="return isNumericKey(event)" onpaste="return false" />
                     </div>
                 </div>
             </div>
 
+           
             <div class="rf-section">
                 <div class="rf-section-head">
                     <div class="rf-section-num">5</div>
@@ -247,25 +225,17 @@
                 <div class="rf-section-body">
                     <div class="rf-upload-notice">
                         <i class="fa-solid fa-circle-exclamation"></i>
-                        All documents must be <strong>PDF format only</strong>.
-                        Maximum file size: <strong>20 MB</strong> per document.
+                        All documents must be <strong>PDF format only</strong>. Maximum <strong>20 MB</strong>.
                     </div>
                     <div class="rf-field rf-field-upload">
-                        <label class="rf-label rf-required">
-                            Proof of High-Density Development
-                        </label>
-                        <input type="file" name="files" class="rf-file" accept=".pdf"
-                               onchange="validatePdf(this)" required />
-                        <span class="rf-file-help">
-                            E.g. approved site development plan, body corporate resolution, or similar
-                        </span>
+                        <label class="rf-label rf-required">Proof of Disaster Impact on Property</label>
+                        <input type="file" name="files" class="rf-file" accept=".pdf" onchange="validatePdf(this)" required />
+                        <span class="rf-file-help">Required — e.g. disaster declaration, damage assessment report</span>
                     </div>
                     <div class="rf-field rf-field-upload">
-                        <label class="rf-label">Authorisation Letter</label>
+                        <label class="rf-label">Any Additional Supporting Documentation</label>
                         <input type="file" name="files" class="rf-file" accept=".pdf" onchange="validatePdf(this)" />
-                        <span class="rf-file-help">
-                            Required if applying as representative or trustee on behalf of Body Corporate
-                        </span>
+                        <span class="rf-file-help">Optional</span>
                     </div>
                 </div>
             </div>
@@ -283,36 +253,35 @@
 </div>
 
 @section Scripts {
-<script>
-(function () {
-    window.isNumericKey = function (e) { var c=e.which??e.keyCode; return !(c>31&&(c<48||c>57)); };
-    document.getElementById('maritalStatus')?.addEventListener('change', function () {
-        var show = this.value === 'Married';
-        var sf = document.getElementById('spouseFields');
-        if (sf) sf.style.display = show ? 'block' : 'none';
-        ['SpouseSurname','SpouseFirstNames'].forEach(function(id){ var el=document.getElementById(id); if(el) el.required=show; });
-    });
-    document.querySelectorAll('input[name="identificationType"]').forEach(function(r){
-        r.addEventListener('change', function(){
-            var ig=document.getElementById('idNumberGroup'), pg=document.getElementById('passportGroup');
-            var ii=document.getElementById('RSAIDNumber'), pi=document.getElementById('PassportNumber');
-            if(this.value==='IDNumber'){ ig.style.display='block'; pg.style.display='none'; ii.required=true; if(pi) pi.required=false; }
-            else { ig.style.display='none'; pg.style.display='block'; if(pi) pi.required=true; ii.required=false; }
-        });
-    });
-    window.copyAddress = function(cb) {
-        [['StreetAddress','PostalAddress'],['CitySuburb','PostalAddressCitySuburb'],['PostalCode','PostalAddressPostalCode']].forEach(function(p){
-            var s=document.getElementById(p[0]), d=document.getElementById(p[1]); if(d) d.value=cb.checked&&s?s.value:'';
-        });
-    };
-    window.validatePdf = function(input) { var f=input.files[0]; if(f&&!f.name.toLowerCase().endsWith('.pdf')){ alert('PDF files only.'); input.value=''; } };
-    document.getElementById('rebateForm')?.addEventListener('submit', function(e){
-        var ids=['Surname','FirstNames','StreetAddress','CitySuburb','PostalCode','CellNo','Email'];
-        var failed=false;
-        ids.forEach(function(id){ var el=document.getElementById(id); if(el&&el.value.trim()===''){ el.style.borderColor='#dc2626'; failed=true; } else if(el){ el.style.borderColor=''; } });
-        if(failed){ e.preventDefault(); document.querySelector('input[style*="dc2626"]')?.scrollIntoView({behavior:'smooth',block:'center'}); }
-        else { var btn=document.getElementById('submitBtn'); if(btn){ btn.disabled=true; btn.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> Submitting...'; } }
-    });
-})();
-</script>
+    <script>
+        (function () {
+            window.isNumericKey = function (e) { var c=e.which??e.keyCode; return !(c>31&&(c<48||c>57)); };
+            document.getElementById('maritalStatus')?.addEventListener('change', function () {
+                var show=this.value==='Married'; var sf=document.getElementById('spouseFields');
+                if(sf) sf.style.display=show?'block':'none';
+                ['SpouseSurname','SpouseFirstNames'].forEach(function(id){ var el=document.getElementById(id); if(el) el.required=show; });
+            });
+            document.querySelectorAll('input[name="identificationType"]').forEach(function(r){
+                r.addEventListener('change', function(){
+                    var ig=document.getElementById('idNumberGroup'), pg=document.getElementById('passportGroup');
+                    var ii=document.getElementById('RSAIDNumber'), pi=document.getElementById('PassportNumber');
+                    if(this.value==='IDNumber'){ ig.style.display='block'; pg.style.display='none'; ii.required=true; if(pi) pi.required=false; }
+                    else { ig.style.display='none'; pg.style.display='block'; if(pi) pi.required=true; ii.required=false; }
+                });
+            });
+            window.copyAddress = function(cb) {
+                [['StreetAddress','PostalAddress'],['CitySuburb','PostalAddressCitySuburb'],['PostalCode','PostalAddressPostalCode']].forEach(function(p){
+                    var s=document.getElementById(p[0]), d=document.getElementById(p[1]); if(d) d.value=cb.checked&&s?s.value:'';
+                });
+            };
+            window.validatePdf = function(i){ var f=i.files[0]; if(f&&!f.name.toLowerCase().endsWith('.pdf')){ alert('PDF only.'); i.value=''; } };
+            document.getElementById('rebateForm')?.addEventListener('submit', function(e){
+                var ids=['Surname','FirstNames','StreetAddress','CitySuburb','PostalCode','PostalAddress','PostalAddressCitySuburb','PostalAddressPostalCode','CellNo','Email'];
+                var failed=false;
+                ids.forEach(function(id){ var el=document.getElementById(id); if(el&&el.value.trim()===''){ el.style.borderColor='#dc2626'; failed=true; } else if(el){ el.style.borderColor=''; } });
+                if(failed){ e.preventDefault(); document.querySelector('input[style*="dc2626"]')?.scrollIntoView({behavior:'smooth',block:'center'}); }
+                else { var btn=document.getElementById('submitBtn'); if(btn){ btn.disabled=true; btn.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> Submitting...'; } }
+            });
+        })();
+    </script>
 }

@@ -97,7 +97,7 @@
                         <span asp-validation-for="S1.Surname" class="rf-error"></span>
                     </div>
 
-                    <div class="rf-field rf-field-half">
+                    <div class="rf-field rf-field-full">
                         <label class="rf-label rf-required">First Names</label>
                         <input asp-for="S1.FirstNames" class="rf-input" id="FirstNames"
                                maxlength="50" placeholder="Your first names" required />
@@ -118,7 +118,7 @@
                         </div>
                     </div>
 
-                    <div class="rf-field rf-field-half" id="idNumberGroup" style="display:none;">
+                    <div class="rf-field rf-field-full" id="idNumberGroup" style="display:none;">
                         <label class="rf-label rf-required">RSA ID Number</label>
                         <input asp-for="S1.IDNumber" class="rf-input" id="RSAIDNumber"
                                minlength="13" maxlength="13" placeholder="13-digit ID"
@@ -126,7 +126,7 @@
                         <span asp-validation-for="S1.IDNumber" class="rf-error"></span>
                     </div>
 
-                    <div class="rf-field rf-field-half" id="passportGroup" style="display:none;">
+                    <div class="rf-field rf-field-full" id="passportGroup" style="display:none;">
                         <label class="rf-label rf-required">Passport Number</label>
                         <input asp-for="S1.PassportNumber" class="rf-input" id="PassportNumber"
                                maxlength="30" placeholder="Passport number" />
@@ -175,13 +175,13 @@
                                maxlength="50" placeholder="e.g. 15 Main Street" required />
                         <span asp-validation-for="S2.StreetAddress" class="rf-error"></span>
                     </div>
-                    <div class="rf-field rf-field-half">
+                    <div class="rf-field" style="flex:2; min-width:180px;">
                         <label class="rf-label rf-required">City / Suburb</label>
                         <input asp-for="S2.CitySuburb" class="rf-input" id="CitySuburb"
                                maxlength="50" required />
                         <span asp-validation-for="S2.CitySuburb" class="rf-error"></span>
                     </div>
-                    <div class="rf-field rf-field-quarter">
+                    <div class="rf-field" style="flex:1; min-width:100px;">
                         <label class="rf-label rf-required">Postal Code</label>
                         <input asp-for="S2.PostalCode" class="rf-input" id="PostalCode"
                                maxlength="4" placeholder="0000"
@@ -203,13 +203,13 @@
                                maxlength="50" required />
                         <span asp-validation-for="S2.PostalAddress" class="rf-error"></span>
                     </div>
-                    <div class="rf-field rf-field-half">
+                    <div class="rf-field" style="flex:2; min-width:180px;">
                         <label class="rf-label rf-required">City / Suburb</label>
                         <input asp-for="S2.PostalAddressCitySuburb" class="rf-input"
                                id="PostalAddressCitySuburb" maxlength="50" required />
                         <span asp-validation-for="S2.PostalAddressCitySuburb" class="rf-error"></span>
                     </div>
-                    <div class="rf-field rf-field-quarter">
+                    <div class="rf-field" style="flex:1; min-width:100px;">
                         <label class="rf-label rf-required">Postal Code</label>
                         <input asp-for="S2.PostalAddressPostalCode" class="rf-input"
                                id="PostalAddressPostalCode" maxlength="4"
@@ -227,25 +227,25 @@
                     <h2 class="rf-section-title">Contact Details</h2>
                 </div>
                 <div class="rf-section-body">
-                    <div class="rf-field rf-field-quarter">
+                    <div class="rf-field rf-field-third">
                         <label class="rf-label">Home Telephone</label>
                         <input asp-for="S3.HomeTel" class="rf-input" maxlength="14"
                                placeholder="011 000 0000"
                                onkeypress="return isNumericKey(event)" onpaste="return false" />
                     </div>
-                    <div class="rf-field rf-field-quarter">
+                    <div class="rf-field rf-field-third">
                         <label class="rf-label rf-required">Cell Number</label>
                         <input asp-for="S3.CellNo" class="rf-input" id="CellNo"
                                maxlength="14" placeholder="0XX XXX XXXX"
                                onkeypress="return isNumericKey(event)" onpaste="return false" required />
                     </div>
-                    <div class="rf-field rf-field-quarter">
+                    <div class="rf-field rf-field-third">
                         <label class="rf-label">Work Telephone</label>
                         <input asp-for="S3.WorkTel" class="rf-input" maxlength="14"
                                placeholder="011 000 0000"
                                onkeypress="return isNumericKey(event)" onpaste="return false" />
                     </div>
-                    <div class="rf-field rf-field-half">
+                    <div class="rf-field rf-field-full">
                         <label class="rf-label rf-required">Email Address</label>
                         <input asp-for="S3.Email" class="rf-input" id="Email"
                                type="email" maxlength="100" placeholder="your@@email.com" required />
@@ -284,7 +284,7 @@
                         <span asp-validation-for="S8.AccountNo_MultipleUnits" class="rf-error"></span>
                     </div>
 
-                    <div class="rf-field rf-field-quarter">
+                    <div class="rf-field rf-field-full">
                         <label class="rf-label">Scheme Contact Cell Number</label>
                         <input asp-for="S8.Contact_CellNo" class="rf-input"
                                maxlength="14" placeholder="0XX XXX XXXX"

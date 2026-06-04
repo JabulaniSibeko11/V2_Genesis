@@ -2,11 +2,16 @@
     ViewData["Title"] = "Application Submitted";
     Layout = "~/Views/Shared/_ClientLayout.cshtml";
 
-    var rebateNo  = TempData["id"]?.ToString()     ?? "—";
-    var rebateType= TempData["Type"]?.ToString()   ?? "Rebate Application";
-    var status    = TempData["Status"]?.ToString() ?? "Acknowledge";
-    var date      = TempData["Date"]?.ToString()   ?? DateTime.Now.ToString("yyyy-MM-dd HH:mm");
-    var count     = TempData["Count"]?.ToString()  ?? "0";
+    var rebateNo   = TempData["id"]?.ToString()     ?? "";
+    var rebateType = TempData["Type"]?.ToString()   ?? "Rebate Application";
+    var status     = TempData["Status"]?.ToString() ?? "Acknowledge";
+    var date       = TempData["Date"]?.ToString()   ?? DateTime.Now.ToString("dd MMM yyyy HH:mm");
+    var count      = TempData["Count"]?.ToString()  ?? "0";
+
+    // Keep TempData so refresh doesn't wipe it
+    TempData.Keep("id");    TempData.Keep("Type");  TempData.Keep("Status");
+    TempData.Keep("Date");  TempData.Keep("Count");
+    for (int k = 1; k <= 10; k++) TempData.Keep($"File{k}");
 
     var files = new List<string>();
     for (int i = 1; i <= 10; i++)
@@ -19,161 +24,156 @@
 }
 
 @section Styles {
-    <link href="~/css/views/rebates-display.css" rel="stylesheet" asp-append-version="true"/>
-      
+    <link href="~/css/views/rebates-display.css" rel="stylesheet" asp-append-version="true" />
+        
     <link href="~/css/views/clientdashboardcss.css" rel="stylesheet" asp-append-version="true" />
     <link href="~/css/site.css" rel="stylesheet" asp-append-version="true" />
 }
 
-<div class="disp-page">
-<div class="disp-body">
-
-
-    <div class="disp-hero">
-        <div class="disp-hero-header @(isRejected ? "disp-hero-reject" : "disp-hero-success")">
-            <div class="disp-hero-icon @(isRejected ? "disp-icon-reject" : "disp-icon-success")">
-                @if (isRejected)
-                {
-                    <i class="fa-solid fa-circle-xmark"></i>
-                }
-                else
-                {
-                    <i class="fa-solid fa-circle-check"></i>
-                }
-            </div>
-            <div class="disp-hero-text">
-                @if (isRejected)
-                {
-                    <h1>Application Unsuccessful</h1>
-                    <p>
-                        Your application did not meet the qualifying criteria and
-                        has been automatically declined. See below for details.
-                    </p>
-                }
-                else
-                {
-                    <h1>Application Submitted Successfully</h1>
-                    <p>
-                        Your rebate application has been received and is now under review
-                        by the Valuation Services Department.
-                    </p>
-                }
-            </div>
-        </div>
-    </div>
+<div class="disp-wrap">
 
   
-    <div class="disp-ref-card">
-        <div class="disp-ref-title">
-            <i class="fa-solid fa-receipt"></i>
-            Application Details
-        </div>
-        <div class="disp-ref-grid">
-            <div class="disp-ref-item">
-                <div class="disp-ref-label">Application Number</div>
-                <div class="disp-ref-value large">@rebateNo</div>
-            </div>
-            <div class="disp-ref-item">
-                <div class="disp-ref-label">Status</div>
-                <div class="disp-ref-value">
-                    <span class="disp-status-pill @(isRejected ? "disp-pill-reject" : "disp-pill-success")">
-                        @if (isRejected)
-                        {
-                            <i class="fa-solid fa-circle-xmark"></i>
-                            <span>Auto Rejected</span>
-                        }
-                        else
-                        {
-                            <i class="fa-solid fa-circle-check"></i>
-                            <span>Acknowledged</span>
-                        }
-                    </span>
-                </div>
-            </div>
-            <div class="disp-ref-item">
-                <div class="disp-ref-label">Rebate Type</div>
-                <div class="disp-ref-value">@rebateType</div>
-            </div>
-            <div class="disp-ref-item">
-                <div class="disp-ref-label">Submission Date &amp; Time</div>
-                <div class="disp-ref-value">@date</div>
-            </div>
-            <div class="disp-ref-item">
-                <div class="disp-ref-label">Documents Uploaded</div>
-                <div class="disp-ref-value">@count file@(count == "1" ? "" : "s")</div>
-            </div>
-        </div>
-    </div>
-
-
-    @if (files.Any())
-    {
-        <div class="disp-files-card">
-            <div class="disp-files-title">
-                <i class="fa-solid fa-paperclip"></i>
-                Uploaded Documents (@files.Count)
-            </div>
-            @for (int i = 0; i < files.Count; i++)
+    <div class="disp-hero @(isRejected ? "disp-hero-reject" : "disp-hero-success")">
+        <div class="disp-hero-icon">
+            @if (isRejected)
             {
-                <div class="disp-file-row">
-                    <i class="fa-solid fa-file-pdf"></i>
-                    <span class="disp-file-num">@(i + 1)</span>
-                    <span>@files[i]</span>
-                </div>
+                <i class="fa-solid fa-circle-xmark"></i>
+            }
+            else
+            {
+                <i class="fa-solid fa-circle-check"></i>
             }
         </div>
-    }
-
-
-    @if (isRejected)
-    {
-        <div class="disp-notice disp-notice-reject">
-            <i class="fa-solid fa-triangle-exclamation"></i>
-            <div>
-                <strong>Your application was automatically declined</strong> because it did not
-                meet the qualifying criteria. If you believe this is incorrect, or would like
-                to enquire further, please contact the Valuation Services Department at
-                <strong>011 407-6622</strong> or
-                <a href="mailto:valuationenquiries@joburg.org.za" style="color:#7a2010;">
-                    valuationenquiries@joburg.org.za
-                </a>.
-            </div>
+        <div class="disp-hero-text">
+            @if (isRejected)
+            {
+                <h1>Application Unsuccessful</h1>
+                <p>Your application did not meet the qualifying criteria and has been automatically declined.</p>
+            }
+            else
+            {
+                <h1>Application Submitted!</h1>
+                <p>Your rebate application has been received. Your acknowledgement has been emailed to you.</p>
+            }
         </div>
-    }
-    else
-    {
-        <div class="disp-notice disp-notice-warning">
-            <i class="fa-solid fa-clock"></i>
-            <div>
-                <strong>Keep your application number for your records: @rebateNo</strong><br />
-                An acknowledgement email has been sent to your registered email address.
-                You may also download a copy of your acknowledgement using the button below.
-            </div>
-        </div>
-    }
-
-   
-    <div class="disp-actions">
-        @if (!isRejected)
-        {
-            <a asp-controller="Rebates" asp-action="Download"
-               asp-route-rebateNo="@rebateNo"
-               class="disp-btn-gold">
-                <i class="fa-solid fa-file-pdf"></i>
-                Download Acknowledgement
-            </a>
-        }
-        <a asp-controller="Rebates" asp-action="RebatesDashboard"
-           class="disp-btn-primary">
-            <i class="fa-solid fa-gauge-high"></i>
-            View My Applications
-        </a>
-        <a asp-controller="Rebates" asp-action="Index"
-           class="disp-btn-outline">
-            <i class="fa-solid fa-plus"></i>
-            New Application
-        </a>
     </div>
 
-</div>
+    <div class="disp-body">
+
+  
+        <div class="disp-card">
+            <div class="disp-card-head">
+                <i class="fa-solid fa-receipt"></i> Application Details
+            </div>
+            <div class="disp-card-body">
+                <div class="disp-ref-grid">
+                    <div>
+                        <div class="disp-ref-label">Application No.</div>
+                        <div class="disp-ref-value hero-num">@rebateNo</div>
+                    </div>
+                    <div>
+                        <div class="disp-ref-label">Status</div>
+                        <div class="disp-ref-value">
+                            <span class="disp-pill @(isRejected ? "disp-pill-reject" : "disp-pill-ok")">
+                                @if (isRejected)
+                                {
+                                    <i class="fa-solid fa-circle-xmark"></i><span>Auto Rejected</span>
+                                }
+                                else
+                                {
+                                    <i class="fa-solid fa-circle-check"></i><span>Acknowledged</span>
+                                }
+                            </span>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="disp-ref-label">Rebate Type</div>
+                        <div class="disp-ref-value" style="font-size:13.5px;">@rebateType</div>
+                    </div>
+                    <div>
+                        <div class="disp-ref-label">Date &amp; Time</div>
+                        <div class="disp-ref-value" style="font-size:13.5px;">@date</div>
+                    </div>
+                    <div>
+                        <div class="disp-ref-label">Documents Uploaded</div>
+                        <div class="disp-ref-value">@count file@(count == "1" ? "" : "s")</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+       
+        @if (files.Any())
+        {
+            <div class="disp-card">
+                <div class="disp-card-head">
+                    <i class="fa-solid fa-paperclip"></i>
+                    Uploaded Documents (@files.Count)
+                </div>
+                <div class="disp-card-body" style="padding-bottom:10px;">
+                    @for (int i = 0; i < files.Count; i++)
+                    {
+                        <div class="disp-file-row">
+                            <i class="fa-solid fa-file-pdf"></i>
+                            <span class="disp-file-num">@(i + 1)</span>
+                            <span>@files[i]</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+        @if (isRejected)
+        {
+            <div class="disp-notice disp-notice-rej">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                <div>
+                    <strong>Automatically declined.</strong>
+                    Your application did not meet the qualifying criteria.
+                    To enquire, contact us at
+                    <strong>011 407-6622</strong> or
+                    <a href="mailto:valuationenquiries@joburg.org.za"
+                       style="color:#7a2010;font-weight:600;">
+                        valuationenquiries@joburg.org.za
+                    </a>.
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="disp-notice disp-notice-ok">
+                <i class="fa-solid fa-envelope"></i>
+                <div>
+                    <strong>Acknowledgement emailed and available to download.</strong><br />
+                    Keep your reference number <strong>@rebateNo</strong> for your records.
+                </div>
+            </div>
+        }
+
+ 
+        <div class="disp-card">
+            <div class="disp-actions">
+                @if (!isRejected)
+                {
+                    <a asp-controller="Rebates" asp-action="Download"
+                       asp-route-rebateNo="@rebateNo"
+                       class="disp-btn disp-btn-gold">
+                        <i class="fa-solid fa-file-pdf"></i>
+                        Download Acknowledgement
+                    </a>
+                }
+                <a asp-controller="Dashboard" asp-action="Index"
+                   class="disp-btn disp-btn-teal">
+                    <i class="fa-solid fa-gauge-high"></i>
+                    My Applications
+                </a>
+                <a asp-controller="Rebates" asp-action="Index"
+                   class="disp-btn disp-btn-outline">
+                    <i class="fa-solid fa-plus"></i>
+                    New Application
+                </a>
+            </div>
+        </div>
+
+    </div>
 </div>

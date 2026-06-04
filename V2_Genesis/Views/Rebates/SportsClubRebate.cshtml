@@ -128,7 +128,7 @@
                 </div>
                 <div class="rf-section-body">
 
-                    <div class="rf-field rf-field-half">
+                    <div class="rf-field" style="flex:2; min-width:180px;">
                         <label class="rf-label rf-required">Email Address</label>
                         <input asp-for="S3.Email" class="rf-input" id="Email"
                                type="email" maxlength="100"
@@ -136,7 +136,7 @@
                         <span asp-validation-for="S3.Email" class="rf-error"></span>
                     </div>
 
-                    <div class="rf-field rf-field-quarter">
+                    <div class="rf-field" style="flex:1; min-width:100px;">
                         <label class="rf-label rf-required">Cell / Contact Number</label>
                         <input asp-for="S3.CellNo" class="rf-input" id="CellNo"
                                maxlength="14" placeholder="0XX XXX XXXX"
@@ -156,7 +156,7 @@
                 </div>
                 <div class="rf-section-body">
 
-                    <div class="rf-field rf-field-half">
+                    <div class="rf-field rf-field-full">
                         <label class="rf-label rf-required">Is the organisation registered with SARS?</label>
                         <select asp-for="S10.RegisteredWithSARS" class="rf-input"
                                 id="sarsSelect" onchange="handleSarsChange(this)" required>

@@ -92,7 +92,8 @@ public class RebatesController : Controller
     [HttpGet]
     public IActionResult Download(string rebateNo)
     {
-        var root = _config["AppSettings:RebateRooTPath"] ?? "";
+        var root = _config["ObjectionRolls:Rebates:RebateRooTPath"]
+                    ?? throw new InvalidOperationException("RebateRooTPath missing.");
         var path = Path.Combine(root, rebateNo, $"{rebateNo}_Acknowledgement.pdf");
 
         if (!System.IO.File.Exists(path))

@@ -7,5 +7,12 @@
         Task SendPasswordResetEmailAsync(string toEmail, string displayName, string resetLink);
 
         Task SendObjectionAcknowledgementAsync(string objectionRef,string rollSource,bool isAppeal,byte[] acknowledgementPdf,string folderPath);
+
+        Task SendEmailWithAttachmentAsync(
+    string toEmail,
+    string subject,
+    string htmlBody,
+    byte[] attachmentBytes,
+    string attachmentFileName);
     }
 }

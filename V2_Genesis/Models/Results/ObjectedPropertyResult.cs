@@ -15,5 +15,7 @@
         public string? Valuation_Key { get; set; }
         public string? objection_Status { get; set; }
         public string? PropertyFrom { get; set; }
+        public int Sub_typ { get; set; }
     }
 }
+

@@ -619,6 +619,41 @@ namespace V2_Genesis.Services.Implementations
                     "[Email] Failed saving email record PDF for {Ref}", objectionRef);
             }
         }
+
+        public async Task SendEmailWithAttachmentAsync(
+            string toEmail,
+            string subject,
+            string htmlBody,
+            byte[] attachmentBytes,
+            string attachmentFileName)
+        {
+            try
+            {
+                using var smtp = BuildClient();
+                using var msg = new MailMessage
+                {
+                    From = new MailAddress(_cfg.Username, _cfg.FromName),
+                    Subject = subject,
+                    Body = htmlBody,
+                    IsBodyHtml = true
+                };
+                msg.To.Add(toEmail);
+
+                // Attach the PDF
+                var stream = new MemoryStream(attachmentBytes);
+                var attachment = new Attachment(stream, attachmentFileName,
+                                                MediaTypeNames.Application.Pdf);
+                msg.Attachments.Add(attachment);
+
+                await smtp.SendMailAsync(msg);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex,
+                    "Failed to send email with attachment to {Email}", toEmail);
+                throw;
+            }
+        }
     }
 
 }

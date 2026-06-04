@@ -21,9 +21,10 @@
 
 @section Styles {
     <link href="~/css/views/objection.css" rel="stylesheet" asp-append-version="true" />
-    <link href="~/css/views/clientdashboard.css" rel="stylesheet" asp-append-version="true" />
+
     <link href="~/css/views/property-search.css" rel="stylesheet" asp-append-version="true" />
-  
+    <link href="~/css/views/clientdashboardcss.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/site.css" rel="stylesheet" asp-append-version="true" />
    
 }
 
@@ -116,7 +117,7 @@
                             onclick="showMainForm()">
                         <i class="fa-solid fa-circle-check"></i>
                         <span id="continueBtnText">
-                            Continue to @(Model.IsAppeal ? "Appeal" : "Objection") Form
+                            Continue to @(isQuery ? "Query" : Model.IsAppeal ? "Appeal" : "Objection") Form
                         </span>
                     </button>
                 </div>
@@ -378,48 +379,31 @@
                 </div>
             </div>
 
+            @* REMOVE the entire submission type card for isQuery —
+   Review is no longer lodged from here. 
+   Query is the only option so no radio needed. *@
+
             @if (isQuery)
             {
                 <div class="obj-card">
                     <div class="obj-card-header">
                         <i class="fa-solid fa-file-magnifying-glass"></i>
-                        Submission Type
-                        <span class="obj-card-sub">Choose the type of submission</span>
+                        Section 78 Query
+                        <span class="obj-card-sub">
+                            Submit a formal query about your property valuation
+                        </span>
                     </div>
                     <div class="obj-card-body">
-                        <div class="obj-radio-grid obj-radio-grid-2">
-
-                            <label class="obj-radio-card">
-                                <input type="radio" name="submissionType"
-                                       id="btn_checkq1" value="Query"
-                                       onchange="onQueryTypeSelect('Query')" />
-                                <div class="obj-radio-content">
-                                    <i class="fa-solid fa-question-circle"></i>
-                                    <strong>Query</strong>
-                                    <small>Submit a formal query about your property valuation</small>
-                                </div>
-                                <div class="obj-radio-check">
-                                    <i class="fa-solid fa-circle-check"></i>
-                                </div>
-                            </label>
-
-                            <label class="obj-radio-card">
-                                <input type="radio" name="submissionType"
-                                       id="btn_checkq3" value="Review"
-                                       onchange="onQueryTypeSelect('Review')" />
-                                <div class="obj-radio-content">
-                                    <i class="fa-solid fa-magnifying-glass"></i>
-                                    <strong>Review</strong>
-                                    <small>Request a review of your property valuation</small>
-                                </div>
-                                <div class="obj-radio-check">
-                                    <i class="fa-solid fa-circle-check"></i>
-                                </div>
-                            </label>
-
-                        </div>
-                        <input type="hidden" id="sub_type" />
-                        <div id="q_type" class="obj-selection-feedback" style="display:none;"></div>
+                        <p style="font-size:14px; color:#645a50; margin:0;">
+                            Click <strong>Lodge Section 78 Query</strong> below to proceed
+                            to the application form.
+                            <br />
+                            <em>
+                                If you are not satisfied with the outcome of your query,
+                                a Review option will appear on your dashboard once the
+                                outcome has been issued.
+                            </em>
+                        </p>
                     </div>
                 </div>
             }
@@ -639,7 +623,7 @@
 </div>
 
 @section Scripts {
-    <script>
+   
     @* ════════════════════════════════════════════════════════════════
    REPLACE entire @section Scripts in CheckProperty.cshtml with this
    
@@ -680,15 +664,22 @@ if (IS_QUERY) {
 
     var property_type  = "";
     var objector_type  = "";
-    var query_type     = "";
+                 var query_type      = "Query";       // ← pre-set
+                var submission_type = "Query";       // ← pre-set, no radio needed
+                var direction       = "Normal";
     var x, y, z, x1, y1, z1, w1, q1, q2;
-    var direction      = "Normal";
-    var submission_type = "";
+   
+ 
+
+
+       
+   
 
     $(document).ready(function () {
 
         $("#form_key").hide();
 
+                    document.getElementById("sub_type").value = "Query";
         // ── Restore direction from session ──────────────────────────
         $(function () {
             const dir = sessionStorage.getItem('direction');
@@ -807,9 +798,9 @@ if (IS_QUERY) {
     function checkQueryFormCompletion() {
         var propOk      = property_type  !== "";
         var objectorOk  = objector_type  !== "";
-        var submissionOk= submission_type !== "";
+        // var submissionOk= submission_type !== "";
 
-        if (propOk && objectorOk && submissionOk) {
+        if (propOk && objectorOk) {
             document.getElementById("lodgeSection").style.display = "block";
             updateQueryButtonVisibility();
             updateLodgeSummary();
@@ -1099,7 +1090,4 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 });
 </script>
-}
-
-    </script>
 }

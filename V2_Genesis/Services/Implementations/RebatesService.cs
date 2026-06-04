@@ -18,12 +18,13 @@ namespace V2_Genesis.Services.Implementations
         private readonly string _connStr;
         private readonly IEmailService _email;
        private readonly IWebHostEnvironment _env;
-
-        public RebatesService(RebateDBContext db, IConfiguration config, IEmailService email, IWebHostEnvironment env) { 
+        private readonly ILogger<RebatesService> _logger;
+        public RebatesService(RebateDBContext db, IConfiguration config, IEmailService email, IWebHostEnvironment env, ILogger<RebatesService> logger) { 
         _db= db;
             _config= config;
             _email= email;
             _env= env;
+            _logger= logger;
             _connStr = config.GetConnectionString("DefaultConnection")
                   ?? throw new InvalidOperationException("DefaultConnection missing.");
         }
@@ -128,16 +129,47 @@ namespace V2_Genesis.Services.Implementations
             };
 
             // ── 4. Acknowledgement PDF to disk ───────────────────────
+
+            // ── 4. Acknowledgement PDF to disk ───────────────────────
             WriteAcknowledgement(result);
 
-            // ── 5. Email ─────────────────────────────────────────────
+            // ── 5. Email — attach PDF for Acknowledged, plain for Reject ─
             var (subject, htmlBody) = BuildRebateEmail(
-           rebateType, result, userEmail, info.Status == "Auto Reject");
+                rebateType, result, userEmail, info.Status == "Auto Reject");
 
-            await _email.SendEmailAsync(userEmail, subject, htmlBody);
+            if (info.Status != "Auto Reject")
+            {
+                // Read the PDF we just wrote and attach it
+                var pdfPath = Path.Combine(
+                    _config["ObjectionRolls:Rebates:RebateRooTPath"] ?? "",
+                    result.RebateNo,
+                    $"{result.RebateNo}_Acknowledgement.pdf");
 
+                if (File.Exists(pdfPath))
+                {
+                    var pdfBytes = await File.ReadAllBytesAsync(pdfPath);
+                    await _email.SendEmailWithAttachmentAsync(
+                        userEmail, subject, htmlBody,
+                        pdfBytes,
+                        $"{result.RebateNo}_Acknowledgement.pdf");
+                }
+                else
+                {
+                    // PDF write failed — send without attachment rather than crash
+                    _logger.LogWarning(
+                        "[Rebates] Acknowledgement PDF not found for {RebateNo} — " +
+                        "sending email without attachment.", result.RebateNo);
+                    await _email.SendEmailAsync(userEmail, subject, htmlBody);
+                }
+            }
+            else
+            {
+                // Auto-rejected — no PDF attachment
+                await _email.SendEmailAsync(userEmail, subject, htmlBody);
+            }
 
             return result;
+
         }
 
 

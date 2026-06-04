@@ -46,7 +46,7 @@
                     <h2 class="rf-section-title">Organisation Details</h2>
                 </div>
                 <div class="rf-section-body">
-                    <div class="rf-field rf-field-half">
+                    <div class="rf-field rf-field-full">
                         <label class="rf-label rf-required">Account Number</label>
                         <input asp-for="S1.AccountNumber" class="rf-input"
                                minlength="9" maxlength="9" placeholder="9-digit account number"
@@ -119,7 +119,7 @@
                     <h2 class="rf-section-title">SARS Registration</h2>
                 </div>
                 <div class="rf-section-body">
-                    <div class="rf-field rf-field-half">
+                    <div class="rf-field rf-field-full">
                         <label class="rf-label rf-required">Is the organisation registered with SARS?</label>
                         <select asp-for="S10.RegisteredWithSARS" class="rf-input"
                                 id="sarsSelect" onchange="handleSars(this)" required>
@@ -143,7 +143,7 @@
                     <h2 class="rf-section-title">Institution Details</h2>
                 </div>
                 <div class="rf-section-body">
-                    <div class="rf-field rf-field-half">
+                    <div class="rf-field rf-field-full">
                         <label class="rf-label rf-required">Is the institution part of a large organisation?</label>
                         <select asp-for="S10.LargeOrganisation" class="rf-input"
                                 id="largeOrgSelect" onchange="handleLargeOrg(this)" required>
