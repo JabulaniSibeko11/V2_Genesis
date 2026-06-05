@@ -121,6 +121,7 @@ public class ObjectionController : Controller
         List<CheckPropertyResult> items = new();
         List<Section78PropertyDetail> Queitems = new();
 
+        // ── EXISTING: populate Queitems from SP ──────────────────────────
         if (rollSource.Contains("Query", StringComparison.OrdinalIgnoreCase))
         {
             var queItem = await _section78Service
@@ -129,6 +130,25 @@ public class ObjectionController : Controller
             Queitems = queItem != null
                 ? new List<Section78PropertyDetail> { queItem }
                 : new List<Section78PropertyDetail>();
+
+            // ── FIX 2: Set TempData for the S78 form ─────────────────────
+            if (Queitems.Any())
+            {
+                var q = Queitems.First();
+                TempData["CurrentFilter_PD"] = q.PropertyDesc;
+                TempData["CurrentFilter_CD"] = q.CatDesc;
+                TempData["CurrentFilter_LSA"] = q.LisStreetAddress;
+                TempData["CurrentFilter_RA"] = q.RateableArea;
+                TempData["CurrentFilter_MV"] = q.MarketValue;
+                TempData["CurrentFilter_ON"] = q.OwnerName;
+                TempData["CurrentFilter_TN"] = q.TownNameDesc;
+                TempData["CurrentFilter_P_ID"] = q.PremiseId;
+                TempData["CurrentFilter_P_I"] = q.PropertyId;
+                TempData["CurrentFilter_UK"] = q.UnitKey;
+                TempData["CurrentFilter_VK"] = q.ValuationKey;
+                TempData["CurrentFilter_S"] = q.Sector;
+                TempData["AppealStatus"] = "False";
+            }
         }
         else
         {
@@ -194,26 +214,22 @@ public class ObjectionController : Controller
                 }
             }
         }
-
+        // ── FIX 1: Add Queitems to the view model ────────────────────────
         var vm = new CheckPropertyViewModel
         {
             Items = items,
+            Queitems = Queitems,   // ← THIS LINE WAS MISSING
             SourceTable = sourceTable,
             RollSource = rollSource,
             AppealStatus = appealStatus,
             IsAppeal = appealStatus == "True",
-            PropertyFrom = PropertyFrom
-    ?? sourceTable
-    ?? rollSource,
+            PropertyFrom = PropertyFrom ?? sourceTable ?? rollSource,
             ControllerName = rollSource.Contains("Query", StringComparison.OrdinalIgnoreCase)
-    ? "Query"
-    : ObjectionService.SourceToController
-        .GetValueOrDefault(sourceTable ?? string.Empty, "Sup3"),
-
-            // Not an omission
+                ? "Query"
+                : ObjectionService.SourceToController
+                    .GetValueOrDefault(sourceTable ?? string.Empty, "Sup3"),
             IsOmission = false,
         };
-
         return View(vm);
     }
 
