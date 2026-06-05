@@ -2,10 +2,10 @@
 
 namespace V2_Genesis.Services.Notice
 {
-    public class AcknowledgementData
+    public class Section78AcknowledgementDbData
     {
         // ── Reference ─────────────────────────────────────────────────────
-        public string ObjectionNo { get; set; } = string.Empty;
+        public string QueryNo { get; set; } = string.Empty;
         public string ObjectionRef { get; set; } = string.Empty;
         public string RollSource { get; set; } = string.Empty;
         public string SubmissionTime { get; set; } = string.Empty;

@@ -332,6 +332,9 @@ public class ObjectionController : Controller
         TempData["time"] = DateTime.Now.ToString("dd MMMM yyyy HH:mm");
         TempData["IsMulti"] = isMulti.ToString();
         TempData["desc"] = obj.Property_Desc;
+        TempData["ValuationKey"] = isAppeal
+    ? appeal?.A_Valuation_Key ?? obj.Valuation_Key
+    : obj.Valuation_Key;
         TempData["successmessage"] = isAppeal
             ? "Appeal Submitted Successfully"
             : "Objection Submitted Successfully";
@@ -370,6 +373,8 @@ public class ObjectionController : Controller
 
         TempData["objection_reason"] = obj6.Objection_Reasons;
 
+        TempData["IsAppeal"] = isAppeal.ToString();
+
         // Files
         var allFiles = (files ?? new())
             .Concat(fileR ?? new())
@@ -394,6 +399,7 @@ public class ObjectionController : Controller
             RollSource = rollSource,
             SubmissionTime = DateTime.Now.ToString("dd MMMM yyyy HH:mm"),
             IsMulti = isMulti,
+            IsAppeal = isAppeal,
             FileCount = allFiles.Count,
             ObjectionReason = obj6.Objection_Reasons,
 
@@ -429,6 +435,11 @@ public class ObjectionController : Controller
             New3_Category = obj6.New3_Category,
             New3_Extent = obj6.New3_Extent,
             New3_MarketValue = obj6.New3_Market_Value,
+
+            ValuationKey = isAppeal
+        ? appeal?.A_Valuation_Key ?? obj.Valuation_Key
+        : obj.Valuation_Key,
+
         };
 
         // ── Folder path ───────────────────────────────────────────────────

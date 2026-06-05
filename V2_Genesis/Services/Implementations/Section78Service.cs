@@ -220,6 +220,7 @@ namespace V2_Genesis.Services.Implementations
                 RandomPin = obj7.RandomPin,
                 IsReview = isReview,
                 IsMulti = propertyType == "Multi",
+                ValuationKey= que.Valuation_Key,
                 FileCount = count,
                 Files = new[]
                 {
@@ -299,40 +300,37 @@ namespace V2_Genesis.Services.Implementations
 
             return result;
         }
-        
+
 
 
         private void WriteAcknowledgement(
-    Section78SubmitResult result,
-    string uploadRootPath)
+     Section78SubmitResult result,
+     string uploadRootPath)
         {
             try
             {
                 var folder = Path.Combine(uploadRootPath, result.QueryRef);
+
                 if (!Directory.Exists(folder))
                     Directory.CreateDirectory(folder);
 
                 var fileName = $"{result.QueryRef}_Acknowledgement.pdf";
                 var fullPath = Path.Combine(folder, fileName);
 
-                // ── Header image ────────────────────────────────────────────
                 var imgPath = !string.IsNullOrEmpty(_config["AppSettings:QueryHeaderImage"])
                     ? _config["AppSettings:QueryHeaderImage"]!
                     : Path.Combine(_env.WebRootPath, "Images", "Obj_Header.PNG");
 
-                bool hasImg = File.Exists(imgPath);
+                var hasImg = File.Exists(imgPath);
 
                 var s6 = result.Section6;
                 var typeWord = result.IsReview ? "REVIEW" : "QUERY";
-                var date = DateTime.Now.ToString("dd MMMM yyyy HH:mm");
-                var isMulti = result.IsMulti;
+                var typeWordTitle = result.IsReview ? "REVIEW" : "QUERY";
+                var typeWordLower = result.IsReview ? "review" : "query";
 
-                // ── Colour palette (COJ branding) ──────────────────────────
-                const string teal = "#36626d";   // COJ primary
-                const string dark = "#1a2e35";   // COJ dark
-                const string gold = "#e6b000";   // COJ gold
-                const string light = "#f4f6f8";   // row background
-                const string white = "#ffffff";
+                var now = DateTime.Now;
+                var letterDate = now.ToString("dd MMMM yyyy");
+                var generatedDate = now.ToString("dd MMMM yyyy HH:mm");
 
                 QuestPDF.Settings.License = LicenseType.Community;
 
@@ -341,310 +339,246 @@ namespace V2_Genesis.Services.Implementations
                     container.Page(page =>
                     {
                         page.Size(PageSizes.A4);
-                        page.Margin(1.5f, Unit.Centimetre);
-                        page.DefaultTextStyle(t =>
-                            t.FontFamily("Arial").FontSize(9).FontColor("#1a1a1a"));
+                        page.Margin(36);
+                        page.DefaultTextStyle(x =>
+                            x.FontFamily("Arial").FontSize(9));
 
                         page.Content().Column(col =>
                         {
-                            col.Spacing(6);
+                            col.Spacing(8);
 
-                            // ── 1. Header image ──────────────────────────────
+                            // HEADER IMAGE
                             if (hasImg)
                             {
                                 col.Item()
-                                   .Height(70)
-                                   .Image(imgPath, ImageScaling.FitArea);
+                                    .Height(80)
+                                    .Image(imgPath, ImageScaling.FitArea);
                             }
 
-                            // ── 2. Title bar ─────────────────────────────────
+                            // DATE
                             col.Item()
-                               .Background(dark)
-                               .Padding(12)
-                               .Column(t =>
-                               {
-                                   t.Item()
-                                    .Text("CITY OF JOHANNESBURG")
-                                    .Bold().FontSize(14).FontColor(gold)
-                                    .AlignCenter();
+                                .AlignRight()
+                                .Text(letterDate)
+                                .FontSize(10)
+                                .SemiBold();
 
-                                   t.Item()
-                                    .Text($"SECTION 78 {typeWord} ACKNOWLEDGEMENT")
-                                    .Bold().FontSize(11).FontColor(white)
-                                    .AlignCenter();
-                               });
-
-                            // Gold divider
-                            col.Item().Height(3).Background(gold);
-
-                            // ── 3. Intro notice ──────────────────────────────
+                            // TITLE
                             col.Item()
-                               .Background("#fffbeb")
-                               .Border(1).BorderColor(gold)
-                              
-                               .Padding(10)
-                               .Text(t =>
-                               {
-                                   t.Span("Your Section 78 ")
-                                    .FontSize(9);
-                                   t.Span(typeWord.ToLower())
-                                    .Bold().FontSize(9);
-                                   t.Span(" has been lodged. Thank you for your submission. ")
-                                    .FontSize(9);
-                                   t.Span("You have 48 hours to upload any outstanding supporting evidence.")
-                                    .Bold().FontSize(9);
-                               });
+                                .AlignCenter()
+                                .Text("CITY OF JOHANNESBURG")
+                                .FontSize(13)
+                                .Bold();
 
-                            // ── 4. Reference details box ─────────────────────
                             col.Item()
-                               .Background(light)
-                               .Border(1).BorderColor("#d0d7de")
-                               
-                               .Padding(10)
-                               .Column(inner =>
-                               {
-                                   inner.Item()
-                                        .Text($"REFERENCE DETAILS")
-                                        .Bold().FontSize(9).FontColor(teal)
-                                        .AlignCenter();
+                                .AlignCenter()
+                                .Text($"SECTION 78 {typeWordTitle} ACKNOWLEDGEMENT")
+                                .FontSize(12)
+                                .Bold();
 
-                                   inner.Item().Height(4);
+                            col.Item()
+                                .BorderBottom(1)
+                                .BorderColor("#555555");
 
-                                   void Ref(string label, string? value)
-                                   {
-                                       inner.Item().Row(row =>
-                                       {
-                                           row.ConstantItem(140)
-                                              .Text(label)
-                                              .Bold().FontSize(9).FontColor("#555");
-                                           row.RelativeItem()
-                                              .Text(value ?? "—")
-                                              .FontSize(9);
-                                       });
-                                   }
+                            // INTRO
+                            col.Item()
+                                .Text(
+                                    $"This is to acknowledge that your Section 78 {typeWordLower} has been successfully received and logged. Details below for your records.")
+                                .FontSize(9);
 
-                                   Ref("Property Description:", s6?.Old_Property_Description);
-                                   Ref($"{typeWord} Reference:", result.QueryRef);
-                                   Ref("PIN:", result.RandomPin);
-                                   Ref("Date Submitted:", date);
-                                   Ref("Documents Uploaded:", result.FileCount.ToString());
-                               });
+                            col.Item()
+                                .Text("IMPORTANT NOTICE: You have 48 hours from submission to upload outstanding evidence.")
+                                .FontSize(9)
+                                .Bold();
 
-                            // ── 5. Helper: table header row ──────────────────
-                            void AddTableHeader(
-                                TableDescriptor tbl,
-                                string[] headers,
-                                float[] widths)
-                            {
-                                tbl.ColumnsDefinition(c =>
+                            // REFERENCE DETAILS
+                            col.Item()
+                                .AlignCenter()
+                                .Text("REFERENCE DETAILS")
+                                .FontSize(10)
+                                .Bold();
+
+                            col.Item()
+                                .Background("#eeeeee")
+                                .Border(1)
+                                .BorderColor("#444444")
+                                .Padding(10)
+                                .Column(refBox =>
                                 {
-                                    foreach (var w in widths)
-                                        c.RelativeColumn(w);
+                                    RefRow(refBox, "Property Description:", s6?.Old_Property_Description);
+                                    RefRow(refBox, $"{typeWordTitle} Reference:", result.QueryRef);
+                                    RefRow(refBox, "PIN:", result.RandomPin);
+                                    RefRow(refBox, "Date Captured:", generatedDate);
+
+                                    if (!string.IsNullOrWhiteSpace(result.ValuationKey))
+                                        RefRow(refBox, "Valuation Key:", result.ValuationKey);
                                 });
 
-                                foreach (var h in headers)
-                                {
-                                    tbl.Cell()
-                                       .Background(dark)
-                                       .Padding(5)
-                                       .Text(h)
-                                       .Bold().FontSize(8).FontColor(gold)
-                                       .AlignCenter();
-                                }
-                            }
+                            col.Item()
+                                .BorderBottom(1)
+                                .BorderColor("#555555");
 
-                            void Cell(
-                                TableDescriptor tbl,
-                                string? value,
-                                bool isEven = false,
-                                bool right = false)
+                            // PROPERTY DETAILS AS LISTED
+                            col.Item()
+                                .AlignCenter()
+                                .Text("PROPERTY DETAILS AS LISTED IN THE VALUATION ROLL")
+                                .FontSize(10)
+                                .Bold();
+
+                            Section78PropertyTable(
+                                col,
+                                s6?.Old_Property_Description,
+                                s6?.Old_Category,
+                                s6?.Old_Address,
+                                FormatMV(s6?.Old_Market_Value),
+                                s6?.Old_Extent,
+                                s6?.Old_Owner,
+                                result.IsMulti,
+                                s6?.Old2_Category,
+                                FormatMV(s6?.Old2_Market_Value),
+                                s6?.Old2_Extent,
+                                s6?.Old3_Category,
+                                FormatMV(s6?.Old3_Market_Value),
+                                s6?.Old3_Extent);
+
+                            col.Item()
+                                .BorderBottom(1)
+                                .BorderColor("#555555");
+
+                            // PROPERTY DETAILS AS PER QUERY / REVIEW
+                            col.Item()
+                                .AlignCenter()
+                                .Text($"PROPERTY DETAILS AS PER YOUR {typeWordTitle}")
+                                .FontSize(10)
+                                .Bold();
+
+                            Section78PropertyTable(
+                                col,
+                                s6?.New_Property_Description,
+                                s6?.New_Category,
+                                s6?.New_Address,
+                                FormatMV(s6?.New_Market_Value),
+                                s6?.New_Extent,
+                                s6?.New_Owner,
+                                result.IsMulti,
+                                s6?.New2_Category,
+                                FormatMV(s6?.New2_Market_Value),
+                                s6?.New2_Extent,
+                                s6?.New3_Category,
+                                FormatMV(s6?.New3_Market_Value),
+                                s6?.New3_Extent);
+
+                            // REASONS
+                            col.Item()
+                                .BorderBottom(1)
+                                .BorderColor("#555555");
+
+                            col.Item()
+                                .AlignCenter()
+                                .Text($"REASONS FOR {typeWordTitle}")
+                                .FontSize(10)
+                                .Bold();
+
+                            col.Item()
+                                .Background("#eaf4fb")
+                                .Border(1)
+                                .BorderColor("#444444")
+                                .Padding(8)
+                                .Text(string.IsNullOrWhiteSpace(s6?.Objection_Reasons)
+                                    ? "No reasons provided."
+                                    : s6.Objection_Reasons)
+                                .FontSize(8);
+
+                            // REQUIRED DOCUMENTATION
+                            col.Item()
+                                .BorderBottom(1)
+                                .BorderColor("#555555");
+
+                            col.Item()
+                                .AlignCenter()
+                                .Text($"REQUIRED DOCUMENTATION FOR {typeWordTitle}")
+                                .FontSize(10)
+                                .Bold();
+
+                            col.Item()
+                                .Text($"You have uploaded {result.FileCount} Document(s)")
+                                .FontSize(9);
+
+                            col.Item().Table(t =>
                             {
-                                var cell = tbl.Cell()
-                                              .Background(isEven ? "#eef2f5" : white)
-                                              .BorderBottom(0.5f).BorderColor("#e0e0e0")
-                                              .Padding(4);
-
-                                var txt = cell.Text(value ?? "—").FontSize(8);
-                                if (right) txt.AlignRight();
-                            }
-
-                            // ── 6. Original property table ───────────────────
-                            col.Item()
-                               .Text($"PROPERTY DETAILS — AS LISTED IN VALUATION ROLL")
-                               .Bold().FontSize(9).FontColor(teal)
-                               .AlignCenter();
-
-                            col.Item().Table(tbl =>
-                            {
-                                AddTableHeader(tbl,
-                                    new[] { "Property Description", "Category",
-                                    "Physical Address", "Market Value",
-                                    "Extent", "Owner" },
-                                    new[] { 25f, 14f, 25f, 14f, 10f, 12f });
-
-                                Cell(tbl, s6?.Old_Property_Description);
-                                Cell(tbl, s6?.Old_Category);
-                                Cell(tbl, s6?.Old_Address);
-                                Cell(tbl, FormatMV(s6?.Old_Market_Value), right: true);
-                                Cell(tbl, s6?.Old_Extent);
-                                Cell(tbl, s6?.Old_Owner);
-
-                                if (isMulti && !string.IsNullOrWhiteSpace(s6?.Old2_Category))
+                                t.ColumnsDefinition(c =>
                                 {
-                                    Cell(tbl, "", isEven: true);           // desc
-                                    Cell(tbl, s6!.Old2_Category, isEven: true);
-                                    Cell(tbl, "", isEven: true);           // address
-                                    Cell(tbl, FormatMV(s6.Old2_Market_Value), true, true);
-                                    Cell(tbl, s6.Old2_Extent, isEven: true);
-                                    Cell(tbl, "", isEven: true);           // owner
-                                }
+                                    c.RelativeColumn();
+                                    c.RelativeColumn();
+                                });
 
-                                if (isMulti && !string.IsNullOrWhiteSpace(s6?.Old3_Category))
-                                {
-                                    Cell(tbl, "");
-                                    Cell(tbl, s6!.Old3_Category);
-                                    Cell(tbl, "");
-                                    Cell(tbl, FormatMV(s6.Old3_Market_Value), right: true);
-                                    Cell(tbl, s6.Old3_Extent);
-                                    Cell(tbl, "");
-                                }
-                            });
-
-                            // ── 7. Requested changes table ───────────────────
-                            col.Item()
-                               .Text($"PROPERTY DETAILS — AS PER YOUR {typeWord}")
-                               .Bold().FontSize(9).FontColor(teal)
-                               .AlignCenter();
-
-                            col.Item().Table(tbl =>
-                            {
-                                AddTableHeader(tbl,
-                                    new[] { "Property Description", "Category",
-                                    "Physical Address", "Market Value",
-                                    "Extent", "Owner" },
-                                    new[] { 25f, 14f, 25f, 14f, 10f, 12f });
-
-                                Cell(tbl, s6?.New_Property_Description);
-                                Cell(tbl, s6?.New_Category);
-                                Cell(tbl, s6?.New_Address);
-                                Cell(tbl, FormatMV(s6?.New_Market_Value), right: true);
-                                Cell(tbl, s6?.New_Extent);
-                                Cell(tbl, s6?.New_Owner);
-
-                                if (isMulti && !string.IsNullOrWhiteSpace(s6?.New2_Category))
-                                {
-                                    Cell(tbl, "", isEven: true);
-                                    Cell(tbl, s6!.New2_Category, isEven: true);
-                                    Cell(tbl, "", isEven: true);
-                                    Cell(tbl, FormatMV(s6.New2_Market_Value), true, true);
-                                    Cell(tbl, s6.New2_Extent, isEven: true);
-                                    Cell(tbl, "", isEven: true);
-                                }
-
-                                if (isMulti && !string.IsNullOrWhiteSpace(s6?.New3_Category))
-                                {
-                                    Cell(tbl, "");
-                                    Cell(tbl, s6!.New3_Category);
-                                    Cell(tbl, "");
-                                    Cell(tbl, FormatMV(s6.New3_Market_Value), right: true);
-                                    Cell(tbl, s6.New3_Extent);
-                                    Cell(tbl, "");
-                                }
-                            });
-
-                            // ── 8. Reasons ───────────────────────────────────
-                            col.Item()
-                               .Text($"REASONS IN SUPPORT OF THIS {typeWord}")
-                               .Bold().FontSize(9).FontColor(teal)
-                               .AlignCenter();
-
-                            col.Item()
-                               .Background("#eef7f8")
-                               .Border(1).BorderColor(teal)
-                               
-                               .MinHeight(35)
-                               .Padding(8)
-                               .Text(string.IsNullOrWhiteSpace(s6?.Objection_Reasons)
-                                   ? "No reasons provided."
-                                   : s6.Objection_Reasons)
-                               .FontSize(8);
-
-                            // ── 9. Supporting documents ──────────────────────
-                            col.Item()
-                               .Text("SUPPORTING DOCUMENTS")
-                               .Bold().FontSize(9).FontColor(teal)
-                               .AlignCenter();
-
-                            col.Item()
-                               .Text($"You uploaded {result.FileCount} document(s).")
-                               .FontSize(8);
-
-                            if (result.FileCount > 0)
-                            {
-                                col.Item().Table(tbl =>
-                                {
-                                    tbl.ColumnsDefinition(c =>
+                                t.Cell()
+                                    .Background("#eaf4fb")
+                                    .Border(1)
+                                    .BorderColor("#444444")
+                                    .Padding(8)
+                                    .Column(left =>
                                     {
-                                        c.RelativeColumn(50);
-                                        c.RelativeColumn(50);
+                                        left.Item()
+                                            .Text("Uploaded Documents (1–5):")
+                                            .FontSize(8)
+                                            .Bold();
+
+                                        for (int i = 0; i < 5; i++)
+                                        {
+                                            var file = i < result.Files.Length ? result.Files[i] : null;
+
+                                            if (!string.IsNullOrWhiteSpace(file))
+                                                left.Item().Text($"• {file}").FontSize(7.5f);
+                                        }
                                     });
 
-                                    // Left: files 1–5
-                                    tbl.Cell()
-                                       .Background("#eef2f5")
-                                       .Border(1).BorderColor("#c8d6e5")
-                                       .Padding(8)
-                                       .Column(left =>
-                                       {
-                                           left.Item()
-                                               .Text("Documents 1–5")
-                                               .Bold().FontSize(8);
-                                           for (int i = 0; i < 5; i++)
-                                           {
-                                               var f = i < result.Files.Length ? result.Files[i] : null;
-                                               if (!string.IsNullOrWhiteSpace(f))
-                                                   left.Item()
-                                                       .Text($"• {f}")
-                                                       .FontSize(7.5f);
-                                           }
-                                       });
+                                t.Cell()
+                                    .Background("#eaf4fb")
+                                    .Border(1)
+                                    .BorderColor("#444444")
+                                    .Padding(8)
+                                    .Column(right =>
+                                    {
+                                        right.Item()
+                                            .Text("Uploaded Documents (6–10):")
+                                            .FontSize(8)
+                                            .Bold();
 
-                                    // Right: files 6–10
-                                    tbl.Cell()
-                                       .Background("#eef2f5")
-                                       .Border(1).BorderColor("#c8d6e5")
-                                       .Padding(8)
-                                       .Column(right =>
-                                       {
-                                           right.Item()
-                                                .Text("Documents 6–10")
-                                                .Bold().FontSize(8);
-                                           for (int i = 5; i < 10; i++)
-                                           {
-                                               var f = i < result.Files.Length ? result.Files[i] : null;
-                                               if (!string.IsNullOrWhiteSpace(f))
-                                                   right.Item()
-                                                        .Text($"• {f}")
-                                                        .FontSize(7.5f);
-                                           }
-                                       });
-                                });
-                            }
-                        }); // end Content column
+                                        for (int i = 5; i < 10; i++)
+                                        {
+                                            var file = i < result.Files.Length ? result.Files[i] : null;
 
-                        // ── Page footer ──────────────────────────────────────
+                                            if (!string.IsNullOrWhiteSpace(file))
+                                                right.Item().Text($"• {file}").FontSize(7.5f);
+                                        }
+                                    });
+                            });
+                        });
+
+                        // FOOTER — same style as Objection/Appeal acknowledgement
                         page.Footer()
-                            .Background(dark)
-                            .Padding(8)
-                            .Row(row =>
+                            .PaddingTop(5)
+                            .AlignCenter()
+                            .Column(f =>
                             {
-                                row.RelativeItem()
-                                   .Text("City of Johannesburg — Valuation Services Department")
-                                   .FontSize(7).FontColor(gold);
-                                row.RelativeItem()
-                                   .Text($"Generated: {date}")
-                                   .FontSize(7).FontColor(white)
-                                   .AlignRight();
+                                f.Item()
+                                    .Text("This is an official document generated by the City of Johannesburg")
+                                    .FontSize(7)
+                                    .FontColor("#666666");
+
+                                f.Item()
+                                    .Text($"Generated on: {generatedDate}")
+                                    .FontSize(7)
+                                    .FontColor("#666666");
+
+                                if (!string.IsNullOrWhiteSpace(result.ValuationKey))
+                                {
+                                    f.Item()
+                                        .Text(result.ValuationKey)
+                                        .FontSize(8)
+                                        .SemiBold()
+                                        .FontColor("#cc0000");
+                                }
                             });
                     });
                 })
@@ -657,6 +591,106 @@ namespace V2_Genesis.Services.Implementations
             {
                 _logger.LogError(ex,
                     "[S78] Failed writing acknowledgement PDF for {Ref}", result.QueryRef);
+            }
+
+            static void RefRow(ColumnDescriptor col, string label, string? value)
+            {
+                col.Item().Text(t =>
+                {
+                    t.Span(label + " ").Bold();
+                    t.Span(string.IsNullOrWhiteSpace(value) ? "—" : value);
+                });
+            }
+
+            static void Section78PropertyTable(
+                ColumnDescriptor col,
+                string? propertyDesc,
+                string? category,
+                string? physicalAddress,
+                string? marketValue,
+                string? extent,
+                string? owner,
+                bool isMulti,
+                string? category2,
+                string? marketValue2,
+                string? extent2,
+                string? category3,
+                string? marketValue3,
+                string? extent3)
+            {
+                col.Item().Table(t =>
+                {
+                    t.ColumnsDefinition(c =>
+                    {
+                        c.RelativeColumn(2.2f);
+                        c.RelativeColumn(1.6f);
+                        c.RelativeColumn(1.7f);
+                        c.RelativeColumn(1.2f);
+                        c.RelativeColumn(0.8f);
+                        c.RelativeColumn(1.1f);
+                    });
+
+                    TH(t, "Property Description");
+                    TH(t, "Category");
+                    TH(t, "Physical Address");
+                    TH(t, "Market Value");
+                    TH(t, "Extent");
+                    TH(t, "Owner");
+
+                    TD(t, propertyDesc);
+                    TD(t, category);
+                    TD(t, physicalAddress);
+                    TD(t, marketValue);
+                    TD(t, extent);
+                    TD(t, owner);
+
+                    if (isMulti && HasAny(category2, marketValue2, extent2))
+                    {
+                        TD(t, "");
+                        TD(t, category2);
+                        TD(t, "");
+                        TD(t, marketValue2);
+                        TD(t, extent2);
+                        TD(t, "");
+                    }
+
+                    if (isMulti && HasAny(category3, marketValue3, extent3))
+                    {
+                        TD(t, "");
+                        TD(t, category3);
+                        TD(t, "");
+                        TD(t, marketValue3);
+                        TD(t, extent3);
+                        TD(t, "");
+                    }
+                });
+            }
+
+            static bool HasAny(params string?[] values)
+                => values.Any(v => !string.IsNullOrWhiteSpace(v));
+
+            static void TH(TableDescriptor t, string text)
+            {
+                t.Cell()
+                    .Background("#3f7fb5")
+                    .Border(1)
+                    .BorderColor("#222222")
+                    .Padding(5)
+                    .Text(text)
+                    .FontSize(8)
+                    .FontColor(Colors.White)
+                    .Bold()
+                    .AlignCenter();
+            }
+
+            static void TD(TableDescriptor t, string? text)
+            {
+                t.Cell()
+                    .Border(1)
+                    .BorderColor("#222222")
+                    .Padding(5)
+                    .Text(string.IsNullOrWhiteSpace(text) ? "" : text)
+                    .FontSize(8);
             }
         }
 

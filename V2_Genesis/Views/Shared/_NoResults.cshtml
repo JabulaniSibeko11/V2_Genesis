@@ -1,142 +1,115 @@
 ﻿@* ═══════════════════════════════════════════════════════════════
-   Views/Shared/_NoResults.cshtml
-   When Roll search returns 0 results → auto-trigger LIS search
-   No manual click needed
+   Views/Shared/_NoResults.cshtml  — FIXED
+   Fix 1: Field names match PropertySearchParams (TownName, Stand…)
+   Fix 2: Re-execute scripts after LIS results injection
 ═══════════════════════════════════════════════════════════════ *@
 @model V2_Genesis.Models.GvList
 <link href="~/css/views/lis-noresult.css" rel="stylesheet" asp-append-version="true" />
-
 <div class="ps-card ps-no-results-card" id="rollNoResults">
     <div class="ps-no-results-body">
+
         <div class="ps-no-results-icon">
             <i class="fa-solid fa-magnifying-glass"></i>
         </div>
+
         <h3>No Properties Found on Roll</h3>
         <p>
             No properties matched your search on
             <strong>@Model?.Name</strong>.
-            Searching the Land Information System automatically…
+            We can search the Land Information System (LIS)
+            using the same values — no need to type them again.
         </p>
 
-       
-        <div id="lisSearching" class="lis-searching">
-            <i class="fa-solid fa-spinner fa-spin"></i>
-            Searching Land Information System…
+        <div class="ps-no-results-tips">
+            <p><strong>Before searching LIS, also try:</strong></p>
+            <ul>
+                <li>Removing some search filters</li>
+                <li>Checking the spelling of your address or scheme name</li>
+                <li>Searching by Township only</li>
+            </ul>
         </div>
 
-     
         <button type="button"
                 id="searchLisBtn"
                 class="ps-btn-lis"
                 data-roll="@Model?.Source"
-                style="display:none;"
                 onclick="triggerLisSearch(this)">
             <i class="fa-solid fa-database"></i>
-            Retry LIS Search
+            Search on LIS
         </button>
+
+        <div id="lisSearching" class="lis-searching" style="display:none;">
+            <i class="fa-solid fa-spinner fa-spin"></i>
+            Searching Land Information System…
+        </div>
+
     </div>
 </div>
 
-@* LIS results injected here *@
 <div id="lisResultsContainer"></div>
 
 <script>
-    // ── Auto-trigger as soon as this partial renders ───────────────────
-    (function autoLis() {
-        var btn = document.getElementById('searchLisBtn');
-        if (!btn) return;
+function triggerLisSearch(btn) {
+    var rollSource = btn.getAttribute('data-roll');
 
-        var rollSource = btn.getAttribute('data-roll');
-
-        function getVal(name) {
-            var el = document.querySelector(
-                'input[name="' + name + '"], select[name="' + name + '"]');
-            return el ? el.value.trim() : '';
-        }
-
-        var params = new URLSearchParams({
-            SearchTownName : getVal('SearchTownName'),
-            SearchStand    : getVal('SearchStand'),
-            SearchAddress  : getVal('SearchAddress'),
-            SearchScheme   : getVal('SearchScheme'),
-            SearchUnit     : getVal('SearchUnit'),
-            SearchOwner    : getVal('SearchOwner'),
-        });
-
-        var token = document.querySelector(
-            'input[name="__RequestVerificationToken"]')?.value ?? '';
-
-        fetch('/search/' + rollSource + '/lis', {
-            method : 'POST',
-            headers: {
-                'Content-Type'             : 'application/x-www-form-urlencoded',
-                'RequestVerificationToken' : token,
-                'X-Requested-With'         : 'XMLHttpRequest'
-            },
-            body: params.toString()
-        })
-        .then(function(res) { return res.text(); })
-        .then(function(html) {
-            document.getElementById('lisSearching').style.display = 'none';
-            document.getElementById('rollNoResults').style.display = 'none';
-            document.getElementById('lisResultsContainer').innerHTML = html;
-            document.getElementById('lisResultsContainer')
-                .scrollIntoView({ behavior: 'smooth', block: 'start' });
-        })
-        .catch(function(err) {
-            document.getElementById('lisSearching').style.display = 'none';
-            btn.style.display = 'inline-flex';   // show retry button
-            console.error('[AutoLIS]', err);
-        });
-    })();
-
-    // ── triggerLisSearch still needed for the retry button ────────────
-    function triggerLisSearch(btn) {
-        btn.style.display = 'none';
-        document.getElementById('lisSearching').style.display = 'flex';
-
-        var rollSource = btn.getAttribute('data-roll');
-        function getVal(name) {
-            var el = document.querySelector(
-                'input[name="' + name + '"], select[name="' + name + '"]');
-            return el ? el.value.trim() : '';
-        }
-        var params = new URLSearchParams({
-            SearchTownName : getVal('SearchTownName'),
-            SearchStand    : getVal('SearchStand'),
-            SearchAddress  : getVal('SearchAddress'),
-            SearchScheme   : getVal('SearchScheme'),
-            SearchUnit     : getVal('SearchUnit'),
-            SearchOwner    : getVal('SearchOwner'),
-        });
-        var token = document.querySelector(
-            'input[name="__RequestVerificationToken"]')?.value ?? '';
-
-        fetch('/search/' + rollSource + '/lis', {
-            method : 'POST',
-            headers: {
-                'Content-Type'             : 'application/x-www-form-urlencoded',
-                'RequestVerificationToken' : token,
-                'X-Requested-With'         : 'XMLHttpRequest'
-            },
-            body: params.toString()
-        })
-        .then(function(res) { return res.text(); })
-        .then(function(html) {
-            document.getElementById('lisSearching').style.display = 'none';
-            document.getElementById('lisResultsContainer').innerHTML = html;
-            document.getElementById('lisResultsContainer')
-                .scrollIntoView({ behavior: 'smooth', block: 'start' });
-        })
-        .catch(function(err) {
-            document.getElementById('lisSearching').style.display = 'none';
-            btn.style.display = 'inline-flex';
-            document.getElementById('lisResultsContainer').innerHTML =
-                '<div class="lis-fetch-error">' +
-                '<i class="fa-solid fa-circle-xmark"></i> ' +
-                'LIS search failed. Please try again.</div>';
-        });
+    // ── FIX 1: Match actual form field names from PropertySearchParams ──
+    function getVal(name) {
+        var el = document.querySelector(
+            'input[name="' + name + '"], select[name="' + name + '"]');
+        return el ? el.value.trim() : '';
     }
+
+    var params = new URLSearchParams({
+        SearchTownName : getVal('TownName'),   // form field = TownName
+        SearchStand    : getVal('Stand'),       // form field = Stand
+        SearchAddress  : getVal('Address'),     // form field = Address
+        SearchScheme   : getVal('Scheme'),      // form field = Scheme
+        SearchUnit     : getVal('Unit'),        // form field = Unit
+        SearchOwner    : getVal('Owner'),       // form field = Owner (if present)
+    });
+
+    btn.style.display = 'none';
+    document.getElementById('lisSearching').style.display = 'flex';
+
+    var token = document.querySelector(
+        'input[name="__RequestVerificationToken"]')?.value ?? '';
+
+    fetch('/search/' + rollSource + '/lis', {
+        method : 'POST',
+        headers: {
+            'Content-Type'             : 'application/x-www-form-urlencoded',
+            'RequestVerificationToken' : token,
+            'X-Requested-With'         : 'XMLHttpRequest'
+        },
+        body: params.toString()
+    })
+    .then(function(r) { return r.text(); })
+    .then(function(html) {
+        document.getElementById('lisSearching').style.display = 'none';
+        document.getElementById('rollNoResults').style.display = 'none';
+
+        var container = document.getElementById('lisResultsContainer');
+        container.innerHTML = html;
+
+        // ── FIX 2: Re-execute scripts in the injected LIS partial ──────
+        // Without this, openOmissionModal / closeOmissionModal are undefined
+        container.querySelectorAll('script').forEach(function(oldScript) {
+            var newScript = document.createElement('script');
+            newScript.textContent = oldScript.textContent;
+            document.body.appendChild(newScript);
+            document.body.removeChild(newScript);
+        });
+
+        container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    })
+    .catch(function(err) {
+        document.getElementById('lisSearching').style.display = 'none';
+        btn.style.display = 'inline-flex';
+        document.getElementById('lisResultsContainer').innerHTML =
+            '<div class="lis-fetch-error">' +
+            '<i class="fa-solid fa-circle-xmark"></i> ' +
+            'LIS search failed. Please try again.</div>';
+        console.error('[LIS]', err);
+    });
+}
 </script>
-
-

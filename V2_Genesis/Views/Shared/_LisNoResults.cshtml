@@ -1,382 +1,620 @@
-﻿@using V2_Genesis.Models.LIS
+﻿@* ═══════════════════════════════════════════════════════════════
+   Views/Shared/_LisNoResults.cshtml
+   Property not found on LIS → Lodge Omission modal
+═══════════════════════════════════════════════════════════════ *@
+@using V2_Genesis.Models.LIS
 @{
-    var rollSource = ViewBag.RollSource  as string       ?? "Objection_Supp3";
-    var rollName   = ViewBag.RollName    as string       ?? rollSource;
-    var towns      = ViewBag.Towns       as List<string> ?? new List<string>();
-    var schemes    = ViewBag.Schemes     as List<string> ?? new List<string>();
+    var rollSource = ViewBag.RollSource   as string       ?? "Objection_Supp3";
+    var rollName   = ViewBag.RollName     as string       ?? rollSource;
+    var towns      = ViewBag.Towns        as List<string> ?? new List<string>();
+    var schemes    = ViewBag.Schemes      as List<string> ?? new List<string>();
     var sp         = ViewBag.SearchParams as LisSearchParams ?? new LisSearchParams();
 
-    // ── Auto-detect probable property type from search params ─────────
     bool likelyST  = !string.IsNullOrWhiteSpace(sp.SearchScheme)
                   || !string.IsNullOrWhiteSpace(sp.SearchUnit);
-    string defaultType = likelyST ? "ST" : "FH";
+    string defType = likelyST ? "ST" : "FH";
+
+    string jsTown   = System.Text.Json.JsonSerializer.Serialize(sp.SearchTownName ?? "");
+    string jsStand  = System.Text.Json.JsonSerializer.Serialize(sp.SearchStand   ?? "");
+    string jsScheme = System.Text.Json.JsonSerializer.Serialize(sp.SearchScheme  ?? "");
+    string jsUnit   = System.Text.Json.JsonSerializer.Serialize(sp.SearchUnit    ?? "");
+    string jsAddr   = System.Text.Json.JsonSerializer.Serialize(sp.SearchAddress ?? "");
 }
-<link href="~/css/views/ommission-view.css" rel="stylesheet" asp-append-version="true" />
-<div class="omit-wrap">
 
-    <div class="omit-banner">
-        <div class="omit-banner-icon">
-            <i class="fa-solid fa-circle-xmark"></i>
+<link href="~/css/views/ommission-view.css" rel="stylesheet" asp-append-version="true"/>
+<div class="nf-wrap">
+
+
+    <div class="nf-hero">
+        <div class="nf-hero-icon">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <div class="nf-hero-x"><i class="fa-solid fa-xmark"></i></div>
         </div>
-        <div>
-            <h3 class="omit-banner-title">Property Not Found on Roll or LIS</h3>
-            <p class="omit-banner-sub">
-                We searched the Land Information System for <strong>@rollName</strong>
-                but could not locate this property. If the property exists but is
-                missing from the roll, you can lodge it as an <strong>omission</strong>.
-            </p>
+        <h3 class="nf-hero-title">Property Not Found</h3>
+        <p class="nf-hero-sub">
+            We searched both <strong>@rollName</strong> and the
+            Land Information System — this property could not be located.
+        </p>
+    </div>
+
+
+    <div class="nf-info-strip">
+        <div class="nf-info-icon"><i class="fa-solid fa-lightbulb"></i></div>
+        <div class="nf-info-text">
+            <strong>This property may be an omission.</strong>
+            An omission is a property that physically exists but was never added
+            to the valuation roll. You can lodge an objection to have it included
+            and correctly valued — no linking step required.
         </div>
     </div>
 
-   
-    <div class="omit-info">
-        <i class="fa-solid fa-circle-info"></i>
-        <div>
-            <strong>What is an omission?</strong>
-            A property that physically exists but is not included on the valuation roll.
-            Lodging an omission objection notifies the City so it can be added
-            and correctly valued.
+
+    <div class="nf-steps">
+        <div class="nf-step nf-step-done">
+            <div class="nf-step-num"><i class="fa-solid fa-check"></i></div>
+            <span>Searched Roll</span>
+        </div>
+        <div class="nf-step-line nf-step-line-done"></div>
+        <div class="nf-step nf-step-done">
+            <div class="nf-step-num"><i class="fa-solid fa-check"></i></div>
+            <span>Searched LIS</span>
+        </div>
+        <div class="nf-step-line"></div>
+        <div class="nf-step nf-step-active">
+            <div class="nf-step-num">3</div>
+            <span>Confirm Details</span>
+        </div>
+        <div class="nf-step-line"></div>
+        <div class="nf-step">
+            <div class="nf-step-num">4</div>
+            <span>Lodge Form</span>
         </div>
     </div>
 
-   
-    <div class="omit-card">
-        <div class="omit-card-header">
-            <i class="fa-solid fa-pen-to-square"></i>
-            Confirm Property Details
-            <span class="omit-card-sub">
-                Verify the details below — we've pre-filled from your search
-            </span>
-        </div>
 
+    <div class="nf-actions">
+        <button type="button" class="nf-btn-omit" onclick="openOmissionModal()">
+            <i class="fa-solid fa-file-signature"></i>
+            Lodge as Omission
+            <span class="nf-btn-arrow"><i class="fa-solid fa-arrow-right"></i></span>
+        </button>
+        <button type="button" class="nf-btn-refine" onclick="refineSearch()">
+            <i class="fa-solid fa-rotate-left"></i>
+            Refine Search
+        </button>
+    </div>
+
+</div>
+
+
+<div id="omitBackdrop" class="om-backdrop" onclick="closeOmissionModal()"></div>
+
+<div id="omitModal" class="om-modal" role="dialog" aria-modal="true"
+     aria-labelledby="omitModalTitle">
+
+
+    <div class="om-header">
+        <div class="om-header-left">
+            <div class="om-header-icon">
+                <i class="fa-solid fa-pen-to-square"></i>
+            </div>
+            <div>
+                <h2 id="omitModalTitle" class="om-header-title">
+                    Lodge Omission Objection
+                </h2>
+                <p class="om-header-sub">
+                    Confirm your property details — pre-filled from your search
+                </p>
+            </div>
+        </div>
+        <button class="om-close" onclick="closeOmissionModal()"
+                aria-label="Close modal">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+    </div>
+
+
+    <div class="om-progress">
+        <div class="om-progress-bar"></div>
+    </div>
+
+  
+    <div class="om-body">
         <form method="post"
               action="/search/@rollSource/omission"
-              id="omissionForm">
+              id="omissionModalForm"
+              novalidate>
             @Html.AntiForgeryToken()
             <input type="hidden" name="rollSource" value="@rollSource" />
-            <input type="hidden" name="propType" id="propTypeInput" value="@defaultType" />
+            <input type="hidden" name="propType"   id="omitPropType" value="@defType" />
 
-            <div class="omit-form-body">
-
-             
-                <div class="omit-field omit-field-full">
-                    <label class="omit-label">
-                        <i class="fa-solid fa-house"></i>
-                        Property Type <span class="omit-required">*</span>
-                    </label>
-                    <div class="omit-type-row">
-                        <label class="omit-type-card @(defaultType == "FH" ? "selected" : "")"
-                               id="lbl-FH" onclick="switchType('FH')">
-                            <input type="radio" name="propTypeRadio" value="FH"
-                                   @(defaultType == "FH" ? "checked" : "")
-                                   style="display:none;" />
+            <div class="om-section">
+                <div class="om-section-label">
+                    <span class="om-section-num">A</span>
+                    Select Property Type
+                </div>
+                <div class="om-type-row">
+                    <label class="om-type-card @(defType=="FH"?"om-selected":"")"
+                           id="lbl-FH" onclick="omitSwitch('FH')">
+                        <input type="radio" name="propTypeRadio" value="FH"
+                               @(defType=="FH"?"checked":"")
+                               style="position:absolute;opacity:0;" />
+                        <div class="om-type-icon">
                             <i class="fa-solid fa-house-chimney"></i>
-                            <div>
-                                <strong>Full Title (Freehold)</strong>
-                                <small>Stand / ERF based property</small>
-                            </div>
-                        </label>
-                        <label class="omit-type-card @(defaultType == "ST" ? "selected" : "")"
-                               id="lbl-ST" onclick="switchType('ST')">
-                            <input type="radio" name="propTypeRadio" value="ST"
-                                   @(defaultType == "ST" ? "checked" : "")
-                                   style="display:none;" />
+                        </div>
+                        <div class="om-type-text">
+                            <strong>Full Title (Freehold)</strong>
+                            <small>Stand / ERF based property</small>
+                        </div>
+                        <div class="om-type-check">
+                            <i class="fa-solid fa-circle-check"></i>
+                        </div>
+                    </label>
+
+                    <label class="om-type-card @(defType=="ST"?"om-selected":"")"
+                           id="lbl-ST" onclick="omitSwitch('ST')">
+                        <input type="radio" name="propTypeRadio" value="ST"
+                               @(defType=="ST"?"checked":"")
+                               style="position:absolute;opacity:0;" />
+                        <div class="om-type-icon">
                             <i class="fa-solid fa-building"></i>
-                            <div>
-                                <strong>Sectional Title</strong>
-                                <small>Scheme / Unit based property</small>
-                            </div>
-                        </label>
+                        </div>
+                        <div class="om-type-text">
+                            <strong>Sectional Title</strong>
+                            <small>Scheme / Unit based property</small>
+                        </div>
+                        <div class="om-type-check">
+                            <i class="fa-solid fa-circle-check"></i>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+          
+            <div class="om-section">
+                <div class="om-section-label">
+                    <span class="om-section-num">B</span>
+                    Property Location
+                </div>
+                <div class="om-field om-field-full">
+                    <label class="om-label" for="omitTown">
+                        <i class="fa-solid fa-map-pin"></i>
+                        Township <span class="om-req">*</span>
+                    </label>
+                    <div class="om-select-wrap">
+                        <select name="FH_Town" id="omitTown"
+                                class="om-ctrl om-select" required>
+                            <option value="">— Select Township —</option>
+                            @foreach (var t in towns)
+                            {
+                                <option value="@t">@t</option>
+                            }
+                        </select>
+                        <i class="fa-solid fa-chevron-down om-select-arrow"></i>
                     </div>
                 </div>
+            </div>
 
-              
-                <div class="omit-field omit-field-full">
-                    <label class="omit-label" for="FH_Town">
-                        <i class="fa-solid fa-map-pin"></i>
-                        Township <span class="omit-required">*</span>
-                    </label>
-                    <select name="FH_Town" id="FH_Town" class="omit-input" required>
-                        <option value="">— Select Township —</option>
-                        @foreach (var town in towns)
-                        {
-                            bool match = string.Equals(town,
-                                sp.SearchTownName?.Trim(),
-                                StringComparison.OrdinalIgnoreCase);
-                          
-                            <option value="@town" selected="@(match ? "selected" : null)">@town</option>
-                        }
-                    </select>
+
+            <div id="omitFH" class="om-section"
+                 style="display:@(defType=="FH"?"block":"none");">
+                <div class="om-section-label">
+                    <span class="om-section-num">C</span>
+                    Freehold Property Details
                 </div>
+                <div class="om-grid">
 
-             
-                <div id="fhFields" class="omit-field-group"
-                     style="display:@(defaultType == "FH" ? "contents" : "none");">
-
-                    <div class="omit-field">
-                        <label class="omit-label" for="FH_ERF">
+                    <div class="om-field">
+                        <label class="om-label" for="omitERF">
                             <i class="fa-solid fa-hashtag"></i>
                             ERF / Stand Number
+                            @if (!string.IsNullOrWhiteSpace(sp.SearchStand))
+                            {
+                                <span class="om-prefilled-badge">
+                                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                                    Pre-filled
+                                </span>
+                            }
                         </label>
-                        <input type="text" name="FH_ERF" id="FH_ERF"
-                               class="omit-input" placeholder="e.g. 1234"
-                               value="@(sp.SearchStand ?? "")" />
+                        <input type="text" name="FH_ERF" id="omitERF"
+                               class="om-ctrl @(!string.IsNullOrWhiteSpace(sp.SearchStand) ? "om-prefilled" : "")"
+                               placeholder="e.g. 1234" />
+                        <p class="om-hint">Number used in your original search</p>
                     </div>
 
-                    <div class="omit-field">
-                        <label class="omit-label" for="FH_Portion">
+                    <div class="om-field">
+                        <label class="om-label" for="omitPortion">
                             <i class="fa-solid fa-square"></i>
                             Portion
                         </label>
-                        <input type="text" name="FH_Portion" id="FH_Portion"
-                               class="omit-input" placeholder="e.g. 0"
-                               onkeypress="return isNumKey(event)" />
+                        <input type="text" name="FH_Portion" id="omitPortion"
+                               class="om-ctrl" placeholder="e.g. 0"
+                               onkeypress="return omitNumKey(event)" />
+                        <p class="om-hint">Enter 0 if no portion</p>
                     </div>
 
-                    <div class="omit-field">
-                        <label class="omit-label" for="FH_RE">
+                    <div class="om-field">
+                        <label class="om-label" for="omitRE">
                             <i class="fa-solid fa-ruler"></i>
-                            RE <span class="omit-required">*</span>
+                            RE <span class="om-req">*</span>
                         </label>
-                        <select name="FH_RE" id="FH_RE" class="omit-input">
-                            <option value="" disabled selected>Select RE option</option>
-                            <option value="RE">RE</option>
-                            <option value="00">00</option>
-                        </select>
+                        <div class="om-select-wrap">
+                            <select name="FH_RE" id="omitRE" class="om-ctrl om-select" required>
+                                <option value="" disabled selected>Select RE option</option>
+                                <option value="RE">RE — Remaining Extent</option>
+                                <option value="00">00 — No remainder</option>
+                            </select>
+                            <i class="fa-solid fa-chevron-down om-select-arrow"></i>
+                        </div>
                     </div>
 
-                    <div class="omit-field">
-                        <label class="omit-label" for="FH_Right">
+                    <div class="om-field">
+                        <label class="om-label" for="omitFHRight">
                             <i class="fa-solid fa-file-signature"></i>
                             Property Right
-                            <span class="omit-optional">(optional)</span>
+                            <span class="om-opt">(optional)</span>
                         </label>
-                        <select name="FH_Right" id="FH_Right" class="omit-input">
-                            <option value="">None</option>
-                            <option value="Lease on ">Long-Term Lease</option>
-                            <option value="Mining Right on ">Mining Rights</option>
-                        </select>
+                        <div class="om-select-wrap">
+                            <select name="FH_Right" id="omitFHRight"
+                                    class="om-ctrl om-select">
+                                <option value="">None</option>
+                                <option value="Lease on ">Long-Term Lease</option>
+                                <option value="Mining Right on ">Mining Rights</option>
+                            </select>
+                            <i class="fa-solid fa-chevron-down om-select-arrow"></i>
+                        </div>
                     </div>
 
-                    <div class="omit-field">
-                        <label class="omit-label" for="FH_Address">
+                    <div class="om-field om-field-full">
+                        <label class="om-label" for="omitAddr">
                             <i class="fa-solid fa-road"></i>
                             Street Address
-                            <span class="omit-optional">(optional)</span>
+                            <span class="om-opt">(optional)</span>
+                            @if (!string.IsNullOrWhiteSpace(sp.SearchAddress))
+                            {
+                                <span class="om-prefilled-badge">
+                                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                                    Pre-filled
+                                </span>
+                            }
                         </label>
-                        <input type="text" name="FH_Address" id="FH_Address"
-                               class="omit-input" placeholder="e.g. 123 Main Street"
-                               value="@(sp.SearchAddress ?? "")" />
+                        <input type="text" name="FH_Address" id="omitAddr"
+                               class="om-ctrl @(!string.IsNullOrWhiteSpace(sp.SearchAddress) ? "om-prefilled" : "")"
+                               placeholder="e.g. 123 Main Street" />
                     </div>
 
                 </div>
+            </div>
 
-                <div id="stFields" class="omit-field-group"
-                     style="display:@(defaultType == "ST" ? "contents" : "none");">
+        
+            <div id="omitST" class="om-section"
+                 style="display:@(defType=="ST"?"block":"none");">
+                <div class="om-section-label">
+                    <span class="om-section-num">C</span>
+                    Sectional Title Details
+                </div>
+                <div class="om-grid">
 
-                    <div class="omit-field">
-                        <label class="omit-label" for="ST_Scheme">
+                    <div class="om-field om-field-full">
+                        <label class="om-label" for="omitScheme">
                             <i class="fa-solid fa-building"></i>
-                            Scheme Name <span class="omit-required">*</span>
+                            Scheme Name <span class="om-req">*</span>
+                            @if (!string.IsNullOrWhiteSpace(sp.SearchScheme))
+                            {
+                                <span class="om-prefilled-badge">
+                                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                                    Pre-filled
+                                </span>
+                            }
                         </label>
                         @if (schemes.Any())
                         {
-                            <select name="ST_Scheme" id="ST_Scheme" class="omit-input">
-                                <option value="">— Select Scheme —</option>
-                                @foreach (var scheme in schemes)
-                                {
-                                    bool match = string.Equals(scheme,
-                                        sp.SearchScheme?.Trim(),
-                                        StringComparison.OrdinalIgnoreCase);
-                                   
-                                    <option value="@scheme" selected="@(match ? "selected" : null)">@scheme</option>
-                                }
-                            </select>
+                            <div class="om-select-wrap">
+                                <select name="ST_Scheme" id="omitScheme"
+                                        class="om-ctrl om-select">
+                                    <option value="">— Select Scheme —</option>
+                                    @foreach (var s in schemes)
+                                    {
+                                        <option value="@s">@s</option>
+                                    }
+                                </select>
+                                <i class="fa-solid fa-chevron-down om-select-arrow"></i>
+                            </div>
                         }
                         else
                         {
-                            <input type="text" name="ST_Scheme" id="ST_Scheme"
-                                   class="omit-input" placeholder="Scheme name"
-                                   value="@(sp.SearchScheme ?? "")" />
+                            <input type="text" name="ST_Scheme" id="omitScheme"
+                                   class="om-ctrl @(!string.IsNullOrWhiteSpace(sp.SearchScheme) ? "om-prefilled" : "")"
+                                   placeholder="Scheme name" />
                         }
                     </div>
 
-                    <div class="omit-field">
-                        <label class="omit-label" for="ST_SchemeNumber">
+                    <div class="om-field">
+                        <label class="om-label" for="omitSchemeNum">
                             <i class="fa-solid fa-hashtag"></i>
-                            Scheme Number <span class="omit-required">*</span>
+                            Scheme Number <span class="om-req">*</span>
                         </label>
-                        <input type="text" name="ST_SchemeNumber" id="ST_SchemeNumber"
-                               class="omit-input" placeholder="e.g. 1234"
-                               onkeypress="return isNumKey(event)" />
+                        <input type="text" name="ST_SchemeNumber" id="omitSchemeNum"
+                               class="om-ctrl" placeholder="e.g. 1234"
+                               onkeypress="return omitNumKey(event)" />
                     </div>
 
-                    <div class="omit-field">
-                        <label class="omit-label" for="ST_SchemeYear">
+                    <div class="om-field">
+                        <label class="om-label" for="omitSchemeYear">
                             <i class="fa-solid fa-calendar-alt"></i>
-                            Scheme Year <span class="omit-required">*</span>
+                            Scheme Year <span class="om-req">*</span>
                         </label>
-                        <input type="text" name="ST_SchemeYear" id="ST_SchemeYear"
-                               class="omit-input" placeholder="e.g. 2018"
-                               onkeypress="return isNumKey(event)" />
+                        <input type="text" name="ST_SchemeYear" id="omitSchemeYear"
+                               class="om-ctrl" placeholder="e.g. 2018"
+                               onkeypress="return omitNumKey(event)" />
                     </div>
 
-                    <div class="omit-field">
-                        <label class="omit-label" for="ST_Unit">
+                    <div class="om-field">
+                        <label class="om-label" for="omitUnit">
                             <i class="fa-solid fa-door-open"></i>
-                            Unit Number <span class="omit-required">*</span>
+                            Unit Number <span class="om-req">*</span>
+                            @if (!string.IsNullOrWhiteSpace(sp.SearchUnit))
+                            {
+                                <span class="om-prefilled-badge">
+                                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                                    Pre-filled
+                                </span>
+                            }
                         </label>
-                        <input type="text" name="ST_Unit" id="ST_Unit"
-                               class="omit-input" placeholder="e.g. 5"
-                               value="@(sp.SearchUnit ?? "")"
-                               onkeypress="return isNumKey(event)" />
+                        <input type="text" name="ST_Unit" id="omitUnit"
+                               class="om-ctrl @(!string.IsNullOrWhiteSpace(sp.SearchUnit) ? "om-prefilled" : "")"
+                               placeholder="e.g. 5"
+                               onkeypress="return omitNumKey(event)" />
                     </div>
 
-                    <div class="omit-field">
-                        <label class="omit-label" for="ST_Right">
+                    <div class="om-field">
+                        <label class="om-label" for="omitSTRight">
                             <i class="fa-solid fa-file-signature"></i>
                             Property Right
-                            <span class="omit-optional">(optional)</span>
+                            <span class="om-opt">(optional)</span>
                         </label>
-                        <select name="ST_Right" id="ST_Right" class="omit-input">
-                            <option value="">None</option>
-                            <option value="Lease on ">Long-Term Lease</option>
-                            <option value="Mining Right on ">Mining Rights</option>
-                        </select>
+                        <div class="om-select-wrap">
+                            <select name="ST_Right" id="omitSTRight"
+                                    class="om-ctrl om-select">
+                                <option value="">None</option>
+                                <option value="Lease on ">Long-Term Lease</option>
+                                <option value="Mining Right on ">Mining Rights</option>
+                            </select>
+                            <i class="fa-solid fa-chevron-down om-select-arrow"></i>
+                        </div>
                     </div>
 
                 </div>
-
             </div>
 
-       
-            <div class="omit-actions">
-                <button type="submit" class="omit-btn-primary" id="omitSubmitBtn">
-                    <i class="fa-solid fa-file-signature"></i>
-                    Lodge as Omission
+        
+            <div class="om-notice">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                <span>
+                    Lodging an omission does not guarantee the property will be added
+                    to the roll. The City will investigate and determine the appropriate
+                    valuation. For assistance call <strong>011 407-6622</strong>.
+                </span>
+            </div>
+
+        
+            <div class="om-footer">
+                <button type="button" class="om-btn-cancel"
+                        onclick="closeOmissionModal()">
+                    <i class="fa-solid fa-xmark"></i> Cancel
                 </button>
-                <button type="button" class="omit-btn-ghost"
-                        onclick="resetOmission()">
-                    <i class="fa-solid fa-rotate-left"></i>
-                    Refine Search
+                <button type="submit" class="om-btn-submit" id="omitSubmitBtn">
+                    <i class="fa-solid fa-arrow-right"></i>
+                    Continue to Objection Form
                 </button>
             </div>
 
         </form>
     </div>
-
- 
-    <div class="omit-notice">
-        <i class="fa-solid fa-triangle-exclamation"></i>
-        <div>
-            <strong>Important:</strong> Lodging an omission does not guarantee
-            the property will be added to the roll. The City will investigate
-            and determine the appropriate valuation. Contact
-            <strong>011 407-6622</strong> for assistance.
-        </div>
-    </div>
-
 </div>
 
 <script>
-function switchType(type) {
-    document.getElementById('propTypeInput').value = type;
+    // ════════════════════════════════════════════════════════════════
+    //  _LisNoResults.cshtml — REPLACE the entire <script> block
+    // ════════════════════════════════════════════════════════════════
 
-    var fh = document.getElementById('fhFields');
-    var st = document.getElementById('stFields');
+    // ── Values from server (Razor-rendered) ─────────────────────────
+    var _omitTown   = @Html.Raw(jsTown);
+    var _omitStand  = @Html.Raw(jsStand);
+    var _omitScheme = @Html.Raw(jsScheme);
+    var _omitUnit   = @Html.Raw(jsUnit);
+    var _omitAddr   = @Html.Raw(jsAddr);
+    var _defType    = '@defType';
 
-    if (type === 'FH') {
-        fh.style.display = 'contents';
-        st.style.display = 'none';
-        document.getElementById('lbl-FH').classList.add('selected');
-        document.getElementById('lbl-ST').classList.remove('selected');
-        // FH fields required, ST not
-        setRequired(['FH_Town', 'FH_RE'], true);
-        setRequired(['ST_Scheme', 'ST_SchemeNumber', 'ST_SchemeYear', 'ST_Unit'], false);
-    } else {
-        fh.style.display = 'none';
-        st.style.display = 'contents';
-        document.getElementById('lbl-ST').classList.add('selected');
-        document.getElementById('lbl-FH').classList.remove('selected');
-        setRequired(['ST_Scheme', 'ST_SchemeNumber', 'ST_SchemeYear', 'ST_Unit'], true);
-        setRequired(['FH_RE'], false);
+    // ── Open modal ───────────────────────────────────────────────────
+    function openOmissionModal() {
+        var modal    = document.getElementById('omitModal');
+        var backdrop = document.getElementById('omitBackdrop');
+        if (!modal || !backdrop) return;
+
+        // Move to <body> — parent Results modal uses CSS transform which
+        // traps position:fixed children, making the modal appear clipped
+        if (modal.parentElement !== document.body) {
+            document.body.appendChild(backdrop);
+            document.body.appendChild(modal);
+        }
+
+        prePopulate();
+        omitSwitch(_defType);
+        backdrop.classList.add('show');
+        modal.classList.add('show');
+        document.body.style.overflow = 'hidden';
     }
-}
 
-function setRequired(ids, required) {
-    ids.forEach(function(id) {
+    // ── Close modal ──────────────────────────────────────────────────
+    function closeOmissionModal() {
+        var backdrop = document.getElementById('omitBackdrop');
+        var modal    = document.getElementById('omitModal');
+        if (backdrop) backdrop.classList.remove('show');
+        if (modal)    modal.classList.remove('show');
+        document.body.style.overflow = '';
+    }
+
+    // ── Remove modal elements from <body> (called before container clear)
+    function _cleanupOmitElements() {
+        ['omitBackdrop', 'omitModal'].forEach(function(id) {
+            var el = document.getElementById(id);
+            if (el && el.parentElement === document.body) {
+                document.body.removeChild(el);
+            }
+        });
+    }
+
+    // ── Pre-populate fields from original search ─────────────────────
+    function prePopulate() {
+        // Town dropdown — case-insensitive match
+        var town = document.getElementById('omitTown');
+        if (town && _omitTown) {
+            for (var i = 0; i < town.options.length; i++) {
+                if (town.options[i].value.toLowerCase() === _omitTown.toLowerCase()) {
+                    town.selectedIndex = i; break;
+                }
+            }
+        }
+        setVal('omitERF',  _omitStand);
+        setVal('omitAddr', _omitAddr);
+        setVal('omitUnit', _omitUnit);
+
+        // Scheme — dropdown or text input
+        var scheme = document.getElementById('omitScheme');
+        if (scheme && _omitScheme) {
+            if (scheme.tagName === 'SELECT') {
+                for (var j = 0; j < scheme.options.length; j++) {
+                    if (scheme.options[j].value.toLowerCase() === _omitScheme.toLowerCase()) {
+                        scheme.selectedIndex = j; break;
+                    }
+                }
+            } else {
+                scheme.value = _omitScheme;
+            }
+        }
+    }
+
+    function setVal(id, val) {
         var el = document.getElementById(id);
-        if (el) el.required = required;
+        if (el && val) el.value = val;
+    }
+
+    // ── Switch between Freehold / Sectional Title ────────────────────
+    function omitSwitch(type) {
+        document.getElementById('omitPropType').value = type;
+        var fh = document.getElementById('omitFH');
+        var st = document.getElementById('omitST');
+        if (!fh || !st) return;
+
+        if (type === 'FH') {
+            fh.style.display = 'block';
+            st.style.display = 'none';
+            document.getElementById('lbl-FH').classList.add('om-selected');
+            document.getElementById('lbl-ST').classList.remove('om-selected');
+            setReq(['omitRE'], true);
+            setReq(['omitScheme','omitSchemeNum','omitSchemeYear','omitUnit'], false);
+        } else {
+            fh.style.display = 'none';
+            st.style.display = 'block';
+            document.getElementById('lbl-ST').classList.add('om-selected');
+            document.getElementById('lbl-FH').classList.remove('om-selected');
+            setReq(['omitScheme','omitSchemeNum','omitSchemeYear','omitUnit'], true);
+            setReq(['omitRE'], false);
+        }
+    }
+
+    function setReq(ids, req) {
+        ids.forEach(function(id) {
+            var el = document.getElementById(id);
+            if (el) el.required = req;
+        });
+    }
+
+    // ── Numeric-only key filter ──────────────────────────────────────
+    function omitNumKey(e) {
+        var c = e.which ?? e.keyCode;
+        return !(c > 31 && (c < 48 || c > 57));
+    }
+
+    // ── Form validation on submit ────────────────────────────────────
+    document.getElementById('omissionModalForm')
+        ?.addEventListener('submit', function(e) {
+        var type = document.getElementById('omitPropType').value;
+        var town = document.getElementById('omitTown').value.trim();
+
+        if (!town) {
+            e.preventDefault();
+            showErr('Please select a township.'); return;
+        }
+
+        if (type === 'FH') {
+            var erf = document.getElementById('omitERF').value.trim();
+            var re  = document.getElementById('omitRE').value;
+            if (!erf) { e.preventDefault(); showErr('Please enter the ERF / Stand number.'); return; }
+            if (!re)  { e.preventDefault(); showErr('Please select the RE option.'); return; }
+        } else {
+            var s  = document.getElementById('omitScheme').value.trim();
+            var sn = document.getElementById('omitSchemeNum').value.trim();
+            var sy = document.getElementById('omitSchemeYear').value.trim();
+            var u  = document.getElementById('omitUnit').value.trim();
+            if (!s || !sn || !sy || !u) {
+                e.preventDefault();
+                showErr('Please fill in all Scheme details: Name, Number, Year and Unit.');
+                return;
+            }
+        }
+
+        // Show loading state
+        var btn = document.getElementById('omitSubmitBtn');
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing…';
+        btn.disabled = true;
     });
-}
 
-function isNumKey(e) {
-    var c = e.which ?? e.keyCode;
-    return !(c > 31 && (c < 48 || c > 57));
-}
+    // ── Validation error message ─────────────────────────────────────
+    function showErr(msg) {
+        var ex = document.getElementById('omitErr');
+        if (ex) ex.remove();
 
-function resetOmission() {
-    document.getElementById('lisResultsContainer').innerHTML = '';
-    var sf = document.querySelector('.ps-search-form, form[action*="/search/"]');
-    if (sf) sf.scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
+        var d = document.createElement('div');
+        d.id = 'omitErr';
+        d.className = 'om-err';
+        d.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> ' + msg;
 
-// Client-side validation
-document.getElementById('omissionForm')?.addEventListener('submit', function(e) {
-    var type = document.getElementById('propTypeInput').value;
-    var town = document.getElementById('FH_Town').value.trim();
+        // ← FIX: scope to #omitModal so it works after modal moves to body
+        var footer = document.querySelector('#omitModal .om-footer');
+        if (footer) footer.insertAdjacentElement('beforebegin', d);
 
-    if (!town) {
-        e.preventDefault();
-        showOmitError('Please select a township before proceeding.');
-        document.getElementById('FH_Town').focus();
-        return;
+        setTimeout(function() { d.remove(); }, 5000);
     }
 
-    if (type === 'FH') {
-        var erf = document.getElementById('FH_ERF').value.trim();
-        var re  = document.getElementById('FH_RE').value;
-        if (!erf) {
-            e.preventDefault();
-            showOmitError('Please enter the ERF / Stand number for Freehold property.');
-            return;
-        }
-        if (!re) {
-            e.preventDefault();
-            showOmitError('Please select the RE option for Freehold property.');
-            return;
-        }
-    } else {
-        var scheme = document.getElementById('ST_Scheme').value.trim();
-        var sNo    = document.getElementById('ST_SchemeNumber').value.trim();
-        var sYr    = document.getElementById('ST_SchemeYear').value.trim();
-        var unit   = document.getElementById('ST_Unit').value.trim();
-        if (!scheme || !sNo || !sYr || !unit) {
-            e.preventDefault();
-            showOmitError('Please fill in all Scheme details: Name, Number, Year and Unit.');
-            return;
-        }
+    // ── Refine search — go back to Roll search ───────────────────────
+    function refineSearch() {
+        closeOmissionModal();
+
+        // ← FIX: clean up modal elements from body BEFORE clearing the
+        //   container — prevents duplicate ID conflicts on the next search
+        _cleanupOmitElements();
+
+        var container = document.getElementById('lisResultsContainer');
+        if (container) container.innerHTML = '';
+
+        var nr = document.getElementById('rollNoResults');
+        if (nr) { nr.style.display = ''; nr.scrollIntoView({behavior:'smooth',block:'start'}); }
     }
 
-    var btn = document.getElementById('omitSubmitBtn');
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing…';
-    btn.disabled = true;
-});
+    // ── Init ─────────────────────────────────────────────────────────
+    omitSwitch(_defType);
 
-function showOmitError(msg) {
-    var ex = document.getElementById('omitValidationError');
-    if (ex) ex.remove();
-    var err = document.createElement('div');
-    err.id = 'omitValidationError';
-    err.className = 'omit-validation-error';
-    err.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> ' + msg;
-    document.querySelector('.omit-actions').insertAdjacentElement('beforebegin', err);
-    err.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    setTimeout(function() { err.remove(); }, 5000);
-}
-
-// Init correct required state on load
-switchType('@defaultType');
+    // ← FIX: remove old listener before adding — prevents accumulation
+    //   when injectWithScripts re-runs this script on second LIS search
+    if (window._omitEscHandler) {
+        document.removeEventListener('keydown', window._omitEscHandler);
+    }
+    window._omitEscHandler = function(e) {
+        if (e.key === 'Escape') closeOmissionModal();
+    };
+    document.addEventListener('keydown', window._omitEscHandler);
 </script>
 
 

@@ -431,208 +431,368 @@ public class NoticeService : INoticeService
     {
         var headerPath = Path.Combine(_env.WebRootPath, HEADER_IMAGE);
         var signaturePath = Path.Combine(_env.ContentRootPath, roll.SignatureFile);
-        var titleLabel = data.IsMulti
-            ? "ACKNOWLEDGEMENT OF MULTIPURPOSE OBJECTION"
-            : "ACKNOWLEDGEMENT OF OBJECTION";
+        var hasHeader = File.Exists(headerPath);
+
+        var now = DateTime.Now;
+        var letterDate = now.ToString("dd MMMM yyyy");
+        var generatedDate = now.ToString("dd MMMM yyyy HH:mm");
+
+        string actionWord = data.IsAppeal ? "appeal" : "objection";
+        string actionWordUpper = data.IsAppeal ? "APPEAL" : "OBJECTION";
+
+        string titleLabel =
+            data.IsAppeal
+                ? data.IsMulti
+                    ? "MULTIPURPOSE APPEAL ACKNOWLEDGEMENT"
+                    : "APPEAL ACKNOWLEDGEMENT"
+                : data.IsMulti
+                    ? "ACKNOWLEDGEMENT OF MULTIPURPOSE OBJECTION"
+                    : "ACKNOWLEDGEMENT OF OBJECTION";
+
+        string referenceLabel = data.IsAppeal
+            ? "Appeal Number:"
+            : "Objection Number:";
+
+        string listedTitle = "PROPERTY DETAILS AS LISTED IN THE VALUATION ROLL";
+
+        string requestedTitle = data.IsAppeal
+            ? "PROPERTY DETAILS AS APPEALED"
+            : "PROPERTY DETAILS AS OBJECTED";
+
+        string reasonTitle = data.IsAppeal
+            ? "REASONS FOR APPEAL"
+            : "REASONS FOR OBJECTION";
+
+        string requiredDocsTitle = data.IsAppeal
+            ? "REQUIRED DOCUMENTATION FOR APPEAL"
+            : "REQUIRED DOCUMENTATION FOR OBJECTION";
 
         return Document.Create(container =>
         {
             container.Page(page =>
             {
                 page.Size(PageSizes.A4);
-                page.Margin(1.5f, Unit.Centimetre);
-                page.DefaultTextStyle(t => t.FontFamily("Arial").FontSize(9));
+                page.Margin(36);
+                page.DefaultTextStyle(x => x.FontFamily("Arial").FontSize(9));
 
                 page.Content().Column(col =>
                 {
-                    // ── Header ────────────────────────────────────────
-                    if (File.Exists(headerPath))
-                        col.Item().Width(500).Image(headerPath);
+                    col.Spacing(8);
 
-                    col.Item().Height(8);
+                    // HEADER IMAGE
+                    if (hasHeader)
+                        col.Item().Height(80).Image(headerPath, ImageScaling.FitArea);
 
-                    // Date right-aligned
+                    // DATE
                     col.Item().AlignRight()
-                        .Text(DateTime.Now.ToString("dd MMMM yyyy"))
-                        .FontSize(10);
+                        .Text(letterDate)
+                        .FontSize(10)
+                        .SemiBold();
 
-                    col.Item().Height(6);
-                    col.Item().BorderBottom(1).BorderColor("#555555");
-                    col.Item().Height(6);
-
-                    // ── Title ─────────────────────────────────────────
+                    // TITLE
                     col.Item().AlignCenter()
                         .Text("CITY OF JOHANNESBURG")
-                        .FontSize(13).Bold();
-
-                    col.Item().Height(4);
+                        .FontSize(13)
+                        .Bold();
 
                     col.Item().AlignCenter()
                         .Text(titleLabel)
-                        .FontSize(11).Bold();
+                        .FontSize(12)
+                        .Bold();
 
-                    col.Item().Height(4);
+                    col.Item().BorderBottom(1).BorderColor("#555555");
 
+                    // INTRO
+                    col.Item().Text(
+                        $"This is to acknowledge that your {actionWord} has been successfully received and logged. Details below for your records.")
+                        .FontSize(9);
+
+                    col.Item().Text(
+                        "IMPORTANT NOTICE: You have 48 hours from submission to upload outstanding evidence.")
+                        .FontSize(9)
+                        .Bold();
+
+                    // REFERENCE DETAILS
                     col.Item().AlignCenter()
-                        .Text(roll.RollTitle.ToUpper())
-                        .FontSize(10).Bold();
+                        .Text("REFERENCE DETAILS")
+                        .FontSize(10)
+                        .Bold();
 
-                    col.Item().Height(10);
-
-                    // ── Objection reference box ───────────────────────
                     col.Item()
-                        .Background("#1a1a1a")
-                        .Border(1).BorderColor("#e6b000")
-                        .Padding(10).Column(box =>
+                        .Background("#eeeeee")
+                        .Border(1)
+                        .BorderColor("#444444")
+                        .Padding(10)
+                        .Column(refBox =>
                         {
-                            box.Item().AlignCenter()
-                                .Text("OBJECTION REFERENCE NUMBER")
-                                .FontColor("#e6b000").FontSize(9).Bold();
-                            box.Item().Height(4);
-                            box.Item().AlignCenter()
-                                .Text(data.ObjectionNo)
-                                .FontColor(Colors.White).FontSize(16).Bold();
-                            box.Item().Height(4);
-                            box.Item().AlignCenter()
-                                .Text($"Submitted: {data.SubmissionTime}")
-                                .FontColor("#e6b000").FontSize(8);
+                            RefRow(refBox, "Property Description:", data.Old_PropertyDescription);
+                            RefRow(refBox, referenceLabel, data.ObjectionRef);
+                            RefRow(refBox, "PIN:", data.ObjectionNo);
+                            RefRow(refBox, "Date Captured:", data.SubmissionTime);
+
+                            if (!string.IsNullOrWhiteSpace(data.ValuationKey))
+                                RefRow(refBox, "Valuation Key:", data.ValuationKey);
                         });
 
-                    col.Item().Height(10);
+                    col.Item().BorderBottom(1).BorderColor("#555555");
 
-                    // ── Property info — Section 1 ─────────────────────
-                    AckSectionTable(col,
-                        label: data.IsMulti ? "SECTION 1 — PROPERTY DETAILS" : "PROPERTY DETAILS",
-                        oldDesc: data.Old_PropertyDescription,
-                        oldCat: data.Old_Category,
-                        oldAddr: data.Old_Address,
-                        oldExt: data.Old_Extent,
-                        oldMv: data.Old_MarketValue,
-                        oldOwner: data.Old_Owner,
-                        newDesc: data.New_PropertyDescription,
-                        newCat: data.New_Category,
-                        newAddr: data.New_Address,
-                        newExt: data.New_Extent,
-                        newMv: data.New_MarketValue,
-                        newOwner: data.New_Owner,
-                        isFirst: true);
+                    // PROPERTY DETAILS AS LISTED
+                    col.Item().AlignCenter()
+                        .Text(listedTitle)
+                        .FontSize(10)
+                        .Bold();
 
-                    // ── Multi: Section 2 ──────────────────────────────
-                    if (data.IsMulti)
-                    {
-                        col.Item().Height(8);
-                        AckSectionTable(col,
-                            label: "SECTION 2 — SECOND USE DETAILS",
-                            oldDesc: null, oldAddr: null,
-                            oldOwner: null, newDesc: null,
-                            newAddr: null, newOwner: null,
-                            oldCat: data.Old2_Category,
-                            oldExt: data.Old2_Extent,
-                            oldMv: data.Old2_MarketValue,
-                            newCat: data.New2_Category,
-                            newExt: data.New2_Extent,
-                            newMv: data.New2_MarketValue,
-                            isFirst: false);
+                    PropertyTable(
+                        col,
+                        data.Old_PropertyDescription,
+                        data.Old_Category,
+                        data.Old_Address,
+                        data.Old_MarketValue,
+                        data.Old_Extent,
+                        data.Old_Owner,
+                        data.IsMulti,
+                        data.Old2_Category,
+                        data.Old2_MarketValue,
+                        data.Old2_Extent,
+                        data.Old3_Category,
+                        data.Old3_MarketValue,
+                        data.Old3_Extent);
 
-                        // ── Multi: Section 3 (only if any value exists)
-                        bool hasSection3 =
-                            !string.IsNullOrWhiteSpace(data.Old3_Category) ||
-                            !string.IsNullOrWhiteSpace(data.New3_Category);
+                    col.Item().BorderBottom(1).BorderColor("#555555");
 
-                        if (hasSection3)
-                        {
-                            col.Item().Height(8);
-                            AckSectionTable(col,
-                                label: "SECTION 3 — THIRD USE DETAILS",
-                                oldDesc: null, oldAddr: null,
-                                oldOwner: null, newDesc: null,
-                                newAddr: null, newOwner: null,
-                                oldCat: data.Old3_Category,
-                                oldExt: data.Old3_Extent,
-                                oldMv: data.Old3_MarketValue,
-                                newCat: data.New3_Category,
-                                newExt: data.New3_Extent,
-                                newMv: data.New3_MarketValue,
-                                isFirst: false);
-                        }
-                    }
+                    // PROPERTY DETAILS AS OBJECTED/APPEALED
+                    col.Item().AlignCenter()
+                        .Text(requestedTitle)
+                        .FontSize(10)
+                        .Bold();
 
-                    col.Item().Height(10);
+                    PropertyTable(
+                        col,
+                        data.New_PropertyDescription,
+                        data.New_Category,
+                        data.New_Address,
+                        data.New_MarketValue,
+                        data.New_Extent,
+                        data.New_Owner,
+                        data.IsMulti,
+                        data.New2_Category,
+                        data.New2_MarketValue,
+                        data.New2_Extent,
+                        data.New3_Category,
+                        data.New3_MarketValue,
+                        data.New3_Extent);
 
-                    // ── Reason ────────────────────────────────────────
+                    // REASONS
                     if (!string.IsNullOrWhiteSpace(data.ObjectionReason))
                     {
-                        col.Item().Background("#FFF9E6").Border(1).BorderColor("#e6b000")
-                            .Padding(8).Column(r =>
-                            {
-                                r.Item().Text("REASON FOR OBJECTION").Bold().FontSize(8);
-                                r.Item().Height(3);
-                                r.Item().Text(data.ObjectionReason).FontSize(8);
-                            });
-                        col.Item().Height(8);
+                        col.Item().BorderBottom(1).BorderColor("#555555");
+
+                        col.Item().AlignCenter()
+                            .Text(reasonTitle)
+                            .FontSize(10)
+                            .Bold();
+
+                        col.Item()
+                            .Background("#eaf4fb")
+                            .Border(1)
+                            .BorderColor("#444444")
+                            .Padding(8)
+                            .Text(data.ObjectionReason)
+                            .FontSize(8);
                     }
 
-                    // ── Documents submitted ───────────────────────────
-                    col.Item().Background("#F0F0F0").Border(1).BorderColor("#888")
-                        .Padding(8).Row(r =>
+                    // REQUIRED DOCUMENTATION
+                    col.Item().BorderBottom(1).BorderColor("#555555");
+
+                    col.Item().AlignCenter()
+                        .Text(requiredDocsTitle)
+                        .FontSize(10)
+                        .Bold();
+
+                    col.Item()
+                        .Text($"You have uploaded {data.FileCount} Document(s)")
+                        .FontSize(9);
+
+                    col.Item().Table(t =>
+                    {
+                        t.ColumnsDefinition(c =>
                         {
-                            r.AutoItem()
-                            .Text("📎 Supporting Documents Submitted:")
-                            .Bold().FontSize(9);
-                            r.RelativeItem().AlignRight()
-                            .Text($"{data.FileCount} file(s)")
-                            .Bold().FontSize(9).FontColor("#1a1a1a");
+                            c.RelativeColumn();
+                            c.RelativeColumn();
                         });
 
-                    col.Item().Height(10);
+                        t.Cell()
+                            .Background("#eaf4fb")
+                            .Border(1)
+                            .BorderColor("#444444")
+                            .Padding(8)
+                            .Text("Uploaded Documents (1–5):")
+                            .FontSize(8)
+                            .Bold();
 
-                    // ── Closing note ──────────────────────────────────
-                    col.Item().Background("#E8F5E9").Border(1).BorderColor("#388E3C")
-                        .Padding(8).Column(c =>
-                        {
-                            c.Item().Text("IMPORTANT").Bold().FontSize(9).FontColor("#1B5E20");
-                            c.Item().Height(3);
-                            c.Item().Text(
-                            "Please keep this acknowledgement as proof that your objection was successfully submitted. " +
-                            "The Municipal Valuer will consider your objection and communicate the outcome in due course. " +
-                            "Should you require assistance, contact Valuation Services on 011 407-6622.")
-                            .FontSize(8);
-                        });
+                        t.Cell()
+                            .Background("#eaf4fb")
+                            .Border(1)
+                            .BorderColor("#444444")
+                            .Padding(8)
+                            .Text("Uploaded Documents (6–10):")
+                            .FontSize(8)
+                            .Bold();
+                    });
 
-                    col.Item().Height(14);
-
-                    // ── Closing date ──────────────────────────────────
+                    // CLOSING DATE
                     if (dates is not null)
                     {
-                        col.Item().Background("#FFF5E6").Border(1.5f).BorderColor("#FF8C00")
-                            .Padding(6).AlignCenter()
-                            .Text($"⚠ OBJECTION PERIOD CLOSES: {dates.VisibleUntil:dd MMMM yyyy} AT 15:00")
-                            .Bold().FontSize(9);
-
-                        col.Item().Height(10);
+                        col.Item()
+                            .Background("#FFF5E6")
+                            .Border(1)
+                            .BorderColor("#FF8C00")
+                            .Padding(6)
+                            .AlignCenter()
+                            .Text($"{actionWordUpper} PERIOD CLOSES: {dates.VisibleUntil:dd MMMM yyyy} AT 15:00")
+                            .Bold()
+                            .FontSize(8);
                     }
 
-                    // ── Signature ─────────────────────────────────────
+                    // SIGNATURE
                     if (File.Exists(signaturePath))
+                    {
+                        col.Item().Height(8);
                         col.Item().Width(150).Image(signaturePath);
-
-                    col.Item().Height(4);
-
-                    // ── Footer ────────────────────────────────────────
-                    col.Item().BorderTop(1).BorderColor("#AAAAAA").PaddingTop(6)
-                        .AlignCenter().Column(f =>
-                        {
-                            f.Item().Text(
-                            "Official document — City of Johannesburg Valuation Services")
-                            .FontSize(7).FontColor("#666666");
-                            f.Item().Text($"Generated: {DateTime.Now:dd MMMM yyyy HH:mm}")
-                            .FontSize(7).FontColor("#666666");
-                        });
+                    }
                 });
+
+                // FOOTER - exactly like the letter style
+                page.Footer()
+                    .PaddingTop(5)
+                    .AlignCenter()
+                    .Column(f =>
+                    {
+                        f.Item()
+                            .Text("This is an official document generated by the City of Johannesburg")
+                            .FontSize(7)
+                            .FontColor("#666666");
+
+                        f.Item()
+                            .Text($"Generated on: {generatedDate}")
+                            .FontSize(7)
+                            .FontColor("#666666");
+
+                        if (!string.IsNullOrWhiteSpace(data.ValuationKey))
+                        {
+                            f.Item()
+                                .Text(data.ValuationKey)
+                                .FontSize(8)
+                                .SemiBold()
+                                .FontColor("#cc0000");
+                        }
+                    });
             });
         }).GeneratePdf();
-    }
 
+        static void RefRow(ColumnDescriptor col, string label, string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                value = "—";
+
+            col.Item().Text(t =>
+            {
+                t.Span(label + " ").Bold();
+                t.Span(value);
+            });
+        }
+
+        static void PropertyTable(
+            ColumnDescriptor col,
+            string? propertyDesc,
+            string? category,
+            string? physicalAddress,
+            string? marketValue,
+            string? extent,
+            string? owner,
+            bool isMulti,
+            string? category2,
+            string? marketValue2,
+            string? extent2,
+            string? category3,
+            string? marketValue3,
+            string? extent3)
+        {
+            col.Item().Table(t =>
+            {
+                t.ColumnsDefinition(c =>
+                {
+                    c.RelativeColumn(2.2f);
+                    c.RelativeColumn(1.6f);
+                    c.RelativeColumn(1.7f);
+                    c.RelativeColumn(1.2f);
+                    c.RelativeColumn(0.8f);
+                    c.RelativeColumn(1.1f);
+                });
+
+                TH(t, "Property Description");
+                TH(t, "Category");
+                TH(t, "Physical Address");
+                TH(t, "Market Value");
+                TH(t, "Extent");
+                TH(t, "Owner");
+
+                TD(t, propertyDesc);
+                TD(t, category);
+                TD(t, physicalAddress);
+                TD(t, marketValue);
+                TD(t, extent);
+                TD(t, owner);
+
+                if (isMulti && HasAny(category2, marketValue2, extent2))
+                {
+                    TD(t, "");
+                    TD(t, category2);
+                    TD(t, "");
+                    TD(t, marketValue2);
+                    TD(t, extent2);
+                    TD(t, "");
+                }
+
+                if (isMulti && HasAny(category3, marketValue3, extent3))
+                {
+                    TD(t, "");
+                    TD(t, category3);
+                    TD(t, "");
+                    TD(t, marketValue3);
+                    TD(t, extent3);
+                    TD(t, "");
+                }
+            });
+        }
+
+        static bool HasAny(params string?[] values)
+            => values.Any(v => !string.IsNullOrWhiteSpace(v));
+
+        static void TH(TableDescriptor t, string text)
+        {
+            t.Cell()
+                .Background("#3f7fb5")
+                .Border(1)
+                .BorderColor("#222222")
+                .Padding(5)
+                .Text(text)
+                .FontSize(8)
+                .FontColor(Colors.White)
+                .Bold()
+                .AlignCenter();
+        }
+
+        static void TD(TableDescriptor t, string? text)
+        {
+            t.Cell()
+                .Border(1)
+                .BorderColor("#222222")
+                .Padding(5)
+                .Text(string.IsNullOrWhiteSpace(text) ? "" : text)
+                .FontSize(8);
+        }
+    }
     // ── Helper: renders one section's comparison table ────────────────────
     private static void AckSectionTable(
         ColumnDescriptor col,

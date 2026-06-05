@@ -10,5 +10,7 @@
         public int FileCount { get; set; }
         public string?[] Files { get; set; } = new string?[10];
         public Obj_Section6Model? Section6 { get; set; }
+        public string? ValuationKey { get; set; }
+
     }
 }

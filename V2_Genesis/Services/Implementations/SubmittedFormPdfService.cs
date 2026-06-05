@@ -1,6 +1,8 @@
-﻿using GV_Forms.Pdf;
+﻿using Dapper;
+using GV_Forms.Pdf;
 using QuestPDF.Fluent;
 using QuestPDF.Infrastructure;
+using System.Data.SqlClient;
 using V2_Genesis.Models;
 // These namespaces will be added in the next step when we copy/adapt GV_Forms PDF classes:
 // V2_Genesis.Models.Pdf -> InquiryAggregate, Wording
@@ -16,13 +18,17 @@ public class SubmittedFormPdfService : ISubmittedFormPdfService
 {
     private readonly ILogger<SubmittedFormPdfService> _logger;
     private readonly IWebHostEnvironment _env;
+    private readonly IConfiguration _config;
+    private readonly string _queryConn;
 
 
     public SubmittedFormPdfService(
-        ILogger<SubmittedFormPdfService> logger, IWebHostEnvironment env)
+        ILogger<SubmittedFormPdfService> logger, IWebHostEnvironment env, IConfiguration config)
     {
         _logger = logger;
         _env = env;
+        _config = config;
+        _queryConn = config.GetConnectionString(" QueryConnection")!;
     }
 
     public async Task<SubmittedFormPdfResult> GenerateObjectionOrAppealFormAsync(
@@ -245,6 +251,171 @@ public class SubmittedFormPdfService : ISubmittedFormPdfService
         return new SubmittedFormPdfResult
         {
             ReferenceNumber = referenceNumber,
+            FileName = fileName,
+            FilePath = filePath,
+            PdfBytes = pdfBytes,
+            SubmissionType = submissionType
+        };
+    }
+
+
+    public async Task<SubmittedFormPdfResult> GenerateSection78FormFromDbAsync(
+    string queryRef,
+    string folderPath)
+    {
+        if (string.IsNullOrWhiteSpace(queryRef))
+            throw new ArgumentException("Query reference is required.", nameof(queryRef));
+
+        if (string.IsNullOrWhiteSpace(folderPath))
+            throw new ArgumentException("Folder path is required.", nameof(folderPath));
+
+        Directory.CreateDirectory(folderPath);
+
+        await using var conn = new SqlConnection(_queryConn);
+
+        var que = await conn.QueryFirstOrDefaultAsync<Que_Property_InfoModel>(
+            @"
+        SELECT TOP 1 *
+        FROM dbo.QUE_Property_Info
+        WHERE LTRIM(RTRIM(QUERY_No)) = LTRIM(RTRIM(@Ref))
+        ",
+            new { Ref = queryRef });
+
+        if (que == null)
+            throw new InvalidOperationException($"QUE_Property_Info not found for {queryRef}.");
+
+        var obj1 = await conn.QueryFirstOrDefaultAsync<Obj_Section1Model>(
+            @"
+        SELECT TOP 1 *
+        FROM dbo.Obj_Section1
+        WHERE LTRIM(RTRIM(Objection_Ref_S1)) = LTRIM(RTRIM(@Ref))
+        ",
+            new { Ref = queryRef }) ?? new Obj_Section1Model();
+
+        var obj2 = await conn.QueryFirstOrDefaultAsync<Obj_Section2Model>(
+            @"
+        SELECT TOP 1 *
+        FROM dbo.Obj_Section2
+        WHERE LTRIM(RTRIM(Objection_Ref_S2)) = LTRIM(RTRIM(@Ref))
+        ",
+            new { Ref = queryRef }) ?? new Obj_Section2Model();
+
+        var que1 = await conn.QueryFirstOrDefaultAsync<Obj_Section2QueryModel>(
+            @"
+        SELECT TOP 1 *
+        FROM dbo.Obj_Section2Query
+        WHERE LTRIM(RTRIM(Objection_Ref_SQ)) = LTRIM(RTRIM(@Ref))
+        ",
+            new { Ref = queryRef }) ?? new Obj_Section2QueryModel();
+
+        var objB3 = await conn.QueryFirstOrDefaultAsync<Obj_Section3BusModel>(
+            @"
+        SELECT TOP 1 *
+        FROM dbo.Obj_Section3Bus
+        WHERE LTRIM(RTRIM(Objection_Ref_SB3)) = LTRIM(RTRIM(@Ref))
+        ",
+            new { Ref = queryRef }) ?? new Obj_Section3BusModel();
+
+        var objA3 = await conn.QueryFirstOrDefaultAsync<Obj_Section3AgriModel>(
+            @"
+        SELECT TOP 1 *
+        FROM dbo.Obj_Section3Agri
+        WHERE LTRIM(RTRIM(Objection_Ref_SA3)) = LTRIM(RTRIM(@Ref))
+        ",
+            new { Ref = queryRef }) ?? new Obj_Section3AgriModel();
+
+        var objB4 = await conn.QueryFirstOrDefaultAsync<Obj_Section4BusModel>(
+            @"
+        SELECT TOP 1 *
+        FROM dbo.Obj_Section4Bus
+        WHERE LTRIM(RTRIM(Objection_Ref_SB4)) = LTRIM(RTRIM(@Ref))
+        ",
+            new { Ref = queryRef }) ?? new Obj_Section4BusModel();
+
+        var objR4 = await conn.QueryFirstOrDefaultAsync<Obj_Section4ResModel>(
+            @"
+        SELECT TOP 1 *
+        FROM dbo.Obj_Section4Res
+        WHERE LTRIM(RTRIM(Objection_Ref_SR4)) = LTRIM(RTRIM(@Ref))
+        ",
+            new { Ref = queryRef }) ?? new Obj_Section4ResModel();
+
+        var obj5 = await conn.QueryFirstOrDefaultAsync<Obj_Section5Model>(
+            @"
+        SELECT TOP 1 *
+        FROM dbo.Obj_Section5
+        WHERE LTRIM(RTRIM(Objection_Ref_S5)) = LTRIM(RTRIM(@Ref))
+        ",
+            new { Ref = queryRef }) ?? new Obj_Section5Model();
+
+        var obj6 = await conn.QueryFirstOrDefaultAsync<Obj_Section6Model>(
+            @"
+        SELECT TOP 1 *
+        FROM dbo.Obj_Section6
+        WHERE LTRIM(RTRIM(Objection_Ref_S6)) = LTRIM(RTRIM(@Ref))
+        ",
+            new { Ref = queryRef }) ?? new Obj_Section6Model();
+
+        var obj7 = await conn.QueryFirstOrDefaultAsync<Obj_Section7Model>(
+            @"
+        SELECT TOP 1 *
+        FROM dbo.Obj_Section7
+        WHERE LTRIM(RTRIM(Objection_Ref_S7)) = LTRIM(RTRIM(@Ref))
+        ",
+            new { Ref = queryRef }) ?? new Obj_Section7Model();
+
+        bool isReview = que.Sub_typ == 1;
+
+        var aggregate = new InquiryAggregate
+        {
+            Main = que
+        };
+
+        aggregate.Sections["Section1"] = obj1;
+        aggregate.Sections["Section2"] = obj2;
+        aggregate.Sections["Section2Query"] = que1;
+        aggregate.Sections["Section3Bus"] = objB3;
+        aggregate.Sections["Section3Agri"] = objA3;
+        aggregate.Sections["Section4Bus"] = objB4;
+        aggregate.Sections["Section4Res"] = objR4;
+        aggregate.Sections["Section5"] = obj5;
+        aggregate.Sections["Section6"] = obj6;
+        aggregate.Sections["Section7"] = obj7;
+
+        var wording = Wording.ForType(isReview ? "Review" : "Query");
+
+        string formType = NormalisePropertyType(que.Property_Type);
+
+        byte[] pdfBytes = formType == "Agric"
+            ? new QueryFarmDocument(aggregate, wording).GeneratePdf()
+            : new QueryFormBDocument(aggregate, wording).GeneratePdf();
+
+        string propertyDesc = que.Property_Desc
+            ?? obj6.Old_Property_Description
+            ?? "NA";
+
+        string category = que.Property_Type
+            ?? obj6.Old_Category
+            ?? "NA";
+
+        string submissionType = isReview
+            ? "Section78Review"
+            : "Section78Query";
+
+        string fileName = BuildSubmittedFormFileName(
+            queryRef,
+            propertyDesc,
+            category,
+            submissionType,
+            DateTime.Now);
+
+        string filePath = Path.Combine(folderPath, fileName);
+
+        await File.WriteAllBytesAsync(filePath, pdfBytes);
+
+        return new SubmittedFormPdfResult
+        {
+            ReferenceNumber = queryRef,
             FileName = fileName,
             FilePath = filePath,
             PdfBytes = pdfBytes,

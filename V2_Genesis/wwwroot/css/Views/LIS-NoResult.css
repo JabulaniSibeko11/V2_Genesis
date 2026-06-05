@@ -3,10 +3,10 @@
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    padding: 12px 24px;
-    border-radius: 9px;
-    background: #15803d;
-    color: #fff;
+    padding: 13px 28px;
+    border-radius: 10px;
+    background: #1a2e35;
+    color: #e6b000;
     border: none;
     cursor: pointer;
     font-family: 'Poppins',sans-serif;
@@ -17,7 +17,7 @@
 }
 
 .ps-btn-lis:hover {
-    background: #166534;
+    background: #243e48;
 }
 
 .lis-searching {
@@ -26,7 +26,7 @@
     gap: 10px;
     margin-top: 16px;
     font-size: 13.5px;
-    color: #15803d;
+    color: #36626d;
     font-weight: 600;
 }
 
