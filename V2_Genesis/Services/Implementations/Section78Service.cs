@@ -1,4 +1,7 @@
 ﻿using Dapper;
+using QuestPDF.Fluent;
+using QuestPDF.Helpers;
+using QuestPDF.Infrastructure;
 using System.Data;
 using System.Data.SqlClient;
 using V2_Genesis.Data;
@@ -6,6 +9,7 @@ using V2_Genesis.Models;
 using V2_Genesis.Models.Results.Section78;
 using V2_Genesis.Models.ViewModels.Section78;
 using V2_Genesis.Services.Interfaces;
+using static Microsoft.CodeAnalysis.CSharp.SyntaxTokenParser;
 
 namespace V2_Genesis.Services.Implementations
 {
@@ -14,15 +18,20 @@ namespace V2_Genesis.Services.Implementations
         private readonly IConfiguration _config;
         private readonly QueryDbContext _qdb;
         private readonly string _queryConn;
-
+        private readonly IWebHostEnvironment _env;
+        private readonly IEmailService _emailService;
+        private readonly ILogger<Section78Service> _logger;
         private const string SP_DETAIL = "IndexObjection";
         private const string SP_LINKED = "DashboardLinkedQ";
         private const string SP_SUBMITTED = "DashboardObjectionQ";
 
-        public Section78Service(IConfiguration config, QueryDbContext qdb)
+        public Section78Service(IConfiguration config, QueryDbContext qdb, IWebHostEnvironment env, IEmailService emailService, ILogger<Section78Service> logger)
         {
             _config = config;
             _qdb = qdb;
+            _env = env;
+            _emailService = emailService;
+            _logger = logger;
             _queryConn = config.GetConnectionString("QueryConnection")
                 ?? throw new InvalidOperationException(
                     "QueryConnection missing from appsettings.");
@@ -199,7 +208,8 @@ namespace V2_Genesis.Services.Implementations
             _qdb.Obj_Files.Add(obj_file);
             await _qdb.SaveChangesAsync();
 
-            return new Section78SubmitResult
+            // ── 11. Build result ───────────────────────────────────────────
+            var result = new Section78SubmitResult
             {
                 QueryRef = queryRef,
                 QueryId = que.Query_ID,
@@ -207,15 +217,430 @@ namespace V2_Genesis.Services.Implementations
                 IsReview = isReview,
                 IsMulti = propertyType == "Multi",
                 FileCount = count,
-                Files = new[] {
+                Files = new[]
+                {
                 obj_file.Files1, obj_file.Files2, obj_file.Files3,
                 obj_file.Files4, obj_file.Files5, obj_file.Files6,
                 obj_file.Files7, obj_file.Files8, obj_file.Files9,
-                obj_file.Files10 },
+                obj_file.Files10
+            },
                 Section6 = obj6
             };
+
+            // ── 12. Write acknowledgement PDF to disk ─────────────────────
+            WriteAcknowledgement(result, uploadRootPath);
+
+            // ── 13. Send acknowledgement email ────────────────────────────
+            try
+            {
+                var pdfPath = Path.Combine(
+                    uploadRootPath,
+                    result.QueryRef,
+                    $"{result.QueryRef}_Acknowledgement.pdf");
+
+                if (File.Exists(pdfPath))
+                {
+                    var pdfBytes = await File.ReadAllBytesAsync(pdfPath);
+                    var folderPath = Path.Combine(uploadRootPath, result.QueryRef);
+
+                    await _emailService.SendSection78AcknowledgementAsync(
+                        result.QueryRef,
+                        result.IsReview,
+                        pdfBytes,
+                        folderPath);
+                }
+                else
+                {
+                    _logger.LogWarning(
+                        "[S78] Ack PDF not found at {Path} — email skipped.",
+                        pdfPath);
+                }
+            }
+            catch (Exception ex)
+            {
+                // Email is best-effort — never crash the submission
+                _logger.LogError(ex,
+                    "[S78] Failed to send ack email for {Ref}", result.QueryRef);
+            }
+
+            return result;
+        }
+        
+
+
+        private void WriteAcknowledgement(
+    Section78SubmitResult result,
+    string uploadRootPath)
+        {
+            try
+            {
+                var folder = Path.Combine(uploadRootPath, result.QueryRef);
+                if (!Directory.Exists(folder))
+                    Directory.CreateDirectory(folder);
+
+                var fileName = $"{result.QueryRef}_Acknowledgement.pdf";
+                var fullPath = Path.Combine(folder, fileName);
+
+                // ── Header image ────────────────────────────────────────────
+                var imgPath = !string.IsNullOrEmpty(_config["AppSettings:QueryHeaderImage"])
+                    ? _config["AppSettings:QueryHeaderImage"]!
+                    : Path.Combine(_env.WebRootPath, "Images", "Obj_Header.PNG");
+
+                bool hasImg = File.Exists(imgPath);
+
+                var s6 = result.Section6;
+                var typeWord = result.IsReview ? "REVIEW" : "QUERY";
+                var date = DateTime.Now.ToString("dd MMMM yyyy HH:mm");
+                var isMulti = result.IsMulti;
+
+                // ── Colour palette (COJ branding) ──────────────────────────
+                const string teal = "#36626d";   // COJ primary
+                const string dark = "#1a2e35";   // COJ dark
+                const string gold = "#e6b000";   // COJ gold
+                const string light = "#f4f6f8";   // row background
+                const string white = "#ffffff";
+
+                QuestPDF.Settings.License = LicenseType.Community;
+
+                Document.Create(container =>
+                {
+                    container.Page(page =>
+                    {
+                        page.Size(PageSizes.A4);
+                        page.Margin(1.5f, Unit.Centimetre);
+                        page.DefaultTextStyle(t =>
+                            t.FontFamily("Arial").FontSize(9).FontColor("#1a1a1a"));
+
+                        page.Content().Column(col =>
+                        {
+                            col.Spacing(6);
+
+                            // ── 1. Header image ──────────────────────────────
+                            if (hasImg)
+                            {
+                                col.Item()
+                                   .Height(70)
+                                   .Image(imgPath, ImageScaling.FitArea);
+                            }
+
+                            // ── 2. Title bar ─────────────────────────────────
+                            col.Item()
+                               .Background(dark)
+                               .Padding(12)
+                               .Column(t =>
+                               {
+                                   t.Item()
+                                    .Text("CITY OF JOHANNESBURG")
+                                    .Bold().FontSize(14).FontColor(gold)
+                                    .AlignCenter();
+
+                                   t.Item()
+                                    .Text($"SECTION 78 {typeWord} ACKNOWLEDGEMENT")
+                                    .Bold().FontSize(11).FontColor(white)
+                                    .AlignCenter();
+                               });
+
+                            // Gold divider
+                            col.Item().Height(3).Background(gold);
+
+                            // ── 3. Intro notice ──────────────────────────────
+                            col.Item()
+                               .Background("#fffbeb")
+                               .Border(1).BorderColor(gold)
+                              
+                               .Padding(10)
+                               .Text(t =>
+                               {
+                                   t.Span("Your Section 78 ")
+                                    .FontSize(9);
+                                   t.Span(typeWord.ToLower())
+                                    .Bold().FontSize(9);
+                                   t.Span(" has been lodged. Thank you for your submission. ")
+                                    .FontSize(9);
+                                   t.Span("You have 48 hours to upload any outstanding supporting evidence.")
+                                    .Bold().FontSize(9);
+                               });
+
+                            // ── 4. Reference details box ─────────────────────
+                            col.Item()
+                               .Background(light)
+                               .Border(1).BorderColor("#d0d7de")
+                               
+                               .Padding(10)
+                               .Column(inner =>
+                               {
+                                   inner.Item()
+                                        .Text($"REFERENCE DETAILS")
+                                        .Bold().FontSize(9).FontColor(teal)
+                                        .AlignCenter();
+
+                                   inner.Item().Height(4);
+
+                                   void Ref(string label, string? value)
+                                   {
+                                       inner.Item().Row(row =>
+                                       {
+                                           row.ConstantItem(140)
+                                              .Text(label)
+                                              .Bold().FontSize(9).FontColor("#555");
+                                           row.RelativeItem()
+                                              .Text(value ?? "—")
+                                              .FontSize(9);
+                                       });
+                                   }
+
+                                   Ref("Property Description:", s6?.Old_Property_Description);
+                                   Ref($"{typeWord} Reference:", result.QueryRef);
+                                   Ref("PIN:", result.RandomPin);
+                                   Ref("Date Submitted:", date);
+                                   Ref("Documents Uploaded:", result.FileCount.ToString());
+                               });
+
+                            // ── 5. Helper: table header row ──────────────────
+                            void AddTableHeader(
+                                TableDescriptor tbl,
+                                string[] headers,
+                                float[] widths)
+                            {
+                                tbl.ColumnsDefinition(c =>
+                                {
+                                    foreach (var w in widths)
+                                        c.RelativeColumn(w);
+                                });
+
+                                foreach (var h in headers)
+                                {
+                                    tbl.Cell()
+                                       .Background(dark)
+                                       .Padding(5)
+                                       .Text(h)
+                                       .Bold().FontSize(8).FontColor(gold)
+                                       .AlignCenter();
+                                }
+                            }
+
+                            void Cell(
+                                TableDescriptor tbl,
+                                string? value,
+                                bool isEven = false,
+                                bool right = false)
+                            {
+                                var cell = tbl.Cell()
+                                              .Background(isEven ? "#eef2f5" : white)
+                                              .BorderBottom(0.5f).BorderColor("#e0e0e0")
+                                              .Padding(4);
+
+                                var txt = cell.Text(value ?? "—").FontSize(8);
+                                if (right) txt.AlignRight();
+                            }
+
+                            // ── 6. Original property table ───────────────────
+                            col.Item()
+                               .Text($"PROPERTY DETAILS — AS LISTED IN VALUATION ROLL")
+                               .Bold().FontSize(9).FontColor(teal)
+                               .AlignCenter();
+
+                            col.Item().Table(tbl =>
+                            {
+                                AddTableHeader(tbl,
+                                    new[] { "Property Description", "Category",
+                                    "Physical Address", "Market Value",
+                                    "Extent", "Owner" },
+                                    new[] { 25f, 14f, 25f, 14f, 10f, 12f });
+
+                                Cell(tbl, s6?.Old_Property_Description);
+                                Cell(tbl, s6?.Old_Category);
+                                Cell(tbl, s6?.Old_Address);
+                                Cell(tbl, FormatMV(s6?.Old_Market_Value), right: true);
+                                Cell(tbl, s6?.Old_Extent);
+                                Cell(tbl, s6?.Old_Owner);
+
+                                if (isMulti && !string.IsNullOrWhiteSpace(s6?.Old2_Category))
+                                {
+                                    Cell(tbl, "", isEven: true);           // desc
+                                    Cell(tbl, s6!.Old2_Category, isEven: true);
+                                    Cell(tbl, "", isEven: true);           // address
+                                    Cell(tbl, FormatMV(s6.Old2_Market_Value), true, true);
+                                    Cell(tbl, s6.Old2_Extent, isEven: true);
+                                    Cell(tbl, "", isEven: true);           // owner
+                                }
+
+                                if (isMulti && !string.IsNullOrWhiteSpace(s6?.Old3_Category))
+                                {
+                                    Cell(tbl, "");
+                                    Cell(tbl, s6!.Old3_Category);
+                                    Cell(tbl, "");
+                                    Cell(tbl, FormatMV(s6.Old3_Market_Value), right: true);
+                                    Cell(tbl, s6.Old3_Extent);
+                                    Cell(tbl, "");
+                                }
+                            });
+
+                            // ── 7. Requested changes table ───────────────────
+                            col.Item()
+                               .Text($"PROPERTY DETAILS — AS PER YOUR {typeWord}")
+                               .Bold().FontSize(9).FontColor(teal)
+                               .AlignCenter();
+
+                            col.Item().Table(tbl =>
+                            {
+                                AddTableHeader(tbl,
+                                    new[] { "Property Description", "Category",
+                                    "Physical Address", "Market Value",
+                                    "Extent", "Owner" },
+                                    new[] { 25f, 14f, 25f, 14f, 10f, 12f });
+
+                                Cell(tbl, s6?.New_Property_Description);
+                                Cell(tbl, s6?.New_Category);
+                                Cell(tbl, s6?.New_Address);
+                                Cell(tbl, FormatMV(s6?.New_Market_Value), right: true);
+                                Cell(tbl, s6?.New_Extent);
+                                Cell(tbl, s6?.New_Owner);
+
+                                if (isMulti && !string.IsNullOrWhiteSpace(s6?.New2_Category))
+                                {
+                                    Cell(tbl, "", isEven: true);
+                                    Cell(tbl, s6!.New2_Category, isEven: true);
+                                    Cell(tbl, "", isEven: true);
+                                    Cell(tbl, FormatMV(s6.New2_Market_Value), true, true);
+                                    Cell(tbl, s6.New2_Extent, isEven: true);
+                                    Cell(tbl, "", isEven: true);
+                                }
+
+                                if (isMulti && !string.IsNullOrWhiteSpace(s6?.New3_Category))
+                                {
+                                    Cell(tbl, "");
+                                    Cell(tbl, s6!.New3_Category);
+                                    Cell(tbl, "");
+                                    Cell(tbl, FormatMV(s6.New3_Market_Value), right: true);
+                                    Cell(tbl, s6.New3_Extent);
+                                    Cell(tbl, "");
+                                }
+                            });
+
+                            // ── 8. Reasons ───────────────────────────────────
+                            col.Item()
+                               .Text($"REASONS IN SUPPORT OF THIS {typeWord}")
+                               .Bold().FontSize(9).FontColor(teal)
+                               .AlignCenter();
+
+                            col.Item()
+                               .Background("#eef7f8")
+                               .Border(1).BorderColor(teal)
+                               
+                               .MinHeight(35)
+                               .Padding(8)
+                               .Text(string.IsNullOrWhiteSpace(s6?.Objection_Reasons)
+                                   ? "No reasons provided."
+                                   : s6.Objection_Reasons)
+                               .FontSize(8);
+
+                            // ── 9. Supporting documents ──────────────────────
+                            col.Item()
+                               .Text("SUPPORTING DOCUMENTS")
+                               .Bold().FontSize(9).FontColor(teal)
+                               .AlignCenter();
+
+                            col.Item()
+                               .Text($"You uploaded {result.FileCount} document(s).")
+                               .FontSize(8);
+
+                            if (result.FileCount > 0)
+                            {
+                                col.Item().Table(tbl =>
+                                {
+                                    tbl.ColumnsDefinition(c =>
+                                    {
+                                        c.RelativeColumn(50);
+                                        c.RelativeColumn(50);
+                                    });
+
+                                    // Left: files 1–5
+                                    tbl.Cell()
+                                       .Background("#eef2f5")
+                                       .Border(1).BorderColor("#c8d6e5")
+                                       .Padding(8)
+                                       .Column(left =>
+                                       {
+                                           left.Item()
+                                               .Text("Documents 1–5")
+                                               .Bold().FontSize(8);
+                                           for (int i = 0; i < 5; i++)
+                                           {
+                                               var f = i < result.Files.Length ? result.Files[i] : null;
+                                               if (!string.IsNullOrWhiteSpace(f))
+                                                   left.Item()
+                                                       .Text($"• {f}")
+                                                       .FontSize(7.5f);
+                                           }
+                                       });
+
+                                    // Right: files 6–10
+                                    tbl.Cell()
+                                       .Background("#eef2f5")
+                                       .Border(1).BorderColor("#c8d6e5")
+                                       .Padding(8)
+                                       .Column(right =>
+                                       {
+                                           right.Item()
+                                                .Text("Documents 6–10")
+                                                .Bold().FontSize(8);
+                                           for (int i = 5; i < 10; i++)
+                                           {
+                                               var f = i < result.Files.Length ? result.Files[i] : null;
+                                               if (!string.IsNullOrWhiteSpace(f))
+                                                   right.Item()
+                                                        .Text($"• {f}")
+                                                        .FontSize(7.5f);
+                                           }
+                                       });
+                                });
+                            }
+                        }); // end Content column
+
+                        // ── Page footer ──────────────────────────────────────
+                        page.Footer()
+                            .Background(dark)
+                            .Padding(8)
+                            .Row(row =>
+                            {
+                                row.RelativeItem()
+                                   .Text("City of Johannesburg — Valuation Services Department")
+                                   .FontSize(7).FontColor(gold);
+                                row.RelativeItem()
+                                   .Text($"Generated: {date}")
+                                   .FontSize(7).FontColor(white)
+                                   .AlignRight();
+                            });
+                    });
+                })
+                .GeneratePdf(fullPath);
+
+                _logger.LogInformation(
+                    "[S78] Acknowledgement PDF saved → {Path}", fullPath);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex,
+                    "[S78] Failed writing acknowledgement PDF for {Ref}", result.QueryRef);
+            }
         }
 
+        // ── Market value formatter ────────────────────────────────────────────
+        private static string FormatMV(string? raw)
+        {
+            if (string.IsNullOrWhiteSpace(raw)) return "—";
+            var clean = raw.Replace("R", "").Replace(",", "").Trim();
+            if (decimal.TryParse(clean,
+                System.Globalization.NumberStyles.Any,
+                System.Globalization.CultureInfo.InvariantCulture,
+                out var num) && num > 0)
+            {
+                return "R " + num.ToString("N0",
+                    new System.Globalization.CultureInfo("en-ZA"));
+            }
+            return raw;
+        }
         // ── Pin generator ─────────────────────────────────────────────
         private static string GeneratePin()
             => new Random().Next(100000, 999999).ToString();

@@ -86,5 +86,59 @@ namespace V2_Genesis.Services.Implementations
                 return new();
             }
         }
+
+        public (string PropertyDesc, string SourceTable, string ControllerName)
+            BuildOmissionDescription(
+                string rollSource,
+                string propType,
+                string? town,
+                string? erf,
+                string? portion,
+                string? re,
+                string? right,
+                string? scheme,
+                string? schemeNumber,
+                string? schemeYear,
+                string? unit,
+                string? stRight)
+        {
+            // ── 1. Derive target controller and sourceTable ────────────────────
+            // This is the KEY fix — maps rollSource → correct roll DB / controller
+            var controllerName = ObjectionService.RollSourceToController
+                                     .GetValueOrDefault(rollSource, "Sup3");
+            var sourceTable = ObjectionService.RollSourceToSourceTable
+                                     .GetValueOrDefault(rollSource, "GV23-SUP3");
+
+            // ── 2. Build PropertyDesc matching V1 format ──────────────────────
+            string propertyDesc;
+
+            if (propType == "ST")
+            {
+                // {Right}{Scheme} ({SchemeNum}/{SchemeYear}), Unit {Unit}, {Town}
+                var r = stRight?.Trim() ?? "";
+                var s = scheme?.Trim() ?? "";
+                var n = schemeNumber?.Trim() ?? "";
+                var y = schemeYear?.Trim() ?? "";
+                var u = unit?.Trim() ?? "";
+                var t = town?.Trim() ?? "";
+                propertyDesc = $"{r}{s} ({n}/{y}), Unit {u}, {t}".Trim();
+            }
+            else
+            {
+                // Freehold: {Right}{Town} Erf {ERF} Portion {Portion} RE   (RE == "RE")
+                //           {Right}{Town} Erf {ERF} Portion {Portion}      (RE == "00")
+                var r = right?.Trim() ?? "";
+                var t = town?.Trim() ?? "";
+                var e = erf?.Trim() ?? "";
+                var p = string.IsNullOrWhiteSpace(portion) ? "0" : portion.Trim();
+                var rev = re?.Trim() ?? "";
+
+                propertyDesc = rev == "RE"
+                    ? $"{r}{t} Erf {e} Portion {p} RE".Trim()
+                    : $"{r}{t} Erf {e} Portion {p}".Trim();
+            }
+
+            return (propertyDesc, sourceTable, controllerName);
+        }
     }
 }

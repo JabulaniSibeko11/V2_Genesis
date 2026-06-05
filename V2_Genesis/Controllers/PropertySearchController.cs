@@ -356,43 +356,63 @@ public class PropertySearchController : Controller
     [Route("search/{rollSource}/omission")]
     [ValidateAntiForgeryToken]
     public IActionResult SubmitOmission(
-        string rollSource,
-        string? FH_Town,
-        string? FH_Address,
-        string? FH_Stand,
-        string? FH_Scheme,
-        string? FH_Unit,
-        string? FH_Description)
+       string rollSource,
+       string? propType,
+       // Freehold
+       string? FH_Town,
+       string? FH_ERF,
+       string? FH_Portion,
+       string? FH_RE,
+       string? FH_Right,
+       string? FH_Address,
+       // Sectional Title
+       string? ST_Scheme,
+       string? ST_SchemeNumber,
+       string? ST_SchemeYear,
+       string? ST_Unit,
+       string? ST_Right)
     {
-        // Build a human-readable description of the omitted property
-        var parts = new List<string>();
-        if (!string.IsNullOrWhiteSpace(FH_Stand))
-            parts.Add($"ERF {FH_Stand}");
-        if (!string.IsNullOrWhiteSpace(FH_Address))
-            parts.Add(FH_Address);
-        if (!string.IsNullOrWhiteSpace(FH_Scheme))
-            parts.Add($"Scheme: {FH_Scheme}");
-        if (!string.IsNullOrWhiteSpace(FH_Unit))
-            parts.Add($"Unit {FH_Unit}");
+        // ── Call service to build desc + resolve correct roll target ───────
+        var (propertyDesc, sourceTable, controllerName) =
+            _omissionService.BuildOmissionDescription(
+                rollSource,
+                propType ?? "FH",
+                FH_Town,
+                FH_ERF,
+                FH_Portion,
+                FH_RE,
+                FH_Right,
+                ST_Scheme,
+                ST_SchemeNumber,
+                ST_SchemeYear,
+                ST_Unit,
+                ST_Right);
 
-        var propertyDesc = string.IsNullOrWhiteSpace(FH_Description)
-            ? string.Join(" | ", parts)
-            : FH_Description.Trim();
+        var town = (propType == "ST" ? FH_Town : FH_Town)?.Trim();
 
-        // Set omission flags — CheckProperty reads these from TempData
+        _logger.LogInformation(
+            "[Omission] {RollSource} → controller={Ctrl} sourceTable={St} desc={Desc}",
+            rollSource, controllerName, sourceTable, propertyDesc);
+
+        // ── Set TempData ───────────────────────────────────────────────────
         TempData["OmissionStatus"] = "True";
-        TempData["OmittedTownName"] = FH_Town?.Trim();
         TempData["OmittedPropertyDesc"] = propertyDesc;
+        TempData["OmittedTownName"] = town;
         TempData["RollSource"] = rollSource;
-
-        // Store all fields so CheckProperty / objection form can access them
         TempData["Omission_Address"] = FH_Address?.Trim();
-        TempData["Omission_Stand"] = FH_Stand?.Trim();
-        TempData["Omission_Scheme"] = FH_Scheme?.Trim();
-        TempData["Omission_Unit"] = FH_Unit?.Trim();
+        TempData["Omission_Stand"] = FH_ERF?.Trim();
+        TempData["Omission_Scheme"] = propType == "ST" ? ST_Scheme?.Trim() : null;
+        TempData["Omission_Unit"] = propType == "ST" ? ST_Unit?.Trim() : null;
 
-        // Redirect to the V2 CheckProperty flow with omission source
+        // ── Redirect — pass sourceTable so CheckProperty picks up the right
+        //   controller and DB connection without defaulting to Sup3 ─────────
         return RedirectToAction("CheckProperty", "Objection",
-            new { rollSource, PropertyFrom = rollSource, omission = true });
+            new
+            {
+                rollSource,
+                sourceTable,          // ← now correctly set e.g. "GV23-SUP2"
+                PropertyFrom = rollSource,
+                omission = true
+            });
     }
 }

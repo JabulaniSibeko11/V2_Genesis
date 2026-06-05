@@ -8,11 +8,20 @@
 
         Task SendObjectionAcknowledgementAsync(string objectionRef,string rollSource,bool isAppeal,byte[] acknowledgementPdf,string folderPath);
 
+
+        Task SendSection78AcknowledgementAsync(
+     string queryRef,
+     bool isReview,
+     byte[] acknowledgementPdf,
+     string folderPath);
+
         Task SendEmailWithAttachmentAsync(
     string toEmail,
     string subject,
     string htmlBody,
     byte[] attachmentBytes,
     string attachmentFileName);
+
+       
     }
 }

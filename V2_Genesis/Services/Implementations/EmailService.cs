@@ -175,7 +175,13 @@ namespace V2_Genesis.Services.Implementations
                     objectionRef, rollTitle, isAppeal, recipients);
 
                 // 4. Save PDF copy to folder (non-blocking, don't fail on error)
-                _ = SaveEmailCopyAsync(folderPath, objectionRef, isAppeal, emailRecordPdf);
+                _ = SaveEmailCopyAsync(
+    folderPath,
+    objectionRef,
+    actionWord,          // "Objection" or "Appeal"
+    htmlBody,            // the same htmlBody already built above
+    acknowledgementPdf,  // the ack PDF passed in
+    recipients);
 
                 // 5. Send email to each recipient
                 foreach (var recipient in recipients)
@@ -196,6 +202,244 @@ namespace V2_Genesis.Services.Implementations
                     "[Email] Failed sending acknowledgement for {ObjRef}", objectionRef);
             }
         }
+
+        public async Task SendSection78AcknowledgementAsync(
+    string queryRef,
+    bool isReview,
+    byte[] acknowledgementPdf,
+    string folderPath)
+        {
+            try
+            {
+                // 1. Resolve recipients from Obj_Section1 in Objection_Query DB
+                var recipients = await ResolveSection78RecipientsAsync(queryRef);
+                if (!recipients.Any())
+                {
+                    _logger.LogWarning(
+                        "[S78 Email] No valid addresses found for {Ref} — skipping.",
+                        queryRef);
+                    return;
+                }
+
+                var actionWord = isReview ? "Review" : "Query";
+                var subject = $"City of Johannesburg — Section 78 {actionWord} " +
+                                 $"Acknowledgement: {queryRef}";
+
+                // 2. Build HTML body
+                var htmlBody = BuildSection78HtmlBody(queryRef, isReview, recipients);
+
+                // 3. Save .eml copy to folder (fire-and-forget, never crash caller)
+                _ = SaveEmailCopyAsync(
+                    folderPath, queryRef, $"S78_{actionWord}",
+                    htmlBody, acknowledgementPdf, recipients);
+
+                // 4. Send to each recipient
+                foreach (var recipient in recipients)
+                {
+                    try
+                    {
+                        using var msg = new MailMessage();
+                        msg.From = new MailAddress(_cfg.FromAddress, _cfg.FromName);
+                        msg.To.Add(new MailAddress(recipient.Address, recipient.Name));
+                        msg.CC.Add(new MailAddress(
+                            _cfg.FromAddress, "Valuation Services (Copy)"));
+                        msg.Subject = subject;
+                        msg.IsBodyHtml = true;
+                        msg.Body = htmlBody;
+
+                        // Attach acknowledgement PDF
+                        var pdfStream = new MemoryStream(acknowledgementPdf);
+                        var attachment = new Attachment(
+                            pdfStream,
+                            $"S78_{actionWord}_Acknowledgement_{queryRef}.pdf",
+                            MediaTypeNames.Application.Pdf);
+                        msg.Attachments.Add(attachment);
+
+                        using var smtp = BuildClient();
+                        await smtp.SendMailAsync(msg);
+
+                        _logger.LogInformation(
+                            "[S78 Email] Sent {Action} acknowledgement to {Addr} for {Ref}",
+                            actionWord, recipient.Address, queryRef);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex,
+                            "[S78 Email] Failed sending to {Addr} for {Ref}",
+                            recipient.Address, queryRef);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex,
+                    "[S78 Email] Failed acknowledgement for {Ref}", queryRef);
+            }
+        }
+
+        // ── Helper: resolve recipients from Objection_Query DB ──────────────
+        private async Task<List<EmailRecipient>> ResolveSection78RecipientsAsync(
+            string queryRef)
+        {
+            var connStr = _config.GetConnectionString("QueryConnection")!;
+            try
+            {
+                await using var conn = new SqlConnection(connStr);
+                var section1 = await conn.QueryFirstOrDefaultAsync(
+                    @"SELECT TOP 1
+                Owner_Name,       Owner_Email,
+                Objector_Name,    Objector_Email, Objector_Status,
+                Representative_name, Rep_Email
+              FROM dbo.Obj_Section1
+              WHERE Objection_Ref_S1 = @Ref",
+                    new { Ref = queryRef.Trim() });
+
+                if (section1 is null) return new();
+
+                var list = new List<EmailRecipient>();
+                var status = section1.Objector_Status?.ToString()?.Trim() ?? string.Empty;
+
+                if (status.Equals("Representative", StringComparison.OrdinalIgnoreCase))
+                {
+                    TryAdd(list,
+                        section1.Owner_Name?.ToString(),
+                        section1.Owner_Email?.ToString());
+                    TryAdd(list,
+                        section1.Representative_name?.ToString(),
+                        section1.Rep_Email?.ToString());
+                }
+                else if (status.Equals("Owner", StringComparison.OrdinalIgnoreCase))
+                {
+                    TryAdd(list,
+                        section1.Owner_Name?.ToString(),
+                        section1.Owner_Email?.ToString());
+                }
+                else
+                {
+                    TryAdd(list,
+                        section1.Owner_Name?.ToString(),
+                        section1.Owner_Email?.ToString());
+                }
+
+                return list;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex,
+                    "[S78 Email] Error reading Obj_Section1 for {Ref}", queryRef);
+                return new();
+            }
+        }
+
+        // ── HTML body for S78 ────────────────────────────────────────────────
+        private string BuildSection78HtmlBody(
+            string queryRef,
+            bool isReview,
+            List<EmailRecipient> recipients)
+        {
+            var actionWord = isReview ? "Review" : "Query";
+            var recipientName = recipients.FirstOrDefault()?.Name ?? "Applicant";
+            var date = DateTime.Now.ToString("dd MMMM yyyy HH:mm");
+
+            return $@"
+<!DOCTYPE html>
+<html>
+<head><meta charset='utf-8'/>
+<style>
+  body  {{ margin:0; padding:0; background:#f5f5f5;
+           font-family:Arial,sans-serif; }}
+  .wrap {{ max-width:640px; margin:32px auto; background:#fff;
+           border-radius:8px; overflow:hidden;
+           box-shadow:0 2px 8px rgba(0,0,0,.08); }}
+  .hdr  {{ background:#e6b000; padding:28px 32px; text-align:center; }}
+  .hdr h1 {{ margin:0; font-size:20px; color:#1a1a1a; }}
+  .hdr p  {{ margin:4px 0 0; font-size:13px; color:#3a3a3a; }}
+  .body {{ padding:28px 32px; }}
+  .ref  {{ background:#f7f7f7; border-radius:8px;
+           border-left:4px solid #e6b000;
+           padding:16px 20px; margin:20px 0; }}
+  .ref span {{ font-size:22px; font-weight:700;
+               color:#1a1a1a; letter-spacing:1px; }}
+  .notice {{ background:#fffbeb; border:1px solid #f59e0b;
+             border-radius:6px; padding:14px 18px;
+             font-size:13px; color:#78350f; margin:16px 0; }}
+  .ftr  {{ background:#1a1a1a; padding:20px 32px;
+           text-align:center; color:#aaa; font-size:12px; }}
+  .ftr a {{ color:#e6b000; text-decoration:none; }}
+</style>
+</head>
+<body>
+<div class='wrap'>
+  <div class='hdr'>
+    <h1>City of Johannesburg</h1>
+    <p>Valuation Services — Section 78 {actionWord} Acknowledgement</p>
+  </div>
+  <div class='body'>
+    <p>Dear <strong>{recipientName}</strong>,</p>
+    <p>Your Section 78 <strong>{actionWord.ToLower()}</strong> has been
+       successfully received by the City of Johannesburg Valuation Services
+       Department.</p>
+ 
+    <div class='ref'>
+      <div style='font-size:12px;color:#666;margin-bottom:4px;
+                  text-transform:uppercase;letter-spacing:.5px;'>
+        Reference Number
+      </div>
+      <span>{queryRef}</span>
+    </div>
+ 
+    <table style='width:100%;border-collapse:collapse;
+                  font-size:13px;margin:16px 0;'>
+      <tr>
+        <td style='padding:8px 0;color:#666;width:40%;'>
+          Submission Type
+        </td>
+        <td style='padding:8px 0;font-weight:600;'>
+          Section 78 {actionWord}
+        </td>
+      </tr>
+      <tr>
+        <td style='padding:8px 0;color:#666;'>Date Submitted</td>
+        <td style='padding:8px 0;font-weight:600;'>{date}</td>
+      </tr>
+      <tr>
+        <td style='padding:8px 0;color:#666;'>Status</td>
+        <td style='padding:8px 0;'>
+          <span style='background:#fef3c7;color:#92400e;
+                       padding:3px 10px;border-radius:12px;
+                       font-size:12px;font-weight:600;'>
+            {actionWord}-Lodging
+          </span>
+        </td>
+      </tr>
+    </table>
+ 
+    <div class='notice'>
+      <strong>Please keep your reference number</strong> ({queryRef})
+      for all future correspondence regarding this {actionWord.ToLower()}.
+      Your official acknowledgement document is attached to this email.
+    </div>
+ 
+    <p>If you have any queries, please contact:</p>
+    <ul style='font-size:13px;color:#333;'>
+      <li>Email:
+        <a href='mailto:valuationenquiries@joburg.org.za'
+           style='color:#e6b000;'>
+          valuationenquiries@joburg.org.za
+        </a>
+      </li>
+      <li>Tel: 011 084 9823</li>
+    </ul>
+  </div>
+  <div class='ftr'>
+    <p>City of Johannesburg — Valuation Services Department</p>
+    <p>This is an automated acknowledgement. Please do not reply directly.</p>
+  </div>
+</div>
+</body>
+</html>";
+        }
+
 
         // ════════════════════════════════════════════════════════════
         //  RESOLVE RECIPIENTS from Obj_Section1
@@ -593,33 +837,73 @@ namespace V2_Genesis.Services.Implementations
         //  SAVE PDF COPY TO FOLDER
         // ════════════════════════════════════════════════════════════
         private async Task SaveEmailCopyAsync(
-            string folderPath,
-            string objectionRef,
-            bool isAppeal,
-            byte[] emailPdf)
+       string folderPath,
+       string reference,
+       string actionWord,
+       string htmlBody,
+       byte[] ackPdf,
+       List<EmailRecipient> recipients)
         {
             try
             {
                 Directory.CreateDirectory(folderPath);
 
                 var safe = string.Join("_",
-                    objectionRef.Split(Path.GetInvalidFileNameChars()));
-                var action = isAppeal ? "Appeal" : "Objection";
-                var fileName = $"{safe}_{action}_EmailNotification.pdf";
+                    reference.Split(Path.GetInvalidFileNameChars()));
+                var fileName = $"{safe}_{actionWord}_EmailNotification.eml";
                 var fullPath = Path.Combine(folderPath, fileName);
 
-                await File.WriteAllBytesAsync(fullPath, emailPdf);
+                // Build the MailMessage
+                using var msg = new MailMessage();
+                msg.From = new MailAddress(_cfg.FromAddress, _cfg.FromName);
+                msg.Subject = $"City of Johannesburg — {actionWord} Acknowledgement: {reference}";
+                msg.IsBodyHtml = true;
+                msg.Body = htmlBody;
+
+                foreach (var r in recipients)
+                    msg.To.Add(new MailAddress(r.Address, r.Name));
+
+                // CC admin inbox
+                msg.CC.Add(new MailAddress(
+                    _cfg.FromAddress, "Valuation Services (Copy)"));
+
+                // Attach the acknowledgement PDF
+                var pdfStream = new MemoryStream(ackPdf);
+                var attachment = new Attachment(
+                    pdfStream,
+                    $"{actionWord}_Acknowledgement_{reference}.pdf",
+                    MediaTypeNames.Application.Pdf);
+                msg.Attachments.Add(attachment);
+
+                // Use SmtpClient pickup-directory trick to write a real .eml file
+                var tmpDir = Path.Combine(
+                    Path.GetTempPath(), "eml_" + Guid.NewGuid().ToString("N"));
+                Directory.CreateDirectory(tmpDir);
+
+                using (var pickup = new SmtpClient
+                {
+                    DeliveryMethod = SmtpDeliveryMethod.SpecifiedPickupDirectory,
+                    PickupDirectoryLocation = tmpDir
+                })
+                {
+                    pickup.Send(msg);   // synchronous — writes .eml to tmpDir
+                }
+
+                var generated = Directory.GetFiles(tmpDir).FirstOrDefault();
+                if (generated is not null)
+                    File.Move(generated, fullPath, overwrite: true);
+
+                Directory.Delete(tmpDir, recursive: true);
 
                 _logger.LogInformation(
-                    "[Email] Email record PDF saved to {Path}", fullPath);
+                    "[Email] EML copy saved → {Path}", fullPath);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex,
-                    "[Email] Failed saving email record PDF for {Ref}", objectionRef);
+                    "[Email] Failed saving EML copy for {Ref}", reference);
             }
         }
-
         public async Task SendEmailWithAttachmentAsync(
             string toEmail,
             string subject,

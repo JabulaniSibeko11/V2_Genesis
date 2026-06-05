@@ -1,27 +1,31 @@
 ﻿
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using V2_Genesis.Data;
 using V2_Genesis.Models;
+using V2_Genesis.Services.Implementations;
 using V2_Genesis.Services.Interfaces;
-using Microsoft.EntityFrameworkCore;
 [Authorize(Roles = "Client")]
 public class Section78Controller : Controller
 {
     private readonly ApplicationDbContext _db;
     private readonly ISection78Service _section78;
     private readonly IConfiguration _config;
+    private readonly ILogger<Section78Controller> _logger;
+    private readonly IEmailService _emailService;
 
     public Section78Controller(
         ApplicationDbContext db,
         ISection78Service section78,
-        IConfiguration config)
+        IConfiguration config,IEmailService emailService,ILogger<Section78Controller>logger)
     {
         _db = db;
         _section78 = section78;
         _config = config;
+        _emailService = emailService;
+        _logger = logger;
     }
 
     // ── PropertyIndex redirect ──────────────────────────────────────
@@ -155,6 +159,7 @@ public class Section78Controller : Controller
             propertyType ?? que.Property_Type ?? "Res",
             userId);
 
+        
         // ── Populate TempData for acknowledgement view ──────────────
         TempData["pin"] = result.RandomPin;
         TempData["id"] = result.QueryRef;
@@ -177,7 +182,55 @@ public class Section78Controller : Controller
         TempData["new_Extent"] = result.Section6?.New_Extent?.ToString();
         TempData["new_Market_Value"] = result.Section6?.New_Market_Value?.ToString();
         TempData["new_Owner"] = result.Section6?.New_Owner;
+
+        TempData["Old2_Category"] = result.Section6?.Old2_Category;
+        TempData["Old2_Market_Value"] = result.Section6?.Old2_Market_Value?.ToString();
+        TempData["Old2_Extent"] = result.Section6?.Old2_Extent?.ToString();
+        TempData["Old3_Category"] = result.Section6?.Old3_Category;
+        TempData["Old3_Market_Value"] = result.Section6?.Old3_Market_Value?.ToString();
+        TempData["Old3_Extent"] = result.Section6?.Old3_Extent?.ToString();
+        TempData["new2_Category"] = result.Section6?.New2_Category;
+        TempData["new2_Market_Value"] = result.Section6?.New2_Market_Value?.ToString();
+        TempData["new2_Extent"] = result.Section6?.New2_Extent?.ToString();
+        TempData["new3_Category"] = result.Section6?.New3_Category;
+        TempData["new3_Market_Value"] = result.Section6?.New3_Market_Value?.ToString();
+        TempData["new3_Extent"] = result.Section6?.New3_Extent?.ToString();
         TempData["objection_reason"] = result.Section6?.Objection_Reasons;
+
+        try
+        {
+            var pdfPath = Path.Combine(
+                uploadRoot,
+                result.QueryRef,
+                $"S78_{(result.IsReview ? "Review" : "Query")}_Acknowledgement_{result.QueryRef}.pdf");
+
+            byte[]? ackPdf = System.IO.File.Exists(pdfPath)
+                ? await System.IO.File.ReadAllBytesAsync(pdfPath)
+                : null;
+
+            if (ackPdf is not null)
+            {
+                var folderPath = Path.Combine(uploadRoot, result.QueryRef);
+                await _emailService.SendSection78AcknowledgementAsync(
+                    result.QueryRef,
+                    result.IsReview,
+                    ackPdf,
+                    folderPath);
+            }
+            else
+            {
+                _logger.LogWarning(
+                    "[S78] Acknowledgement PDF not found at {Path} — email skipped.",
+                    pdfPath);
+            }
+        }
+        catch (Exception ex)
+        {
+            // Email is best-effort — never crash the submission
+            _logger.LogError(ex,
+                "[S78] Failed to send acknowledgement email for {Ref}",
+                result.QueryRef);
+        }
 
         TempData["successmessage"] = "Query Submitted Successfully";
 
@@ -192,7 +245,8 @@ public class Section78Controller : Controller
     public async Task<IActionResult> Display()
     {
         ViewBag.GvList = await _db.GvList.OrderBy(r => r.ID).ToListAsync();
-        return View();   // Views/Section78/Display.cshtml
+        ViewBag.IsMulti = false;
+        return View("Display");   // Views/Section78/Display.cshtml
     }
 
     [HttpGet]
@@ -200,6 +254,7 @@ public class Section78Controller : Controller
     public async Task<IActionResult> MultiPurposeDisplay()
     {
         ViewBag.GvList = await _db.GvList.OrderBy(r => r.ID).ToListAsync();
-        return View();   // Views/Section78/MultiPurposeDisplay.cshtml
+        ViewBag.IsMulti = true;
+        return View("Display");   // SAME view — flag tells it to show multi rows
     }
 }

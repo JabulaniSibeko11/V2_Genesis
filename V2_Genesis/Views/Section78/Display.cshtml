@@ -1,0 +1,401 @@
+﻿@* ═══════════════════════════════════════════════════════════════════
+   Views/Section78/Display.cshtml
+   Unified display for Query, Review, Multi-purpose
+   Deploy SAME file as both Display.cshtml and MultiPurposeDisplay.cshtml
+   Controller sets ViewBag.IsMulti = true for multi-purpose path
+═══════════════════════════════════════════════════════════════════ *@
+@{
+    ViewData["Title"] = "Submission Acknowledged";
+    Layout = "~/Views/Shared/_ClientLayout.cshtml";
+
+    bool isMulti   = ViewBag.IsMulti == true;
+    bool isReview  = TempData.Peek("ReviewStat")?.ToString() == "R";
+    string typeWord = isReview ? "Review" : "Query";
+
+    var queryRef   = TempData["id"]?.ToString()    ?? "—";
+    var pin        = TempData["pin"]?.ToString()   ?? "—";
+    var count      = TempData["Count"]?.ToString() ?? "0";
+    var reason     = TempData["objection_reason"]?.ToString();
+    var date       = DateTime.Now.ToString("dd MMMM yyyy HH:mm");
+
+    var oldPropDesc  = TempData["Old_Property_Description"]?.ToString();
+    var oldCat       = TempData["Old_Category"]?.ToString();
+    var oldAddress   = TempData["Old_Address"]?.ToString();
+    var oldExtent    = TempData["Old_Extent"]?.ToString();
+    var oldMV        = TempData["Old_Market_Value"]?.ToString();
+    var oldOwner     = TempData["Old_Owner"]?.ToString();
+
+    var oldCat2    = TempData["Old2_Category"]?.ToString();
+    var oldMV2     = TempData["Old2_Market_Value"]?.ToString();
+    var oldExt2    = TempData["Old2_Extent"]?.ToString();
+    var oldCat3    = TempData["Old3_Category"]?.ToString();
+    var oldMV3     = TempData["Old3_Market_Value"]?.ToString();
+    var oldExt3    = TempData["Old3_Extent"]?.ToString();
+
+    var newPropDesc  = TempData["new_Property_Description"]?.ToString();
+    var newCat       = TempData["new_Category"]?.ToString();
+    var newAddress   = TempData["new_Address"]?.ToString();
+    var newExtent    = TempData["new_Extent"]?.ToString();
+    var newMV        = TempData["new_Market_Value"]?.ToString();
+    var newOwner     = TempData["new_Owner"]?.ToString();
+
+    var newCat2    = TempData["new2_Category"]?.ToString();
+    var newMV2     = TempData["new2_Market_Value"]?.ToString();
+    var newExt2    = TempData["new2_Extent"]?.ToString();
+    var newCat3    = TempData["new3_Category"]?.ToString();
+    var newMV3     = TempData["new3_Market_Value"]?.ToString();
+    var newExt3    = TempData["new3_Extent"]?.ToString();
+
+    var files = new List<string>();
+    for (int i = 1; i <= 10; i++)
+    {
+        var f = TempData[$"File{i}"]?.ToString();
+        if (!string.IsNullOrWhiteSpace(f)) files.Add(f);
+    }
+
+    // Keep everything alive in case page is refreshed
+    TempData.Keep("id"); TempData.Keep("pin"); TempData.Keep("Count"); TempData.Keep("ReviewStat");
+    for (int i = 1; i <= 10; i++) TempData.Keep($"File{i}");
+    foreach (var k in new[]{ "Old_Property_Description","Old_Category","Old_Address",
+        "Old_Extent","Old_Market_Value","Old_Owner",
+        "Old2_Category","Old2_Market_Value","Old2_Extent",
+        "Old3_Category","Old3_Market_Value","Old3_Extent",
+        "new_Property_Description","new_Category","new_Address",
+        "new_Extent","new_Market_Value","new_Owner",
+        "new2_Category","new2_Market_Value","new2_Extent",
+        "new3_Category","new3_Market_Value","new3_Extent",
+        "objection_reason" })
+    { TempData.Keep(k); }
+}
+
+
+@section Styles {
+      <link href="~/css/views/clientdashboardcss.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/site.css" rel="stylesheet" asp-append-version="true"/>
+    <link href="~/css/views/section78-display.css" rel="stylesheet" asp-append-version="true"/>
+}
+
+<div class="disp-page">
+
+  
+    <div class="disp-hero">
+        <div class="disp-hero-inner">
+            <div class="disp-hero-icon">
+                <i class="fa-solid fa-@(isReview ? "magnifying-glass" : "magnifying-glass-chart")"></i>
+            </div>
+            <div>
+                <div class="disp-hero-coj">City of Johannesburg · Valuation Services</div>
+                <h1 class="disp-hero-title">
+                    Section 78 @typeWord @(isMulti ? "(Multiple Purposes)" : "") — Acknowledged
+                </h1>
+                <p class="disp-hero-sub">
+                    Your application has been received and logged. Reference: <strong style="color:#e6b000;">@queryRef</strong>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="disp-body">
+
+      
+        <div class="disp-success">
+            <div class="disp-success-icon">
+                <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <div>
+                <h2>@typeWord Successfully Submitted</h2>
+                <p>
+                    Your Section 78 @typeWord.ToLower() has been officially received.
+                    An acknowledgement email with this document attached has been sent to you.
+                </p>
+            </div>
+        </div>
+
+       
+        <div class="disp-card">
+            <div class="disp-card-head">
+                <i class="fa-solid fa-receipt"></i>
+                <h3>Submission Details</h3>
+            </div>
+            <div class="disp-card-body">
+                <div class="disp-ref-grid">
+                    <div class="disp-ref-item">
+                        <div class="disp-ref-label">@typeWord Reference</div>
+                        <div class="disp-ref-value big">@queryRef</div>
+                    </div>
+                    <div class="disp-ref-item">
+                        <div class="disp-ref-label">Submission Type</div>
+                        <div class="disp-ref-value">
+                            @if (isReview)
+                            {
+                                <span class="disp-type-pill disp-type-review">
+                                    <i class="fa-solid fa-magnifying-glass"></i> Review
+                                </span>
+                            }
+                            else if (isMulti)
+                            {
+                                <span class="disp-type-pill disp-type-multi">
+                                    <i class="fa-solid fa-layer-group"></i> Multi-Purpose Query
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="disp-type-pill disp-type-query">
+                                    <i class="fa-solid fa-magnifying-glass-chart"></i> Query
+                                </span>
+                            }
+                        </div>
+                    </div>
+                    <div class="disp-ref-item">
+                        <div class="disp-ref-label">Security PIN</div>
+                        <div class="disp-ref-value">
+                            <span class="disp-pin">@pin</span>
+                        </div>
+                    </div>
+                    <div class="disp-ref-item">
+                        <div class="disp-ref-label">Date &amp; Time</div>
+                        <div class="disp-ref-value" style="font-size:13.5px;">@date</div>
+                    </div>
+                    <div class="disp-ref-item">
+                        <div class="disp-ref-label">Documents Uploaded</div>
+                        <div class="disp-ref-value">@count file@(count == "1" ? "" : "s")</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="disp-notice">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            <div>
+                <strong>Important:</strong> You have <strong>48 hours</strong> from the time of submission
+                to upload any outstanding supporting evidence.
+                Keep your reference number <strong>@queryRef</strong> for all future correspondence.
+            </div>
+        </div>
+
+   
+        <div class="disp-card">
+            <div class="disp-card-head">
+                <i class="fa-solid fa-building"></i>
+                <h3>Property Details — As Listed in Valuation Roll</h3>
+            </div>
+            <div class="disp-card-body" style="padding:16px 20px;">
+                <table class="disp-prop-table">
+                    <thead>
+                        <tr>
+                            <th>Property Description</th>
+                            <th>Physical Address</th>
+                            <th>Owner</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>@(string.IsNullOrWhiteSpace(oldPropDesc) ? "–" : oldPropDesc)</td>
+                            <td>@(string.IsNullOrWhiteSpace(oldAddress)  ? "–" : oldAddress)</td>
+                            <td>@(string.IsNullOrWhiteSpace(oldOwner)    ? "–" : oldOwner)</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <table class="disp-prop-table">
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Market Value</th>
+                            <th>Extent</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>@(string.IsNullOrWhiteSpace(oldCat) ? "–" : oldCat)</td>
+                            <td class="mv">@(string.IsNullOrWhiteSpace(oldMV) ? "–" : oldMV)</td>
+                            <td>@(string.IsNullOrWhiteSpace(oldExtent) ? "–" : oldExtent)</td>
+                        </tr>
+                        @if (isMulti && !string.IsNullOrWhiteSpace(oldCat2))
+                        {
+                            <tr>
+                                <td>@oldCat2</td>
+                                <td class="mv">@(oldMV2 ?? "–")</td>
+                                <td>@(oldExt2 ?? "–")</td>
+                            </tr>
+                        }
+                        @if (isMulti && !string.IsNullOrWhiteSpace(oldCat3))
+                        {
+                            <tr>
+                                <td>@oldCat3</td>
+                                <td class="mv">@(oldMV3 ?? "–")</td>
+                                <td>@(oldExt3 ?? "–")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    
+        <div class="disp-card">
+            <div class="disp-card-head">
+                <i class="fa-solid fa-arrow-right-arrow-left"></i>
+                <h3>Changes Requested via @typeWord</h3>
+            </div>
+            <div class="disp-card-body" style="padding:16px 20px;">
+                <table class="disp-prop-table">
+                    <thead>
+                        <tr>
+                            <th>Property Description</th>
+                            <th>Physical Address</th>
+                            <th>Owner</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+    @if (string.IsNullOrWhiteSpace(newPropDesc))
+    {
+        <span class="empty">No change</span>
+    }
+    else
+    {
+        @newPropDesc
+    }
+</td>
+                           <td>
+    @if (string.IsNullOrWhiteSpace(newAddress))
+    {
+        <span class="empty">No change</span>
+    }
+    else
+    {
+        @newAddress
+    }
+</td>
+
+<td>
+    @if (string.IsNullOrWhiteSpace(newOwner))
+    {
+        <span class="empty">No change</span>
+    }
+    else
+    {
+        @newOwner
+    }
+</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <table class="disp-prop-table">
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Market Value</th>
+                            <th>Extent</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>@(string.IsNullOrWhiteSpace(newCat) ? "–" : newCat)</td>
+                            <td class="mv">@(string.IsNullOrWhiteSpace(newMV) ? "–" : newMV)</td>
+                            <td>@(string.IsNullOrWhiteSpace(newExtent) ? "–" : newExtent)</td>
+                        </tr>
+                        @if (isMulti && !string.IsNullOrWhiteSpace(newCat2))
+                        {
+                            <tr>
+                                <td>@newCat2</td>
+                                <td class="mv">@(newMV2 ?? "–")</td>
+                                <td>@(newExt2 ?? "–")</td>
+                            </tr>
+                        }
+                        @if (isMulti && !string.IsNullOrWhiteSpace(newCat3))
+                        {
+                            <tr>
+                                <td>@newCat3</td>
+                                <td class="mv">@(newMV3 ?? "–")</td>
+                                <td>@(newExt3 ?? "–")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(reason))
+        {
+            <div class="disp-card">
+                <div class="disp-card-head">
+                    <i class="fa-solid fa-comment-dots"></i>
+                    <h3>Reasons / Motivation</h3>
+                </div>
+                <div class="disp-card-body">
+                    <div class="disp-reasons">@reason</div>
+                </div>
+            </div>
+        }
+
+      
+        <div class="disp-card">
+            <div class="disp-card-head">
+                <i class="fa-solid fa-paperclip"></i>
+                <h3>Documents Uploaded (@files.Count)</h3>
+            </div>
+            <div class="disp-card-body" style="padding-bottom:10px;">
+                @if (!files.Any())
+                {
+                    <span class="disp-no-files">No documents uploaded with this submission.</span>
+                }
+                else
+                {
+                    @for (int i = 0; i < files.Count; i++)
+                    {
+                        <div class="disp-file-row">
+                            <i class="fa-solid fa-file-pdf"></i>
+                            <span class="disp-file-num">@(i + 1)</span>
+                            <span>@files[i]</span>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+
+        <div class="disp-card">
+            <div class="disp-actions">
+                <a href="@Url.Action("DownloadAcknowledgement", "Section78",
+                          new { appeal = "False" })"
+                   class="disp-btn disp-btn-gold"
+                   onclick="showDlToast()">
+                    <i class="fa-solid fa-file-pdf"></i>
+                    Download Acknowledgement
+                </a>
+                <a asp-controller="Dashboard" asp-action="Index"
+                   class="disp-btn disp-btn-teal">
+                    <i class="fa-solid fa-gauge-high"></i>
+                    My Dashboard
+                </a>
+                <a asp-controller="Home" asp-action="Index"
+                   class="disp-btn disp-btn-outline">
+                    <i class="fa-solid fa-house"></i>
+                    Home
+                </a>
+            </div>
+        </div>
+
+       
+        <div style="text-align:center; font-size:11.5px; color:#aaa; padding:0 8px;">
+            This is an official document generated by the City of Johannesburg
+            Valuation Services Department. Generated: @date
+        </div>
+
+    </div>
+</div>
+
+@section Scripts {
+<script>
+function showDlToast() {
+    // Use existing toaster if available, else console
+    if (typeof showToaster === 'function') {
+        showToaster('Download Started',
+            'Your acknowledgement document is being prepared...', 4000);
+    }
+}
+</script>
+}

@@ -20,7 +20,7 @@ public class ObjectionService : IObjectionService
         ["GV23-SUP2"] = ("Sup2Connection", "CheckPropertyFromSup2"),
         ["GV23-SUP1"] = ("Sup1Connection", "CheckPropertyFromSup1"),
         ["GV23"] = ("DefaultConnection", "CheckPropertyFromGV"),
-        ["LIS"] = ("LISConnection", "CheckPropertyFromLIS"),
+        ["LIS"] = ("LISConnection", "CheckPropertyFromLIS"), 
     };
 
     // ── sourceTable → MVC controller name (for Lodge button routing) ──
@@ -31,6 +31,24 @@ public class ObjectionService : IObjectionService
         ["GV23-SUP1"] = "Sup1",
         ["GV23"] = "Objection",
         ["LIS"] = "LIS",
+    };
+
+    // ── rollSource (GvList.Source) → MVC controller name ─────────────────
+    public static readonly Dictionary<string, string> RollSourceToController = new()
+    {
+        ["Objection"] = "Objection",
+        ["Objection_Supp1"] = "Sup1",
+        ["Objection_Supp2"] = "Sup2",
+        ["Objection_Supp3"] = "Sup3",
+    };
+
+    // ── rollSource → sourceTable key (used in _sourceMap) ─────────────────
+    public static readonly Dictionary<string, string> RollSourceToSourceTable = new()
+    {
+        ["Objection"] = "GV23",
+        ["Objection_Supp1"] = "GV23-SUP1",
+        ["Objection_Supp2"] = "GV23-SUP2",
+        ["Objection_Supp3"] = "GV23-SUP3",
     };
 
     private const string SP_APPEAL = "IndexAppeal";

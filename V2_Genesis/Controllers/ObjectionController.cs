@@ -99,8 +99,14 @@ public class ObjectionController : Controller
                 AppealStatus = "False",
                 IsAppeal = false,
                 PropertyFrom = PropertyFrom ?? rollSource,
-                ControllerName = ObjectionService.SourceToController
-                                     .GetValueOrDefault(sourceTable, "Sup3"),
+                ControllerName = !string.IsNullOrEmpty(sourceTable)
+    // sourceTable was passed (e.g. "GV23-SUP2") → use SourceToController
+    ? ObjectionService.SourceToController
+          .GetValueOrDefault(sourceTable, "Omission")
+    // sourceTable missing → fall back to rollSource mapping
+    : ObjectionService.RollSourceToController
+          .GetValueOrDefault(rollSource, "Omission"),
+
 
                 // Omission-specific fields
                 IsOmission = true,
