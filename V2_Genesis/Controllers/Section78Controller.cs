@@ -197,40 +197,7 @@ public class Section78Controller : Controller
         TempData["new3_Extent"] = result.Section6?.New3_Extent?.ToString();
         TempData["objection_reason"] = result.Section6?.Objection_Reasons;
 
-        try
-        {
-            var pdfPath = Path.Combine(
-                uploadRoot,
-                result.QueryRef,
-                $"S78_{(result.IsReview ? "Review" : "Query")}_Acknowledgement_{result.QueryRef}.pdf");
-
-            byte[]? ackPdf = System.IO.File.Exists(pdfPath)
-                ? await System.IO.File.ReadAllBytesAsync(pdfPath)
-                : null;
-
-            if (ackPdf is not null)
-            {
-                var folderPath = Path.Combine(uploadRoot, result.QueryRef);
-                await _emailService.SendSection78AcknowledgementAsync(
-                    result.QueryRef,
-                    result.IsReview,
-                    ackPdf,
-                    folderPath);
-            }
-            else
-            {
-                _logger.LogWarning(
-                    "[S78] Acknowledgement PDF not found at {Path} — email skipped.",
-                    pdfPath);
-            }
-        }
-        catch (Exception ex)
-        {
-            // Email is best-effort — never crash the submission
-            _logger.LogError(ex,
-                "[S78] Failed to send acknowledgement email for {Ref}",
-                result.QueryRef);
-        }
+      
 
         TempData["successmessage"] = "Query Submitted Successfully";
 

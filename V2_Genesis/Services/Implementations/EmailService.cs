@@ -144,11 +144,12 @@ namespace V2_Genesis.Services.Implementations
 
 
         public async Task SendObjectionAcknowledgementAsync(
-       string objectionRef,
-       string rollSource,
-       bool isAppeal,
-       byte[] acknowledgementPdf,
-       string folderPath)
+     string objectionRef,
+     string rollSource,
+     bool isAppeal,
+     byte[] acknowledgementPdf,
+     string folderPath,
+     List<EmailAttachment>? extraAttachments = null)
         {
             try
             {
@@ -168,32 +169,44 @@ namespace V2_Genesis.Services.Implementations
 
                 // 2. Build HTML body
                 var htmlBody = BuildHtmlBody(
-                    objectionRef, rollTitle, isAppeal, recipients);
+                    objectionRef,
+                    rollTitle,
+                    isAppeal,
+                    recipients);
 
                 // 3. Build PDF copy of email notification
                 var emailRecordPdf = BuildEmailRecordPdf(
-                    objectionRef, rollTitle, isAppeal, recipients);
+                    objectionRef,
+                    rollTitle,
+                    isAppeal,
+                    recipients);
 
-                // 4. Save PDF copy to folder (non-blocking, don't fail on error)
+                // 4. Save EML copy to folder
                 _ = SaveEmailCopyAsync(
-    folderPath,
-    objectionRef,
-    actionWord,          // "Objection" or "Appeal"
-    htmlBody,            // the same htmlBody already built above
-    acknowledgementPdf,  // the ack PDF passed in
-    recipients);
+                    folderPath,
+                    objectionRef,
+                    actionWord,
+                    htmlBody,
+                    acknowledgementPdf,
+                    recipients);
 
-                // 5. Send email to each recipient
+                // 5. Send email to each recipient with acknowledgement + extra PDFs
                 foreach (var recipient in recipients)
                 {
                     await SendMailAsync(
-                        recipient, subject, htmlBody,
-                        acknowledgementPdf, objectionRef, isAppeal);
+                        recipient,
+                        subject,
+                        htmlBody,
+                        acknowledgementPdf,
+                        objectionRef,
+                        isAppeal,
+                        extraAttachments);
                 }
 
                 _logger.LogInformation(
                     "[Email] Sent {Count} acknowledgement email(s) for {ObjRef}",
-                    recipients.Count, objectionRef);
+                    recipients.Count,
+                    objectionRef);
             }
             catch (Exception ex)
             {
@@ -204,10 +217,11 @@ namespace V2_Genesis.Services.Implementations
         }
 
         public async Task SendSection78AcknowledgementAsync(
-    string queryRef,
-    bool isReview,
-    byte[] acknowledgementPdf,
-    string folderPath)
+      string queryRef,
+      bool isReview,
+      byte[] acknowledgementPdf,
+      string folderPath,
+      List<EmailAttachment>? extraAttachments = null)
         {
             try
             {
@@ -223,15 +237,22 @@ namespace V2_Genesis.Services.Implementations
 
                 var actionWord = isReview ? "Review" : "Query";
                 var subject = $"City of Johannesburg — Section 78 {actionWord} " +
-                                 $"Acknowledgement: {queryRef}";
+                              $"Acknowledgement: {queryRef}";
 
                 // 2. Build HTML body
-                var htmlBody = BuildSection78HtmlBody(queryRef, isReview, recipients);
+                var htmlBody = BuildSection78HtmlBody(
+                    queryRef,
+                    isReview,
+                    recipients);
 
-                // 3. Save .eml copy to folder (fire-and-forget, never crash caller)
+                // 3. Save .eml copy to folder
                 _ = SaveEmailCopyAsync(
-                    folderPath, queryRef, $"S78_{actionWord}",
-                    htmlBody, acknowledgementPdf, recipients);
+                    folderPath,
+                    queryRef,
+                    $"S78_{actionWord}",
+                    htmlBody,
+                    acknowledgementPdf,
+                    recipients);
 
                 // 4. Send to each recipient
                 foreach (var recipient in recipients)
@@ -239,10 +260,13 @@ namespace V2_Genesis.Services.Implementations
                     try
                     {
                         using var msg = new MailMessage();
+
                         msg.From = new MailAddress(_cfg.FromAddress, _cfg.FromName);
                         msg.To.Add(new MailAddress(recipient.Address, recipient.Name));
                         msg.CC.Add(new MailAddress(
-                            _cfg.FromAddress, "Valuation Services (Copy)"));
+                            _cfg.FromAddress,
+                            "Valuation Services (Copy)"));
+
                         msg.Subject = subject;
                         msg.IsBodyHtml = true;
                         msg.Body = htmlBody;
@@ -253,20 +277,27 @@ namespace V2_Genesis.Services.Implementations
                             pdfStream,
                             $"S78_{actionWord}_Acknowledgement_{queryRef}.pdf",
                             MediaTypeNames.Application.Pdf);
+
                         msg.Attachments.Add(attachment);
+
+                        // Attach submitted form PDF or any extra PDFs
+                        AddExtraAttachments(msg, extraAttachments);
 
                         using var smtp = BuildClient();
                         await smtp.SendMailAsync(msg);
 
                         _logger.LogInformation(
                             "[S78 Email] Sent {Action} acknowledgement to {Addr} for {Ref}",
-                            actionWord, recipient.Address, queryRef);
+                            actionWord,
+                            recipient.Address,
+                            queryRef);
                     }
                     catch (Exception ex)
                     {
                         _logger.LogError(ex,
                             "[S78 Email] Failed sending to {Addr} for {Ref}",
-                            recipient.Address, queryRef);
+                            recipient.Address,
+                            queryRef);
                     }
                 }
             }
@@ -664,12 +695,13 @@ namespace V2_Genesis.Services.Implementations
         //  SEND INDIVIDUAL EMAIL via System.Net.Mail
         // ════════════════════════════════════════════════════════════
         private async Task SendMailAsync(
-            EmailRecipient recipient,
-            string subject,
-            string htmlBody,
-            byte[] pdfAttachment,
-            string objectionRef,
-            bool isAppeal)
+        EmailRecipient recipient,
+        string subject,
+        string htmlBody,
+        byte[] pdfAttachment,
+        string objectionRef,
+        bool isAppeal,
+        List<EmailAttachment>? extraAttachments = null)
         {
             using var msg = new MailMessage();
 
@@ -681,9 +713,17 @@ namespace V2_Genesis.Services.Implementations
 
             // Attach the acknowledgement PDF
             var pdfName = $"{(isAppeal ? "Appeal" : "Objection")}_Acknowledgement_{objectionRef}.pdf";
+
             var pdfStream = new MemoryStream(pdfAttachment);
-            var attachment = new Attachment(pdfStream, pdfName, MediaTypeNames.Application.Pdf);
+            var attachment = new Attachment(
+                pdfStream,
+                pdfName,
+                MediaTypeNames.Application.Pdf);
+
             msg.Attachments.Add(attachment);
+
+            // Attach submitted form PDF or any extra PDFs
+            AddExtraAttachments(msg, extraAttachments);
 
             using var client = new SmtpClient(_cfg.Host, _cfg.Port)
             {
@@ -696,7 +736,39 @@ namespace V2_Genesis.Services.Implementations
             _logger.LogInformation(
                 "[Email] Sent {Action} acknowledgement to {Addr} for {Ref}",
                 isAppeal ? "Appeal" : "Objection",
-                recipient.Address, objectionRef);
+                recipient.Address,
+                objectionRef);
+        }
+
+        private static void AddExtraAttachments(
+    MailMessage msg,
+    List<EmailAttachment>? extraAttachments)
+        {
+            if (extraAttachments == null || !extraAttachments.Any())
+                return;
+
+            foreach (var item in extraAttachments)
+            {
+                if (item == null)
+                    continue;
+
+                if (item.FileBytes == null || item.FileBytes.Length == 0)
+                    continue;
+
+                if (string.IsNullOrWhiteSpace(item.FileName))
+                    continue;
+
+                var stream = new MemoryStream(item.FileBytes);
+
+                var attachment = new Attachment(
+                    stream,
+                    item.FileName,
+                    string.IsNullOrWhiteSpace(item.ContentType)
+                        ? MediaTypeNames.Application.Pdf
+                        : item.ContentType);
+
+                msg.Attachments.Add(attachment);
+            }
         }
 
         // ════════════════════════════════════════════════════════════
@@ -904,39 +976,86 @@ namespace V2_Genesis.Services.Implementations
                     "[Email] Failed saving EML copy for {Ref}", reference);
             }
         }
-        public async Task SendEmailWithAttachmentAsync(
-            string toEmail,
-            string subject,
-            string htmlBody,
-            byte[] attachmentBytes,
-            string attachmentFileName)
+        public async Task SendEmailWithAttachmentsAsync(
+        string toEmail,
+        string subject,
+        string body,
+        List<EmailAttachment> attachments,
+        bool isHtml = true)
         {
             try
             {
                 using var smtp = BuildClient();
+
                 using var msg = new MailMessage
                 {
                     From = new MailAddress(_cfg.Username, _cfg.FromName),
                     Subject = subject,
-                    Body = htmlBody,
-                    IsBodyHtml = true
+                    Body = body,
+                    IsBodyHtml = isHtml
                 };
+
                 msg.To.Add(toEmail);
 
-                // Attach the PDF
-                var stream = new MemoryStream(attachmentBytes);
-                var attachment = new Attachment(stream, attachmentFileName,
-                                                MediaTypeNames.Application.Pdf);
-                msg.Attachments.Add(attachment);
+                if (attachments != null && attachments.Any())
+                {
+                    foreach (var item in attachments)
+                    {
+                        if (item == null)
+                            continue;
+
+                        if (item.FileBytes == null || item.FileBytes.Length == 0)
+                            continue;
+
+                        if (string.IsNullOrWhiteSpace(item.FileName))
+                            continue;
+
+                        var stream = new MemoryStream(item.FileBytes);
+
+                        var attachment = new Attachment(
+                            stream,
+                            item.FileName,
+                            string.IsNullOrWhiteSpace(item.ContentType)
+                                ? MediaTypeNames.Application.Pdf
+                                : item.ContentType);
+
+                        msg.Attachments.Add(attachment);
+                    }
+                }
 
                 await smtp.SendMailAsync(msg);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex,
-                    "Failed to send email with attachment to {Email}", toEmail);
+                    "Failed to send email with attachments to {Email}", toEmail);
+
                 throw;
             }
+        }
+        public async Task SendEmailWithAttachmentAsync(
+    string toEmail,
+    string subject,
+    string htmlBody,
+    byte[] attachmentBytes,
+    string attachmentFileName)
+        {
+            var attachments = new List<EmailAttachment>
+    {
+        new EmailAttachment
+        {
+            FileName = attachmentFileName,
+            FileBytes = attachmentBytes,
+            ContentType = MediaTypeNames.Application.Pdf
+        }
+    };
+
+            await SendEmailWithAttachmentsAsync(
+                toEmail,
+                subject,
+                htmlBody,
+                attachments,
+                true);
         }
     }
 

@@ -4,8 +4,10 @@ using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 using System.Data;
 using System.Data.SqlClient;
+using System.Net.Mime;
 using V2_Genesis.Data;
 using V2_Genesis.Models;
+using V2_Genesis.Models.Emails;
 using V2_Genesis.Models.Results.Section78;
 using V2_Genesis.Models.ViewModels.Section78;
 using V2_Genesis.Services.Interfaces;
@@ -20,17 +22,19 @@ namespace V2_Genesis.Services.Implementations
         private readonly string _queryConn;
         private readonly IWebHostEnvironment _env;
         private readonly IEmailService _emailService;
+        private readonly ISubmittedFormPdfService _submittedFormPdfService;
         private readonly ILogger<Section78Service> _logger;
         private const string SP_DETAIL = "IndexObjection";
         private const string SP_LINKED = "DashboardLinkedQ";
         private const string SP_SUBMITTED = "DashboardObjectionQ";
 
-        public Section78Service(IConfiguration config, QueryDbContext qdb, IWebHostEnvironment env, IEmailService emailService, ILogger<Section78Service> logger)
+        public Section78Service(IConfiguration config, QueryDbContext qdb, IWebHostEnvironment env, IEmailService emailService, ISubmittedFormPdfService submittedFormPdfService, ILogger<Section78Service> logger)
         {
             _config = config;
             _qdb = qdb;
             _env = env;
             _emailService = emailService;
+            _submittedFormPdfService = submittedFormPdfService;
             _logger = logger;
             _queryConn = config.GetConnectionString("QueryConnection")
                 ?? throw new InvalidOperationException(
@@ -231,36 +235,66 @@ namespace V2_Genesis.Services.Implementations
             WriteAcknowledgement(result, uploadRootPath);
 
             // ── 13. Send acknowledgement email ────────────────────────────
+            // ── 13. Generate submitted form PDF + send acknowledgement email ─────
             try
             {
+                var folderPath = Path.Combine(uploadRootPath, result.QueryRef);
+
                 var pdfPath = Path.Combine(
-                    uploadRootPath,
-                    result.QueryRef,
+                    folderPath,
                     $"{result.QueryRef}_Acknowledgement.pdf");
 
-                if (File.Exists(pdfPath))
-                {
-                    var pdfBytes = await File.ReadAllBytesAsync(pdfPath);
-                    var folderPath = Path.Combine(uploadRootPath, result.QueryRef);
-
-                    await _emailService.SendSection78AcknowledgementAsync(
-                        result.QueryRef,
-                        result.IsReview,
-                        pdfBytes,
-                        folderPath);
-                }
-                else
+                if (!File.Exists(pdfPath))
                 {
                     _logger.LogWarning(
                         "[S78] Ack PDF not found at {Path} — email skipped.",
                         pdfPath);
+
+                    return result;
                 }
+
+                var ackPdfBytes = await File.ReadAllBytesAsync(pdfPath);
+
+                // Generate the Section 78 Query/Review form PDF and save it in the same folder
+                var submittedFormPdf = await _submittedFormPdfService.GenerateSection78FormAsync(
+                    result.IsReview,
+                    folderPath,
+                    que,
+                    obj1,
+                    obj2,
+                    que1,
+                    objR3,
+                    objB3,
+                    objA3,
+                    objB4,
+                    objR4,
+                    obj5,
+                    obj6,
+                    obj7,
+                    DateTime.Now);
+
+                var extraAttachments = new List<EmailAttachment>
+    {
+        new EmailAttachment
+        {
+            FileName = submittedFormPdf.FileName,
+            FileBytes = submittedFormPdf.PdfBytes,
+            ContentType = MediaTypeNames.Application.Pdf
+        }
+    };
+
+                await _emailService.SendSection78AcknowledgementAsync(
+                    result.QueryRef,
+                    result.IsReview,
+                    ackPdfBytes,
+                    folderPath,
+                    extraAttachments);
             }
             catch (Exception ex)
             {
-                // Email is best-effort — never crash the submission
                 _logger.LogError(ex,
-                    "[S78] Failed to send ack email for {Ref}", result.QueryRef);
+                    "[S78] Failed to generate submitted form PDF/send ack email for {Ref}",
+                    result.QueryRef);
             }
 
             return result;

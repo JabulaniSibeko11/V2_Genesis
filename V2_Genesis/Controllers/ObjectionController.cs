@@ -1,10 +1,12 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Net.Mime;
 using System.Security.Claims;
 using System.Xml.Linq;
 using V2_Genesis.Data;
 using V2_Genesis.Models;
+using V2_Genesis.Models.Emails;
 using V2_Genesis.Models.Objections;
 using V2_Genesis.Models.Results.Section78;
 using V2_Genesis.Models.ViewModels.Objections;
@@ -21,7 +23,7 @@ public class ObjectionController : Controller
     private readonly ApplicationDbContext _db;
     private readonly IObjectionFormService _objectionFormService;
     private readonly ISection78Service _section78Service;
-
+    private readonly ISubmittedFormPdfService _submittedFormPdfService;
 
     private readonly IEmailService _emailService;
     private readonly IConfiguration _config;
@@ -31,12 +33,13 @@ public class ObjectionController : Controller
     public ObjectionController(
         IObjectionService objectionService,
         ApplicationDbContext db,
-        IObjectionFormService objectionFormService,ISection78Service section78Service, INoticeService noticeService,IEmailService emailService, IConfiguration config, ILogger<ObjectionController> logger)
+        IObjectionFormService objectionFormService,ISection78Service section78Service, INoticeService noticeService,IEmailService emailService, IConfiguration config,ISubmittedFormPdfService submittedFormPdfService, ILogger<ObjectionController> logger)
     {
         _objectionService = objectionService;
         _db = db;
         _objectionFormService = objectionFormService;
         _emailService = emailService;
+      _submittedFormPdfService = submittedFormPdfService;   
         _config = config;
         _noticeService = noticeService;
      _section78Service= section78Service;
@@ -442,20 +445,52 @@ public class ObjectionController : Controller
         {
             try
             {
-                var (pdfBytes, _) = await _noticeService
+                // 1. Generate acknowledgement PDF
+                var (ackPdfBytes, _) = await _noticeService
                     .GenerateAcknowledgementAsync(ackData);
+
+                // 2. Generate submitted form PDF and save it in the same folder
+                var submittedFormPdf = await _submittedFormPdfService
+                    .GenerateObjectionOrAppealFormAsync(
+                        isAppeal,
+                        folderPath,
+                        obj,
+                        appeal,
+                        obj1,
+                        obj2,
+                        objR3,
+                        objB3,
+                        objA3,
+                        objB4,
+                        objR4,
+                        obj5,
+                        obj6,
+                        obj7,
+                        DateTime.Now);
+
+                // 3. Attach submitted form PDF together with acknowledgement PDF
+                var extraAttachments = new List<EmailAttachment>
+        {
+            new EmailAttachment
+            {
+                FileName = submittedFormPdf.FileName,
+                FileBytes = submittedFormPdf.PdfBytes,
+                ContentType = MediaTypeNames.Application.Pdf
+            }
+        };
 
                 await _emailService.SendObjectionAcknowledgementAsync(
                     objectionRef,
                     rollSource,
                     isAppeal,
-                    pdfBytes,
-                    folderPath);
+                    ackPdfBytes,
+                    folderPath,
+                    extraAttachments);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex,
-                    "[ObjectionController] Background email failed for {Ref}",
+                    "[ObjectionController] Background email/form PDF failed for {Ref}",
                     objectionRef);
             }
         });

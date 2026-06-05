@@ -116,6 +116,7 @@ builder.Services.AddScoped<IAttributeSubmissionService, AttributeSubmissionServi
 builder.Services.AddScoped<IAttributeDocumentService, AttributeDocumentService>();
 builder.Services.AddScoped<ISection78Service, Section78Service>();
 builder.Services.AddScoped<IRebatesService, RebatesService>();
+builder.Services.AddScoped<ISubmittedFormPdfService, SubmittedFormPdfService>();
 // ── App Pipeline ──────────────────────────────────────────────────────────────
 var app = builder.Build();
 
