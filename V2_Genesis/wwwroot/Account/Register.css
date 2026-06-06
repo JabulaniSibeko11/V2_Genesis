@@ -3,7 +3,7 @@
 ═══════════════════════════════════════════════ */
 .reg-page {
     min-height: calc(100vh - var(--nav-h));
-    background: var(--grey-100);
+    background: #f7f5f2;
     padding: 40px 20px;
 }
 
@@ -22,7 +22,10 @@
 
 /* ── LEFT ────────────────────────────────────── */
 .reg-left {
-    background: var(--black);
+    background: linear-gradient( 160deg, #1a2e35 0%, #2d4f58 45%, #36626d 100% );
+    border-right: 3px solid #e6b000;
+    position: relative;
+    overflow: hidden;
     color: var(--white);
     padding: 52px 44px;
     display: flex;
@@ -32,6 +35,16 @@
     top: var(--nav-h);
     align-self: start;
 }
+    .reg-left::before {
+        content: '';
+        position: absolute;
+        top: -60px;
+        right: -60px;
+        width: 200px;
+        height: 200px;
+        background: radial-gradient( circle, rgba(230, 176, 0, .12) 0%, transparent 70% );
+        pointer-events: none;
+    }
 
 .reg-brand {
     display: flex;
@@ -42,7 +55,9 @@
 .reg-brand-mark {
     width: 46px;
     height: 46px;
-    background: var(--gold);
+    background: rgba(230, 176, 0, .15);
+    border: 2px solid rgba(230, 176, 0, .4);
+    border-radius: 12px;
     color: var(--black);
     font-weight: 800;
     font-size: 22px;
@@ -61,14 +76,14 @@
 
 .reg-brand-sub {
     font-size: 11px;
-    color: rgba(255,255,255,.5);
+    color: rgba(255,255,255,.55);
 }
 
 .reg-headline {
     font-size: 32px;
     font-weight: 800;
     line-height: 1.2;
-    color: var(--white);
+    color: #ffffff;
 }
 
     .reg-headline span {
@@ -97,8 +112,8 @@
     width: 36px;
     height: 36px;
     flex-shrink: 0;
-    background: rgba(230,176,0,.12);
-    border: 1px solid rgba(230,176,0,.25);
+    background: rgba(230,176,0,.15);
+    border: 1px solid rgba(230,176,0,.3);
     border-radius: 8px;
     color: var(--gold);
     display: flex;
@@ -121,7 +136,7 @@
 
     .reg-feature-text span {
         font-size: 12px;
-        color: rgba(255,255,255,.5);
+        color: rgba(255,255,255,.55);
     }
 
 .reg-badge {
@@ -129,7 +144,7 @@
     align-items: center;
     gap: 8px;
     background: rgba(230,176,0,.12);
-    border: 1px solid rgba(230,176,0,.3);
+    border: 1px solid rgba(230,176,0,.35);
     color: var(--gold);
     font-size: 12px;
     font-weight: 600;
@@ -157,7 +172,7 @@
 .reg-right-title {
     font-size: 24px;
     font-weight: 700;
-    color: var(--black);
+    color: #1a2e35;
     margin-bottom: 6px;
 }
 
@@ -171,7 +186,7 @@
 .reg-tabs {
     display: flex;
     gap: 8px;
-    background: var(--grey-100);
+    background: #f0f4f5;
     padding: 5px;
     border-radius: 10px;
     margin-bottom: 24px;
@@ -196,9 +211,9 @@
 
     .reg-tab.active {
         background: var(--white);
-        color: var(--black);
+        color: #1a2e35;
         font-weight: 600;
-        box-shadow: var(--shadow-sm);
+        box-shadow: 0 2px 8px rgba(26, 46, 53, .08);
     }
 
     .reg-tab i {
@@ -242,8 +257,8 @@
 
     .id-toggle-btn.active {
         border-color: var(--gold);
-        background: var(--gold-light);
-        color: var(--black);
+        background: #fdf6d8;
+        color: #1a2e35;
         font-weight: 600;
     }
 
@@ -260,7 +275,7 @@
     width: 100%;
     padding: 13px;
     background: var(--gold);
-    color: var(--black);
+    color: #1a2e35;
     border: none;
     cursor: pointer;
     border-radius: 9px;
@@ -277,7 +292,8 @@
 }
 
     .reg-submit:hover {
-        background: var(--gold-hover);
+        background: #f5c800;
+        color: #1a2e35;
         transform: translateY(-1px);
     }
 
@@ -288,14 +304,16 @@
 .reg-login-link {
     text-align: center;
     font-size: 13.5px;
-    color: var(--grey-600);
+    color: #36626d;
 }
 
     .reg-login-link a {
-        color: var(--gold-dark);
+        color: #36626d;
         font-weight: 600;
     }
-
+        .reg-login-link a:hover {
+            color: #e6b000;
+        }
 /* ── Responsive ──────────────────────────────── */
 @media (max-width: 900px) {
     .reg-wrap {
@@ -325,3 +343,38 @@
         justify-content: center;
     }
 }
+
+.reg-brand-mark {
+    width: 70px;
+    height: 70px;
+    background: #e6b000;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    padding: 6px;
+}
+
+.reg-brand-logo {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.reg-brand-logo {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+input::-ms-reveal {
+    display: none;
+}
+
+/* Hide Chrome password clear/reveal decorations */
+input::-webkit-credentials-auto-fill-button,
+input::-webkit-textfield-decoration-container {
+    display: none !important;
+}
+

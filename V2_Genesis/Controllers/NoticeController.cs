@@ -17,15 +17,17 @@ public class NoticeController : Controller
     private readonly IPropertySearchService _search;
     private readonly ApplicationDbContext _db;
     private readonly RollDatesSettings _rollDates;
+    private readonly ILogger<NoticeController> _logger;
     public NoticeController(
         INoticeService notice,
         IPropertySearchService search,
-        ApplicationDbContext db, IOptions<RollDatesSettings> rollDatesOpts)
+        ApplicationDbContext db, IOptions<RollDatesSettings> rollDatesOpts,ILogger<NoticeController>logger)
     {
         _notice = notice;
         _search = search;
         _db = db;
         _rollDates = rollDatesOpts.Value;
+        _logger = logger;
     }
 
     // ── GET /notice/section49 — display view ─────────────────────────
@@ -138,4 +140,91 @@ public class NoticeController : Controller
             return RedirectToAction("Index", "Dashboard");
         }
     }
+    // GET /notices
+    [HttpGet]
+    [Route("notices")]
+    public async Task<IActionResult> Index()
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "";
+        var displayName = User.FindFirstValue(ClaimTypes.Name) ?? "Client";
+
+        var vm = await _notice.GetNoticesDashboardAsync(userId, displayName);
+        return View(vm);   // Views/Notices/Index.cshtml
+    }
+
+    // GET /notices/download?path={encodedPath}
+    // Serves the notice file (PDF or EML) to the client
+    [HttpGet]
+    [Route("notices/download")]
+    public IActionResult Download(string path)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(path))
+                return BadRequest("No file path specified.");
+
+            // Decode
+            var filePath = System.Uri.UnescapeDataString(path);
+
+            if (!System.IO.File.Exists(filePath))
+                return NotFound("Notice file not found.");
+
+            // Security: file must be within one of the configured roots
+            // (prevents path traversal)
+            var safePaths = new[]
+            {
+                HttpContext.RequestServices
+                    .GetRequiredService<IConfiguration>()
+                    ["ObjectionRolls:Objection:RootPath"]       ?? "",
+                HttpContext.RequestServices
+                    .GetRequiredService<IConfiguration>()
+                    ["ObjectionRolls:Objection_Supp1:RootPath"] ?? "",
+                HttpContext.RequestServices
+                    .GetRequiredService<IConfiguration>()
+                    ["ObjectionRolls:Objection_Supp2:RootPath"] ?? "",
+                HttpContext.RequestServices
+                    .GetRequiredService<IConfiguration>()
+                    ["ObjectionRolls:Objection_Supp3:RootPath"] ?? "",
+                HttpContext.RequestServices
+                    .GetRequiredService<IConfiguration>()
+                    ["AppSettings:Section49RootPath"]            ?? "",
+                HttpContext.RequestServices
+                    .GetRequiredService<IConfiguration>()
+                    ["AppSettings:AppealRootPath"]               ?? "",
+                HttpContext.RequestServices
+                    .GetRequiredService<IConfiguration>()
+                    ["ObjectionRolls:Objection_Query:QueryRootPath"] ?? "",
+            };
+
+            var normalised = Path.GetFullPath(filePath);
+            bool allowed = safePaths
+                .Where(p => !string.IsNullOrWhiteSpace(p))
+                .Any(root => normalised.StartsWith(
+                    Path.GetFullPath(root),
+                    StringComparison.OrdinalIgnoreCase));
+
+            if (!allowed)
+            {
+                _logger.LogWarning(
+                    "[Notices] Blocked download outside safe paths: {Path}", filePath);
+                return Forbid();
+            }
+
+            var ext = Path.GetExtension(filePath).ToLower();
+            var contentType = ext == ".eml"
+                ? "message/rfc822"
+                : "application/pdf";
+
+            var fileName = Path.GetFileName(filePath);
+            var bytes = System.IO.File.ReadAllBytes(filePath);
+
+            return File(bytes, contentType, fileName);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[Notices] Download failed for {Path}", path);
+            return StatusCode(500, "Could not retrieve the file.");
+        }
+    }
 }
+ 

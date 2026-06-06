@@ -39,8 +39,8 @@ namespace V2_Genesis.Services.Implementations
                     .Select(r =>
                     {
                         var d = (IDictionary<string, object>)r;
-                        return d.TryGetValue("Town_Name_Description", out var v)
-                            ? v?.ToString() ?? "" : "";
+                        return d.TryGetValue("TsOnlyName", out var v)
+    ? v?.ToString() ?? "" : "";
                     })
                     .Where(t => !string.IsNullOrWhiteSpace(t))
                     .OrderBy(t => t)
@@ -72,8 +72,8 @@ namespace V2_Genesis.Services.Implementations
                     .Select(r =>
                     {
                         var d = (IDictionary<string, object>)r;
-                        return d.TryGetValue("Scheme_Name", out var v)
-                            ? v?.ToString() ?? "" : "";
+                        return d.TryGetValue("SchemeName", out var v)
+      ? v?.ToString() ?? "" : "";
                     })
                     .Where(s => !string.IsNullOrWhiteSpace(s))
                     .OrderBy(s => s)

@@ -1,4 +1,5 @@
-﻿using V2_Genesis.Services.Notice;
+﻿using V2_Genesis.Models.Notice;
+using V2_Genesis.Services.Notice;
 
 namespace V2_Genesis.Services.Interfaces
 {
@@ -26,5 +27,12 @@ namespace V2_Genesis.Services.Interfaces
     string rollSource,
     int fileCount,
     List<string> fileNames);
+
+
+        Task<NoticesDashboardViewModel> GetNoticesDashboardAsync(string userId, string displayName);
+        (bool exists, string path, string ext) FindNoticeFile(string folder, string subFolder);
     }
+
+
+
 }

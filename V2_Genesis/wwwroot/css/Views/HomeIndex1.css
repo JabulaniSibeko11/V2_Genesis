@@ -202,7 +202,7 @@
 }
 
 .disclaimer-header {
-    background: var(--black);
+    background: #1a2e35;
     padding: 24px 28px;
     display: flex;
     align-items: center;
@@ -257,7 +257,7 @@
     align-items: center;
     gap: 8px;
     background: var(--gold);
-    color: var(--black);
+    color: #1a2e35;
     border: none;
     cursor: pointer;
     border-radius: 9px;
@@ -429,16 +429,17 @@
     align-items: center;
     gap: 14px;
     padding: 18px 24px;
-    background: #1a1a1a;
-    border-bottom: 2px solid #e6b000;
+    background: linear-gradient(135deg, #1a2e35 0%, #36626d 100%);
+    border-bottom-color: #e6b000;
 }
 
 .hs-card-header-icon {
     width: 42px;
     height: 42px;
     border-radius: 10px;
-    background: #e6b000;
-    color: #1a1a1a;
+    background: rgba(230, 176, 0, .2);
+    border: 1.5px solid rgba(230, 176, 0, .4);
+    color: #e6b000;
     font-size: 18px;
     display: flex;
     align-items: center;
@@ -534,7 +535,7 @@ select.hs-input {
     padding: 11px 22px;
     border-radius: 8px;
     background: #e6b000;
-    color: #1a1a1a;
+    color: #1a2e35;
     border: none;
     cursor: pointer;
     font-family: 'Poppins', sans-serif;
@@ -546,7 +547,8 @@ select.hs-input {
 }
 
     .hs-search-btn:hover {
-        background: #f5c200;
+        background: #f5c800;
+        
     }
 
     .hs-search-btn:disabled {
@@ -624,25 +626,27 @@ select.hs-input {
     font-size: 10.5px;
     font-weight: 700;
     white-space: nowrap;
+    background: #1a2e35;
+    color: #e6b000;
 }
 
 .hs-roll-objectionsupp3 {
-    background: #4c1d95;
-    color: #ede9fe;
+    background: #4a7d8a;
+    color: #fff;
 }
 
 .hs-roll-objectionsupp2 {
-    background: #14532d;
-    color: #bbf7d0;
+    background: #36626d;
+    color: #fff;
 }
 
 .hs-roll-objectionsupp1 {
-    background: #1e3a8a;
-    color: #bfdbfe;
+    background: #2d4f58;
+    color: #89b7b2;
 }
 
 .hs-roll-objection {
-    background: #1a1a1a;
+    background: #1a2e35;
     color: #e6b000;
 }
 
@@ -653,7 +657,7 @@ select.hs-input {
     gap: 5px;
     padding: 6px 12px;
     border-radius: 7px;
-    background: #1a1a1a;
+    background: #1a2e35;
     color: #e6b000;
     font-family: 'Poppins', sans-serif;
     font-size: 12px;
@@ -663,7 +667,7 @@ select.hs-input {
 }
 
     .hs-view-btn:hover {
-        background: #333;
+        background: #243e48;
         color: #e6b000;
     }
 
@@ -705,7 +709,7 @@ select.hs-input {
 }
 
 .hs-dt-btn {
-    background: #1a1a1a !important;
+    background: #1a2e35 !important;
     color: #e6b000 !important;
     border: none !important;
     border-radius: 7px !important;
@@ -727,7 +731,7 @@ select.hs-input {
    SERVICE TILES
 ══════════════════════════════════════════════ */
 .tiles-section {
-    background: var(--grey-100);
+    background: #f7f5f2;
     padding: 56px 24px;
 }
 
@@ -779,15 +783,15 @@ select.hs-input {
     }
 
 .tile-evidence {
-    border-top-color: #15803d;
+    border-top-color: #36626d;
 }
 
 .tile-section51 {
-    border-top-color: #1d4ed8;
+    border-top-color: #89b7b2; /* COJ African Turquoise */
 }
 
 .tile-rebates {
-    border-top-color: var(--gold-dark);
+    border-top-color: #c49a00;
 }
 
 .tile-attributes {
@@ -857,25 +861,33 @@ select.hs-input {
 }
 
 .tile-evidence .tile-icon {
-    background: #f0fdf4;
-    color: #15803d;
+    background: #e8f3f4; /* coj-green-pale */
+    color: #36626d;
 }
 
 .tile-section51 .tile-icon {
-    background: #eff6ff;
-    color: #1d4ed8;
+    background: #e8f3f4;
+    color: #36626d;
 }
 
 .tile-rebates .tile-icon {
-    background: var(--gold-light);
-    color: var(--gold-dark);
+    background: #fdf6d8;
+    color: #8a6200;
 }
 
 .tile-attributes .tile-icon {
     background: var(--gold-light);
     color: var(--gold-dark);
 }
+.tile-rebates .tile-btn-solid {
+    background: #e6b000;
+    color: #1a2e35;
+}
 
+    .tile-rebates .tile-btn-solid:hover {
+        background: #f5c800;
+        color: #1a2e35;
+    }
 .tile-title {
     font-size: 16px;
     font-weight: 700;
@@ -908,37 +920,57 @@ select.hs-input {
 }
 
 .tile-btn-solid {
-    background: var(--black);
-    color: var(--gold);
+    background: #1a2e35; /* COJ dark teal (was var(--black)) */
+    color: #e6b000;
 }
 
     .tile-btn-solid:hover {
-        background: #333;
-        color: var(--gold);
+        background: #243e48;
+        color: #e6b000;
     }
 
 .tile-evidence .tile-btn-solid {
-    background: #15803d;
-    color: #fff;
+    background: #36626d;
+    color: #ffffff;
 }
 
     .tile-evidence .tile-btn-solid:hover {
-        background: #166534;
+        background: #2d4f58;
     }
 
 .tile-section51 .tile-btn-solid {
-    background: #1d4ed8;
-    color: #fff;
+    background: #36626d;
+    color: #ffffff;
 }
 
     .tile-section51 .tile-btn-solid:hover {
-        background: #1e40af;
+        background: #2d4f58;
     }
 
 .tile-attributes .tile-btn-solid {
-    background: var(--gold);
-    color: var(--black);
+    background: #e6b000;
+    color: #1a2e35;
 }
+
+/* ── Section 78 tile (add if .tile-section78 not already styled) */
+.tile-section78 {
+    border-top-color: #89b7b2;
+}
+
+    .tile-section78 .tile-icon {
+        background: #e8f3f4;
+        color: #36626d;
+    }
+
+    .tile-section78 .tile-btn-solid {
+        background: #36626d;
+        color: #fff;
+    }
+
+        .tile-section78 .tile-btn-solid:hover {
+            background: #2d4f58;
+        }
+
 
     .tile-attributes .tile-btn-solid:hover {
         background: var(--gold-hover);
@@ -966,7 +998,7 @@ select.hs-input {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: var(--black);
+    background: #1a2e35;
     color: var(--white);
     border: none;
     cursor: pointer;
@@ -979,7 +1011,7 @@ select.hs-input {
 }
 
     .prev-rolls-toggle:hover {
-        background: #222;
+        background: #243e48;
     }
 
     .prev-rolls-toggle span {
@@ -997,6 +1029,33 @@ select.hs-input {
     transition: transform .3s ease;
 }
 
+/* ── Announcement bar — ensure COJ colours ───────────────────── */
+.ann-badge.badge-open {
+    background: #e8f3f4;
+    color: #36626d;
+    border-color: #89b7b2;
+}
+
+.ann-dot {
+    background: #36626d;
+}
+
+/* ── Hover on tile outline btn ───────────────────────────────── */
+.tile-btn-outline:hover {
+    border-color: #e6b000;
+    color: #8a6200;
+}
+
+/* ── Status badges in tiles ──────────────────────────────────── */
+.tile-status.badge-open {
+    background: #e8f3f4;
+    color: #36626d;
+    border-color: #89b7b2;
+}
+
+.tile-status-dot {
+    background: #36626d;
+}
 .prev-rolls-content {
     max-height: 0;
     overflow: hidden;

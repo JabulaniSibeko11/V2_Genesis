@@ -78,6 +78,13 @@
                     </a>
                 </li>
 
+                <li>
+                     <a class="nav-link @(ViewContext.RouteData.Values["controller"]
+                          ?.ToString() == "Notices" ? "active" : "")"
+       asp-controller="Notices" asp-action="Index">
+        <i class="fa-solid fa-bell"></i> Notices
+    </a>
+                </li>
                 <li class="cl-nav-item">
                     <a class="cl-nav-link cl-nav-evidence @(reqPath.StartsWith("/evidence") || reqPath.StartsWith("/attributes/evidence") ? "active" : "")"
                        href="@(isAttr ? "/attributes/evidence" : "/evidence/verifyObj")">

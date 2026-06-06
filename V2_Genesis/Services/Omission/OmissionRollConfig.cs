@@ -16,12 +16,14 @@
                 SchemeSp: $"propertyDetailsScheme{suffix}"
             );
 
+            // Each roll DB has the same SP names — no suffix needed.
+            // The correct DB is selected via the ConnectionKey.
             return new Dictionary<string, OmissionRollConfig>
             {
                 ["Objection"] = Make("DefaultConnection", ""),
-                ["Objection_Supp1"] = Make("Sup1Connection", "_Sup1"),
-                ["Objection_Supp2"] = Make("Sup2Connection", "_Sup2"),
-                ["Objection_Supp3"] = Make("Sup3Connection", "_Sup3"),
+                ["Objection_Supp1"] = Make("Sup1Connection", ""),
+                ["Objection_Supp2"] = Make("Sup2Connection", ""),
+                ["Objection_Supp3"] = Make("Sup3Connection", ""),
             };
         }
     }

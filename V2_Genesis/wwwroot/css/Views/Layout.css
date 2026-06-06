@@ -63,10 +63,13 @@
     }
 
     .pub-nav-link.active {
-        color: #1a1a1a;
-        border-bottom-color: #1a1a1a;
+        color: #1a2e35;
+        border-bottom-color: #1a2e35;
     }
 
+.pub-mobile-overlay {
+    background: rgba(26, 46, 53, .55); /* COJ tinted (was rgba(0,0,0,.5)) */
+}
 /* Add Evidence button — dark on gold background */
 .pub-nav-evidence {
     display: inline-flex;
@@ -74,7 +77,7 @@
     gap: 7px;
     padding: 9px 18px;
     border-radius: 8px;
-    background: #1a1a1a; /* ← dark button on gold nav */
+    background: #1a2e35; /* ← dark button on gold nav */
     color: #e6b000;
     font-family: 'Poppins', sans-serif;
     font-size: 13px;
@@ -87,7 +90,7 @@
 }
 
     .pub-nav-evidence:hover {
-        background: #333;
+        background: #243e48; /* COJ mid teal (was #333) */
         color: #e6b000;
     }
 
@@ -119,9 +122,9 @@
     gap: 6px;
     padding: 8px 16px;
     border-radius: 8px;
-    background: #1a1a1a;
+    background: #1a2e35; /* COJ dark teal */
     color: #e6b000;
-    border: none;
+    border: 1.5px solid #1a2e35;
     font-family: 'Poppins', sans-serif;
     font-size: 13px;
     font-weight: 700;
@@ -130,7 +133,8 @@
 }
 
     .pub-btn-register:hover {
-        background: #333;
+        background: #243e48;
+        border-color: #243e48;
         color: #e6b000;
     }
 
@@ -160,7 +164,7 @@
     width: 30px;
     height: 30px;
     border-radius: 50%;
-    background: #1a1a1a;
+    background: #1a2e35; /* COJ dark teal (was #1a1a1a) */
     color: #e6b000;
     font-size: 13px;
     font-weight: 800;
@@ -181,9 +185,22 @@
 
 /* Mobile drawer — keep dark */
 .pub-mobile-drawer {
-    background: #1a1a1a;
+    background: #1a2e35;
 }
-
+.pub-drawer-header {
+    border-bottom-color: rgba(230, 176, 0, .25);
+}
+.pub-drawer-link {
+    color: rgba(255, 255, 255, .7);
+    border-bottom-color: rgba(255, 255, 255, .06);
+}
+    .pub-drawer-link:hover {
+        background: rgba(255, 255, 255, .06);
+        color: #ffffff;
+    }
+    .pub-drawer-link i {
+        color: #e6b000; /* gold ✓ */
+    }
 /* Responsive — unchanged */
 @media (max-width: 768px) {
     .pub-nav-links,
@@ -220,7 +237,8 @@
     font-size: 13px;
     font-weight: 600;
     font-family: 'Poppins', sans-serif;
-    color: #1a1a1a;
+    color: #1a2e35;
+    border-color: rgba(0, 0, 0, .10);
     text-decoration: none;
     background: rgba(0,0,0,.06);
     border: 1px solid rgba(0,0,0,.10);
@@ -230,12 +248,12 @@
 
     .pub-nav-action-link:hover {
         background: rgba(0,0,0,.12);
-        color: #1a1a1a;
+        color: #1a2e35;
     }
 
     .pub-nav-action-link i {
         font-size: 12px;
-        color: #c49000;
+        color: #36626d;
     }
 
 /* ── Sign In / Register buttons ─────────────────────────────────── */
@@ -256,7 +274,7 @@
 }
 
     .pub-btn-signin:hover {
-        background: #1a1a1a;
+        background: #1a2e35; /* COJ dark teal (was #1a1a1a) */
         color: #e6b000;
     }
 .pub-nav-right {
@@ -311,7 +329,8 @@
     top: calc(100% + 6px);
     left: 0;
     min-width: 200px;
-    background: #1a1a1a;
+    background: #1a2e35; /* COJ dark teal (was #1a1a1a) */
+    border-color: #243e48;
     border: 1px solid #333;
     border-radius: 10px;
     padding: 6px 0;
@@ -333,14 +352,14 @@
     font-size: 13px;
     font-weight: 600;
     font-family: 'Poppins', sans-serif;
-    color: #e0e0e0;
+    color: rgba(255, 255, 255, .8);
     text-decoration: none;
     transition: background .15s, color .15s;
     white-space: nowrap;
 }
 
     .pub-nav-drop-item:hover {
-        background: rgba(230,176,0,.12);
+        background: rgba(230, 176, 0, .12);
         color: #e6b000;
     }
 
@@ -350,8 +369,15 @@
         text-align: center;
         flex-shrink: 0;
     }
+.pub-user-menu {
+    border-color: #e8ecef;
+    box-shadow: 0 8px 24px rgba(26, 46, 53, .15); /* COJ tinted shadow */
+}
+.pub-dd-item:hover {
+    background: #e8f3f4; /* COJ pale green hover (was #f7f7f7) */
+}
 
 /* Divider between items */
 .pub-nav-drop-menu li + li {
-    border-top: 1px solid #2a2a2a;
+    border-top-color: #243e48;
 }

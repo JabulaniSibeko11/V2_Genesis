@@ -1,0 +1,496 @@
+﻿@model V2_Genesis.Models.Notice.NoticesDashboardViewModel
+@{
+    ViewData["Title"] = "My Notices";
+    Layout = "~/Views/Shared/_ClientLayout.cshtml";
+
+    var today     = DateTime.Today;
+    var upcoming  = Model.CalendarEvents.Where(e => !e.IsExpired).ToList();
+    var expired   = Model.CalendarEvents.Where(e =>  e.IsExpired).ToList();
+
+    string TypeIcon(V2_Genesis.Models.Notice.NoticeType t) => t switch
+    {
+        V2_Genesis.Models.Notice.NoticeType.Section49       => "fa-envelope-open-text",
+        V2_Genesis.Models.Notice.NoticeType.Section51       => "fa-users",
+        V2_Genesis.Models.Notice.NoticeType.Section53       => "fa-scale-balanced",
+        V2_Genesis.Models.Notice.NoticeType.Section52Review => "fa-magnifying-glass-chart",
+        V2_Genesis.Models.Notice.NoticeType.AppealDecision  => "fa-gavel",
+        V2_Genesis.Models.Notice.NoticeType.InvalidObjection or
+        V2_Genesis.Models.Notice.NoticeType.InvalidOmission => "fa-circle-exclamation",
+        V2_Genesis.Models.Notice.NoticeType.DearJohnny      => "fa-envelope",
+        V2_Genesis.Models.Notice.NoticeType.Section78Outcome=> "fa-file-magnifying-glass",
+        _                                                     => "fa-file-alt"
+    };
+
+    string TypeColour(V2_Genesis.Models.Notice.NoticeType t) => t switch
+    {
+        V2_Genesis.Models.Notice.NoticeType.Section53       => "#e6b000",
+        V2_Genesis.Models.Notice.NoticeType.AppealDecision  => "#7c3aed",
+        V2_Genesis.Models.Notice.NoticeType.InvalidObjection or
+        V2_Genesis.Models.Notice.NoticeType.InvalidOmission => "#ef4444",
+        V2_Genesis.Models.Notice.NoticeType.Section52Review => "#0ea5e9",
+        _                                                     => "#36626d"
+    };
+}
+
+@section Styles {
+<link href="~/css/views/clientdashboardcss.css" rel="stylesheet" asp-append-version="true"/>
+    <link href="~/css/views/notice-calendar.css" rel="stylesheet" asp-append-version="true"/>
+}
+
+<div class="nt-page">
+
+
+<div class="nt-hero">
+    <div class="nt-hero-inner">
+        <div class="nt-hero-icon">
+            <i class="fa-solid fa-bell"></i>
+        </div>
+        <div>
+            <div class="nt-hero-coj">City of Johannesburg · Valuation Services</div>
+            <h1 class="nt-hero-title">My Notices &amp; Schedule</h1>
+            <p class="nt-hero-sub">
+                All official notices issued to you — download any time
+            </p>
+        </div>
+    </div>
+</div>
+
+<div class="nt-body">
+
+
+    @if (Model.CalendarEvents.Any())
+    {
+        <div class="nt-cal">
+            <div class="nt-cal-head">
+                <div class="nt-cal-head-icon">
+                    <i class="fa-solid fa-calendar-days"></i>
+                </div>
+                <div>
+                    <h3>Appeal Closing Date Calendar</h3>
+                    <p>
+                        @upcoming.Count active window@(upcoming.Count == 1 ? "" : "s") ·
+                        @expired.Count expired
+                    </p>
+                </div>
+            </div>
+            <div class="nt-cal-body">
+
+                @if (!upcoming.Any())
+                {
+                    <div class="nt-cal-empty">
+                        <i class="fa-solid fa-calendar-check"
+                           style="font-size:28px;color:#22c55e;display:block;margin-bottom:8px;"></i>
+                        No active appeal windows at this time.
+                    </div>
+                }
+                else
+                {
+                    @foreach (var ev in upcoming.OrderBy(e => e.CloseDate))
+                    {
+                        <div class="nt-cal-event @(ev.IsUrgent ? "urgent" : "")">
+                            <div class="nt-cal-date">
+                                <span class="day">@ev.CloseDate.Day.ToString("D2")</span>
+                                <span class="mon">@ev.CloseDate.ToString("MMM")</span>
+                                <span class="yr">@ev.CloseDate.Year</span>
+                            </div>
+                            <div class="nt-cal-info">
+                                <h4>Appeal Window Closing</h4>
+                                <p>
+                                    <i class="fa-solid fa-file-pen"
+                                       style="color:#36626d;font-size:11px;"></i>
+                                    @ev.ObjectionNo
+                                    &nbsp;·&nbsp;
+                                    @ev.RollName
+                                </p>
+                                <p style="margin-top:2px;font-size:11.5px;color:#555;">
+                                    @ev.PropertyDesc
+                                </p>
+                                <span class="nt-cal-badge @(ev.IsUrgent ? "nt-badge-urgent" : "nt-badge-open")">
+                                    <i class="fa-solid fa-@(ev.IsUrgent ? "triangle-exclamation" : "circle-check")"></i>
+                                    @if (ev.IsUrgent)
+                                    {
+                                        @:⚠ Closes in @ev.DaysLeft day@(ev.DaysLeft == 1 ? "" : "s") — Act now!
+                                    }
+                                    else
+                                    {
+                                        @:@ev.DaysLeft day@(ev.DaysLeft == 1 ? "" : "s") remaining
+                                    }
+                                </span>
+                            </div>
+                            <div class="nt-cal-days">
+                                <span class="dn">@ev.DaysLeft</span>
+                                <span class="dl">days left</span>
+                            </div>
+                        </div>
+                    }
+                }
+
+                @if (expired.Any())
+                {
+                    <div class="nt-cal-expired-title">
+                        <i class="fa-solid fa-clock-rotate-left"
+                           style="margin-right:6px;"></i>
+                        Expired Windows
+                    </div>
+                    @foreach (var ev in expired.OrderByDescending(e => e.CloseDate))
+                    {
+                        <div class="nt-cal-event expired">
+                            <div class="nt-cal-date">
+                                <span class="day">@ev.CloseDate.Day.ToString("D2")</span>
+                                <span class="mon">@ev.CloseDate.ToString("MMM")</span>
+                                <span class="yr">@ev.CloseDate.Year</span>
+                            </div>
+                            <div class="nt-cal-info">
+                                <h4 style="color:#888;">Appeal Window Closed</h4>
+                                <p>@ev.ObjectionNo · @ev.RollName</p>
+                                <p style="font-size:11.5px;color:#aaa;">@ev.PropertyDesc</p>
+                                <span class="nt-cal-badge nt-badge-expired">
+                                    <i class="fa-solid fa-lock"></i> Expired
+                                    @ev.CloseDate.ToString("dd MMM yyyy")
+                                </span>
+                            </div>
+                            <div class="nt-cal-days">
+                                <span class="dn" style="color:#ccc;">0</span>
+                                <span class="dl">expired</span>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    }
+
+ 
+    <div class="nt-section">
+        <div class="nt-section-head"
+             onclick="toggleSection('objNotices')">
+            <div class="nt-section-head-left">
+                <i class="fa-solid fa-file-pen"></i>
+                <h3>Objection Notices</h3>
+                <span class="nt-count">@Model.ObjectionNotices.Count</span>
+            </div>
+            <i class="fa-solid fa-chevron-down nt-chevron"
+               id="chev-objNotices"></i>
+        </div>
+        <div id="panel-objNotices">
+            @if (!Model.ObjectionNotices.Any())
+            {
+                <div class="nt-empty">
+                    <i class="fa-solid fa-inbox"></i>
+                    No objection notices on record for your account.
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="nt-table" id="tbl-objections">
+                        <thead>
+                            <tr>
+                                <th>Reference</th>
+                                <th>Property Description</th>
+                                <th>Roll</th>
+                                <th>Notice Type</th>
+                                <th>Issued</th>
+                                <th>Appeal Window</th>
+                                <th>Download</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var n in Model.ObjectionNotices
+                                .OrderByDescending(x => x.IssuedDate))
+                            {
+                                <tr>
+                                    <td><strong>@n.ReferenceNo</strong></td>
+                                    <td style="max-width:200px;word-break:break-word;">
+                                        @n.PropertyDesc
+                                    </td>
+                                    <td>
+                                        <span style="font-size:11px;font-weight:700;
+                                            background:#e8ecef;padding:2px 8px;
+                                            border-radius:10px;color:#36626d;">
+                                            @n.RollName
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="nt-type-pill"
+                                              style="background:@TypeColour(n.Type)22;
+                                                     color:@TypeColour(n.Type);">
+                                            <i class="fa-solid @TypeIcon(n.Type)"></i>
+                                            @n.TypeLabel
+                                        </span>
+                                    </td>
+                                    <td>
+                                        @(n.IssuedDate.HasValue
+                                            ? n.IssuedDate.Value.ToString("dd MMM yyyy")
+                                            : "—")
+                                    </td>
+                                    <td>
+                                        @if (n.AppealOpenDate.HasValue && n.AppealCloseDate.HasValue)
+                                        {
+                                            if (n.AppealExpired)
+                                            {
+                                                <span class="nt-appeal-exp">
+                                                    <i class="fa-solid fa-lock"></i>
+                                                    Closed @n.AppealCloseDate.Value.ToString("dd MMM yyyy")
+                                                </span>
+                                            }
+                                            else if (n.AppealCloseDate.Value <= DateTime.Today.AddDays(7))
+                                            {
+                                                <span class="nt-appeal-urgent">
+                                                    <i class="fa-solid fa-triangle-exclamation"></i>
+                                                    Closes @n.AppealCloseDate.Value.ToString("dd MMM yyyy")
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="nt-appeal-open">
+                                                    <i class="fa-solid fa-calendar"></i>
+                                                    @n.AppealOpenDate.Value.ToString("dd MMM") –
+                                                    @n.AppealCloseDate.Value.ToString("dd MMM yyyy")
+                                                </span>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <span style="color:#ccc;font-size:12px;">—</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (n.FileExists)
+                                        {
+                                            <a class="nt-dl-btn @(n.FileExt == ".eml" ? "nt-eml" : "")"
+                                               href="@Url.Action("Download", "Notices",
+                                                         new { path = Uri.EscapeDataString(n.FilePath) })"
+                                               download>
+                                                <i class="fa-solid fa-download"></i>
+                                                @(n.FileExt == ".eml" ? "Email" : "PDF")
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <span class="nt-unavail">
+                                                <i class="fa-solid fa-clock"></i>
+                                                Pending
+                                            </span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+
+
+    <div class="nt-section">
+        <div class="nt-section-head"
+             onclick="toggleSection('appNotices')">
+            <div class="nt-section-head-left">
+                <i class="fa-solid fa-gavel"></i>
+                <h3>Appeal Notices</h3>
+                <span class="nt-count">@Model.AppealNotices.Count</span>
+            </div>
+            <i class="fa-solid fa-chevron-down nt-chevron"
+               id="chev-appNotices"></i>
+        </div>
+        <div id="panel-appNotices">
+            @if (!Model.AppealNotices.Any())
+            {
+                <div class="nt-empty">
+                    <i class="fa-solid fa-gavel"></i>
+                    No appeal notices on record for your account.
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="nt-table" id="tbl-appeals">
+                        <thead>
+                            <tr>
+                                <th>Appeal No.</th>
+                                <th>Property Description</th>
+                                <th>Roll</th>
+                                <th>Notice Type</th>
+                                <th>Issued</th>
+                                <th>Download</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var n in Model.AppealNotices
+                                .OrderByDescending(x => x.IssuedDate))
+                            {
+                                <tr>
+                                    <td><strong>@n.ReferenceNo</strong></td>
+                                    <td style="max-width:220px;word-break:break-word;">
+                                        @n.PropertyDesc
+                                    </td>
+                                    <td>
+                                        <span style="font-size:11px;font-weight:700;
+                                            background:#e8ecef;padding:2px 8px;
+                                            border-radius:10px;color:#36626d;">
+                                            @n.RollName
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="nt-type-pill"
+                                              style="background:@TypeColour(n.Type)22;
+                                                     color:@TypeColour(n.Type);">
+                                            <i class="fa-solid @TypeIcon(n.Type)"></i>
+                                            @n.TypeLabel
+                                        </span>
+                                    </td>
+                                    <td>
+                                        @(n.IssuedDate.HasValue
+                                            ? n.IssuedDate.Value.ToString("dd MMM yyyy")
+                                            : "—")
+                                    </td>
+                                    <td>
+                                        @if (n.FileExists)
+                                        {
+                                            <a class="nt-dl-btn @(n.FileExt == ".eml" ? "nt-eml" : "")"
+                                               href="@Url.Action("Download", "Notices",
+                                                         new { path = Uri.EscapeDataString(n.FilePath) })"
+                                               download>
+                                                <i class="fa-solid fa-download"></i>
+                                                @(n.FileExt == ".eml" ? "Email" : "PDF")
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <span class="nt-unavail">
+                                                <i class="fa-solid fa-clock"></i> Pending
+                                            </span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+
+  
+    <div class="nt-section">
+        <div class="nt-section-head"
+             onclick="toggleSection('qryNotices')">
+            <div class="nt-section-head-left">
+                <i class="fa-solid fa-magnifying-glass-chart"></i>
+                <h3>Section 78 Query / Review Notices</h3>
+                <span class="nt-count">@Model.QueryNotices.Count</span>
+            </div>
+            <i class="fa-solid fa-chevron-down nt-chevron"
+               id="chev-qryNotices"></i>
+        </div>
+        <div id="panel-qryNotices">
+            @if (!Model.QueryNotices.Any())
+            {
+                <div class="nt-empty">
+                    <i class="fa-solid fa-file-magnifying-glass"></i>
+                    No Section 78 notices on record for your account.
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="nt-table" id="tbl-queries">
+                        <thead>
+                            <tr>
+                                <th>Query No.</th>
+                                <th>Property Description</th>
+                                <th>Notice Type</th>
+                                <th>Issued</th>
+                                <th>Download</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var n in Model.QueryNotices
+                                .OrderByDescending(x => x.IssuedDate))
+                            {
+                                <tr>
+                                    <td><strong>@n.ReferenceNo</strong></td>
+                                    <td style="max-width:260px;word-break:break-word;">
+                                        @n.PropertyDesc
+                                    </td>
+                                    <td>
+                                        <span class="nt-type-pill"
+                                              style="background:@TypeColour(n.Type)22;
+                                                     color:@TypeColour(n.Type);">
+                                            <i class="fa-solid @TypeIcon(n.Type)"></i>
+                                            @n.TypeLabel
+                                        </span>
+                                    </td>
+                                    <td>
+                                        @(n.IssuedDate.HasValue
+                                            ? n.IssuedDate.Value.ToString("dd MMM yyyy")
+                                            : "—")
+                                    </td>
+                                    <td>
+                                        @if (n.FileExists)
+                                        {
+                                            <a class="nt-dl-btn"
+                                               href="@Url.Action("Download", "Notices",
+                                                         new { path = Uri.EscapeDataString(n.FilePath) })"
+                                               download>
+                                                <i class="fa-solid fa-download"></i> PDF
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <span class="nt-unavail">
+                                                <i class="fa-solid fa-clock"></i> Pending
+                                            </span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+
+</div>
+</div>
+
+@section Scripts {
+<script>
+// ── Collapse / expand sections ────────────────────────────────
+function toggleSection(key) {
+    var panel   = document.getElementById('panel-' + key);
+    var chevron = document.getElementById('chev-'  + key);
+    if (!panel) return;
+    var open = panel.style.display !== 'none';
+    panel.style.display   = open ? 'none'   : '';
+    chevron.style.transform = open ? 'rotate(-90deg)' : 'rotate(0deg)';
+}
+
+// ── DataTables on all notice tables ─────────────────────────
+$(document).ready(function() {
+    ['#tbl-objections', '#tbl-appeals', '#tbl-queries'].forEach(function(sel) {
+        if ($(sel).length) {
+            $(sel).DataTable({
+                responsive: true,
+                dom: '<"nt-dt-top"lBf>rt<"nt-dt-bot"ip>',
+                lengthMenu: [[10, 25, -1], [10, 25, 'All']],
+                buttons: [
+                    { extend: 'excel', className: 'cd-dt-btn',
+                      text: '<i class="fa-solid fa-file-excel"></i> Excel' },
+                    { extend: 'pdf',   className: 'cd-dt-btn',
+                      text: '<i class="fa-solid fa-file-pdf"></i> PDF' }
+                ],
+                language: {
+                    search: '_INPUT_', searchPlaceholder: 'Search notices…',
+                    lengthMenu: '_MENU_ per page'
+                },
+                order: [[4, 'desc']]   // sort by Issued date desc
+            });
+        }
+    });
+});
+</script>
+}

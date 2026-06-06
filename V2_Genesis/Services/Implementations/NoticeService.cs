@@ -1,8 +1,11 @@
-﻿using Microsoft.Extensions.Options;
+﻿using Dapper;
+using Microsoft.Extensions.Options;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
+using System.Data.SqlClient;
 using V2_Genesis.Models;
+using V2_Genesis.Models.Notice;
 using V2_Genesis.Models.Results;
 using V2_Genesis.Services.Interfaces;
 using V2_Genesis.Services.Notice;
@@ -39,6 +42,32 @@ public class NoticeService : INoticeService
         // Set QuestPDF community licence (free for open-source / internal tools)
         QuestPDF.Settings.License = LicenseType.Community;
     }
+
+    // ── Roll registry ────────────────────────────────────────────────
+    private record RollCfg(
+        string ConnKey,
+        string RootPath,
+        string Short,
+        string Name);
+
+    private List<RollCfg> Rolls => new()
+    {
+        new("DefaultConnection",
+            _config["ObjectionRolls:Objection:RootPath"]       ?? "",
+            "GV", "General Valuation Roll 2023"),
+        new("Sup1Connection",
+            _config["ObjectionRolls:Objection_Supp1:RootPath"] ?? "",
+            "SUP1", "Supplementary Roll 1"),
+        new("Sup2Connection",
+            _config["ObjectionRolls:Objection_Supp2:RootPath"] ?? "",
+            "SUP2", "Supplementary Roll 2"),
+        new("Sup3Connection",
+            _config["ObjectionRolls:Objection_Supp3:RootPath"] ?? "",
+            "SUP3", "Supplementary Roll 3"),
+    };
+    private string Section49Root => _config["AppSettings:Section49RootPath"] ?? "";
+    private string AppealRoot => _config["AppSettings:AppealRootPath"] ?? "";
+    private string QueryRoot => _config["ObjectionRolls:Objection_Query:QueryRootPath"] ?? "";
 
     // ── Section 49 ────────────────────────────────────────────────────
     public async Task<(byte[] Pdf, string FileName)> GenerateSection49Async(
@@ -1202,4 +1231,270 @@ public class NoticeService : INoticeService
             _logger.LogError(ex, "[Section51] Save PDF failed for {ObjNo}", objectionNo);
         }
     }
+    // ════════════════════════════════════════════════════════════════
+    public async Task<NoticesDashboardViewModel> GetNoticesDashboardAsync(
+        string userId, string displayName)
+    {
+        var vm = new NoticesDashboardViewModel { DisplayName = displayName };
+
+        await Task.WhenAll(
+            LoadObjectionNoticesAsync(userId, vm),
+            LoadAppealNoticesAsync(userId, vm),
+            LoadQueryNoticesAsync(userId, vm)
+        );
+
+        // Build calendar from objection notices that have appeal dates
+        vm.CalendarEvents = vm.ObjectionNotices
+            .Where(n => n.AppealOpenDate.HasValue && n.AppealCloseDate.HasValue)
+            .Select(n => new AppealCalendarEvent
+            {
+                ObjectionNo = n.ReferenceNo,
+                PropertyDesc = n.PropertyDesc,
+                RollName = n.RollName,
+                OpenDate = n.AppealOpenDate!.Value,
+                CloseDate = n.AppealCloseDate!.Value,
+            })
+            // Deduplicate — one calendar event per objection
+            .GroupBy(e => e.ObjectionNo)
+            .Select(g => g.First())
+            .OrderBy(e => e.CloseDate)
+            .ToList();
+
+        return vm;
+    }
+
+    // ── Objection notices (all rolls) ─────────────────────────────────
+    private async Task LoadObjectionNoticesAsync(
+        string userId, NoticesDashboardViewModel vm)
+    {
+        foreach (var roll in Rolls)
+        {
+            try
+            {
+                var connStr = _config.GetConnectionString(roll.ConnKey)!;
+                await using var conn = new SqlConnection(connStr);
+
+                var objections = await conn.QueryAsync(
+                    @"SELECT Objection_No, Objection_Status, Property_Desc
+                      FROM   dbo.Obj_Property_Info
+                      WHERE  UserID = @UserId",
+                    new { UserId = userId });
+
+                foreach (var obj in objections)
+                {
+                    var objNo = obj.Objection_No?.ToString() ?? "";
+                    var status = obj.Objection_Status?.ToString() ?? "";
+                    var propDesc = obj.Property_Desc?.ToString() ?? "";
+                    var objRoot = Path.Combine(roll.RootPath, objNo);
+
+                    // ── Section 49 (by property desc, separate root) ────
+                    var s49 = FindNoticeFile(Section49Root, propDesc);
+                    if (s49.exists)
+                        vm.ObjectionNotices.Add(Notice(
+                            objNo, propDesc, roll.Name,
+                            NoticeType.Section49, "Section 49 – Invitation to Object",
+                            s49.path, s49.ext, null, null, null));
+
+                    // ── Section 51 ──────────────────────────────────────
+                    var s51 = FindNoticeFile(objRoot, "Section51");
+                    if (s51.exists)
+                        vm.ObjectionNotices.Add(Notice(
+                            objNo, propDesc, roll.Name,
+                            NoticeType.Section51, "Section 51 – Third Party Notice",
+                            s51.path, s51.ext, null, null, null));
+
+                    // ── Section 53 + appeal dates (status = Notice-Sent) ─
+                    if (status.Equals("Notice-Sent",
+                            StringComparison.OrdinalIgnoreCase))
+                    {
+                        var s53 = FindNoticeFile(objRoot, "Section53");
+                        // get appeal dates from Objection_MVD
+                        DateTime? openDate = null;
+                        DateTime? closeDate = null;
+                        try
+                        {
+                            var mvd = await conn.QueryFirstOrDefaultAsync(
+                                @"SELECT Appeal_Start_Date, Appeal_Close_Date
+                                  FROM   dbo.Objection_MVD
+                                  WHERE  Objection_No = @ObjNo",
+                                new { ObjNo = objNo });
+                            if (mvd != null)
+                            {
+                                openDate = mvd.Appeal_Start_Date;
+                                closeDate = mvd.Appeal_Close_Date;
+                            }
+                        }
+                        catch { /* MVD may not exist on supp roll DBs */ }
+
+                        if (s53.exists || openDate.HasValue)
+                            vm.ObjectionNotices.Add(Notice(
+                                objNo, propDesc, roll.Name,
+                                NoticeType.Section53,
+                                "Section 53 – Valuer Decision (MVD)",
+                                s53.path, s53.ext,
+                                null, openDate, closeDate));
+                    }
+
+                    // ── Section 52 Review (.eml) ────────────────────────
+                    var s52 = FindNoticeFile(objRoot, "Section52");
+                    if (s52.exists)
+                        vm.ObjectionNotices.Add(Notice(
+                            objNo, propDesc, roll.Name,
+                            NoticeType.Section52Review, "Section 52 – Review Outcome",
+                            s52.path, s52.ext, null, null, null));
+
+                    // ── Invalid Objection/Omission ──────────────────────
+                    var inv = FindNoticeFile(objRoot, "Invalid");
+                    if (inv.exists)
+                        vm.ObjectionNotices.Add(Notice(
+                            objNo, propDesc, roll.Name,
+                            NoticeType.InvalidObjection, "Invalid Objection / Omission Notice",
+                            inv.path, inv.ext, null, null, null));
+
+                    // ── Dear Johnny ─────────────────────────────────────
+                    var dj = FindNoticeFile(objRoot, "DearJohnny");
+                    if (dj.exists)
+                        vm.ObjectionNotices.Add(Notice(
+                            objNo, propDesc, roll.Name,
+                            NoticeType.DearJohnny, "Dear Owner – Multi-Roll Notice",
+                            dj.path, dj.ext, null, null, null));
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex,
+                    "[Notices] Objection load failed for roll {Roll}", roll.Short);
+            }
+        }
+    }
+
+    // ── Appeal notices (all rolls) ────────────────────────────────────
+    private async Task LoadAppealNoticesAsync(
+        string userId, NoticesDashboardViewModel vm)
+    {
+        foreach (var roll in Rolls)
+        {
+            try
+            {
+                var connStr = _config.GetConnectionString(roll.ConnKey)!;
+                await using var conn = new SqlConnection(connStr);
+
+                var appeals = await conn.QueryAsync(
+                    @"SELECT Appeal_No, A_Property_Desc
+                      FROM   dbo.Obj_Property_Info_Appeal
+                      WHERE  A_UserID = @UserId",
+                    new { UserId = userId });
+
+                foreach (var appeal in appeals)
+                {
+                    var appNo = appeal.Appeal_No?.ToString() ?? "";
+                    var propDesc = appeal.A_Property_Desc?.ToString() ?? "";
+
+                    // Appeal Decision notice (.eml in appeal root folder)
+                    var appDecision = FindNoticeFile(AppealRoot, appNo);
+                    if (appDecision.exists)
+                        vm.AppealNotices.Add(Notice(
+                            appNo, propDesc, roll.Name,
+                            NoticeType.AppealDecision, "Appeal Decision Notice",
+                            appDecision.path, appDecision.ext,
+                            null, null, null));
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex,
+                    "[Notices] Appeal load failed for roll {Roll}", roll.Short);
+            }
+        }
+    }
+
+    // ── Section 78 query notices ──────────────────────────────────────
+    private async Task LoadQueryNoticesAsync(
+        string userId, NoticesDashboardViewModel vm)
+    {
+        try
+        {
+            var connStr = _config.GetConnectionString("QueryConnection")!;
+            await using var conn = new SqlConnection(connStr);
+
+            var queries = await conn.QueryAsync(
+                @"SELECT q.Query_No, s1.Old_Property_Description AS Property_Desc
+                  FROM   dbo.Que_Property_Info  q
+                  JOIN   dbo.Obj_Section1        s1
+                         ON s1.Objection_Ref_S1 = q.Query_No
+                  WHERE  q.UserID = @UserId",
+                new { UserId = userId });
+
+            foreach (var q in queries)
+            {
+                var queryNo = q.Query_No?.ToString() ?? "";
+                var propDesc = q.Property_Desc?.ToString() ?? "";
+
+                // Section 78 outcome — same pattern as Section 49
+                var outcome = FindNoticeFile(QueryRoot, propDesc);
+                if (outcome.exists)
+                    vm.QueryNotices.Add(Notice(
+                        queryNo, propDesc, "Query / Review",
+                        NoticeType.Section78Outcome, "Section 78 Query Outcome",
+                        outcome.path, outcome.ext,
+                        null, null, null));
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[Notices] Query load failed");
+        }
+    }
+
+    // ── Find first file in a folder ──────────────────────────────────
+    public (bool exists, string path, string ext) FindNoticeFile(
+        string parentFolder, string subFolder)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(parentFolder)) return (false, "", "");
+            var dir = Path.Combine(parentFolder, subFolder);
+            if (!Directory.Exists(dir)) return (false, "", "");
+
+            // Accept PDF or EML
+            var file = Directory.GetFiles(dir, "*.pdf").FirstOrDefault()
+                    ?? Directory.GetFiles(dir, "*.eml").FirstOrDefault();
+
+            if (file is null) return (false, "", "");
+            return (true, file, Path.GetExtension(file).ToLower());
+        }
+        catch
+        {
+            return (false, "", "");
+        }
+    }
+
+    // ── Helper: build a NoticeItem ────────────────────────────────────
+    private static NoticeItem Notice(
+        string refNo, string propDesc, string rollName,
+        NoticeType type, string label,
+        string path, string ext,
+        DateTime? issued,
+        DateTime? appealOpen, DateTime? appealClose)
+    {
+        DateTime? fileDate = null;
+        if (!string.IsNullOrEmpty(path) && File.Exists(path))
+            fileDate = File.GetLastWriteTime(path);
+
+        return new NoticeItem
+        {
+            ReferenceNo = refNo,
+            PropertyDesc = propDesc,
+            RollName = rollName,
+            Type = type,
+            TypeLabel = label,
+            IssuedDate = issued ?? fileDate,
+            FilePath = path,
+            FileExt = ext,
+            FileExists = !string.IsNullOrEmpty(path) && File.Exists(path),
+            AppealOpenDate = appealOpen,
+            AppealCloseDate = appealClose,
+        };
+    }
 }
+ 
