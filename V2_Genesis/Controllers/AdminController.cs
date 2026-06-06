@@ -9,6 +9,7 @@ using V2_Genesis.Models.Results.Admin;
 
 using V2_Genesis.Models.ViewModels.Dashboard;
 using V2_Genesis.Services;
+using V2_Genesis.Services.Implementations;
 using V2_Genesis.Services.Interfaces;
 using V2_Genesis.Services.PropertySearch;
 
@@ -21,7 +22,9 @@ public class AdminController : Controller
     private readonly IAuditService _audit;
     private readonly ApplicationDbContext _db;
     private readonly RollDatesSettings _rollDates;
-
+    private readonly IPropertySearchService _search;
+    private readonly INoticeService _noticeService;
+    
     private static readonly Regex AdminPattern =
         new(@"^val\.admin(1[0-9]?|[1-9])@joburg\.org\.za$",
             RegexOptions.IgnoreCase | RegexOptions.Compiled);
@@ -31,13 +34,16 @@ public class AdminController : Controller
         IAdminDashboardService adminService,
         IAuditService audit,
         ApplicationDbContext db,
-        IOptions<RollDatesSettings> rollDatesOpts)
+        IOptions<RollDatesSettings> rollDatesOpts,
+        IPropertySearchService search ,INoticeService noticeService  )
     {
         _dashboardService = dashboardService;
         _adminService = adminService;
         _audit = audit;
         _db = db;
         _rollDates = rollDatesOpts.Value;
+        _search = search;
+        _noticeService = noticeService;
     }
 
     // ── Helpers ───────────────────────────────────────────────────────
@@ -65,10 +71,10 @@ public class AdminController : Controller
 
         // Same client SPs — admin tracks their own linked/objected/appeals
         var rollDataTasks = rolls
-            .Where(r => !r.IsQuery)
-            .ToDictionary(
-                r => r.Source,
-                r => _dashboardService.GetRollDataAsync(r.Source, UserId, AdminEmail));
+     .Where(r => !r.IsQuery)
+     .ToDictionary(
+         r => r.Source,
+         r => _adminService.GetAllRollDataAsync(r.Source));   // ← all users
 
         await Task.WhenAll(rollDataTasks.Values);
 
@@ -96,13 +102,96 @@ public class AdminController : Controller
     [Route("admin/search")]
     public async Task<IActionResult> Search()
     {
-        if (!IsAdmin(AdminEmail))
-            return View("_NoAccess");
+        if (!IsAdmin(AdminEmail)) return View("_NoAccess");
 
         ViewBag.GvList = await _db.GvList.OrderBy(r => r.ID).ToListAsync();
-        return View();
+        ViewBag.Townships = await _search.GetTownshipsAsync();  // inject IPropertySearchService
+        ViewBag.Schemes = await _search.GetSchemesAsync();
+        return View();    // Views/Admin/Search.cshtml
     }
 
+    [HttpPost]
+    [Route("admin/search/ref")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SearchByRef(
+    string refNo, string? rollSource)
+    {
+        if (!IsAdmin(AdminEmail)) return View("_NoAccess");
+
+        if (string.IsNullOrWhiteSpace(refNo))
+        {
+            TempData["SearchError"] = "Please enter a reference number.";
+            return RedirectToAction(nameof(Search));
+        }
+
+        var result = await _adminService.SearchByReferenceAsync(refNo.Trim(), rollSource);
+
+        await _audit.LogAsync(AdminEmail, AuditActions.Search, SapNumber,
+            rollSource: rollSource ?? "All",
+            searchValue: refNo, ipAddress: ClientIp);
+
+        return View("SearchResults", result);
+    }
+    [HttpPost]
+    [Route("admin/search/property")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SearchByProperty(
+        string? TownName, string? Stand, string? Address,
+        string? Scheme, string? Unit, string? rollSource)
+    {
+        if (!IsAdmin(AdminEmail)) return View("_NoAccess");
+
+        var result = await _adminService.SearchByPropertyAsync(
+            TownName, Stand, Address, Scheme, Unit, rollSource);
+
+        await _audit.LogAsync(AdminEmail, AuditActions.Search, SapNumber,
+            rollSource: rollSource ?? "All",
+            searchValue: result.SearchInput, ipAddress: ClientIp);
+
+        return View("SearchResults", result);
+    }
+
+    [HttpGet]
+    [Route("admin/notices")]
+    public IActionResult Notices()
+    {
+        if (!IsAdmin(AdminEmail)) return View("_NoAccess");
+        return View();   // Views/Admin/Notices.cshtml
+    }
+
+    // POST /admin/notices/search — look up notices for a client email
+    [HttpPost]
+    [Route("admin/notices/search")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> NoticesSearch(string clientEmail)
+    {
+        if (!IsAdmin(AdminEmail)) return View("_NoAccess");
+
+        if (string.IsNullOrWhiteSpace(clientEmail))
+        {
+            ViewBag.Error = "Please enter a client email address.";
+            return View("Notices");
+        }
+
+        // Resolve Identity userId from email
+        var user = await _db.Users
+            .FirstOrDefaultAsync(u => u.NormalizedEmail ==
+                                      clientEmail.Trim().ToUpper());
+
+        if (user is null)
+        {
+            ViewBag.Error = $"No account found for: {clientEmail}";
+            return View("Notices");
+        }
+
+        var vm = await _noticeService.GetNoticesDashboardAsync(
+            user.Id, user.Email ?? clientEmail);
+
+        await _audit.LogAsync(AdminEmail, "ViewClientNotices", SapNumber,
+            entityRef: clientEmail, ipAddress: ClientIp);
+
+        return View("Notices", vm);
+    }
     // ── POST /admin/search/objection ──────────────────────────────────
     [HttpPost]
     [Route("admin/search/objection")]

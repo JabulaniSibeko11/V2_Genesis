@@ -2,6 +2,7 @@
     var reqPath  = Context.Request.Path.Value?.ToLower() ?? "";
     bool isAttr  = reqPath.StartsWith("/attributes");
     bool isAuth  = User?.Identity?.IsAuthenticated ?? false;
+    
 }
 
 <!DOCTYPE html>
@@ -85,6 +86,17 @@
         <i class="fa-solid fa-bell"></i> Notices
     </a>
                 </li>
+
+               @*  @if (isAdmin)
+{
+    <a class="nav-link" asp-controller="Admin" asp-action="Index">
+        <i class="fa-solid fa-shield-halved"></i> Admin
+    </a>
+    <a class="nav-link" asp-controller="Admin" asp-action="Notices">
+        <i class="fa-solid fa-bell"></i> Client Notices
+    </a>
+} *@
+ 
                 <li class="cl-nav-item">
                     <a class="cl-nav-link cl-nav-evidence @(reqPath.StartsWith("/evidence") || reqPath.StartsWith("/attributes/evidence") ? "active" : "")"
                        href="@(isAttr ? "/attributes/evidence" : "/evidence/verifyObj")">

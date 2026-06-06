@@ -1,176 +1,219 @@
 ﻿@{
     ViewData["Title"] = "Search Enquiry";
     Layout = "~/Views/Shared/_ClientLayout.cshtml";
-    var searchValue = TempData["SearchValue"];
-    var searchAppealValue = TempData["SearchAppealValue"];
-    var searchQuery = TempData["searchQuery"];
+    var gvList = ViewBag.GvList as List<V2_Genesis.Models.GvList> ?? new();
+    var towns = ViewBag.Townships as List<string> ?? new();
+    var schemes = ViewBag.Schemes as List<string> ?? new();
 }
 
 @section Styles {
-    <link href="~/css/views/admin-search.css" rel="stylesheet" asp-append-version="true" />
-     <link href="~/css/views/clientdashboardcss.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/views/clientdashboardcss.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/views/admin-search.css" rel="stylesheet" asp-append-version="true"/>
 }
 
-<div class="srch-page">
-    <div class="srch-inner">
+<div class="adms-page">
 
-        <div class="srch-header">
-            <a href="/admin" class="srch-back">
-                <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
+    <div class="adms-hero">
+        <div class="adms-hero-inner">
+            <div class="adms-hero-icon">
+                <i class="fa-solid fa-magnifying-glass"></i>
+            </div>
+            <div>
+                <h1>Search Enquiry</h1>
+                <p>Find any objection, appeal or query across all rolls</p>
+            </div>
+            <a href="/admin" class="adms-hero-back">
+                <i class="fa-solid fa-arrow-left"></i> Dashboard
             </a>
-            <div class="srch-heading">
-                <div class="srch-heading-icon">
-                    <i class="fa-solid fa-magnifying-glass"></i>
+        </div>
+    </div>
+
+    <div class="adms-body">
+
+
+        <div class="adms-tab-bar">
+            <button class="adms-tab active" id="tab-ref"
+                    onclick="switchTab('ref')">
+                <i class="fa-solid fa-hashtag"></i>
+                By Reference Number
+            </button>
+            <button class="adms-tab" id="tab-prop"
+                    onclick="switchTab('prop')">
+                <i class="fa-solid fa-map-location-dot"></i>
+                By Property Description
+            </button>
+        </div>
+
+       
+        <div class="adms-pane active" id="pane-ref">
+            <div class="adms-card">
+                <div class="adms-card-head">
+                    <i class="fa-solid fa-hashtag" style="color:#e6b000;"></i>
+                    <h3>Search by Reference Number</h3>
+                    <p>Objection No / Appeal No / Query No</p>
                 </div>
-                <div>
-                    <h1>Search Enquiry</h1>
-                    <p>Search for objections, appeals, queries or townships</p>
+                <div class="adms-card-body">
+                    <form method="post" action="/admin/search/ref"
+                          onsubmit="handleSubmit(event,this,'refBtn')">
+                        @Html.AntiForgeryToken()
+
+                        <div class="adms-roll-strip">
+                            <label><i class="fa-solid fa-layer-group"></i> Roll:</label>
+                            <select name="rollSource" class="adms-roll-select">
+                                <option value="">All Rolls</option>
+                                @foreach (var r in gvList.Where(r => !r.IsQuery))
+                                {
+                                    <option value="@r.Source">@r.Short — @r.Name</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="adms-field adms-field-full" style="margin-bottom:16px;">
+                            <label class="adms-label" for="refNo">
+                                <i class="fa-solid fa-file-pen"></i>
+                                Reference Number
+                            </label>
+                            <input type="text" name="refNo" id="refNo"
+                                   class="adms-input"
+                                   placeholder="e.g. GV23-1234  |  APP-GV23-1234  |  QUE-GV23-1234"
+                                   autocomplete="off" />
+                            <p style="font-size:11px;color:#9aa3af;margin:4px 0 0;">
+                                The system auto-detects whether it's an Objection, Appeal or Query
+                            </p>
+                        </div>
+
+                        <button type="submit" class="adms-submit" id="refBtn">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            Search by Reference
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>
 
-        <div class="srch-grid">
 
-            <!-- 1. Search Objection -->
-            <div class="srch-card">
-                <div class="srch-card-header">
-                    <i class="fa-solid fa-file-pen"></i> Search for Objection
+        <div class="adms-pane" id="pane-prop">
+            <div class="adms-card">
+                <div class="adms-card-head">
+                    <i class="fa-solid fa-map-location-dot" style="color:#e6b000;"></i>
+                    <h3>Search by Property Description</h3>
+                    <p>Township · ERF · Address · Scheme · Unit</p>
                 </div>
-                <div class="srch-card-body">
-                    <form method="post" action="/admin/search/objection"
-                          onsubmit="handleSubmit(event, this)">
+                <div class="adms-card-body">
+                    <form method="post" action="/admin/search/property"
+                          onsubmit="handleSubmit(event,this,'propBtn')">
                         @Html.AntiForgeryToken()
-                        <div class="srch-roll-row">
-                            <label>Roll</label>
-                            <select name="rollSource" class="srch-select">
+
+                        <div class="adms-roll-strip">
+                            <label><i class="fa-solid fa-layer-group"></i> Roll:</label>
+                            <select name="rollSource" class="adms-roll-select">
                                 <option value="">All Rolls</option>
-                                @foreach (var roll in (ViewBag.GvList as List<V2_Genesis.Models.GvList> ?? new()).Where(r => !r.IsQuery))
+                                @foreach (var r in gvList.Where(r => !r.IsQuery))
                                 {
-                                    <option value="@roll.Source">@roll.Short</option>
+                                    <option value="@r.Source">@r.Short — @r.Name</option>
                                 }
                             </select>
                         </div>
-                        <div class="srch-field">
-                            <label>Objection Number</label>
-                            <input type="text" name="searchValue"
-                                   value="@searchValue"
-                                   placeholder="e.g. GV23-SUP3-123"
-                                   class="srch-input" required />
+
+                        <div class="adms-grid">
+                            <div class="adms-field adms-field-full">
+                                <label class="adms-label" for="TownName">
+                                    <i class="fa-solid fa-map-pin"></i> Township
+                                </label>
+                                <select name="TownName" id="TownName" class="adms-input">
+                                    <option value="">— Select Township (optional) —</option>
+                                    @foreach (var t in towns)
+                                    {
+                                        <option value="@t">@t</option>
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="adms-field">
+                                <label class="adms-label" for="Stand">
+                                    <i class="fa-solid fa-hashtag"></i> ERF / Stand No.
+                                </label>
+                                <input type="text" name="Stand" id="Stand"
+                                       class="adms-input" placeholder="e.g. 1234" />
+                            </div>
+
+                            <div class="adms-field">
+                                <label class="adms-label" for="Address">
+                                    <i class="fa-solid fa-road"></i> Street Address
+                                </label>
+                                <input type="text" name="Address" id="Address"
+                                       class="adms-input" placeholder="e.g. 123 Main Street" />
+                            </div>
+
+                            <div class="adms-field">
+                                <label class="adms-label" for="Scheme">
+                                    <i class="fa-solid fa-building"></i> Scheme Name
+                                </label>
+                                <select name="Scheme" id="Scheme" class="adms-input">
+                                    <option value="">— Select Scheme (optional) —</option>
+                                    @foreach (var s in schemes)
+                                    {
+                                        <option value="@s">@s</option>
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="adms-field">
+                                <label class="adms-label" for="Unit">
+                                    <i class="fa-solid fa-door-open"></i> Unit No.
+                                </label>
+                                <input type="text" name="Unit" id="Unit"
+                                       class="adms-input" placeholder="e.g. 5" />
+                            </div>
                         </div>
-                        <button type="submit" class="srch-btn">
-                            <i class="fa-solid fa-search"></i> Search Objection
+
+                        <button type="submit" class="adms-submit" id="propBtn">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            Search by Property
                         </button>
                     </form>
                 </div>
             </div>
-
-            <!-- 2. Search Appeal by Appeal No -->
-            <div class="srch-card">
-                <div class="srch-card-header">
-                    <i class="fa-solid fa-gavel"></i> Search for Appeal
-                </div>
-                <div class="srch-card-body">
-                    <form method="post" action="/admin/search/appeal"
-                          onsubmit="handleSubmit(event, this)">
-                        @Html.AntiForgeryToken()
-                        <div class="srch-roll-row">
-                            <label>Roll</label>
-                            <select name="rollSource" class="srch-select">
-                                <option value="">All Rolls</option>
-                                @foreach (var roll in (ViewBag.GvList as List<V2_Genesis.Models.GvList> ?? new()).Where(r => !r.IsQuery))
-                                {
-                                    <option value="@roll.Source">@roll.Short</option>
-                                }
-                            </select>
-                        </div>
-                        <div class="srch-field">
-                            <label>Appeal Number</label>
-                            <input type="text" name="searchAppealValue"
-                                   value="@searchAppealValue"
-                                   placeholder="e.g. APP-GV23-SUP3-123"
-                                   class="srch-input" required />
-                        </div>
-                        <button type="submit" class="srch-btn">
-                            <i class="fa-solid fa-search"></i> Search Appeal
-                        </button>
-                    </form>
-                </div>
-            </div>
-
-            <!-- 3. Search Appeal by Township -->
-            <div class="srch-card">
-                <div class="srch-card-header">
-                    <i class="fa-solid fa-city"></i> Search by Township
-                </div>
-                <div class="srch-card-body">
-                    <form method="post" action="/admin/search/appeal"
-                          onsubmit="handleSubmit(event, this)">
-                        @Html.AntiForgeryToken()
-                        <div class="srch-roll-row">
-                            <label>Roll</label>
-                            <select name="rollSource" class="srch-select">
-                                <option value="">All Rolls</option>
-                                @foreach (var roll in (ViewBag.GvList as List<V2_Genesis.Models.GvList> ?? new()).Where(r => !r.IsQuery))
-                                {
-                                    <option value="@roll.Source">@roll.Short</option>
-                                }
-                            </select>
-                        </div>
-                        <div class="srch-field">
-                            <label>Township Name</label>
-                            <input type="text" name="searchAppealValue"
-                                   value="@searchAppealValue"
-                                   placeholder="Enter township name"
-                                   class="srch-input" required />
-                        </div>
-                        <button type="submit" class="srch-btn">
-                            <i class="fa-solid fa-search"></i> Search Township
-                        </button>
-                    </form>
-                </div>
-            </div>
-
-            <!-- 4. Search Query -->
-            <div class="srch-card">
-                <div class="srch-card-header">
-                    <i class="fa-solid fa-circle-question"></i> Search for Query
-                </div>
-                <div class="srch-card-body">
-                    <form method="post" action="/admin/search/query"
-                          onsubmit="handleSubmit(event, this)">
-                        @Html.AntiForgeryToken()
-                        <div class="srch-field">
-                            <label>Query Number</label>
-                            <input type="text" name="searchQuery"
-                                   value="@searchQuery"
-                                   placeholder="e.g. QUE-GV23-123"
-                                   class="srch-input" required />
-                        </div>
-                        <button type="submit" class="srch-btn">
-                            <i class="fa-solid fa-search"></i> Search Query
-                        </button>
-                    </form>
-                </div>
-            </div>
-
         </div>
+
     </div>
 </div>
 
 @section Scripts {
     <script>
-        function handleSubmit(e, form) {
-            const input = form.querySelector('.srch-input');
-            if (!input.value.trim()) {
+        function switchTab(tab) {
+            ['ref','prop'].forEach(function(t) {
+                document.getElementById('tab-'  + t).classList.toggle('active', t === tab);
+                document.getElementById('pane-' + t).classList.toggle('active', t === tab);
+            });
+        }
+
+        function handleSubmit(e, form, btnId) {
+            var inputs = form.querySelectorAll('input[type="text"], select');
+            var hasValue = false;
+            inputs.forEach(function(el) {
+                if (el.name !== 'rollSource' && el.name !== '__RequestVerificationToken'
+                    && el.value.trim()) hasValue = true;
+            });
+            if (!hasValue) {
                 e.preventDefault();
-                input.focus();
-                input.style.borderColor = '#ef4444';
-                setTimeout(() => input.style.borderColor = '', 2000);
-                return false;
+                showErr(form, 'Please enter at least one search field.');
+                return;
             }
-            const btn = form.querySelector('.srch-btn');
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Searching...';
+            var btn = document.getElementById(btnId);
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Searching…';
             btn.disabled = true;
+        }
+
+        function showErr(form, msg) {
+            var ex = form.querySelector('.adms-err');
+            if (ex) ex.remove();
+            var d = document.createElement('div');
+            d.className = 'adms-err';
+            d.style.cssText = 'padding:10px 14px;background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;font-size:13px;color:#b91c1c;margin-bottom:10px;';
+            d.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> ' + msg;
+            form.insertBefore(d, form.firstChild);
+            setTimeout(function() { d.remove(); }, 5000);
         }
     </script>
 }

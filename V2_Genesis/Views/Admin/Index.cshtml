@@ -32,6 +32,9 @@
             <a href="/admin/audit" class="adm-topbar-btn adm-audit-btn">
                 <i class="fa-solid fa-clock-rotate-left"></i> Audit Trail
             </a>
+             <a href="/admin/notices" class="adm-topbar-btn">
+        <i class="fa-solid fa-bell"></i> Client Notices
+    </a>
         </div>
     </div>
 </div>
@@ -106,19 +109,20 @@
                     </div>
                 </div>
                 <div class="cd-roll-header-right">
-                    @if (!roll.IsQuery && dates is not null)
-                    {
-                        <div class="cd-period-wrap">
-                            <span class="cd-period-dates">
-                                <i class="fa-solid fa-calendar-days"></i>
-                                @dates.OpenDate.ToString("dd MMM yyyy") – @dates.VisibleUntil.ToString("dd MMM yyyy")
-                            </span>
-                            <span class="cd-roll-badge cd-badge-@status">
-                                @(status == "active" ? "Objection Open" :
-                                  status == "upcoming" ? "Opening Soon" : "Period Closed")
-                            </span>
-                        </div>
-                    }
+                     @if (!roll.IsQuery && dates is not null)
+                            {
+                                <div class="cd-period-wrap">
+                                    <span class="cd-period-dates">
+                                        <i class="fa-solid fa-calendar-days"></i>
+                                        @dates.OpenDate.ToString("dd MMM yyyy") – @dates.VisibleUntil.ToString("dd MMM yyyy")
+                                    </span>
+                               
+                                    <span class="cd-roll-badge cd-badge-open">Objection Open</span>
+                                </div>
+                            }
+ 
+                  
+                    
                     @if (!roll.IsQuery)
                     {
                         <a href="/search/@roll.Source"

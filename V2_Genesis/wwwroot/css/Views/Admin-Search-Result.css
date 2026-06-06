@@ -1,0 +1,331 @@
+﻿
+.res-page {
+    font-family: 'Poppins',sans-serif;
+    padding-bottom: 60px;
+}
+
+.res-hero {
+    background: linear-gradient(135deg,#1a2e35 0%,#36626d 100%);
+    padding: 28px;
+    position: relative;
+}
+
+    .res-hero::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg,#e6b000,#ffd700,#e6b000);
+    }
+
+.res-hero-inner {
+    max-width: 960px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.res-hero h1 {
+    margin: 0 0 3px;
+    font-size: 20px;
+    font-weight: 800;
+    color: #fff;
+}
+
+.res-hero p {
+    margin: 0;
+    font-size: 12.5px;
+    color: rgba(255,255,255,.6);
+}
+
+.res-back {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 9px 16px;
+    border-radius: 8px;
+    background: rgba(255,255,255,.1);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    border: 1px solid rgba(255,255,255,.2);
+}
+
+    .res-back:hover {
+        background: rgba(255,255,255,.18);
+        color: #fff;
+    }
+
+.res-body {
+    max-width: 960px;
+    margin: 24px auto;
+    padding: 0 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* Search context card */
+.res-context {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 18px;
+    background: #fff;
+    border: 1.5px solid #e8ecef;
+    border-radius: 10px;
+    box-shadow: 0 1px 6px rgba(0,0,0,.05);
+}
+
+.res-context-type {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    background: #1a2e35;
+    color: #e6b000;
+}
+
+.res-context-val {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1a2e35;
+}
+
+.res-context-sub {
+    font-size: 12px;
+    color: #9aa3af;
+    margin-left: 4px;
+}
+
+.res-count {
+    margin-left: auto;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 20px;
+    background: #f0fdf4;
+    color: #15803d;
+    border: 1px solid #bbf7d0;
+}
+
+    .res-count.zero {
+        background: #fef2f2;
+        color: #b91c1c;
+        border-color: #fca5a5;
+    }
+
+/* No results */
+.res-empty {
+    text-align: center;
+    padding: 48px 20px;
+    background: #fff;
+    border-radius: 12px;
+    border: 1.5px solid #e8ecef;
+}
+
+    .res-empty i {
+        font-size: 40px;
+        color: #e8ecef;
+        display: block;
+        margin-bottom: 12px;
+    }
+
+    .res-empty h3 {
+        font-size: 17px;
+        font-weight: 700;
+        color: #1a1a1a;
+        margin: 0 0 6px;
+    }
+
+    .res-empty p {
+        font-size: 13.5px;
+        color: #9aa3af;
+        margin: 0;
+    }
+
+/* Reference result card */
+.res-ref-card {
+    background: #fff;
+    border-radius: 12px;
+    border: 1.5px solid #e8ecef;
+    box-shadow: 0 2px 10px rgba(0,0,0,.06);
+    overflow: hidden;
+}
+
+.res-ref-head {
+    padding: 14px 20px;
+    background: #1a2e35;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.res-ref-type {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #fff;
+}
+
+.res-ref-no {
+    font-size: 18px;
+    font-weight: 800;
+    color: #e6b000;
+}
+
+.res-ref-roll {
+    font-size: 11.5px;
+    color: rgba(255,255,255,.55);
+    margin-left: auto;
+}
+
+.res-ref-body {
+    padding: 20px;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 14px;
+}
+
+.res-field {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.res-field-full {
+    grid-column: 1/-1;
+}
+
+.res-label {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #9aa3af;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+}
+
+.res-value {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #1a2e35;
+}
+
+.res-ref-footer {
+    padding: 12px 20px;
+    border-top: 1px solid #f0f2f5;
+    background: #fafbfc;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.res-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 9px 18px;
+    border-radius: 8px;
+    font-family: 'Poppins',sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: background .15s;
+    border: none;
+    cursor: pointer;
+}
+
+.res-btn-primary {
+    background: #1a2e35;
+    color: #e6b000;
+}
+
+    .res-btn-primary:hover {
+        background: #243e48;
+        color: #e6b000;
+    }
+
+/* Property results table */
+.res-table-card {
+    background: #fff;
+    border-radius: 12px;
+    border: 1.5px solid #e8ecef;
+    box-shadow: 0 2px 10px rgba(0,0,0,.06);
+    overflow: hidden;
+}
+
+.res-table-head {
+    padding: 14px 20px;
+    background: #1a2e35;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+    .res-table-head h3 {
+        margin: 0;
+        font-size: 13px;
+        font-weight: 700;
+        color: #e6b000;
+        text-transform: uppercase;
+        letter-spacing: .5px;
+    }
+
+.res-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+    .res-table thead th {
+        background: #1a2e35;
+        color: #e6b000;
+        padding: 10px 13px;
+        text-align: left;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: .4px;
+        text-transform: uppercase;
+    }
+
+    .res-table tbody td {
+        padding: 11px 13px;
+        border-bottom: 1px solid #f0f2f5;
+        color: #2c3e50;
+        vertical-align: middle;
+    }
+
+    .res-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .res-table tbody tr:hover {
+        background: #f7f9fb;
+    }
+
+.res-roll-badge {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 10px;
+    font-size: 10.5px;
+    font-weight: 700;
+    background: #e8ecef;
+    color: #36626d;
+}
+
+@media(max-width:600px) {
+    .res-ref-body {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+

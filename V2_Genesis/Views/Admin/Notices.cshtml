@@ -1,0 +1,284 @@
+﻿@model V2_Genesis.Models.Notice.NoticesDashboardViewModel
+@{
+    ViewData["Title"] = "Admin — Client Notices";
+    Layout = "~/Views/Shared/_ClientLayout.cshtml";
+    bool hasResults = Model is not null;
+}
+
+@section Styles {
+<link href="~/css/views/clientdashboardcss.css" rel="stylesheet" asp-append-version="true"/>
+    <link href="~/css/views/admin-notice.css" rel="stylesheet" asp-append-version="true" />
+}
+
+<div class="adn-page">
+    <div class="adn-hero">
+        <div class="adn-hero-inner">
+            <div class="adn-hero-icon"><i class="fa-solid fa-bell"></i></div>
+            <div>
+                <h1>Client Notices — Admin View</h1>
+                <p>Search a client email to view all their notices and appeal schedule</p>
+            </div>
+            <a href="/admin" class="adn-back">
+                <i class="fa-solid fa-arrow-left"></i> Dashboard
+            </a>
+        </div>
+    </div>
+
+    <div class="adn-body">
+
+        
+        <div class="adn-search-card">
+            <div class="adn-search-head">
+                <i class="fa-solid fa-user-magnifying-glass" style="color:#e6b000;"></i>
+                <h3>Search by Client Email</h3>
+            </div>
+            <div class="adn-search-body">
+                <form method="post" action="/admin/notices/search"
+                      style="display:flex;gap:12px;flex:1;flex-wrap:wrap;align-items:flex-end;">
+                    @Html.AntiForgeryToken()
+                    <div class="adn-search-field">
+                        <label class="adn-label" for="clientEmail">
+                            <i class="fa-solid fa-envelope"></i> Client Email Address
+                        </label>
+                        <input type="email" name="clientEmail" id="clientEmail"
+                               class="adn-input" placeholder="e.g. client@email.com"
+                               value="@(Model?.DisplayName)" />
+                    </div>
+                    <button type="submit" class="adn-search-btn">
+                        <i class="fa-solid fa-magnifying-glass"></i> Load Notices
+                    </button>
+                </form>
+            </div>
+            @if (ViewBag.Error is string err)
+            {
+                <div style="padding:0 20px 16px;">
+                    <div style="padding:10px 14px;background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;font-size:13px;color:#b91c1c;">
+                        <i class="fa-solid fa-circle-xmark"></i> @err
+                    </div>
+                </div>
+            }
+        </div>
+
+        @if (!hasResults)
+        {
+            <div style="text-align:center;padding:48px 20px;background:#fff;border-radius:12px;border:1.5px solid #e8ecef;">
+                <i class="fa-solid fa-user-magnifying-glass" style="font-size:40px;color:#e8ecef;display:block;margin-bottom:12px;"></i>
+                <h3 style="font-size:17px;font-weight:700;color:#1a1a1a;margin:0 0 6px;">
+                    Enter a Client Email
+                </h3>
+                <p style="font-size:13.5px;color:#9aa3af;margin:0;">
+                    Search for a registered client to view all their notices and appeal schedule dates.
+                </p>
+            </div>
+        }
+        else
+        {
+           
+            <div class="adn-client-strip">
+                <div class="adn-client-avatar">
+                    @(Model!.DisplayName.Length > 0 ? Model.DisplayName[0].ToString().ToUpper() : "C")
+                </div>
+                <div>
+                    <div class="adn-client-name">@Model.DisplayName</div>
+                    <div class="adn-client-email">
+                        @Model.ObjectionNotices.Count objection notice@(Model.ObjectionNotices.Count==1?"":"s") ·
+                        @Model.AppealNotices.Count appeal notice@(Model.AppealNotices.Count==1?"":"s") ·
+                        @Model.QueryNotices.Count query notice@(Model.QueryNotices.Count==1?"":"s")
+                    </div>
+                </div>
+            </div>
+
+         
+          
+                var upcoming = Model.CalendarEvents.Where(e => !e.IsExpired).ToList();
+            
+            @if (upcoming.Any())
+            {
+                <div style="background:#fffbeb;border:1.5px solid #fde68a;border-radius:10px;padding:14px 18px;">
+                    <div style="font-size:12px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">
+                        <i class="fa-solid fa-calendar-days"></i> Open Appeal Windows (@upcoming.Count)
+                    </div>
+                    @foreach (var ev in upcoming.OrderBy(e => e.CloseDate))
+                    {
+                        <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid #fde68a;">
+                            <div style="font-size:22px;font-weight:900;color:#1a2e35;min-width:36px;">
+                                @ev.CloseDate.Day
+                            </div>
+                            <div style="font-size:11px;color:#92400e;font-weight:700;min-width:28px;">
+                                @ev.CloseDate.ToString("MMM yyyy")
+                            </div>
+                            <div>
+                                <div style="font-size:13px;font-weight:600;color:#1a2e35;">@ev.ObjectionNo · @ev.RollName</div>
+                                <div style="font-size:11.5px;color:#9aa3af;">@ev.PropertyDesc</div>
+                            </div>
+                            <div style="margin-left:auto;font-size:12px;font-weight:700;color:@(ev.IsUrgent?"#dc2626":"#15803d");">
+                                @ev.DaysLeft day@(ev.DaysLeft==1?"":"s") left
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+
+
+            <div class="nt-section">
+                <div class="nt-section-head" onclick="toggleSection('obj')">
+                    <div class="nt-section-head-left">
+                        <i class="fa-solid fa-file-pen"></i>
+                        <h3>Objection Notices</h3>
+                        <span class="nt-count">@Model.ObjectionNotices.Count</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-down nt-chevron" id="chev-obj"></i>
+                </div>
+                <div id="panel-obj">
+                    @if (!Model.ObjectionNotices.Any())
+                    {
+                        <div class="nt-empty"><i class="fa-solid fa-inbox"></i>No objection notices found.</div>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="nt-table" id="tbl-obj">
+                                <thead>
+                                    <tr><th>Reference</th><th>Property</th><th>Roll</th><th>Notice Type</th><th>Issued</th><th>Download</th></tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var n in Model.ObjectionNotices.OrderByDescending(x => x.IssuedDate))
+                                    {
+                                        <tr>
+                                            <td><strong>@n.ReferenceNo</strong></td>
+                                            <td style="max-width:180px;word-break:break-word;">@n.PropertyDesc</td>
+                                            <td><span style="font-size:11px;font-weight:700;background:#e8ecef;padding:2px 8px;border-radius:10px;color:#36626d;">@n.RollName</span></td>
+                                            <td><span class="nt-type-pill">@n.TypeLabel</span></td>
+                                            <td>@(n.IssuedDate.HasValue ? n.IssuedDate.Value.ToString("dd MMM yyyy") : "—")</td>
+                                            <td>
+                                                @if (n.FileExists)
+                                                {
+                                                    <a class="nt-dl-btn @(n.FileExt==".eml"?"nt-eml":"")"
+                                                       href="@Url.Action("Download","Notices",new{path=Uri.EscapeDataString(n.FilePath)})"
+                                                       download>
+                                                        <i class="fa-solid fa-download"></i> @(n.FileExt==".eml"?"Email":"PDF")
+                                                    </a>
+                                                }
+                                                else { <span class="nt-unavail">Pending</span> }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="nt-section">
+                <div class="nt-section-head" onclick="toggleSection('app')">
+                    <div class="nt-section-head-left">
+                        <i class="fa-solid fa-gavel"></i>
+                        <h3>Appeal Notices</h3>
+                        <span class="nt-count">@Model.AppealNotices.Count</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-down nt-chevron" id="chev-app"></i>
+                </div>
+                <div id="panel-app">
+                    @if (!Model.AppealNotices.Any())
+                    { <div class="nt-empty"><i class="fa-solid fa-gavel"></i>No appeal notices found.</div> }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="nt-table">
+                                <thead><tr><th>Appeal No.</th><th>Property</th><th>Roll</th><th>Notice</th><th>Issued</th><th>Download</th></tr></thead>
+                                <tbody>
+                                    @foreach (var n in Model.AppealNotices.OrderByDescending(x => x.IssuedDate))
+                                    {
+                                        <tr>
+                                            <td><strong>@n.ReferenceNo</strong></td>
+                                            <td style="max-width:180px;word-break:break-word;">@n.PropertyDesc</td>
+                                            <td><span style="font-size:11px;font-weight:700;background:#e8ecef;padding:2px 8px;border-radius:10px;color:#36626d;">@n.RollName</span></td>
+                                            <td><span class="nt-type-pill">@n.TypeLabel</span></td>
+                                            <td>@(n.IssuedDate.HasValue ? n.IssuedDate.Value.ToString("dd MMM yyyy") : "—")</td>
+                                            <td>
+                                                @if (n.FileExists)
+                                                { <a class="nt-dl-btn nt-eml" href="@Url.Action("Download","Notices",new{path=Uri.EscapeDataString(n.FilePath)})" download><i class="fa-solid fa-download"></i> Email</a> }
+                                                else { <span class="nt-unavail">Pending</span> }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+
+          
+            <div class="nt-section">
+                <div class="nt-section-head" onclick="toggleSection('qry')">
+                    <div class="nt-section-head-left">
+                        <i class="fa-solid fa-magnifying-glass-chart"></i>
+                        <h3>Section 78 Notices</h3>
+                        <span class="nt-count">@Model.QueryNotices.Count</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-down nt-chevron" id="chev-qry"></i>
+                </div>
+                <div id="panel-qry">
+                    @if (!Model.QueryNotices.Any())
+                    { <div class="nt-empty"><i class="fa-solid fa-file-magnifying-glass"></i>No Section 78 notices found.</div> }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="nt-table">
+                                <thead><tr><th>Query No.</th><th>Property</th><th>Notice</th><th>Issued</th><th>Download</th></tr></thead>
+                                <tbody>
+                                    @foreach (var n in Model.QueryNotices.OrderByDescending(x => x.IssuedDate))
+                                    {
+                                        <tr>
+                                            <td><strong>@n.ReferenceNo</strong></td>
+                                            <td style="max-width:220px;word-break:break-word;">@n.PropertyDesc</td>
+                                            <td><span class="nt-type-pill">@n.TypeLabel</span></td>
+                                            <td>@(n.IssuedDate.HasValue ? n.IssuedDate.Value.ToString("dd MMM yyyy") : "—")</td>
+                                            <td>
+                                                @if (n.FileExists)
+                                                { <a class="nt-dl-btn" href="@Url.Action("Download","Notices",new{path=Uri.EscapeDataString(n.FilePath)})" download><i class="fa-solid fa-download"></i> PDF</a> }
+                                                else { <span class="nt-unavail">Pending</span> }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+    </div>
+</div>
+
+@section Scripts {
+<script>
+function toggleSection(key) {
+    var panel   = document.getElementById('panel-' + key);
+    var chevron = document.getElementById('chev-'  + key);
+    if (!panel) return;
+    var open = panel.style.display !== 'none';
+    panel.style.display   = open ? 'none' : '';
+    if (chevron) chevron.style.transform = open ? 'rotate(-90deg)' : 'rotate(0deg)';
+}
+$(document).ready(function() {
+    ['#tbl-obj'].forEach(function(sel) {
+        if ($(sel).length && !$.fn.DataTable.isDataTable(sel)) {
+            $(sel).DataTable({
+                responsive:true, dom:'<"cd-dt-top"lBf>rt<"cd-dt-bottom"ip>',
+                lengthMenu:[[10,25,-1],[10,25,'All']],
+                buttons:[
+                    {extend:'excel',className:'cd-dt-btn',text:'<i class="fa-solid fa-file-excel"></i> Excel'},
+                    {extend:'pdf',  className:'cd-dt-btn',text:'<i class="fa-solid fa-file-pdf"></i> PDF'}
+                ],
+                language:{search:'_INPUT_',searchPlaceholder:'Filter…'},
+                order:[[4,'desc']]
+            });
+        }
+    });
+});
+</script>
+}

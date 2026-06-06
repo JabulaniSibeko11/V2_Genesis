@@ -1,0 +1,363 @@
+﻿
+.adn-page {
+    font-family: 'Poppins',sans-serif;
+    padding-bottom: 60px;
+}
+
+.adn-hero {
+    background: linear-gradient(135deg,#1a2e35 0%,#36626d 100%);
+    padding: 32px 28px 28px;
+    position: relative;
+}
+
+    .adn-hero::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg,#e6b000,#ffd700,#e6b000);
+    }
+
+.adn-hero-inner {
+    max-width: 900px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.adn-hero-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: rgba(230,176,0,.2);
+    border: 1.5px solid rgba(230,176,0,.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #e6b000;
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.adn-hero h1 {
+    margin: 0 0 3px;
+    font-size: 22px;
+    font-weight: 800;
+    color: #fff;
+}
+
+.adn-hero p {
+    margin: 0;
+    font-size: 12.5px;
+    color: rgba(255,255,255,.6);
+}
+
+.adn-back {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 9px 16px;
+    border-radius: 8px;
+    background: rgba(255,255,255,.1);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    border: 1px solid rgba(255,255,255,.2);
+}
+
+    .adn-back:hover {
+        background: rgba(255,255,255,.18);
+        color: #fff;
+    }
+
+.adn-body {
+    max-width: 900px;
+    margin: 24px auto;
+    padding: 0 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* Search card */
+.adn-search-card {
+    background: #fff;
+    border-radius: 12px;
+    border: 1.5px solid #e8ecef;
+    box-shadow: 0 2px 10px rgba(0,0,0,.06);
+    overflow: hidden;
+}
+
+.adn-search-head {
+    padding: 14px 20px;
+    background: #1a2e35;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+    .adn-search-head h3 {
+        margin: 0;
+        font-size: 13px;
+        font-weight: 700;
+        color: #e6b000;
+        text-transform: uppercase;
+        letter-spacing: .5px;
+    }
+
+.adn-search-body {
+    padding: 20px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+}
+
+.adn-search-field {
+    flex: 1;
+    min-width: 220px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.adn-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #2c3e50;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.adn-input {
+    padding: 10px 13px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 8px;
+    font-family: 'Poppins',sans-serif;
+    font-size: 13.5px;
+    outline: none;
+    width: 100%;
+    transition: border-color .15s;
+}
+
+    .adn-input:focus {
+        border-color: #e6b000;
+        box-shadow: 0 0 0 3px rgba(230,176,0,.12);
+    }
+
+    .adn-input::placeholder {
+        color: #c0cad4;
+    }
+
+.adn-search-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 11px 22px;
+    border-radius: 8px;
+    background: #1a2e35;
+    color: #e6b000;
+    border: none;
+    cursor: pointer;
+    font-family: 'Poppins',sans-serif;
+    font-size: 13.5px;
+    font-weight: 700;
+    white-space: nowrap;
+    transition: background .15s;
+}
+
+    .adn-search-btn:hover {
+        background: #243e48;
+    }
+
+/* Client header */
+.adn-client-strip {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 18px;
+    background: #fffbeb;
+    border: 1.5px solid #fde68a;
+    border-radius: 10px;
+}
+
+.adn-client-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #1a2e35;
+    color: #e6b000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 17px;
+    font-weight: 800;
+    flex-shrink: 0;
+}
+
+.adn-client-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1a2e35;
+}
+
+.adn-client-email {
+    font-size: 12px;
+    color: #9aa3af;
+}
+
+/* ── Reuse the same notice table styles from client notices page ── */
+.nt-section {
+    background: #fff;
+    border-radius: 12px;
+    border: 1.5px solid #e8ecef;
+    box-shadow: 0 2px 10px rgba(0,0,0,.06);
+    overflow: hidden;
+    margin-bottom: 0;
+}
+
+.nt-section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    border-bottom: 1px solid #f0f2f5;
+    background: #fafbfc;
+    cursor: pointer;
+}
+
+.nt-section-head-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+    .nt-section-head-left i {
+        font-size: 15px;
+        color: #36626d;
+    }
+
+    .nt-section-head-left h3 {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 700;
+        color: #1a2e35;
+    }
+
+.nt-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 6px;
+    border-radius: 100px;
+    background: #1a2e35;
+    color: #e6b000;
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.nt-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+    .nt-table thead th {
+        background: #1a2e35;
+        color: #e6b000;
+        padding: 10px 14px;
+        text-align: left;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: .5px;
+        text-transform: uppercase;
+        border: none;
+    }
+
+    .nt-table tbody td {
+        padding: 11px 14px;
+        border-bottom: 1px solid #f0f2f5;
+        vertical-align: middle;
+        color: #2c3e50;
+    }
+
+    .nt-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .nt-table tbody tr:hover {
+        background: #f7f9fb;
+    }
+
+.nt-type-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    background: #f0f4f8;
+    color: #36626d;
+}
+
+.nt-dl-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 13px;
+    border-radius: 7px;
+    background: #1a2e35;
+    color: #e6b000;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    font-family: 'Poppins',sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    transition: background .15s;
+}
+
+    .nt-dl-btn:hover {
+        background: #243e48;
+        color: #e6b000;
+    }
+
+    .nt-dl-btn.nt-eml {
+        background: #7c3aed;
+    }
+
+.nt-unavail {
+    font-size: 12px;
+    color: #c0c7d0;
+    font-style: italic;
+}
+
+.nt-empty {
+    text-align: center;
+    padding: 28px;
+    color: #9aa3af;
+    font-size: 13.5px;
+}
+
+    .nt-empty i {
+        font-size: 26px;
+        display: block;
+        margin-bottom: 8px;
+        opacity: .4;
+    }
+
+.nt-chevron {
+    color: #9aa3af;
+    transition: transform .2s;
+}
+
+
