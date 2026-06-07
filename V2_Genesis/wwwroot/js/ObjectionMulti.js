@@ -14,23 +14,29 @@ window.addEventListener("load", function () {
 
 });
 
+//var userEmailElement = document.getElementById('userEmail');
+
+//if (userEmailElement) {
+//    var userEmail = userEmailElement.value;
+
+//    var regex = /^(val\.admin(1[0-9]?|[1-9])@joburg\.org\.za)$/i;
+
+//    if (regex.test(userEmail) || userEmail === 'AdministrationEnquiries@Joburg.org.za') {
+//        document.getElementById('capturer').style.display = 'block';
+//        document.getElementById('sapNo').setAttribute('required', 'required');
+//    } else {
+//        document.getElementById('capturer').style.display = 'none';
+//        document.getElementById('sapNo').removeAttribute('required');
+//    }
+//} else {
+//    console.warn("Element with ID 'userEmail' not found in the document.");
+//}
+var isAdminFlag = document.getElementById('isAdminFlag')?.value === 'true';
+
+// keep the regex + userEmail for the showInput() submit validation
 var userEmailElement = document.getElementById('userEmail');
-
-if (userEmailElement) {
-    var userEmail = userEmailElement.value;
-
-    var regex = /^(val\.admin(1[0-9]?|[1-9])@joburg\.org\.za)$/i;
-
-    if (regex.test(userEmail) || userEmail === 'AdministrationEnquiries@Joburg.org.za') {
-        document.getElementById('capturer').style.display = 'block';
-        document.getElementById('sapNo').setAttribute('required', 'required');
-    } else {
-        document.getElementById('capturer').style.display = 'none';
-        document.getElementById('sapNo').removeAttribute('required');
-    }
-} else {
-    console.warn("Element with ID 'userEmail' not found in the document.");
-}
+var userEmail = userEmailElement ? userEmailElement.value : '';
+var regex = /^(val\.admin(1[0-9]?|[1-9])@joburg\.org\.za)$/i;
 
 document.getElementById('Objector_Type').value = sessionStorage.getItem('objector_choice');
 

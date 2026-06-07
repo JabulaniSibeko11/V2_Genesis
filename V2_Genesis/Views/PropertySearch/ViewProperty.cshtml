@@ -1,4 +1,5 @@
-﻿@model V2_Genesis.Models.Results.PropertyDetailViewModel
+﻿@using System.Security.Claims
+@model V2_Genesis.Models.Results.PropertyDetailViewModel
 @{
     ViewData["Title"] = "Property Details";
 
@@ -38,6 +39,15 @@
     string sourceTableCode = roll?.SourceTableCode ?? "";
 
     string returnUrl = $"{Context?.Request?.Path}{Context?.Request?.QueryString}";
+
+    var currentEmail = User.FindFirstValue(ClaimTypes.Name) ?? "";
+    bool isAdmin = !string.IsNullOrEmpty(currentEmail) && (
+        currentEmail.Equals("AdministrationEnquiries@Joburg.org.za",
+            StringComparison.OrdinalIgnoreCase) ||
+        System.Text.RegularExpressions.Regex.IsMatch(
+            currentEmail,
+            @"^val\.admin(1[0-9]?|[1-9])@joburg\.org\.za$",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase));
 }
 @section Styles {
     <link href="~/css/views/property-detail.css" rel="stylesheet" asp-append-version="true" />
@@ -417,13 +427,13 @@
                     </a> *@
                 
             }
-            else if (Model.IsWithinObjectionPeriod)
-            
+            else if (isAdmin)
             {
-                @* ── Regular objection flow: period open ────────── *@
+                @* ── Admin flow: objection period must NOT apply ───────── *@
                 <button class="pd-btn pd-btn-outline" onclick="history.back()">
                     <i class="fa-solid fa-arrow-left"></i> Cancel
                 </button>
+
                 @if (!string.IsNullOrWhiteSpace(rollSource) && !string.IsNullOrWhiteSpace(sourceTableCode))
                 {
                     <a class="pd-btn pd-btn-primary"
@@ -442,19 +452,45 @@
                     </a>
                 }
             }
-            else 
+            else if (Model.IsWithinObjectionPeriod)
             {
-                @* ── Regular objection flow: period ended ───────── *@
+                @* ── Normal user flow: objection period open ───────── *@
+                <button class="pd-btn pd-btn-outline" onclick="history.back()">
+                    <i class="fa-solid fa-arrow-left"></i> Cancel
+                </button>
+
+                @if (!string.IsNullOrWhiteSpace(rollSource) && !string.IsNullOrWhiteSpace(sourceTableCode))
+                {
+                    <a class="pd-btn pd-btn-primary"
+                           href="/property/save?rollSource=@rollSource&key=@d.Id&sourceTable=@sourceTableCode">
+                        <i class="fa-solid fa-link"></i> Link Property
+                    </a>
+
+                    <a class="pd-btn pd-btn-secondary"
+                           href="/notice/section49?rollSource=@rollSource&unitKey=@d.UnitKey&valuationKey=@d.ValuationKey">
+                        <i class="fa-solid fa-eye"></i> View Section 49
+                    </a>
+
+                    <a class="pd-btn pd-btn-outline"
+                           href="/notice/section49/download?rollSource=@rollSource&unitKey=@d.UnitKey&valuationKey=@d.ValuationKey">
+                        <i class="fa-solid fa-download"></i> Download Section 49
+                    </a>
+                }
+            }
+            else
+            {
+                @* ── Normal user flow: objection period ended ───────── *@
                 <div class="pd-period-ended">
                     <i class="fa-solid fa-triangle-exclamation"></i>
                     The objection period for <strong>@rollShort</strong>
                     has ended. You can still view property details.
                 </div>
+
                 <button class="pd-btn pd-btn-outline" onclick="history.back()">
                     <i class="fa-solid fa-arrow-left"></i> Back
                 </button>
             }
-
+            
         </div>
 
     </div>

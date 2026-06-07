@@ -1,14 +1,10 @@
-﻿@model V2_Genesis.Models.ViewModels.Dashboard.AdminDashboardViewModel
+﻿@using System.Security.Claims
+@model V2_Genesis.Models.ViewModels.Dashboard.AdminDashboardViewModel
 @{
     ViewData["Title"] = "Admin Dashboard";
     Layout = "~/Views/Shared/_ClientLayout.cshtml";
 }
 @functions {
-
-  
-  
-
- 
 
     string GetAttrStatusPill(string? status) => status switch
     {
@@ -36,7 +32,7 @@
         "Rejected" => "<span class='cd-pill cd-pill-rejected'>Rejected</span>",
         _ => $"<span class='cd-pill cd-pill-pending'>{status ?? "Pending"}</span>"
     };
-}}
+}
 
 @section Styles {
    @*  <link href="~/css/views/dashboardcss.css" rel="stylesheet" asp-append-version="true" />
@@ -52,11 +48,26 @@
             <span class="adm-admin-badge">
                 <i class="fa-solid fa-shield-halved"></i> ADMIN
             </span>
-            <span class="adm-email">@Model.AdminEmail</span>
-            @if (!string.IsNullOrEmpty(Model.SapNumber))
-            {
-                <span class="adm-sap">SAP: @Model.SapNumber</span>
-            }
+          @{
+    var _adminFullName = User.FindFirstValue("FullName") ?? "";
+    var _sapFull       = User.FindFirstValue("SAPNumber") ?? "";
+}
+
+<span class="adm-email">@Model.AdminEmail</span>
+
+@if (!string.IsNullOrWhiteSpace(_adminFullName))
+{
+    <span class="adm-sap">
+        <i class="fa-solid fa-user" style="margin-right:4px;font-size:11px;"></i>
+        @_adminFullName
+    </span>
+}
+else if (!string.IsNullOrEmpty(_sapFull))
+{
+   
+    <span class="adm-sap">SAP: @_sapFull</span>
+}
+
         </div>
         <div class="adm-topbar-right">
             <a href="/admin/search" class="adm-topbar-btn adm-search-modal-btn">
@@ -76,12 +87,19 @@
 <div class="cd-welcome">
     <div class="cd-welcome-inner">
         <div>
-            <h1 class="cd-welcome-name">
-                Admin Dashboard @* <span>@Model.AdminEmail</span> *@
-                <span class="adm-badge-inline">
-                    <i class="fa-solid fa-shield-halved"></i> ADMIN
-                </span>
-            </h1>
+          <h1 class="cd-welcome-name">
+    @if (!string.IsNullOrWhiteSpace(_adminFullName))
+    {
+        <span>Welcome, @_adminFullName</span>
+    }
+    else
+    {
+        <text>Admin Dashboard</text>
+    }
+    <span class="adm-badge-inline">
+        <i class="fa-solid fa-shield-halved"></i> ADMIN
+    </span>
+</h1>
             <p class="cd-welcome-sub">
                 City of Johannesburg — Valuation Portal Administration
             </p>

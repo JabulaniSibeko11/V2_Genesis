@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using System.Data;
 using System.Security.Claims;
+using System.Text.RegularExpressions;
 using V2_Genesis.Data;
 using V2_Genesis.Models;
 using V2_Genesis.Models.Attributes;
@@ -29,6 +30,11 @@ public class PropertySearchController : Controller
     private readonly ILogger<PropertySearchController> _logger;
     private readonly IAttributesSearchService _attributesService;
 
+    private static readonly Regex AdminPattern =
+    new(@"^val\.admin(1[0-9]?|[1-9])@joburg\.org\.za$",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+
     public PropertySearchController(
         IPropertySearchService search,
         ApplicationDbContext db,
@@ -44,7 +50,11 @@ public class PropertySearchController : Controller
         _omissionService = omissionService;
         _attributesService = attributesService;
     }
-
+    private bool IsAdmin(string? email) =>
+      !string.IsNullOrEmpty(email) && (
+          email.Equals("AdministrationEnquiries@Joburg.org.za",
+              StringComparison.OrdinalIgnoreCase) ||
+          AdminPattern.IsMatch(email));
     // ── GET /search/{rollSource} ──────────────────────────────────────
     [HttpGet]
     [Route("search/{rollSource}")]
@@ -230,14 +240,23 @@ public class PropertySearchController : Controller
     [Route("property/save")]
     [Authorize]
     public async Task<IActionResult> SaveRecord(
-     string rollSource,
-     int key,
-     string sourceTable)
+        string rollSource,
+        int key,
+        string sourceTable)
     {
-        // Must be authenticated
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrEmpty(userId))
             return RedirectToAction("Login", "Account");
+
+        var currentEmail = User.FindFirstValue(ClaimTypes.Name) ?? "";
+
+        bool isAdmin = !string.IsNullOrEmpty(currentEmail) && (
+            currentEmail.Equals("AdministrationEnquiries@Joburg.org.za",
+                StringComparison.OrdinalIgnoreCase) ||
+            System.Text.RegularExpressions.Regex.IsMatch(
+                currentEmail,
+                @"^val\.admin(1[0-9]?|[1-9])@joburg\.org\.za$",
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase));
 
         try
         {
@@ -250,6 +269,7 @@ public class PropertySearchController : Controller
             if (result.Success)
             {
                 TempData["LinkSuccess"] = "Property successfully linked to your profile.";
+
                 _logger.LogInformation(
                     "User {UserId} linked property {Key} from {Roll}.",
                     userId, key, rollSource);
@@ -266,9 +286,15 @@ public class PropertySearchController : Controller
         catch (Exception ex)
         {
             TempData["LinkError"] = "An error occurred while linking the property. Please try again.";
+
             _logger.LogError(ex,
                 "Error linking property {Key} for user {UserId} on roll {Roll}.",
                 key, userId, rollSource);
+        }
+
+        if (isAdmin)
+        {
+            return RedirectToAction("Index", "Admin");
         }
 
         return RedirectToAction("Index", "Dashboard");

@@ -46,6 +46,11 @@ public class ObjectionController : Controller
       _logger = logger; 
     }
 
+    private static readonly System.Text.RegularExpressions.Regex AdminEmailRx =
+    new(@"^val\.admin(1[0-9]?|[1-9])@joburg\.org\.za$",
+        System.Text.RegularExpressions.RegexOptions.IgnoreCase |
+        System.Text.RegularExpressions.RegexOptions.Compiled);
+
     [HttpGet]
     [Route("objection/check")]
     public async Task<IActionResult> CheckProperty(
@@ -267,13 +272,33 @@ public class ObjectionController : Controller
     public IActionResult ViewObjectionForm(string? propertyFrom)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        var userEmail = User.FindFirstValue(ClaimTypes.Name);
+        var userEmail = User.FindFirstValue(ClaimTypes.Name) ?? "";
 
         if (string.IsNullOrEmpty(userId))
             return RedirectToAction("Login", "Account");
 
+        // ── Admin detection (same regex as JS) ───────────────────
+        bool isAdmin = userEmail.Equals(
+                           "AdministrationEnquiries@Joburg.org.za",
+                           StringComparison.OrdinalIgnoreCase)
+                       || AdminEmailRx.IsMatch(userEmail);
+
+        // ── SAP claim: "JOBURG\30092655" → extract numeric part ──
+        var sapFull = User.FindFirstValue("SAPNumber") ?? "";
+        var sapNumeric = sapFull.Contains('\\')
+                       ? sapFull.Split('\\').Last()
+                       : sapFull;
+
+        // ── Full name from UM DB (stored as claim at SAP login) ───
+        var adminFullName = User.FindFirstValue("FullName") ?? "";
+
         ViewData["UserEmail"] = userEmail;
         ViewData["SourceTable"] = propertyFrom;
+
+        ViewBag.IsAdmin = isAdmin;
+        ViewBag.SapNumeric = sapNumeric;      // e.g. "30092655" — saved to DB
+        ViewBag.AdminFullName = adminFullName;   // e.g. "John Smith" — shown in UI
+        ViewBag.SapFull = sapFull;         // e.g. "JOBURG\30092655"
 
         return View("ObjectionForm");
     }
