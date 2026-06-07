@@ -596,3 +596,206 @@
         grid-template-columns: 1fr;
     }
 }
+/* ═══════════════════════════════════════════════════════════════
+   wwwroot/css/Views/objection.css  — APPEND TO BOTTOM
+   COJ brand colour overrides (dark teal + gold)
+═══════════════════════════════════════════════════════════════ */
+
+/* ── Page background ────────────────────────────────────────── */
+.obj-page {
+    background: linear-gradient(160deg, #f0f4f5 0%, #f7f5f2 100%);
+}
+
+/* ── Heading icon ───────────────────────────────────────────── */
+.obj-heading-icon {
+    background: linear-gradient(135deg, #1a2e35, #36626d);
+    color: #e6b000;
+    box-shadow: 0 4px 14px rgba(26,46,53,.2);
+}
+
+/* ── Card headers ───────────────────────────────────────────── */
+.obj-card-header {
+    background: linear-gradient(135deg, #1a2e35, #2d4f58);
+    color: #e6b000;
+    border-bottom: 2px solid rgba(230,176,0,.3);
+}
+
+.obj-card-sub {
+    color: rgba(230,176,0,.6);
+}
+
+/* ── Continue / primary buttons ─────────────────────────────── */
+.obj-btn-primary {
+    background: linear-gradient(135deg, #e6b000, #d4a000);
+    color: #1a2e35;
+    box-shadow: 0 3px 12px rgba(230,176,0,.3);
+}
+
+    .obj-btn-primary:hover:not(:disabled) {
+        background: linear-gradient(135deg, #f5c200, #e6b000);
+        transform: translateY(-1px);
+        box-shadow: 0 5px 18px rgba(230,176,0,.35);
+    }
+
+    .obj-btn-primary:disabled {
+        background: rgba(230,176,0,.35);
+        color: rgba(26,46,53,.5);
+    }
+
+/* ── Lodge button ───────────────────────────────────────────── */
+.obj-lodge-card {
+    border: 2px solid #e6b000;
+    background: linear-gradient(135deg, #1a2e35 0%, #2d4f58 100%);
+}
+
+.obj-lodge-summary {
+    color: rgba(255,255,255,.85);
+    font-size: 13.5px;
+}
+
+.obj-lodge-btn {
+    background: #e6b000;
+    color: #1a2e35;
+    font-weight: 800;
+    box-shadow: 0 4px 14px rgba(230,176,0,.3);
+}
+
+    .obj-lodge-btn:hover {
+        background: #f5c200;
+        color: #1a2e35;
+        box-shadow: 0 6px 20px rgba(230,176,0,.4);
+        transform: translateY(-1px);
+    }
+
+/* ── Disclaimer items ───────────────────────────────────────── */
+.obj-dl-item {
+    border-color: rgba(54,98,109,.2);
+    background: rgba(54,98,109,.04);
+}
+
+    .obj-dl-item i {
+        color: #36626d;
+    }
+
+/* ── Property value pills ───────────────────────────────────── */
+.obj-prop-label i {
+    color: #36626d;
+}
+
+.obj-prop-value {
+    border-color: rgba(54,98,109,.2);
+    background: rgba(240,244,245,.6);
+}
+
+/* ── Radio cards ────────────────────────────────────────────── */
+.obj-radio-card:hover {
+    border-color: #36626d;
+    background: rgba(54,98,109,.05);
+}
+
+.obj-radio-card.selected {
+    border-color: #e6b000;
+    background: rgba(230,176,0,.07);
+    box-shadow: 0 0 0 3px rgba(230,176,0,.15);
+}
+
+.obj-radio-content i {
+    color: #36626d;
+}
+
+.obj-radio-card.selected .obj-radio-content i {
+    color: #e6b000;
+}
+
+.obj-radio-check {
+    color: #e6b000;
+}
+
+/* ── Selection feedback ─────────────────────────────────────── */
+.obj-selection-feedback {
+    background: rgba(54,98,109,.1);
+    color: #1a2e35;
+    border: 1px solid rgba(54,98,109,.2);
+}
+
+/* ── Instructions modal ─────────────────────────────────────── */
+.obj-modal-header {
+    background: linear-gradient(135deg, #1a2e35, #2d4f58);
+    border-bottom: 2px solid rgba(230,176,0,.3);
+}
+
+    .obj-modal-header h2 {
+        color: #e6b000;
+    }
+
+    .obj-modal-header p {
+        color: rgba(230,176,0,.6);
+    }
+
+.obj-modal-close {
+    background: rgba(230,176,0,.12);
+    color: #e6b000;
+}
+
+    .obj-modal-close:hover {
+        background: rgba(230,176,0,.22);
+    }
+
+.obj-instr-section {
+    border-left-color: #e6b000;
+}
+
+    .obj-instr-section h3 i {
+        color: #36626d;
+    }
+
+.obj-instr-warning {
+    background: rgba(230,176,0,.08);
+    border-color: rgba(230,176,0,.4);
+    color: #7a5800;
+}
+
+    .obj-instr-warning i {
+        color: #e6b000;
+    }
+
+/* ── Agree checkboxes ───────────────────────────────────────── */
+.obj-agree-check {
+    border-color: rgba(54,98,109,.3);
+}
+
+.obj-agree-label input:checked ~ .obj-agree-check {
+    background: #36626d;
+    border-color: #36626d;
+}
+
+    .obj-agree-label input:checked ~ .obj-agree-check::after {
+        color: #e6b000;
+    }
+
+/* ── Outline button ─────────────────────────────────────────── */
+.obj-btn-outline {
+    border-color: rgba(54,98,109,.25);
+    color: #1a2e35;
+}
+
+    .obj-btn-outline:hover {
+        border-color: #36626d;
+        color: #36626d;
+        background: rgba(54,98,109,.06);
+    }
+
+/* ── Start form button (inside modal) ───────────────────────── */
+#startFormBtn {
+    background: linear-gradient(135deg, #1a2e35, #36626d);
+    color: #e6b000;
+}
+
+    #startFormBtn:not(:disabled):hover {
+        background: linear-gradient(135deg, #243e48, #4a7d8a);
+    }
+
+    #startFormBtn:disabled {
+        background: rgba(26,46,53,.25);
+        color: rgba(26,46,53,.4);
+    }
