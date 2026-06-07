@@ -27,6 +27,9 @@ namespace V2_Genesis.Models.ViewModels.Account
         [StringLength(20, ErrorMessage = "Invalid SAP number.")]
         [Display(Name = "SAP Number")]
         public string SapNumber { get; set; } = string.Empty;
+
+        [Display(Name = "Remember me for 8 hours")]
+        public bool RememberEightHours { get; set; }
     }
 
     // ─── Forgot Password ─────────────────────────────────────────────────────────

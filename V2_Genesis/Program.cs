@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Query;
@@ -117,6 +118,8 @@ builder.Services.AddScoped<IAttributeDocumentService, AttributeDocumentService>(
 builder.Services.AddScoped<ISection78Service, Section78Service>();
 builder.Services.AddScoped<IRebatesService, RebatesService>();
 builder.Services.AddScoped<ISubmittedFormPdfService, SubmittedFormPdfService>();
+builder.Services.AddDataProtection();
+
 // ── App Pipeline ──────────────────────────────────────────────────────────────
 var app = builder.Build();
 

@@ -1,5 +1,4 @@
-﻿
-using GenesisV2.Services.PropertySearch;
+﻿using GenesisV2.Services.PropertySearch;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
@@ -33,7 +32,7 @@ public class PropertySearchController : Controller
     public PropertySearchController(
         IPropertySearchService search,
         ApplicationDbContext db,
-      IOptions<RollDatesSettings> rollDatesOpts,IConfiguration config,ILisSearchService lisSearchService,IOmissionService omissionService,IAttributesSearchService attributesService,
+      IOptions<RollDatesSettings> rollDatesOpts, IConfiguration config, ILisSearchService lisSearchService, IOmissionService omissionService, IAttributesSearchService attributesService,
   ILogger<PropertySearchController> logger)
     {
         _search = search;
@@ -198,7 +197,7 @@ public class PropertySearchController : Controller
             // ── Identifiers ───────────────────────────────────────
             UnitKey = d.UnitKey,           // ← CRITICAL for link form
             ValuationKey = d.ValuationKey ?? string.Empty,
-            Id =  d.UnitKey,
+            Id = d.UnitKey,
             PremiseId = d.PremiseId,
 
             // ── Property ──────────────────────────────────────────
@@ -302,8 +301,11 @@ public class PropertySearchController : Controller
         {
             // Load towns + schemes in parallel so the omission form
             // is ready without a second round-trip
-            var townsTask = _omissionService.GetTownsAsync(rollSource);
-            var schemesTask = _omissionService.GetSchemesAsync(rollSource);
+            // FIX: use _search (DefaultConnection + Objection.dbo SPs) — same source
+            //      as the home and property search pages. OmissionService was connecting
+            //      to the roll-specific DB (e.g. Sup3) which doesn't have those SPs.
+            var townsTask = _search.GetTownshipsAsync();
+            var schemesTask = _search.GetSchemesAsync();
             await Task.WhenAll(townsTask, schemesTask);
 
             var roll = await _db.GvList

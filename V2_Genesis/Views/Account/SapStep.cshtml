@@ -1,43 +1,160 @@
 ﻿@model V2_Genesis.Models.ViewModels.Account.SapStepViewModel
 @{
     ViewData["Title"] = "Verify Identity";
+    Layout = "_Layout";
 }
 
-<link href="~/account/sapstepcss.css" rel="stylesheet" />
+<link href="~/css/site.css" rel="stylesheet" asp-append-version="true" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+<link href="~/account/sapstepcss.css" rel="stylesheet" asp-append-version="true"/>
 
-<div class="auth-page">
-  <div class="auth-card">
-    <div class="auth-icon"><i class="fa-solid fa-id-badge"></i></div>
-    <h1 class="auth-title">Identity Verification</h1>
-    <p class="auth-desc">
-      Your email and password have been verified. Please enter your SAP number to complete
-      sign-in and confirm your access rights in the City of Johannesburg system.
-    </p>
-    <div class="sap-info">
-      <i class="fa-solid fa-circle-info"></i>
-      <span>Your SAP number is your employee number assigned by the City of Johannesburg (e.g. <strong>30092655</strong>).</span>
-    </div>
-    @if (!ViewData.ModelState.IsValid)
-    {
-      <div class="val-summary"><i class="fa-solid fa-circle-exclamation"></i> @Html.ValidationSummary(false)</div>
-    }
-    <form asp-action="SapStep" asp-controller="Account" method="post" novalidate>
-      @Html.AntiForgeryToken()
-      <div class="f-group">
-        <label class="f-label" asp-for="SapNumber">SAP Number <em>*</em></label>
-        <div class="f-wrap">
-          <i class="fa-solid fa-hashtag f-icon"></i>
-          <input asp-for="SapNumber" class="f-input" placeholder="e.g. 30092655"
-                 inputmode="numeric" autocomplete="off" autofocus />
+
+<div class="sap-page">
+    <div class="sap-wrap">
+
+
+        <div class="sap-left">
+            <div class="sap-brand">
+                <div class="sap-brand-mark">
+                    <img src="~/images/joburg_logo.png" alt="COJ" />
+                </div>
+                <div>
+                    <div class="sap-brand-name">City of Johannesburg</div>
+                    <div class="sap-brand-sub">Valuation Services Portal</div>
+                </div>
+            </div>
+
+            <div>
+                <h2 class="sap-left-headline">
+                    Admin<br>
+                    <span>Identity Check</span>
+                </h2>
+                <p class="sap-left-desc">
+                    Your credentials have been verified. One final step
+                    confirms your employee identity and grants you access
+                    to the administration panel.
+                </p>
+            </div>
+
+            <ul class="sap-security-list">
+                <li>
+                    <i class="fa-solid fa-circle-check"></i>
+                    Email and password verified successfully
+                </li>
+                <li>
+                    <i class="fa-solid fa-shield-halved"></i>
+                    SAP number confirms your City of Johannesburg employment
+                </li>
+                <li>
+                    <i class="fa-solid fa-clock"></i>
+                    Tick "Remember me" to skip this step for 8 hours
+                </li>
+                <li>
+                    <i class="fa-solid fa-lock"></i>
+                    Session is encrypted and secured by ASP.NET Core Data Protection
+                </li>
+            </ul>
+
+            <div class="sap-left-badge">
+                <span class="sap-badge-dot"></span>
+                Secure admin access — POPIA compliant
+            </div>
         </div>
-        <span asp-validation-for="SapNumber" class="f-err"></span>
-      </div>
-      <button type="submit" class="auth-submit">
-        <i class="fa-solid fa-shield-check"></i> Verify &amp; Sign In
-      </button>
-    </form>
-    <p class="auth-back">Wrong account? <a href="/login">Back to sign in</a></p>
-  </div>
+
+
+        <div class="sap-right">
+            <div class="sap-form-card">
+
+     
+                <div class="sap-step-indicator">
+                    <div class="sap-step sap-step-done">
+                        <div class="sap-step-num">
+                            <i class="fa-solid fa-check" style="font-size:9px;"></i>
+                        </div>
+                        Credentials
+                    </div>
+                    <div class="sap-step-line sap-step-line-done"></div>
+                    <div class="sap-step sap-step-active">
+                        <div class="sap-step-num">2</div>
+                        SAP Verify
+                    </div>
+                    <div class="sap-step-line"></div>
+                    <div class="sap-step">
+                        <div class="sap-step-num">3</div>
+                        Admin Panel
+                    </div>
+                </div>
+
+                <h1 class="sap-form-title">Identity Verification</h1>
+                <p class="sap-form-sub">Enter your SAP employee number to continue</p>
+
+              
+                @if (!ViewData.ModelState.IsValid)
+                {
+                    <div class="sap-val-err">
+                        <i class="fa-solid fa-circle-exclamation" style="margin-top:1px;flex-shrink:0;"></i>
+                        <div>@Html.ValidationSummary(false)</div>
+                    </div>
+                }
+
+                <form asp-action="SapStep" asp-controller="Account"
+                      method="post" novalidate>
+                    @Html.AntiForgeryToken()
+
+              
+                    <div class="sap-field">
+                        <label class="sap-label" asp-for="SapNumber">
+                            <i class="fa-solid fa-id-card"></i>
+                            SAP Number <em>*</em>
+                        </label>
+                        <div class="sap-input-wrap">
+                            <i class="fa-solid fa-hashtag sap-input-icon"></i>
+                            <input asp-for="SapNumber"
+                                   class="sap-input"
+                                   placeholder="e.g. 30092655"
+                                   inputmode="numeric"
+                                   autocomplete="off"
+                                   autofocus />
+                        </div>
+                        <span asp-validation-for="SapNumber" class="sap-input-err"></span>
+                        <p style="font-size:11.5px;color:#9aa3af;margin:5px 0 0;">
+                            Your employee number assigned by City of Johannesburg HR
+                        </p>
+                    </div>
+
+                   
+                    <label class="sap-remember">
+                        <i class="fa-solid fa-clock sap-remember-icon"></i>
+                        <div class="sap-remember-text">
+                            <strong>Remember me for 8 hours</strong>
+                            <span>
+                                Skip this SAP step for the next 8 hours on this device.
+                                Ideal for active workday sessions — clears automatically.
+                            </span>
+                        </div>
+                        <input asp-for="RememberEightHours"
+                               type="checkbox"
+                               style="margin-left:auto;" />
+                    </label>
+
+                  
+                    <button type="submit" class="sap-submit">
+                        <i class="fa-solid fa-shield-check"></i>
+                        Verify &amp; Access Admin Panel
+                    </button>
+
+                </form>
+
+                <p class="sap-back">
+                    Wrong account? <a href="/account/login">Back to sign in</a>
+                </p>
+
+            </div>
+        </div>
+
+    </div>
 </div>
 
-@section Scripts { @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); } }
+@section Scripts {
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+}

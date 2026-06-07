@@ -1,8 +1,18 @@
-﻿@{
+﻿@using System.Security.Claims
+@{
     var reqPath  = Context.Request.Path.Value?.ToLower() ?? "";
     bool isAttr  = reqPath.StartsWith("/attributes");
     bool isAuth  = User?.Identity?.IsAuthenticated ?? false;
-    
+
+    // ── Admin detection ────────────────────────────────────────────
+    var currentEmail = User.FindFirstValue(ClaimTypes.Name) ?? "";
+    bool isAdmin = !string.IsNullOrEmpty(currentEmail) && (
+        currentEmail.Equals("AdministrationEnquiries@Joburg.org.za",
+            StringComparison.OrdinalIgnoreCase) ||
+        System.Text.RegularExpressions.Regex.IsMatch(
+            currentEmail,
+            @"^val\.admin(1[0-9]?|[1-9])@joburg\.org\.za$",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase));
 }
 
 <!DOCTYPE html>
@@ -79,24 +89,42 @@
                     </a>
                 </li>
 
-                <li>
-                     <a class="nav-link @(ViewContext.RouteData.Values["controller"]
-                          ?.ToString() == "Notices" ? "active" : "")"
-       asp-controller="Notices" asp-action="Index">
-        <i class="fa-solid fa-bell"></i> Notices
-    </a>
-                </li>
+                @if (!isAdmin)
+                {
+                    <!-- Client-only: Notices -->
+                    <li class="cl-nav-item">
+                        <a class="cl-nav-link @(reqPath.StartsWith("/notices") ? "active" : "")"
+                           href="/notices">
+                            <i class="fa-solid fa-bell"></i> Notices
+                        </a>
+                    </li>
+                }
 
-               @*  @if (isAdmin)
-{
-    <a class="nav-link" asp-controller="Admin" asp-action="Index">
-        <i class="fa-solid fa-shield-halved"></i> Admin
-    </a>
-    <a class="nav-link" asp-controller="Admin" asp-action="Notices">
-        <i class="fa-solid fa-bell"></i> Client Notices
-    </a>
-} *@
- 
+                @if (isAdmin)
+                {
+                    <!-- Admin: Admin Dashboard -->
+                    <li class="cl-nav-item">
+                        <a class="cl-nav-link @(reqPath == "/admin" ? "active" : "")"
+                           href="/admin">
+                            <i class="fa-solid fa-shield-halved"></i> Admin
+                        </a>
+                    </li>
+                    <!-- Admin: Client Notices -->
+                    <li class="cl-nav-item">
+                        <a class="cl-nav-link @(reqPath.StartsWith("/admin/notices") ? "active" : "")"
+                           href="/admin/notices">
+                            <i class="fa-solid fa-bell"></i> Client Notices
+                        </a>
+                    </li>
+                    <!-- Admin: Search Enquiry -->
+                    <li class="cl-nav-item">
+                        <a class="cl-nav-link @(reqPath.StartsWith("/admin/search") ? "active" : "")"
+                           href="/admin/search">
+                            <i class="fa-solid fa-magnifying-glass"></i> Search
+                        </a>
+                    </li>
+                }
+
                 <li class="cl-nav-item">
                     <a class="cl-nav-link cl-nav-evidence @(reqPath.StartsWith("/evidence") || reqPath.StartsWith("/attributes/evidence") ? "active" : "")"
                        href="@(isAttr ? "/attributes/evidence" : "/evidence/verifyObj")">
@@ -164,6 +192,13 @@
                         </div>
                         <a href="/my-profile" class="cl-user-item"><i class="fa-solid fa-user"></i> My Profile</a>
                         <a href="/dashboard"  class="cl-user-item"><i class="fa-solid fa-gauge-high"></i> Dashboard</a>
+                        @if (isAdmin)
+                        {
+                            <div class="cl-dd-divider"></div>
+                            <a href="/admin" class="cl-user-item">
+                                <i class="fa-solid fa-shield-halved"></i> Admin Panel
+                            </a>
+                        }
                         <div class="cl-dd-divider"></div>
                         <form asp-action="Logout" asp-controller="Account" method="post">
                             @Html.AntiForgeryToken()
@@ -226,6 +261,27 @@
         <a href="/dashboard" class="cl-drawer-link @(reqPath == "/dashboard" ? "active" : "")">
             <i class="fa-solid fa-gauge-high"></i> Dashboard
         </a>
+
+        @if (!isAdmin)
+        {
+            <a href="/notices" class="cl-drawer-link @(reqPath.StartsWith("/notices") ? "active" : "")">
+                <i class="fa-solid fa-bell"></i> Notices
+            </a>
+        }
+
+        @if (isAdmin)
+        {
+            <div class="cl-drawer-section-title">Admin</div>
+            <a href="/admin" class="cl-drawer-link @(reqPath == "/admin" ? "active" : "")">
+                <i class="fa-solid fa-shield-halved"></i> Admin Dashboard
+            </a>
+            <a href="/admin/search" class="cl-drawer-link">
+                <i class="fa-solid fa-magnifying-glass"></i> Search Enquiry
+            </a>
+            <a href="/admin/notices" class="cl-drawer-link">
+                <i class="fa-solid fa-bell"></i> Client Notices
+            </a>
+        }
 
         <div class="cl-drawer-section-title">Services</div>
         <a href="@(isAttr ? "/attributes/evidence" : "/evidence/verifyObj")"
@@ -290,7 +346,6 @@
     <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
 
     <script>
-    // ── Dropdowns ──────────────────────────────────────────────────
     document.querySelectorAll('.cl-dropdown').forEach(dd => {
         const toggle = dd.querySelector('.cl-dropdown-toggle');
         const menu   = dd.querySelector('.cl-dropdown-menu');
@@ -309,20 +364,17 @@
         });
     });
 
-    // ── Close on outside click ──────────────────────────────────────
     document.addEventListener('click', () => {
         document.querySelectorAll('.cl-dropdown-menu.open').forEach(m => m.classList.remove('open'));
         document.querySelectorAll('.cl-dd-chevron').forEach(c => c.style.transform = '');
         document.getElementById('clUserMenu')?.classList.remove('open');
     });
 
-    // ── User pill ───────────────────────────────────────────────────
     document.getElementById('clUserBtn')?.addEventListener('click', e => {
         e.stopPropagation();
         document.getElementById('clUserMenu')?.classList.toggle('open');
     });
 
-    // ── Mobile drawer ───────────────────────────────────────────────
     const drawer   = document.getElementById('clDrawer');
     const backdrop = document.getElementById('clBackdrop');
 

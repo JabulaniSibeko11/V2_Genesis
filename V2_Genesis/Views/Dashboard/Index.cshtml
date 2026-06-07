@@ -190,6 +190,8 @@
         </button>
     </div>
 }
+
+
 <!-- ── Per-roll collapsible sections ──────────────────────────────────── -->
 <div class="cd-body">
     @foreach (var roll in Model.Rolls)
@@ -219,6 +221,7 @@
 
                             <i class="fa-solid fa-scroll"></i>
                         }
+               
                     </div>
                     <div>
                         <h2 class="cd-roll-name">@roll.Name</h2>
@@ -265,6 +268,8 @@ else if (roll.IsQuery)
                         </a>
     <span class="cd-roll-badge cd-badge-open">OPEN</span>
 }
+
+
                     <i class="fa-solid fa-chevron-down cd-roll-chevron" id="chevron-@rollKey"></i>
                 </div>
             </div>
@@ -646,38 +651,78 @@ else if (roll.IsQuery)
                                         <td>@item.Old_Category</td>
                                         <td>@FormatZAR(item.Old_Market_Value)</td>
                                         <td>@Html.Raw(GetStatusPill(item.objection_Status))</td>
-                                        <td>
-                                            <div class="dropdown">
-                                                <button class="cd-action-btn dropdown-toggle"
-                                                        data-bs-toggle="dropdown">Actions</button>
-                                                <ul class="dropdown-menu">
-                                                    <li>
-                                                        <a class="dropdown-item"
-                                                           href="/Home/FormData@(roll.ControllerName)?propertyID=@item.Property_Type&objectionNo=@item.Objection_No&AppealStatus=False">
-                                                            <i class="fa-solid fa-eye"></i> View Form
-                                                        </a>
-                                                    </li>
-                                                    <li>
-                                                        <a class="dropdown-item"
-                                                           href="/@roll.ControllerName/DownloadAcknowledgement?objectionNo=@item.Objection_No">
-                                                            <i class="fa-solid fa-download"></i> Acknowledgement
-                                                        </a>
-                                                    </li>
-                                                    @if (roll.HasAppeal && item.objection_Status == "Notice-Sent")
-                                                    {
-                                                        <li><hr class="dropdown-divider" /></li>
-                                                        <li>
-                                                            <a class="dropdown-item"
-                                                               href="/objection/check?rollSource=@roll.Source&sourceTable=@item.Property_Type&objectionNo=@item.Objection_No&unitKey=@item.Unit_key&valuationKey=@item.Valuation_Key&appealStatus=True">
-                                                                <i class="fa-solid fa-gavel"
-                                                                   style="color:#e6b000;"></i>
-                                                                <strong>Lodge Appeal</strong>
-                                                            </a>
-                                                        </li>
-                                                    }
-                                                </ul>
-                                            </div>
-                                        </td>
+                                                    <td>
+                                                        <div class="dropdown">
+                                                            <button class="cd-action-btn dropdown-toggle"
+                                                                    data-bs-toggle="dropdown">
+                                                                Actions
+                                                            </button>
+                                                            <ul class="dropdown-menu">
+                                                                <li>
+                                                                    <a class="dropdown-item"
+                                                                           href="/Home/FormData@(roll.ControllerName)?propertyID=@item.Property_Type&objectionNo=@item.Objection_No&AppealStatus=False"
+                                                                           onclick="logAction('ViewForm', '@roll.Source', '@item.Objection_No')">
+                                                                        View Form
+                                                                    </a>
+                                                                </li>
+                                                                <li>
+
+                   
+                                                                    <a class="dropdown-item"
+                                                                           href="/notice/acknowledgement/download?objectionNo=@item.Objection_No&rollSource=@roll.Source"
+                                                                           onclick="logAction('DownloadAck', '@roll.Source', '@item.Objection_No')">
+                                                                        Acknowledgement
+                                                                    </a>
+                                                                </li>
+                                                                @if (item.objection_Status == "Obj-Lodging")
+                                                                {
+                                                                    <li>
+                                                                        @if (User.Identity?.IsAuthenticated == true)
+                                                                        {
+                                                                            <a class="btn btn-sm btn-primary"
+                                                                                   href="/evidence/verify?objectionNo=@item.Objection_No&rollSource=@roll.Source">
+                                                                                <i class="fa-solid fa-upload"></i> Add Evidence
+                                                                            </a>
+                                                                        }
+                                                                    </li>
+                                                                }
+                                                              
+                                                                @if (item.objection_Status == "Notice-Sent" || item.objection_Status == "Appeal-Closed")
+                                                                {
+                                                                    <li>
+                                                                        <a class="dropdown-item"
+                                                                               href="/@roll.ControllerName/DownloadSection53?ObjectionNum=@item.Objection_No"
+                                                                               onclick="logAction('DownloadDecision', '@roll.Source', '@item.Objection_No')">
+                                                                            Download Section 53 Notice
+                                                                        </a>
+                                                                    </li>
+                     
+                                                                }
+                                                                @if (item.objection_Status == "Notice-Sent")
+                                                                {
+              
+                                                                    <li>
+                                                                        <a class="dropdown-item"
+                                                                               href="/objection/check?rollSource=@roll.Source&sourceTable=@item.PropertyFrom&unitKey=@item.Unit_key&valuationKey=@item.Valuation_Key&appealStatus=True&ObjectionNo=@item.Objection_No"
+                                                                               onclick="logAction('Appeal', '@roll.Source', '@item.Unit_key')">
+                                                                            Lodge Appeal
+                                                                        </a>
+                                                                    </li>
+
+               
+                                                                }
+                                                                @if (item.objection_Status == "Obj-Lodging" || item.objection_Status == "Obj-Unallocated")
+                                                                {
+                                                                    <li>
+                                                                        <a class="dropdown-item"
+                                                                               href="/@roll.ControllerName/Withdrawal?ObjectionNum=@item.Objection_No&Withdraw=O">
+                                                                            Withdraw
+                                                                        </a>
+                                                                    </li>
+                                                                }
+                                                            </ul>
+                                                        </div>
+                                                    </td>
                                     </tr>
                                 }
                             </tbody>
@@ -724,26 +769,55 @@ else if (roll.IsQuery)
                                         <td>@item.Old_Category</td>
                                         <td>@FormatZAR(item.Old_Market_Value)</td>
                                         <td>@Html.Raw(GetStatusPill(item.objection_Status))</td>
-                                        <td>
-                                            <div class="dropdown">
-                                                <button class="cd-action-btn dropdown-toggle"
-                                                        data-bs-toggle="dropdown">Actions</button>
-                                                <ul class="dropdown-menu">
-                                                    <li>
-                                                        <a class="dropdown-item"
-                                                           href="/Home/FormData@(roll.ControllerName)?propertyID=@item.Property_Type&objectionNo=@item.Objection_No&AppealStatus=True">
-                                                            <i class="fa-solid fa-eye"></i> View Form
-                                                        </a>
-                                                    </li>
-                                                    <li>
-                                                        <a class="dropdown-item"
-                                                           href="/@roll.ControllerName/DownloadAcknowledgement?objectionNo=@item.Objection_No">
-                                                            <i class="fa-solid fa-download"></i> Acknowledgement
-                                                        </a>
-                                                    </li>
-                                                </ul>
-                                            </div>
-                                        </td>
+                                                    <td>
+                                                        <div class="dropdown">
+                                                            <button class="cd-action-btn dropdown-toggle"
+                                                                    data-bs-toggle="dropdown">
+                                                                Actions
+                                                            </button>
+                                                            <ul class="dropdown-menu">
+                                                                <li>
+                                                                    <a class="dropdown-item"
+                                                                           href="/Home/FormData@(roll.ControllerName)?propertyID=@item.Property_Type&objectionNo=@item.Objection_No&AppealStatus=True"
+                                                                           onclick="logAction('ViewForm', '@roll.Source', '@item.Objection_No')">
+                                                                        View Form
+                                                                    </a>
+                                                                </li>
+
+                                                                @if (item.objection_Status == "App-Unallocated")
+                                                                {
+                                                                    @if (User.Identity?.IsAuthenticated == true)
+                                                                    {
+                                                                        <a class="btn btn-sm btn-primary"
+                                                                               href="/evidence/verify?objectionNo=@item.Objection_No&rollSource=@roll.Source">
+                                                                            <i class="fa-solid fa-upload"></i> Add Evidence
+                                                                        </a>
+                                                                    }
+                  
+                                                                }
+                                                                @if (item.objection_Status == "App-Finalized")
+                                                                {
+                                                                    <li>
+                                                                        <a class="dropdown-item"
+                                                                               href="/@roll.ControllerName/DownloadAppeal?ObjectionNum=@item.Objection_No"
+                                                                               onclick="logAction('DownloadDecision', '@roll.Source', '@item.Objection_No')">
+                                                                            Download Appeal Notice
+                                                                        </a>
+                                                                    </li>
+                     
+                                                                }
+                                                                @if (item.objection_Status == "App-Lodging" || item.objection_Status == "App-Unallocated")
+                                                                {
+                                                                    <li>
+                                                                        <a class="dropdown-item"
+                                                                               href="/@roll.ControllerName/Withdrawal?ObjectionNum=@item.Objection_No&Withdraw=AppealSup1">
+                                                                            Withdraw
+                                                                        </a>
+                                                                    </li>
+                                                                }
+                                                            </ul>
+                                                        </div>
+                                                    </td>
                                     </tr>
                                 }
                             </tbody>

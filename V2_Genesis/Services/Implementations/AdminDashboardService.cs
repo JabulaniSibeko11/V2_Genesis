@@ -1,4 +1,7 @@
-﻿using Dapper;
+﻿// ═══════════════════════════════════════════════════════════════
+//  Services/Implementations/AdminDashboardService.cs  — REPLACE FULL FILE
+// ═══════════════════════════════════════════════════════════════
+using Dapper;
 using Microsoft.Data.SqlClient;
 using System.Data;
 using V2_Genesis.Models.Admin;
@@ -89,7 +92,6 @@ public class AdminDashboardService : IAdminDashboardService
         if (!AdminRollRegistry.Configs.TryGetValue(rollSource, out var cfg))
             return new();
 
-        // Determine SP: appeal no search vs property search
         bool isAppeal = searchValue.Trim().ToUpper().StartsWith("APP");
         var sp = isAppeal ? cfg.AppSearchSp : cfg.PropSearchSp;
 
@@ -109,12 +111,10 @@ public class AdminDashboardService : IAdminDashboardService
             return new();
         }
     }
-    // ═══════════════════════════════════════════════════════════════
-    //  Services/Implementations/AdminDashboardService.cs
-    //  ADD these methods at the bottom of the existing class
-    // ═══════════════════════════════════════════════════════════════
 
-    // ── All-users roll data for admin dashboard ───────────────────
+    // ── All-users roll data for admin dashboard ───────────────────────
+    // FIX 1: removed New_Market_Value_MVD / New_Category_MVD — not on Obj_Property_Info
+    // FIX 2: added Appeals query
     public async Task<RollData> GetAllRollDataAsync(string rollSource)
     {
         if (!AdminRollRegistry.Configs.TryGetValue(rollSource, out var cfg))
@@ -125,15 +125,22 @@ public class AdminDashboardService : IAdminDashboardService
             var connStr = _config.GetConnectionString(cfg.ConnectionKey)!;
             await using var conn = new SqlConnection(connStr);
 
-            // ── All objections (no UserID filter) ────────────────
+            // ── All objections (no UserID filter) ──────────────────
             var objRows = await conn.QueryAsync(
                 @"SELECT TOP 500
-                Objection_No, Property_Desc, Old_Category, Town_Name,
-                Old_Market_Value, New_Market_Value_MVD, New_Category_MVD,
-                objection_Status, Sub_typ, Unit_key, Valuation_Key,
-                Property_Type, PropertyFrom
-              FROM dbo.Obj_Property_Info
-              ORDER BY Objection_No DESC");
+                    Objection_No,
+                    Property_Desc,
+                    Old_Category,
+                    Town_Name,
+                    Old_Market_Value,
+                    objection_Status,
+                    Sub_typ,
+                    Unit_key,
+                    Valuation_Key,
+                    Property_Type,
+                    PropertyFrom
+                  FROM dbo.Obj_Property_Info
+                  ORDER BY Objection_No DESC");
 
             var objProps = objRows.Select(r => new ObjectedPropertyResult
             {
@@ -142,8 +149,6 @@ public class AdminDashboardService : IAdminDashboardService
                 Old_Category = r.Old_Category?.ToString(),
                 Town_Name = r.Town_Name?.ToString(),
                 Old_Market_Value = r.Old_Market_Value?.ToString(),
-                New_Market_Value_MVD = r.New_Market_Value_MVD?.ToString(),
-                New_Category_MVD = r.New_Category_MVD?.ToString(),
                 objection_Status = r.objection_Status?.ToString(),
                 Sub_typ = Convert.ToInt32(r.Sub_typ ?? 0),
                 Unit_key = r.Unit_key?.ToString(),
@@ -152,21 +157,51 @@ public class AdminDashboardService : IAdminDashboardService
                 PropertyFrom = r.PropertyFrom?.ToString(),
             }).ToList();
 
+            // ── All appeals (no UserID filter) ─────────────────────
+            var appRows = await conn.QueryAsync(
+                @"SELECT TOP 200
+                    Appeal_No,
+                    A_Property_Desc,
+                    Town_Name,
+                    Old_Market_Value,
+                    Old_Category,
+                    A_Unit_key,
+                    A_Valuation_Key,
+                    A_Property_Type,
+                    Appeal_Status
+                  FROM dbo.Obj_Property_Info_Appeal
+                  ORDER BY Appeal_No DESC");
+
+            var appeals = appRows.Select(r => new AppealResult
+            {
+                Appeal_No = r.Appeal_No?.ToString(),
+                A_Property_Desc = r.A_Property_Desc?.ToString(),
+                Town_Name = r.Town_Name?.ToString(),
+                Old_Market_Value = r.Old_Market_Value?.ToString(),
+                Old_Category = r.Old_Category?.ToString(),
+                A_Unit_key = r.A_Unit_key?.ToString(),
+                A_Valuation_Key = r.A_Valuation_Key?.ToString(),
+                A_Property_Type = r.A_Property_Type?.ToString(),
+                Appeal_Status = r.Appeal_Status?.ToString(),
+            }).ToList();
+
             return new RollData
             {
-                LinkedProperties = new(),   // admin doesn't link properties
+                LinkedProperties = new(),    // admin doesn't link properties
                 ObjectedProperties = objProps,
+                Appeals = appeals,
             };
         }
         catch (Exception ex)
         {
             _logger.LogError(ex,
-                "[AdminDashboard] GetAllRollData failed for {Roll}", rollSource);
+                "[AdminDashboard] GetAllRollData failed for {Roll} — {Msg}",
+                rollSource, ex.Message);
             return new RollData();
         }
     }
 
-    // ── Unified search by reference number ───────────────────────
+    // ── Unified search by reference number ───────────────────────────
     public async Task<AdminSearchResult> SearchByReferenceAsync(
         string refNo, string? rollSource)
     {
@@ -178,8 +213,6 @@ public class AdminDashboardService : IAdminDashboardService
         };
 
         var refUpper = refNo.Trim().ToUpper();
-
-        // Detect type from prefix
         bool isAppeal = refUpper.Contains("-APP-") || refUpper.StartsWith("APP");
         bool isQuery = refUpper.Contains("QUE-") || refUpper.StartsWith("QUE");
 
@@ -205,15 +238,14 @@ public class AdminDashboardService : IAdminDashboardService
 
                 if (isQuery)
                 {
-                    // Search Objection_Query DB
                     var connStrQ = _config.GetConnectionString("QueryConnection")!;
                     await using var connQ = new SqlConnection(connStrQ);
                     var qRow = await connQ.QueryFirstOrDefaultAsync(
                         @"SELECT TOP 1 Query_No, Property_Desc, Town_Name,
-                             Old_Category, Old_Market_Value,
-                             Query_Status, Unit_key, Valuation_Key
-                      FROM dbo.Que_Property_Info
-                      WHERE Query_No = @Ref",
+                                 Old_Category, Old_Market_Value,
+                                 Query_Status, Unit_key, Valuation_Key
+                          FROM dbo.Que_Property_Info
+                          WHERE Query_No = @Ref",
                         new { Ref = refNo });
 
                     if (qRow is not null)
@@ -231,14 +263,13 @@ public class AdminDashboardService : IAdminDashboardService
                             Unit_key = qRow.Unit_key?.ToString(),
                             Valuation_Key = qRow.Valuation_Key?.ToString(),
                         });
-                    break; // queries only in one DB
+                    break;
                 }
                 else if (isAppeal)
                 {
                     var aRow = await conn.QueryFirstOrDefaultAsync(
-                        @"SELECT *
-                      FROM dbo.Obj_Property_Info_Appeal
-                      WHERE Appeal_No = @Ref",
+                        @"SELECT TOP 1 * FROM dbo.Obj_Property_Info_Appeal
+                          WHERE Appeal_No = @Ref",
                         new { Ref = refNo });
 
                     if (aRow is not null)
@@ -259,11 +290,9 @@ public class AdminDashboardService : IAdminDashboardService
                 }
                 else
                 {
-                    // Default: objection
                     var oRow = await conn.QueryFirstOrDefaultAsync(
-                        @"SELECT *
-                      FROM dbo.Obj_Property_Info
-                      WHERE Objection_No = @Ref",
+                        @"SELECT TOP 1 * FROM dbo.Obj_Property_Info
+                          WHERE Objection_No = @Ref",
                         new { Ref = refNo });
 
                     if (oRow is not null)
@@ -294,27 +323,24 @@ public class AdminDashboardService : IAdminDashboardService
         return result;
     }
 
-    // ── Unified search by property attributes ────────────────────
+    // ── Unified search by property attributes ────────────────────────
+    // FIX 3: Town_Name (was TownName — wrong column name)
     public async Task<AdminSearchResult> SearchByPropertyAsync(
         string? town, string? stand, string? address,
-        string? scheme, string? unit,
-        string? rollSource)
+        string? scheme, string? unit, string? rollSource)
     {
         var result = new AdminSearchResult
         {
             SearchType = "Property",
-            SearchInput = string.Join(" ", new[] { town, stand, address, scheme, unit }
-                              .Where(v => !string.IsNullOrWhiteSpace(v))),
+            SearchInput = string.Join(" ",
+                new[] { town, stand, address, scheme, unit }
+                    .Where(v => !string.IsNullOrWhiteSpace(v))),
             RollFilter = rollSource
         };
 
         string Like(string? v) => string.IsNullOrWhiteSpace(v) ? "%%" : $"%{v.Trim()}%";
 
-        var rolls = AdminRollRegistry.Configs
-            .Where(kv => string.IsNullOrEmpty(rollSource) || kv.Key == rollSource)
-            .ToList();
-
-        string rollName(string src) => src switch
+        string RollName(string src) => src switch
         {
             "Objection" => "GV 2023",
             "Objection_Supp1" => "Supp 1",
@@ -323,6 +349,10 @@ public class AdminDashboardService : IAdminDashboardService
             _ => src
         };
 
+        var rolls = AdminRollRegistry.Configs
+            .Where(kv => string.IsNullOrEmpty(rollSource) || kv.Key == rollSource)
+            .ToList();
+
         foreach (var (roll, cfg) in rolls)
         {
             try
@@ -330,13 +360,12 @@ public class AdminDashboardService : IAdminDashboardService
                 var connStr = _config.GetConnectionString(cfg.ConnectionKey)!;
                 await using var conn = new SqlConnection(connStr);
 
-                // Build WHERE dynamically
                 var conditions = new List<string> { "1=1" };
                 var parms = new DynamicParameters();
 
                 if (!string.IsNullOrWhiteSpace(town))
                 {
-                    conditions.Add("TownName LIKE @Town");
+                    conditions.Add("Town_Name LIKE @Town");   // FIX: was TownName
                     parms.Add("Town", Like(town));
                 }
                 if (!string.IsNullOrWhiteSpace(stand))
@@ -360,10 +389,14 @@ public class AdminDashboardService : IAdminDashboardService
                     parms.Add("Unit", Like(unit));
                 }
 
-                var sql = $@"SELECT *
-                         FROM dbo.Obj_Property_Info
-                         WHERE {string.Join(" AND ", conditions)}
-                         ORDER BY Objection_No DESC";
+                var sql = $@"SELECT TOP 100
+                                Objection_No, Property_Desc, Town_Name,
+                                Old_Category, Old_Market_Value,
+                                objection_Status, Sub_typ,
+                                Unit_key, Valuation_Key, PropertyFrom
+                             FROM dbo.Obj_Property_Info
+                             WHERE {string.Join(" AND ", conditions)}
+                             ORDER BY Objection_No DESC";
 
                 var rows = await conn.QueryAsync(sql, parms);
 
@@ -371,7 +404,7 @@ public class AdminDashboardService : IAdminDashboardService
                     result.PropMatches.Add(new AdminPropMatch
                     {
                         RollSource = roll,
-                        RollName = rollName(roll),
+                        RollName = RollName(roll),
                         Objection_No = r.Objection_No?.ToString(),
                         Property_Desc = r.Property_Desc?.ToString(),
                         Town_Name = r.Town_Name?.ToString(),
