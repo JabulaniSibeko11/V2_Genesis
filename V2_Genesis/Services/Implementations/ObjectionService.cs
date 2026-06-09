@@ -2,7 +2,9 @@
 using GenesisV2.Services.PropertySearch;
 using Microsoft.Data.SqlClient;
 using System.Data;
-
+using System.Globalization;
+using System.Text.RegularExpressions;
+using V2_Genesis.Helpers;
 using V2_Genesis.Models.Objections;
 using V2_Genesis.Services.Interfaces;
 using V2_Genesis.Services.PropertySearch;
@@ -16,16 +18,20 @@ public class ObjectionService : IObjectionService
     // ── sourceTable → (ConnectionKey, SP name) ────────────────────────
     private static readonly Dictionary<string, (string ConnKey, string Sp)> _sourceMap = new()
     {
+        ["GV23-SUP5"] = ("Sup5Connection", "CheckPropertyFromSup5"),
+        ["GV23-SUP4"] = ("Sup4Connection", "CheckPropertyFromSup4"),
         ["GV23-SUP3"] = ("Sup3Connection", "CheckPropertyFromSup3"),
         ["GV23-SUP2"] = ("Sup2Connection", "CheckPropertyFromSup2"),
         ["GV23-SUP1"] = ("Sup1Connection", "CheckPropertyFromSup1"),
-        ["GV23"] = ("DefaultConnection", "CheckPropertyFromGV"),
-        ["LIS"] = ("LISConnection", "CheckPropertyFromLIS"), 
+        ["GV23"] = ("DefaultConnection", "CheckProperty"),
+        ["LIS"] = ("LISConnection", "CheckPropertyFromLIS"),
     };
 
     // ── sourceTable → MVC controller name (for Lodge button routing) ──
     public static readonly Dictionary<string, string> SourceToController = new()
     {
+        ["GV23-SUP5"] = "Sup5",
+        ["GV23-SUP4"] = "Sup4",
         ["GV23-SUP3"] = "Sup3",
         ["GV23-SUP2"] = "Sup2",
         ["GV23-SUP1"] = "Sup1",
@@ -40,6 +46,8 @@ public class ObjectionService : IObjectionService
         ["Objection_Supp1"] = "Sup1",
         ["Objection_Supp2"] = "Sup2",
         ["Objection_Supp3"] = "Sup3",
+        ["Objection_Supp4"] = "Sup4",
+        ["Objection_Supp5"] = "Sup5",
     };
 
     // ── rollSource → sourceTable key (used in _sourceMap) ─────────────────
@@ -49,6 +57,8 @@ public class ObjectionService : IObjectionService
         ["Objection_Supp1"] = "GV23-SUP1",
         ["Objection_Supp2"] = "GV23-SUP2",
         ["Objection_Supp3"] = "GV23-SUP3",
+        ["Objection_Supp4"] = "GV23-SUP4",
+        ["Objection_Supp5"] = "GV23-SUP5",
     };
 
     private const string SP_APPEAL = "IndexAppeal";
@@ -58,9 +68,9 @@ public class ObjectionService : IObjectionService
 
     // ── Normal objection property fetch ───────────────────────────────
     public async Task<List<CheckPropertyResult>> GetPropertyForObjectionAsync(
-        string sourceTable,
-        string unitKey,
-        string valuationKey)
+     string sourceTable,
+     string? unitKey,
+     string? valuationKey)
     {
         if (!_sourceMap.TryGetValue(sourceTable, out var cfg))
             return new List<CheckPropertyResult>();
@@ -68,16 +78,22 @@ public class ObjectionService : IObjectionService
         var connString = _config.GetConnectionString(cfg.ConnKey)
                          ?? _config.GetConnectionString("DefaultConnection")!;
 
+        unitKey = FloatKeyHelper.Normalize(unitKey);
+        valuationKey = FloatKeyHelper.Normalize(valuationKey);
+
         await using var conn = new SqlConnection(connString);
+
+        var parameters = new DynamicParameters();
+        parameters.Add("@UnitKey", unitKey, DbType.String);
+        parameters.Add("@ValuationKey", valuationKey, DbType.String);
 
         var results = await conn.QueryAsync<CheckPropertyResult>(
             cfg.Sp,
-            new { UnitKey = unitKey, ValuationKey = valuationKey },
+            parameters,
             commandType: CommandType.StoredProcedure);
 
         return results.ToList();
     }
-
     // ── Appeal property fetch ─────────────────────────────────────────
     public async Task<List<CheckPropertyResult>> GetPropertyForAppealAsync(
         string rollSource,
@@ -120,5 +136,35 @@ public class ObjectionService : IObjectionService
             SchemeNumber = r.New2_Category_MVD?.ToString(),
             SchemeName = r.Property_Desc?.ToString(),
         }).ToList();
+    }
+
+    private static string NormalizeKey(object? value)
+    {
+        if (value == null)
+            return string.Empty;
+
+        var key = value.ToString()?.Trim();
+
+        if (string.IsNullOrWhiteSpace(key))
+            return string.Empty;
+
+        // Fix broken scientific notation like "1.05735e 007"
+        key = Regex.Replace(
+            key,
+            @"([eE])\s+([+-]?\d+)",
+            "$1+$2");
+
+        // Convert scientific notation / float / decimal into plain whole-number string
+        if (decimal.TryParse(
+            key,
+            NumberStyles.Float,
+            CultureInfo.InvariantCulture,
+            out var decimalValue))
+        {
+            return Math.Round(decimalValue, 0)
+                .ToString("0", CultureInfo.InvariantCulture);
+        }
+
+        return key;
     }
 }

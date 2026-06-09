@@ -35,6 +35,11 @@ public class AdminDashboardViewModel
     public AttributesDashboardData AttributesData { get; set; } = new();
     public List<AttrLinkedPropertyResult> AttributesLinked { get; set; } = new();
 
+    public string AdminFullName { get; set; } = string.Empty;
+    public string AdminPosition { get; set; } = string.Empty;
+    
+    public string SapNumeric { get; set; } = string.Empty;
+
     // ── Admin search state ────────────────────────────────────────────
     public string? SearchValue { get; set; }
     public string? FilterRoll { get; set; }

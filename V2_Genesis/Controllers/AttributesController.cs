@@ -248,9 +248,9 @@ public class AttributesController : Controller
                 if (d is not null)
                 {
                     model.PropertyDetails.PropertyId = d.PropertyId ?? idProperty;
-                    model.PropertyDetails.UnitKey = d.UnitKey;
+                    model.PropertyDetails.UnitKey = d.UnitKey.ToString();
                     model.PropertyDetails.PremiseId = d.PremiseId;
-                    model.PropertyDetails.ValuationKey = d.ValuationKey;
+                    model.PropertyDetails.ValuationKey = d.ValuationKey.ToString();
                     model.PropertyDetails.PropertyDesc = d.PropertyDesc;
                     model.PropertyDetails.Township = d.TownNameDesc;
                     model.PropertyDetails.Address = d.LisStreetAddress;

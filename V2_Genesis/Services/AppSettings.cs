@@ -2,7 +2,7 @@
 {
     public class AppSettings
     {
-        public string PortalName { get; set; } = "Genesis";
+        public string PortalName { get; set; } = "City of Johannesburg Valuation Portal";
         public string PortalSubtitle { get; set; } = "City of Johannesburg Valuation Portal";
         public string AdminEmail { get; set; } = string.Empty;
         public string SapDomain { get; set; } = "JOBURG";

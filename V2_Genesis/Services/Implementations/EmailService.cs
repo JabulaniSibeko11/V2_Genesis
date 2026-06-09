@@ -36,6 +36,8 @@ namespace V2_Genesis.Services.Implementations
             ["Objection_Supp1"] = "Sup1Connection",
             ["Objection_Supp2"] = "Sup2Connection",
             ["Objection_Supp3"] = "Sup3Connection",
+            ["Objection_Supp4"] = "Sup4Connection",
+            ["Objection_Supp5"] = "Sup5Connection",
         };
         private static readonly Dictionary<string, string> RollTitles = new()
         {
@@ -43,6 +45,8 @@ namespace V2_Genesis.Services.Implementations
             ["Objection_Supp1"] = "Supplementary Roll 1",
             ["Objection_Supp2"] = "Supplementary Roll 2",
             ["Objection_Supp3"] = "Supplementary Roll 3",
+            ["Objection_Supp4"] = "Supplementary Roll 4",
+            ["Objection_Supp5"] = "Supplementary Roll 5",
         };
 
         public async Task SendEmailAsync(string toEmail, string subject, string htmlBody)

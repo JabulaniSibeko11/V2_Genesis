@@ -40,6 +40,9 @@ public static class LisRollRegistry
             ["Objection_Supp1"] = Make("Sup1Connection", "_Sup1"),
             ["Objection_Supp2"] = Make("Sup2Connection", "_Sup2"),
             ["Objection_Supp3"] = Make("Sup3Connection", "_Sup3"),
+            ["Objection_Supp4"] = Make("Sup4Connection", "_Sup4"),
+            ["Objection_Supp5"] = Make("Sup5Connection", "_Sup5"),
+
         };
     }
 }

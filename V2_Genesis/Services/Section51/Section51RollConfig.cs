@@ -29,6 +29,8 @@ public static class Section51RollRegistry
             ["Objection_Supp1"] = Load("Objection_Supp1"),
             ["Objection_Supp2"] = Load("Objection_Supp2"),
             ["Objection_Supp3"] = Load("Objection_Supp3"),
+            ["Objection_Supp4"] = Load("Objection_Supp4"),
+            ["Objection_Supp5"] = Load("Objection_Supp5"),
         };
     }
 }

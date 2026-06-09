@@ -24,6 +24,8 @@
                 ["Objection_Supp1"] = Make("Sup1Connection", ""),
                 ["Objection_Supp2"] = Make("Sup2Connection", ""),
                 ["Objection_Supp3"] = Make("Sup3Connection", ""),
+                ["Objection_Supp4"] = Make("Sup4Connection", ""),
+                ["Objection_Supp5"] = Make("Sup5Connection", ""),
             };
         }
     }

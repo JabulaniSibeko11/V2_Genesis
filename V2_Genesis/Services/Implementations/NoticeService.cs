@@ -64,6 +64,12 @@ public class NoticeService : INoticeService
         new("Sup3Connection",
             _config["ObjectionRolls:Objection_Supp3:RootPath"] ?? "",
             "SUP3", "Supplementary Roll 3"),
+         new("Sup4Connection",
+            _config["ObjectionRolls:Objection_Supp4:RootPath"] ?? "",
+            "SUP4", "Supplementary Roll 4"),
+           new("Sup5Connection",
+            _config["ObjectionRolls:Objection_Supp5:RootPath"] ?? "",
+            "SUP5", "Supplementary Roll 5"),
     };
     private string Section49Root => _config["AppSettings:Section49RootPath"] ?? "";
     private string AppealRoot => _config["AppSettings:AppealRootPath"] ?? "";

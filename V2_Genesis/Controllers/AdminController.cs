@@ -70,7 +70,7 @@ public class AdminController : Controller
 
     private string AdminEmail => User.FindFirstValue(ClaimTypes.Name) ?? string.Empty;
     private string UserId => User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
-    private string SapNumber => User.FindFirstValue("SapNumber") ?? string.Empty;
+    private string SapNumber =>User.FindFirstValue("SAPNumber")?? HttpContext.Session.GetString("AdminSapNumber") ?? string.Empty;
     private string ClientIp => HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
 
     // ══════════════════════════════════════════════════════════════════
@@ -105,12 +105,38 @@ public class AdminController : Controller
             kvp => kvp.Key,
             kvp => kvp.Value.Result);
 
+        var adminFullName =
+    User.FindFirstValue("FullName")
+    ?? HttpContext.Session.GetString("AdminFullName")
+    ?? string.Empty;
+
+        var adminPosition =
+            User.FindFirstValue("Position")
+            ?? HttpContext.Session.GetString("AdminPosition")
+            ?? string.Empty;
+
+        var sapFull =
+            User.FindFirstValue("SAPNumber")
+            ?? HttpContext.Session.GetString("AdminSapNumber")
+            ?? SapNumber
+            ?? string.Empty;
+
+        var sapNumeric = sapFull.Contains('\\')
+            ? sapFull.Split('\\').Last()
+            : sapFull;
+
+
         // ── Build view model ──────────────────────────────────────────
         var vm = new AdminDashboardViewModel
         {
             UserId = userId,
             AdminEmail = AdminEmail,
-            SapNumber = SapNumber,
+
+            SapNumber = sapFull,
+            SapNumeric = sapNumeric,
+            AdminFullName = adminFullName,
+            AdminPosition = adminPosition,
+
             Announcement = _announcement.GetAnnouncement(),
             Rolls = rolls,
             RollData = rollData,

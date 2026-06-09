@@ -233,6 +233,8 @@ public class AdminDashboardService : IAdminDashboardService
                     "Objection_Supp1" => "Supplementary Roll 1",
                     "Objection_Supp2" => "Supplementary Roll 2",
                     "Objection_Supp3" => "Supplementary Roll 3",
+                    "Objection_Supp4" => "Supplementary Roll 4",
+                    "Objection_Supp5" => "Supplementary Roll 5",
                     _ => roll
                 };
 
@@ -346,6 +348,8 @@ public class AdminDashboardService : IAdminDashboardService
             "Objection_Supp1" => "Supp 1",
             "Objection_Supp2" => "Supp 2",
             "Objection_Supp3" => "Supp 3",
+            "Objection_Supp4" => "Supp 4",
+            "Objection_Supp5" => "Supp 5",
             _ => src
         };
 

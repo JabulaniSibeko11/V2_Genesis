@@ -289,6 +289,10 @@ namespace V2_Genesis.Controllers
         // ══════════════════════════════════════════════════════════════════════
         //  ADMIN – SAP STEP
         // ══════════════════════════════════════════════════════════════════════
+
+
+
+        // ── ALSO REPLACE the GET SapStep action (restores Position from cookie) ──
         [HttpGet]
         [Route("verify-identity")]
         [AllowAnonymous]
@@ -304,18 +308,16 @@ namespace V2_Genesis.Controllers
                 {
                     var payload = _sapProtector.Unprotect(token);
                     var parts = payload.Split('|');
-                    // format: email|expiry|SAPvalue|FullName
+                    // segments: email | expiry | SAPvalue | FullName | Position
                     var cookieEmail = parts[0];
                     var expiresAt = DateTimeOffset.Parse(parts[1]);
                     var pendingId = HttpContext.Session.GetString(_session.AdminEmailKey);
 
-                    if (expiresAt > DateTimeOffset.UtcNow
-                        && !string.IsNullOrEmpty(pendingId))
+                    if (expiresAt > DateTimeOffset.UtcNow && !string.IsNullOrEmpty(pendingId))
                     {
                         var user = await _userManager.FindByIdAsync(pendingId);
                         if (user is not null
-                            && cookieEmail.Equals(user.Email,
-                                                  StringComparison.OrdinalIgnoreCase))
+                            && cookieEmail.Equals(user.Email, StringComparison.OrdinalIgnoreCase))
                         {
                             await EnsureRoleAsync("Admin");
                             if (!await _userManager.IsInRoleAsync(user, "Admin"))
@@ -323,23 +325,19 @@ namespace V2_Genesis.Controllers
 
                             var sapClaim = parts.Length > 2 ? parts[2] : "";
                             var fullName = parts.Length > 3 ? parts[3] : "";
+                            var position = parts.Length > 4 ? parts[4] : "";
 
-                            var additionalClaims = new List<Claim>
-                    {
-                        new Claim("SAPNumber", sapClaim),
-                        new Claim("UMRole",    "Admin"),
-                        new Claim("FullName",  fullName),   // ← restored from cookie
-                    };
+                            // ── Persist claims to DB (same as POST) ───
+                            await PersistAdminClaimsAsync(user, sapClaim, fullName, position, "Admin");
 
                             HttpContext.Session.Remove(_session.AdminPendingKey);
                             HttpContext.Session.Remove(_session.AdminEmailKey);
 
-                            await _signInManager.SignInWithClaimsAsync(
-                                user, isPersistent: true, additionalClaims);
+                            await _signInManager.SignInAsync(user, isPersistent: true);
 
                             _logger.LogInformation(
-                                "Admin {Email} auto-signed in via 8-hour cookie.",
-                                user.Email);
+                                "Admin {Email} auto-signed in via 8-hour cookie as '{Name}'.",
+                                user.Email, fullName);
 
                             return RedirectToAction("Index", "Admin");
                         }
@@ -355,7 +353,51 @@ namespace V2_Genesis.Controllers
         }
 
 
-        // ── REPLACE: POST /verify-identity ───────────────────────────
+        // ════════════════════════════════════════════════════════════════
+        //  PRIVATE HELPERS  — add these inside AccountController class
+        // ════════════════════════════════════════════════════════════════
+
+        /// <summary>
+        /// Removes any stale SAP claims for this user, then adds fresh
+        /// ones to the AspNetUserClaims table so they survive stamp refresh.
+        /// </summary>
+        private async Task PersistAdminClaimsAsync(
+            ApplicationUser user,
+            string sapValue, string fullName, string position, string role)
+        {
+            var claimTypes = new[] { "SAPNumber", "FullName", "Position", "UMRole" };
+
+            var existing = await _userManager.GetClaimsAsync(user);
+            foreach (var c in existing.Where(c => claimTypes.Contains(c.Type)))
+                await _userManager.RemoveClaimAsync(user, c);
+
+            await _userManager.AddClaimsAsync(user, new[]
+            {
+        new Claim("SAPNumber", sapValue),
+        new Claim("FullName",  fullName),
+        new Claim("Position",  position),
+        new Claim("UMRole",    role),
+    });
+        }
+
+        /// <summary>Writes the encrypted 8-hour SAP bypass cookie.</summary>
+        private void WriteAdminCookie(
+            string email, string sapValue, string fullName, string position)
+        {
+            var expiresAt = DateTimeOffset.UtcNow.AddHours(SAP_HOURS);
+            var payload = $"{email}|{expiresAt:O}|{sapValue}|{fullName}|{position}";
+            var cookieToken = _sapProtector.Protect(payload);
+
+            Response.Cookies.Append(SAP_COOKIE, cookieToken, new CookieOptions
+            {
+                Expires = expiresAt,
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Path = "/"
+            });
+        }
+
         [HttpPost]
         [Route("verify-identity")]
         [AllowAnonymous]
@@ -391,46 +433,36 @@ namespace V2_Genesis.Controllers
                 await _userManager.AddToRoleAsync(user, "Admin");
 
             var sapValue = $@"{_app.SapDomain}\{model.SapNumber.Trim()}";
-            var fullName = umResult.FullName ?? string.Empty;
+            var fullName = umResult.FullName;
+            var position = umResult.Position?.Trim() ?? string.Empty;
 
-            var additionalClaims = new List<Claim>
-    {
-        new Claim("SAPNumber", sapValue),
-        new Claim("UMRole",    umResult.Role),
-        new Claim("FullName",  fullName),       // ← full name from UM DB
-    };
+            // ── Persist claims to AspNetUserClaims table ──────────────
+            // This is the key fix: the SecurityStampValidator rebuilds
+            // the principal from the DB table every ~30 min.
+            // Claims passed only to SignInWithClaimsAsync() are NOT in
+            // the table and get dropped on the next stamp refresh.
+            await PersistAdminClaimsAsync(user, sapValue, fullName, position,
+                umResult.Role ?? "Admin");
 
             HttpContext.Session.Remove(_session.AdminPendingKey);
             HttpContext.Session.Remove(_session.AdminEmailKey);
 
-            // ── 8-hour remember cookie ────────────────────────────────
+            // ── 8-hour remember cookie (skips SAP form on next visit) ─
             if (model.RememberEightHours)
-            {
-                var expiresAt = DateTimeOffset.UtcNow.AddHours(SAP_HOURS);
-                // store: email|expiry|SAPvalue|FullName
-                var payload = $"{user.Email}|{expiresAt:O}|{sapValue}|{fullName}";
-                var cookieToken = _sapProtector.Protect(payload);
+                WriteAdminCookie(user.Email!, sapValue, fullName, position);
 
-                Response.Cookies.Append(SAP_COOKIE, cookieToken, new CookieOptions
-                {
-                    Expires = expiresAt,
-                    HttpOnly = true,
-                    Secure = true,
-                    SameSite = SameSiteMode.Strict,
-                    Path = "/"
-                });
-            }
+            // ── Sign in persistently — claims come from DB via factory ─
+            // isPersistent: true → cookie survives browser close.
+            // Claims are now loaded from AspNetUserClaims, not the ticket.
+            await _signInManager.SignInAsync(user, isPersistent: true);
 
-            await _signInManager.SignInWithClaimsAsync(
-                user,
-                isPersistent: model.RememberEightHours,
-                additionalClaims);
-
-            _logger.LogInformation("Admin {SAP} signed in (role: {Role}) name: {Name}.",
-                model.SapNumber, umResult.Role, fullName);
+            _logger.LogInformation("Admin {SAP} signed in as '{Name}' ({Position}).",
+                model.SapNumber, fullName, position);
 
             return RedirectToAction("Index", "Admin");
         }
+
+
         // ══════════════════════════════════════════════════════════════════════
         //  FORGOT / RESET PASSWORD
         // ══════════════════════════════════════════════════════════════════════

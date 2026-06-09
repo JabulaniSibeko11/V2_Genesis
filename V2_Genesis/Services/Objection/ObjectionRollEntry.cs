@@ -5,6 +5,7 @@ public class ObjectionRollEntry
     public string FileRootPath { get; set; } = string.Empty;
     public string ObjPrefix { get; set; } = string.Empty;
     public string AppealPrefix { get; set; } = string.Empty;
+    public string AppealRootPath { get; set; } = string.Empty;
 }
 
 public class ObjectionRollSettings

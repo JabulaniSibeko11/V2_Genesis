@@ -33,7 +33,12 @@
         _ => $"<span class='cd-pill cd-pill-pending'>{status ?? "Pending"}</span>"
     };
 }
-
+ @{
+    var _adminFullName = Model.AdminFullName ?? "";
+    var _adminPosition = Model.AdminPosition ?? "";
+    var _sapFull = Model.SapNumber ?? "";
+    var _sapNumeric = Model.SapNumeric ?? "";
+}
 @section Styles {
    @*  <link href="~/css/views/dashboardcss.css" rel="stylesheet" asp-append-version="true" />
    *@  <link href="~/css/views/clientdashboardcss.css" rel="stylesheet" asp-append-version="true" />
@@ -48,23 +53,30 @@
             <span class="adm-admin-badge">
                 <i class="fa-solid fa-shield-halved"></i> ADMIN
             </span>
-          @{
-    var _adminFullName = User.FindFirstValue("FullName") ?? "";
-    var _sapFull       = User.FindFirstValue("SAPNumber") ?? "";
-}
+          
+
+
 
 <span class="adm-email">@Model.AdminEmail</span>
 
 @if (!string.IsNullOrWhiteSpace(_adminFullName))
 {
+ 
     <span class="adm-sap">
         <i class="fa-solid fa-user" style="margin-right:4px;font-size:11px;"></i>
-        @_adminFullName
+        <strong>@_adminFullName</strong>
+        @if (!string.IsNullOrWhiteSpace(_adminPosition))
+        {
+            <span style="opacity:.55; margin: 0 4px;">·</span>
+            <span style="opacity:.75;">@_adminPosition</span>
+        }
+        <span style="opacity:.45; margin-left:8px; font-size:10px; letter-spacing:.5px;">
+            @_sapNumeric
+        </span>
     </span>
 }
 else if (!string.IsNullOrEmpty(_sapFull))
 {
-   
     <span class="adm-sap">SAP: @_sapFull</span>
 }
 
@@ -87,7 +99,8 @@ else if (!string.IsNullOrEmpty(_sapFull))
 <div class="cd-welcome">
     <div class="cd-welcome-inner">
         <div>
-          <h1 class="cd-welcome-name">
+     
+<h1 class="cd-welcome-name">
     @if (!string.IsNullOrWhiteSpace(_adminFullName))
     {
         <span>Welcome, @_adminFullName</span>
@@ -100,9 +113,22 @@ else if (!string.IsNullOrEmpty(_sapFull))
         <i class="fa-solid fa-shield-halved"></i> ADMIN
     </span>
 </h1>
-            <p class="cd-welcome-sub">
-                City of Johannesburg — Valuation Portal Administration
-            </p>
+            @if (!string.IsNullOrWhiteSpace(_adminPosition))
+{
+    <p class="cd-welcome-sub" style="margin-top:2px;">
+        <i class="fa-solid fa-briefcase"
+           style="color:#e6b000;margin-right:5px;font-size:11px;"></i>
+        @_adminPosition
+        <span style="opacity:.4; margin: 0 6px;">·</span>
+        City of Johannesburg — Valuation Portal Administration
+    </p>
+}
+else
+{
+    <p class="cd-welcome-sub">
+        City of Johannesburg — Valuation Portal Administration
+    </p>
+}
         </div>
     </div>
 </div>

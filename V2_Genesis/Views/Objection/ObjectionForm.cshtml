@@ -1,286 +1,89 @@
 ﻿@using V2_Genesis.Models
 @model Prop_View_Model
- @{
-    var messageID2 = TempData["CurrentFilter_Id"];
-    var messagePD = TempData["CurrentFilter_PD"];
-    var messageCD = TempData["CurrentFilter_CD"];
-    var messageLSA = TempData["CurrentFilter_LSA"];
-    var messageRA = TempData["CurrentFilter_RA"];
-    var messageMV = TempData["CurrentFilter_MV"]; 
-    var messageON = TempData["CurrentFilter_ON"];
-    var messageTN = TempData["CurrentFilter_TN"];
-    var messagePID = TempData["CurrentFilter_P_ID"];
-    var messagePI = TempData["CurrentFilter_P_I"];
-    var messageUK = TempData["CurrentFilter_UK"];
-    var messageVK = TempData["CurrentFilter_VK"];
-    var messageS = TempData["CurrentFilter_S"];
-    var messageProp = TempData["CurrentFilter_Prop"];
-    var obj_Appeal = TempData["ObjectionNum"];
-}
- 
 @{
-    TempData.Keep("CurrentFilter_Id");
-}
+    Layout = "~/Views/Shared/_ClientLayout.cshtml";
 
-@{
-    TempData.Keep("CurrentFilter_PD");
-    TempData.Keep("CurrentFilter_CD");
-    TempData.Keep("CurrentFilter_LSA");
-    TempData.Keep("CurrentFilter_RA");
-    TempData.Keep("CurrentFilter_MV");
-    TempData.Keep("CurrentFilter_ON");
-    TempData.Keep("CurrentFilter_TN");
-    TempData.Keep("CurrentFilter_P_ID");
-    TempData.Keep("CurrentFilter_P_I");
-    TempData.Keep("CurrentFilter_UK");
-    TempData.Keep("CurrentFilter_VK");
-    TempData.Keep("CurrentFilter_S"); 
-    TempData.Keep("CurrentFilter_Prop");
+    // ── Admin identity from ViewBag ──────────────────────────────
+    bool _isAdmin = ViewBag.IsAdmin as bool? ?? false;
+    string _fullName = ViewBag.AdminFullName?.ToString() ?? "";
+    string _sapNumeric = ViewBag.SapNumeric?.ToString() ?? "";
+    string _adminPosition = ViewBag.AdminPosition?.ToString() ?? "";
+    string _sapFull = ViewBag.SapFull?.ToString() ?? "";
+
+    // ── SourceTable from ViewData ────────────────────────────────
+    string sourceTable = (string)(ViewData["SourceTable"] ?? "");
+
+    // ── All TempData reads use Peek — nothing is consumed ────────
+    bool _isAppeal = TempData.Peek("AppealStatus")?.ToString() == "True";
+
+    var messagePD = TempData.Peek("CurrentFilter_PD")?.ToString()
+                     ?? TempData.Peek("CurrentFilter_Prop")?.ToString()
+                     ?? "";
+
+    var messageProp = TempData.Peek("CurrentFilter_Prop")?.ToString()
+                      ?? TempData.Peek("CurrentFilter_PD")?.ToString()
+                      ?? "";
+
+    var propertyDescription = _isAppeal ? messageProp : messagePD;
+
+    var messageID2 = TempData.Peek("CurrentFilter_Id")?.ToString() ?? "";
+    var messageCD = TempData.Peek("CurrentFilter_CD")?.ToString() ?? "";
+    var messageLSA = TempData.Peek("CurrentFilter_LSA")?.ToString() ?? "";
+    var messageRA = TempData.Peek("CurrentFilter_RA")?.ToString() ?? "";
+    var messageMV = TempData.Peek("CurrentFilter_MV")?.ToString() ?? "";
+    var messageON = TempData.Peek("CurrentFilter_ON")?.ToString() ?? "";
+    var messageTN = TempData.Peek("CurrentFilter_TN")?.ToString() ?? "";
+    var messagePID = TempData.Peek("CurrentFilter_P_ID")?.ToString() ?? "";
+    var messagePI = TempData.Peek("CurrentFilter_P_I")?.ToString() ?? "";
+    var messageUK = TempData.Peek("CurrentFilter_UK")?.ToString() ?? "";
+    var messageVK = TempData.Peek("CurrentFilter_VK")?.ToString() ?? "";
+    var messageS = TempData.Peek("CurrentFilter_S")?.ToString() ?? "";
+    var obj_Appeal = TempData.Peek("ObjectionNum")?.ToString() ?? "";
+
+    // Derived aliases used in Section 2
     var messageEX = messageRA;
     var messageSA = messageLSA;
-    TempData.Keep("CurrentFilter_LSA");
-    TempData.Keep("CurrentFilter_RA");
-    TempData.Keep("CurrentFilter_MV");
-    TempData.Keep("ObjectionNum");
 
-     string sourceTable = (string)ViewData["SourceTable"];
-}
-  @{
-    Layout = "~/Views/Shared/_ClientLayout.cshtml";
+    // ── Persist admin identity in TempData for multi-step forms ──
+    // (only set if not already present so repeat visits don't overwrite)
+    if (_isAdmin)
+    {
+        TempData["SapNumber"] = _sapNumeric;
+        TempData["AdminFullName"] = _fullName;
+        TempData["AdminPosition"] = _adminPosition;
+        TempData["SapFull"] = _sapFull;
     }
-@{
-    bool _isAdmin = (bool)(ViewBag.IsAdmin ?? false);
-    string _fullName = ViewBag.AdminFullName ?? "";
-    string _sapNumeric = ViewBag.SapNumeric ?? "";
-    bool _isAppeal = TempData.Peek("AppealStatus")?.ToString() == "True";
-    string _propDesc = TempData.Peek("CurrentFilter_PD")?.ToString()
-                       ?? TempData.Peek("CurrentFilter_Prop")?.ToString()
-                       ?? "";
-    TempData.Keep("AppealStatus");
-    TempData.Keep("CurrentFilter_PD");
-    TempData.Keep("CurrentFilter_Prop");
+
+    // ── Keep ALL TempData keys for the next request ───────────────
+    // (handles Previous navigation back through the form)
+    var _keysToKeep = new[]
+    {
+        "AppealStatus",
+        "CurrentFilter_Id",
+        "CurrentFilter_PD",   "CurrentFilter_Prop",
+        "CurrentFilter_CD",   "CurrentFilter_LSA",
+        "CurrentFilter_RA",   "CurrentFilter_MV",
+        "CurrentFilter_ON",   "CurrentFilter_TN",
+        "CurrentFilter_P_ID", "CurrentFilter_P_I",
+        "CurrentFilter_UK",   "CurrentFilter_VK",
+        "CurrentFilter_S",
+        "ObjectionNum",
+        "SapNumber",   "AdminFullName",
+        "AdminPosition", "SapFull",
+    };
+    foreach (var _k in _keysToKeep)
+        if (TempData.ContainsKey(_k)) TempData.Keep(_k);
 }
 
-       
-
-
-
-
-
-
-
-
-
-
-<style>
-/* ── Objection Form Hero ─────────────────────────────────── */
-.obj-hero {
-    background: linear-gradient(135deg, #1a2e35 0%, #2d4f58 55%, #36626d 100%);
-    border-bottom: 3px solid #e6b000;
-    padding: 0;
-    margin-bottom: 24px;
-    border-radius: 0 0 12px 12px;
-    overflow: hidden;
-    box-shadow: 0 4px 20px rgba(26,46,53,.2);
-    position: relative;
-}
-
-.obj-hero::before {
-    content: '';
-    position: absolute;
-    top: -60px; right: -60px;
-    width: 220px; height: 220px;
-    background: radial-gradient(circle, rgba(230,176,0,.12) 0%, transparent 70%);
-    pointer-events: none;
-}
-
-.obj-hero::after {
-    content: '';
-    position: absolute;
-    bottom: -30px; left: 30px;
-    width: 120px; height: 120px;
-    background: radial-gradient(circle, rgba(230,176,0,.06) 0%, transparent 70%);
-    pointer-events: none;
-}
-
-.obj-hero-inner {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 20px;
-    padding: 22px 32px;
-    position: relative;
-    z-index: 1;
-    flex-wrap: wrap;
-}
-
-.obj-hero-left {
-    display: flex;
-    align-items: center;
-    gap: 18px;
-    flex: 1;
-    min-width: 260px;
-}
-
-.obj-hero-logo {
-    width: 54px; height: 54px;
-    border-radius: 12px;
-    background: rgba(230,176,0,.15);
-    border: 2px solid rgba(230,176,0,.4);
-    display: flex; align-items: center; justify-content: center;
-    overflow: hidden; padding: 5px; flex-shrink: 0;
-}
-
-.obj-hero-logo img {
-    width: 100%; height: 100%; object-fit: contain;
-}
-
-.obj-hero-text {}
-
-.obj-hero-org {
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 2px;
-    color: rgba(230,176,0,.7);
-    text-transform: uppercase;
-    margin-bottom: 2px;
-}
-
-.obj-hero-title {
-    font-size: 18px;
-    font-weight: 800;
-    color: #fff;
-    line-height: 1.2;
-    margin: 0;
-}
-
-.obj-hero-title span { color: #e6b000; }
-
-.obj-hero-sub {
-    font-size: 12px;
-    color: rgba(255,255,255,.55);
-    margin-top: 3px;
-    letter-spacing: .3px;
-}
-
-.obj-hero-right {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 8px;
-    flex-shrink: 0;
-}
-
-.obj-hero-type-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    padding: 6px 14px;
-    background: rgba(230,176,0,.18);
-    border: 1.5px solid rgba(230,176,0,.5);
-    border-radius: 100px;
-    font-size: 12px;
-    font-weight: 700;
-    color: #e6b000;
-    letter-spacing: .5px;
-    text-transform: uppercase;
-}
-
-.obj-hero-prop {
-    font-size: 12.5px;
-    color: rgba(255,255,255,.65);
-    text-align: right;
-    max-width: 340px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.obj-hero-prop strong { color: rgba(255,255,255,.9); }
-
-/* Form head bar below hero */
-.obj-form-head {
-    background: linear-gradient(90deg, #1a2e35, #243e48);
-    border-bottom: 2px solid #e6b000;
-    padding: 10px 32px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.obj-form-head-label {
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 1.5px;
-    color: rgba(255,255,255,.45);
-    text-transform: uppercase;
-    white-space: nowrap;
-}
-
-.obj-form-head-title {
-    font-size: 13px;
-    font-weight: 700;
-    color: #e6b000;
-    text-transform: uppercase;
-    letter-spacing: .3px;
-}
-
-/* Admin capturer card */
-.obj-capturer-card {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    background: linear-gradient(135deg, #1a2e35, #2d4f58);
-    border: 1.5px solid rgba(230,176,0,.4);
-    border-radius: 10px;
-    padding: 12px 18px;
-    margin-top: 16px;
-}
-
-.obj-capturer-icon {
-    width: 38px; height: 38px;
-    border-radius: 8px;
-    background: rgba(230,176,0,.15);
-    border: 1.5px solid rgba(230,176,0,.4);
-    display: flex; align-items: center; justify-content: center;
-    color: #e6b000; font-size: 16px; flex-shrink: 0;
-}
-
-.obj-capturer-label {
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 1.5px;
-    color: rgba(255,255,255,.45);
-    text-transform: uppercase;
-    margin-bottom: 2px;
-}
-
-.obj-capturer-name {
-    font-size: 15px;
-    font-weight: 700;
-    color: #fff;
-}
-
-.obj-capturer-sap {
-    font-size: 11px;
-    color: rgba(230,176,0,.75);
-    font-weight: 600;
-    margin-top: 1px;
-}
-
-@@media (max-width: 680px) {
-    .obj-hero-inner  { flex-direction: column; align-items: flex-start; padding: 18px 20px; }
-    .obj-hero-right  { align-items: flex-start; }
-    .obj-hero-prop   { text-align: left; white-space: normal; }
-    .obj-form-head   { padding: 10px 20px; }
-}
-</style>
+@section Styles {
 
 @* 4. Add this CSS link at the top *@
 <link href="~/css/views/objection-form.css" rel="stylesheet" asp-append-version="true" />
 <link href="~/css/views/clientdashboardcss.css" rel="stylesheet" asp-append-version="true" />
 <link href="~/css/views/property-search.css" rel="stylesheet" asp-append-version="true" />
 <link href="~/css/views/searchpropertycss.css" rel="stylesheet" asp-append-version="true" />
+}
+
 <div class="obj-hero">
     <div class="obj-hero-inner">
         <div class="obj-hero-left">
@@ -310,10 +113,10 @@
                 <i class="fa-solid @(_isAppeal ? "fa-gavel" : "fa-file-pen")"></i>
                 @(_isAppeal ? "Appeal Form" : "Objection Form")
             </div>
-            @if (!string.IsNullOrWhiteSpace(_propDesc))
+            @if (!string.IsNullOrWhiteSpace(propertyDescription))
             {
                 <div class="obj-hero-prop">
-                    <strong>Property:</strong> @_propDesc
+                    <strong>Property:</strong> @propertyDescription
                 </div>
             }
         </div>
@@ -3855,9 +3658,10 @@
                         <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #d4a000; font-size: 13px; text-transform: uppercase; letter-spacing: 0.3px;">CATEGORY</label>
                         <select asp-for="New_Category" id="NewCat" style="width: 100%; padding: 12px 16px; margin-bottom: 15px; border: 2px solid #e6b000; border-radius: 8px; background: white; font-size: 14px; color: #333; transition: all 0.3s; box-shadow: 0 2px 8px rgba(230, 176, 0, 0.1); cursor: pointer;">
                                             <option value="" selected disabled>--Select Category--</option>
-                                            <option value="Business and Commercial">Business and Commercial</option>
-                                            <option value="Farming">Farming</option>
-                                            <option value="Industrial">Industrial</option>
+                                             <option value="Agricultural">Agricultural</option>
+                        <option value="Business and Commercial">Business and Commercial</option>
+                                          
+                                             <option value="Industrial">Industrial</option>
                                             <option value="Mining Land">Mining Land</option>
                                             <option value="MultiPurpose*">MultiPurpose*</option>
                                             <option value="Municipal Property">Municipal Property</option>
@@ -3982,26 +3786,57 @@
                     <strong style="color:#006570;">Capturer (Sap no.):</strong> <input style="margin-top: -1px;font-family: 'Poppins', sans-serif;border:2px solid #006570;border-radius:5px;padding:5px 10px;background:white;" id="sapNo" maxlength="10" required asp-for="Capturer" type="text" onpaste="return false;" ondrop="return false;" />
                     <br />
                 </div> *@
-                                    @if (_isAdmin)
-                    {
-                        <div class="obj-capturer-card" id="capturer">
-                            <div class="obj-capturer-icon">
-                                <i class="fa-solid fa-id-badge"></i>
-                            </div>
-                            <div>
-                                <div class="obj-capturer-label">Capturer</div>
-                                <div class="obj-capturer-name">@_fullName</div>
-                                <div class="obj-capturer-sap">SAP: @ViewBag.SapFull</div>
-                            </div>
-                           
-                            <input type="hidden" id="sapNo" asp-for="Capturer" value="@_sapNumeric" />
+                     @if (_isAdmin)
+            {
+                <div id="capturer" style="display:flex;align-items:center;gap:14px;
+                     background:linear-gradient(135deg,#1a2e35,#2d4f58);
+                     border:1.5px solid rgba(230,176,0,.4);border-radius:10px;
+                     padding:14px 18px;margin-bottom:18px;flex-wrap:wrap;">
+
+                   
+                    <div style="width:42px;height:42px;border-radius:9px;flex-shrink:0;
+                         background:rgba(230,176,0,.15);border:1.5px solid rgba(230,176,0,.4);
+                         display:flex;align-items:center;justify-content:center;
+                         color:#e6b000;font-size:18px;">
+                        <i class="fa-solid fa-id-badge"></i>
+                    </div>
+
+                    
+                    <div style="flex:1;">
+                        <div style="font-size:9.5px;font-weight:700;letter-spacing:1.5px;
+                             color:rgba(255,255,255,.4);text-transform:uppercase;margin-bottom:1px;">
+                            Captured by
                         </div>
-                    }
-                    else
-                    {
-    
-                        <input type="hidden" asp-for="Capturer" value="" />
-                    }
+                        <div style="font-size:15px;font-weight:800;color:#fff;line-height:1.2;">
+                            @_fullName
+                        </div>
+                        @if (!string.IsNullOrWhiteSpace(_adminPosition))
+                        {
+                            <div style="font-size:11.5px;color:rgba(230,176,0,.7);font-weight:600;margin-top:1px;">
+                                @_adminPosition
+                            </div>
+                        }
+                        <div style="font-size:11px;color:rgba(255,255,255,.35);margin-top:2px;font-family:monospace;">
+                            @_sapFull
+                        </div>
+                    </div>
+
+                    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0;">
+                        <span style="font-size:9px;font-weight:700;letter-spacing:1.5px;
+                              color:rgba(255,255,255,.3);text-transform:uppercase;">SAP No.</span>
+                        <span style="font-size:14px;font-weight:800;color:#e6b000;font-family:monospace;">
+                            @_sapNumeric
+                        </span>
+                    </div>
+
+                  
+                    <input type="hidden" id="sapNo" asp-for="Capturer" value="@_sapNumeric" />
+                </div>
+            }
+            else
+            {
+                <input type="hidden" asp-for="Capturer" value="" />
+            }
 
                 <label hidden style="margin-top:1%"><span style="color: red;">*</span>DATE (<span style="color: red;">required</span>)</label>
                 <input hidden style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" id="signDate" required type="datetime-local" asp-for="Declaration_Date">

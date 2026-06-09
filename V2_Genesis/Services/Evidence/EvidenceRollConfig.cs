@@ -64,6 +64,26 @@
                     AppealRootPath: AppPath("Objection_Supp3"),
                     ConnectionKey: "Sup3Connection"),
 
+                ["Objection_Supp4"] = new(
+                    ValidateSp: "userDocuments_Sup4",
+                    EvidenceCountSp: "userDocumentsEvidence_Sup4",
+                    UpdateFileSp: "UpdateObjFiles_Sup4",
+                    UpdateCountSp: "UpdateEvidenceCount_Sup4",
+                    EvidenceSp: "Evidence_Sup4",
+                    FileRootPath: ObjPath("Objection_Supp4"),
+                    AppealRootPath: AppPath("Objection_Supp4"),
+                    ConnectionKey: "Sup4Connection"),
+
+                ["Objection_Supp5"] = new(
+                    ValidateSp: "userDocuments_Sup5",
+                    EvidenceCountSp: "userDocumentsEvidence_Sup5",
+                    UpdateFileSp: "UpdateObjFiles_Sup5",
+                    UpdateCountSp: "UpdateEvidenceCount_Sup5",
+                    EvidenceSp: "Evidence_Sup5",
+                    FileRootPath: ObjPath("Objection_Supp5"),
+                    AppealRootPath: AppPath("Objection_Supp5"),
+                    ConnectionKey: "Sup5Connection"),
+
                 ["Objection_Query"] = new(
                     ValidateSp: "userDocuments",
                     EvidenceCountSp: "userDocumentsEvidence",

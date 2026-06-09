@@ -41,6 +41,20 @@
                     StatsSp: "AdminDashboardStats_Sup3",
                     ConnectionKey: "Sup3Connection"
                 ),
+                ["Objection_Supp3"] = new(
+                    ObjSearchSp: "GetObjectionDetailsBySearch_Sup4",
+                    AppSearchSp: "GV_App_Search_Sup4",
+                    PropSearchSp: "GV_Prop_Search_Sup4",
+                    StatsSp: "AdminDashboardStats_Sup4",
+                    ConnectionKey: "Sup4Connection"
+                ),
+                ["Objection_Supp5"] = new(
+                    ObjSearchSp: "GetObjectionDetailsBySearch_Sup5",
+                    AppSearchSp: "GV_App_Search_Sup5",
+                    PropSearchSp: "GV_Prop_Search_Sup5",
+                    StatsSp: "AdminDashboardStats_Sup5",
+                    ConnectionKey: "Sup5Connection"
+                ),
             };
     }
 }

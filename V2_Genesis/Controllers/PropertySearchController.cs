@@ -5,6 +5,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using System.Data;
+using System.Globalization;
 using System.Security.Claims;
 using System.Text.RegularExpressions;
 using V2_Genesis.Data;
@@ -164,6 +165,8 @@ public class PropertySearchController : Controller
         if (roll is null)
             return NotFound($"Roll '{rollSource}' not found.");
 
+        unitKey = NormalizeKey(unitKey) ?? string.Empty;
+        valuationKey = NormalizeKey(valuationKey) ?? string.Empty;
         var items = await _search.GetPropertyDetailsAsync(
             rollSource,
             unitKey,
@@ -198,6 +201,35 @@ public class PropertySearchController : Controller
 
         return View(vm);
     }
+    private static string NormalizeKey(object? value)
+    {
+        if (value == null)
+            return string.Empty;
+
+        var key = value.ToString()?.Trim();
+
+        if (string.IsNullOrWhiteSpace(key))
+            return string.Empty;
+
+        // Fix broken scientific notation like "1.05735e 007"
+        key = Regex.Replace(
+            key,
+            @"([eE])\s+([+-]?\d+)",
+            "$1+$2");
+
+        // Convert scientific notation / float / decimal into plain whole-number string
+        if (decimal.TryParse(
+            key,
+            NumberStyles.Float,
+            CultureInfo.InvariantCulture,
+            out var decimalValue))
+        {
+            return Math.Round(decimalValue, 0)
+                .ToString("0", CultureInfo.InvariantCulture);
+        }
+
+        return key;
+    }
 
     private static PropertyDetailResult MapAttributePropertyToResult(
        LisPropertyDetail d)
@@ -206,8 +238,8 @@ public class PropertySearchController : Controller
         {
             // ── Identifiers ───────────────────────────────────────
             UnitKey = d.UnitKey,           // ← CRITICAL for link form
-            ValuationKey = d.ValuationKey ?? string.Empty,
-            Id = d.UnitKey,
+            ValuationKey = d.ValuationKey,
+            Id = d.UnitKey.ToString(),
             PremiseId = d.PremiseId,
 
             // ── Property ──────────────────────────────────────────

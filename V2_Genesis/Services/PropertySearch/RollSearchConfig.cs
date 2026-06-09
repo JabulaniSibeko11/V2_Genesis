@@ -76,6 +76,34 @@ public static class RollSearchRegistry
                 ConnectionKey: "Sup3Connection"
             ),
 
+            ["Objection_Supp4"] = new(
+                SpTown: "SearchTown",
+                SpStand: "SearchTownStandNumber",
+                SpStandAddress: "StandTownStandNumberAddress",
+                SpAddress: "SearchTownAddress",
+                SpScheme: "SearchTownScheme",
+                SpUnit: "SearchTownUnit",
+                SpSchemeUnit: "SearchTownSchemeUnit",
+                SpStandScheme: "SearchTownERFScheme",
+                SpAddressScheme: "SearchTownAddressScheme",
+                DetailSp: "IndexObjection_Sup3",
+                ConnectionKey: "Sup3Connection"
+            ),
+
+            ["Objection_Supp5"] = new(
+                SpTown: "SearchTown",
+                SpStand: "SearchTownStandNumber",
+                SpStandAddress: "StandTownStandNumberAddress",
+                SpAddress: "SearchTownAddress",
+                SpScheme: "SearchTownScheme",
+                SpUnit: "SearchTownUnit",
+                SpSchemeUnit: "SearchTownSchemeUnit",
+                SpStandScheme: "SearchTownERFScheme",
+                SpAddressScheme: "SearchTownAddressScheme",
+                DetailSp: "IndexObjection_Sup3",
+                ConnectionKey: "Sup3Connection"
+            ),
+
             // ── Section 78 Query roll ─────────────────────────────────
             ["Objection_Query"] = new(
                 SpTown: "SearchTown",
