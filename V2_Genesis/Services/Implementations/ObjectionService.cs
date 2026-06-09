@@ -27,7 +27,7 @@ public class ObjectionService : IObjectionService
         ["LIS"] = ("LISConnection", "CheckPropertyFromLIS"),
     };
 
-    // ── sourceTable → MVC controller name (for Lodge button routing) ──
+    // ── sourceTable → MVC controller name ─────────────────────────────
     public static readonly Dictionary<string, string> SourceToController = new()
     {
         ["GV23-SUP5"] = "Sup5",
@@ -39,7 +39,7 @@ public class ObjectionService : IObjectionService
         ["LIS"] = "LIS",
     };
 
-    // ── rollSource (GvList.Source) → MVC controller name ─────────────────
+    // ── rollSource → MVC controller name ──────────────────────────────
     public static readonly Dictionary<string, string> RollSourceToController = new()
     {
         ["Objection"] = "Objection",
@@ -50,7 +50,7 @@ public class ObjectionService : IObjectionService
         ["Objection_Supp5"] = "Sup5",
     };
 
-    // ── rollSource → sourceTable key (used in _sourceMap) ─────────────────
+    // ── rollSource → sourceTable ──────────────────────────────────────
     public static readonly Dictionary<string, string> RollSourceToSourceTable = new()
     {
         ["Objection"] = "GV23",
@@ -61,17 +61,112 @@ public class ObjectionService : IObjectionService
         ["Objection_Supp5"] = "GV23-SUP5",
     };
 
+    // ── sourceTable → rollSource ──────────────────────────────────────
+    // This is the important reverse map for saving.
+    public static readonly Dictionary<string, string> SourceTableToRollSource = new()
+    {
+        ["GV23"] = "Objection",
+        ["GV23-SUP1"] = "Objection_Supp1",
+        ["GV23-SUP2"] = "Objection_Supp2",
+        ["GV23-SUP3"] = "Objection_Supp3",
+        ["GV23-SUP4"] = "Objection_Supp4",
+        ["GV23-SUP5"] = "Objection_Supp5",
+    };
+
     private const string SP_APPEAL = "IndexAppeal";
 
     public ObjectionService(IConfiguration config)
         => _config = config;
 
+    // ── Convert anything into rollSource for saving ───────────────────
+    public static string NormalizeRollSource(string? source)
+    {
+        if (string.IsNullOrWhiteSpace(source))
+            return "Objection_Supp3";
+
+        source = source.Trim();
+
+        if (SourceTableToRollSource.TryGetValue(source, out var rollSource))
+            return rollSource;
+
+        if (RollSourceToSourceTable.ContainsKey(source))
+            return source;
+
+        return source switch
+        {
+            "Sup1" => "Objection_Supp1",
+            "Sup2" => "Objection_Supp2",
+            "Sup3" => "Objection_Supp3",
+            "Sup4" => "Objection_Supp4",
+            "Sup5" => "Objection_Supp5",
+
+            "SUP1" => "Objection_Supp1",
+            "SUP2" => "Objection_Supp2",
+            "SUP3" => "Objection_Supp3",
+            "SUP4" => "Objection_Supp4",
+            "SUP5" => "Objection_Supp5",
+
+            _ => source
+        };
+    }
+
+    // ── Convert rollSource into sourceTable for searching/display ──────
+    public static string NormalizeSourceTable(string? source)
+    {
+        if (string.IsNullOrWhiteSpace(source))
+            return "GV23-SUP3";
+
+        source = source.Trim();
+
+        if (RollSourceToSourceTable.TryGetValue(source, out var sourceTable))
+            return sourceTable;
+
+        if (_sourceMap.ContainsKey(source))
+            return source;
+
+        return source switch
+        {
+            "Sup1" => "GV23-SUP1",
+            "Sup2" => "GV23-SUP2",
+            "Sup3" => "GV23-SUP3",
+            "Sup4" => "GV23-SUP4",
+            "Sup5" => "GV23-SUP5",
+
+            "SUP1" => "GV23-SUP1",
+            "SUP2" => "GV23-SUP2",
+            "SUP3" => "GV23-SUP3",
+            "SUP4" => "GV23-SUP4",
+            "SUP5" => "GV23-SUP5",
+
+            _ => source
+        };
+    }
+
+    // ── Get connection key from rollSource ─────────────────────────────
+    public static string GetConnectionKeyFromRollSource(string? rollSource)
+    {
+        rollSource = NormalizeRollSource(rollSource);
+
+        return rollSource switch
+        {
+            "Objection_Supp5" => "Sup5Connection",
+            "Objection_Supp4" => "Sup4Connection",
+            "Objection_Supp3" => "Sup3Connection",
+            "Objection_Supp2" => "Sup2Connection",
+            "Objection_Supp1" => "Sup1Connection",
+            "Objection" => "DefaultConnection",
+            _ => "DefaultConnection"
+        };
+    }
+
     // ── Normal objection property fetch ───────────────────────────────
     public async Task<List<CheckPropertyResult>> GetPropertyForObjectionAsync(
-     string sourceTable,
-     string? unitKey,
-     string? valuationKey)
+        string sourceTable,
+        string? unitKey,
+        string? valuationKey)
     {
+        sourceTable = NormalizeSourceTable(sourceTable);
+
         if (!_sourceMap.TryGetValue(sourceTable, out var cfg))
             return new List<CheckPropertyResult>();
 
@@ -94,21 +189,23 @@ public class ObjectionService : IObjectionService
 
         return results.ToList();
     }
+
     // ── Appeal property fetch ─────────────────────────────────────────
     public async Task<List<CheckPropertyResult>> GetPropertyForAppealAsync(
         string rollSource,
         string objectionNo)
     {
-        // Use the roll's connection from the search registry
+        rollSource = NormalizeRollSource(rollSource);
+
         if (!RollSearchRegistry.Configs.TryGetValue(rollSource, out var rollCfg))
             return new List<CheckPropertyResult>();
 
         var connString = _config.GetConnectionString(rollCfg.ConnectionKey)
+                         ?? _config.GetConnectionString(GetConnectionKeyFromRollSource(rollSource))
                          ?? _config.GetConnectionString("DefaultConnection")!;
 
         await using var conn = new SqlConnection(connString);
 
-        // IndexAppeal returns differently-named columns — map manually
         var raw = await conn.QueryAsync(
             SP_APPEAL,
             new { Objection_No = objectionNo },
@@ -117,9 +214,9 @@ public class ObjectionService : IObjectionService
         return raw.Select(r => new CheckPropertyResult
         {
             PremiseId = r.Premise_id?.ToString(),
-            UnitKey = r.Unit_key?.ToString(),
+            UnitKey = NormalizeKey(r.Unit_key),
             PropertyId = r.Property_id?.ToString(),
-            ValuationKey = r.Valuation_Key?.ToString(),
+            ValuationKey = NormalizeKey(r.Valuation_Key),
             Sector = r.Sector?.ToString(),
             TownNameDesc = r.Town_Name?.ToString(),
             MarketValue = r.New_Market_Value_MVD?.ToString(),
@@ -128,7 +225,7 @@ public class ObjectionService : IObjectionService
             CatDesc = r.New_Category_MVD?.ToString(),
             PropertyDesc = r.New_Property_Description_MVD?.ToString(),
             OwnerName = r.New_Owner_MVD?.ToString(),
-            // Map extra appeal columns into spare fields
+
             Re = r.New3_Market_Value_MVD?.ToString(),
             Reason = r.New3_Extent_MVD?.ToString(),
             ValuationDate = r.New3_Category_MVD?.ToString(),
@@ -148,13 +245,11 @@ public class ObjectionService : IObjectionService
         if (string.IsNullOrWhiteSpace(key))
             return string.Empty;
 
-        // Fix broken scientific notation like "1.05735e 007"
         key = Regex.Replace(
             key,
             @"([eE])\s+([+-]?\d+)",
             "$1+$2");
 
-        // Convert scientific notation / float / decimal into plain whole-number string
         if (decimal.TryParse(
             key,
             NumberStyles.Float,

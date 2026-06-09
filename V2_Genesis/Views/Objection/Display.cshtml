@@ -1,0 +1,144 @@
+﻿@{
+    Layout = "~/Views/Shared/_ClientLayout.cshtml";
+
+    var queryRef = TempData.Peek("objection_ref")?.ToString()
+                   ?? TempData.Peek("Id")?.ToString();
+
+    var pin = TempData.Peek("pin")?.ToString();
+    var isAppeal = TempData.Peek("IsAppeal")?.ToString() == "True";
+    var isMulti = TempData.Peek("IsMulti")?.ToString() == "True";
+    var typeWord = isAppeal ? "Appeal" : "Objection";
+
+    var count = TempData.Peek("Count")?.ToString() ?? "0";
+    var date = TempData.Peek("time")?.ToString();
+    var emailStatus = TempData.Peek("EmailStatus")?.ToString();
+
+    var oldPropDesc = TempData.Peek("Old_Property_Description")?.ToString();
+    var oldCat = TempData.Peek("Old_Category")?.ToString();
+    var oldAddress = TempData.Peek("Old_Address")?.ToString();
+    var oldExtent = TempData.Peek("Old_Extent")?.ToString();
+    var oldMV = TempData.Peek("Old_Market_Value")?.ToString();
+    var oldOwner = TempData.Peek("Old_Owner")?.ToString();
+
+    var newPropDesc = TempData.Peek("new_Property_Description")?.ToString();
+    var newCat = TempData.Peek("new_Category")?.ToString();
+    var newAddress = TempData.Peek("new_Address")?.ToString();
+    var newExtent = TempData.Peek("new_Extent")?.ToString();
+    var newMV = TempData.Peek("new_Market_Value")?.ToString();
+    var newOwner = TempData.Peek("new_Owner")?.ToString();
+
+    var reason = TempData.Peek("objection_reason")?.ToString();
+
+    TempData.Keep();
+}
+
+<div class="container mt-4 mb-5">
+
+    <div class="alert alert-success">
+        <h3>@typeWord Successfully Submitted</h3>
+        <p>
+            Your @typeWord.ToLower() has been received and logged.
+        </p>
+
+        @if (!string.IsNullOrWhiteSpace(emailStatus))
+        {
+            <p><strong>Email Status:</strong> @emailStatus</p>
+        }
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-header">
+            <strong>Submission Details</strong>
+        </div>
+        <div class="card-body">
+            <p><strong>@typeWord Reference:</strong> @queryRef</p>
+            <p><strong>PIN:</strong> @pin</p>
+            <p><strong>Submission Type:</strong> @(isAppeal ? "Appeal" : isMulti ? "Multi-Purpose Objection" : "Objection")</p>
+            <p><strong>Date:</strong> @date</p>
+            <p><strong>Documents Uploaded:</strong> @count</p>
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-header">
+            <strong>Current Valuation Roll Details</strong>
+        </div>
+        <div class="card-body">
+            <table class="table table-bordered">
+                <tr>
+                    <th>Property Description</th>
+                    <td>@oldPropDesc</td>
+                </tr>
+                <tr>
+                    <th>Category</th>
+                    <td>@oldCat</td>
+                </tr>
+                <tr>
+                    <th>Address</th>
+                    <td>@oldAddress</td>
+                </tr>
+                <tr>
+                    <th>Extent</th>
+                    <td>@oldExtent</td>
+                </tr>
+                <tr>
+                    <th>Market Value</th>
+                    <td>@oldMV</td>
+                </tr>
+                <tr>
+                    <th>Owner</th>
+                    <td>@oldOwner</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-header">
+            <strong>Requested Changes</strong>
+        </div>
+        <div class="card-body">
+            <table class="table table-bordered">
+                <tr>
+                    <th>Property Description</th>
+                    <td>@newPropDesc</td>
+                </tr>
+                <tr>
+                    <th>Category</th>
+                    <td>@newCat</td>
+                </tr>
+                <tr>
+                    <th>Address</th>
+                    <td>@newAddress</td>
+                </tr>
+                <tr>
+                    <th>Extent</th>
+                    <td>@newExtent</td>
+                </tr>
+                <tr>
+                    <th>Market Value</th>
+                    <td>@newMV</td>
+                </tr>
+                <tr>
+                    <th>Owner</th>
+                    <td>@newOwner</td>
+                </tr>
+            </table>
+
+            @if (!string.IsNullOrWhiteSpace(reason))
+            {
+                <p><strong>Reason:</strong> @reason</p>
+            }
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <a class="btn btn-primary"
+               asp-controller="Notice"
+               asp-action="DownloadAcknowledgement"
+               asp-route-objectionNo="@queryRef">
+            Download Acknowledgement
+        </a>
+    </div>
+
+</div>

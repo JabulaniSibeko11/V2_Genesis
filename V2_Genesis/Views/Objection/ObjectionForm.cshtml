@@ -11,7 +11,7 @@
     string _sapFull = ViewBag.SapFull?.ToString() ?? "";
 
     // ── SourceTable from ViewData ────────────────────────────────
-    string sourceTable = (string)(ViewData["SourceTable"] ?? "");
+    // //string sourceTable = (string)(ViewData["SourceTable"] ?? "");
 
     // ── All TempData reads use Peek — nothing is consumed ────────
     bool _isAppeal = TempData.Peek("AppealStatus")?.ToString() == "True";
@@ -25,6 +25,20 @@
                       ?? "";
 
     var propertyDescription = _isAppeal ? messageProp : messagePD;
+
+
+  
+    string sourceTable = ViewData["SourceTable"]?.ToString()
+                         ?? TempData.Peek("SourceTable")?.ToString()
+                         ?? TempData.Peek("PropertyFrom")?.ToString()
+                         ?? "";
+
+    string rollSource = TempData.Peek("RollSource")?.ToString() ?? "";
+
+    TempData.Keep("RollSource");
+    TempData.Keep("SourceTable");
+    TempData.Keep("PropertyFrom");
+
 
     var messageID2 = TempData.Peek("CurrentFilter_Id")?.ToString() ?? "";
     var messageCD = TempData.Peek("CurrentFilter_CD")?.ToString() ?? "";
@@ -141,10 +155,10 @@
 </div>
  *@
 
-<form id="myForm" method="post" enctype="multipart/form-data"
-      asp-controller="Objection"
-      asp-action="SubmitObjectionForm"
-      asp-route-PropertyFrom="@sourceTable">
+<form id="myForm" method="post" enctype="multipart/form-data"asp-controller="Objection"asp-action="SubmitObjectionForm"asp-route-PropertyFrom="@sourceTable">
+
+    <input type="hidden" name="PropertyFrom" value="@sourceTable" />
+    <input type="hidden" name="RollSource" value="@rollSource" />
    
     <div style="display:flex;justify-content: center;">
         <div style="margin-top: 12px; border-radius: 12px; border: 3px solid #e6b000; padding: 20px; width: 1050px; background-color: #ffffff; box-shadow: 0 10px 40px rgba(0, 101, 112, 0.15);">

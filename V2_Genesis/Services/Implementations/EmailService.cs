@@ -186,13 +186,13 @@ namespace V2_Genesis.Services.Implementations
                     recipients);
 
                 // 4. Save EML copy to folder
-                _ = SaveEmailCopyAsync(
-                    folderPath,
-                    objectionRef,
-                    actionWord,
-                    htmlBody,
-                    acknowledgementPdf,
-                    recipients);
+                await SaveEmailCopyAsync(
+     folderPath,
+     objectionRef,
+     actionWord,
+     htmlBody,
+     acknowledgementPdf,
+     recipients);
 
                 // 5. Send email to each recipient with acknowledgement + extra PDFs
                 foreach (var recipient in recipients)

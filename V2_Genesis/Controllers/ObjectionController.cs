@@ -691,35 +691,59 @@ public class ObjectionController : Controller
     [Route("objection/form")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> SubmitObjectionForm(
-        Obj_Property_InfoModel obj,
-        Obj_Section1Model obj1,
-        Obj_Section2Model obj2,
-        Obj_Section3ResModel objR3,
-        Obj_Section3BusModel objB3,
-        Obj_Section3AgriModel objA3,
-        Obj_Section4BusModel objB4,
-        Obj_Section4ResModel objR4,
-        Obj_Section5Model obj5,
-        Obj_Section6Model obj6,
-        Obj_Section7Model obj7,
-        Obj_Files obj_file,
-        List<IFormFile> files,
-        List<IFormFile> fileR,
-        string AppealStat,
-        string obj_appeal,
-        Obj_Property_Info_AppealModel appeal,
-        string? PropertyFrom)
+    Obj_Property_InfoModel obj,
+    Obj_Section1Model obj1,
+    Obj_Section2Model obj2,
+    Obj_Section3ResModel objR3,
+    Obj_Section3BusModel objB3,
+    Obj_Section3AgriModel objA3,
+    Obj_Section4BusModel objB4,
+    Obj_Section4ResModel objR4,
+    Obj_Section5Model obj5,
+    Obj_Section6Model obj6,
+    Obj_Section7Model obj7,
+    Obj_Files obj_file,
+    List<IFormFile> files,
+    List<IFormFile> fileR,
+    string AppealStat,
+    string obj_appeal,
+    Obj_Property_Info_AppealModel appeal,
+    string? PropertyFrom)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-        var rollSource = PropertyFrom
-                      ?? HttpContext.Session.GetString("RollSource")
-                      ?? "Objection_Supp3";
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        // ── Submit ────────────────────────────────────────────────────────
+        if (string.IsNullOrWhiteSpace(userId))
+            return RedirectToAction("Login", "Account");
+
+        var rollSource = ResolveSubmissionRollSource(PropertyFrom);
+        var sourceTable = ResolveSourceTable(rollSource);
+
+        HttpContext.Session.SetString("RollSource", rollSource);
+
+        TempData["RollSource"] = rollSource;
+        TempData["SourceTable"] = sourceTable;
+        TempData["PropertyFrom"] = sourceTable;
+
         var result = await _objectionFormService.SubmitAsync(
-            rollSource, userId, AppealStat, obj_appeal,
-            obj, obj1, obj2, objR3, objB3, objA3, objB4, objR4,
-            obj5, obj6, obj7, obj_file, files, fileR, appeal);
+            rollSource,
+            userId,
+            AppealStat,
+            obj_appeal,
+            obj,
+            obj1,
+            obj2,
+            objR3,
+            objB3,
+            objA3,
+            objB4,
+            objR4,
+            obj5,
+            obj6,
+            obj7,
+            obj_file,
+            files,
+            fileR,
+            appeal);
 
         if (!result.Success)
         {
@@ -727,28 +751,32 @@ public class ObjectionController : Controller
             return RedirectToAction("CheckProperty");
         }
 
-        // ── Resolved values ───────────────────────────────────────────────
         var objectionRef = result.ObjectionNo;
         var isAppeal = result.IsAppeal;
-        var isMulti = obj.Property_Type?.Equals(
-                               "Multi", StringComparison.OrdinalIgnoreCase) ?? false;
+        var isMulti = obj.Property_Type?.Equals("Multi", StringComparison.OrdinalIgnoreCase) ?? false;
 
-        // ── TempData ──────────────────────────────────────────────────────
         TempData["pin"] = result.Pin;
         TempData["Id"] = objectionRef;
         TempData["objection_ref"] = objectionRef;
         TempData["section51pin"] = result.Pin;
         TempData["time"] = DateTime.Now.ToString("dd MMMM yyyy HH:mm");
         TempData["IsMulti"] = isMulti.ToString();
-        TempData["desc"] = obj.Property_Desc;
-        TempData["ValuationKey"] = isAppeal
-    ? appeal?.A_Valuation_Key ?? obj.Valuation_Key
-    : obj.Valuation_Key;
+        TempData["IsAppeal"] = isAppeal.ToString();
+
         TempData["successmessage"] = isAppeal
             ? "Appeal Submitted Successfully"
             : "Objection Submitted Successfully";
 
-        // Old values
+        //TempData["EmailStatus"] = result.EmailSent
+        //    ? "Acknowledgement email sent to the client."
+        //    : "Submission saved, but the email was not sent. Please check the logs.";
+
+        TempData["desc"] = obj.Property_Desc;
+
+        TempData["ValuationKey"] = isAppeal
+            ? appeal?.A_Valuation_Key ?? obj.Valuation_Key
+            : obj.Valuation_Key;
+
         TempData["Old_Property_Description"] = obj6.Old_Property_Description;
         TempData["Old_Category"] = obj6.Old_Category;
         TempData["Old_Address"] = obj6.Old_Address;
@@ -756,7 +784,6 @@ public class ObjectionController : Controller
         TempData["Old_Market_Value"] = obj6.Old_Market_Value;
         TempData["Old_Owner"] = obj6.Old_Owner;
 
-        // New values
         TempData["new_Property_Description"] = obj6.New_Property_Description;
         TempData["new_Category"] = obj6.New_Category;
         TempData["new_Address"] = obj6.New_Address;
@@ -764,33 +791,31 @@ public class ObjectionController : Controller
         TempData["new_Market_Value"] = obj6.New_Market_Value;
         TempData["new_Owner"] = obj6.New_Owner;
 
-        // Multi section 2
         TempData["Old2_Category"] = obj6.Old2_Category;
         TempData["Old2_Extent"] = obj6.Old2_Extent;
         TempData["Old2_Market_Value"] = obj6.Old2_Market_Value;
+
         TempData["new2_Category"] = obj6.New2_Category;
         TempData["new2_Extent"] = obj6.New2_Extent;
         TempData["new2_Market_Value"] = obj6.New2_Market_Value;
 
-        // Multi section 3
         TempData["Old3_Category"] = obj6.Old3_Category;
         TempData["Old3_Extent"] = obj6.Old3_Extent;
         TempData["Old3_Market_Value"] = obj6.Old3_Market_Value;
+
         TempData["new3_Category"] = obj6.New3_Category;
         TempData["new3_Extent"] = obj6.New3_Extent;
         TempData["new3_Market_Value"] = obj6.New3_Market_Value;
 
         TempData["objection_reason"] = obj6.Objection_Reasons;
 
-        TempData["IsAppeal"] = isAppeal.ToString();
-
-        // Files
-        var allFiles = (files ?? new())
-            .Concat(fileR ?? new())
-            .Where(f => f is not null && f.Length > 0)
+        var allFiles = (files ?? new List<IFormFile>())
+            .Concat(fileR ?? new List<IFormFile>())
+            .Where(f => f != null && f.Length > 0)
             .ToList();
 
         TempData["Count"] = allFiles.Count.ToString();
+
         for (int i = 1; i <= 10; i++)
         {
             TempData[$"File{i}"] = i <= allFiles.Count
@@ -798,127 +823,72 @@ public class ObjectionController : Controller
                 : null;
         }
 
-        // ── AcknowledgementData — exact property names from the model ──────
-        var ackData = new AcknowledgementData
+        return RedirectToAction(isMulti ? nameof(MultiPurposeDisplay) : nameof(Display));
+    }
+    private string ResolveSubmissionRollSource(string? sourceFromForm)
+    {
+        var source = sourceFromForm;
+
+        if (string.IsNullOrWhiteSpace(source) && Request.HasFormContentType)
         {
-            // ObjectionNo  = PIN  (matches how FromTempData sets it)
-            // ObjectionRef = actual reference number
-            ObjectionNo = result.Pin,
-            ObjectionRef = objectionRef,
-            RollSource = rollSource,
-            SubmissionTime = DateTime.Now.ToString("dd MMMM yyyy HH:mm"),
-            IsMulti = isMulti,
-            IsAppeal = isAppeal,
-            FileCount = allFiles.Count,
-            ObjectionReason = obj6.Objection_Reasons,
+            if (Request.Form.TryGetValue("RollSource", out var postedRoll))
+                source = postedRoll.FirstOrDefault();
 
-            // Old values — note: PropertyDescription (no underscore before D)
-            //                     MarketValue       (no underscore mid-word)
-            Old_PropertyDescription = obj6.Old_Property_Description,
-            Old_Category = obj6.Old_Category,
-            Old_Address = obj6.Old_Address,
-            Old_Extent = obj6.Old_Extent,
-            Old_MarketValue = obj6.Old_Market_Value,
-            Old_Owner = obj6.Old_Owner,
+            if (string.IsNullOrWhiteSpace(source)
+                && Request.Form.TryGetValue("PropertyFrom", out var postedPropertyFrom))
+                source = postedPropertyFrom.FirstOrDefault();
+        }
 
-            // New values
-            New_PropertyDescription = obj6.New_Property_Description,
-            New_Category = obj6.New_Category,
-            New_Address = obj6.New_Address,
-            New_Extent = obj6.New_Extent,
-            New_MarketValue = obj6.New_Market_Value,
-            New_Owner = obj6.New_Owner,
+        source ??= TempData.Peek("RollSource")?.ToString()
+                ?? HttpContext.Session.GetString("RollSource")
+                ?? TempData.Peek("SourceTable")?.ToString()
+                ?? TempData.Peek("PropertyFrom")?.ToString()
+                ?? "Objection_Supp3";
 
-            // Multi section 2
-            Old2_Category = obj6.Old2_Category,
-            Old2_Extent = obj6.Old2_Extent,
-            Old2_MarketValue = obj6.Old2_Market_Value,
-            New2_Category = obj6.New2_Category,
-            New2_Extent = obj6.New2_Extent,
-            New2_MarketValue = obj6.New2_Market_Value,
+        return source.Trim() switch
+        {
+            "GV23" => "Objection",
+            "GV23-SUP1" => "Objection_Supp1",
+            "GV23-SUP2" => "Objection_Supp2",
+            "GV23-SUP3" => "Objection_Supp3",
 
-            // Multi section 3
-            Old3_Category = obj6.Old3_Category,
-            Old3_Extent = obj6.Old3_Extent,
-            Old3_MarketValue = obj6.Old3_Market_Value,
-            New3_Category = obj6.New3_Category,
-            New3_Extent = obj6.New3_Extent,
-            New3_MarketValue = obj6.New3_Market_Value,
+            "Sup1" => "Objection_Supp1",
+            "Sup2" => "Objection_Supp2",
+            "Sup3" => "Objection_Supp3",
 
-            ValuationKey = isAppeal
-        ? appeal?.A_Valuation_Key ?? obj.Valuation_Key
-        : obj.Valuation_Key,
-
+            var s => s
         };
+    }
 
-        // ── Folder path ───────────────────────────────────────────────────
-        var folderPath = isAppeal
-            ? Path.Combine(
-                _config[$"ObjectionRolls:{rollSource}:AppealRootPath"] ?? "",
-                objectionRef.Trim())
-            : Path.Combine(
-                _config[$"ObjectionRolls:{rollSource}:FileRootPath"] ?? "",
-                objectionRef.Trim());
-
-        // ── Email — fire-and-forget, never blocks the redirect ────────────
-        _ = Task.Run(async () =>
-        {
-            try
+    private static string ResolveSourceTable(string rollSource)
+    {
+        return ObjectionService.RollSourceToSourceTable.TryGetValue(rollSource, out var sourceTable)
+            ? sourceTable
+            : rollSource switch
             {
-                // 1. Generate acknowledgement PDF
-                var (ackPdfBytes, _) = await _noticeService
-                    .GenerateAcknowledgementAsync(ackData);
+                "Objection" => "GV23",
+                "Objection_Supp1" => "GV23-SUP1",
+                "Objection_Supp2" => "GV23-SUP2",
+                "Objection_Supp3" => "GV23-SUP3",
+                _ => rollSource
+            };
+    }
+    [HttpGet]
+    [Route("objection/display")]
+    public async Task<IActionResult> Display()
+    {
+        ViewBag.GvList = await _db.GvList.OrderBy(r => r.ID).ToListAsync();
+        ViewBag.IsMulti = false;
+        return View("Display");
+    }
 
-                // 2. Generate submitted form PDF and save it in the same folder
-                var submittedFormPdf = await _submittedFormPdfService
-                    .GenerateObjectionOrAppealFormAsync(
-                        isAppeal,
-                        folderPath,
-                        obj,
-                        appeal,
-                        obj1,
-                        obj2,
-                        objR3,
-                        objB3,
-                        objA3,
-                        objB4,
-                        objR4,
-                        obj5,
-                        obj6,
-                        obj7,
-                        DateTime.Now);
-
-                // 3. Attach submitted form PDF together with acknowledgement PDF
-                var extraAttachments = new List<EmailAttachment>
-        {
-            new EmailAttachment
-            {
-                FileName = submittedFormPdf.FileName,
-                FileBytes = submittedFormPdf.PdfBytes,
-                ContentType = MediaTypeNames.Application.Pdf
-            }
-        };
-
-                await _emailService.SendObjectionAcknowledgementAsync(
-                    objectionRef,
-                    rollSource,
-                    isAppeal,
-                    ackPdfBytes,
-                    folderPath,
-                    extraAttachments);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex,
-                    "[ObjectionController] Background email/form PDF failed for {Ref}",
-                    objectionRef);
-            }
-        });
-
-        // ── Redirect ──────────────────────────────────────────────────────
-        return RedirectToAction(
-            "DownloadAcknowledgement", "Notice",
-            new { objectionNo = objectionRef, rollSource });
+    [HttpGet]
+    [Route("objection/multipurpose-display")]
+    public async Task<IActionResult> MultiPurposeDisplay()
+    {
+        ViewBag.GvList = await _db.GvList.OrderBy(r => r.ID).ToListAsync();
+        ViewBag.IsMulti = true;
+        return View("Display");
     }
     private string GetControllerForSession()
     {
