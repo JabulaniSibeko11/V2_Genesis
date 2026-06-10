@@ -62,11 +62,15 @@ public class AdminController : Controller
     }
 
     // ── Helpers ───────────────────────────────────────────────────────
-    private bool IsAdmin(string? email) =>
-        !string.IsNullOrEmpty(email) && (
-            email.Equals("AdministrationEnquiries@Joburg.org.za",
-                StringComparison.OrdinalIgnoreCase) ||
-            AdminPattern.IsMatch(email));
+    private bool IsAdmin()
+    {
+        return User.Identity?.IsAuthenticated == true
+            && (
+                User.IsInRole("Admin")
+                || User.FindFirstValue("UMRole")?.Equals("Admin", StringComparison.OrdinalIgnoreCase) == true
+                || !string.IsNullOrWhiteSpace(User.FindFirstValue("SAPNumber"))
+            );
+    }
 
     private string AdminEmail => User.FindFirstValue(ClaimTypes.Name) ?? string.Empty;
     private string UserId => User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
@@ -80,7 +84,7 @@ public class AdminController : Controller
     [Route("admin")]
     public async Task<IActionResult> Index()
     {
-        if (!IsAdmin(AdminEmail))
+        if (!IsAdmin())
             return RedirectToAction("Login", "Account");
 
         var userId = UserId;
@@ -169,7 +173,7 @@ public class AdminController : Controller
     [Route("admin/search")]
     public async Task<IActionResult> Search()
     {
-        if (!IsAdmin(AdminEmail)) return View("_NoAccess");
+        if (!IsAdmin()) return View("_NoAccess");
 
         ViewBag.GvList = await _db.GvList.OrderBy(r => r.ID).ToListAsync();
         ViewBag.Townships = await _search.GetTownshipsAsync();
@@ -183,7 +187,7 @@ public class AdminController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> SearchByRef(string refNo, string? rollSource)
     {
-        if (!IsAdmin(AdminEmail)) return View("_NoAccess");
+        if (!IsAdmin()) return View("_NoAccess");
 
         if (string.IsNullOrWhiteSpace(refNo))
         {
@@ -208,7 +212,7 @@ public class AdminController : Controller
         string? TownName, string? Stand, string? Address,
         string? Scheme, string? Unit, string? rollSource)
     {
-        if (!IsAdmin(AdminEmail)) return View("_NoAccess");
+        if (!IsAdmin()) return View("_NoAccess");
 
         var result = await _adminService.SearchByPropertyAsync(
             TownName, Stand, Address, Scheme, Unit, rollSource);
@@ -227,7 +231,7 @@ public class AdminController : Controller
     [Route("admin/notices")]
     public IActionResult Notices()
     {
-        if (!IsAdmin(AdminEmail)) return View("_NoAccess");
+        if (!IsAdmin()) return View("_NoAccess");
         return View();
     }
 
@@ -236,7 +240,7 @@ public class AdminController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> NoticesSearch(string clientEmail)
     {
-        if (!IsAdmin(AdminEmail)) return View("_NoAccess");
+        if (!IsAdmin()) return View("_NoAccess");
 
         if (string.IsNullOrWhiteSpace(clientEmail))
         {
@@ -271,7 +275,7 @@ public class AdminController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DashBoard1(string searchValue, string? rollSource)
     {
-        if (!IsAdmin(AdminEmail)) return View("_NoAccess");
+        if (!IsAdmin()) return View("_NoAccess");
 
         ViewBag.GvList = await _db.GvList.OrderBy(r => r.ID).ToListAsync();
         TempData["SearchValue"] = searchValue;
@@ -298,7 +302,7 @@ public class AdminController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DashBoard2(string searchAppealValue, string? rollSource)
     {
-        if (!IsAdmin(AdminEmail)) return View("_NoAccess");
+        if (!IsAdmin()) return View("_NoAccess");
 
         ViewBag.GvList = await _db.GvList.OrderBy(r => r.ID).ToListAsync();
         TempData["SearchAppealValue"] = searchAppealValue;
@@ -326,7 +330,7 @@ public class AdminController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> LogAction([FromBody] AdminActionRequest req)
     {
-        if (!IsAdmin(AdminEmail)) return Forbid();
+        if (!IsAdmin()) return Forbid();
         await _audit.LogAsync(AdminEmail, req.Action, SapNumber,
             rollSource: req.RollSource, entityRef: req.EntityRef, ipAddress: ClientIp);
         return Ok();

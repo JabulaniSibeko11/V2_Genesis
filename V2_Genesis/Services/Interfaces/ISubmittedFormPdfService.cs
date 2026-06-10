@@ -22,6 +22,13 @@ namespace V2_Genesis.Services.Interfaces
             Obj_Section7Model obj7,
             DateTime? dateSubmitted = null);
 
+        Task<SubmittedFormPdfResult> GenerateObjectionOrAppealFormFromDbAsync(
+            string rollSource,
+            bool isAppeal,
+            string referenceNo,
+            string folderPath,
+            DateTime? dateSubmitted = null);
+
         Task<SubmittedFormPdfResult> GenerateSection78FormAsync(
             bool isReview,
             string folderPath,
@@ -38,6 +45,9 @@ namespace V2_Genesis.Services.Interfaces
             Obj_Section6Model obj6,
             Obj_Section7Model obj7,
             DateTime? dateSubmitted = null);
-    }
 
+        Task<SubmittedFormPdfResult> GenerateSection78FormFromDbAsync(
+            string queryRef,
+            string folderPath);
+    }
 }

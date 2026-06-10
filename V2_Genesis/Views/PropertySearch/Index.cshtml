@@ -1,157 +1,206 @@
 ﻿@model V2_Genesis.Models.PropertySearchParams
 @{
-    var roll = ViewBag.Roll as V2_Genesis.Models.GvList;
+    var roll     = ViewBag.Roll as V2_Genesis.Models.GvList;
     var townships = ViewBag.Townships as List<string> ?? new();
-    var schemes = ViewBag.Schemes as List<string> ?? new();
+    var schemes   = ViewBag.Schemes   as List<string> ?? new();
     ViewData["Title"] = $"Property Search – {roll?.Short}";
     Layout = "~/Views/Shared/_ClientLayout.cshtml";
 }
 
 @section Styles {
-
     <link href="~/css/views/clientdashboardcss.css" rel="stylesheet" asp-append-version="true" />
-    <link href="~/css/views/property-search.css" rel="stylesheet" asp-append-version="true" />
-    <link href="~/css/views/searchpropertycss.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/views/property-search.css"    rel="stylesheet" asp-append-version="true" />
+   @*  <link href="~/css/views/searchpropertycss.css"  rel="stylesheet" asp-append-version="true" /> *@
 }
 
-<div class="ps-page">
-    <div class="ps-inner">
 
-        <!-- Page title -->
-        <div class="ps-title-bar">
-            <a href="/dashboard" class="ps-back">
-                <i class="fa-solid fa-arrow-left"></i> Back
-            </a>
-            <div class="ps-title-text">
-                <h1>
-                    <i class="fa-solid fa-magnifying-glass"></i>
-                    Property Search
+
+<div class="srch-page">
+
+    <div class="srch-hero">
+        <div class="srch-hero-inner">
+            <div class="srch-hero-logo">
+                <img src="~/images/joburg_logo.png" alt="City of Johannesburg" />
+            </div>
+            <div class="srch-hero-text">
+                <div class="srch-hero-org">City of Johannesburg · Valuation Services</div>
+                <h1 class="srch-hero-title">
+                    Property Search — <span>@(roll?.Name ?? "Valuation Roll")</span>
                 </h1>
-                <span class="ps-roll-tag">@roll?.Name</span>
+                <p class="srch-hero-sub">
+                    Search the @(roll?.Short ?? "") to find and link a property before lodging an objection or appeal.
+                </p>
+            </div>
+            <div class="srch-hero-right">
+                <div class="srch-roll-badge">
+                    <i class="fa-solid fa-landmark"></i>
+                    @(roll?.Short ?? "GV23")
+                </div>
+                <a href="/dashboard" class="srch-back-btn">
+                    <i class="fa-solid fa-arrow-left"></i> Dashboard
+                </a>
             </div>
         </div>
+    </div>
 
-        <!-- Two-column layout — both cards always visible -->
-        <div class="ps-layout">
+  
+    <div class="srch-body">
 
-            <!-- ── LEFT: Search form ──────────────────────────────── -->
-            <div class="ps-card ps-form-card">
-                <div class="ps-card-header">
-                    <i class="fa-solid fa-filter"></i> Search Criteria
+       
+        <div class="srch-left">
+
+            <div class="srch-left-heading">
+                <h2>
+                    <i class="fa-solid fa-magnifying-glass" style="color:#e6b000;margin-right:8px;font-size:16px;"></i>
+                    Search Criteria
+                </h2>
+                <p>Select a township and fill in at least one field below.</p>
+            </div>
+
+            <form id="searchForm">
+                @Html.AntiForgeryToken()
+
+        
+                <div class="srch-field">
+                    <label class="srch-label">
+                        <i class="fa-solid fa-map-pin"></i>
+                        Township <span class="req">*</span>
+                    </label>
+                    <select name="TownName" id="TownName" class="srch-select" required>
+                        <option value="">Select Township…</option>
+                        @foreach (var t in townships)
+                        {
+                            <option value="@t">@t</option>
+                        }
+                    </select>
+                    <span class="srch-val-msg" id="townErr"></span>
                 </div>
-                <div class="ps-card-body">
-                    <p class="ps-required-note">
-                        <i class="fa-solid fa-circle-info"></i>
-                        <strong>Please fill at least one field</strong> in addition to Township.
-                    </p>
 
-                    <form id="searchForm">
-                        @Html.AntiForgeryToken()
+                <div class="srch-divider">
+                    <div class="srch-divider-line"></div>
+                    <div class="srch-divider-dot"></div>
+                    <div class="srch-divider-line"></div>
+                </div>
 
-                        <!-- Township -->
-                        <div class="ps-field">
-                            <label class="ps-label">
-                                 <strong>Township <span class="ps-req">*</span></strong>
-                            </label>
-                            <select name="TownName" id="TownName" class="ps-select" required>
-                                <option value=""> Select Township</option>
-                                @foreach (var t in townships)
-                                {
-                                    <option value="@t">@t</option>
-                                }
-                            </select>
-                            <span class="ps-val-msg" id="townErr"></span>
-                        </div>
+           
+                <div class="srch-field">
+                    <label class="srch-label">
+                        <i class="fa-solid fa-road"></i> Address
+                    </label>
+                    <input type="text" name="Address" id="Address"
+                           class="srch-input" minlength="3"
+                           placeholder="e.g. 17 Commissioner Street" />
+                </div>
 
-                        <!-- Address -->
-                        <div class="ps-field">
-                            <label class="ps-label"> <strong>Address:</strong></label>
-                            <input type="text" name="Address" id="Address"
-                                   class="ps-input" minlength="3"
-                                   placeholder="Enter street address" />
-                        </div>
+          
+                <div class="srch-field">
+                    <label class="srch-label">
+                        <i class="fa-solid fa-hashtag"></i> Stand Number
+                    </label>
+                    <input type="text" name="Stand" id="Stand"
+                           class="srch-input"
+                           placeholder="e.g. 1234" />
+                </div>
 
-                        <!-- Stand -->
-                        <div class="ps-field">
-                            <label class="ps-label"> <strong>Stand:</strong></label>
-                            <input type="text" name="Stand" id="Stand"
-                                   class="ps-input"
-                                   placeholder="Enter stand number" />
-                        </div>
+                
+                <div class="srch-field">
+                    <label class="srch-label">
+                        <i class="fa-solid fa-building"></i> Scheme Name
+                    </label>
+                    <select name="Scheme" id="Scheme" class="srch-select">
+                        <option value="">Select Scheme…</option>
+                        @foreach (var s in schemes)
+                        {
+                            <option value="@s">@s</option>
+                        }
+                    </select>
+                </div>
 
-                        <!-- Scheme Name -->
-                        <div class="ps-field">
-                            <label class="ps-label"> <strong>Scheme Name:</strong></label>
-                            <select name="Scheme" id="Scheme" class="ps-select">
-                                <option value="">🔽 Select Scheme</option>
-                                @foreach (var s in schemes)
-                                {
-                                    <option value="@s">@s</option>
-                                }
-                            </select>
-                        </div>
+               
+                <div class="srch-field">
+                    <label class="srch-label">
+                        <i class="fa-solid fa-door-open"></i> Unit Number
+                    </label>
+                    <input type="text" name="Unit" id="Unit"
+                           class="srch-input"
+                           placeholder="e.g. 5" />
+                </div>
 
-                        <!-- Unit No -->
-                        <div class="ps-field">
-                            <label class="ps-label"> <strong>Unit No:</strong></label>
-                            <input type="text" name="Unit" id="Unit"
-                                   class="ps-input"
-                                   placeholder="Enter unit number" />
-                        </div>
+                <button type="submit" class="srch-submit" id="searchBtn">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    Search Property
+                </button>
+            </form>
+        </div>
 
-                        <div class="ps-btn-row">
-                            <a href="/dashboard" class="ps-btn-secondary">
-                                ⬅ <strong>Back</strong>
-                            </a>
-                            <button type="submit" class="ps-btn-primary" id="searchBtn">
-                                 <strong>Search Property</strong>
-                            </button>
-                        </div>
-                    </form>
+      
+        <div class="srch-right">
+
+            <div class="srch-right-heading">
+                <h2>How to Search</h2>
+                <p>
+                    Use the form on the left to locate your property in the
+                    @(roll?.Name ?? "Valuation Roll"). Once found, select it to link it to your account.
+                </p>
+            </div>
+
+            <div class="srch-steps">
+                <div class="srch-step">
+                    <div class="srch-step-num">1</div>
+                    <div class="srch-step-body">
+                        <div class="srch-step-title">Select a Township</div>
+                        <p class="srch-step-desc">
+                            Start by choosing the township your property falls under.
+                            This field is required.
+                        </p>
+                    </div>
+                </div>
+                <div class="srch-step">
+                    <div class="srch-step-num">2</div>
+                    <div class="srch-step-body">
+                        <div class="srch-step-title">Fill in at least one field</div>
+                        <p class="srch-step-desc">
+                            Provide one or more of:
+                            <ul>
+                                <li>Street address</li>
+                                <li>Stand number</li>
+                                <li>Scheme name + Unit number</li>
+                            </ul>
+                        </p>
+                    </div>
+                </div>
+                <div class="srch-step">
+                    <div class="srch-step-num">3</div>
+                    <div class="srch-step-body">
+                        <div class="srch-step-title">Click Search &amp; Select</div>
+                        <p class="srch-step-desc">
+                            Results appear in a panel above. Click <strong>Select</strong>
+                            on the matching property to link it to your account.
+                        </p>
+                    </div>
                 </div>
             </div>
 
-            <!-- ── RIGHT: Instructions (always visible) ───────────── -->
-            <div class="ps-card ps-info-card">
-                <div class="ps-card-header ps-card-header-gold">
-                    📋 <strong>Search Instructions</strong>
+            <div class="srch-tip">
+                <i class="fa-solid fa-triangle-exclamation srch-tip-icon"></i>
+                <div>
+                    <strong>Property not found?</strong> If no results appear, try
+                    broadening your search — remove one filter, check spelling, or
+                    use the LIS (Land Information System) search for the latest
+                    property data including recently subdivided or consolidated erfs.
                 </div>
-                <div class="ps-card-body">
-                    <ol class="ps-steps">
-                        <li>
-                            <strong>Step 1:</strong>
-                            Select a <strong>Township</strong> (Required)
-                        </li>
-                        <li>
-                            <strong>Step 2:</strong> Fill in at least ONE field:
-                            <ul>
-                                <li>Address</li>
-                                <li>Stand Number</li>
-                                <li>Scheme Name + Unit Number</li>
-                            </ul>
-                        </li>
-                        <li>
-                            <strong>Step 3:</strong> Click "Search Property"
-                        </li>
-                    </ol>
-                    <div class="ps-warning-box">
-                        <i class="fa-solid fa-triangle-exclamation"></i>
-                        <div>
-                            <strong>⚠️ Property Not Found?</strong><br />
-                            If no results are found, use the LIS (Land Info System)
-                            search for the latest property data.
-                        </div>
-                    </div>
-                </div>
+            </div>
+
+            <div class="srch-note">
+                <i class="fa-solid fa-info-circle" style="margin-right:6px;"></i>
+                Stand and Scheme/Unit searches are mutually exclusive — fill one or the other, not both.
             </div>
 
         </div>
     </div>
 </div>
 
-<!-- ══════════════════════════════════════════════════════
-     RESULTS MODAL — shown on top of search page
-══════════════════════════════════════════════════════ -->
+
 <div class="psm-backdrop" id="psmBackdrop" onclick="closeResultsModal()"></div>
 <div class="psm-modal" id="psmModal">
     <div class="psm-header" id="psmHeader">
@@ -164,15 +213,12 @@
             <i class="fa-solid fa-xmark"></i>
         </button>
     </div>
-    <div class="psm-body" id="psmBody">
-        <!-- Partial view injected here -->
-    </div>
+    <div class="psm-body" id="psmBody"></div>
 </div>
 
-<!-- Preloader overlay -->
 <div class="ps-preloader" id="psPreloader">
     <div class="ps-spinner"></div>
-    <span>Searching properties…</span>
+    <span>Searching the valuation roll…</span>
 </div>
 
 @section Scripts {
@@ -181,7 +227,6 @@
         const scheme = document.getElementById('Scheme');
         const unit   = document.getElementById('Unit');
 
-        // ── Stand / Scheme mutual exclusion ───────────────────────────────
         function updateFieldStates() {
             if (stand.value.trim() !== '') {
                 scheme.disabled = true;
@@ -203,7 +248,6 @@
         scheme.addEventListener('change', updateFieldStates);
         updateFieldStates();
 
-        // ── Open / close modal ────────────────────────────────────────────
         function openResultsModal() {
             document.getElementById('psmBackdrop').classList.add('show');
             document.getElementById('psmModal').classList.add('show');
@@ -214,14 +258,10 @@
             document.getElementById('psmBackdrop').classList.remove('show');
             document.getElementById('psmModal').classList.remove('show');
             document.body.style.overflow = '';
-
-            // Destroy DataTable so it can re-init cleanly next search
-            if ($.fn.DataTable.isDataTable('#psResultsTable')) {
+            if ($.fn.DataTable.isDataTable('#psResultsTable'))
                 $('#psResultsTable').DataTable().destroy();
-            }
         }
 
-        // ── AJAX submit ───────────────────────────────────────────────────
         document.getElementById('searchForm').addEventListener('submit', async function (e) {
             e.preventDefault();
 
@@ -232,8 +272,6 @@
                 return;
             }
             document.getElementById('townErr').textContent = '';
-
-            // Close any previous modal + destroy old DataTable
             closeResultsModal();
 
             document.getElementById('psPreloader').classList.add('show');
@@ -249,27 +287,20 @@
 
             document.getElementById('psPreloader').classList.remove('show');
 
-            const html = await response.text();
-
-            // Inject partial into modal body
-            document.getElementById('psmBody').innerHTML = html;
-
-            // Update modal header title
+            document.getElementById('psmBody').innerHTML = await response.text();
             document.getElementById('psmTitle').textContent =
                 'Results – @(roll?.Short ?? "Search")';
 
-            // Run scripts inside the partial (DataTables init)
             document.querySelectorAll('#psmBody script').forEach(s => {
-                const script = document.createElement('script');
-                script.textContent = s.textContent;
-                document.body.appendChild(script);
+                const sc = document.createElement('script');
+                sc.textContent = s.textContent;
+                document.body.appendChild(sc);
             });
 
             openResultsModal();
         });
 
-        // Close on Escape key
-        document.addEventListener('keydown', function (e) {
+        document.addEventListener('keydown', e => {
             if (e.key === 'Escape') closeResultsModal();
         });
     </script>

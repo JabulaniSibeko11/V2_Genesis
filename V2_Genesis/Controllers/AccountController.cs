@@ -66,10 +66,23 @@ namespace V2_Genesis.Controllers
         //  REGISTER
         // ══════════════════════════════════════════════════════════════════════
         private static readonly Regex AdminPattern =
-    new(@"^val\.admin(1[0-9]?|[1-9])@joburg\.org\.za$",
-        RegexOptions.IgnoreCase | RegexOptions.Compiled);
+     new(@"^val\.admin(1[0-9]?|[1-9])@joburg\.org\.za$",
+         RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private const string AdminAppEmail = "AdministrationEnquiries@Joburg.org.za";
+        private const string PendingAdminLoginEmailKey = "PendingAdminLoginEmail";
 
+        private static bool IsAdminLoginEmail(string? email)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                return false;
 
+            var cleanEmail = email.Trim();
+
+            return cleanEmail.Equals(
+                "AdministrationEnquiries@Joburg.org.za",
+                StringComparison.OrdinalIgnoreCase);
+        }
+      
         [HttpGet]
         [Route("register")]
         [AllowAnonymous]
@@ -274,11 +287,16 @@ namespace V2_Genesis.Controllers
 
             // 5. Admin detection — val.admin1@joburg.org.za … val.admin19@joburg.org.za
             //    → Windows auth. Any other email → external client flow below.
-            if (AdminPattern.IsMatch(model.Email))
+            if (IsAdminLoginEmail(model.Email))
             {
-                // Password correct. Reset failed count to prevent lockout.
                 await _userManager.ResetAccessFailedCountAsync(user);
-                // Redirect to Windows auth — WindowsLogin completes the sign-in.
+
+                // Keep the fixed app admin account.
+                // This is the account the app must use to pull admin data.
+                HttpContext.Session.SetString(PendingAdminLoginEmailKey, AdminAppEmail);
+
+                await _signInManager.SignOutAsync();
+
                 return RedirectToAction(nameof(WindowsLogin));
             }
 
@@ -292,7 +310,7 @@ namespace V2_Genesis.Controllers
 
             // 7. Sign client in
             await _userManager.ResetAccessFailedCountAsync(user);
-            await _signInManager.SignInAsync(user, model.RememberMe);
+            await _signInManager.SignInAsync(user, isPersistent: true);
 
             _logger.LogInformation("Client {Email} signed in.", user.Email);
             if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
@@ -460,23 +478,19 @@ namespace V2_Genesis.Controllers
         //        return View(new SapStepViewModel());
         //    }
 
-
         [HttpGet]
         [Route("admin/windows-login")]
-        [AllowAnonymous]  // Must be anonymous so Cookie auth doesn't intercept the 401
+        [AllowAnonymous]
         public async Task<IActionResult> WindowsLogin()
         {
-            // ── 1. Authenticate via Windows (Negotiate/NTLM/Kerberos) ──
-            // [AllowAnonymous] + manual Challenge avoids the redirect loop:
-            // [Authorize(Negotiate)] → 401 → Cookie auth → redirect /login → loop.
-            // This way the 401 goes directly to the browser which sends credentials.
+            const string AdminAppEmail = "AdministrationEnquiries@Joburg.org.za";
+
+            // ── 1. Authenticate via Windows / Negotiate ───────────────────
             var authResult = await HttpContext.AuthenticateAsync(
                 NegotiateDefaults.AuthenticationScheme);
 
             if (!authResult.Succeeded)
             {
-                // Return 401 + WWW-Authenticate: Negotiate to browser.
-                // Edge/Chrome on domain will auto-respond with Windows token.
                 _logger.LogInformation("WindowsLogin: issuing Negotiate challenge.");
                 return Challenge(NegotiateDefaults.AuthenticationScheme);
             }
@@ -489,95 +503,140 @@ namespace V2_Genesis.Controllers
                 return RedirectToAction(nameof(Login));
             }
 
-            _logger.LogInformation("WindowsLogin: Windows identity = {Name}", windowsName);
+            _logger.LogInformation(
+                "WindowsLogin: Windows identity = {WindowsName}",
+                windowsName);
 
-            // ── 2. Validate against UserManagement Login SP ──────────
-            // Passes "JOBURG\30092655" directly to dbo.Login SP.
+            // ── 2. Validate Windows user against UserManagement ────────────
+            // Example windowsName: JOBURG\30092655
             var umResult = await _umService.ValidateByWindowsIdentityAsync(windowsName);
 
             if (umResult is null)
             {
-                // Authenticated by Windows but not found in UserManagement DB.
-                // They don't have access to the admin portal.
                 _logger.LogWarning(
-                    "WindowsLogin: {Name} authenticated by Windows but not in UserManagement.",
+                    "WindowsLogin: {WindowsName} authenticated by Windows but not found in UserManagement.",
                     windowsName);
+
                 return View("_WindowsNoAccess", windowsName);
             }
 
-            // ── 3. Extract SAP details from SP result ─────────────────
+            // ── 3. Extract Windows audit identity ──────────────────────────
             var sapNumeric = windowsName.Contains('\\')
-                ? windowsName.Split('\\').Last()   // "30092655"
+                ? windowsName.Split('\\').Last()
                 : windowsName;
 
-            var sapFull = windowsName;            // "JOBURG\30092655"
-            var fullName = umResult.FullName;      // "John Smith" (computed from FirstName+Surname)
+            var sapFull = windowsName;
+
+            var fullName = !string.IsNullOrWhiteSpace(umResult.FullName)
+                ? umResult.FullName.Trim()
+                : $"{umResult.FirstName} {umResult.Surname}".Trim();
+
             var position = umResult.Position?.Trim() ?? string.Empty;
+            var umRole = string.IsNullOrWhiteSpace(umResult.Role)
+                ? "Admin"
+                : umResult.Role.Trim();
 
-            // ── 4. Find or create the portal Identity account ─────────
-            // Use email from UserManagement DB, else derive from SAP number.
-            var userEmail = !string.IsNullOrWhiteSpace(umResult.EmailAddress)
-                ? umResult.EmailAddress.Trim()
-                : $"{sapNumeric}@{_app.SapDomain.ToLower()}.org.za";
-
-            var user = await _userManager.FindByEmailAsync(userEmail);
+            // ── 4. IMPORTANT:
+            // Always sign into the portal using the fixed admin account.
+            // Do NOT use the Windows-authenticated user's email for portal login.
+            var user = await _userManager.FindByEmailAsync(AdminAppEmail);
 
             if (user is null)
             {
-                // First-time Windows login — auto-create the portal account.
-                // No password set: admin authenticates exclusively via Windows.
+                _logger.LogWarning(
+                    "WindowsLogin: fixed admin account {AdminEmail} was not found. Creating it.",
+                    AdminAppEmail);
+
                 user = new ApplicationUser
                 {
-                    UserName = userEmail,
-                    Email = userEmail,
+                    UserName = AdminAppEmail,
+                    Email = AdminAppEmail,
                     EmailConfirmed = true,
-                    FirstName = umResult.FirstName ?? "",
-                    LastName = umResult.Surname ?? "",
-                    SAPNumber = sapFull,
+                    FirstName = "Administration",
+                    LastName = "Enquiries",
+                    SAPNumber = sapFull
                 };
 
                 var createResult = await _userManager.CreateAsync(user);
+
                 if (!createResult.Succeeded)
                 {
-                    var errs = string.Join(", ", createResult.Errors.Select(e => e.Description));
-                    _logger.LogError("WindowsLogin: failed to create account for {Email}: {Errors}",
-                        userEmail, errs);
+                    var errors = string.Join(", ", createResult.Errors.Select(e => e.Description));
+
+                    _logger.LogError(
+                        "WindowsLogin: failed to create fixed admin account {AdminEmail}: {Errors}",
+                        AdminAppEmail,
+                        errors);
+
+                    TempData["Error"] = "Admin account could not be created. Please contact support.";
                     return RedirectToAction(nameof(Login));
                 }
-
-                _logger.LogInformation(
-                    "WindowsLogin: auto-created portal account for {Email}", userEmail);
             }
 
-            // ── 5. Ensure Admin role ───────────────────────────────────
+            // ── 5. Ensure Admin role for the fixed admin account ───────────
             await EnsureRoleAsync("Admin");
+
             if (!await _userManager.IsInRoleAsync(user, "Admin"))
+            {
                 await _userManager.AddToRoleAsync(user, "Admin");
+            }
 
-            // ── 6. Persist SAP claims to AspNetUserClaims table ───────
-            // Claims here survive SecurityStampValidator 30-min refresh.
-            await PersistAdminClaimsAsync(user, sapFull, fullName, position,
-                umResult.Role ?? "Admin");
+            // ── 6. Persist audit claims against fixed admin account ────────
+            // These claims survive cookie refresh.
+            await PersistAdminClaimsAsync(
+                user,
+                sapFull,
+                fullName,
+                position,
+                umRole);
 
+            // ── 7. Sign in using fixed admin account + audit claims ────────
+            var additionalClaims = new List<Claim>
+    {
+        // App account used for pulling admin/dashboard data
+        new Claim("AdminAppEmail", AdminAppEmail),
+        new Claim(ClaimTypes.Email, AdminAppEmail),
 
+        // Real Windows-authenticated user for audit trail
+        new Claim("WindowsUser", windowsName),
+        new Claim("SAPNumber", sapFull),
+        new Claim("SAPNumeric", sapNumeric),
+        new Claim("FullName", fullName),
+        new Claim("Position", position),
+        new Claim("UMRole", umRole),
+        new Claim("LoginType", "AdminWindows")
+    };
 
-            // ── 7. Sign in persistently ───────────────────────────────
-            // isPersistent: true — auth cookie survives browser close.
-            // Claims are loaded from AspNetUserClaims table automatically.
-            await _signInManager.SignInAsync(user, isPersistent: true);
+            HttpContext.Session.SetString("AdminAppEmail", AdminAppEmail);
+
+            // Audit-trail identity
+            HttpContext.Session.SetString("AdminWindowsUser", windowsName);
+            HttpContext.Session.SetString("AdminSapNumber", sapFull);
+            HttpContext.Session.SetString("AdminSapNumeric", sapNumeric);
+            HttpContext.Session.SetString("AdminFullName", fullName);
+            HttpContext.Session.SetString("AdminPosition", position);
+            HttpContext.Session.SetString("AdminUMRole", umRole);
+
+            await _signInManager.SignInWithClaimsAsync(
+                user,
+                isPersistent: true,
+                additionalClaims);
 
             _logger.LogInformation(
-                "WindowsLogin: {FullName} ({SAP}) signed in via Windows auth.", fullName, sapFull);
+                "WindowsLogin: fixed admin account {AdminEmail} signed in. Windows audit user: {FullName} ({SAP}).",
+                AdminAppEmail,
+                fullName,
+                sapFull);
 
-            // ── 8. Write the 8-hour bypass cookie (optional) ──────────
-            // Allows the admin to return without re-authentication even if
-            // the auth cookie expires before the domain session does.
-            WriteAdminCookie(userEmail, sapFull, fullName, position);
+            // ── 8. Write 8-hour admin bypass cookie using fixed admin email ─
+            WriteAdminCookie(
+                AdminAppEmail,
+                sapFull,
+                fullName,
+                position);
 
             return RedirectToAction("Index", "Admin");
         }
-
-
 
         private async Task PersistAdminClaimsAsync(ApplicationUser user,
         string sapValue, string fullName, string position, string role)
@@ -725,7 +784,13 @@ namespace V2_Genesis.Controllers
         public async Task<IActionResult> Logout()
         {
             await _signInManager.SignOutAsync();
+
             HttpContext.Session.Clear();
+
+            Response.Cookies.Delete(SAP_COOKIE);
+            Response.Cookies.Delete("V2Genesis.Auth");
+            Response.Cookies.Delete("V2Genesis.Session");
+
             return RedirectToAction(nameof(Login));
         }
 

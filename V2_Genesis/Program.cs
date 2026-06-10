@@ -25,13 +25,15 @@ QuestPDF.Settings.License = LicenseType.Community;
 builder.Services.AddControllersWithViews();
 
 // ── Session ───────────────────────────────────────────────────────────────────
-var sessionMins = cfg.GetValue<int>("Session:TimeoutMinutes", 30);
+var sessionMins = cfg.GetValue<int>("Session:TimeoutMinutes", 480);
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(o =>
 {
     o.IdleTimeout = TimeSpan.FromMinutes(sessionMins);
+    o.Cookie.Name = "V2Genesis.Session";
     o.Cookie.HttpOnly = true;
     o.Cookie.IsEssential = true;
+    o.Cookie.SecurePolicy = CookieSecurePolicy.Always;
     o.Cookie.SameSite = SameSiteMode.Lax;
 });
 
@@ -73,9 +75,14 @@ builder.Services.ConfigureApplicationCookie(o =>
     o.LoginPath = "/login";
     o.LogoutPath = "/logout";
     o.AccessDeniedPath = "/access-denied";
+
     o.ExpireTimeSpan = TimeSpan.FromHours(8);
     o.SlidingExpiration = true;
+
+    o.Cookie.Name = "V2Genesis.Auth";
     o.Cookie.HttpOnly = true;
+    o.Cookie.IsEssential = true;
+    o.Cookie.SecurePolicy = CookieSecurePolicy.Always;
     o.Cookie.SameSite = SameSiteMode.Lax;
 });
 

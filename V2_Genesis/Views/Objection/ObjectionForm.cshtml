@@ -4,11 +4,55 @@
     Layout = "~/Views/Shared/_ClientLayout.cshtml";
 
     // ── Admin identity from ViewBag ──────────────────────────────
-    bool _isAdmin = ViewBag.IsAdmin as bool? ?? false;
-    string _fullName = ViewBag.AdminFullName?.ToString() ?? "";
-    string _sapNumeric = ViewBag.SapNumeric?.ToString() ?? "";
-    string _adminPosition = ViewBag.AdminPosition?.ToString() ?? "";
-    string _sapFull = ViewBag.SapFull?.ToString() ?? "";
+    // ── Admin identity from Windows Authenticator audit claims/session ──
+    // Data pulling still uses AdministrationEnquiries@Joburg.org.za.
+    // These values are ONLY for Captured By / audit trail.
+
+    bool _isAdmin =
+        (ViewBag.IsAdmin as bool? ?? false)
+        || User.IsInRole("Admin")
+        || User.FindFirst("AdminAppEmail")?.Value?.Equals(
+            "AdministrationEnquiries@Joburg.org.za",
+            StringComparison.OrdinalIgnoreCase) == true
+        || Context.Session.GetString("AdminAppEmail")?.Equals(
+            "AdministrationEnquiries@Joburg.org.za",
+            StringComparison.OrdinalIgnoreCase) == true;
+
+    string _fullName =
+        User.FindFirst("FullName")?.Value
+        ?? Context.Session.GetString("AdminFullName")
+        ?? ViewBag.AdminFullName?.ToString()
+        ?? "";
+
+    string _adminPosition =
+        User.FindFirst("Position")?.Value
+        ?? Context.Session.GetString("AdminPosition")
+        ?? ViewBag.AdminPosition?.ToString()
+        ?? "";
+
+    string _sapFull =
+        User.FindFirst("SAPNumber")?.Value
+        ?? Context.Session.GetString("AdminSapNumber")
+        ?? ViewBag.SapFull?.ToString()
+        ?? "";
+
+    string _sapNumeric =
+        User.FindFirst("SAPNumeric")?.Value
+        ?? Context.Session.GetString("AdminSapNumeric")
+        ?? ViewBag.SapNumeric?.ToString()
+        ?? "";
+
+    if (string.IsNullOrWhiteSpace(_sapNumeric) && !string.IsNullOrWhiteSpace(_sapFull))
+    {
+        _sapNumeric = _sapFull.Contains('\\')
+            ? _sapFull.Split('\\').Last()
+            : _sapFull;
+    }
+
+    string _windowsUser =
+        User.FindFirst("WindowsUser")?.Value
+        ?? Context.Session.GetString("AdminWindowsUser")
+        ?? "";
 
     // ── SourceTable from ViewData ────────────────────────────────
     // //string sourceTable = (string)(ViewData["SourceTable"] ?? "");
@@ -62,10 +106,18 @@
     // (only set if not already present so repeat visits don't overwrite)
     if (_isAdmin)
     {
+        // These are Windows Authenticator details for audit/capturer.
         TempData["SapNumber"] = _sapNumeric;
         TempData["AdminFullName"] = _fullName;
         TempData["AdminPosition"] = _adminPosition;
         TempData["SapFull"] = _sapFull;
+        TempData["AdminWindowsUser"] = _windowsUser;
+
+        TempData.Keep("SapNumber");
+        TempData.Keep("AdminFullName");
+        TempData.Keep("AdminPosition");
+        TempData.Keep("SapFull");
+        TempData.Keep("AdminWindowsUser");
     }
 
     // ── Keep ALL TempData keys for the next request ───────────────
@@ -3800,58 +3852,77 @@
                     <strong style="color:#006570;">Capturer (Sap no.):</strong> <input style="margin-top: -1px;font-family: 'Poppins', sans-serif;border:2px solid #006570;border-radius:5px;padding:5px 10px;background:white;" id="sapNo" maxlength="10" required asp-for="Capturer" type="text" onpaste="return false;" ondrop="return false;" />
                     <br />
                 </div> *@
-                     @if (_isAdmin)
-            {
-                <div id="capturer" style="display:flex;align-items:center;gap:14px;
-                     background:linear-gradient(135deg,#1a2e35,#2d4f58);
-                     border:1.5px solid rgba(230,176,0,.4);border-radius:10px;
-                     padding:14px 18px;margin-bottom:18px;flex-wrap:wrap;">
+                                 @if (_isAdmin)
+                                {
+                                    <div id="capturer" style="display:flex;align-items:center;gap:14px;
+                                         background:linear-gradient(135deg,#1a2e35,#2d4f58);
+                                         border:1.5px solid rgba(230,176,0,.4);border-radius:10px;
+                                         padding:14px 18px;margin-bottom:18px;flex-wrap:wrap;">
 
-                   
-                    <div style="width:42px;height:42px;border-radius:9px;flex-shrink:0;
-                         background:rgba(230,176,0,.15);border:1.5px solid rgba(230,176,0,.4);
-                         display:flex;align-items:center;justify-content:center;
-                         color:#e6b000;font-size:18px;">
-                        <i class="fa-solid fa-id-badge"></i>
-                    </div>
+                                        <div style="width:42px;height:42px;border-radius:9px;flex-shrink:0;
+                                             background:rgba(230,176,0,.15);border:1.5px solid rgba(230,176,0,.4);
+                                             display:flex;align-items:center;justify-content:center;
+                                             color:#e6b000;font-size:18px;">
+                                            <i class="fa-solid fa-id-badge"></i>
+                                        </div>
 
-                    
-                    <div style="flex:1;">
-                        <div style="font-size:9.5px;font-weight:700;letter-spacing:1.5px;
-                             color:rgba(255,255,255,.4);text-transform:uppercase;margin-bottom:1px;">
-                            Captured by
-                        </div>
-                        <div style="font-size:15px;font-weight:800;color:#fff;line-height:1.2;">
-                            @_fullName
-                        </div>
-                        @if (!string.IsNullOrWhiteSpace(_adminPosition))
-                        {
-                            <div style="font-size:11.5px;color:rgba(230,176,0,.7);font-weight:600;margin-top:1px;">
-                                @_adminPosition
-                            </div>
-                        }
-                        <div style="font-size:11px;color:rgba(255,255,255,.35);margin-top:2px;font-family:monospace;">
-                            @_sapFull
-                        </div>
-                    </div>
+                                        <div style="flex:1;">
+                                            <div style="font-size:9.5px;font-weight:700;letter-spacing:1.5px;
+                                                 color:rgba(255,255,255,.4);text-transform:uppercase;margin-bottom:1px;">
+                                                Captured by Windows Authenticator
+                                            </div>
 
-                    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0;">
-                        <span style="font-size:9px;font-weight:700;letter-spacing:1.5px;
-                              color:rgba(255,255,255,.3);text-transform:uppercase;">SAP No.</span>
-                        <span style="font-size:14px;font-weight:800;color:#e6b000;font-family:monospace;">
-                            @_sapNumeric
-                        </span>
-                    </div>
+                                            <div style="font-size:15px;font-weight:800;color:#fff;line-height:1.2;">
+                                                @(!string.IsNullOrWhiteSpace(_fullName) ? _fullName : "Admin User")
+                                            </div>
 
-                  
-                    <input type="hidden" id="sapNo" asp-for="Capturer" value="@_sapNumeric" />
-                </div>
-            }
-            else
-            {
-                <input type="hidden" asp-for="Capturer" value="" />
-            }
+                                            @if (!string.IsNullOrWhiteSpace(_adminPosition))
+                                            {
+                                                <div style="font-size:11.5px;color:rgba(230,176,0,.7);font-weight:600;margin-top:1px;">
+                                                    @_adminPosition
+                                                </div>
+                                            }
 
+                                            @if (!string.IsNullOrWhiteSpace(_sapFull))
+                                            {
+                                                <div style="font-size:11px;color:rgba(255,255,255,.35);margin-top:2px;font-family:monospace;">
+                                                    @_sapFull
+                                                </div>
+                                            }
+
+                                            @if (!string.IsNullOrWhiteSpace(_windowsUser))
+                                            {
+                                                <div style="font-size:10.5px;color:rgba(255,255,255,.3);margin-top:2px;font-family:monospace;">
+                                                    Windows: @_windowsUser
+                                                </div>
+                                            }
+                                        </div>
+
+                                        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0;">
+                                            <span style="font-size:9px;font-weight:700;letter-spacing:1.5px;
+                                                  color:rgba(255,255,255,.3);text-transform:uppercase;">
+                                                SAP No.
+                                            </span>
+
+                                            <span style="font-size:14px;font-weight:800;color:#e6b000;font-family:monospace;">
+                                                @_sapNumeric
+                                            </span>
+                                        </div>
+
+                                        <!-- Section 7 Capturer should save the Windows-authenticated SAP number -->
+                                        <input type="hidden" id="sapNo" asp-for="Capturer" value="@_sapNumeric" />
+
+                                        <!-- Optional audit values if your model/table has these fields later -->
+                                        <input type="hidden" name="AdminCapturedFullName" value="@_fullName" />
+                                        <input type="hidden" name="AdminCapturedPosition" value="@_adminPosition" />
+                                        <input type="hidden" name="AdminCapturedWindowsUser" value="@_windowsUser" />
+                                        <input type="hidden" name="AdminCapturedSapFull" value="@_sapFull" />
+                                    </div>
+                                }
+                                else
+                                {
+                                    <input type="hidden" asp-for="Capturer" value="" />
+                                }
                 <label hidden style="margin-top:1%"><span style="color: red;">*</span>DATE (<span style="color: red;">required</span>)</label>
                 <input hidden style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" id="signDate" required type="datetime-local" asp-for="Declaration_Date">
                 <br>

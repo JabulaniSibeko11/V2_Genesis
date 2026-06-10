@@ -148,22 +148,23 @@ namespace V2_Genesis.Services.Implementations
 
 
         public async Task SendObjectionAcknowledgementAsync(
-     string objectionRef,
-     string rollSource,
-     bool isAppeal,
-     byte[] acknowledgementPdf,
-     string folderPath,
-     List<EmailAttachment>? extraAttachments = null)
+         string objectionRef,
+         string rollSource,
+         bool isAppeal,
+         byte[] acknowledgementPdf,
+         string folderPath,
+         List<EmailAttachment>? extraAttachments = null)
         {
             try
             {
-                // 1. Resolve recipients from Obj_Section1
                 var recipients = await ResolveRecipientsAsync(objectionRef, rollSource, isAppeal);
+
                 if (!recipients.Any())
                 {
                     _logger.LogWarning(
                         "[Email] No valid email addresses found for {ObjRef} — skipping.",
                         objectionRef);
+
                     return;
                 }
 
@@ -171,32 +172,26 @@ namespace V2_Genesis.Services.Implementations
                 var actionWord = isAppeal ? "Appeal" : "Objection";
                 var subject = $"City of Johannesburg — {actionWord} Acknowledgement: {objectionRef}";
 
-                // 2. Build HTML body
-                var htmlBody = BuildHtmlBody(
-                    objectionRef,
-                    rollTitle,
-                    isAppeal,
-                    recipients);
-
-                // 3. Build PDF copy of email notification
-                var emailRecordPdf = BuildEmailRecordPdf(
-                    objectionRef,
-                    rollTitle,
-                    isAppeal,
-                    recipients);
-
-                // 4. Save EML copy to folder
-                await SaveEmailCopyAsync(
-     folderPath,
-     objectionRef,
-     actionWord,
-     htmlBody,
-     acknowledgementPdf,
-     recipients);
-
-                // 5. Send email to each recipient with acknowledgement + extra PDFs
                 foreach (var recipient in recipients)
                 {
+                    var htmlBody = BuildHtmlBody(
+                        objectionRef,
+                        rollTitle,
+                        isAppeal,
+                        recipient,
+                        recipients);
+
+                    // Save one evidence email copy per recipient.
+                    // Representative = Owner copy + Representative copy.
+                    await SaveEmailCopyAsync(
+                        folderPath,
+                        objectionRef,
+                        actionWord,
+                        htmlBody,
+                        acknowledgementPdf,
+                        new List<EmailRecipient> { recipient },
+                        extraAttachments);
+
                     await SendMailAsync(
                         recipient,
                         subject,
@@ -214,9 +209,10 @@ namespace V2_Genesis.Services.Implementations
             }
             catch (Exception ex)
             {
-                // Never crash the caller — email is best-effort
-                _logger.LogError(ex,
-                    "[Email] Failed sending acknowledgement for {ObjRef}", objectionRef);
+                _logger.LogError(
+                    ex,
+                    "[Email] Failed sending acknowledgement for {ObjRef}",
+                    objectionRef);
             }
         }
 
@@ -488,118 +484,156 @@ namespace V2_Genesis.Services.Implementations
         //    Obj_Property_Info_Appeal.Obj_Ref → Obj_Property_Info.Objector_Type
         // ════════════════════════════════════════════════════════════
         private async Task<List<EmailRecipient>> ResolveRecipientsAsync(
-            string objectionRef, string rollSource, bool isAppeal = false)
+     string objectionRef,
+     string rollSource,
+     bool isAppeal = false)
         {
             var connKey = RollConnections.GetValueOrDefault(
-                rollSource, "DefaultConnection");
+                rollSource,
+                "DefaultConnection");
+
             var connStr = _config.GetConnectionString(connKey)!;
 
             try
             {
                 await using var conn = new SqlConnection(connStr);
 
-                // ── Build SQL based on objection vs appeal ────────────
-                // For objections : join Obj_Property_Info directly on Objection_No.
-                // For appeals    : chain through Obj_Property_Info_Appeal.Obj_Ref
-                //                  → Obj_Property_Info.Objection_No to get Objector_Type.
                 var sql = isAppeal
-                    ? @"SELECT TOP 1
-                            s1.Owner_Name,       s1.Owner_Email,
-                            s1.Objector_Name,    s1.Objector_Email,
-                            s1.Representative_name, s1.Rep_Email,
-                            opi.Objector_Type
-                       FROM dbo.Obj_Section1 s1
-                       LEFT JOIN dbo.Obj_Property_Info_Appeal opia
-                              ON opia.Appeal_No  = @Ref
-                       LEFT JOIN dbo.Obj_Property_Info opi
-                              ON opi.Objection_No = opia.Obj_Ref
-                       WHERE s1.Objection_Ref_S1 = @Ref"
-                    : @"SELECT TOP 1
-                            s1.Owner_Name,       s1.Owner_Email,
-                            s1.Objector_Name,    s1.Objector_Email,
-                            s1.Representative_name, s1.Rep_Email,
-                            opi.Objector_Type
-                       FROM dbo.Obj_Section1 s1
-                       LEFT JOIN dbo.Obj_Property_Info opi
-                              ON opi.Objection_No = @Ref
-                       WHERE s1.Objection_Ref_S1 = @Ref";
+                    ? @"
+                SELECT TOP 1
+                    s1.Owner_Name,
+                    s1.Owner_Email,
+                    s1.Objector_Name,
+                    s1.Objector_Email,
+                    s1.Representative_name,
+                    s1.Rep_Email,
+                    COALESCE(opi.Objector_Type, opia.Appeal_Type) AS Objector_Type
+                FROM dbo.Obj_Section1 s1
+                LEFT JOIN dbo.Obj_Property_Info_Appeal opia
+                       ON opia.Appeal_No = @Ref
+                LEFT JOIN dbo.Obj_Property_Info opi
+                       ON opi.Objection_No = opia.Obj_Ref
+                WHERE s1.Objection_Ref_S1 = @Ref"
+                    : @"
+                SELECT TOP 1
+                    s1.Owner_Name,
+                    s1.Owner_Email,
+                    s1.Objector_Name,
+                    s1.Objector_Email,
+                    s1.Representative_name,
+                    s1.Rep_Email,
+                    opi.Objector_Type
+                FROM dbo.Obj_Section1 s1
+                LEFT JOIN dbo.Obj_Property_Info opi
+                       ON opi.Objection_No = @Ref
+                WHERE s1.Objection_Ref_S1 = @Ref";
 
                 var row = await conn.QueryFirstOrDefaultAsync(
-                    sql, new { Ref = objectionRef.Trim() });
+                    sql,
+                    new { Ref = objectionRef.Trim() });
 
                 if (row is null)
                 {
                     _logger.LogWarning(
-                        "[Email] Obj_Section1 not found for {ObjRef}", objectionRef);
-                    return new();
+                        "[Email] Obj_Section1 not found for {ObjRef}",
+                        objectionRef);
+
+                    return new List<EmailRecipient>();
                 }
 
-                // ── Route by Objector_Type from Obj_Property_Info ─────
-                // "Owner"          → Owner_Email only
-                // "Third_Party"    → Objector_Email only
-                // "Representative" → Owner_Email + Rep_Email
-                // Fallback         → Owner_Email (safe default)
                 var objectorType = row.Objector_Type?.ToString()?.Trim() ?? string.Empty;
                 var list = new List<EmailRecipient>();
 
+                string objRef = objectionRef?.ToString() ?? "";
+                string type = objectorType?.ToString() ?? "";
                 _logger.LogInformation(
-     "[Email] {ObjRef} Objector_Type = '{Type}'",
-     (string)objectionRef,
-     (string)objectorType);
+                    "[Email] {ObjRef} Objector_Type = '{Type}'",
+                    objRef,
+                    type);
                 if (objectorType.Equals("Owner", StringComparison.OrdinalIgnoreCase))
                 {
-                    TryAdd(list,
+                    TryAdd(
+                        list,
                         row.Owner_Name?.ToString(),
-                        row.Owner_Email?.ToString());
-                }
-                else if (objectorType.Equals("Third_Party", StringComparison.OrdinalIgnoreCase))
-                {
-                    TryAdd(list,
-                        row.Objector_Name?.ToString(),
-                        row.Objector_Email?.ToString());
+                        row.Owner_Email?.ToString(),
+                        "Owner");
                 }
                 else if (objectorType.Equals("Representative", StringComparison.OrdinalIgnoreCase))
                 {
-                    TryAdd(list,
+                    TryAdd(
+                        list,
                         row.Owner_Name?.ToString(),
-                        row.Owner_Email?.ToString());
-                    TryAdd(list,
+                        row.Owner_Email?.ToString(),
+                        "Owner");
+
+                    TryAdd(
+                        list,
                         row.Representative_name?.ToString(),
-                        row.Rep_Email?.ToString());
+                        row.Rep_Email?.ToString(),
+                        "Representative");
+                }
+                else if (
+                    objectorType.Equals("Third_Party", StringComparison.OrdinalIgnoreCase) ||
+                    objectorType.Equals("Third Party", StringComparison.OrdinalIgnoreCase))
+                {
+                    TryAdd(
+                        list,
+                        row.Objector_Name?.ToString(),
+                        row.Objector_Email?.ToString(),
+                        "Third Party");
                 }
                 else
                 {
-                    // Fallback: Objector_Type not set — send to owner
-                    string type = objectorType?.ToString() ?? string.Empty;
-                    string objRef = objectionRef?.ToString() ?? string.Empty;
-
+                
                     _logger.LogWarning(
                         "[Email] Unknown Objector_Type '{Type}' for {ObjRef} — defaulting to Owner_Email.",
                         type,
                         objRef);
-                    TryAdd(list,
+
+                    TryAdd(
+                        list,
                         row.Owner_Name?.ToString(),
-                        row.Owner_Email?.ToString());
+                        row.Owner_Email?.ToString(),
+                        "Owner");
+                }
+
+                if (!list.Any())
+                {
+                   
+                    _logger.LogWarning("[Email] No usable email address found for {ObjRef}. Objector_Type was '{Type}'.",objRef,type);
                 }
 
                 return list;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex,
-                    "[Email] Error resolving recipients for {ObjRef}", objectionRef);
-                return new();
+                _logger.LogError(
+                    ex,
+                    "[Email] Error resolving recipients for {ObjRef}",
+                    objectionRef);
+
+                return new List<EmailRecipient>();
             }
         }
 
-        private static void TryAdd(List<EmailRecipient> list, string? name, string? email)
+        private static void TryAdd(
+    List<EmailRecipient> list,
+    string? name,
+    string? email,
+    string recipientType = "Client")
         {
-            if (!string.IsNullOrWhiteSpace(email) &&
-                email.Contains('@'))  // basic guard
+            if (!string.IsNullOrWhiteSpace(email) && email.Contains('@'))
             {
+                var cleanEmail = email.Trim();
+
+                // Prevent duplicate sends if Owner_Email and Rep_Email are the same.
+                if (list.Any(x => x.Address.Equals(cleanEmail, StringComparison.OrdinalIgnoreCase)))
+                    return;
+
                 list.Add(new EmailRecipient(
-                    name?.Trim() ?? email.Trim(),
-                    email.Trim()));
+                    name?.Trim() ?? cleanEmail,
+                    cleanEmail,
+                    recipientType));
             }
         }
 
@@ -607,15 +641,21 @@ namespace V2_Genesis.Services.Implementations
         //  HTML EMAIL BODY
         // ════════════════════════════════════════════════════════════
         private static string BuildHtmlBody(
-            string objectionRef,
-            string rollTitle,
-            bool isAppeal,
-            List<EmailRecipient> recipients)
+     string objectionRef,
+     string rollTitle,
+     bool isAppeal,
+     EmailRecipient recipient,
+     List<EmailRecipient> recipients)
         {
             var actionWord = isAppeal ? "appeal" : "objection";
             var ActionWord = isAppeal ? "Appeal" : "Objection";
             var ActorWord = isAppeal ? "Appellant" : "Objector";
-            var toName = recipients.FirstOrDefault()?.Name ?? "Valued Ratepayer";
+            var toName = recipient.Name ?? "Valued Ratepayer";
+
+            var recipientType = string.IsNullOrWhiteSpace(recipient.RecipientType)
+                ? (recipients.Count > 1 ? "Representative" : "Client")
+                : recipient.RecipientType;
+
             var now = DateTime.Now.ToString("dd MMMM yyyy HH:mm");
 
             return $@"
@@ -690,7 +730,7 @@ namespace V2_Genesis.Services.Implementations
         </tr>
         <tr>
           <td>{ActorWord} Type:</td>
-          <td>{(recipients.Count > 1 ? "Representative" : "See attached")}</td>
+          <td>{recipientType}</td>
         </tr>
       </table>
     </div>
@@ -949,72 +989,112 @@ namespace V2_Genesis.Services.Implementations
         //  SAVE PDF COPY TO FOLDER
         // ════════════════════════════════════════════════════════════
         private async Task SaveEmailCopyAsync(
-       string folderPath,
-       string reference,
-       string actionWord,
-       string htmlBody,
-       byte[] ackPdf,
-       List<EmailRecipient> recipients)
+        string folderPath,
+        string reference,
+        string actionWord,
+        string htmlBody,
+        byte[] ackPdf,
+        List<EmailRecipient> recipients,
+        List<EmailAttachment>? extraAttachments = null)
         {
             try
             {
                 Directory.CreateDirectory(folderPath);
 
-                var safe = string.Join("_",
-                    reference.Split(Path.GetInvalidFileNameChars()));
-                var fileName = $"{safe}_{actionWord}_EmailNotification.eml";
-                var fullPath = Path.Combine(folderPath, fileName);
+                var safeReference = SanitizeFilePart(reference);
 
-                // Build the MailMessage
-                using var msg = new MailMessage();
-                msg.From = new MailAddress(_cfg.FromAddress, _cfg.FromName);
-                msg.Subject = $"City of Johannesburg — {actionWord} Acknowledgement: {reference}";
-                msg.IsBodyHtml = true;
-                msg.Body = htmlBody;
-
-                foreach (var r in recipients)
-                    msg.To.Add(new MailAddress(r.Address, r.Name));
-
-                // CC admin inbox
-                msg.CC.Add(new MailAddress(
-                    _cfg.FromAddress, "Valuation Services (Copy)"));
-
-                // Attach the acknowledgement PDF
-                var pdfStream = new MemoryStream(ackPdf);
-                var attachment = new Attachment(
-                    pdfStream,
-                    $"{actionWord}_Acknowledgement_{reference}.pdf",
-                    MediaTypeNames.Application.Pdf);
-                msg.Attachments.Add(attachment);
-
-                // Use SmtpClient pickup-directory trick to write a real .eml file
-                var tmpDir = Path.Combine(
-                    Path.GetTempPath(), "eml_" + Guid.NewGuid().ToString("N"));
-                Directory.CreateDirectory(tmpDir);
-
-                using (var pickup = new SmtpClient
+                foreach (var recipient in recipients)
                 {
-                    DeliveryMethod = SmtpDeliveryMethod.SpecifiedPickupDirectory,
-                    PickupDirectoryLocation = tmpDir
-                })
-                {
-                    pickup.Send(msg);   // synchronous — writes .eml to tmpDir
+                    var safeRecipientType = SanitizeFilePart(recipient.RecipientType);
+                    var safeRecipientAddress = SanitizeFilePart(recipient.Address);
+
+                    var fileName =
+                        $"{safeReference}_{actionWord}_EmailNotification_{safeRecipientType}_{safeRecipientAddress}.eml";
+
+                    var fullPath = Path.Combine(folderPath, fileName);
+
+                    using var msg = new MailMessage();
+
+                    msg.From = new MailAddress(_cfg.FromAddress, _cfg.FromName);
+                    msg.To.Add(new MailAddress(recipient.Address, recipient.Name));
+
+                    // Admin copy for evidence.
+                    msg.CC.Add(new MailAddress(
+                        _cfg.FromAddress,
+                        "Valuation Services (Copy)"));
+
+                    msg.Subject = $"City of Johannesburg — {actionWord} Acknowledgement: {reference}";
+                    msg.IsBodyHtml = true;
+                    msg.Body = htmlBody;
+
+                    msg.Attachments.Add(new Attachment(
+                        new MemoryStream(ackPdf),
+                        $"{actionWord}_Acknowledgement_{reference}.pdf",
+                        MediaTypeNames.Application.Pdf));
+
+                    // This makes the saved .eml evidence include the populated form PDF too.
+                    AddExtraAttachments(msg, extraAttachments);
+
+                    var tmpDir = Path.Combine(
+                        Path.GetTempPath(),
+                        "eml_" + Guid.NewGuid().ToString("N"));
+
+                    Directory.CreateDirectory(tmpDir);
+
+                    using (var pickup = new SmtpClient
+                    {
+                        DeliveryMethod = SmtpDeliveryMethod.SpecifiedPickupDirectory,
+                        PickupDirectoryLocation = tmpDir
+                    })
+                    {
+                        pickup.Send(msg);
+                    }
+
+                    var generated = Directory.GetFiles(tmpDir).FirstOrDefault();
+
+                    if (generated is not null)
+                        File.Move(generated, fullPath, overwrite: true);
+
+                    Directory.Delete(tmpDir, recursive: true);
+
+                    _logger.LogInformation(
+                        "[Email] EML copy saved → {Path}",
+                        fullPath);
                 }
-
-                var generated = Directory.GetFiles(tmpDir).FirstOrDefault();
-                if (generated is not null)
-                    File.Move(generated, fullPath, overwrite: true);
-
-                Directory.Delete(tmpDir, recursive: true);
-
-                _logger.LogInformation(
-                    "[Email] EML copy saved → {Path}", fullPath);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex,
-                    "[Email] Failed saving EML copy for {Ref}", reference);
+                _logger.LogError(
+                    ex,
+                    "[Email] Failed saving EML copy for {Ref}",
+                    reference);
             }
+        }
+        private static string SanitizeFilePart(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return "NA";
+
+            var invalid = Path.GetInvalidFileNameChars();
+
+            var cleaned = new string(value.Trim()
+                .Select(c => invalid.Contains(c) ? '_' : c)
+                .ToArray());
+
+            cleaned = cleaned
+                .Replace("@", "_at_")
+                .Replace(".", "_")
+                .Replace(" ", "_")
+                .Replace("/", "_")
+                .Replace("\\", "_")
+                .Replace(":", "_");
+
+            while (cleaned.Contains("__"))
+                cleaned = cleaned.Replace("__", "_");
+
+            return string.IsNullOrWhiteSpace(cleaned)
+                ? "NA"
+                : cleaned.Trim('_');
         }
         public async Task SendEmailWithAttachmentsAsync(
         string toEmail,

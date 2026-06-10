@@ -903,14 +903,106 @@ public class ObjectionController : Controller
     public IActionResult ViewMultiPurposeForm(string? propertyFrom, string? objectorType, string? appeal)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        var userEmail = User.FindFirstValue(ClaimTypes.Name);
 
         if (string.IsNullOrEmpty(userId))
             return RedirectToAction("Login", "Account");
 
-        ViewData["UserEmail"] = userEmail;
-        ViewData["SourceTable"] = propertyFrom;
+        RestorePropertyContextFromSession();
+        KeepObjectionFormTempData();
 
-        return View("ObjectionForm");   // same view — JS shows multi-purpose sections
+        if (TempData.Peek("AppealStatus") == null)
+        {
+            TempData["AppealStatus"] =
+                string.Equals(appeal, "True", StringComparison.OrdinalIgnoreCase)
+                    ? "True"
+                    : "False";
+        }
+
+        TempData["CurrentFilter_S"] = "Multi";
+        TempData["Property_Type"] = "Multi";
+
+        string adminAppEmail =
+            User.FindFirstValue("AdminAppEmail")
+            ?? HttpContext.Session.GetString("AdminAppEmail")
+            ?? User.FindFirstValue(ClaimTypes.Email)
+            ?? User.Identity?.Name
+            ?? "";
+
+        bool isAdmin =
+            User.Identity?.IsAuthenticated == true
+            && (
+                User.IsInRole("Admin")
+                || User.FindFirstValue("UMRole")?.Equals("Admin", StringComparison.OrdinalIgnoreCase) == true
+                || adminAppEmail.Equals("AdministrationEnquiries@Joburg.org.za", StringComparison.OrdinalIgnoreCase)
+            );
+
+        var sapFull =
+            User.FindFirstValue("SAPNumber")
+            ?? HttpContext.Session.GetString("AdminSapNumber")
+            ?? "";
+
+        var sapNumeric =
+            User.FindFirstValue("SAPNumeric")
+            ?? HttpContext.Session.GetString("AdminSapNumeric")
+            ?? "";
+
+        if (string.IsNullOrWhiteSpace(sapNumeric) && !string.IsNullOrWhiteSpace(sapFull))
+        {
+            sapNumeric = sapFull.Contains('\\')
+                ? sapFull.Split('\\').Last()
+                : sapFull;
+        }
+
+        var adminFullName =
+            User.FindFirstValue("FullName")
+            ?? HttpContext.Session.GetString("AdminFullName")
+            ?? "";
+
+        var adminPosition =
+            User.FindFirstValue("Position")
+            ?? HttpContext.Session.GetString("AdminPosition")
+            ?? "";
+
+        var windowsUser =
+            User.FindFirstValue("WindowsUser")
+            ?? HttpContext.Session.GetString("AdminWindowsUser")
+            ?? "";
+
+        ViewData["UserEmail"] = adminAppEmail;
+        ViewData["SourceTable"] = propertyFrom
+                                  ?? TempData.Peek("SourceTable")?.ToString()
+                                  ?? TempData.Peek("PropertyFrom")?.ToString()
+                                  ?? "";
+
+        ViewBag.IsAdmin = isAdmin;
+        ViewBag.AdminFullName = adminFullName;
+        ViewBag.AdminPosition = adminPosition;
+        ViewBag.SapFull = sapFull;
+        ViewBag.SapNumeric = sapNumeric;
+        ViewBag.AdminWindowsUser = windowsUser;
+        ViewBag.IsMulti = true;
+
+        if (isAdmin)
+        {
+            TempData["SapNumber"] = sapNumeric;
+            TempData["AdminFullName"] = adminFullName;
+            TempData["AdminPosition"] = adminPosition;
+            TempData["SapFull"] = sapFull;
+            TempData["AdminWindowsUser"] = windowsUser;
+
+            TempData.Keep("SapNumber");
+            TempData.Keep("AdminFullName");
+            TempData.Keep("AdminPosition");
+            TempData.Keep("SapFull");
+            TempData.Keep("AdminWindowsUser");
+        }
+
+        TempData.Keep("AppealStatus");
+        TempData.Keep("CurrentFilter_S");
+        TempData.Keep("Property_Type");
+
+        KeepObjectionFormTempData();
+
+        return View("ViewMultiPurposeForm");
     }
 }
