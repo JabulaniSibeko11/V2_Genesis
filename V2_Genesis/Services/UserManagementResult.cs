@@ -14,6 +14,7 @@
         public string? Position { get; set; }
         public string? SAPNumber { get; set; }   // from Users table
         public string Role { get; set; } = string.Empty;
+        public string ? EmailAddress { get; set; }
 
         // ── Computed: FirstName + Surname ─────────────────────────────
         // Dapper won't map this — it's built from the real columns above.

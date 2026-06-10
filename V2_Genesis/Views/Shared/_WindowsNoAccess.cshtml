@@ -1,0 +1,42 @@
+﻿@model string
+@{
+    ViewData["Title"] = "Access Denied";
+    Layout = "_Layout";
+}
+
+<div style="min-height:80vh;display:flex;align-items:center;justify-content:center;
+    background:#f5f5f5;font-family:'Poppins',sans-serif;">
+    <div style="background:#fff;border-radius:14px;border:2px solid #e6b000;
+        padding:48px 40px;max-width:520px;width:100%;text-align:center;
+        box-shadow:0 8px 32px rgba(26,46,53,.12);">
+
+        <div style="width:64px;height:64px;border-radius:16px;
+            background:linear-gradient(135deg,#1a2e35,#2d4f58);
+            display:flex;align-items:center;justify-content:center;
+            margin:0 auto 24px;font-size:28px;color:#e6b000;">
+            <i class="fa-solid fa-shield-halved"></i>
+        </div>
+
+        <h1 style="font-size:22px;font-weight:800;color:#1a2e35;margin:0 0 8px;">
+            Access Denied
+        </h1>
+        <p style="font-size:14px;color:#6b6b6b;margin:0 0 24px;line-height:1.7;">
+            Your Windows account <strong style="color:#1a2e35;">@Model</strong>
+            was verified by the domain, but does not have access to the
+            City of Johannesburg Valuation Portal admin system.
+        </p>
+        <p style="font-size:13px;color:#9aa3af;margin:0 0 32px;">
+            If you believe this is an error, contact the Valuation Systems team
+            to ensure your account is registered in the UserManagement system.
+        </p>
+
+        <a href="/login"
+               style="display:inline-flex;align-items:center;gap:8px;
+            background:linear-gradient(135deg,#1a2e35,#36626d);
+            color:#e6b000;padding:13px 28px;border-radius:9px;
+            font-weight:700;font-size:14px;text-decoration:none;
+            box-shadow:0 4px 14px rgba(26,46,53,.2);">
+            <i class="fa-solid fa-arrow-left"></i> Back to Login
+        </a>
+    </div>
+</div>

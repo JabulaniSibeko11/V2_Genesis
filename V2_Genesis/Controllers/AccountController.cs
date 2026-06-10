@@ -1,16 +1,21 @@
 ﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Negotiate;
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using System.Data;
+using System.Net;
+using System.Reflection.Metadata;
 using System.Security.Claims;
 using System.Web;
 using V2_Genesis.Models.Entities;
 using V2_Genesis.Models.ViewModels.Account;
 using V2_Genesis.Services;
 using V2_Genesis.Services.Interfaces;
+
 
 namespace V2_Genesis.Controllers
 {
@@ -60,6 +65,10 @@ namespace V2_Genesis.Controllers
         // ══════════════════════════════════════════════════════════════════════
         //  REGISTER
         // ══════════════════════════════════════════════════════════════════════
+        private static readonly Regex AdminPattern =
+    new(@"^val\.admin(1[0-9]?|[1-9])@joburg\.org\.za$",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
 
         [HttpGet]
         [Route("register")]
@@ -263,12 +272,14 @@ namespace V2_Genesis.Controllers
                 return View(model);
             }
 
-            // 5. Admin flow — route to SAP verification step
-            if (model.Email.Equals(_app.AdminEmail, StringComparison.OrdinalIgnoreCase))
+            // 5. Admin detection — val.admin1@joburg.org.za … val.admin19@joburg.org.za
+            //    → Windows auth. Any other email → external client flow below.
+            if (AdminPattern.IsMatch(model.Email))
             {
-                HttpContext.Session.SetString(_session.AdminPendingKey, "true");
-                HttpContext.Session.SetString(_session.AdminEmailKey, user.Id);
-                return RedirectToAction(nameof(SapStep));
+                // Password correct. Reset failed count to prevent lockout.
+                await _userManager.ResetAccessFailedCountAsync(user);
+                // Redirect to Windows auth — WindowsLogin completes the sign-in.
+                return RedirectToAction(nameof(WindowsLogin));
             }
 
             // 6. Client flow — require confirmed email
@@ -284,168 +295,341 @@ namespace V2_Genesis.Controllers
             await _signInManager.SignInAsync(user, model.RememberMe);
 
             _logger.LogInformation("Client {Email} signed in.", user.Email);
-
-            return LocalRedirectOrDashboard(returnUrl);
+            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+                return LocalRedirect(returnUrl);
+            return RedirectToAction("Index", "Dashboard");
         }
 
         // ══════════════════════════════════════════════════════════════════════
         //  ADMIN – SAP STEP
         // ══════════════════════════════════════════════════════════════════════
 
-        [HttpPost]
-        [Route("verify-identity")]
-        [AllowAnonymous]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> SapStep(SapStepViewModel model)
+        //    [HttpPost]
+        //    [Route("verify-identity")]
+        //    [AllowAnonymous]
+        //    [ValidateAntiForgeryToken]
+        //    public async Task<IActionResult> SapStep(SapStepViewModel model)
+        //    {
+        //        if (HttpContext.Session.GetString(_session.AdminPendingKey) != "true")
+        //            return RedirectToAction(nameof(Login));
+
+        //        if (!ModelState.IsValid)
+        //            return View(model);
+
+        //        var umResult = await _umService.ValidateAdminAsync(model.SapNumber);
+
+        //        if (umResult is null)
+        //        {
+        //            ModelState.AddModelError(string.Empty,
+        //                "SAP number not recognised or you do not have access to this system.");
+        //            return View(model);
+        //        }
+
+        //        var userId = HttpContext.Session.GetString(_session.AdminEmailKey)!;
+        //        var user = await _userManager.FindByIdAsync(userId);
+
+        //        if (user is null)
+        //        {
+        //            HttpContext.Session.Clear();
+        //            return RedirectToAction(nameof(Login));
+        //        }
+
+        //        await EnsureRoleAsync("Admin");
+        //        if (!await _userManager.IsInRoleAsync(user, "Admin"))
+        //            await _userManager.AddToRoleAsync(user, "Admin");
+
+        //        var sapValue = $@"{_app.SapDomain}\{model.SapNumber.Trim()}";
+        //        var fullName = umResult.FullName;           // "John Smith"  — computed from FirstName+Surname
+        //        var position = umResult.Position?.Trim() ?? string.Empty;
+
+
+        //        HttpContext.Session.SetString("AdminSapNumber", sapValue);
+        //        HttpContext.Session.SetString("AdminFullName", fullName);
+        //        HttpContext.Session.SetString("AdminPosition", position);
+        //        HttpContext.Session.SetString("AdminUMRole", umResult.Role ?? "Admin");
+
+        //        var additionalClaims = new List<Claim>
+        //{
+        //     new Claim("SAPNumber", sapValue),
+        //new Claim("UMRole", umResult.Role ?? "Admin"),
+        //new Claim("FullName", fullName),
+        //new Claim("Position", position),       // "Senior Valuer"
+        //};
+
+        //        HttpContext.Session.Remove(_session.AdminPendingKey);
+        //        HttpContext.Session.Remove(_session.AdminEmailKey);
+
+        //        // ── 8-hour remember cookie ────────────────────────────────
+        //        if (model.RememberEightHours)
+        //        {
+        //            var expiresAt = DateTimeOffset.UtcNow.AddHours(SAP_HOURS);
+        //            // cookie segments: email|expiry|SAPvalue|FullName|Position
+        //            var payload = $"{user.Email}|{expiresAt:O}|{sapValue}|{fullName}|{position}";
+        //            var cookieToken = _sapProtector.Protect(payload);
+
+        //            Response.Cookies.Append(SAP_COOKIE, cookieToken, new CookieOptions
+        //            {
+        //                Expires = expiresAt,
+        //                HttpOnly = true,
+        //                Secure = true,
+        //                SameSite = SameSiteMode.Strict,
+        //                Path = "/"
+        //            });
+        //        }
+
+        //        await _signInManager.SignInWithClaimsAsync(
+        //            user,
+        //            isPersistent: model.RememberEightHours,
+        //            additionalClaims);
+
+        //        _logger.LogInformation("Admin {SAP} signed in as '{Name}' ({Position}).",
+        //            model.SapNumber, fullName, position);
+
+        //        return RedirectToAction("Index", "Admin");
+        //    }
+
+
+        //    // ── ALSO REPLACE the GET SapStep action (restores Position from cookie) ──
+        //    [HttpGet]
+        //    [Route("verify-identity")]
+        //    [AllowAnonymous]
+        //    public async Task<IActionResult> SapStep()
+        //    {
+        //        if (HttpContext.Session.GetString(_session.AdminPendingKey) != "true")
+        //            return RedirectToAction(nameof(Login));
+
+        //        // ── Check 8-hour remember cookie ──────────────────────────
+        //        if (Request.Cookies.TryGetValue(SAP_COOKIE, out var token))
+        //        {
+        //            try
+        //            {
+        //                var payload = _sapProtector.Unprotect(token);
+        //                var parts = payload.Split('|');
+        //                // segments: email|expiry|SAPvalue|FullName|Position
+        //                var cookieEmail = parts[0];
+        //                var expiresAt = DateTimeOffset.Parse(parts[1]);
+        //                var pendingId = HttpContext.Session.GetString(_session.AdminEmailKey);
+
+        //                if (expiresAt > DateTimeOffset.UtcNow && !string.IsNullOrEmpty(pendingId))
+        //                {
+        //                    var user = await _userManager.FindByIdAsync(pendingId);
+        //                    if (user is not null
+        //                        && cookieEmail.Equals(user.Email, StringComparison.OrdinalIgnoreCase))
+        //                    {
+        //                        await EnsureRoleAsync("Admin");
+        //                        if (!await _userManager.IsInRoleAsync(user, "Admin"))
+        //                            await _userManager.AddToRoleAsync(user, "Admin");
+
+        //                        var sapClaim = parts.Length > 2 ? parts[2] : "";
+        //                        var fullName = parts.Length > 3 ? parts[3] : "";
+        //                        var position = parts.Length > 4 ? parts[4] : "";
+
+        //                        HttpContext.Session.SetString("AdminSapNumber", sapClaim);
+        //                        HttpContext.Session.SetString("AdminFullName", fullName);
+        //                        HttpContext.Session.SetString("AdminPosition", position);
+        //                        HttpContext.Session.SetString("AdminUMRole", "Admin");
+
+        //                        var additionalClaims = new List<Claim>
+        //                {
+        //                      new Claim("SAPNumber", sapClaim),
+        //                        new Claim("UMRole", "Admin"),
+        //                        new Claim("FullName", fullName),
+        //                        new Claim("Position", position),
+        //                };
+
+        //                        HttpContext.Session.Remove(_session.AdminPendingKey);
+        //                        HttpContext.Session.Remove(_session.AdminEmailKey);
+
+        //                        await _signInManager.SignInWithClaimsAsync(
+        //                            user, isPersistent: true, additionalClaims);
+
+        //                        _logger.LogInformation(
+        //                            "Admin {Email} auto-signed in via 8-hour cookie as '{Name}'.",
+        //                            user.Email, fullName);
+
+        //                        return RedirectToAction("Index", "Admin");
+        //                    }
+        //                }
+        //            }
+        //            catch
+        //            {
+        //                Response.Cookies.Delete(SAP_COOKIE);
+        //            }
+        //        }
+
+        //        return View(new SapStepViewModel());
+        //    }
+
+
+        [HttpGet]
+        [Route("admin/windows-login")]
+        [AllowAnonymous]  // Must be anonymous so Cookie auth doesn't intercept the 401
+        public async Task<IActionResult> WindowsLogin()
         {
-            if (HttpContext.Session.GetString(_session.AdminPendingKey) != "true")
+            // ── 1. Authenticate via Windows (Negotiate/NTLM/Kerberos) ──
+            // [AllowAnonymous] + manual Challenge avoids the redirect loop:
+            // [Authorize(Negotiate)] → 401 → Cookie auth → redirect /login → loop.
+            // This way the 401 goes directly to the browser which sends credentials.
+            var authResult = await HttpContext.AuthenticateAsync(
+                NegotiateDefaults.AuthenticationScheme);
+
+            if (!authResult.Succeeded)
+            {
+                // Return 401 + WWW-Authenticate: Negotiate to browser.
+                // Edge/Chrome on domain will auto-respond with Windows token.
+                _logger.LogInformation("WindowsLogin: issuing Negotiate challenge.");
+                return Challenge(NegotiateDefaults.AuthenticationScheme);
+            }
+
+            var windowsName = authResult.Principal?.Identity?.Name;
+
+            if (string.IsNullOrWhiteSpace(windowsName))
+            {
+                _logger.LogWarning("WindowsLogin: Windows identity name was empty after auth.");
                 return RedirectToAction(nameof(Login));
+            }
 
-            if (!ModelState.IsValid)
-                return View(model);
+            _logger.LogInformation("WindowsLogin: Windows identity = {Name}", windowsName);
 
-            var umResult = await _umService.ValidateAdminAsync(model.SapNumber);
+            // ── 2. Validate against UserManagement Login SP ──────────
+            // Passes "JOBURG\30092655" directly to dbo.Login SP.
+            var umResult = await _umService.ValidateByWindowsIdentityAsync(windowsName);
 
             if (umResult is null)
             {
-                ModelState.AddModelError(string.Empty,
-                    "SAP number not recognised or you do not have access to this system.");
-                return View(model);
+                // Authenticated by Windows but not found in UserManagement DB.
+                // They don't have access to the admin portal.
+                _logger.LogWarning(
+                    "WindowsLogin: {Name} authenticated by Windows but not in UserManagement.",
+                    windowsName);
+                return View("_WindowsNoAccess", windowsName);
             }
 
-            var userId = HttpContext.Session.GetString(_session.AdminEmailKey)!;
-            var user = await _userManager.FindByIdAsync(userId);
+            // ── 3. Extract SAP details from SP result ─────────────────
+            var sapNumeric = windowsName.Contains('\\')
+                ? windowsName.Split('\\').Last()   // "30092655"
+                : windowsName;
+
+            var sapFull = windowsName;            // "JOBURG\30092655"
+            var fullName = umResult.FullName;      // "John Smith" (computed from FirstName+Surname)
+            var position = umResult.Position?.Trim() ?? string.Empty;
+
+            // ── 4. Find or create the portal Identity account ─────────
+            // Use email from UserManagement DB, else derive from SAP number.
+            var userEmail = !string.IsNullOrWhiteSpace(umResult.EmailAddress)
+                ? umResult.EmailAddress.Trim()
+                : $"{sapNumeric}@{_app.SapDomain.ToLower()}.org.za";
+
+            var user = await _userManager.FindByEmailAsync(userEmail);
 
             if (user is null)
             {
-                HttpContext.Session.Clear();
-                return RedirectToAction(nameof(Login));
+                // First-time Windows login — auto-create the portal account.
+                // No password set: admin authenticates exclusively via Windows.
+                user = new ApplicationUser
+                {
+                    UserName = userEmail,
+                    Email = userEmail,
+                    EmailConfirmed = true,
+                    FirstName = umResult.FirstName ?? "",
+                    LastName = umResult.Surname ?? "",
+                    SAPNumber = sapFull,
+                };
+
+                var createResult = await _userManager.CreateAsync(user);
+                if (!createResult.Succeeded)
+                {
+                    var errs = string.Join(", ", createResult.Errors.Select(e => e.Description));
+                    _logger.LogError("WindowsLogin: failed to create account for {Email}: {Errors}",
+                        userEmail, errs);
+                    return RedirectToAction(nameof(Login));
+                }
+
+                _logger.LogInformation(
+                    "WindowsLogin: auto-created portal account for {Email}", userEmail);
             }
 
+            // ── 5. Ensure Admin role ───────────────────────────────────
             await EnsureRoleAsync("Admin");
             if (!await _userManager.IsInRoleAsync(user, "Admin"))
                 await _userManager.AddToRoleAsync(user, "Admin");
 
-            var sapValue = $@"{_app.SapDomain}\{model.SapNumber.Trim()}";
-            var fullName = umResult.FullName;           // "John Smith"  — computed from FirstName+Surname
-            var position = umResult.Position?.Trim() ?? string.Empty;
+            // ── 6. Persist SAP claims to AspNetUserClaims table ───────
+            // Claims here survive SecurityStampValidator 30-min refresh.
+            await PersistAdminClaimsAsync(user, sapFull, fullName, position,
+                umResult.Role ?? "Admin");
 
 
-            HttpContext.Session.SetString("AdminSapNumber", sapValue);
-            HttpContext.Session.SetString("AdminFullName", fullName);
-            HttpContext.Session.SetString("AdminPosition", position);
-            HttpContext.Session.SetString("AdminUMRole", umResult.Role ?? "Admin");
 
-            var additionalClaims = new List<Claim>
-    {
-         new Claim("SAPNumber", sapValue),
-    new Claim("UMRole", umResult.Role ?? "Admin"),
-    new Claim("FullName", fullName),
-    new Claim("Position", position),       // "Senior Valuer"
-    };
+            // ── 7. Sign in persistently ───────────────────────────────
+            // isPersistent: true — auth cookie survives browser close.
+            // Claims are loaded from AspNetUserClaims table automatically.
+            await _signInManager.SignInAsync(user, isPersistent: true);
 
-            HttpContext.Session.Remove(_session.AdminPendingKey);
-            HttpContext.Session.Remove(_session.AdminEmailKey);
+            _logger.LogInformation(
+                "WindowsLogin: {FullName} ({SAP}) signed in via Windows auth.", fullName, sapFull);
 
-            // ── 8-hour remember cookie ────────────────────────────────
-            if (model.RememberEightHours)
-            {
-                var expiresAt = DateTimeOffset.UtcNow.AddHours(SAP_HOURS);
-                // cookie segments: email|expiry|SAPvalue|FullName|Position
-                var payload = $"{user.Email}|{expiresAt:O}|{sapValue}|{fullName}|{position}";
-                var cookieToken = _sapProtector.Protect(payload);
-
-                Response.Cookies.Append(SAP_COOKIE, cookieToken, new CookieOptions
-                {
-                    Expires = expiresAt,
-                    HttpOnly = true,
-                    Secure = true,
-                    SameSite = SameSiteMode.Strict,
-                    Path = "/"
-                });
-            }
-
-            await _signInManager.SignInWithClaimsAsync(
-                user,
-                isPersistent: model.RememberEightHours,
-                additionalClaims);
-
-            _logger.LogInformation("Admin {SAP} signed in as '{Name}' ({Position}).",
-                model.SapNumber, fullName, position);
+            // ── 8. Write the 8-hour bypass cookie (optional) ──────────
+            // Allows the admin to return without re-authentication even if
+            // the auth cookie expires before the domain session does.
+            WriteAdminCookie(userEmail, sapFull, fullName, position);
 
             return RedirectToAction("Index", "Admin");
         }
 
 
-        // ── ALSO REPLACE the GET SapStep action (restores Position from cookie) ──
-        [HttpGet]
-        [Route("verify-identity")]
-        [AllowAnonymous]
-        public async Task<IActionResult> SapStep()
+
+        private async Task PersistAdminClaimsAsync(ApplicationUser user,
+        string sapValue, string fullName, string position, string role)
         {
-            if (HttpContext.Session.GetString(_session.AdminPendingKey) != "true")
-                return RedirectToAction(nameof(Login));
 
-            // ── Check 8-hour remember cookie ──────────────────────────
-            if (Request.Cookies.TryGetValue(SAP_COOKIE, out var token))
+
+            var types = new[] { "SAPNumber", "FullName", "Position", "UMRole" };
+
+            var existing = await _userManager.GetClaimsAsync(user);
+
+            foreach (var old in existing.Where(c => types.Contains(c.Type)))
+                await _userManager.RemoveClaimAsync(user, old);
+            await _userManager.AddClaimsAsync(user, new[]
             {
-                try
-                {
-                    var payload = _sapProtector.Unprotect(token);
-                    var parts = payload.Split('|');
-                    // segments: email|expiry|SAPvalue|FullName|Position
-                    var cookieEmail = parts[0];
-                    var expiresAt = DateTimeOffset.Parse(parts[1]);
-                    var pendingId = HttpContext.Session.GetString(_session.AdminEmailKey);
+  new Claim("SAPNumber",sapValue),
+  new Claim("FullName",fullName),
+  new Claim("Position",position),
+  new Claim("UMRole",role),
+}
+            );
+        }
 
-                    if (expiresAt > DateTimeOffset.UtcNow && !string.IsNullOrEmpty(pendingId))
-                    {
-                        var user = await _userManager.FindByIdAsync(pendingId);
-                        if (user is not null
-                            && cookieEmail.Equals(user.Email, StringComparison.OrdinalIgnoreCase))
-                        {
-                            await EnsureRoleAsync("Admin");
-                            if (!await _userManager.IsInRoleAsync(user, "Admin"))
-                                await _userManager.AddToRoleAsync(user, "Admin");
+        private void WriteAdminCookie(string email, string sapValue, string fullName, string position)
+        {
+            var expiresAt = DateTimeOffset.UtcNow.AddHours(SAP_HOURS);
+            // segments: email | expiry | SAPvalue | FullName | Position
+            var payload = $"{email}|{expiresAt:O}|{sapValue}|{fullName}|{position}";
+            var cookieToken = _sapProtector.Protect(payload);
 
-                            var sapClaim = parts.Length > 2 ? parts[2] : "";
-                            var fullName = parts.Length > 3 ? parts[3] : "";
-                            var position = parts.Length > 4 ? parts[4] : "";
-
-                            HttpContext.Session.SetString("AdminSapNumber", sapClaim);
-                            HttpContext.Session.SetString("AdminFullName", fullName);
-                            HttpContext.Session.SetString("AdminPosition", position);
-                            HttpContext.Session.SetString("AdminUMRole", "Admin");
-
-                            var additionalClaims = new List<Claim>
-                    {
-                          new Claim("SAPNumber", sapClaim),
-                            new Claim("UMRole", "Admin"),
-                            new Claim("FullName", fullName),
-                            new Claim("Position", position),
-                    };
-
-                            HttpContext.Session.Remove(_session.AdminPendingKey);
-                            HttpContext.Session.Remove(_session.AdminEmailKey);
-
-                            await _signInManager.SignInWithClaimsAsync(
-                                user, isPersistent: true, additionalClaims);
-
-                            _logger.LogInformation(
-                                "Admin {Email} auto-signed in via 8-hour cookie as '{Name}'.",
-                                user.Email, fullName);
-
-                            return RedirectToAction("Index", "Admin");
-                        }
-                    }
-                }
-                catch
-                {
-                    Response.Cookies.Delete(SAP_COOKIE);
-                }
-            }
-
-            return View(new SapStepViewModel());
+            Response.Cookies.Append(SAP_COOKIE, cookieToken, new CookieOptions
+            {
+                Expires = expiresAt,
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Path = "/"
+            });
+        }
+        // ═══════════════════════════════════════════════════════════════
+        //  GET  /admin/windows-login/initiate
+        //  Called by the "Login with Windows" button on the login page.
+        //  Redirects to the Negotiate-protected endpoint above.
+        //  This indirection keeps the main login page as anonymous.
+        // ═══════════════════════════════════════════════════════════════
+        [HttpGet]
+        [Route("admin/windows-login/initiate")]
+        [AllowAnonymous]
+        public IActionResult InitiateWindowsLogin()
+        {
+            // Simply redirect to the Negotiate-protected action.
+            // The browser will handle the Windows auth challenge automatically.
+            return Redirect("/admin/windows-login");
         }
 
 
@@ -595,8 +779,8 @@ namespace V2_Genesis.Controllers
 
             return RedirectToUserDashboard();
         }
-    
-    [HttpGet]
+
+        [HttpGet]
         [Route("access-denied")]
         [AllowAnonymous]
         public IActionResult AccessDenied(string? ReturnUrl)

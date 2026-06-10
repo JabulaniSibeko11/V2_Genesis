@@ -6,7 +6,6 @@
     var siteKey = ViewBag.RecaptchaSiteKey as string ?? "";
 }
 
-
 <link href="~/account/login.css" rel="stylesheet" asp-append-version="true" />
 
 <div class="login-page">
@@ -31,7 +30,8 @@
             </h1>
             <p class="login-desc">
                 The official City of Johannesburg Valuation Portal. Access the General Valuation Roll,
-                lodge objections,appeals, track submissions and manage your property information — securely and transparently.
+                lodge objections, appeals, track submissions and manage your property information —
+                securely and transparently.
             </p>
 
             <div class="login-features">
@@ -140,7 +140,7 @@
         const inp = document.getElementById(id);
         const ico = btn.querySelector('i');
         inp.type = inp.type === 'password' ? 'text' : 'password';
-         ico.className = inp.type === 'password' ? 'fa-solid fa-eye' : 'fa-solid fa-eye-slash';
+        ico.className = inp.type === 'password' ? 'fa-solid fa-eye' : 'fa-solid fa-eye-slash';
         }
     </script>
 }

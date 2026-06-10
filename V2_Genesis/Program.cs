@@ -66,7 +66,7 @@ builder.Services
     })
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
-
+builder.Services.AddAuthentication().AddNegotiate();
 // ── Cookie paths (clean URLs, no /Account/Login) ─────────────────────────────
 builder.Services.ConfigureApplicationCookie(o =>
 {
@@ -133,6 +133,7 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 app.UseSession();
+app.UseForwardedHeaders();
 app.UseAuthentication();
 app.UseAuthorization();
 

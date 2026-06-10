@@ -158,7 +158,7 @@ namespace V2_Genesis.Services.Implementations
             try
             {
                 // 1. Resolve recipients from Obj_Section1
-                var recipients = await ResolveRecipientsAsync(objectionRef, rollSource);
+                var recipients = await ResolveRecipientsAsync(objectionRef, rollSource, isAppeal);
                 if (!recipients.Any())
                 {
                     _logger.LogWarning(
@@ -477,10 +477,18 @@ namespace V2_Genesis.Services.Implementations
 
 
         // ════════════════════════════════════════════════════════════
-        //  RESOLVE RECIPIENTS from Obj_Section1
+        //  RESOLVE RECIPIENTS from Obj_Section1 + Obj_Property_Info
+        //
+        //  Routing (based on Obj_Property_Info.Objector_Type):
+        //    Owner          → Owner_Email
+        //    Third_Party    → Objector_Email
+        //    Representative → Owner_Email + Rep_Email
+        //
+        //  For appeals, Objector_Type is retrieved via:
+        //    Obj_Property_Info_Appeal.Obj_Ref → Obj_Property_Info.Objector_Type
         // ════════════════════════════════════════════════════════════
         private async Task<List<EmailRecipient>> ResolveRecipientsAsync(
-            string objectionRef, string rollSource)
+            string objectionRef, string rollSource, bool isAppeal = false)
         {
             var connKey = RollConnections.GetValueOrDefault(
                 rollSource, "DefaultConnection");
@@ -490,60 +498,88 @@ namespace V2_Genesis.Services.Implementations
             {
                 await using var conn = new SqlConnection(connStr);
 
-                var section1 = await conn.QueryFirstOrDefaultAsync(
-                    @"SELECT TOP 1
-                    Owner_Name, Owner_Email,
-                    Objector_Name, Objector_Email, Objector_Status,
-                    Representative_name, Rep_Email
-                  FROM dbo.Obj_Section1
-                  WHERE Objection_Ref_S1 = @Ref",
-                    new { Ref = objectionRef.Trim() });
+                // ── Build SQL based on objection vs appeal ────────────
+                // For objections : join Obj_Property_Info directly on Objection_No.
+                // For appeals    : chain through Obj_Property_Info_Appeal.Obj_Ref
+                //                  → Obj_Property_Info.Objection_No to get Objector_Type.
+                var sql = isAppeal
+                    ? @"SELECT TOP 1
+                            s1.Owner_Name,       s1.Owner_Email,
+                            s1.Objector_Name,    s1.Objector_Email,
+                            s1.Representative_name, s1.Rep_Email,
+                            opi.Objector_Type
+                       FROM dbo.Obj_Section1 s1
+                       LEFT JOIN dbo.Obj_Property_Info_Appeal opia
+                              ON opia.Appeal_No  = @Ref
+                       LEFT JOIN dbo.Obj_Property_Info opi
+                              ON opi.Objection_No = opia.Obj_Ref
+                       WHERE s1.Objection_Ref_S1 = @Ref"
+                    : @"SELECT TOP 1
+                            s1.Owner_Name,       s1.Owner_Email,
+                            s1.Objector_Name,    s1.Objector_Email,
+                            s1.Representative_name, s1.Rep_Email,
+                            opi.Objector_Type
+                       FROM dbo.Obj_Section1 s1
+                       LEFT JOIN dbo.Obj_Property_Info opi
+                              ON opi.Objection_No = @Ref
+                       WHERE s1.Objection_Ref_S1 = @Ref";
 
-                if (section1 is null)
+                var row = await conn.QueryFirstOrDefaultAsync(
+                    sql, new { Ref = objectionRef.Trim() });
+
+                if (row is null)
                 {
                     _logger.LogWarning(
                         "[Email] Obj_Section1 not found for {ObjRef}", objectionRef);
                     return new();
                 }
 
-                var status = section1.Objector_Status?.ToString()?.Trim() ?? string.Empty;
+                // ── Route by Objector_Type from Obj_Property_Info ─────
+                // "Owner"          → Owner_Email only
+                // "Third_Party"    → Objector_Email only
+                // "Representative" → Owner_Email + Rep_Email
+                // Fallback         → Owner_Email (safe default)
+                var objectorType = row.Objector_Type?.ToString()?.Trim() ?? string.Empty;
                 var list = new List<EmailRecipient>();
 
-                // ── Owner ─────────────────────────────────────────────
-                if (status.Equals("Owner", StringComparison.OrdinalIgnoreCase))
+                _logger.LogInformation(
+     "[Email] {ObjRef} Objector_Type = '{Type}'",
+     (string)objectionRef,
+     (string)objectorType);
+                if (objectorType.Equals("Owner", StringComparison.OrdinalIgnoreCase))
                 {
                     TryAdd(list,
-                        section1.Owner_Name?.ToString(),
-                        section1.Owner_Email?.ToString());
+                        row.Owner_Name?.ToString(),
+                        row.Owner_Email?.ToString());
                 }
-
-                // ── Third Party ────────────────────────────────────────
-                else if (status.Equals("Third_Party", StringComparison.OrdinalIgnoreCase))
+                else if (objectorType.Equals("Third_Party", StringComparison.OrdinalIgnoreCase))
                 {
                     TryAdd(list,
-                        section1.Objector_Name?.ToString(),
-                        section1.Objector_Email?.ToString());
+                        row.Objector_Name?.ToString(),
+                        row.Objector_Email?.ToString());
                 }
-
-                // ── Representative ─────────────────────────────────────
-                // → send to owner AND representative
-                else if (status.Equals("Representative", StringComparison.OrdinalIgnoreCase))
+                else if (objectorType.Equals("Representative", StringComparison.OrdinalIgnoreCase))
                 {
                     TryAdd(list,
-                        section1.Owner_Name?.ToString(),
-                        section1.Owner_Email?.ToString());
-
+                        row.Owner_Name?.ToString(),
+                        row.Owner_Email?.ToString());
                     TryAdd(list,
-                        section1.Representative_name?.ToString(),
-                        section1.Rep_Email?.ToString());
+                        row.Representative_name?.ToString(),
+                        row.Rep_Email?.ToString());
                 }
-
-                // ── Fallback (if Objector_Status is not set) ──────────
                 else
                 {
+                    // Fallback: Objector_Type not set — send to owner
+                    string type = objectorType?.ToString() ?? string.Empty;
+                    string objRef = objectionRef?.ToString() ?? string.Empty;
+
+                    _logger.LogWarning(
+                        "[Email] Unknown Objector_Type '{Type}' for {ObjRef} — defaulting to Owner_Email.",
+                        type,
+                        objRef);
                     TryAdd(list,
-                        section1.Owner_Name?.ToString(),
-                        section1.Owner_Email?.ToString());
+                        row.Owner_Name?.ToString(),
+                        row.Owner_Email?.ToString());
                 }
 
                 return list;
@@ -551,7 +587,7 @@ namespace V2_Genesis.Services.Implementations
             catch (Exception ex)
             {
                 _logger.LogError(ex,
-                    "[Email] Error reading Obj_Section1 for {ObjRef}", objectionRef);
+                    "[Email] Error resolving recipients for {ObjRef}", objectionRef);
                 return new();
             }
         }
@@ -886,7 +922,7 @@ namespace V2_Genesis.Services.Implementations
                         // Note
                         col.Item().Background("#fffbeb").Border(1)
                             .BorderColor("#f59e0b").Padding(8)
-                           
+
                           .DefaultTextStyle(x => x.FontSize(8))
                             .Text(t =>
                             {
@@ -1064,5 +1100,3 @@ namespace V2_Genesis.Services.Implementations
     }
 
 }
-
-
