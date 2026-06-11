@@ -1,0 +1,226 @@
+﻿
+
+.wd-wrap {
+    min-height: 100vh;
+    background: #f0f4f5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 16px;
+    font-family: 'Poppins', sans-serif;
+}
+
+.wd-card {
+    width: 100%;
+    max-width: 540px;
+    background: #fff;
+    border: 2px solid #e6b000;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(26,46,53,.14);
+    animation: wd-in .35s ease;
+}
+
+@keyframes wd-in {
+    from {
+        transform: translateY(-24px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Header */
+.wd-header {
+    background: linear-gradient(135deg, #1a2e35, #2d4f58);
+    border-bottom: 3px solid #e6b000;
+    padding: 22px 28px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.wd-header-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 11px;
+    background: rgba(230,176,0,.15);
+    border: 2px solid rgba(230,176,0,.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    color: #e6b000;
+    flex-shrink: 0;
+}
+
+.wd-header-text h2 {
+    font-size: 16px;
+    font-weight: 800;
+    color: #fff;
+    margin: 0 0 2px;
+}
+
+.wd-header-text p {
+    font-size: 11.5px;
+    color: rgba(255,255,255,.45);
+    margin: 0;
+}
+
+/* Warning strip */
+.wd-warning {
+    background: rgba(230,176,0,.07);
+    border-bottom: 1px solid rgba(230,176,0,.2);
+    padding: 14px 28px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #7a5800;
+}
+
+    .wd-warning i {
+        font-size: 16px;
+        color: #c49a00;
+        flex-shrink: 0;
+    }
+
+/* Body */
+.wd-body {
+    padding: 24px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+/* Error box */
+.wd-error {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    background: #fef2f2;
+    border: 1.5px solid #fca5a5;
+    font-size: 13px;
+    color: #991b1b;
+}
+
+    .wd-error i {
+        flex-shrink: 0;
+        color: #dc2626;
+    }
+
+/* Reference field */
+.wd-field label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: #36626d;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+}
+
+.wd-ref {
+    width: 100%;
+    padding: 11px 16px;
+    background: rgba(26,46,53,.04);
+    border: 2px solid #e6b000;
+    border-radius: 9px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #1a2e35;
+    font-family: monospace;
+    letter-spacing: .5px;
+}
+
+/* Consequence note */
+.wd-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 13px 16px;
+    border-radius: 9px;
+    background: rgba(220,38,38,.05);
+    border: 1.5px solid rgba(220,38,38,.2);
+    font-size: 12.5px;
+    color: #7f1d1d;
+    line-height: 1.65;
+}
+
+    .wd-note i {
+        color: #dc2626;
+        flex-shrink: 0;
+        margin-top: 1px;
+        font-size: 14px;
+    }
+
+/* Footer */
+.wd-footer {
+    padding: 18px 28px;
+    background: #fafafa;
+    border-top: 2px solid #f0f0f0;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.wd-btn {
+    flex: 1;
+    min-width: 130px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 13px 20px;
+    border-radius: 9px;
+    border: none;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all .15s;
+    letter-spacing: .2px;
+}
+
+.wd-btn-confirm {
+    background: linear-gradient(135deg, #991b1b, #b91c1c);
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(153,27,27,.25);
+}
+
+    .wd-btn-confirm:hover {
+        background: linear-gradient(135deg, #7f1d1d, #991b1b);
+        transform: translateY(-1px);
+        box-shadow: 0 6px 18px rgba(153,27,27,.3);
+        color: #fff;
+    }
+
+.wd-btn-cancel {
+    background: #fff;
+    color: #1a2e35;
+    border: 1.5px solid #d0d5db;
+}
+
+    .wd-btn-cancel:hover {
+        border-color: #36626d;
+        color: #36626d;
+        text-decoration: none;
+    }
+
+@media (max-width: 480px) {
+    .wd-footer {
+        flex-direction: column;
+    }
+
+    .wd-btn {
+        min-width: auto;
+    }
+}
+

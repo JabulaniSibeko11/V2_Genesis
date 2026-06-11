@@ -16,6 +16,8 @@
         public string? objection_Status { get; set; }
         public string? PropertyFrom { get; set; }
         public int Sub_typ { get; set; }
+        public string? Appeal_No { get; set; }
+        public string?Query_No { get; set; }    
     }
 }
 

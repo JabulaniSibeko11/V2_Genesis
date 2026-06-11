@@ -231,8 +231,11 @@
     z-index: 2000; /* ← above backdrop */
     background: #fff;
     border-radius: 16px;
-    width: min(700px, 96vw);
-    max-height: 88vh;
+    
+    width: min(1100px, 96vw) !important;
+    max-width: 1100px !important;
+    max-height: 92vh;
+   
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -328,6 +331,9 @@
 .om-body {
     overflow-y: auto;
     flex: 1;
+    max-height: calc(92vh - 145px);
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 /* Sections */
@@ -430,8 +436,11 @@
 /* Grid */
 .om-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 14px;
+    
+   
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px 22px;
 }
 
 .om-field {
@@ -631,6 +640,9 @@
 
     .om-type-row {
         flex-direction: column;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
     }
 
     .om-footer {
@@ -649,5 +661,22 @@
     .nf-step-line {
         min-width: 10px;
         max-width: 20px;
+    }
+}
+
+@media (max-width: 768px) {
+    .om-modal {
+        width: 96vw !important;
+        max-width: 96vw !important;
+        max-height: 94vh;
+    }
+
+    .om-body {
+        max-height: calc(94vh - 145px);
+    }
+
+    .om-grid,
+    .om-type-row {
+        grid-template-columns: 1fr;
     }
 }

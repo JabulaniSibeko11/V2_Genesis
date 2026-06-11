@@ -73,7 +73,7 @@
 
 
     <div class="nf-actions">
-        <button type="button" class="nf-btn-omit" onclick="openOmissionModal()">
+        <button type="button" class="nf-btn-omit" onclick="openOmissionModal(this)">
             <i class="fa-solid fa-file-signature"></i>
             Lodge as Omission
             <span class="nf-btn-arrow"><i class="fa-solid fa-arrow-right"></i></span>
@@ -427,31 +427,88 @@
     var _defType    = '@defType';
 
     // ── Open modal ───────────────────────────────────────────────────
-    function openOmissionModal() {
-        var modal    = document.getElementById('omitModal');
+    let _omitParentModal = null;
+    let _omitParentDisplay = '';
+
+    function openOmissionModal(trigger) {
+        var modal = document.getElementById('omitModal');
         var backdrop = document.getElementById('omitBackdrop');
+            backdrop.style.zIndex = '20000';
+    modal.style.zIndex = '20001';
+
+    modal.style.width = 'min(1100px, 96vw)';
+    modal.style.maxWidth = '1100px';
+    modal.style.maxHeight = '92vh';
+
         if (!modal || !backdrop) return;
 
-        // Move to <body> — parent Results modal uses CSS transform which
-        // traps position:fixed children, making the modal appear clipped
-        if (modal.parentElement !== document.body) {
+        // Find the modal/container that currently contains the "Lodge Omission" button.
+        // This is the first modal we must hide before showing the omission modal.
+        _omitParentModal = trigger
+            ? trigger.closest('.modal.show, .modal, .results-modal, .property-modal, .search-modal, [role="dialog"]')
+            : null;
+
+        // Do not treat the omission modal itself as the parent.
+        if (_omitParentModal && _omitParentModal.id === 'omitModal') {
+            _omitParentModal = null;
+        }
+
+        if (_omitParentModal) {
+            _omitParentDisplay = _omitParentModal.style.display || '';
+
+            _omitParentModal.classList.remove('show');
+            _omitParentModal.style.display = 'none';
+            _omitParentModal.setAttribute('aria-hidden', 'true');
+        }
+
+        // Move omission modal to body so it is not trapped inside the previous modal.
+        if (backdrop.parentElement !== document.body) {
             document.body.appendChild(backdrop);
+        }
+
+        if (modal.parentElement !== document.body) {
             document.body.appendChild(modal);
         }
 
         prePopulate();
         omitSwitch(_defType);
+
+        // Force omission modal to appear above all other modals/backdrops.
+        backdrop.style.zIndex = '20000';
+        modal.style.zIndex = '20001';
+
         backdrop.classList.add('show');
         modal.classList.add('show');
+        modal.style.display = 'block';
+        modal.removeAttribute('aria-hidden');
+
         document.body.style.overflow = 'hidden';
     }
 
     // ── Close modal ──────────────────────────────────────────────────
-    function closeOmissionModal() {
+       function closeOmissionModal() {
         var backdrop = document.getElementById('omitBackdrop');
-        var modal    = document.getElementById('omitModal');
-        if (backdrop) backdrop.classList.remove('show');
-        if (modal)    modal.classList.remove('show');
+        var modal = document.getElementById('omitModal');
+
+        if (backdrop) {
+            backdrop.classList.remove('show');
+            backdrop.style.zIndex = '';
+        }
+
+        if (modal) {
+            modal.classList.remove('show');
+            modal.style.display = 'none';
+            modal.style.zIndex = '';
+            modal.setAttribute('aria-hidden', 'true');
+        }
+
+        // Restore the first modal if user cancels/backs out.
+        if (_omitParentModal) {
+            _omitParentModal.style.display = _omitParentDisplay || 'block';
+            _omitParentModal.classList.add('show');
+            _omitParentModal.removeAttribute('aria-hidden');
+        }
+
         document.body.style.overflow = '';
     }
 

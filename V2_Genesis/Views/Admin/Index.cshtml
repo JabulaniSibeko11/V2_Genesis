@@ -5,6 +5,30 @@
     Layout = "~/Views/Shared/_ClientLayout.cshtml";
 }
 @functions {
+      string FormatZAR(string? val)
+    {
+        if (string.IsNullOrWhiteSpace(val))
+            return "–";
+
+        // Remove currency symbols and spaces only
+        var clean = val.Replace("R", "")
+                       .Replace(",", "")
+                       .Trim();
+
+        if (!decimal.TryParse(clean,
+            System.Globalization.NumberStyles.Any,
+            System.Globalization.CultureInfo.InvariantCulture,
+            out var num) || num <= 0)
+        {
+            return "–";
+        }
+
+        return "R " + num.ToString("N0",
+            new System.Globalization.CultureInfo("en-ZA"));
+
+
+      
+    }
 
     string GetAttrStatusPill(string? status) => status switch
     {
@@ -32,6 +56,21 @@
         "Rejected" => "<span class='cd-pill cd-pill-rejected'>Rejected</span>",
         _ => $"<span class='cd-pill cd-pill-pending'>{status ?? "Pending"}</span>"
     };
+
+    string GetStatusPill(string? status) => status switch
+    {
+        "Obj-Unallocated" or "Obj-Section51"
+            => "<span class='cd-pill cd-pill-pending'>Obj-Pending</span>",
+        "Obj-Inprogress" or "Obj-Pending-Approval"
+            => "<span class='cd-pill cd-pill-inprogress'>Obj-InProgress</span>",
+        "Obj-Lodging"
+            => "<span class='cd-pill cd-pill-lodging'>Obj-Lodging</span>",
+        "App-Unallocated" or "App-Lodging"
+            => "<span class='cd-pill cd-pill-pending'>@status</span>",
+        "App-Finalized"
+            => "<span class='cd-pill cd-pill-completed'>App-Finalized</span>",
+        _ => $"<span class='cd-pill cd-pill-completed'>{status}</span>"
+    };
 }
  @{
     var _adminFullName = Model.AdminFullName ?? "";
@@ -39,6 +78,8 @@
     var _sapFull = Model.SapNumber ?? "";
     var _sapNumeric = Model.SapNumeric ?? "";
 }
+
+
 @section Styles {
    @*  <link href="~/css/views/dashboardcss.css" rel="stylesheet" asp-append-version="true" />
    *@  <link href="~/css/views/clientdashboardcss.css" rel="stylesheet" asp-append-version="true" />
@@ -973,31 +1014,9 @@ else
 </div>
 
 @functions {
-    string FormatZAR(string? val)
-    {
-        if (string.IsNullOrWhiteSpace(val)) return "–";
-        var clean = System.Text.RegularExpressions.Regex.Replace(val, @"[^\d.]", "");
-        if (!decimal.TryParse(clean,
-                System.Globalization.NumberStyles.Any,
-                System.Globalization.CultureInfo.InvariantCulture, out var num) || num <= 0)
-            return "–";
-        return "R " + num.ToString("N0", new System.Globalization.CultureInfo("en-ZA"));
-    }
+  
 
-    string GetStatusPill(string? status) => status switch
-    {
-        "Obj-Unallocated" or "Obj-Section51"
-            => "<span class='cd-pill cd-pill-pending'>Obj-Pending</span>",
-        "Obj-Inprogress" or "Obj-Pending-Approval"
-            => "<span class='cd-pill cd-pill-inprogress'>Obj-InProgress</span>",
-        "Obj-Lodging"
-            => "<span class='cd-pill cd-pill-lodging'>Obj-Lodging</span>",
-        "App-Unallocated" or "App-Lodging"
-            => "<span class='cd-pill cd-pill-pending'>@status</span>",
-        "App-Finalized"
-            => "<span class='cd-pill cd-pill-completed'>App-Finalized</span>",
-        _ => $"<span class='cd-pill cd-pill-completed'>{status}</span>"
-    };
+    
 }
 
 @section Scripts {

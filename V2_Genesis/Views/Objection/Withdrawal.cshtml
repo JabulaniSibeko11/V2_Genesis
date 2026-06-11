@@ -1,0 +1,99 @@
+﻿@{
+    Layout = "~/Views/Shared/_ClientLayout.cshtml";
+
+    var objectionNo  = TempData.Peek("ObjectionNum")?.ToString() ?? "";
+    var withdrawType = TempData.Peek("WithdrawType")?.ToString() ?? "";
+    var rollSource   = TempData.Peek("RollSource")?.ToString()   ?? "";
+    var returnUrl    = TempData.Peek("ReturnUrl")?.ToString()     ?? "/dashboard";
+    var error        = TempData["WithdrawError"]?.ToString();
+
+    bool isAppeal = withdrawType.Contains("Appeal", StringComparison.OrdinalIgnoreCase);
+    bool isQuery  = withdrawType.Equals("Query",     StringComparison.OrdinalIgnoreCase)
+                 || withdrawType.Equals("Section78", StringComparison.OrdinalIgnoreCase);
+
+    string typeLabel = isAppeal ? "Appeal" : isQuery ? "Query" : "Objection";
+    string typeIcon  = isAppeal ? "fa-gavel" : isQuery ? "fa-magnifying-glass" : "fa-file-pen";
+
+    TempData.Keep("ObjectionNum");
+    TempData.Keep("WithdrawType");
+    TempData.Keep("RollSource");
+    TempData.Keep("ReturnUrl");
+}
+@section  Styles{
+    <link href="~/css/views/objection-withdrawal.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/views/clientdashboardcss.css" rel="stylesheet" asp-append-version="true" />
+}
+
+
+<div class="wd-wrap">
+    <div class="wd-card">
+        <form method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="objectionNo"  value="@objectionNo"  />
+            <input type="hidden" name="withdrawType" value="@withdrawType" />
+            <input type="hidden" name="rollSource"   value="@rollSource"   />
+            <input type="hidden" name="returnUrl"    value="@returnUrl"    />
+
+           
+            <div class="wd-header">
+                <div class="wd-header-icon">
+                    <i class="fa-solid @typeIcon"></i>
+                </div>
+                <div class="wd-header-text">
+                    <h2>Withdraw @typeLabel</h2>
+                    <p>City of Johannesburg · Valuation Services</p>
+                </div>
+            </div>
+
+         
+            <div class="wd-warning">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                Are you sure you want to withdraw this @typeLabel.ToLower()?
+            </div>
+
+      
+            <div class="wd-body">
+
+                @if (!string.IsNullOrWhiteSpace(error))
+                {
+                    <div class="wd-error">
+                        <i class="fa-solid fa-circle-xmark"></i>
+                        @error
+                    </div>
+                }
+
+                <div class="wd-field">
+                    <label>
+                        <i class="fa-solid fa-hashtag" style="margin-right:4px;"></i>
+                        @typeLabel Reference Number
+                    </label>
+                    <input class="wd-ref" disabled value="@objectionNo" />
+                </div>
+
+                <div class="wd-note">
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                    <div>
+                        <strong>This action cannot be undone.</strong>
+                        Withdrawing this @typeLabel.ToLower() will mark it as withdrawn
+                        in the system. If you wish to re-lodge, you will need to submit a new
+                        @typeLabel.ToLower() from the beginning.
+                    </div>
+                </div>
+
+            </div>
+
+          
+            <div class="wd-footer">
+                <button type="submit" class="wd-btn wd-btn-confirm">
+                    <i class="fa-solid fa-check-circle"></i>
+                    Yes, Withdraw
+                </button>
+                <a href="@returnUrl" class="wd-btn wd-btn-cancel">
+                    <i class="fa-solid fa-times-circle"></i>
+                    No, Cancel
+                </a>
+            </div>
+
+        </form>
+    </div>
+</div>

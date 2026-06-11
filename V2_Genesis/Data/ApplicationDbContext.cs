@@ -27,6 +27,7 @@ namespace V2_Genesis.Data
     {
         public DbSet<GvList> GvList { get; set; }
 
+        public DbSet<LinkedProperties> LinkedProperties { get; set; }
         public DbSet<Obj_Property_InfoModel> Obj_Property_Info { get; set; }
         public DbSet<Obj_Property_Info_AppealModel> Obj_Property_Info_Appeal { get; set; }
         public DbSet<Que_Property_InfoModel> Que_Property_Info { get; set; }

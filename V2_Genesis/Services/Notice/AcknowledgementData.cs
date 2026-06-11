@@ -48,6 +48,7 @@ namespace V2_Genesis.Services.Notice
         public string? ValuationKey { get; set; }
 
         public bool IsAppeal { get; set; }
+        public List<string> UploadedDocumentNames { get; set; } = new();
 
         // ── Factory: build from TempData ─────────────────────────────────
         public static AcknowledgementData FromTempData(ITempDataDictionary td, string rollSource)

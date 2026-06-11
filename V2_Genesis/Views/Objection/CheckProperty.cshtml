@@ -1,277 +1,315 @@
 ﻿@model V2_Genesis.Models.ViewModels.Objections.CheckPropertyViewModel
-
 @{
     ViewData["Title"] = Model.IsAppeal ? "Property Appeal" : "Property Objection";
     Layout = "~/Views/Shared/_ClientLayout.cshtml";
 
-    var d = Model.Main;
-
-    // QUERY CHANGE
-    var q = Model.Queitems?.FirstOrDefault();
-
+    var d  = Model.Main;
+    var q  = Model.Queitems?.FirstOrDefault();
     var src = Model.SourceTable;
-
     bool isQuery = Model.IsQuery;
 
-    if (isQuery)
-    {
-        ViewData["Title"] = "Property Query System";
-    }
+    if (isQuery) ViewData["Title"] = "Property Query System";
 }
 
 @section Styles {
-    <link href="~/css/views/objection.css" rel="stylesheet" asp-append-version="true" />
-
-    <link href="~/css/views/property-search.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/views/objection.css"          rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/views/property-search.css"    rel="stylesheet" asp-append-version="true" />
     <link href="~/css/views/clientdashboardcss.css" rel="stylesheet" asp-append-version="true" />
-    <link href="~/css/site.css" rel="stylesheet" asp-append-version="true" />
-   
+    <link href="~/css/views/site.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/views/check-property.css" rel="stylesheet" asp-append-version="true" />
 }
 
-<div class="obj-page">
-    <div class="obj-inner">
 
-        <!-- ── Page heading ─────────────────────────────────── -->
-        <div class="obj-heading">
-            <div class="obj-heading-icon">
+
+<div class="cp-page">
+
+  
+    <div class="cp-hero">
+        <div class="cp-hero-inner">
+            <div class="cp-hero-icon">
                 <i class="fa-solid @(isQuery ? "fa-magnifying-glass-chart" : Model.IsAppeal ? "fa-gavel" : "fa-file-pen")"></i>
             </div>
-            <div>
-                <h1 class="obj-title" id="pageTitle">
-                    @(isQuery ? "Property Query System" : Model.IsAppeal ? "Property Appeal System" : "Property Objection System")
+            <div class="cp-hero-text">
+                <div class="cp-hero-eyebrow">City of Johannesburg · Valuation Services</div>
+                <h1 class="cp-hero-title" id="pageTitle">
+                    @(isQuery ? "Property Query System" :
+                      Model.IsAppeal ? "Property Appeal System" :
+                      "Property Objection System")
                 </h1>
-                <p class="obj-subtitle" id="pageSubtitle">
-                    @(isQuery ? "Submit your Section 78 query or review online" : Model.IsAppeal ? "Submit your property appeal online" : "Submit your property objection online")
+                <p class="cp-hero-sub" id="pageSubtitle">
+                    @(isQuery ? "Submit your Section 78 query or review online" :
+                      Model.IsAppeal ? "Submit your property appeal online" :
+                      "Submit your property objection online")
                 </p>
             </div>
         </div>
-        <!-- ══════════════════════════════════════════════════
-             STEP 1 — Disclaimer
-        ══════════════════════════════════════════════════ -->
-        <div class="obj-card" id="disclaimerSection">
-            <span id="disclaimerTitle">
-                @if (isQuery)
-                {
-                    @:Disclaimer | Online Section 78 Query
-                }
-                else
-                {
-                    @(Model.IsAppeal ? "Disclaimer | Online Appeal" : "Disclaimer | Online Objection")
-                }
-            </span>
-            <div class="obj-card-body">
-                <p id="disclaimerIntro">
-                    You are about to commence with the online
-                    <strong id="actionWord">
-                        @(isQuery ? "Section 78 query" : Model.IsAppeal ? "appeal" : "objection")
-                    </strong> process.
+    </div>
+
+    <div class="cp-body">
+
+      
+        <div class="cp-card" id="disclaimerSection">
+            <div class="cp-card-hdr">
+                <i class="fa-solid fa-shield-halved"></i>
+                <span id="disclaimerTitle">
                     @if (isQuery)
                     {
-                        <span>
-                            If you wish to upload supporting documents, please ensure
-                            your evidence is ready and meets the following criteria.
-                        </span>
+                        @:Disclaimer | Online Section 78 Query
                     }
+                    else
+                    {
+                        @(Model.IsAppeal
+                            ? "Disclaimer | Online Appeal"
+                            : "Disclaimer | Online Objection")
+                    }
+                </span>
+            </div>
+            <div class="cp-card-body">
+                <p class="cp-disclaimer-intro" id="disclaimerIntro">
+                    You are about to commence with the online
+                    <strong id="actionWord">@(isQuery ? "Section 78 query" : Model.IsAppeal ? "appeal" : "objection")</strong>
+                    process. If you wish to upload supporting documents, please ensure your evidence is ready.
                 </p>
-                <p>If you wish to upload supporting documents, please ensure your evidence is ready:</p>
 
-                <div class="obj-disclaimer-list">
-                    <div class="obj-dl-item">
+                <div class="cp-dl-list">
+                    <div class="cp-dl-item">
                         <i class="fa-solid fa-file-pdf"></i>
                         Evidence attachments must be in <strong>PDF format</strong>
                     </div>
-                    <div class="obj-dl-item">
+                    <div class="cp-dl-item">
                         <i class="fa-solid fa-upload"></i>
                         You may upload up to <strong>10 attachments</strong>
                     </div>
-                    <div class="obj-dl-item">
+                    <div class="cp-dl-item">
                         <i class="fa-solid fa-weight-hanging"></i>
                         Maximum total size for all attachments: <strong>10 MB</strong>
                     </div>
-                    <div class="obj-dl-item">
+                    <div class="cp-dl-item">
                         <i class="fa-solid fa-file-lines"></i>
                         Each attachment may have as many pages as needed within the 10 MB limit
                     </div>
                 </div>
 
-                <p class="obj-disclaimer-note">
+                <p class="cp-disclaimer-note">
                     The municipality assumes no responsibility or liability for any errors
                     or omissions in the content of this site. Information is provided on
                     an "as is" basis.
                 </p>
 
-                <div class="obj-agree-row">
-                    <label class="obj-agree-label">
+                <div class="cp-agree-row">
+                    <label class="cp-agree-label">
                         <input type="checkbox" id="agreeCheckbox"
                                onchange="onAgreeChange(this)" />
-                        <span class="obj-agree-check"></span>
-                        By checking this box I confirm that I have read and understand
-                        the above information.
+                        By checking this box I confirm that I have read and understand the above information.
                     </label>
                 </div>
 
-                <div class="obj-agree-btn-row">
-                    <button id="continueBtn"
-                            class="obj-btn obj-btn-primary"
-                            disabled
-                            onclick="showMainForm()">
-                        <i class="fa-solid fa-circle-check"></i>
-                        <span id="continueBtnText">
-                            Continue to @(isQuery ? "Query" : Model.IsAppeal ? "Appeal" : "Objection") Form
-                        </span>
-                    </button>
-                </div>
+                <button id="continueBtn" class="cp-btn cp-btn-primary" disabled
+                        onclick="showMainForm()">
+                    <i class="fa-solid fa-circle-check"></i>
+                    <span id="continueBtnText">
+                        Continue to @(isQuery ? "Query" : Model.IsAppeal ? "Appeal" : "Objection") Form
+                    </span>
+                </button>
             </div>
         </div>
 
-        <!-- ══════════════════════════════════════════════════
-             STEP 2 — Main form
-        ══════════════════════════════════════════════════ -->
+        
         <div id="mainForm" style="display:none; flex-direction:column; gap:20px;">
 
-            <!-- Property info -->
-            <div class="obj-card">
-                <div class="obj-card-header">
+          
+            <div class="cp-card">
+                <div class="cp-card-hdr">
                     <i class="fa-solid fa-map-marker-alt"></i>
                     Property Information
-                    <span class="obj-card-sub" id="propInfoSub">
-                        Details of the property you are
-                        @(Model.IsAppeal ? "appealing" : "objecting to")
+                    <span class="cp-card-sub" id="propInfoSub">
+                        Details of the property you are @(Model.IsAppeal ? "appealing" : "objecting to")
                     </span>
                 </div>
-                <div class="obj-card-body obj-prop-grid">
-                    @if (Model.IsOmission)
-                    {
-                        <!-- Omission: show confirmed details, no DB values -->
-                        <div class="obj-prop-item obj-prop-omission-badge">
-                            <span class="obj-omission-tag">
-                                <i class="fa-solid fa-circle-exclamation"></i>
-                                Omitted Property — Not on Valuation Roll
-                            </span>
-                        </div>
-                        @if (!string.IsNullOrWhiteSpace(Model.OmittedTownName))
-                        {
-                            <div class="obj-prop-item">
-                                <span class="obj-prop-label">
-                                    <i class="fa-solid fa-map-pin"></i> Township
-                                </span>
-                                <span class="obj-prop-value">@Model.OmittedTownName</span>
-                            </div>
-                        }
-                        @if (!string.IsNullOrWhiteSpace(Model.OmittedPropertyDesc))
-                        {
-                            <div class="obj-prop-item">
-                                <span class="obj-prop-label">
-                                    <i class="fa-solid fa-file-alt"></i> Property Description
-                                </span>
-                                <span class="obj-prop-value">@Model.OmittedPropertyDesc</span>
-                            </div>
-                        }
-                        @if (!string.IsNullOrWhiteSpace(Model.OmittedAddress))
-                        {
-                            <div class="obj-prop-item">
-                                <span class="obj-prop-label">
-                                    <i class="fa-solid fa-road"></i> Address
-                                </span>
-                                <span class="obj-prop-value">@Model.OmittedAddress</span>
-                            </div>
-                        }
-                        @if (!string.IsNullOrWhiteSpace(Model.OmittedStand))
-                        {
-                            <div class="obj-prop-item">
-                                <span class="obj-prop-label">
-                                    <i class="fa-solid fa-hashtag"></i> ERF / Stand
-                                </span>
-                                <span class="obj-prop-value">@Model.OmittedStand</span>
-                            </div>
-                        }
-                    }
-                    else if (isQuery && q is not null)
-                    {
-                        <div class="obj-prop-item">
-                            <span class="obj-prop-label">
-                                <i class="fa-solid fa-file-alt"></i> Property Description
-                            </span>
-                            <span class="obj-prop-value">@(q.PropertyDesc ?? "N/A")</span>
-                        </div>
+               <div class="cp-card-body">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
 
-                        <div class="obj-prop-item">
-                            <span class="obj-prop-label">
-                                <i class="fa-solid fa-home"></i> Address
-                            </span>
-                            <span class="obj-prop-value">@(q.LisStreetAddress ?? "N/A")</span>
-                        </div>
-
-                        <div class="obj-prop-item">
-                            <span class="obj-prop-label">
-                                <i class="fa-solid fa-tag"></i> Category
-                            </span>
-                            <span class="obj-prop-value">@(q.CatDesc ?? "N/A")</span>
-                        </div>
-
-                        <div class="obj-prop-item">
-                            <span class="obj-prop-label">
-                                <i class="fa-solid fa-city"></i> Township
-                            </span>
-                            <span class="obj-prop-value">@(q.TownNameDesc ?? "N/A")</span>
-                        </div>
-                    }
-                    else if (d is not null)
-                    {
-                        <div class="obj-prop-item">
-                            <span class="obj-prop-label">
-                                <i class="fa-solid fa-file-alt"></i> Property Description
-                            </span>
-                            <span class="obj-prop-value">@(d.PropertyDesc ?? "N/A")</span>
-                        </div>
-                        <div class="obj-prop-item">
-                            <span class="obj-prop-label">
-                                <i class="fa-solid fa-home"></i> Address
-                            </span>
-                            <span class="obj-prop-value">@(d.LisStreetAddress ?? "N/A")</span>
-                        </div>
-                        <div class="obj-prop-item">
-                            <span class="obj-prop-label">
-                                <i class="fa-solid fa-tag"></i> Category
-                            </span>
-                            <span class="obj-prop-value">@(d.CatDesc ?? "N/A")</span>
-                        </div>
-                        <div class="obj-prop-item">
-                            <span class="obj-prop-label">
-                                <i class="fa-solid fa-city"></i> Township
-                            </span>
-                            <span class="obj-prop-value">@(d.TownNameDesc ?? "N/A")</span>
-                        </div>
-                    }
+        @if (Model.IsOmission)
+        {
+            <div style="grid-column:1/-1;display:inline-flex;align-items:center;gap:8px;
+                 padding:8px 14px;border-radius:8px;background:#fff7ed;
+                 border:1.5px solid #fed7aa;font-size:13px;font-weight:700;color:#c2410c;">
+                <i class="fa-solid fa-circle-exclamation"></i>
+                Omitted Property — Not on Valuation Roll
+            </div>
+            @if (!string.IsNullOrWhiteSpace(Model.OmittedTownName))
+            {
+                <div style="display:flex;flex-direction:column;gap:4px;padding:12px 14px;
+                     border-radius:9px;background:#f8f9fa;border:1.5px solid #f0f0f0;">
+                    <span style="font-size:10px;font-weight:700;letter-spacing:1px;color:#36626d;
+                          text-transform:uppercase;display:flex;align-items:center;gap:5px;">
+                        <i class="fa-solid fa-map-pin" style="color:#e6b000;"></i>Township
+                    </span>
+                    <span style="font-size:13.5px;font-weight:600;color:#1a2e35;">
+                        @Model.OmittedTownName
+                    </span>
                 </div>
+            }
+            @if (!string.IsNullOrWhiteSpace(Model.OmittedPropertyDesc))
+            {
+                <div style="display:flex;flex-direction:column;gap:4px;padding:12px 14px;
+                     border-radius:9px;background:#f8f9fa;border:1.5px solid #f0f0f0;">
+                    <span style="font-size:10px;font-weight:700;letter-spacing:1px;color:#36626d;
+                          text-transform:uppercase;display:flex;align-items:center;gap:5px;">
+                        <i class="fa-solid fa-file-alt" style="color:#e6b000;"></i>Property Description
+                    </span>
+                    <span style="font-size:13.5px;font-weight:600;color:#1a2e35;">
+                        @Model.OmittedPropertyDesc
+                    </span>
+                </div>
+            }
+            @if (!string.IsNullOrWhiteSpace(Model.OmittedAddress))
+            {
+                <div style="display:flex;flex-direction:column;gap:4px;padding:12px 14px;
+                     border-radius:9px;background:#f8f9fa;border:1.5px solid #f0f0f0;">
+                    <span style="font-size:10px;font-weight:700;letter-spacing:1px;color:#36626d;
+                          text-transform:uppercase;display:flex;align-items:center;gap:5px;">
+                        <i class="fa-solid fa-road" style="color:#e6b000;"></i>Address
+                    </span>
+                    <span style="font-size:13.5px;font-weight:600;color:#1a2e35;">
+                        @Model.OmittedAddress
+                    </span>
+                </div>
+            }
+            @if (!string.IsNullOrWhiteSpace(Model.OmittedStand))
+            {
+                <div style="display:flex;flex-direction:column;gap:4px;padding:12px 14px;
+                     border-radius:9px;background:#f8f9fa;border:1.5px solid #f0f0f0;">
+                    <span style="font-size:10px;font-weight:700;letter-spacing:1px;color:#36626d;
+                          text-transform:uppercase;display:flex;align-items:center;gap:5px;">
+                        <i class="fa-solid fa-hashtag" style="color:#e6b000;"></i>ERF / Stand
+                    </span>
+                    <span style="font-size:13.5px;font-weight:600;color:#1a2e35;">
+                        @Model.OmittedStand
+                    </span>
+                </div>
+            }
+        }
+        else if (isQuery && q is not null)
+        {
+            <div style="display:flex;flex-direction:column;gap:4px;padding:12px 14px;
+                 border-radius:9px;background:#f8f9fa;border:1.5px solid #f0f0f0;">
+                <span style="font-size:10px;font-weight:700;letter-spacing:1px;color:#36626d;
+                      text-transform:uppercase;display:flex;align-items:center;gap:5px;">
+                    <i class="fa-solid fa-file-alt" style="color:#e6b000;"></i>Property Description
+                </span>
+                <span style="font-size:13.5px;font-weight:600;color:#1a2e35;">
+                    @(q.PropertyDesc ?? "N/A")
+                </span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:4px;padding:12px 14px;
+                 border-radius:9px;background:#f8f9fa;border:1.5px solid #f0f0f0;">
+                <span style="font-size:10px;font-weight:700;letter-spacing:1px;color:#36626d;
+                      text-transform:uppercase;display:flex;align-items:center;gap:5px;">
+                    <i class="fa-solid fa-home" style="color:#e6b000;"></i>Address
+                </span>
+                <span style="font-size:13.5px;font-weight:600;color:#1a2e35;">
+                    @(q.LisStreetAddress ?? "N/A")
+                </span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:4px;padding:12px 14px;
+                 border-radius:9px;background:#f8f9fa;border:1.5px solid #f0f0f0;">
+                <span style="font-size:10px;font-weight:700;letter-spacing:1px;color:#36626d;
+                      text-transform:uppercase;display:flex;align-items:center;gap:5px;">
+                    <i class="fa-solid fa-tag" style="color:#e6b000;"></i>Category
+                </span>
+                <span style="font-size:13.5px;font-weight:600;color:#1a2e35;">
+                    @(q.CatDesc ?? "N/A")
+                </span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:4px;padding:12px 14px;
+                 border-radius:9px;background:#f8f9fa;border:1.5px solid #f0f0f0;">
+                <span style="font-size:10px;font-weight:700;letter-spacing:1px;color:#36626d;
+                      text-transform:uppercase;display:flex;align-items:center;gap:5px;">
+                    <i class="fa-solid fa-city" style="color:#e6b000;"></i>Township
+                </span>
+                <span style="font-size:13.5px;font-weight:600;color:#1a2e35;">
+                    @(q.TownNameDesc ?? "N/A")
+                </span>
+            </div>
+        }
+        else if (d is not null)
+        {
+            <div style="display:flex;flex-direction:column;gap:4px;padding:12px 14px;
+                 border-radius:9px;background:#f8f9fa;border:1.5px solid #f0f0f0;">
+                <span style="font-size:10px;font-weight:700;letter-spacing:1px;color:#36626d;
+                      text-transform:uppercase;display:flex;align-items:center;gap:5px;">
+                    <i class="fa-solid fa-file-alt" style="color:#e6b000;"></i>Property Description
+                </span>
+                <span style="font-size:13.5px;font-weight:600;color:#1a2e35;">
+                    @(d.PropertyDesc ?? "N/A")
+                </span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:4px;padding:12px 14px;
+                 border-radius:9px;background:#f8f9fa;border:1.5px solid #f0f0f0;">
+                <span style="font-size:10px;font-weight:700;letter-spacing:1px;color:#36626d;
+                      text-transform:uppercase;display:flex;align-items:center;gap:5px;">
+                    <i class="fa-solid fa-home" style="color:#e6b000;"></i>Address
+                </span>
+                <span style="font-size:13.5px;font-weight:600;color:#1a2e35;">
+                    @(d.LisStreetAddress ?? "N/A")
+                </span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:4px;padding:12px 14px;
+                 border-radius:9px;background:#f8f9fa;border:1.5px solid #f0f0f0;">
+                <span style="font-size:10px;font-weight:700;letter-spacing:1px;color:#36626d;
+                      text-transform:uppercase;display:flex;align-items:center;gap:5px;">
+                    <i class="fa-solid fa-tag" style="color:#e6b000;"></i>Category
+                </span>
+                <span style="font-size:13.5px;font-weight:600;color:#1a2e35;">
+                    @(d.CatDesc ?? "N/A")
+                </span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:4px;padding:12px 14px;
+                 border-radius:9px;background:#f8f9fa;border:1.5px solid #f0f0f0;">
+                <span style="font-size:10px;font-weight:700;letter-spacing:1px;color:#36626d;
+                      text-transform:uppercase;display:flex;align-items:center;gap:5px;">
+                    <i class="fa-solid fa-city" style="color:#e6b000;"></i>Township
+                </span>
+                <span style="font-size:13.5px;font-weight:600;color:#1a2e35;">
+                    @(d.TownNameDesc ?? "N/A")
+                </span>
+            </div>
+        }
+        else
+        {
+            
+            <div style="grid-column:1/-1;padding:16px;text-align:center;
+                 color:#9aa3af;font-size:13px;font-style:italic;">
+                <i class="fa-solid fa-circle-exclamation" style="margin-right:6px;color:#e6b000;"></i>
+                Property details could not be loaded. Please go back and try again.
+            </div>
+        }
+
+    </div>
+</div>
             </div>
 
-            <!-- Property type -->
-            <div class="obj-card">
-                <div class="obj-card-header">
+          
+            <div class="cp-card">
+                <div class="cp-card-hdr">
                     <i class="fa-solid fa-house"></i>
                     Property Type
-                    <span class="obj-card-sub" id="propTypeSub">
-                        Choose the property type you want to
-                        @(Model.IsAppeal ? "appeal on" : "object on")
+                    <span class="cp-card-sub" id="propTypeSub">
+                        Choose the property type you want to @(Model.IsAppeal ? "appeal on" : "object on")
                     </span>
                 </div>
-                <div class="obj-card-body">
-                    <div class="obj-radio-grid">
-
+                <div class="cp-card-body">
+                    <div class="cp-radio-grid">
                         <label class="obj-radio-card" id="card-res">
                             <input type="radio" name="propertyType" value="Res"
                                    onchange="onTypeSelect('propertyType','res-feedback')" />
-
                             <div class="obj-radio-content">
                                 <i class="fa-solid fa-house-chimney"></i>
                                 <strong>Residential</strong>
                                 <small>Full Title and Sectional Title used for Residential Purposes</small>
                             </div>
-
-                            <div class="obj-radio-check">
-                                <i class="fa-solid fa-circle-check"></i>
-                            </div>
+                            <div class="obj-radio-check"><i class="fa-solid fa-circle-check"></i></div>
                         </label>
 
                         <label class="obj-radio-card" id="card-agric">
@@ -282,9 +320,7 @@
                                 <strong>Agricultural</strong>
                                 <small>Holdings or Farms</small>
                             </div>
-                            <div class="obj-radio-check">
-                                <i class="fa-solid fa-circle-check"></i>
-                            </div>
+                            <div class="obj-radio-check"><i class="fa-solid fa-circle-check"></i></div>
                         </label>
 
                         <label class="obj-radio-card" id="card-bus">
@@ -295,9 +331,7 @@
                                 <strong>Business / Other</strong>
                                 <small>Business, Factories, Offices, Schools</small>
                             </div>
-                            <div class="obj-radio-check">
-                                <i class="fa-solid fa-circle-check"></i>
-                            </div>
+                            <div class="obj-radio-check"><i class="fa-solid fa-circle-check"></i></div>
                         </label>
 
                         <label class="obj-radio-card" id="card-multi">
@@ -308,30 +342,24 @@
                                 <strong>Multiple Purposes</strong>
                                 <small>Property used for more than one purpose</small>
                             </div>
-                            <div class="obj-radio-check">
-                                <i class="fa-solid fa-circle-check"></i>
-                            </div>
+                            <div class="obj-radio-check"><i class="fa-solid fa-circle-check"></i></div>
                         </label>
-
                     </div>
                     <div class="obj-selection-feedback" id="res-feedback"></div>
                 </div>
             </div>
 
-            <!-- Objector / Appellant type -->
-            <div class="obj-card">
-                <div class="obj-card-header">
+
+            <div class="cp-card">
+                <div class="cp-card-hdr">
                     <i class="fa-solid fa-user"></i>
-                    <span id="objectorTypeHeader">
-                        @(Model.IsAppeal ? "Appellant Type" : "Objector Type")
-                    </span>
-                    <span class="obj-card-sub" id="objectorTypeSub">
+                    <span id="objectorTypeHeader">@(Model.IsAppeal ? "Appellant Type" : "Objector Type")</span>
+                    <span class="cp-card-sub" id="objectorTypeSub">
                         Choose the type of @(Model.IsAppeal ? "appellant" : "objector")
                     </span>
                 </div>
-                <div class="obj-card-body">
-                    <div class="obj-radio-grid obj-radio-grid-3">
-
+                <div class="cp-card-body">
+                    <div class="cp-radio-grid-3">
                         <label class="obj-radio-card">
                             <input type="radio" name="objectorType" value="Owner"
                                    onchange="onTypeSelect('objectorType','obj-feedback')" />
@@ -339,26 +367,22 @@
                                 <i class="fa-solid fa-user-check"></i>
                                 <strong>Owner</strong>
                             </div>
-                            <div class="obj-radio-check">
-                                <i class="fa-solid fa-circle-check"></i>
-                            </div>
+                            <div class="obj-radio-check"><i class="fa-solid fa-circle-check"></i></div>
                         </label>
-                          @* Third Party — hidden for Query *@
+
                         @if (!isQuery)
                         {
-
                             <label class="obj-radio-card">
                                 <input type="radio" name="objectorType" value="Third_Party"
-                                onchange="onTypeSelect('objectorType','obj-feedback')" />
+                                       onchange="onTypeSelect('objectorType','obj-feedback')" />
                                 <div class="obj-radio-content">
                                     <i class="fa-solid fa-users"></i>
                                     <strong>Third Party</strong>
                                 </div>
-                                <div class="obj-radio-check">
-                                    <i class="fa-solid fa-circle-check"></i>
-                                </div>
+                                <div class="obj-radio-check"><i class="fa-solid fa-circle-check"></i></div>
                             </label>
                         }
+
                         <label class="obj-radio-card">
                             <input type="radio" name="objectorType" value="Representative"
                                    onchange="onTypeSelect('objectorType','obj-feedback')" />
@@ -366,137 +390,106 @@
                                 <i class="fa-solid fa-user-tie"></i>
                                 <strong>Representative</strong>
                             </div>
-                            <div class="obj-radio-check">
-                                <i class="fa-solid fa-circle-check"></i>
-                            </div>
+                            <div class="obj-radio-check"><i class="fa-solid fa-circle-check"></i></div>
                         </label>
-
                     </div>
                     <div class="obj-selection-feedback" id="obj-feedback"></div>
                     <input type="hidden" id="objector_type" />
-                    <div id="o_type" class="obj-selection-feedback" style="display:none;"></div>
-
+                    <div id="o_type" style="display:none;"></div>
                 </div>
             </div>
 
-            @* REMOVE the entire submission type card for isQuery —
-   Review is no longer lodged from here. 
-   Query is the only option so no radio needed. *@
-
+          
             @if (isQuery)
             {
-                <div class="obj-card">
-                    <div class="obj-card-header">
+                <div class="cp-card">
+                    <div class="cp-card-hdr">
                         <i class="fa-solid fa-file-magnifying-glass"></i>
                         Section 78 Query
-                        <span class="obj-card-sub">
-                            Submit a formal query about your property valuation
-                        </span>
+                        <span class="cp-card-sub">Submit a formal query about your property valuation</span>
                     </div>
-                    <div class="obj-card-body">
-                        <p style="font-size:14px; color:#645a50; margin:0;">
-                            Click <strong>Lodge Section 78 Query</strong> below to proceed
-                            to the application form.
+                    <div class="cp-card-body">
+                        <div class="cp-s78-info">
+                            Click <strong>Lodge Section 78 Query</strong> below to proceed to the application form.
                             <br />
-                            <em>
+                            <em style="font-size:12.5px;color:#9aa3af;">
                                 If you are not satisfied with the outcome of your query,
-                                a Review option will appear on your dashboard once the
-                                outcome has been issued.
+                                a Review option will appear on your dashboard once the outcome has been issued.
                             </em>
-                        </p>
+                        </div>
                     </div>
                 </div>
             }
-            <!-- Lodge button (hidden until both types selected) -->
-            <div id="lodgeSection" style="display:none;">
-                <div class="obj-card obj-lodge-card">
-                    <div class="obj-card-body obj-lodge-body">
 
+     
+            <div id="lodgeSection" style="display:none;">
+                <div class="cp-card cp-lodge-card">
+                    <div class="cp-lodge-body">
                         <div class="obj-lodge-summary" id="lodgeSummary"></div>
+
                         @if (isQuery)
                         {
                             <input type="hidden" id="Direct" value="" />
 
-                            @* Normal — Query *@
-                            <a asp-controller="Section78"
-                                   asp-action="Section78Query"
-                                   asp-route-qtype="Query"
-                                   asp-route-Direct=""
-                                   asp-route-PropDesc="@(isQuery ? q?.PropertyDesc : d?.PropertyDesc)"
-                                   asp-route-addr="@(isQuery ? q?.LisStreetAddress : d?.LisStreetAddress)"
-                                   asp-route-cat="@(isQuery ? q?.CatDesc : d?.CatDesc)"
-                                   asp-route-UKey="@(isQuery ? q?.UnitKey : d?.UnitKey)"
-                                   asp-route-VKey="@(isQuery ? q?.ValuationKey : d?.ValuationKey)"
-                                   id="btn_choice"
-                                   class="obj-lodge-btn"
-                                   hidden>
+                            <a asp-controller="Section78" asp-action="Section78Query"
+                               asp-route-qtype="Query" asp-route-Direct=""
+                               asp-route-PropDesc="@(isQuery ? q?.PropertyDesc : d?.PropertyDesc)"
+                               asp-route-addr="@(isQuery ? q?.LisStreetAddress : d?.LisStreetAddress)"
+                               asp-route-cat="@(isQuery ? q?.CatDesc : d?.CatDesc)"
+                               asp-route-UKey="@(isQuery ? q?.UnitKey : d?.UnitKey)"
+                               asp-route-VKey="@(isQuery ? q?.ValuationKey : d?.ValuationKey)"
+                               id="btn_choice" class="obj-lodge-btn" hidden>
                                 <i class="fa-solid fa-file-magnifying-glass"></i>
                                 Lodge Section 78 Query
                             </a>
 
-                            @* Normal — Review *@
-                            <a asp-controller="Section78"
-                                   asp-action="Section78Query"
-                                   asp-route-qtype="Review"
-                                   asp-route-Direct=""
-                                   asp-route-PropDesc="@(isQuery ? q?.PropertyDesc : d?.PropertyDesc)"
-                                   asp-route-addr="@(isQuery ? q?.LisStreetAddress : d?.LisStreetAddress)"
-                                   asp-route-cat="@(isQuery ? q?.CatDesc : d?.CatDesc)"
-                                   asp-route-UKey="@(isQuery ? q?.UnitKey : d?.UnitKey)"
-                                   asp-route-VKey="@(isQuery ? q?.ValuationKey : d?.ValuationKey)"
-                                   id="btn_choice1"
-                                   class="obj-lodge-btn"
-                                   hidden>
+                            <a asp-controller="Section78" asp-action="Section78Query"
+                               asp-route-qtype="Review" asp-route-Direct=""
+                               asp-route-PropDesc="@(isQuery ? q?.PropertyDesc : d?.PropertyDesc)"
+                               asp-route-addr="@(isQuery ? q?.LisStreetAddress : d?.LisStreetAddress)"
+                               asp-route-cat="@(isQuery ? q?.CatDesc : d?.CatDesc)"
+                               asp-route-UKey="@(isQuery ? q?.UnitKey : d?.UnitKey)"
+                               asp-route-VKey="@(isQuery ? q?.ValuationKey : d?.ValuationKey)"
+                               id="btn_choice1" class="obj-lodge-btn" hidden>
                                 <i class="fa-solid fa-magnifying-glass"></i>
                                 Lodge Section 78 Review
                             </a>
 
-                            @* Multi — Query *@
-                            <a asp-controller="Section78"
-                                   asp-action="Section78Query"
-                                   asp-route-qtype="Query"
-                                   asp-route-Direct="Multi"
-                                   asp-route-PropDesc="@(isQuery ? q?.PropertyDesc : d?.PropertyDesc)"
-                                   asp-route-addr="@(isQuery ? q?.LisStreetAddress : d?.LisStreetAddress)"
-                                   asp-route-cat="@(isQuery ? q?.CatDesc : d?.CatDesc)"
-                                   asp-route-UKey="@(isQuery ? q?.UnitKey : d?.UnitKey)"
-                                   asp-route-VKey="@(isQuery ? q?.ValuationKey : d?.ValuationKey)"
-                                   id="btn_choiceM"
-                                   class="obj-lodge-btn"
-                                   hidden>
+                            <a asp-controller="Section78" asp-action="Section78Query"
+                               asp-route-qtype="Query" asp-route-Direct="Multi"
+                               asp-route-PropDesc="@(isQuery ? q?.PropertyDesc : d?.PropertyDesc)"
+                               asp-route-addr="@(isQuery ? q?.LisStreetAddress : d?.LisStreetAddress)"
+                               asp-route-cat="@(isQuery ? q?.CatDesc : d?.CatDesc)"
+                               asp-route-UKey="@(isQuery ? q?.UnitKey : d?.UnitKey)"
+                               asp-route-VKey="@(isQuery ? q?.ValuationKey : d?.ValuationKey)"
+                               id="btn_choiceM" class="obj-lodge-btn" hidden>
                                 <i class="fa-solid fa-file-magnifying-glass"></i>
                                 Lodge Section 78 Query (Multi)
                             </a>
 
-                            @* Multi — Review *@
-                            <a asp-controller="Section78"
-                                   asp-action="Section78Query"
-                                   asp-route-qtype="Review"
-                                   asp-route-Direct="Multi"
-                                   asp-route-PropDesc="@(isQuery ? q?.PropertyDesc : d?.PropertyDesc)"
-                                   asp-route-addr="@(isQuery ? q?.LisStreetAddress : d?.LisStreetAddress)"
-                                   asp-route-cat="@(isQuery ? q?.CatDesc : d?.CatDesc)"
-                                   asp-route-UKey="@(isQuery ? q?.UnitKey : d?.UnitKey)"
-                                   asp-route-VKey="@(isQuery ? q?.ValuationKey : d?.ValuationKey)"
-                                   id="btn_choiceM1"
-                                   class="obj-lodge-btn"
-                                   hidden>
+                            <a asp-controller="Section78" asp-action="Section78Query"
+                               asp-route-qtype="Review" asp-route-Direct="Multi"
+                               asp-route-PropDesc="@(isQuery ? q?.PropertyDesc : d?.PropertyDesc)"
+                               asp-route-addr="@(isQuery ? q?.LisStreetAddress : d?.LisStreetAddress)"
+                               asp-route-cat="@(isQuery ? q?.CatDesc : d?.CatDesc)"
+                               asp-route-UKey="@(isQuery ? q?.UnitKey : d?.UnitKey)"
+                               asp-route-VKey="@(isQuery ? q?.ValuationKey : d?.ValuationKey)"
+                               id="btn_choiceM1" class="obj-lodge-btn" hidden>
                                 <i class="fa-solid fa-magnifying-glass"></i>
                                 Lodge Section 78 Review (Multi)
                             </a>
                         }
-                        <a href="#" id="btn_choice" class="obj-lodge-btn" hidden>
-                            <i class="fa-solid fa-file-signature"></i>
-                            <span id="lodgeBtnText">
-                                @(Model.IsAppeal ? "Lodge Appeal" : "Lodge Objection")
-                            </span>
-                        </a>
-                        <a href="#" id="btn_choice1" class="obj-lodge-btn" hidden>
-                            <i class="fa-solid fa-file-signature"></i>
-                            <span id="lodgeBtnText1">
-                                @(Model.IsAppeal ? "Lodge Appeal" : "Lodge Objection")
-                            </span>
-                        </a>
+                        else
+                        {
+                            <a href="#" id="btn_choice" class="obj-lodge-btn" hidden>
+                                <i class="fa-solid fa-file-signature"></i>
+                                <span id="lodgeBtnText">@(Model.IsAppeal ? "Lodge Appeal" : "Lodge Objection")</span>
+                            </a>
+                            <a href="#" id="btn_choice1" class="obj-lodge-btn" hidden>
+                                <i class="fa-solid fa-layer-group"></i>
+                                <span id="lodgeBtnText1">@(Model.IsAppeal ? "Lodge Appeal (Multi)" : "Lodge Multi-Purpose Objection")</span>
+                            </a>
+                        }
                     </div>
                 </div>
             </div>
@@ -505,18 +498,14 @@
     </div>
 </div>
 
-<!-- ══════════════════════════════════════════════════
-     Instructions modal
-══════════════════════════════════════════════════ -->
+
 <div class="obj-modal-backdrop" id="instrBackdrop"></div>
 <div class="obj-modal" id="instrModal">
     <div class="obj-modal-header">
         <div>
             <h2>
                 <i class="fa-solid fa-clipboard-list"></i>
-                <span id="modalTitle">
-                    @(Model.IsAppeal ? "Appeal" : "Objection") Form Instructions
-                </span>
+                <span id="modalTitle">@(Model.IsAppeal ? "Appeal" : "Objection") Form Instructions</span>
             </h2>
             <p id="modalSubtitle">
                 Please read all instructions carefully before starting your
@@ -527,39 +516,25 @@
             <i class="fa-solid fa-xmark"></i>
         </button>
     </div>
-    <div class="obj-modal-body">
 
+    <div class="obj-modal-body">
         <div class="obj-instr-section">
             <h3><i class="fa-solid fa-user"></i> Section 1: Personal Information</h3>
             <ul>
-                <li>
-                    Complete at least one field to submit your
-                    <span class="instr-action-word">@(Model.IsAppeal ? "appeal" : "objection")</span>
-                </li>
-                <li>
-                    <strong>ID Number or Passport:</strong> SA citizens enter their ID number.
-                    Non-citizens provide a valid Passport or Asylum number
-                </li>
+                <li>Complete at least one field to submit your <span class="instr-action-word">@(Model.IsAppeal ? "appeal" : "objection")</span></li>
+                <li><strong>ID Number or Passport:</strong> SA citizens enter their ID. Non-citizens provide a Passport or Asylum number</li>
                 <li><strong>Contact Numbers:</strong> Populate at least one contact number</li>
-                <li>
-                    <strong>Address:</strong> Fill all address fields.
-                    Click "Yes" if postal = physical address
-                </li>
+                <li><strong>Address:</strong> Fill all address fields. Click "Yes" if postal = physical address</li>
             </ul>
         </div>
 
         <div class="obj-instr-section">
             <h3>
                 <i class="fa-solid fa-users"></i>
-                <span id="instrSection2Title">
-                    @(Model.IsAppeal ? "Appellant" : "Objector") Type Requirements
-                </span>
+                <span id="instrSection2Title">@(Model.IsAppeal ? "Appellant" : "Objector") Type Requirements</span>
             </h3>
             <ul>
-                <li>
-                    <strong>Third Party:</strong> Clearly mention your
-                    <span class="instr-action-word">@(Model.IsAppeal ? "appellant" : "objector")</span> status
-                </li>
+                <li><strong>Third Party:</strong> Clearly mention your <span class="instr-action-word">@(Model.IsAppeal ? "appellant" : "objector")</span> status</li>
                 <li><strong>Representative:</strong> Provide an authorised letter in Section 1</li>
             </ul>
         </div>
@@ -567,66 +542,53 @@
         <div class="obj-instr-section">
             <h3>
                 <i class="fa-solid fa-pen"></i>
-                Section 6: <span class="instr-action-word-cap">
-                @(Model.IsAppeal ? "Appeal" : "Objection")
-            </span> Details
-        </h3>
-        <ul>
-            <li>
-                Only fill in fields you wish to
-                <span class="instr-action-word">@(Model.IsAppeal ? "appeal" : "object to")</span>
-                — leave others blank
-            </li>
-            <li>Do not enter values identical to the original</li>
-        </ul>
-    </div>
+                Section 6: <span class="instr-action-word-cap">@(Model.IsAppeal ? "Appeal" : "Objection")</span> Details
+            </h3>
+            <ul>
+                <li>Only fill in fields you wish to <span class="instr-action-word">@(Model.IsAppeal ? "appeal" : "object to")</span> — leave others blank</li>
+                <li>Do not enter values identical to the original</li>
+            </ul>
+        </div>
 
-    <div class="obj-instr-section">
-        <h3><i class="fa-solid fa-upload"></i> Document Upload</h3>
-        <ul>
-            <li>Upload up to <strong>10 documents</strong> (PDF, PNG, JPG)</li>
-            <li>Additional uploads possible within 48 hours</li>
-            <li>Ensure your signature is clear and visible</li>
-        </ul>
-    </div>
+        <div class="obj-instr-section">
+            <h3><i class="fa-solid fa-upload"></i> Document Upload</h3>
+            <ul>
+                <li>Upload up to <strong>10 documents</strong> (PDF, PNG, JPG)</li>
+                <li>Additional uploads possible within 48 hours</li>
+                <li>Ensure your signature is clear and visible</li>
+            </ul>
+        </div>
 
-    <div class="obj-instr-warning">
-        <i class="fa-solid fa-triangle-exclamation"></i>
-        <div>
-            <strong>Important Notice:</strong> If you experience problems,
-            do not retry multiple times. Contact the Valuation Admission Team
-            or visit the office.
+        <div class="obj-instr-warning">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            <div>
+                <strong>Important Notice:</strong> If you experience problems,
+                do not retry multiple times. Contact the Valuation Admission Team or visit the office.
+            </div>
         </div>
     </div>
 
+    <div class="obj-modal-footer">
+        <label class="cp-agree-label">
+            <input type="checkbox" id="instrAgree" onchange="onInstrAgree(this)" />
+            I have read and understood all the instructions
+        </label>
+        <div class="obj-modal-actions">
+            <button class="cp-btn cp-btn-outline" onclick="closeInstrModal()">
+                <i class="fa-solid fa-xmark"></i> Cancel
+            </button>
+            <button class="cp-btn cp-btn-primary" id="startFormBtn" disabled onclick="proceedToForm()">
+                <i class="fa-solid fa-play"></i>
+                Start <span id="startBtnWord">@(Model.IsAppeal ? "Appeal" : "Objection")</span> Form
+            </button>
+        </div>
+    </div>
 </div>
-<div class="obj-modal-footer">
-    <label class="obj-agree-label">
-        <input type="checkbox" id="instrAgree"
-               onchange="onInstrAgree(this)" />
-        <span class="obj-agree-check"></span>
-        I have read and understood all the instructions
-    </label>
-    <div class="obj-modal-actions">
-        <button class="obj-btn obj-btn-outline" onclick="closeInstrModal()">
-            <i class="fa-solid fa-xmark"></i> Cancel
-        </button>
-        <button class="obj-btn obj-btn-primary" id="startFormBtn"
-                disabled onclick="proceedToForm()">
-            <i class="fa-solid fa-play"></i>
-            Start <span id="startBtnWord">
-            @(Model.IsAppeal ? "Appeal" : "Objection")
-        </span> Form
-    </button>
-</div>
-</div>
-</div>
+
 <script asp-append-version="true" src="~/js/QueryIndex.js" type="text/javascript"></script>
 
 @section Scripts {
 <script>
-
-// ── CONFIG injected from Razor ───────────────────────────────────
 var CONTROLLER = '@Model.ControllerName';
 var SOURCE     = '@Model.SourceTable';
 var IS_LIS     = SOURCE === 'LIS';
@@ -634,232 +596,101 @@ var IS_QUERY   = @(Model.IsQuery ? "true" : "false");
 
 var IS_APPEAL = (function () {
     var fromRazor = '@Model.AppealStatus';
-    if (fromRazor === 'True' || fromRazor === 'False')
-        return fromRazor === 'True';
+    if (fromRazor === 'True' || fromRazor === 'False') return fromRazor === 'True';
     var urlParam = new URLSearchParams(window.location.search).get('AppealStatus');
-    if (urlParam !== null) {
-        sessionStorage.setItem('AppealStatus', urlParam);
-        return urlParam === 'True';
-    }
+    if (urlParam !== null) { sessionStorage.setItem('AppealStatus', urlParam); return urlParam === 'True'; }
     return sessionStorage.getItem('AppealStatus') === 'True';
 })();
-
 sessionStorage.setItem('AppealStatus', IS_APPEAL ? 'True' : 'False');
 
-// ════════════════════════════════════════════════════════════════
-//  SHARED STATE — declared at top level so all functions reach them
-// ════════════════════════════════════════════════════════════════
+var property_type = "", objector_type = "", submission_type = "Query",
+    query_type = "Query", direction = "Normal",
+    selectedProperty = '', selectedObjector = '', pendingUrl = '';
 
-// Query state
-var property_type   = "";
-var objector_type   = "";
-var submission_type = "Query";   // always Query — Review removed from here
-var query_type      = "Query";
-var direction       = "Normal";
-
-// Objection / Appeal state
-var selectedProperty = '';
-var selectedObjector = '';
-var pendingUrl       = '';
-
-// ════════════════════════════════════════════════════════════════
-//  UNIFIED onTypeSelect — handles BOTH Query and Objection flows
-//  Called by onchange="onTypeSelect(...)" on every radio card
-// ════════════════════════════════════════════════════════════════
-        function onTypeSelect(name, feedbackId) {
-
-            var selected = document.querySelector('input[name="' + name + '"]:checked');
-            if (!selected) return;
-
-            // ── Visual highlight ──────────────────────────────────────────
-            document.querySelectorAll('input[name="' + name + '"]').forEach(function (r) {
-                r.closest('.obj-radio-card').classList.remove('selected');
-            });
-            selected.closest('.obj-radio-card').classList.add('selected');
-
-            // ── Feedback label ────────────────────────────────────────────
-            var labels = {
-                Res: 'Residential', Agric: 'Agricultural',
-                Bus: 'Business / Other', Multi: 'Multiple Purposes',
-                Owner: 'Owner', Third_Party: 'Third Party',
-                Representative: 'Representative'
-            };
-            var feedback = document.getElementById(feedbackId);
-            if (feedback) {
-                feedback.innerHTML =
-                    '<i class="fa-solid fa-circle-check" style="color:#22c55e;"></i> ' +
-                    'Selected: <strong>' + (labels[selected.value] || selected.value) + '</strong>';
-            }
-
-            if (IS_QUERY) {
-                // ── Query path ────────────────────────────────────────────
-                if (name === 'propertyType') {
-                    property_type = selected.value;
-                    sessionStorage.setItem('property_choice', property_type);
-                    direction = (property_type === 'Multi') ? 'Multi' : 'Normal';
-                    sessionStorage.setItem('direction', direction);
-                }
-                if (name === 'objectorType') {
-                    objector_type = selected.value;
-                    sessionStorage.setItem('objector_choice', objector_type);
-                }
-                checkQueryFormCompletion();
-
-            } else {
-                // ── Objection / Appeal path ───────────────────────────────
-                if (name === 'propertyType') {
-                    selectedProperty = selected.value;
-                    sessionStorage.setItem('property_choice', selectedProperty);
-                }
-                if (name === 'objectorType') {
-                    selectedObjector = selected.value;
-                    sessionStorage.setItem('objector_choice', selectedObjector);
-                    localStorage.setItem('objectorType', selectedObjector);
-                }
-                checkBothSelected();
-            }
-        }
-
-// ════════════════════════════════════════════════════════════════
-//  QUERY — show lodge button when both selections made
-// ════════════════════════════════════════════════════════════════
-function checkQueryFormCompletion() {
-    var propOk     = property_type !== "";
-    var objectorOk = objector_type !== "";
-
-    if (propOk && objectorOk) {
-        document.getElementById("lodgeSection").style.display = "block";
-        updateQueryButtonVisibility();
-        updateLodgeSummary();
-        setTimeout(function () {
-            document.getElementById('lodgeSection')
-                .scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }, 150);
+function onTypeSelect(name, feedbackId) {
+    var selected = document.querySelector('input[name="' + name + '"]:checked');
+    if (!selected) return;
+    document.querySelectorAll('input[name="' + name + '"]').forEach(function (r) {
+        r.closest('.obj-radio-card').classList.remove('selected');
+    });
+    selected.closest('.obj-radio-card').classList.add('selected');
+    var labels = { Res:'Residential', Agric:'Agricultural', Bus:'Business / Other',
+                   Multi:'Multiple Purposes', Owner:'Owner', Third_Party:'Third Party',
+                   Representative:'Representative' };
+    var feedback = document.getElementById(feedbackId);
+    if (feedback) feedback.innerHTML =
+        '<i class="fa-solid fa-circle-check" style="color:#22c55e;margin-right:5px;"></i>' +
+        'Selected: <strong>' + (labels[selected.value] || selected.value) + '</strong>';
+    if (IS_QUERY) {
+        if (name === 'propertyType') { property_type = selected.value; sessionStorage.setItem('property_choice', property_type); direction = (property_type === 'Multi') ? 'Multi' : 'Normal'; sessionStorage.setItem('direction', direction); }
+        if (name === 'objectorType') { objector_type = selected.value; sessionStorage.setItem('objector_choice', objector_type); }
+        checkQueryFormCompletion();
     } else {
-        document.getElementById("lodgeSection").style.display = "none";
+        if (name === 'propertyType') { selectedProperty = selected.value; sessionStorage.setItem('property_choice', selectedProperty); }
+        if (name === 'objectorType') { selectedObjector = selected.value; sessionStorage.setItem('objector_choice', selectedObjector); localStorage.setItem('objectorType', selectedObjector); }
+        checkBothSelected();
     }
+}
+
+function checkQueryFormCompletion() {
+    if (property_type && objector_type) {
+        document.getElementById("lodgeSection").style.display = "block";
+        updateQueryButtonVisibility(); updateLodgeSummary();
+        setTimeout(function() { document.getElementById('lodgeSection').scrollIntoView({behavior:'smooth',block:'nearest'}); }, 150);
+    } else { document.getElementById("lodgeSection").style.display = "none"; }
 }
 
 function updateQueryButtonVisibility() {
     var isMulti = direction === 'Multi';
-
-    // Hide all query lodge buttons first
-    ['btn_choice', 'btn_choice1', 'btn_choiceM', 'btn_choiceM1'].forEach(function (id) {
-        var el = document.getElementById(id);
-        if (el) el.setAttribute('hidden', true);
-    });
-
-    // Show the correct one
-    var targetId = isMulti
-        ? (submission_type === 'Query' ? 'btn_choiceM' : 'btn_choiceM1')
-        : (submission_type === 'Query' ? 'btn_choice'  : 'btn_choice1');
-
+    ['btn_choice','btn_choice1','btn_choiceM','btn_choiceM1'].forEach(function(id){ var el=document.getElementById(id); if(el) el.setAttribute('hidden',true); });
+    var targetId = isMulti ? (submission_type==='Query'?'btn_choiceM':'btn_choiceM1') : (submission_type==='Query'?'btn_choice':'btn_choice1');
     var target = document.getElementById(targetId);
     if (target) {
         target.removeAttribute('hidden');
-        // Inject objectorType into the href
-        try {
-            var url = new URL(target.href);
-            url.searchParams.set('Direct', isMulti ? 'Multi' : '');
-            url.searchParams.set('objectorType', objector_type);
-            target.href = url.toString();
-        } catch (e) {}
+        try { var url=new URL(target.href); url.searchParams.set('Direct',isMulti?'Multi':''); url.searchParams.set('objectorType',objector_type); target.href=url.toString(); } catch(e){}
     }
 }
 
 function updateLodgeSummary() {
-    var propLabels = {
-        Res: 'Residential', Agric: 'Agricultural',
-        Bus: 'Business / Other', Multi: 'Multiple Purposes'
-    };
-    var typeLabel = objector_type === 'Owner' ? 'Owner' : 'Representative';
+    var propLabels = {Res:'Residential',Agric:'Agricultural',Bus:'Business / Other',Multi:'Multiple Purposes'};
     var el = document.getElementById('lodgeSummary');
-    if (el) {
-        el.innerHTML =
-            '<i class="fa-solid fa-circle-check" style="color:#22c55e;"></i> ' +
-            'Section 78 Query as <strong>' + typeLabel + '</strong> on a ' +
-            '<strong>' + (propLabels[property_type] || property_type) + '</strong> property';
-    }
+    if (el) el.innerHTML = '<i class="fa-solid fa-circle-check" style="color:#22c55e;margin-right:6px;"></i>Section 78 Query as <strong>' + (objector_type==='Owner'?'Owner':'Representative') + '</strong> on a <strong>' + (propLabels[property_type]||property_type) + '</strong> property';
 }
 
-// ════════════════════════════════════════════════════════════════
-//  OBJECTION / APPEAL — build URL and show lodge button
-// ════════════════════════════════════════════════════════════════
 function buildLodgeUrl(isMulti) {
-    var qs = '?PropertyFrom=' + encodeURIComponent(SOURCE) +
-             '&objectorType=' + encodeURIComponent(selectedObjector) +
-             '&appeal='       + (IS_APPEAL ? 'True' : 'False');
-
-    if (IS_LIS)
-        return isMulti ? '/LIS/ViewMultiPurposeFormSup3' + qs
-                       : '/LIS/ViewResidentialFormSup3'  + qs;
-
-    return isMulti ? '/objection/multipurpose' + qs
-                   : '/objection/form'         + qs;
+    var qs = '?PropertyFrom='+encodeURIComponent(SOURCE)+'&objectorType='+encodeURIComponent(selectedObjector)+'&appeal='+(IS_APPEAL?'True':'False');
+    if (IS_LIS) return isMulti ? '/LIS/ViewMultiPurposeFormSup3'+qs : '/LIS/ViewResidentialFormSup3'+qs;
+    return isMulti ? '/objection/multipurpose'+qs : '/objection/form'+qs;
 }
 
 function checkBothSelected() {
     if (!selectedProperty || !selectedObjector) return;
-
     var isMulti = selectedProperty === 'Multi';
     var url = buildLodgeUrl(isMulti);
-
-    localStorage.setItem('propertyType', selectedProperty);
-    localStorage.setItem('sourceTable',  SOURCE);
-
+    localStorage.setItem('propertyType', selectedProperty); localStorage.setItem('sourceTable', SOURCE);
     document.getElementById('lodgeSection').style.display = 'block';
-
-    var propLabels = { Res: 'Residential', Agric: 'Agricultural',
-                       Bus: 'Business / Other', Multi: 'Multiple Purposes' };
-    var objLabels  = { Owner: 'Owner', Third_Party: 'Third Party',
-                       Representative: 'Representative' };
-    var actionLabel = IS_APPEAL ? 'Appeal' : 'Objection';
-
+    var propLabels = {Res:'Residential',Agric:'Agricultural',Bus:'Business / Other',Multi:'Multiple Purposes'};
+    var objLabels  = {Owner:'Owner',Third_Party:'Third Party',Representative:'Representative'};
     document.getElementById('lodgeSummary').innerHTML =
-        '<i class="fa-solid fa-circle-check" style="color:#22c55e;"></i> ' +
-        actionLabel + ' as <strong>' +
-        (objLabels[selectedObjector] || selectedObjector) + '</strong> on a <strong>' +
-        (propLabels[selectedProperty] || selectedProperty) + '</strong> property';
-
-    ['btn_choice', 'btn_choice1'].forEach(function (id) {
-        var el = document.getElementById(id);
-        if (el) el.setAttribute('hidden', true);
-    });
-
-    var target = document.getElementById(isMulti ? 'btn_choice1' : 'btn_choice');
-    if (target) {
-        target.href = url;
-        target.removeAttribute('hidden');
-    }
-
-    setTimeout(function () {
-        document.getElementById('lodgeSection')
-            .scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }, 200);
+        '<i class="fa-solid fa-circle-check" style="color:#22c55e;margin-right:6px;"></i>' +
+        (IS_APPEAL?'Appeal':'Objection') + ' as <strong>' + (objLabels[selectedObjector]||selectedObjector) +
+        '</strong> on a <strong>' + (propLabels[selectedProperty]||selectedProperty) + '</strong> property';
+    ['btn_choice','btn_choice1'].forEach(function(id){var el=document.getElementById(id);if(el) el.setAttribute('hidden',true);});
+    var target = document.getElementById(isMulti?'btn_choice1':'btn_choice');
+    if (target) { target.href=url; target.removeAttribute('hidden'); }
+    setTimeout(function(){ document.getElementById('lodgeSection').scrollIntoView({behavior:'smooth',block:'nearest'}); }, 200);
 }
 
-// ════════════════════════════════════════════════════════════════
-//  DISCLAIMER & CONTINUE BUTTON
-// ════════════════════════════════════════════════════════════════
-function onAgreeChange(cb) {
-    document.getElementById('continueBtn').disabled = !cb.checked;
-}
+function onAgreeChange(cb) { document.getElementById('continueBtn').disabled = !cb.checked; }
 
 function showMainForm() {
     document.getElementById('disclaimerSection').style.display = 'none';
-    var f = document.getElementById('mainForm');
-    f.style.display = 'flex';
+    var f = document.getElementById('mainForm'); f.style.display = 'flex';
 }
 
-// ════════════════════════════════════════════════════════════════
-//  INSTRUCTIONS MODAL
-// ════════════════════════════════════════════════════════════════
-document.addEventListener('click', function (e) {
-    var btn = e.target.closest(
-        '#btn_choice, #btn_choice1, #btn_choiceM, #btn_choiceM1');
-    if (!btn) return;
-    e.preventDefault();
-    pendingUrl = btn.href;
+document.addEventListener('click', function(e) {
+    var btn = e.target.closest('#btn_choice,#btn_choice1,#btn_choiceM,#btn_choiceM1');
+    if (!btn) return; e.preventDefault(); pendingUrl = btn.href;
     document.getElementById('instrAgree').checked = false;
     document.getElementById('startFormBtn').disabled = true;
     document.getElementById('instrBackdrop').classList.add('show');
@@ -867,122 +698,52 @@ document.addEventListener('click', function (e) {
     document.body.style.overflow = 'hidden';
 });
 
-function onInstrAgree(cb) {
-    document.getElementById('startFormBtn').disabled = !cb.checked;
-}
-
-function closeInstrModal() {
-    document.getElementById('instrBackdrop').classList.remove('show');
-    document.getElementById('instrModal').classList.remove('show');
-    document.body.style.overflow = '';
-    pendingUrl = '';
-}
-
-function proceedToForm() {
-    if (!pendingUrl) return;
-    window.location.href = pendingUrl;
-}
-
+function onInstrAgree(cb) { document.getElementById('startFormBtn').disabled = !cb.checked; }
+function closeInstrModal() { document.getElementById('instrBackdrop').classList.remove('show'); document.getElementById('instrModal').classList.remove('show'); document.body.style.overflow=''; pendingUrl=''; }
+function proceedToForm() { if (pendingUrl) window.location.href = pendingUrl; }
 document.getElementById('instrBackdrop')?.addEventListener('click', closeInstrModal);
-document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape') closeInstrModal();
-});
+document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeInstrModal(); });
 
-// ════════════════════════════════════════════════════════════════
-//  APPEAL LABEL SWAP
-// ════════════════════════════════════════════════════════════════
 function updateAppealLabels() {
     if (!IS_APPEAL || IS_QUERY) return;
-    setText('pageTitle',          'Property Appeal System');
-    setText('pageSubtitle',       'Submit your property appeal online');
-    setText('disclaimerTitle',    'Disclaimer | Online Appeal');
-    setText('actionWord',         'appeal');
-    setText('continueBtnText',    'Continue to Appeal Form');
-    setText('propTypeSub',        'Choose the property type you want to appeal on');
-    setText('propInfoSub',        'Details of the property you are appealing');
-    setText('objectorTypeHeader', 'Appellant Type');
-    setText('objectorTypeSub',    'Choose the type of appellant');
-    setText('lodgeBtnText',       'Lodge Appeal');
-    setText('lodgeBtnText1',      'Lodge Appeal');
-    setText('modalTitle',         'Appeal Form Instructions');
-    setText('modalSubtitle',
-        'Please read all instructions carefully before starting your appeal');
-    setText('instrSection2Title', 'Appellant Type Requirements');
-    setText('startBtnWord',       'Appeal');
-    document.querySelectorAll('.instr-action-word').forEach(function (el) {
-        el.textContent = el.textContent
-            .replace(/objection/gi, 'appeal')
-            .replace(/objector/gi,  'appellant')
-            .replace(/object to/gi, 'appeal');
-    });
-    document.querySelectorAll('.instr-action-word-cap').forEach(function (el) {
-        el.textContent = 'Appeal';
-    });
+    setText('pageTitle','Property Appeal System'); setText('pageSubtitle','Submit your property appeal online');
+    setText('disclaimerTitle','Disclaimer | Online Appeal'); setText('actionWord','appeal');
+    setText('continueBtnText','Continue to Appeal Form'); setText('propTypeSub','Choose the property type you want to appeal on');
+    setText('propInfoSub','Details of the property you are appealing'); setText('objectorTypeHeader','Appellant Type');
+    setText('objectorTypeSub','Choose the type of appellant'); setText('lodgeBtnText','Lodge Appeal');
+    setText('lodgeBtnText1','Lodge Appeal'); setText('modalTitle','Appeal Form Instructions');
+    setText('modalSubtitle','Please read all instructions carefully before starting your appeal');
+    setText('instrSection2Title','Appellant Type Requirements'); setText('startBtnWord','Appeal');
+    document.querySelectorAll('.instr-action-word').forEach(function(el){ el.textContent=el.textContent.replace(/objection/gi,'appeal').replace(/objector/gi,'appellant').replace(/object to/gi,'appeal'); });
+    document.querySelectorAll('.instr-action-word-cap').forEach(function(el){ el.textContent='Appeal'; });
 }
 
 function updateQueryLabels() {
     if (!IS_QUERY) return;
-    setText('continueBtnText',    'Continue to Query Form');
-    setText('propInfoSub',        'Details of the property you are querying');
-    setText('propTypeSub',        'Choose the property type you want to query');
-    setText('objectorTypeHeader', 'Applicant Type');
-    setText('objectorTypeSub',    'Choose the type of applicant');
-    setText('startBtnWord',       'Query');
-    setText('modalTitle',         'Section 78 Query Form Instructions');
-    setText('modalSubtitle',
-        'Please read all instructions carefully before starting your query');
+    setText('continueBtnText','Continue to Query Form'); setText('propInfoSub','Details of the property you are querying');
+    setText('propTypeSub','Choose the property type you want to query'); setText('objectorTypeHeader','Applicant Type');
+    setText('objectorTypeSub','Choose the type of applicant'); setText('startBtnWord','Query');
+    setText('modalTitle','Section 78 Query Form Instructions');
+    setText('modalSubtitle','Please read all instructions carefully before starting your query');
 }
 
-function setText(id, text) {
-    var el = document.getElementById(id);
-    if (el) el.textContent = text;
-}
+function setText(id, text) { var el=document.getElementById(id); if(el) el.textContent=text; }
 
-// ════════════════════════════════════════════════════════════════
-//  INIT
-// ════════════════════════════════════════════════════════════════
-document.addEventListener('DOMContentLoaded', function () {
-    updateAppealLabels();
-    updateQueryLabels();
-
-    // Wire radio card clicks to trigger their radio input change event
-    document.querySelectorAll('.obj-radio-card').forEach(function (card) {
-        card.addEventListener('click', function () {
+document.addEventListener('DOMContentLoaded', function() {
+    updateAppealLabels(); updateQueryLabels();
+    document.querySelectorAll('.obj-radio-card').forEach(function(card) {
+        card.addEventListener('click', function() {
             var radio = card.querySelector('input[type="radio"]');
-            if (radio) {
-                radio.checked = true;
-                radio.dispatchEvent(new Event('change', { bubbles: true }));
-            }
+            if (radio) { radio.checked=true; radio.dispatchEvent(new Event('change',{bubbles:true})); }
         });
     });
-
-    // Restore session state for Query
     if (IS_QUERY) {
-        document.getElementById('sub_type')?.setAttribute('value', 'Query');
-
-        var savedProp = sessionStorage.getItem('property_choice');
-        var savedObj  = sessionStorage.getItem('objector_choice');
-
-        if (savedProp) {
-            var r = document.querySelector('input[name="propertyType"][value="' + savedProp + '"]');
-            if (r) {
-                r.checked = true;
-                property_type = savedProp;
-                direction = (savedProp === 'Multi') ? 'Multi' : 'Normal';
-                r.closest('.obj-radio-card')?.classList.add('selected');
-            }
-        }
-        if (savedObj) {
-            var r2 = document.querySelector('input[name="objectorType"][value="' + savedObj + '"]');
-            if (r2) {
-                r2.checked = true;
-                objector_type = savedObj;
-                r2.closest('.obj-radio-card')?.classList.add('selected');
-            }
-        }
+        document.getElementById('sub_type')?.setAttribute('value','Query');
+        var savedProp=sessionStorage.getItem('property_choice'), savedObj=sessionStorage.getItem('objector_choice');
+        if (savedProp) { var r=document.querySelector('input[name="propertyType"][value="'+savedProp+'"]'); if(r){r.checked=true;property_type=savedProp;direction=(savedProp==='Multi')?'Multi':'Normal';r.closest('.obj-radio-card')?.classList.add('selected');} }
+        if (savedObj)  { var r2=document.querySelector('input[name="objectorType"][value="'+savedObj+'"]'); if(r2){r2.checked=true;objector_type=savedObj;r2.closest('.obj-radio-card')?.classList.add('selected');} }
         if (savedProp && savedObj) checkQueryFormCompletion();
     }
 });
-
 </script>
 }

@@ -169,9 +169,21 @@ namespace V2_Genesis.Services.Implementations
                 }
 
                 var rollTitle = RollTitles.GetValueOrDefault(rollSource, rollSource);
-                var actionWord = isAppeal ? "Appeal" : "Objection";
-                var subject = $"City of Johannesburg — {actionWord} Acknowledgement: {objectionRef}";
+                
+                var submissionType = isAppeal ? "Appeal" : "Objection";
 
+                var propertyDescription = await ResolvePropertyDescriptionAsync(
+                    objectionRef,
+                    rollSource,
+                    isAppeal);
+
+                var cleanPropertyDescription = string.IsNullOrWhiteSpace(propertyDescription)
+                    ? "Property"
+                    : propertyDescription.Trim();
+
+                var subject =
+                    $"City of Johannesburg — {submissionType} Acknowledgement: {objectionRef} — {cleanPropertyDescription}";
+               
                 foreach (var recipient in recipients)
                 {
                     var htmlBody = BuildHtmlBody(
@@ -186,7 +198,7 @@ namespace V2_Genesis.Services.Implementations
                     await SaveEmailCopyAsync(
                         folderPath,
                         objectionRef,
-                        actionWord,
+                        submissionType,
                         htmlBody,
                         acknowledgementPdf,
                         new List<EmailRecipient> { recipient },
@@ -216,6 +228,55 @@ namespace V2_Genesis.Services.Implementations
             }
         }
 
+        private async Task<string> ResolvePropertyDescriptionAsync(
+    string referenceNo,
+    string rollSource,
+    bool isAppeal)
+        {
+            try
+            {
+                var connKey = RollConnections.GetValueOrDefault(rollSource, "DefaultConnection");
+                var connStr = _config.GetConnectionString(connKey);
+
+                if (string.IsNullOrWhiteSpace(connStr))
+                    return "";
+
+                await using var conn = new SqlConnection(connStr);
+
+                if (isAppeal)
+                {
+                    var sql = @"
+                SELECT TOP 1
+                    COALESCE(
+                        NULLIF(LTRIM(RTRIM(a.A_Property_Desc)), ''),
+                        NULLIF(LTRIM(RTRIM(o.Property_Desc)), '')
+                    )
+                FROM dbo.Obj_Property_Info_Appeal a
+                LEFT JOIN dbo.Obj_Property_Info o
+                       ON LTRIM(RTRIM(o.Objection_No)) = LTRIM(RTRIM(a.Obj_Ref))
+                WHERE LTRIM(RTRIM(a.Appeal_No)) = LTRIM(RTRIM(@Ref));";
+
+                    return await conn.QueryFirstOrDefaultAsync<string>(
+                        sql,
+                        new { Ref = referenceNo.Trim() }) ?? "";
+                }
+                else
+                {
+                    var sql = @"
+                SELECT TOP 1 Property_Desc
+                FROM dbo.Obj_Property_Info
+                WHERE LTRIM(RTRIM(Objection_No)) = LTRIM(RTRIM(@Ref));";
+
+                    return await conn.QueryFirstOrDefaultAsync<string>(
+                        sql,
+                        new { Ref = referenceNo.Trim() }) ?? "";
+                }
+            }
+            catch
+            {
+                return "";
+            }
+        }
         public async Task SendSection78AcknowledgementAsync(
       string queryRef,
       bool isReview,
@@ -989,19 +1050,34 @@ namespace V2_Genesis.Services.Implementations
         //  SAVE PDF COPY TO FOLDER
         // ════════════════════════════════════════════════════════════
         private async Task SaveEmailCopyAsync(
-        string folderPath,
-        string reference,
-        string actionWord,
-        string htmlBody,
-        byte[] ackPdf,
-        List<EmailRecipient> recipients,
-        List<EmailAttachment>? extraAttachments = null)
+      string folderPath,
+      string reference,
+      string actionWord,
+      string htmlBody,
+      byte[] ackPdf,
+      List<EmailRecipient> recipients,
+      List<EmailAttachment>? extraAttachments = null)
         {
             try
             {
                 Directory.CreateDirectory(folderPath);
 
                 var safeReference = SanitizeFilePart(reference);
+                var datePart = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+
+                // Find the actual acknowledgement PDF name saved in the evidence folder.
+                var ackAttachmentFileName = FindAcknowledgementFileName(folderPath, reference);
+
+                // Try to get property description from the acknowledgement file name.
+                var propertyDescription = ExtractPropertyDescriptionFromAcknowledgementFileName(
+                    ackAttachmentFileName,
+                    reference);
+
+                var safePropertyDescription = SanitizeFilePart(propertyDescription);
+
+                var subjectPropertyText = string.IsNullOrWhiteSpace(propertyDescription)
+                    ? ""
+                    : $" — {propertyDescription}";
 
                 foreach (var recipient in recipients)
                 {
@@ -1009,7 +1085,7 @@ namespace V2_Genesis.Services.Implementations
                     var safeRecipientAddress = SanitizeFilePart(recipient.Address);
 
                     var fileName =
-                        $"{safeReference}_{actionWord}_EmailNotification_{safeRecipientType}_{safeRecipientAddress}.eml";
+                        $"email_{safeReference}_{safePropertyDescription}_{actionWord}_EmailNotification_{safeRecipientType}_{safeRecipientAddress}_{datePart}.eml";
 
                     var fullPath = Path.Combine(folderPath, fileName);
 
@@ -1023,16 +1099,19 @@ namespace V2_Genesis.Services.Implementations
                         _cfg.FromAddress,
                         "Valuation Services (Copy)"));
 
-                    msg.Subject = $"City of Johannesburg — {actionWord} Acknowledgement: {reference}";
+                    msg.Subject =
+                        $"City of Johannesburg — {actionWord} Acknowledgement: {reference}{subjectPropertyText}";
+
                     msg.IsBodyHtml = true;
                     msg.Body = htmlBody;
 
+                    // Attach acknowledgement PDF using the proper filename.
                     msg.Attachments.Add(new Attachment(
                         new MemoryStream(ackPdf),
-                        $"{actionWord}_Acknowledgement_{reference}.pdf",
+                        ackAttachmentFileName,
                         MediaTypeNames.Application.Pdf));
 
-                    // This makes the saved .eml evidence include the populated form PDF too.
+                    // Attach populated Form A/B/C/D PDF too.
                     AddExtraAttachments(msg, extraAttachments);
 
                     var tmpDir = Path.Combine(
@@ -1041,25 +1120,33 @@ namespace V2_Genesis.Services.Implementations
 
                     Directory.CreateDirectory(tmpDir);
 
-                    using (var pickup = new SmtpClient
+                    try
                     {
-                        DeliveryMethod = SmtpDeliveryMethod.SpecifiedPickupDirectory,
-                        PickupDirectoryLocation = tmpDir
-                    })
-                    {
-                        pickup.Send(msg);
+                        using (var pickup = new SmtpClient
+                        {
+                            DeliveryMethod = SmtpDeliveryMethod.SpecifiedPickupDirectory,
+                            PickupDirectoryLocation = tmpDir
+                        })
+                        {
+                            pickup.Send(msg);
+                        }
+
+                        var generated = Directory.GetFiles(tmpDir).FirstOrDefault();
+
+                        if (generated is not null)
+                        {
+                            File.Move(generated, fullPath, overwrite: true);
+                        }
+
+                        _logger.LogInformation(
+                            "[Email] EML copy saved → {Path}",
+                            fullPath);
                     }
-
-                    var generated = Directory.GetFiles(tmpDir).FirstOrDefault();
-
-                    if (generated is not null)
-                        File.Move(generated, fullPath, overwrite: true);
-
-                    Directory.Delete(tmpDir, recursive: true);
-
-                    _logger.LogInformation(
-                        "[Email] EML copy saved → {Path}",
-                        fullPath);
+                    finally
+                    {
+                        if (Directory.Exists(tmpDir))
+                            Directory.Delete(tmpDir, recursive: true);
+                    }
                 }
             }
             catch (Exception ex)
@@ -1069,6 +1156,77 @@ namespace V2_Genesis.Services.Implementations
                     "[Email] Failed saving EML copy for {Ref}",
                     reference);
             }
+        }
+
+        private static string ExtractPropertyDescriptionFromAcknowledgementFileName(
+    string fileName,
+    string reference)
+        {
+            if (string.IsNullOrWhiteSpace(fileName))
+                return "";
+
+            var name = Path.GetFileNameWithoutExtension(fileName);
+
+            if (string.IsNullOrWhiteSpace(name))
+                return "";
+
+            var safeReference = SanitizeFilePart(reference);
+
+            // Expected filename:
+            // GV23-Sup3-257_PROPERTY_DESC_Acknowledgement_20260611_103512
+            if (name.StartsWith(safeReference + "_", StringComparison.OrdinalIgnoreCase))
+            {
+                name = name[(safeReference.Length + 1)..];
+            }
+
+            var ackIndex = name.IndexOf("_Acknowledgement_", StringComparison.OrdinalIgnoreCase);
+
+            if (ackIndex >= 0)
+            {
+                name = name[..ackIndex];
+            }
+
+            return name
+                .Replace("_", " ")
+                .Trim();
+        }
+        private static string FindAcknowledgementFileName(
+    string folderPath,
+    string referenceNo)
+        {
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(folderPath) && Directory.Exists(folderPath))
+                {
+                    var file = Directory.GetFiles(folderPath, "*Acknowledgement*.pdf")
+                        .OrderByDescending(File.GetLastWriteTime)
+                        .FirstOrDefault();
+
+                    if (!string.IsNullOrWhiteSpace(file))
+                        return Path.GetFileName(file);
+                }
+            }
+            catch
+            {
+                // fallback below
+            }
+
+            var safeRef = SanitiseEmailFilePart(referenceNo);
+            var datePart = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+
+            return $"{safeRef}_Acknowledgement_{datePart}.pdf";
+        }
+
+        private static string SanitiseEmailFilePart(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return "Property";
+
+            var safe = string.Concat(value.Split(Path.GetInvalidFileNameChars()))
+                .Replace(" ", "_")
+                .Trim();
+
+            return safe.Length > 90 ? safe[..90] : safe;
         }
         private static string SanitizeFilePart(string? value)
         {

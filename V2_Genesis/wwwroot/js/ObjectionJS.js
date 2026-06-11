@@ -528,19 +528,45 @@ $(document).ready(function () {
     $(".btn_n5").click(function () { $(".div5").hide(); $(".div6").show(); document.getElementById("NewPropDesc").focus(); });
 
     $(".btn_p6").click(function () { $(".div5").show(); $(".div6").hide(); });
-    $(".btn_n6").click(function () {
-        var anyFilled = ['NewCat', 'NewMarketValue', 'NewExtent', 'NewPropDesc', 'NewAddress', 'NewOwner']
-            .some(id => document.getElementById(id)?.value);
-        if (!anyFilled) {
-            document.getElementById("new_change_invalid").innerHTML = "Please fill at least one of the changes you want to make.";
-            document.getElementById("new_change_invalid").style.color = "red";
-            ['NewCat', 'NewMarketValue', 'NewExtent', 'NewPropDesc', 'NewAddress', 'NewOwner'].forEach(id => { document.getElementById(id).style.border = "2px solid red"; });
-        } else {
-            NewChange = 'true';
-            document.getElementById("new_change_invalid").innerHTML = "";
-            ['NewCat', 'NewMarketValue', 'NewExtent', 'NewPropDesc', 'NewAddress', 'NewOwner'].forEach(id => { document.getElementById(id).style.border = ""; });
-            $(".div6").hide(); $(".divU").show(); document.getElementById("sectionUpload").focus();
+
+    //$(".btn_n6").click(function () {
+    //    var anyFilled = ['NewCat', 'NewMarketValue', 'NewExtent', 'NewPropDesc', 'NewAddress', 'NewOwner']
+    //        .some(id => document.getElementById(id)?.value);
+    //    if (!anyFilled) {
+    //        document.getElementById("new_change_invalid").innerHTML = "Please fill at least one of the changes you want to make.";
+    //        document.getElementById("new_change_invalid").style.color = "red";
+    //        ['NewCat', 'NewMarketValue', 'NewExtent', 'NewPropDesc', 'NewAddress', 'NewOwner'].forEach(id => { document.getElementById(id).style.border = "2px solid red"; });
+    //    } else {
+    //        NewChange = 'true';
+    //        document.getElementById("new_change_invalid").innerHTML = "";
+    //        ['NewCat', 'NewMarketValue', 'NewExtent', 'NewPropDesc', 'NewAddress', 'NewOwner'].forEach(id => { document.getElementById(id).style.border = ""; });
+    //        $(".div6").hide(); $(".divU").show(); document.getElementById("sectionUpload").focus();
+    //    }
+    //});
+
+    $(".btn_n6").off("click").on("click", function (e) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+
+        if (!section6ValidateBeforeNext()) {
+            return false;
         }
+
+        NewChange = 'true';
+
+        const invalid = document.getElementById("new_change_invalid");
+        if (invalid) {
+            invalid.innerHTML = "";
+            invalid.style.color = "";
+        }
+
+        $(".div6").hide();
+        $(".divU").show();
+
+        const upload = document.getElementById("sectionUpload");
+        if (upload) upload.focus();
+
+        return false;
     });
 
     $(".btn_pU").click(function () { $(".div6").show(); $(".divU").hide(); });
@@ -591,3 +617,546 @@ function formatCurrency(input, blur) {
     caret_pos = updated_len - original_len + caret_pos;
     input[0].setSelectionRange(caret_pos, caret_pos);
 }
+
+// ═══════════════════════════════════════════════════════════════
+// SECTION 6 VALIDATION — Objection / Appeal / Query / Review
+// Prevent same values as Valuation Roll / MVD
+// ═══════════════════════════════════════════════════════════════
+
+function getSubmissionMode() {
+    const appealHidden = document.getElementById("AppealStat")?.value;
+    const sessionAppeal = sessionStorage.getItem("AppealStatus");
+
+    const isAppeal =
+        appealHidden === "True" ||
+        appealHidden === "true" ||
+        sessionAppeal === "True" ||
+        sessionAppeal === "true";
+
+    const sectionHead =
+        document.getElementById("s_head")?.innerText?.toLowerCase() ||
+        document.getElementById("Section6_reason")?.innerText?.toLowerCase() ||
+        "";
+
+    const isReview = sectionHead.includes("review");
+    const isQuery = sectionHead.includes("query");
+
+    if (isAppeal) return "Appeal";
+    if (isReview) return "Review";
+    if (isQuery) return "Query";
+
+    return "Objection";
+}
+
+function normaliseText(value) {
+    if (!value) return "";
+
+    return value
+        .toString()
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, " ")
+        .replace(/[.,;:]+$/g, "");
+}
+
+function normaliseCategory(value) {
+    let v = normaliseText(value);
+
+    const map = {
+        "residential": "residential property",
+        "residential property": "residential property",
+
+        "business": "business and commercial",
+        "commercial": "business and commercial",
+        "business and commercial": "business and commercial",
+
+        "agric": "agricultural",
+        "agriculture": "agricultural",
+        "agricultural": "agricultural",
+
+        "multipurpose": "multipurpose",
+        "multipurpose*": "multipurpose",
+        "multi purpose": "multipurpose",
+        "multi-purpose": "multipurpose",
+
+        "vacant": "vacant land",
+        "vacant land": "vacant land"
+    };
+
+    return map[v] || v;
+}
+
+function normaliseNumber(value) {
+    if (!value) return "";
+
+    let cleaned = value
+        .toString()
+        .replace(/R/gi, "")
+        .replace(/\s/g, "")
+        .replace(/,/g, "")
+        .trim();
+
+    if (cleaned === "") return "";
+
+    const num = Number(cleaned);
+
+    if (Number.isNaN(num)) {
+        return cleaned.toLowerCase();
+    }
+
+    return num.toString();
+}
+
+function normaliseExtent(value) {
+    if (!value) return "";
+
+    let cleaned = value
+        .toString()
+        .replace(/\s/g, "")
+        .replace(/,/g, ".")
+        .trim();
+
+    const num = Number(cleaned);
+
+    if (Number.isNaN(num)) {
+        return cleaned.toLowerCase();
+    }
+
+    return num.toString();
+}
+
+function section6GetFieldPairs() {
+    return [
+        {
+            label: "Description of the Property/Unit",
+            newId: "NewPropDesc",
+            oldId: "desc",
+            type: "text"
+        },
+        {
+            label: "Category",
+            newId: "NewCat",
+            oldId: "cat",
+            type: "category"
+        },
+        {
+            label: "Physical Address / Door No. / Flat No.",
+            newId: "NewAddress",
+            oldId: "add",
+            type: "text"
+        },
+        {
+            label: "Extent",
+            newId: "NewExtent",
+            oldId: "extent",
+            type: "extent"
+        },
+        {
+            label: "Market Value",
+            newId: "NewMarketValue",
+            oldId: "Market_Value",
+            type: "market"
+        },
+        {
+            label: "Name of Owner",
+            newId: "NewOwner",
+            oldId: "owner",
+            type: "text"
+        }
+    ];
+}
+
+function section6Normalise(value, type) {
+    if (type === "category") return normaliseCategory(value);
+    if (type === "market") return normaliseNumber(value);
+    if (type === "extent") return normaliseExtent(value);
+
+    return normaliseText(value);
+}
+
+function section6ClearFieldError(input) {
+    if (!input) return;
+
+    input.style.border = "";
+    input.style.backgroundColor = "";
+
+    const err = document.getElementById(input.id + "_same_error");
+    if (err) err.remove();
+}
+
+function section6SetFieldError(input, message) {
+    if (!input) return;
+
+    input.style.border = "2px solid #d00000";
+    input.style.backgroundColor = "#fff1f1";
+
+    const errorId = input.id + "_same_error";
+    let err = document.getElementById(errorId);
+
+    if (!err) {
+        err = document.createElement("span");
+        err.id = errorId;
+        err.style.display = "block";
+        err.style.color = "#d00000";
+        err.style.fontSize = "12px";
+        err.style.fontWeight = "700";
+        err.style.marginTop = "-8px";
+        err.style.marginBottom = "10px";
+        input.parentNode.insertBefore(err, input.nextSibling);
+    }
+
+    err.innerText = message;
+}
+
+function section6ValidateSameValues() {
+    const duplicates = [];
+
+    section6GetFieldPairs().forEach(pair => {
+        const newEl = document.getElementById(pair.newId);
+        const oldEl = document.getElementById(pair.oldId);
+
+        if (!newEl || !oldEl) return;
+
+        section6ClearFieldError(newEl);
+
+        const newRaw = newEl.value || "";
+        const oldRaw = oldEl.value || "";
+
+        if (newRaw.trim() === "") return;
+
+        const newValue = section6Normalise(newRaw, pair.type);
+        const oldValue = section6Normalise(oldRaw, pair.type);
+
+        if (newValue !== "" && oldValue !== "" && newValue === oldValue) {
+            duplicates.push(pair);
+
+            section6SetFieldError(
+                newEl,
+                "This value is the same as the value on the Valuation Roll / MVD. Please enter a different value."
+            );
+        }
+    });
+
+    return duplicates;
+}
+
+function section6HasAtLeastOneChange() {
+    return section6GetFieldPairs().some(pair => {
+        const el = document.getElementById(pair.newId);
+        return el && el.value.trim() !== "";
+    });
+}
+
+function section6FormatRandInput(input) {
+    if (!input) return;
+
+    let raw = input.value.replace(/[^\d]/g, "");
+
+    if (!raw) {
+        input.value = "";
+        return;
+    }
+
+    const amount = parseInt(raw, 10);
+
+    if (Number.isNaN(amount)) {
+        input.value = "";
+        return;
+    }
+
+    input.value = "R " + amount.toLocaleString("en-ZA");
+}
+
+function section6FormatOriginalMarketValue() {
+    const oldMv = document.getElementById("Market_Value");
+
+    if (!oldMv || !oldMv.value) return;
+
+    let raw = oldMv.value.replace(/[^\d]/g, "");
+
+    if (!raw) return;
+
+    oldMv.value = "R " + parseInt(raw, 10).toLocaleString("en-ZA");
+}
+
+function ensureLocusStandModalExists() {
+    if (document.getElementById("locusStandModal")) return;
+
+    const modal = document.createElement("div");
+    modal.id = "locusStandModal";
+    modal.className = "locus-modal-backdrop";
+    modal.style.display = "none";
+
+    modal.innerHTML = `
+        <div class="locus-modal">
+            <div class="locus-modal-header">
+                <div class="locus-modal-icon">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+                <div>
+                    <h3 id="locusModalTitle">Locus Standi Required</h3>
+                    <p id="locusModalSub">Appeal validation failed</p>
+                </div>
+            </div>
+
+            <div class="locus-modal-body">
+                <p id="locusModalMessage">
+                    You cannot continue with the same details that are reflected on the Valuation Roll / MVD.
+                </p>
+
+                <div id="locusDuplicateList" class="locus-duplicate-list"></div>
+            </div>
+
+            <div class="locus-modal-footer">
+                <button type="button" onclick="closeLocusStandModal()" class="locus-modal-btn">
+                    Okay, I will update the values
+                </button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+}
+
+function showLocusStandModal(mode, duplicates) {
+    ensureLocusStandModalExists();
+
+    const modal = document.getElementById("locusStandModal");
+    const title = document.getElementById("locusModalTitle");
+    const sub = document.getElementById("locusModalSub");
+    const msg = document.getElementById("locusModalMessage");
+    const list = document.getElementById("locusDuplicateList");
+
+    if (mode === "Appeal") {
+        title.innerText = "Locus Standi Required";
+        sub.innerText = "Appeal cannot continue with unchanged MVD details";
+        msg.innerText =
+            "You cannot appeal with the same details that are reflected on the Municipal Valuation Roll / MVD. Please enter different values before continuing.";
+    } else if (mode === "Review") {
+        title.innerText = "Review Details Required";
+        sub.innerText = "Review cannot continue with unchanged MVD details";
+        msg.innerText =
+            "You cannot submit a review using the same details that are reflected on the Municipal Valuation Roll / MVD. Please enter different values before continuing.";
+    } else if (mode === "Query") {
+        title.innerText = "Query Details Required";
+        sub.innerText = "Query cannot continue with unchanged MVD details";
+        msg.innerText =
+            "You cannot submit a query using the same details that are reflected on the Municipal Valuation Roll / MVD. Please enter different values before continuing.";
+    } else {
+        title.innerText = "Different Values Required";
+        sub.innerText = "Objection cannot continue with unchanged roll details";
+        msg.innerText =
+            "You cannot lodge an objection using the same details that are reflected on the Valuation Roll. Please enter different values before continuing.";
+    }
+
+    if (list) {
+        if (duplicates && duplicates.length > 0) {
+            list.style.display = "block";
+            list.innerHTML =
+                "<strong>Same values found:</strong><br/>" +
+                duplicates.map(x => "• " + x.label).join("<br/>");
+        } else {
+            list.style.display = "none";
+            list.innerHTML = "";
+        }
+    }
+
+    modal.style.display = "flex";
+    document.body.style.overflow = "hidden";
+}
+
+function closeLocusStandModal() {
+    const modal = document.getElementById("locusStandModal");
+    if (modal) modal.style.display = "none";
+
+    document.body.style.overflow = "";
+}
+
+function section6ValidateBeforeNext() {
+    const mode = getSubmissionMode();
+    const pairs = section6GetFieldPairs();
+
+    pairs.forEach(pair => {
+        const el = document.getElementById(pair.newId);
+        if (el) section6ClearFieldError(el);
+    });
+
+    if (!section6HasAtLeastOneChange()) {
+        const msg = document.getElementById("new_change_invalid");
+
+        if (msg) {
+            msg.innerHTML = "Please fill at least one of the changes you want to make.";
+            msg.style.color = "red";
+        }
+
+        pairs.forEach(pair => {
+            const el = document.getElementById(pair.newId);
+            if (el) {
+                el.style.border = "2px solid #d00000";
+                el.style.backgroundColor = "#fff1f1";
+            }
+        });
+
+        showLocusStandModal(mode, []);
+
+        return false;
+    }
+
+    const duplicates = section6ValidateSameValues();
+
+    if (duplicates.length > 0) {
+        showLocusStandModal(mode, duplicates);
+
+        const first = document.getElementById(duplicates[0].newId);
+        if (first) {
+            setTimeout(() => first.focus(), 250);
+        }
+
+        return false;
+    }
+
+    const msg = document.getElementById("new_change_invalid");
+
+    if (msg) {
+        msg.innerHTML = "";
+        msg.style.color = "";
+    }
+
+    return true;
+}
+
+function initialiseSection6MvdValidation() {
+    ensureLocusStandModalExists();
+    section6FormatOriginalMarketValue();
+
+    const newMarketValue = document.getElementById("NewMarketValue");
+
+    if (newMarketValue) {
+        newMarketValue.addEventListener("input", function () {
+            section6FormatRandInput(this);
+            section6ValidateSameValues();
+        });
+
+        newMarketValue.addEventListener("blur", function () {
+            section6FormatRandInput(this);
+            section6ValidateSameValues();
+        });
+    }
+
+    section6GetFieldPairs().forEach(pair => {
+        const el = document.getElementById(pair.newId);
+
+        if (!el || pair.newId === "NewMarketValue") return;
+
+        const eventName = el.tagName === "SELECT" ? "change" : "input";
+
+        el.addEventListener(eventName, function () {
+            section6ValidateSameValues();
+        });
+
+        el.addEventListener("blur", function () {
+            section6ValidateSameValues();
+        });
+    });
+}
+const style = document.createElement('style');
+style.textContent = `
+    body.loading { overflow: hidden; }
+    #preloader.fade-out { opacity: 0; transition: opacity 0.6s ease-out; }
+    .btn:active { transform: scale(0.95); }
+    input:focus, select:focus, textarea:focus { box-shadow: 0 0 0 3px rgba(0, 101, 112, 0.1); }
+
+    .locus-modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, .65);
+        z-index: 25000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+
+    .locus-modal {
+        width: min(620px, 94vw);
+        background: #ffffff;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 25px 80px rgba(0, 0, 0, .35);
+        border: 2px solid #e6b000;
+        font-family: 'Poppins', Arial, sans-serif;
+    }
+
+    .locus-modal-header {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 20px 24px;
+        background: linear-gradient(135deg, #1a2e35, #006572);
+        color: #ffffff;
+        border-bottom: 4px solid #e6b000;
+    }
+
+    .locus-modal-icon {
+        width: 46px;
+        height: 46px;
+        border-radius: 12px;
+        background: rgba(230, 176, 0, .18);
+        border: 1.5px solid rgba(230, 176, 0, .6);
+        color: #e6b000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+    }
+
+    .locus-modal-header h3 {
+        margin: 0;
+        font-size: 20px;
+        font-weight: 800;
+    }
+
+    .locus-modal-header p {
+        margin: 3px 0 0;
+        color: rgba(255, 255, 255, .7);
+        font-size: 13px;
+    }
+
+    .locus-modal-body {
+        padding: 24px;
+        color: #333;
+        font-size: 14px;
+    }
+
+    .locus-duplicate-list {
+        margin-top: 14px;
+        padding: 12px 14px;
+        background: #fff5f5;
+        border: 1px solid #f5b5b5;
+        border-radius: 10px;
+        color: #9f1d1d;
+        font-weight: 600;
+        display: none;
+    }
+
+    .locus-modal-footer {
+        padding: 16px 24px 22px;
+        text-align: right;
+    }
+
+    .locus-modal-btn {
+        border: none;
+        background: #006572;
+        color: #ffffff;
+        font-weight: 800;
+        padding: 11px 18px;
+        border-radius: 9px;
+        cursor: pointer;
+    }
+
+    .locus-modal-btn:hover {
+        background: #004f59;
+    }
+`;
+
+document.head.appendChild(style);

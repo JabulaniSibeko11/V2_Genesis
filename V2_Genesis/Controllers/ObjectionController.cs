@@ -1005,4 +1005,103 @@ public class ObjectionController : Controller
 
         return View("ViewMultiPurposeForm");
     }
+    [HttpGet]
+    [Authorize]
+    [Route("objection/withdraw")]
+    public IActionResult Withdrawal(
+        string objectionNo,
+        string withdrawType,
+        string rollSource,
+        string? returnUrl = null)
+    {
+        TempData["ObjectionNum"] = objectionNo;
+        TempData["WithdrawType"] = withdrawType;
+        TempData["RollSource"] = rollSource;
+        TempData["ReturnUrl"] = returnUrl ?? "/dashboard";
+        TempData.Keep();
+        return View();
+    }
+
+
+    [HttpPost]
+    [Authorize]
+    [Route("objection/withdraw")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> WithdrawalPost(
+        string objectionNo,
+        string withdrawType,
+        string rollSource,
+        string? returnUrl)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+
+        var (success, error) = await _objectionFormService.WithdrawAsync(
+            objectionNo, withdrawType, rollSource, userId);
+
+        if (!success)
+        {
+            TempData["WithdrawError"] = error;
+            // Re-populate TempData so the view can re-render
+            TempData["ObjectionNum"] = objectionNo;
+            TempData["WithdrawType"] = withdrawType;
+            TempData["RollSource"] = rollSource;
+            TempData["ReturnUrl"] = returnUrl ?? "/dashboard";
+            TempData.Keep();
+            return View();
+        }
+
+        bool isAppeal = withdrawType?.Contains("Appeal", StringComparison.OrdinalIgnoreCase) == true;
+        bool isQuery = withdrawType?.Equals("Query", StringComparison.OrdinalIgnoreCase) == true
+                     || withdrawType?.Equals("Section78", StringComparison.OrdinalIgnoreCase) == true;
+
+        TempData["WithdrawSuccess"] =
+            $"{(isAppeal ? "Appeal" : isQuery ? "Query" : "Objection")} " +
+            $"{objectionNo} has been successfully withdrawn.";
+
+        // Redirect back to wherever the user came from (dashboard, admin, etc.)
+        if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+            return LocalRedirect(returnUrl);
+
+        return RedirectToAction("Index", "Dashboard");
+    }
+    // ══════════════════════════════════════════════════════════════
+    //  UNLINK — remove a linked / saved property
+    // ══════════════════════════════════════════════════════════════
+
+    [HttpGet]
+    [Authorize]
+    [Route("property/unlink")]
+    public IActionResult UnlinkProperty(long linkedId, string? returnUrl = null)
+    {
+        TempData["UnlinkId"] = linkedId;
+        TempData["ReturnUrl"] = returnUrl ?? "/dashboard";
+        TempData.Keep();
+        return View();
+    }
+
+    [HttpPost]
+    [Authorize]
+    [Route("property/unlink")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UnlinkPropertyConfirm(long linkedId, string? returnUrl)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+
+        var (success, error) = await _objectionFormService.UnlinkPropertyAsync(linkedId, userId);
+
+        if (!success)
+        {
+            TempData["UnlinkError"] = error;
+            return RedirectToAction("Index", "Dashboard");
+        }
+
+        TempData["UnlinkSuccess"] =
+            "Property has been removed from your profile. " +
+            "You can search and link it again at any time.";
+
+        if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+            return LocalRedirect(returnUrl);
+
+        return RedirectToAction("Index", "Dashboard");
+    }
 }

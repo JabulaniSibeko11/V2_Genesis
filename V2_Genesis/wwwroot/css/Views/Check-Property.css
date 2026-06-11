@@ -1,0 +1,689 @@
+﻿
+/* ── CheckProperty page ──────────────────────────────── */
+.cp-page {
+    background: #f0f4f5;
+    min-height: 100vh;
+    font-family: 'Poppins', sans-serif;
+}
+
+/* ── Hero strip ──────────────────────────────────────── */
+.cp-hero {
+    background: linear-gradient(135deg, #1a2e35 0%, #2d4f58 55%, #36626d 100%);
+    border-bottom: 3px solid #e6b000;
+    padding: 24px 40px 20px;
+    position: relative;
+    overflow: hidden;
+}
+
+    .cp-hero::before {
+        content: '';
+        position: absolute;
+        top: -40px;
+        right: -40px;
+        width: 180px;
+        height: 180px;
+        background: radial-gradient(circle, rgba(230,176,0,.1) 0%, transparent 70%);
+        pointer-events: none;
+    }
+
+.cp-hero-inner {
+    max-width: 980px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    position: relative;
+    z-index: 1;
+}
+
+.cp-hero-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    flex-shrink: 0;
+    background: rgba(230,176,0,.15);
+    border: 2px solid rgba(230,176,0,.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    color: #e6b000;
+}
+
+.cp-hero-text {
+    flex: 1;
+}
+
+.cp-hero-eyebrow {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: rgba(230,176,0,.65);
+    text-transform: uppercase;
+    margin-bottom: 3px;
+}
+
+.cp-hero-title {
+    font-size: 19px;
+    font-weight: 800;
+    color: #fff;
+    margin: 0 0 3px;
+}
+
+    .cp-hero-title span {
+        color: #e6b000;
+    }
+
+.cp-hero-sub {
+    font-size: 12.5px;
+    color: rgba(255,255,255,.5);
+    margin: 0;
+}
+
+/* ── Body wrapper ────────────────────────────────────── */
+.cp-body {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 28px 24px 60px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* ── Cards ───────────────────────────────────────────── */
+.cp-card {
+    background: #fff;
+    border-radius: 12px;
+    border: 2px solid #e6b000;
+    box-shadow: 0 2px 12px rgba(26,46,53,.07);
+    overflow: hidden;
+}
+
+.cp-card-hdr {
+    background: linear-gradient(90deg, #1a2e35, #243e48);
+    border-left: 4px solid #e6b000;
+    padding: 12px 22px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #e6b000;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+}
+
+    .cp-card-hdr i {
+        font-size: 14px;
+    }
+
+.cp-card-sub {
+    font-size: 11px;
+    font-weight: 400;
+    color: rgba(230,176,0,.55);
+    text-transform: none;
+    letter-spacing: 0;
+    margin-left: 6px;
+}
+
+.cp-card-body {
+    padding: 24px;
+}
+
+/* ── Disclaimer card ─────────────────────────────────── */
+.cp-disclaimer-intro {
+    font-size: 13.5px;
+    color: #1a2e35;
+    line-height: 1.7;
+    margin: 0 0 18px;
+}
+
+.cp-dl-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 18px;
+}
+
+.cp-dl-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 16px;
+    border-radius: 8px;
+    background: rgba(26,46,53,.04);
+    border: 1.5px solid rgba(26,46,53,.08);
+    font-size: 13px;
+    color: #1a2e35;
+}
+
+    .cp-dl-item i {
+        color: #e6b000;
+        font-size: 14px;
+        flex-shrink: 0;
+    }
+
+.cp-disclaimer-note {
+    font-size: 12px;
+    color: #9aa3af;
+    line-height: 1.6;
+    padding: 12px 16px;
+    background: #fafafa;
+    border-radius: 8px;
+    border: 1px solid #f0f0f0;
+    margin-bottom: 20px;
+    margin-top: 0;
+}
+
+.cp-agree-row {
+    margin-bottom: 18px;
+}
+
+.cp-agree-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    cursor: pointer;
+    font-size: 13.5px;
+    color: #1a2e35;
+    font-weight: 500;
+    line-height: 1.5;
+}
+
+    .cp-agree-label input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        margin-top: 1px;
+        flex-shrink: 0;
+        accent-color: #e6b000;
+        cursor: pointer;
+    }
+
+/* ── Buttons ─────────────────────────────────────────── */
+.cp-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 13px 26px;
+    border-radius: 9px;
+    border: none;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all .15s;
+    letter-spacing: .2px;
+}
+
+.cp-btn-primary {
+    background: linear-gradient(135deg, #1a2e35, #36626d);
+    color: #e6b000;
+    box-shadow: 0 4px 14px rgba(26,46,53,.2);
+}
+
+    .cp-btn-primary:hover {
+        background: linear-gradient(135deg, #243e48, #4a7d8a);
+        color: #e6b000;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 18px rgba(26,46,53,.28);
+        text-decoration: none;
+    }
+
+    .cp-btn-primary:disabled {
+        opacity: .45;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: 0 4px 14px rgba(26,46,53,.1);
+    }
+
+.cp-btn-outline {
+    background: #fff;
+    color: #1a2e35;
+    border: 1.5px solid #d0d5db;
+}
+
+    .cp-btn-outline:hover {
+        border-color: #36626d;
+        color: #36626d;
+        text-decoration: none;
+    }
+
+/* ── Property info grid ──────────────────────────────── */
+.cp-prop-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.cp-prop-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px 14px;
+    border-radius: 9px;
+    background: #f8f9fa;
+    border: 1.5px solid #f0f0f0;
+}
+
+.cp-prop-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: #36626d;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+    .cp-prop-label i {
+        font-size: 11px;
+        color: #e6b000;
+    }
+
+.cp-prop-value {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #1a2e35;
+    line-height: 1.4;
+}
+
+.cp-omission-badge {
+    grid-column: 1 / -1;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border-radius: 8px;
+    background: #fff7ed;
+    border: 1.5px solid #fed7aa;
+    font-size: 13px;
+    font-weight: 700;
+    color: #c2410c;
+}
+
+/* ── Radio cards ─────────────────────────────────────── */
+/* !! Keep .obj-radio-card — JS adds/removes .selected on it !! */
+.obj-radio-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 18px;
+    border-radius: 11px;
+    cursor: pointer;
+    background: #fff;
+    border: 2px solid #e8e8e8;
+    transition: border-color .15s, background .15s, box-shadow .15s;
+    position: relative;
+}
+
+    .obj-radio-card:hover {
+        border-color: rgba(230,176,0,.5);
+        box-shadow: 0 2px 12px rgba(26,46,53,.07);
+    }
+
+    .obj-radio-card.selected {
+        background: linear-gradient(135deg, #1a2e35, #2d4f58);
+        border-color: #e6b000;
+        box-shadow: 0 4px 16px rgba(26,46,53,.2);
+    }
+
+    .obj-radio-card input[type="radio"] {
+        display: none;
+    }
+
+.obj-radio-content {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    flex: 1;
+}
+
+    .obj-radio-content i {
+        font-size: 20px;
+        color: #36626d;
+        margin-bottom: 4px;
+        transition: color .15s;
+    }
+
+.obj-radio-card.selected .obj-radio-content i {
+    color: #e6b000;
+}
+
+.obj-radio-content strong {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1a2e35;
+    transition: color .15s;
+}
+
+.obj-radio-card.selected .obj-radio-content strong {
+    color: #fff;
+}
+
+.obj-radio-content small {
+    font-size: 11.5px;
+    color: #9aa3af;
+    line-height: 1.4;
+    transition: color .15s;
+}
+
+.obj-radio-card.selected .obj-radio-content small {
+    color: rgba(255,255,255,.5);
+}
+
+/* Check icon — hidden unless selected */
+.obj-radio-check {
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+    flex-shrink: 0;
+    background: rgba(230,176,0,.1);
+    border: 1.5px solid rgba(230,176,0,.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    color: rgba(230,176,0,.3);
+    transition: all .15s;
+}
+
+.obj-radio-card.selected .obj-radio-check {
+    background: rgba(230,176,0,.25);
+    border-color: #e6b000;
+    color: #e6b000;
+}
+
+/* Grid layouts */
+.cp-radio-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.cp-radio-grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+/* Selection feedback */
+.obj-selection-feedback {
+    margin-top: 12px;
+    font-size: 13px;
+    color: #36626d;
+    font-weight: 600;
+    min-height: 20px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* ── Lodge section ───────────────────────────────────── */
+.cp-lodge-card {
+    background: linear-gradient(135deg, #1a2e35, #243e48);
+    border: 2px solid #e6b000;
+}
+
+.cp-lodge-body {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+}
+
+.obj-lodge-summary {
+    font-size: 14px;
+    color: rgba(255,255,255,.7);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+    .obj-lodge-summary strong {
+        color: #e6b000;
+    }
+
+/* Lodge button */
+.obj-lodge-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 15px 36px;
+    border-radius: 10px;
+    background: #e6b000;
+    color: #1a2e35;
+    border: none;
+    font-family: 'Poppins', sans-serif;
+    font-size: 15px;
+    font-weight: 800;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all .15s;
+    letter-spacing: .2px;
+    box-shadow: 0 4px 18px rgba(230,176,0,.3);
+}
+
+    .obj-lodge-btn:hover {
+        background: #f5c200;
+        color: #1a2e35;
+        text-decoration: none;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 22px rgba(230,176,0,.4);
+    }
+
+/* ── Instructions MODAL ──────────────────────────────── */
+/* !! Keep .show class — JS toggles it !! */
+.obj-modal-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.6);
+    backdrop-filter: blur(3px);
+    z-index: 4000;
+}
+
+    .obj-modal-backdrop.show {
+        display: block;
+    }
+
+.obj-modal {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(.96);
+    width: 94vw;
+    max-width: 680px;
+    max-height: 88vh;
+    background: #fff;
+    border-radius: 14px;
+    border: 2px solid #e6b000;
+    box-shadow: 0 24px 80px rgba(0,0,0,.3);
+    z-index: 4100;
+    flex-direction: column;
+    overflow: hidden;
+    opacity: 0;
+    transition: transform .25s, opacity .25s;
+}
+
+    .obj-modal.show {
+        display: flex;
+        transform: translate(-50%,-50%) scale(1);
+        opacity: 1;
+    }
+
+.obj-modal-header {
+    background: linear-gradient(135deg, #1a2e35, #2d4f58);
+    border-bottom: 3px solid #e6b000;
+    padding: 18px 24px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+    flex-shrink: 0;
+}
+
+    .obj-modal-header h2 {
+        font-size: 16px;
+        font-weight: 800;
+        color: #e6b000;
+        margin: 0 0 4px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+        .obj-modal-header h2 i {
+            font-size: 16px;
+        }
+
+    .obj-modal-header p {
+        font-size: 12px;
+        color: rgba(255,255,255,.45);
+        margin: 0;
+    }
+
+.obj-modal-close {
+    background: rgba(255,255,255,.1);
+    border: none;
+    cursor: pointer;
+    color: #fff;
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background .15s;
+}
+
+    .obj-modal-close:hover {
+        background: rgba(255,255,255,.2);
+    }
+
+.obj-modal-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 22px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.obj-instr-section h3 {
+    font-size: 13px;
+    font-weight: 700;
+    color: #1a2e35;
+    margin: 0 0 8px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding-bottom: 7px;
+    border-bottom: 1.5px solid #f0f0f0;
+}
+
+    .obj-instr-section h3 i {
+        color: #e6b000;
+        font-size: 13px;
+    }
+
+.obj-instr-section ul {
+    margin: 0;
+    padding-left: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.obj-instr-section li {
+    font-size: 13px;
+    color: #4b5563;
+    line-height: 1.6;
+}
+
+.obj-instr-warning {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 13px 16px;
+    border-radius: 9px;
+    background: rgba(230,176,0,.08);
+    border: 1.5px solid rgba(230,176,0,.3);
+    font-size: 13px;
+    color: #7a5800;
+    line-height: 1.6;
+}
+
+    .obj-instr-warning i {
+        color: #c49a00;
+        flex-shrink: 0;
+        font-size: 15px;
+        margin-top: 1px;
+    }
+
+.obj-modal-footer {
+    padding: 16px 24px;
+    background: #fafafa;
+    border-top: 2px solid #f0f0f0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    flex-shrink: 0;
+}
+
+.obj-modal-actions {
+    display: flex;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+/* Section 78 info card */
+.cp-s78-info {
+    padding: 16px 18px;
+    border-radius: 9px;
+    background: rgba(54,98,109,.06);
+    border: 1.5px solid rgba(54,98,109,.2);
+    font-size: 13.5px;
+    color: #1a2e35;
+    line-height: 1.7;
+}
+
+@@media (max-width: 680px) {
+    .cp-hero {
+        padding: 18px 16px;
+    }
+
+    .cp-body {
+        padding: 16px 12px 48px;
+    }
+
+    .cp-prop-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .cp-radio-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .cp-radio-grid-3 {
+        grid-template-columns: 1fr;
+    }
+
+    .obj-modal-footer {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .obj-modal-actions {
+        justify-content: flex-end;
+    }
+}
+

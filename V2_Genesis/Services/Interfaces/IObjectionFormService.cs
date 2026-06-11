@@ -25,6 +25,17 @@ public interface IObjectionFormService
         List<IFormFile> files,
         List<IFormFile> fileR,
         Obj_Property_Info_AppealModel appeal);
+
+    Task<(bool Success, string? Error)> WithdrawAsync(
+    string objectionNo,
+    string withdrawType,
+    string rollSource,
+    string userId);
+
+    // Unlink a saved property from the user's dashboard.
+    Task<(bool Success, string? Error)> UnlinkPropertyAsync(
+        long linkedId,
+        string userId);
 }
 
 public class ObjectionSubmitResult

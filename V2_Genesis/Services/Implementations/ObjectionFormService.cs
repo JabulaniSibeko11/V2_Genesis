@@ -1,6 +1,9 @@
 ﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using System.Data;
 using System.Net.Mime;
 using V2_Genesis.Data;
 using V2_Genesis.Models;
@@ -9,6 +12,7 @@ using V2_Genesis.Models.Results;
 using V2_Genesis.Services.Interfaces;
 using V2_Genesis.Services.Notice;
 using V2_Genesis.Services.Objection;
+using Dapper;
 
 namespace V2_Genesis.Services.Implementations;
 
@@ -324,7 +328,7 @@ public class ObjectionFormService : IObjectionFormService
             obj5: obj5,
             obj6: obj6,
             obj7: obj7,
-            fileCount: count);
+            fileCount: count, objFile: objFile);
 
         return new ObjectionSubmitResult
         {
@@ -491,7 +495,7 @@ public class ObjectionFormService : IObjectionFormService
             obj5: obj5,
             obj6: obj6,
             obj7: obj7,
-            fileCount: count);
+            fileCount: count, objFile: objFile);
 
         return new ObjectionSubmitResult
         {
@@ -522,7 +526,7 @@ public class ObjectionFormService : IObjectionFormService
         Obj_Section5Model obj5,
         Obj_Section6Model obj6,
         Obj_Section7Model obj7,
-        int fileCount)
+        int fileCount, Obj_Files objFile)
     {
         try
         {
@@ -575,13 +579,14 @@ public class ObjectionFormService : IObjectionFormService
 
                 ValuationKey = isAppeal
                     ? appeal?.A_Valuation_Key ?? obj.Valuation_Key
-                    : obj.Valuation_Key
+                    : obj.Valuation_Key,
+
+                    UploadedDocumentNames = GetUploadedDocumentNames(objFile),
             };
 
             // 1. Generate acknowledgement PDF
-            var (ackPdfBytes, _) = await _noticeService
-                .GenerateAcknowledgementAsync(acknowledgementData);
-
+            var (ackPdfBytes, ackFileName) = await _noticeService
+      .GenerateAcknowledgementAsync(acknowledgementData);
             if (ackPdfBytes == null || ackPdfBytes.Length == 0)
             {
                 throw new InvalidOperationException(
@@ -589,8 +594,9 @@ public class ObjectionFormService : IObjectionFormService
             }
 
             // 2. Save acknowledgement PDF in evidence folder
-            var ackFileName = $"{referenceNo}_Acknowledgement.pdf";
             var ackPath = Path.Combine(folderPath, ackFileName);
+
+            await File.WriteAllBytesAsync(ackPath, ackPdfBytes);
 
             await File.WriteAllBytesAsync(ackPath, ackPdfBytes);
 
@@ -803,4 +809,450 @@ public class ObjectionFormService : IObjectionFormService
             case 10: f.Files10 = name; break;
         }
     }
+    public async Task<(bool Success, string? Error)> WithdrawAsync(
+  string objectionNo,
+  string withdrawType,
+  string rollSource,
+  string userId)
+    {
+        if (string.IsNullOrWhiteSpace(objectionNo))
+            return (false, "Objection / reference number is required.");
+
+        objectionNo = objectionNo.Trim();
+        withdrawType = withdrawType?.Trim() ?? string.Empty;
+        rollSource = NormalizeRollSource(rollSource);
+
+        bool isAppeal = withdrawType.Contains("Appeal", StringComparison.OrdinalIgnoreCase);
+
+        bool isReview = withdrawType.Contains("Review", StringComparison.OrdinalIgnoreCase);
+
+        bool isQuery =
+            withdrawType.Equals("Query", StringComparison.OrdinalIgnoreCase)
+            || withdrawType.Equals("Section78", StringComparison.OrdinalIgnoreCase)
+            || withdrawType.Contains("Section78", StringComparison.OrdinalIgnoreCase)
+            || isReview;
+
+        string submissionType = isAppeal
+            ? "Appeal"
+            : isReview
+                ? "Review"
+                : isQuery
+                    ? "Query"
+                    : "Objection";
+
+        // ── Resolve connection ─────────────────────────────────────
+        string connKey = isQuery
+            ? "QueryConnection"
+            : GetConnectionKeyFromRollSource(rollSource);
+
+        string connStr = _config.GetConnectionString(connKey)
+                      ?? _config.GetConnectionString("DefaultConnection")
+                      ?? throw new InvalidOperationException($"Connection string '{connKey}' was not found.");
+
+        // ── Stored procedure name ──────────────────────────────────
+        string spName = isAppeal
+            ? "Obj_Withdraw_Appeal"
+            : isQuery
+                ? "Que_Withdraw"
+                : "Obj_Withdraw";
+
+        try
+        {
+            await using var conn = new SqlConnection(connStr);
+
+            // 1. Execute withdrawal stored procedure
+            await conn.ExecuteAsync(
+                spName,
+                new { Objection_No = objectionNo },
+                commandType: CommandType.StoredProcedure);
+
+            // 2. Save withdrawal audit record
+            if (isQuery)
+            {
+                _db.Que_Withdrawals.Add(new Que_WithdrawalsModel
+                {
+                    Query_Withdrawn = objectionNo,
+                    User = userId,
+                });
+            }
+            else
+            {
+                _db.Obj_Withdrawals.Add(new Obj_WithdrawalsModel
+                {
+                    Objection_Withdrawn = objectionNo,
+                    User = userId,
+                });
+            }
+
+            await _db.SaveChangesAsync();
+
+            // 3. Send withdrawal email to client
+            try
+            {
+                var recipients = await ResolveWithdrawalRecipientsAsync(
+                    connStr,
+                    objectionNo,
+                    isAppeal,
+                    isQuery);
+
+                if (!recipients.Any())
+                {
+                    _logger.LogWarning(
+                        "[Withdrawal Email] No client email found for {Ref}. Type: {Type}",
+                        objectionNo,
+                        submissionType);
+                }
+                else
+                {
+                    var subject = $"City of Johannesburg — {submissionType} Withdrawal Confirmation: {objectionNo}";
+
+                    foreach (var recipient in recipients)
+                    {
+                        var body = BuildWithdrawalEmailBody(
+                            referenceNo: objectionNo,
+                            submissionType: submissionType,
+                            recipientName: recipient.Name);
+
+                        await _emailService.SendEmailWithAttachmentsAsync(
+                            toEmail: recipient.Address,
+                            subject: subject,
+                            body: body,
+                            attachments: new List<EmailAttachment>(),
+                            isHtml: true);
+
+                        _logger.LogInformation(
+                            "[Withdrawal Email] Sent {Type} withdrawal confirmation for {Ref} to {Email}",
+                            submissionType,
+                            objectionNo,
+                            recipient.Address);
+                    }
+                }
+            }
+            catch (Exception emailEx)
+            {
+                // Withdrawal must remain successful even if email fails.
+                _logger.LogError(
+                    emailEx,
+                    "[Withdrawal Email] Failed to send withdrawal email for {Ref}. Type: {Type}",
+                    objectionNo,
+                    submissionType);
+            }
+
+            _logger.LogInformation(
+                "Withdrew {Type} {Ref} (roll: {Roll}) for user {User}.",
+                submissionType,
+                objectionNo,
+                rollSource,
+                userId);
+
+            return (true, null);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Error withdrawing {Ref} (type: {Type}, roll: {Roll}).",
+                objectionNo,
+                withdrawType,
+                rollSource);
+
+            return (false, "An error occurred while processing the withdrawal. Please try again.");
+        }
+    }
+    private async Task<List<EmailRecipient>> ResolveWithdrawalRecipientsAsync(
+    string connStr,
+    string referenceNo,
+    bool isAppeal,
+    bool isQuery)
+    {
+        await using var conn = new SqlConnection(connStr);
+
+        string sql;
+
+        if (isQuery)
+        {
+            sql = @"
+            SELECT TOP 1
+                s1.Owner_Name,
+                s1.Owner_Email,
+                s1.Objector_Name,
+                s1.Objector_Email,
+                s1.Representative_name,
+                s1.Rep_Email,
+                COALESCE(q.Objector_Type, q.Query_Type, q.Submission_Type, '') AS Objector_Type
+            FROM dbo.Obj_Section1 s1
+            LEFT JOIN dbo.QUE_Property_Info q
+                   ON LTRIM(RTRIM(q.Query_No)) = LTRIM(RTRIM(@Ref))
+            WHERE LTRIM(RTRIM(s1.Objection_Ref_S1)) = LTRIM(RTRIM(@Ref));";
+        }
+        else if (isAppeal)
+        {
+            sql = @"
+            SELECT TOP 1
+                s1.Owner_Name,
+                s1.Owner_Email,
+                s1.Objector_Name,
+                s1.Objector_Email,
+                s1.Representative_name,
+                s1.Rep_Email,
+                COALESCE(opi.Objector_Type, opia.Appeal_Type, '') AS Objector_Type
+            FROM dbo.Obj_Section1 s1
+            LEFT JOIN dbo.Obj_Property_Info_Appeal opia
+                   ON LTRIM(RTRIM(opia.Appeal_No)) = LTRIM(RTRIM(@Ref))
+            LEFT JOIN dbo.Obj_Property_Info opi
+                   ON LTRIM(RTRIM(opi.Objection_No)) = LTRIM(RTRIM(opia.Obj_Ref))
+            WHERE LTRIM(RTRIM(s1.Objection_Ref_S1)) = LTRIM(RTRIM(@Ref));";
+        }
+        else
+        {
+            sql = @"
+            SELECT TOP 1
+                s1.Owner_Name,
+                s1.Owner_Email,
+                s1.Objector_Name,
+                s1.Objector_Email,
+                s1.Representative_name,
+                s1.Rep_Email,
+                COALESCE(opi.Objector_Type, '') AS Objector_Type
+            FROM dbo.Obj_Section1 s1
+            LEFT JOIN dbo.Obj_Property_Info opi
+                   ON LTRIM(RTRIM(opi.Objection_No)) = LTRIM(RTRIM(@Ref))
+            WHERE LTRIM(RTRIM(s1.Objection_Ref_S1)) = LTRIM(RTRIM(@Ref));";
+        }
+
+        var row = await conn.QueryFirstOrDefaultAsync(sql, new { Ref = referenceNo });
+
+        if (row is null)
+        {
+            _logger.LogWarning(
+                "[Withdrawal Email] No Obj_Section1 recipient data found for {Ref}",
+                referenceNo);
+
+            return new List<EmailRecipient>();
+        }
+
+        var objectorType = row.Objector_Type?.ToString()?.Trim() ?? string.Empty;
+        var recipients = new List<EmailRecipient>();
+
+        if (objectorType.Equals("Owner", StringComparison.OrdinalIgnoreCase))
+        {
+            TryAddEmailRecipient(
+                recipients,
+                row.Owner_Name?.ToString(),
+                row.Owner_Email?.ToString(),
+                "Owner");
+        }
+        else if (objectorType.Equals("Representative", StringComparison.OrdinalIgnoreCase))
+        {
+            TryAddEmailRecipient(
+                recipients,
+                row.Owner_Name?.ToString(),
+                row.Owner_Email?.ToString(),
+                "Owner");
+
+            TryAddEmailRecipient(
+                recipients,
+                row.Representative_name?.ToString(),
+                row.Rep_Email?.ToString(),
+                "Representative");
+        }
+        else if (
+            objectorType.Equals("Third_Party", StringComparison.OrdinalIgnoreCase)
+            || objectorType.Equals("Third Party", StringComparison.OrdinalIgnoreCase))
+        {
+            TryAddEmailRecipient(
+                recipients,
+                row.Objector_Name?.ToString(),
+                row.Objector_Email?.ToString(),
+                "Third Party");
+        }
+        else
+        {
+            // Safe fallback
+            TryAddEmailRecipient(
+                recipients,
+                row.Owner_Name?.ToString(),
+                row.Owner_Email?.ToString(),
+                "Owner");
+
+            if (!recipients.Any())
+            {
+                TryAddEmailRecipient(
+                    recipients,
+                    row.Objector_Name?.ToString(),
+                    row.Objector_Email?.ToString(),
+                    "Client");
+            }
+        }
+
+        return recipients;
+    }
+
+    private static void TryAddEmailRecipient(
+    List<EmailRecipient> list,
+    string? name,
+    string? email,
+    string recipientType)
+    {
+        if (string.IsNullOrWhiteSpace(email) || !email.Contains('@'))
+            return;
+
+        var cleanEmail = email.Trim();
+
+        if (list.Any(x => x.Address.Equals(cleanEmail, StringComparison.OrdinalIgnoreCase)))
+            return;
+
+        list.Add(new EmailRecipient(
+            name?.Trim() ?? cleanEmail,
+            cleanEmail,
+            recipientType));
+    }
+
+    private static string BuildWithdrawalEmailBody(
+    string referenceNo,
+    string submissionType,
+    string recipientName)
+    {
+        var safeName = string.IsNullOrWhiteSpace(recipientName)
+            ? "Valued Ratepayer"
+            : recipientName.Trim();
+
+        var date = DateTime.Now.ToString("dd MMMM yyyy HH:mm");
+
+        return $@"
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8' />
+</head>
+<body style='font-family:Arial,Helvetica,sans-serif;background:#f5f5f5;margin:0;padding:24px;'>
+    <div style='max-width:760px;margin:0 auto;background:#ffffff;border-radius:10px;
+                border:1px solid #ddd;overflow:hidden;'>
+
+        <div style='background:#1a2e35;color:#ffffff;padding:18px 24px;
+                    border-bottom:4px solid #e6b000;'>
+            <h2 style='margin:0;font-size:20px;'>City of Johannesburg</h2>
+            <div style='font-size:13px;color:#e6b000;font-weight:bold;margin-top:4px;'>
+                Valuation Services Department
+            </div>
+        </div>
+
+        <div style='padding:24px;color:#333;'>
+            <p>Dear {safeName},</p>
+
+            <p>
+                This email confirms that your <strong>{submissionType}</strong>
+                with reference number
+                <strong>{referenceNo}</strong>
+                has been successfully withdrawn.
+            </p>
+
+            <table style='width:100%;border-collapse:collapse;margin:18px 0;'>
+                <tr>
+                    <td style='padding:10px;border:1px solid #ddd;background:#f8f8f8;font-weight:bold;width:35%;'>
+                        Reference Number
+                    </td>
+                    <td style='padding:10px;border:1px solid #ddd;'>
+                        {referenceNo}
+                    </td>
+                </tr>
+                <tr>
+                    <td style='padding:10px;border:1px solid #ddd;background:#f8f8f8;font-weight:bold;'>
+                        Submission Type
+                    </td>
+                    <td style='padding:10px;border:1px solid #ddd;'>
+                        {submissionType}
+                    </td>
+                </tr>
+                <tr>
+                    <td style='padding:10px;border:1px solid #ddd;background:#f8f8f8;font-weight:bold;'>
+                        Withdrawn Date
+                    </td>
+                    <td style='padding:10px;border:1px solid #ddd;'>
+                        {date}
+                    </td>
+                </tr>
+            </table>
+
+            <p>
+                No further processing will continue on this withdrawn submission.
+            </p>
+
+            <p style='margin-top:24px;'>
+                Regards,<br/>
+                <strong>City of Johannesburg<br/>Valuation Services Department</strong>
+            </p>
+        </div>
+
+        <div style='background:#1a2e35;color:#ffffff;padding:12px 24px;
+                    font-size:12px;text-align:center;'>
+            This is an automated notification. Please do not reply to this email.
+        </div>
+    </div>
+</body>
+</html>";
+    }
+    // ══════════════════════════════════════════════════════════════
+    //  UNLINK — remove a saved / linked property
+    //
+    //  Uses the LinkedProperties table in the DefaultConnection DB.
+    //  Security: checks userId so a user cannot unlink another's property.
+    // ══════════════════════════════════════════════════════════════
+    public async Task<(bool Success, string? Error)> UnlinkPropertyAsync(
+        long linkedId,
+        string userId)
+    {
+        try
+        {
+            // Re-enable this DbSet in ApplicationDbContext if it is still
+            // commented out:
+            //   public DbSet<LinkedProperties> LinkedProperties { get; set; }
+            var record = await _db.LinkedProperties
+                .FirstOrDefaultAsync(p => p.ID == linkedId && p.UserID == userId);
+
+            if (record is null)
+                return (false, "Property not found or you do not have permission to unlink it.");
+
+            _db.LinkedProperties.Remove(record);
+            await _db.SaveChangesAsync();
+
+            _logger.LogInformation(
+                "User {User} unlinked property record {Id}.", userId, linkedId);
+
+            return (true, null);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,
+                "Error unlinking property {Id} for user {User}.", linkedId, userId);
+            return (false, "An error occurred while removing the property. Please try again.");
+        }
+    }
+    private static List<string> GetUploadedDocumentNames(Obj_Files objFile)
+    {
+        var docs = new List<string>();
+
+        void Add(string? name)
+        {
+            if (!string.IsNullOrWhiteSpace(name))
+                docs.Add(name.Trim());
+        }
+
+        Add(objFile.Files1);
+        Add(objFile.Files2);
+        Add(objFile.Files3);
+        Add(objFile.Files4);
+        Add(objFile.Files5);
+        Add(objFile.Files6);
+        Add(objFile.Files7);
+        Add(objFile.Files8);
+        Add(objFile.Files9);
+        Add(objFile.Files10);
+
+        if (!string.IsNullOrWhiteSpace(objFile.Rep_letter))
+            docs.Add("Representative Letter: " + objFile.Rep_letter.Trim());
+
+        return docs;
+    }
 }
+

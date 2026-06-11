@@ -84,10 +84,31 @@
 <!-- ── Welcome strip ──────────────────────────────────────────────────── -->
 <div class="ann-bar @ann.BadgeCss">
     <div class="ann-inner">
+
         <span class="ann-badge @ann.BadgeCss">
-            <span class="ann-dot"></span>@ann.BadgeText
+            <span class="ann-dot"></span>
+            @ann.BadgeText
         </span>
-        <span class="ann-text">@ann.Message</span>
+
+       
+        <span class="ann-text">
+            <span>
+                @ann.Message
+                @if (ann.DaysLeft > 0)
+                {
+                    <span style="margin-left:24px;opacity:.75;">
+                        &nbsp;·&nbsp;
+                        <i class="fa-solid fa-calendar-days"></i>
+                        @ann.DaysLeft @(ann.DaysLeft == 1 ? "day" : "days") remaining
+                    </span>
+                }
+               
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                @ann.Message
+            </span>
+        </span>
+
+        
         @if (ann.DaysLeft > 0)
         {
             <span class="ann-days @ann.DaysCss">
@@ -95,6 +116,7 @@
                 @ann.DaysLeft @(ann.DaysLeft == 1 ? "day" : "days") remaining
             </span>
         }
+
     </div>
 </div>
 
@@ -102,7 +124,8 @@
     <div class="cd-welcome-inner">
         <div>
             <h1 class="cd-welcome-name">
-                Welcome back, <span>@Model.DisplayName</span> 👋
+                Welcome back, <span>@Model.DisplayName</span>
+                <span class="cd-welcome-wave">👋</span>
             </h1>
             <p class="cd-welcome-sub">
                 @(Model.IsCompany ? "Company Account" : "Individual Account") &nbsp;·&nbsp;
@@ -334,10 +357,10 @@ else if (roll.IsQuery)
                                                 </a>
                                             </li>
                                             <li>
-                                                <a class="dropdown-item"
-                                                   href="/Home/Delete@(roll.ControllerName)?id=@item.Id">
-                                                    <i class="fa-solid fa-link-slash"></i> Unlink
-                                                </a>
+                                                                <a class="dropdown-item"
+                                                                       href="/property/unlink?linkedId=@item.Id&returnUrl=/dashboard">
+                                                                    <i class="fa-solid fa-link-slash"></i> Unlink Property
+                                                                </a>
                                             </li>
                                         </ul>
                                     </div>
@@ -415,10 +438,10 @@ else if (roll.IsQuery)
                                             @if (item.objection_Status is "Query-Lodging" or "Query-Unallocated")
                                             {
                                                 <li>
-                                                    <a class="dropdown-item"
-                                                       href="/@roll.ControllerName/Withdrawal?ObjectionNum=@item.Objection_No&Withdraw=O">
-                                                        <i class="fa-solid fa-ban"></i> Withdraw
-                                                    </a>
+                                                                    <a class="dropdown-item"
+                                                                           href="/objection/withdraw?objectionNo=@item.Query_No&withdrawType=Query&rollSource=Query&returnUrl=/dashboard">
+                                                                        <i class="fa-solid fa-ban"></i> Withdraw Query
+                                                                    </a>
                                                 </li>
                                             }
                                             @* ── Review button — only when Query-Finalized ── *@
@@ -715,8 +738,8 @@ else if (roll.IsQuery)
                                                                 {
                                                                     <li>
                                                                         <a class="dropdown-item"
-                                                                               href="/@roll.ControllerName/Withdrawal?ObjectionNum=@item.Objection_No&Withdraw=O">
-                                                                            Withdraw
+                                                                               href="/objection/withdraw?objectionNo=@item.Objection_No&withdrawType=O&rollSource=@roll.Source&returnUrl=/dashboard">
+                                                                            <i class="fa-solid fa-ban"></i> Withdraw Objection
                                                                         </a>
                                                                     </li>
                                                                 }
@@ -810,8 +833,8 @@ else if (roll.IsQuery)
                                                                 {
                                                                     <li>
                                                                         <a class="dropdown-item"
-                                                                               href="/@roll.ControllerName/Withdrawal?ObjectionNum=@item.Objection_No&Withdraw=AppealSup1">
-                                                                            Withdraw
+                                                                               href="/objection/withdraw?objectionNo=@item.Appeal_No&withdrawType=Appeal&rollSource=@roll.Source&returnUrl=/dashboard">
+                                                                            <i class="fa-solid fa-ban"></i> Withdraw Appeal
                                                                         </a>
                                                                     </li>
                                                                 }

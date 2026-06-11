@@ -148,9 +148,104 @@
 <link href="~/css/views/clientdashboardcss.css" rel="stylesheet" asp-append-version="true" />
 <link href="~/css/views/property-search.css" rel="stylesheet" asp-append-version="true" />
 <link href="~/css/views/searchpropertycss.css" rel="stylesheet" asp-append-version="true" />
+
+<style>
+    .locus-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, .65);
+    z-index: 25000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
 }
 
-<div class="obj-hero">
+.locus-modal {
+    width: min(620px, 94vw);
+    background: #ffffff;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 25px 80px rgba(0, 0, 0, .35);
+    border: 2px solid #e6b000;
+    font-family: 'Poppins', Arial, sans-serif;
+}
+
+.locus-modal-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 20px 24px;
+    background: linear-gradient(135deg, #1a2e35, #006572);
+    color: #ffffff;
+    border-bottom: 4px solid #e6b000;
+}
+
+.locus-modal-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 12px;
+    background: rgba(230, 176, 0, .18);
+    border: 1.5px solid rgba(230, 176, 0, .6);
+    color: #e6b000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+}
+
+.locus-modal-header h3 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 800;
+}
+
+.locus-modal-header p {
+    margin: 3px 0 0;
+    color: rgba(255, 255, 255, .7);
+    font-size: 13px;
+}
+
+.locus-modal-body {
+    padding: 24px;
+    color: #333;
+    font-size: 14px;
+}
+
+.locus-duplicate-list {
+    margin-top: 14px;
+    padding: 12px 14px;
+    background: #fff5f5;
+    border: 1px solid #f5b5b5;
+    border-radius: 10px;
+    color: #9f1d1d;
+    font-weight: 600;
+    display: none;
+}
+
+.locus-modal-footer {
+    padding: 16px 24px 22px;
+    text-align: right;
+}
+
+.locus-modal-btn {
+    border: none;
+    background: #006572;
+    color: #ffffff;
+    font-weight: 800;
+    padding: 11px 18px;
+    border-radius: 9px;
+    cursor: pointer;
+}
+
+.locus-modal-btn:hover {
+    background: #004f59;
+}
+    </style>
+    }
+
+
+    <div class="obj-hero">
     <div class="obj-hero-inner">
         <div class="obj-hero-left">
             <div class="obj-hero-logo">
@@ -195,17 +290,7 @@
     </div>
 </div>
 
-@* <div class="form-header-container">
-    <h4 id="form_head">
-        <span class="form-icon"></span>
-        FORM A: RESIDENTIAL (FULL TITLE AND SECTIONAL TITLE USED FOR RESIDENTIAL PURPOSES)
-    </h4>
-</div>
- *@
-@* <div style="display:flex;justify-content: center;">
-    <h4 style="margin-top: 2%;font-family: 'Poppins' , sans-serif;" id="form_head">FORM A: RESIDENTIAL (FULL TITLE AND SECTIONAL TITLE USED FOR RESIDENTIAL PURPOSES)</h4>
-</div>
- *@
+
 
 <form id="myForm" method="post" enctype="multipart/form-data"asp-controller="Objection"asp-action="SubmitObjectionForm"asp-route-PropertyFrom="@sourceTable">
 
@@ -3751,8 +3836,10 @@
                         <input id="NewExtent" style="width: 100%; padding: 12px 16px; margin-bottom: 15px; border: 2px solid #e6b000; border-radius: 8px; background: white; font-size: 14px; color: #333; transition: all 0.3s; box-shadow: 0 2px 8px rgba(230, 176, 0, 0.1);" maxlength="10" onkeypress="return onlyNumberKey(event)" type="text" asp-for="New_Extent" />
 
                         <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #d4a000; font-size: 13px; text-transform: uppercase; letter-spacing: 0.3px;">MARKET VALUE</label>
-                        <input id="NewMarketValue" style="width: 100%; padding: 12px 16px; margin-bottom: 15px; border: 2px solid #e6b000; border-radius: 8px; background: white; font-size: 14px; color: #333; transition: all 0.3s; box-shadow: 0 2px 8px rgba(230, 176, 0, 0.1);" maxlength="19" pattern="^\R\d{1,3}(,\d{3})*(\.\d+)?$" onkeypress="return onlyNumberKey(event)" type="text" asp-for="New_Market_Value" />
-
+                        <input id="NewMarketValue"  inputmode="numeric" style="width: 100%; padding: 12px 16px; margin-bottom: 15px; border: 2px solid #e6b000; border-radius: 8px; background: white; font-size: 14px; color: #333; transition: all 0.3s; box-shadow: 0 2px 8px rgba(230, 176, 0, 0.1);" maxlength="19"  type="text" asp-for="New_Market_Value" />
+                   
+                  
+                       
                         <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #d4a000; font-size: 13px; text-transform: uppercase; letter-spacing: 0.3px;">NAME OF OWNER</label>
                         <input id="NewOwner" style="width: 100%; padding: 12px 16px; margin-bottom: 15px; border: 2px solid #e6b000; border-radius: 8px; background: white; font-size: 14px; color: #333; transition: all 0.3s; box-shadow: 0 2px 8px rgba(230, 176, 0, 0.1);" maxlength="80" type="text" asp-for="New_Owner" />
                         </div>
@@ -3773,6 +3860,36 @@
                 </div>
         </div>
    </div>
+
+   @*----------------------------------------Locus Standis  ---------------------------------------*@
+    <div id="locusStandModal" class="locus-modal-backdrop" style="display:none;">
+    <div class="locus-modal">
+        <div class="locus-modal-header">
+            <div class="locus-modal-icon">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <div>
+                <h3 id="locusModalTitle">Locus Standi Required</h3>
+                <p id="locusModalSub">Appeal validation failed</p>
+            </div>
+        </div>
+
+        <div class="locus-modal-body">
+            <p id="locusModalMessage">
+                You cannot appeal with the same details that are reflected on the Municipal Valuation Roll.
+                Please enter different values before continuing.
+            </p>
+
+            <div id="locusDuplicateList" class="locus-duplicate-list"></div>
+        </div>
+
+        <div class="locus-modal-footer">
+            <button type="button" onclick="closeLocusStandModal()" class="locus-modal-btn">
+                Okay, I will update the values
+            </button>
+        </div>
+    </div>
+</div>
     @*  ------------------------------------------- Document Upload -------------------------------------------  *@
     <div id="sectionUpload" style="display:flex;justify-content: center;">
         <div class="divU " style="margin-top: 12px;border-radius: 12px;border: 3px solid #e6b000;padding: 20px;width: 100%;max-width: 1050px;background-color: #ffffff;box-shadow: 0 10px 40px rgba(0, 101, 112, 0.15);font-family: 'Poppins' , sans-serif;">
@@ -3986,532 +4103,3 @@
 
      </form>  
 
-<script>
-    
-    $(document).ready(function () {
-        setTimeout(function () {
-            $("#preloader").fadeOut(600);
-        }, 900);
-    });
-
-   
-    function showToaster(title, message, duration = 4000) {
-        let container = document.querySelector('.toaster-container');
-        if (!container) {
-            container = document.createElement('div');
-            container.className = 'toaster-container';
-            document.body.appendChild(container);
-        }
-
-        const toaster = document.createElement('div');
-        toaster.className = 'toaster';
-        toaster.innerHTML = `
-            <div class="toaster-icon">👋</div>
-            <div class="toaster-content">
-                <div class="toaster-title">${title}</div>
-                <div class="toaster-message">${message}</div>
-            </div>
-            <button class="toaster-close" onclick="closeToaster(this)">×</button>
-        `;
-        container.appendChild(toaster);
-
-        setTimeout(() => {
-            closeToaster(toaster.querySelector('.toaster-close'));
-        }, duration);
-    }
-
-    function closeToaster(button) {
-        const toaster = button.closest('.toaster');
-        if (!toaster) return;
-
-        toaster.classList.add('hiding');
-        setTimeout(() => {
-            toaster.remove();
-            const container = document.querySelector('.toaster-container');
-            if (container && container.children.length === 0) {
-                container.remove();
-            }
-        }, 400);
-    }
-
-  
-    function normalizeValue(value) {
-        if (!value) return '';
-        return value.toString().replace(/\s+/g, '').trim().toLowerCase();
-    }
-
-    function normalizeCategory(category) {
-        if (!category) return '';
-        const normalized = category.toString().trim().toLowerCase();
-        return normalized === 'residential' ? 'residential property' : normalized;
-    }
-
-    function toggleErrorMessage(inputElement, shouldShow, message) {
-        const errorId = inputElement.id + '_error';
-        let errorElement = document.getElementById(errorId);
-
-        if (shouldShow) {
-            inputElement.style.border = '2px solid red';
-            inputElement.style.backgroundColor = '#ffebee';
-            if (!errorElement) {
-                errorElement = document.createElement('span');
-                errorElement.id = errorId;
-                errorElement.style.color = 'red';
-                errorElement.style.fontSize = '12px';
-                errorElement.style.display = 'block';
-                errorElement.style.marginTop = '5px';
-                errorElement.style.fontFamily = "'Poppins', sans-serif";
-                errorElement.textContent = message;
-                inputElement.parentNode.insertBefore(errorElement, inputElement.nextSibling);
-            } else {
-                errorElement.textContent = message;
-                errorElement.style.display = 'block';
-            }
-        } else {
-            inputElement.style.border = '';
-            inputElement.style.backgroundColor = '';
-            if (errorElement) {
-                errorElement.style.display = 'none';
-            }
-        }
-    }
-
-    function handleFieldError(inputElement, isCategory = false) {
-        toggleErrorMessage(inputElement, true, 'The value is the same as the original value');
-        setTimeout(() => {
-            inputElement.value = '';
-            toggleErrorMessage(inputElement, false, '');
-            inputElement.dispatchEvent(isCategory ? new Event('change') : new Event('input'));
-        }, 5000);
-    }
-
-    function validateField(newInputId, oldInputId, isCategory = false, isExtent = false) {
-        const newInput = document.getElementById(newInputId);
-        const oldInput = document.getElementById(oldInputId);
-        if (!newInput || !oldInput) return true;
-
-        const newValue = newInput.value;
-        const oldValue = oldInput.value;
-
-        if (newValue.trim() === '') {
-            toggleErrorMessage(newInput, false, '');
-            return true;
-        }
-
-        let isMatch = false;
-        if (isCategory) {
-            isMatch = normalizeCategory(newValue) === normalizeCategory(oldValue);
-        } else if (isExtent) {
-            isMatch = normalizeValue(newValue.replace(',', '.')) === normalizeValue(oldValue.replace(',', '.'));
-        } else {
-            isMatch = newValue.trim().toLowerCase() === oldValue.trim().toLowerCase();
-        }
-
-        if (isMatch) {
-            handleFieldError(newInput, isCategory);
-            return false;
-        } else {
-            toggleErrorMessage(newInput, false, '');
-            return true;
-        }
-    }
-
-    function validateMarketValue(value) {
-        const rawValue = value.replace(/[^\d]/g, '');
-        const numValue = parseInt(rawValue);
-        if (!rawValue || isNaN(numValue)) return { valid: true };
-        if (numValue < 0) return { valid: false, message: 'Negative value not allowed' };
-        if (numValue > 9999999999)
-        return { valid: false, message: 'Exceeds 1B ZAR' };
-        return { valid: true };
-    }
-
-    function allowDecimalInput(event) {
-        const char = String.fromCharCode(event.which || event.keyCode);
-        const input = event.target;
-        const value = input.value;
-
-        if (!/[0-9.,]/.test(char) &&
-            event.keyCode !== 8 && event.keyCode !== 46 &&
-            (event.keyCode < 37 || event.keyCode > 40)) {
-            event.preventDefault();
-            return;
-        }
-
-        if ((char === '.' || char === ',') && (value.includes('.') || value.includes(','))) {
-            event.preventDefault();
-        }
-    }
-
-    function formatExtentInput(input) {
-        input.value = input.value.replace(/,/g, '.');
-    }
-
-    function formatMarketValueInput(input) {
-        let value = input.value.replace(/[^\d]/g, '');
-        if (value) {
-            input.value = 'R ' + parseInt(value).toLocaleString('en-ZA');
-        }
-    }
-
-    function formatOriginalValues() {
-        const originalMarketValue = document.getElementById('Market_Value');
-        if (originalMarketValue && originalMarketValue.value) {
-            let rawValue = originalMarketValue.value.replace(/[^\d]/g, '');
-            if (rawValue) {
-                originalMarketValue.value = 'R ' + parseInt(rawValue).toLocaleString('en-ZA');
-            }
-        }
-
-        const originalExtent = document.getElementById('extent');
-        if (originalExtent && originalExtent.value) {
-            let value = originalExtent.value.replace(/,/g, '.');
-            if (value.includes('.')) {
-                originalExtent.value = parseFloat(value).toFixed(2);
-            }
-        }
-    }
-
-    function validateAllFields() {
-        let isValid = true;
-        const fields = ['NewPropDesc', 'NewCat', 'NewAddress', 'NewExtent', 'NewMarketValue', 'NewOwner'];
-        fields.forEach(fieldId => {
-            const el = document.getElementById(fieldId);
-            if (el) toggleErrorMessage(el, false, '');
-        });
-
-        isValid = validateField('NewPropDesc', 'desc') && isValid;
-        isValid = validateField('NewCat', 'cat', true) && isValid;
-        isValid = validateField('NewAddress', 'add') && isValid;
-        isValid = validateField('NewExtent', 'extent', false, true) && isValid;
-        isValid = validateField('NewMarketValue', 'Market_Value') && isValid;
-        isValid = validateField('NewOwner', 'owner') && isValid;
-
-        return isValid;
-    }
-
-    function onlyNumberKey(event) {
-        const char = String.fromCharCode(event.which || event.keyCode);
-        return /[0-9]/.test(char) || [8, 46, 37, 38, 39, 40].includes(event.keyCode);
-    }
-
-    // ========================= INITIALIZATION =========================
-    document.addEventListener('DOMContentLoaded', function () {
-        // Add loading class
-        document.body.classList.add('loading');
-
-        // Hide preloader
-        setTimeout(() => {
-            const preloader = document.getElementById("preloader");
-            if (preloader) {
-                preloader.classList.add('fade-out');
-                document.body.classList.remove('loading');
-                setTimeout(() => {
-                    preloader.style.display = "none";
-                    showToaster('Objection Form Ready', 'Complete all required sections to submit your objection', 5000);
-                }, 600);
-            }
-        }, 900);
-
-        // Format original values
-        formatOriginalValues();
-
-        // Initialize all features
-        initializeFormValidation();
-        initializeNavigationButtons();
-        initializeFieldToasters();
-        initializeSectionSixToasters();
-        initializeFileUploadToasters();
-        initializeSignatureToasters();
-        initializeSubmitToaster();
-        initializePropertyTypeToasters();
-        initializeCompensationToaster();
-    });
-
-    // ========================= NAVIGATION TOASTERS =========================
-    function initializeNavigationButtons() {
-        let currentSection = 1;
-
-        document.querySelectorAll('[class*="btn_n"]').forEach(button => {
-            button.addEventListener('click', function () {
-                const sectionNum = this.className.match(/btn_n(\d+|U)/)?.[1] || ++currentSection;
-                showToaster('Section Complete', `Moving to next section...`, 2000);
-                currentSection++;
-            });
-        });
-
-        document.querySelectorAll('[class*="btn_p"]').forEach(button => {
-            button.addEventListener('click', function () {
-                currentSection = Math.max(1, currentSection - 1);
-                showToaster('Going Back', 'Returning to previous section...', 2000);
-            });
-        });
-
-        const backButton = document.getElementById('form_back');
-        if (backButton) {
-            backButton.addEventListener('click', () => {
-                showToaster('Returning', 'Going back to property selection...', 2000);
-            });
-        }
-    }
-
-    // ========================= FIELD VALIDATION TOASTERS =========================
-    function initializeFieldToasters() {
-        // Owner Name
-        const ownerName = document.getElementById('o_name');
-        if (ownerName) {
-            ownerName.addEventListener('blur', function () {
-                if (this.value.trim()) {
-                    showToaster('Owner Name Added', 'Owner information recorded', 2000);
-                }
-            });
-        }
-
-        // ID/Passport
-        const ownerId = document.getElementById('o_id');
-        if (ownerId) {
-            ownerId.addEventListener('blur', function () {
-                if (this.value.length === 13) {
-                    showToaster('ID Validated', 'South African ID number format correct', 2000);
-                } else if (this.value.length > 0 && this.value.length < 13) {
-                    showToaster('ID Incomplete', 'SA ID must be 13 digits', 3000);
-                }
-            });
-        }
-
-       
-
-        // Phone number
-        document.querySelectorAll('input[id*="cd_"]').forEach(input => {
-            input.addEventListener('blur', function () {
-                if (this.value.length >= 10) {
-                    showToaster('Phone Number Added', 'Contact number recorded', 2000);
-                }
-            });
-        });
-
-        // Postal address same as physical
-        document.querySelectorAll('input[name="add_pos"]').forEach(radio => {
-            radio.addEventListener('change', function () {
-                if (this.value === 'Yes') {
-                    showToaster('Address Copied', 'Postal address set to physical address', 2000);
-                } else {
-                    showToaster('Different Address', 'Please enter postal address', 2000);
-                }
-            });
-        });
-    }
-
-    // ========================= SECTION 6 TOASTERS =========================
-    function initializeSectionSixToasters() {
-        const newPropDesc = document.getElementById('NewPropDesc');
-        const newCat = document.getElementById('NewCat');
-        const newAddress = document.getElementById('NewAddress');
-        const newExtent = document.getElementById('NewExtent');
-        const newMarketValue = document.getElementById('NewMarketValue');
-        const newOwner = document.getElementById('NewOwner');
-
-        if (newPropDesc) {
-            newPropDesc.addEventListener('input', () => {
-                if (newPropDesc.value.trim()) {
-                    validateField('NewPropDesc', 'desc');
-                }
-            });
-            newPropDesc.addEventListener('blur', () => validateField('NewPropDesc', 'desc'));
-        }
-
-        if (newCat) {
-            newCat.addEventListener('change', function () {
-                if (this.value) {
-                    const isValid = validateField('NewCat', 'cat', true);
-                    showToaster(isValid ? 'Category Changed' : 'Duplicate Category', 
-                        isValid ? `New category: ${this.value}` : 'New category matches original', 
-                        isValid ? 2000 : 3000);
-                }
-            });
-        }
-
-        if (newMarketValue) {
-            newMarketValue.addEventListener('blur', function () {
-                if (this.value.trim()) {
-                    const validation = validateMarketValue(this.value);
-                    if (!validation.valid) {
-                        showToaster('Market Value Error', validation.message, 4000);
-                    } else {
-                        const isValid = validateField('NewMarketValue', 'Market_Value');
-                        if (isValid) {
-                            showToaster('Market Value Set', 'New market value recorded', 2000);
-                        }
-                    }
-                }
-            });
-            newMarketValue.addEventListener('input', function () {
-                formatMarketValueInput(this);
-                const validation = validateMarketValue(this.value);
-                toggleErrorMessage(this, !validation.valid, validation.message || '');
-            });
-        }
-
-        if (newExtent) {
-            newExtent.addEventListener('keypress', allowDecimalInput);
-            newExtent.addEventListener('input', function () {
-                formatExtentInput(this);
-                validateField('NewExtent', 'extent', false, true);
-            });
-            newExtent.addEventListener('blur', function () {
-                formatExtentInput(this);
-                validateField('NewExtent', 'extent', false, true);
-                if (this.value.trim()) {
-                    showToaster('Extent Updated', 'Property extent recorded', 2000);
-                }
-            });
-        }
-
-        ['NewAddress', 'NewOwner'].forEach(id => {
-            const el = document.getElementById(id);
-            if (el) {
-                el.addEventListener('input', () => validateField(id, id === 'NewAddress' ? 'add' : 'owner'));
-                el.addEventListener('blur', () => validateField(id, id === 'NewAddress' ? 'add' : 'owner'));
-            }
-        });
-    }
-
-    
-    function initializeFileUploadToasters() {
-        const fileInput = document.getElementById('files');
-        if (fileInput) {
-            fileInput.addEventListener('change', function () {
-                const files = this.files;
-                const maxFiles = 10;
-                const maxSize = 10 * 1024 * 1024;
-                const validExts = ['pdf', 'png', 'jpeg', 'jpg', 'heic'];
-
-                if (files.length > maxFiles) {
-                    showToaster('Too Many Files', `Maximum ${maxFiles} files allowed`, 4000);
-                    this.value = '';
-                    return;
-                }
-
-                let totalSize = 0;
-                let invalidFiles = [];
-
-                for (let file of files) {
-                    totalSize += file.size;
-                    const ext = file.name.split('.').pop().toLowerCase();
-                    if (!validExts.includes(ext)) invalidFiles.push(file.name);
-                }
-
-                if (invalidFiles.length > 0) {
-                    showToaster('Invalid File Type', `Only PDF, PNG, JPEG, HEIC allowed`, 4000);
-                    this.value = '';
-                    return;
-                }
-
-                if (totalSize > maxSize) {
-                    showToaster('Files Too Large', `Total size exceeds 10MB`, 4000);
-                    this.value = '';
-                    return;
-                }
-
-                showToaster('Files Uploaded', `${files.length} file(s) ready to upload`, 3000);
-            });
-        }
-
-        
-    }
-
-    // ========================= SIGNATURE TOASTERS =========================
-    function initializeSignatureToasters() {
-        const acceptButton = document.getElementById('accept');
-        const clearButton = document.getElementById('Clear');
-
-        if (acceptButton) {
-            acceptButton.addEventListener('click', function () {
-                const canvas = document.getElementById('signature');
-                const context = canvas.getContext('2d');
-                const data = context.getImageData(0, 0, canvas.width, canvas.height).data;
-                let isBlank = true;
-
-                for (let i = 3; i < data.length; i += 4) {
-                    if (data[i] !== 0) {
-                        isBlank = false;
-                        break;
-                    }
-                }
-
-                if (isBlank) {
-                    showToaster('Signature Required', 'Please sign in the box above', 4000);
-                } else {
-                    showToaster('Signature Accepted', 'Your signature has been recorded', 3000);
-                }
-            });
-        }
-
-        if (clearButton) {
-            clearButton.addEventListener('click', () => {
-                showToaster('Signature Cleared', 'Please sign again', 2000);
-            });
-        }
-    }
-
-    // ========================= SUBMIT TOASTER =========================
-  
-
-    function checkForChanges() {
-        const fields = ['NewPropDesc', 'NewCat', 'NewAddress', 'NewExtent', 'NewMarketValue', 'NewOwner'];
-        return fields.some(id => document.getElementById(id)?.value.trim());
-    }
-
-    // ========================= PROPERTY TYPE & COMPENSATION TOASTERS =========================
-    function initializePropertyTypeToasters() {
-        const labels = {
-            'btncheck1': 'Residential Property',
-            'btncheck2': 'Agricultural Property',
-            'btncheck3': 'Business Property',
-            'btncheck4': 'Multiple Purpose Property'
-        };
-
-        document.querySelectorAll('input[name="btnradio"]').forEach(radio => {
-            radio.addEventListener('change', function () {
-                showToaster('Property Type Selected', labels[this.id] || 'Property type selected', 2000);
-            });
-        });
-    }
-
-    function initializeCompensationToaster() {
-        document.querySelectorAll('input[name="Compensation_Paid"]').forEach(radio => {
-            radio.addEventListener('change', function () {
-                if (this.value === 'Yes') {
-                    showToaster('Compensation Details', 'Please provide payment details', 3000);
-                } else {
-                    showToaster('No Compensation', 'Compensation section skipped', 2000);
-                }
-            });
-        });
-    }
-
-    // ========================= FORM VALIDATION (SECTION 6) =========================
-    function initializeFormValidation() {
-        const nextButton = document.querySelector('.btn_n6');
-        if (nextButton) {
-            nextButton.addEventListener('click', function (e) {
-                if (!validateAllFields()) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    alert('Please ensure all changed values are different from the original values.');
-                }
-            });
-        }
-    }
-
-    // ========================= DYNAMIC CSS =========================
-    const style = document.createElement('style');
-    style.textContent = `
-        body.loading { overflow: hidden; }
-        #preloader.fade-out { opacity: 0; transition: opacity 0.6s ease-out; }
-        .btn:active { transform: scale(0.95); }
-        input:focus, select:focus, textarea:focus { box-shadow: 0 0 0 3px rgba(0, 101, 112, 0.1); }
-    `;
-
-    document.head.appendChild(style);
-</script>

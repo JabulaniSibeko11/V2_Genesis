@@ -10,6 +10,7 @@ using V2_Genesis.Models.Results;
 using V2_Genesis.Services.Interfaces;
 using V2_Genesis.Services.Notice;
 using V2_Genesis.Services.PropertySearch;
+using static QuestPDF.Helpers.Colors;
 
 namespace V2_Genesis.Services.Implementations;
 
@@ -74,6 +75,9 @@ public class NoticeService : INoticeService
     private string Section49Root => _config["AppSettings:Section49RootPath"] ?? "";
     private string AppealRoot => _config["AppSettings:AppealRootPath"] ?? "";
     private string QueryRoot => _config["ObjectionRolls:Objection_Query:QueryRootPath"] ?? "";
+
+
+   
 
     // ── Section 49 ────────────────────────────────────────────────────
     public async Task<(byte[] Pdf, string FileName)> GenerateSection49Async(
@@ -421,12 +425,40 @@ public class NoticeService : INoticeService
         return "R " + n.ToString("N0", new System.Globalization.CultureInfo("en-ZA"));
     }
 
-    private static string SanitiseName(string? name) =>
-        string.IsNullOrWhiteSpace(name)
-            ? "Property"
-            : string.Concat(name.Split(Path.GetInvalidFileNameChars()))
-                    .Replace(" ", "_")[..Math.Min(name.Length, 80)];
+    private static string SanitiseName(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return "Property";
 
+        var safe = string.Concat(name.Split(Path.GetInvalidFileNameChars()))
+            .Replace(" ", "_")
+            .Replace("/", "_")
+            .Replace("\\", "_")
+            .Replace(":", "_")
+            .Replace("*", "_")
+            .Replace("?", "_")
+            .Replace("\"", "_")
+            .Replace("<", "_")
+            .Replace(">", "_")
+            .Replace("|", "_")
+            .Trim();
+
+        while (safe.Contains("__"))
+            safe = safe.Replace("__", "_");
+
+        if (string.IsNullOrWhiteSpace(safe))
+            safe = "Property";
+
+        return safe.Length > 90 ? safe[..90] : safe;
+    }
+    private static string BuildAcknowledgementFileName(AcknowledgementData data)
+    {
+        var referenceNo = SanitiseName(data.ObjectionRef);
+        var propertyDesc = SanitiseName(data.Old_PropertyDescription);
+        var datePart = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+
+        return $"{referenceNo}_{propertyDesc}_Acknowledgement_{datePart}.pdf";
+    }
     private async Task SaveToDiskAsync(string folderPath, string? propertyDesc, byte[] pdf)
     {
         try
@@ -448,12 +480,12 @@ public class NoticeService : INoticeService
     {
         var roll = _noticeSettings.For(data.RollSource);
         var dates = _rollDates.For(data.RollSource);
-        var fileName = $"Acknowledgement_{SanitiseName(data.ObjectionNo)}.pdf";
+        var fileName = BuildAcknowledgementFileName(data);
 
         var pdfBytes = BuildAcknowledgementPdf(data, roll, dates);
 
         // Save copy to disk (non-blocking)
-        _ = SaveAckToDiskAsync(roll, data, pdfBytes);
+        _ = SaveAckToDiskAsync(roll, data, pdfBytes,fileName);
 
         return Task.FromResult((pdfBytes, fileName));
     }
@@ -481,8 +513,8 @@ public class NoticeService : INoticeService
                     ? "MULTIPURPOSE APPEAL ACKNOWLEDGEMENT"
                     : "APPEAL ACKNOWLEDGEMENT"
                 : data.IsMulti
-                    ? "ACKNOWLEDGEMENT OF MULTIPURPOSE OBJECTION"
-                    : "ACKNOWLEDGEMENT OF OBJECTION";
+                    ? "MULTIPURPOSE OBJECTION ACKNOWLEDGEMENT"
+                    : "OBJECTION ACKNOWLEDGEMENT";
 
         string referenceLabel = data.IsAppeal
             ? "Appeal Number:"
@@ -516,13 +548,13 @@ public class NoticeService : INoticeService
 
                     // HEADER IMAGE
                     if (hasHeader)
-                        col.Item().Height(80).Image(headerPath, ImageScaling.FitArea);
-
+                        //col.Item().Height(80).Image(headerPath, ImageScaling.FitArea);
+                    col.Item().AlignCenter().Width(500).Height(100).Image(headerPath, ImageScaling.FitArea);
                     // DATE
-                    col.Item().AlignRight()
-                        .Text(letterDate)
-                        .FontSize(10)
-                        .SemiBold();
+                    //col.Item().AlignRight()
+                    //    .Text(letterDate)
+                    //    .FontSize(10)
+                    //    .SemiBold();
 
                     // TITLE
                     col.Item().AlignCenter()
@@ -648,33 +680,11 @@ public class NoticeService : INoticeService
                         .Text($"You have uploaded {data.FileCount} Document(s)")
                         .FontSize(9);
 
-                    col.Item().Table(t =>
-                    {
-                        t.ColumnsDefinition(c =>
-                        {
-                            c.RelativeColumn();
-                            c.RelativeColumn();
-                        });
+                    var docs = data.UploadedDocumentNames ?? new List<string>();
 
-                        t.Cell()
-                            .Background("#eaf4fb")
-                            .Border(1)
-                            .BorderColor("#444444")
-                            .Padding(8)
-                            .Text("Uploaded Documents (1–5):")
-                            .FontSize(8)
-                            .Bold();
+                  
 
-                        t.Cell()
-                            .Background("#eaf4fb")
-                            .Border(1)
-                            .BorderColor("#444444")
-                            .Padding(8)
-                            .Text("Uploaded Documents (6–10):")
-                            .FontSize(8)
-                            .Bold();
-                    });
-
+                    col.Item().Element(e => SupportingDocumentsBlock(e, docs));
                     // CLOSING DATE
                     if (dates is not null)
                     {
@@ -690,11 +700,11 @@ public class NoticeService : INoticeService
                     }
 
                     // SIGNATURE
-                    if (File.Exists(signaturePath))
-                    {
-                        col.Item().Height(8);
-                        col.Item().Width(150).Image(signaturePath);
-                    }
+                    //if (File.Exists(signaturePath))
+                    //{
+                    //    col.Item().Height(8);
+                    //    col.Item().Width(150).Image(signaturePath);
+                    //}
                 });
 
                 // FOOTER - exactly like the letter style
@@ -724,6 +734,7 @@ public class NoticeService : INoticeService
                     });
             });
         }).GeneratePdf();
+
 
         static void RefRow(ColumnDescriptor col, string label, string? value)
         {
@@ -829,6 +840,86 @@ public class NoticeService : INoticeService
         }
     }
     // ── Helper: renders one section's comparison table ────────────────────
+    private static void SupportingDocumentsBlock(IContainer container, List<string> docs)
+    {
+        docs ??= new List<string>();
+
+        var left = docs.Take(5).ToList();
+        var right = docs.Skip(5).Take(5).ToList();
+
+        container.Table(t =>
+        {
+            t.ColumnsDefinition(cols =>
+            {
+                cols.RelativeColumn(1);
+                cols.RelativeColumn(1);
+            });
+
+            t.Cell()
+                .Border(1)
+                .BorderColor("#444444")
+                .Background("#eaf4fb")
+                .Padding(8)
+                .Column(c =>
+                {
+                    c.Item()
+                        .Text("Uploaded Documents (1–5):")
+                        .FontSize(8)
+                        .Bold();
+
+                    c.Item().Height(4);
+
+                    if (left.Any())
+                    {
+                        foreach (var d in left)
+                        {
+                            c.Item()
+                                .Text("• " + d)
+                                .FontSize(8);
+                        }
+                    }
+                    else
+                    {
+                        c.Item()
+                            .Text("No documents uploaded.")
+                            .FontSize(8)
+                            .Italic()
+                            .FontColor("#666666");
+                    }
+                });
+
+            t.Cell()
+                .Border(1)
+                .BorderColor("#444444")
+                .Background("#eaf4fb")
+                .Padding(8)
+                .Column(c =>
+                {
+                    c.Item()
+                        .Text("Uploaded Documents (6–10):")
+                        .FontSize(8)
+                        .Bold();
+
+                    c.Item().Height(4);
+
+                    if (right.Any())
+                    {
+                        foreach (var d in right)
+                        {
+                            c.Item()
+                                .Text("• " + d)
+                                .FontSize(8);
+                        }
+                    }
+                    else
+                    {
+                        c.Item()
+                            .Text("")
+                            .FontSize(8);
+                    }
+                });
+        });
+    }
     private static void AckSectionTable(
         ColumnDescriptor col,
         string label,
@@ -905,23 +996,31 @@ public class NoticeService : INoticeService
 
     // ── Save acknowledgement to disk ──────────────────────────────────────
     private async Task SaveAckToDiskAsync(
-        NoticeRollEntry roll, AcknowledgementData data, byte[] pdf)
+     NoticeRollEntry roll,
+     AcknowledgementData data,
+     byte[] pdf,
+     string fileName)
     {
         try
         {
-            var dir = Path.Combine(roll.Section49Path
-                           .Replace("Section49", "Acknowledgements"),
-                           SanitiseName(data.ObjectionNo));
+            var safeRef = SanitiseName(data.ObjectionRef);
+
+            var dir = Path.Combine(
+                roll.Section49Path.Replace("Section49", "Acknowledgements"),
+                safeRef);
+
             Directory.CreateDirectory(dir);
-            var path = Path.Combine(dir,
-                           $"Acknowledgement_{SanitiseName(data.ObjectionNo)}.pdf");
+
+            var path = Path.Combine(dir, fileName);
+
             await File.WriteAllBytesAsync(path, pdf);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex,
-                "Failed to save acknowledgement to disk for objection: {Obj}",
-                data.ObjectionNo);
+            _logger.LogError(
+                ex,
+                "Failed to save acknowledgement to disk for reference: {Ref}",
+                data.ObjectionRef);
         }
     }
     public Task<(byte[] Pdf, string FileName)> GenerateAttachmentConfirmationAsync(
