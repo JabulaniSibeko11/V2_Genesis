@@ -17,6 +17,7 @@ using V2_Genesis.Services.Implementations;
 using V2_Genesis.Services.Interfaces;
 using V2_Genesis.Services.PropertySearch;
 
+
 namespace V2_Genesis.Controllers;
 
 [Authorize]
@@ -109,15 +110,23 @@ public class PropertySearchController : Controller
     [Route("property/view")]
     [AllowAnonymous]
     public async Task<IActionResult> ViewProperty(
-     string rollSource,
-     string unitKey,
-     string valuationKey)
+      string rollSource,
+      string unitKey,
+      string valuationKey,
+      string? propertyFrom)
     {
         if (string.IsNullOrWhiteSpace(rollSource))
             return BadRequest("Roll source is required.");
 
         if (string.IsNullOrWhiteSpace(unitKey))
             return BadRequest("Unit key is required.");
+
+        propertyFrom = string.IsNullOrWhiteSpace(propertyFrom)
+            ? rollSource
+            : propertyFrom.Trim();
+
+        unitKey = NormalizeKey(unitKey) ?? string.Empty;
+        valuationKey = NormalizeKey(valuationKey) ?? string.Empty;
 
         // ============================================================
         // ATTRIBUTES FLOW
@@ -130,43 +139,87 @@ public class PropertySearchController : Controller
             if (attrItem == null)
                 return NotFound("Attribute property details not found.");
 
-            // ── Also read propertyFrom query param ────────────────
-            var propertyFrom = Request.Query["propertyFrom"]
-                                      .FirstOrDefault() ?? "Attributes";
-
-            HttpContext.Session.SetString("UnitKey", unitKey ?? string.Empty);
-            HttpContext.Session.SetString("ValuationKey", valuationKey ?? string.Empty);
+            HttpContext.Session.SetString("UnitKey", unitKey);
+            HttpContext.Session.SetString("ValuationKey", valuationKey);
             HttpContext.Session.SetString("RollSource", "Attributes");
+            HttpContext.Session.SetString("PropertyFrom", "Attributes");
 
-            ViewBag.GvList = await _db.GvList.OrderBy(r => r.ID).ToListAsync();
+            ViewBag.GvList = await _db.GvList
+                .OrderBy(r => r.ID)
+                .ToListAsync();
 
             var attrVm = new PropertyDetailViewModel
             {
                 Items = new List<PropertyDetailResult>
-        {
-            MapAttributePropertyToResult(attrItem)
-        },
+            {
+                MapAttributePropertyToResult(attrItem)
+            },
                 Roll = null,
-                IsAttributes = true
+                IsAttributes = true,
+                IsLis = false
             };
 
             return View(attrVm);
         }
 
+        // ============================================================
+        // LIS FLOW
+        // Property was not found on the roll, but found on LIS.
+        // Do NOT call normal roll property detail SP here.
+        // ============================================================
+        if (propertyFrom.Equals("LIS", StringComparison.OrdinalIgnoreCase))
+        {
+            var roll = await _db.GvList
+                .FirstOrDefaultAsync(r => r.Source == rollSource);
 
+            if (roll is null)
+                return NotFound($"Roll '{rollSource}' not found.");
+
+            var lisItem = await _lisSearchService.GetPropertyByKeysAsync(
+                rollSource,
+                unitKey,
+                valuationKey);
+
+            if (lisItem == null)
+                return NotFound("LIS property details not found.");
+
+            HttpContext.Session.SetString("UnitKey", unitKey);
+            HttpContext.Session.SetString("ValuationKey", valuationKey);
+            HttpContext.Session.SetString("RollSource", rollSource);
+            HttpContext.Session.SetString("PropertyFrom", "LIS");
+
+            ViewBag.GvList = await _db.GvList
+                .OrderBy(r => r.ID)
+                .ToListAsync();
+
+            var dates = _rollDates.For(rollSource);
+
+            var lisVm = new PropertyDetailViewModel
+            {
+                Items = new List<PropertyDetailResult>
+            {
+                MapLisPropertyToResult(lisItem)
+            },
+                Roll = roll,
+                OpenDate = dates?.OpenDate,
+                VisibleUntil = dates?.VisibleUntil,
+                IsAttributes = false,
+                IsLis = true
+            };
+
+            return View(lisVm);
+        }
 
         // ============================================================
         // NORMAL ROLL FLOW
         // GV23 / SUPP / QUERY etc.
         // ============================================================
-        var roll = await _db.GvList
+        var normalRoll = await _db.GvList
             .FirstOrDefaultAsync(r => r.Source == rollSource);
 
-        if (roll is null)
+        if (normalRoll is null)
             return NotFound($"Roll '{rollSource}' not found.");
 
-        unitKey = NormalizeKey(unitKey) ?? string.Empty;
-        valuationKey = NormalizeKey(valuationKey) ?? string.Empty;
         var items = await _search.GetPropertyDetailsAsync(
             rollSource,
             unitKey,
@@ -175,31 +228,99 @@ public class PropertySearchController : Controller
         if (!items.Any())
             return NotFound("Property details not found.");
 
-        HttpContext.Session.SetString("UnitKey", unitKey ?? string.Empty);
-        HttpContext.Session.SetString("ValuationKey", valuationKey ?? string.Empty);
+        HttpContext.Session.SetString("UnitKey", unitKey);
+        HttpContext.Session.SetString("ValuationKey", valuationKey);
         HttpContext.Session.SetString("RollSource", rollSource);
+        HttpContext.Session.SetString("PropertyFrom", rollSource);
 
-        ViewBag.GvList = await _db.GvList.OrderBy(r => r.ID).ToListAsync();
+        ViewBag.GvList = await _db.GvList
+            .OrderBy(r => r.ID)
+            .ToListAsync();
 
-        var dates = _rollDates.For(rollSource);
-
+        var rollDates = _rollDates.For(rollSource);
 
         var vm = new PropertyDetailViewModel
         {
-
             Items = items,
-            Roll = roll,
+            Roll = normalRoll,
             OpenDate = rollSource.Equals("Query", StringComparison.OrdinalIgnoreCase)
-        ? null
-        : dates?.OpenDate,
-
+                ? null
+                : rollDates?.OpenDate,
             VisibleUntil = rollSource.Equals("Query", StringComparison.OrdinalIgnoreCase)
-        ? null
-        : dates?.VisibleUntil,
-            IsAttributes = false
+                ? null
+                : rollDates?.VisibleUntil,
+            IsAttributes = false,
+            IsLis = false
         };
 
         return View(vm);
+    }
+    private static PropertyDetailResult MapLisPropertyToResult(V2_Genesis.Models.Lis.LisProperty l)
+    {
+        return new PropertyDetailResult
+        {
+            TownNameDesc = l.TownNameDescription,
+            PropertyDesc = !string.IsNullOrWhiteSpace(l.PropertyDescription)
+                ? l.PropertyDescription
+                : BuildLisPropertyDescription(l),
+
+            LisStreetAddress = l.LisStreetAddress,
+
+            Erf = l.Erf,
+            Ptn = l.Ptn.ToString(),
+            Re = string.IsNullOrWhiteSpace(l.Re) ? "-" : l.Re,
+
+            CatDesc = l.CATDescription,
+            RateableArea = l.RateableArea,
+            MarketValue = l.MarketValue,
+
+            SchemeName = l.SchemeName,
+            SchemeNumber = l.SchemeNumber,
+            SchemeYear = l.SchemeYear,
+
+           // Lease = l.Lease,
+            UnitNo = int.TryParse(l.UnitNo, out var unitNo) ? unitNo : 0,
+
+            Reason = l.Reason,
+            UnitKey = l.UnitKey,
+            ValuationKey = l.ValuationKey,
+
+            WefDate = l.ValuationEffectiveDateWefDate,
+            AdditionalNotes = l.AdditionalNotes,
+            ValuationDate = l.ValuationEndDate,
+
+            OwnerName = l.OwnerName,
+            PremiseId = l.PremiseId,
+            PropertyId = l.PropertyId,
+           // LeaseStatus = l.SGID,
+            Sector = l.Sector
+        };
+    }
+    private static string BuildLisPropertyDescription(V2_Genesis.Models.Lis.LisProperty l)
+    {
+        var parts = new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(l.Re))
+            parts.Add(l.Re);
+
+        if (l.Ptn > 0)
+            parts.Add($"PORTION {l.Ptn}");
+
+        if (l.Erf > 0)
+            parts.Add($"ERF {l.Erf}");
+
+        if (!string.IsNullOrWhiteSpace(l.TownNameDescription))
+            parts.Add(l.TownNameDescription);
+
+        if (!string.IsNullOrWhiteSpace(l.SchemeName))
+            parts.Add(l.SchemeName);
+
+        if (!string.IsNullOrWhiteSpace(l.UnitNo))
+            parts.Add($"UNIT {l.UnitNo}");
+
+        return parts.Any()
+            ? string.Join(" ", parts)
+            : "LIS Property";
     }
     private static string NormalizeKey(object? value)
     {
@@ -272,13 +393,24 @@ public class PropertySearchController : Controller
     [Route("property/save")]
     [Authorize]
     public async Task<IActionResult> SaveRecord(
-        string rollSource,
-        int key,
-        string sourceTable)
+     string rollSource,
+     string? key,
+     string? sourceTable,
+     string? propertyFrom,
+     string? unitKey,
+     string? valuationKey,
+     string? propertyId)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
         if (string.IsNullOrEmpty(userId))
             return RedirectToAction("Login", "Account");
+
+        propertyFrom = string.IsNullOrWhiteSpace(propertyFrom)
+            ? sourceTable
+            : propertyFrom.Trim();
+
+        var isLis = propertyFrom.Equals("LIS", StringComparison.OrdinalIgnoreCase);
 
         var currentEmail = User.FindFirstValue(ClaimTypes.Name) ?? "";
 
@@ -292,23 +424,54 @@ public class PropertySearchController : Controller
 
         try
         {
+            var idProperty = isLis
+                ? FirstNotEmpty(propertyId, key, unitKey, valuationKey)
+                : key;
+
+            if (string.IsNullOrWhiteSpace(idProperty))
+            {
+                TempData["LinkError"] = "Property could not be linked because the property key is missing.";
+
+                _logger.LogWarning(
+                    "Property link failed. Missing key. User={UserId}, Roll={Roll}, PropertyFrom={PropertyFrom}, Key={Key}, PropertyId={PropertyId}, UnitKey={UnitKey}, ValuationKey={ValuationKey}",
+                    userId,
+                    rollSource,
+                    propertyFrom,
+                    key,
+                    propertyId,
+                    unitKey,
+                    valuationKey);
+
+                return isAdmin
+                    ? RedirectToAction("Index", "Admin")
+                    : RedirectToAction("Index", "Dashboard");
+            }
+
+            var linkPropertyFrom = isLis
+                ? "LIS"
+                : sourceTable ?? rollSource;
+
             var result = await _search.LinkPropertyAsync(
                 rollSource: rollSource,
-                idProperty: key.ToString(),
+                idProperty: idProperty,
                 userId: userId,
-                propertyFrom: sourceTable);
+                propertyFrom: linkPropertyFrom);
 
             if (result.Success)
             {
-                TempData["LinkSuccess"] = "Property successfully linked to your profile.";
+                TempData["LinkSuccess"] = isLis
+                    ? "LIS property successfully linked to your profile."
+                    : "Property successfully linked to your profile.";
 
                 _logger.LogInformation(
-                    "User {UserId} linked property {Key} from {Roll}.",
-                    userId, key, rollSource);
-            }
-            else if (result.IsDuplicate)
-            {
-                TempData["LinkError"] = result.ErrorMessage;
+                    "User {UserId} linked property {PropertyKey} from {Roll}. PropertyFrom={PropertyFrom}, PropertyId={PropertyId}, UnitKey={UnitKey}, ValuationKey={ValuationKey}",
+                    userId,
+                    idProperty,
+                    rollSource,
+                    linkPropertyFrom,
+                    propertyId,
+                    unitKey,
+                    valuationKey);
             }
             else
             {
@@ -319,9 +482,16 @@ public class PropertySearchController : Controller
         {
             TempData["LinkError"] = "An error occurred while linking the property. Please try again.";
 
-            _logger.LogError(ex,
-                "Error linking property {Key} for user {UserId} on roll {Roll}.",
-                key, userId, rollSource);
+            _logger.LogError(
+                ex,
+                "Error linking property. User={UserId}, Roll={Roll}, PropertyFrom={PropertyFrom}, Key={Key}, PropertyId={PropertyId}, UnitKey={UnitKey}, ValuationKey={ValuationKey}",
+                userId,
+                rollSource,
+                propertyFrom,
+                key,
+                propertyId,
+                unitKey,
+                valuationKey);
         }
 
         if (isAdmin)
@@ -331,6 +501,16 @@ public class PropertySearchController : Controller
 
         return RedirectToAction("Index", "Dashboard");
     }
+    private static string? FirstNotEmpty(params string?[] values)
+{
+    foreach (var value in values)
+    {
+        if (!string.IsNullOrWhiteSpace(value))
+            return value.Trim();
+    }
+
+    return null;
+}
     [HttpPost]
     [Authorize]
     [Route("search/{rollSource}/lis")]
@@ -354,6 +534,24 @@ public class PropertySearchController : Controller
         };
 
         var lisResults = await _lisSearchService.SearchAsync(rollSource, p);
+        _logger.LogInformation(
+    "[LIS] Search returned {Count} records for Roll={Roll}, Town={Town}, Stand={Stand}, Address={Address}, Scheme={Scheme}, Unit={Unit}",
+    lisResults.Count(),
+    rollSource,
+    SearchTownName,
+    SearchStand,
+    SearchAddress,
+    SearchScheme,
+    SearchUnit);
+
+        var firstLis = lisResults.FirstOrDefault();
+
+        if (firstLis != null)
+        {
+            _logger.LogInformation(
+                "[LIS] First result: {@FirstLis}",
+                firstLis);
+        }
 
         if (!lisResults.Any())
         {
@@ -405,7 +603,7 @@ public class PropertySearchController : Controller
         ViewBag.Roll = rollRecord;
         ViewBag.IsLisSearch = true;
 
-        return PartialView("_PropertySearchResults", mapped);
+        return PartialView("_Results", mapped);
     }
 
 

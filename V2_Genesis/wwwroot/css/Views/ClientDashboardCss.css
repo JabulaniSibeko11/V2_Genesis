@@ -181,12 +181,17 @@
 /* ════════════════════════════════════════════════
    WELCOME STRIP
 ════════════════════════════════════════════════ */
-.cd-welcome { background: var(--coj-green); padding: 24px; }
+.cd-welcome {
+    background: linear-gradient(135deg, #1a2e35 0%, #2d4f58 55%, #36626d 100%);
+    
+    padding: 24px;
+}
 .cd-welcome-inner {
     max-width: 1400px; margin: 0 auto;
     display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;
 }
-.cd-welcome-name  { font-size:22px; font-weight:700; color:#fff; margin:0 0 4px; }
+.cd-welcome-name  
+{ font-size:22px; font-weight:700; color:#fff; margin:0 0 4px; }
 .cd-welcome-name span { color: #e6b000; }
 .cd-welcome-sub   { font-size:13px; color:rgba(255,255,255,.6); margin:0; }
 
@@ -239,7 +244,18 @@
    ROLL SECTION
 ════════════════════════════════════════════════ */
 .cd-roll-section { border-radius:12px; overflow:hidden; box-shadow:0 2px 10px rgba(0,0,0,.07); background:#fff; }
-.cd-roll-header  { background:var(--coj-green); padding:16px 22px; display:flex; align-items:center; justify-content:space-between; cursor:pointer; gap:16px; flex-wrap:wrap; transition:background .2s; }
+.cd-roll-header {
+    background: linear-gradient(135deg, #1a2e35 0%, #2d4f58 55%, #36626d 100%);
+    
+    padding: 16px 22px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    gap: 16px;
+    flex-wrap: wrap;
+    transition: background .2s;
+}
 .cd-roll-header:hover { background:var(--coj-green-mid); }
 .cd-roll-query    { background: linear-gradient(135deg,#2a4e58,#36626d); }
 .cd-roll-inactive { background: #5a7a80; }

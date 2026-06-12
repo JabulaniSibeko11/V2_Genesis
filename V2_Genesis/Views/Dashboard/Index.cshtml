@@ -1,4 +1,5 @@
-﻿@using V2_Genesis.Services.PropertySearch
+﻿@using V2_Genesis.Services.Implementations
+@using V2_Genesis.Services.PropertySearch
 @model V2_Genesis.Models.ViewModels.Dashboard.ClientDashboardViewModel
 @{
     ViewData["Title"] = "My Dashboard";
@@ -78,7 +79,8 @@
 @section Styles {
    
     <link href="~/css/views/clientdashboardcss.css" rel="stylesheet" asp-append-version="true" />
-    <link href="~/css/site.css" rel="stylesheet" asp-append-version="true"/>
+    <link href="~/css/site.css" rel="stylesheet" asp-append-version="true" />
+  @*   <link href="~/css/views/client-dashboard.css" rel="stylesheet" asp-append-version="true"/> *@
 }
 
 <!-- ── Welcome strip ──────────────────────────────────────────────────── -->
@@ -277,7 +279,7 @@
                             <span class="cd-roll-badge cd-badge-@status">
                                 @(status == "active"   ? "Objection Open"   :
                                   status == "upcoming" ? "Opening Soon"      :
-                                                         "Period Closed")
+                                                         "Objection Closed")
                             </span>
                         </div>
                     }
@@ -318,11 +320,11 @@ else if (roll.IsQuery)
                id="wchev-@rollKey-linked"></i>
         </div>
         <div class="cd-widget-body" id="widget-@rollKey-linked">
-            <div class="cd-widget-toolbar">
+           @*  <div class="cd-widget-toolbar">
                 <a href="/search/@roll.Source" class="cd-add-btn">
                     <i class="fa-solid fa-plus"></i> Link New Property
                 </a>
-            </div>
+            </div> *@
             <div class="table-responsive">
                 <table class="cd-table table table-bordered"
                        id="tbl-@rollKey-linked">
@@ -332,7 +334,7 @@ else if (roll.IsQuery)
                             <th>Category</th>
                             <th>Town</th>
                             <th>Market Value</th>
-                            <th>WEF Date</th>
+                            <th>With Effective Date</th>
                             <th>Options</th>
                         </tr>
                     </thead>
@@ -344,7 +346,11 @@ else if (roll.IsQuery)
                                 <td>@item.CatDesc</td>
                                 <td>@item.TownNameDesc</td>
                                 <td>@FormatZAR(item.MarketValue)</td>
-                                <td>@item.WefDate</td>
+                                                <td>
+                                                    @(DateTime.TryParse(item.WefDate, out var wefDate)
+                                                        ? wefDate.ToString("dd MMMM yyyy")
+                                                        : item.WefDate)
+                                                </td>
                                 <td>
                                     <div class="dropdown">
                                         <button class="cd-action-btn dropdown-toggle"
@@ -579,11 +585,11 @@ else if (roll.IsQuery)
                    id="wchev-@rollKey-linked"></i>
             </div>
             <div class="cd-widget-body" id="widget-@rollKey-linked">
-                <div class="cd-widget-toolbar">
+               @*  <div class="cd-widget-toolbar">
                     <a href="/search/@roll.Source" class="cd-add-btn">
                         <i class="fa-solid fa-plus"></i> Link New Property
                     </a>
-                </div>
+                </div> *@
                 <div class="table-responsive">
                     <table class="cd-table table table-bordered"
                            id="tbl-@rollKey-linked">
@@ -593,7 +599,7 @@ else if (roll.IsQuery)
                                 <th>Category</th>
                                 <th>Town</th>
                                 <th>Market Value</th>
-                                <th>WEF Date</th>
+                                            <th>With Effective Date</th>
                                 <th>Options</th>
                             </tr>
                         </thead>
@@ -605,7 +611,11 @@ else if (roll.IsQuery)
                                     <td>@item.CatDesc</td>
                                     <td>@item.TownNameDesc</td>
                                     <td>@FormatZAR(item.MarketValue)</td>
-                                    <td>@item.WefDate</td>
+                                                <td>
+                                                    @(DateTime.TryParse(item.WefDate, out var wefDate)
+                                                        ? wefDate.ToString("dd MMMM yyyy")
+                                                        : item.WefDate)
+                                                </td>
                                     <td>
                                         <div class="dropdown">
                                             <button class="cd-action-btn dropdown-toggle"
@@ -614,10 +624,26 @@ else if (roll.IsQuery)
                                                 @if (roll.HasObjection)
                                                 {
                                                     <li>
-                                                        <a class="dropdown-item"
+                                                                    @{
+                                                                        var propertyFrom = item.PropertyFrom?.Trim();
+
+                                                                        var checkSourceTable = propertyFrom?.Equals("LIS", StringComparison.OrdinalIgnoreCase) == true
+                                                                            ? ObjectionService.RollSourceToSourceTable.GetValueOrDefault(roll.Source, roll.Source)
+                                                                            : propertyFrom;
+
+                                                                        var checkPropertyFrom = propertyFrom?.Equals("LIS", StringComparison.OrdinalIgnoreCase) == true
+                                                                            ? "LIS"
+                                                                            : checkSourceTable;
+                                                                    }
+
+                                                                    <a class="dropdown-item"
+                                                                           href="/objection/check?rollSource=@roll.Source&sourceTable=@checkSourceTable&unitKey=@item.UnitKey&valuationKey=@item.ValuationKey&appealStatus=False&PropertyFrom=@checkPropertyFrom">
+                                                                        <i class="fa-solid fa-file-pen"></i> Lodge Objection
+                                                                    </a>
+                                                    @*     <a class="dropdown-item"
                                                            href="/objection/check?rollSource=@roll.Source&sourceTable=@item.PropertyFrom&unitKey=@item.UnitKey&valuationKey=@item.ValuationKey&appealStatus=False">
                                                             <i class="fa-solid fa-file-pen"></i> Lodge Objection
-                                                        </a>
+                                                        </a> *@
                                                     </li>
                                                 }
                                                 <li>
@@ -1064,11 +1090,11 @@ else if (roll.IsQuery)
                        id="wchev-attr-linked"></i>
                 </div>
                 <div class="cd-widget-body" id="widget-attr-linked">
-                    <div class="cd-widget-toolbar">
+                   @*  <div class="cd-widget-toolbar">
                         <a href="/attributes/search" class="cd-add-btn">
                             <i class="fa-solid fa-plus"></i> Link New Property
                         </a>
-                    </div>
+                    </div> *@
                     <div class="table-responsive">
                         <table class="cd-table table table-bordered"
                                id="tbl-attr-linked">

@@ -307,3 +307,40 @@ input::-webkit-textfield-decoration-container {
     display: none !important;
 }
 
+/* reCAPTCHA must be fully visible and clickable */
+.recaptcha-wrap {
+    width: 100%;
+    min-height: 92px;
+    margin: 10px 0 22px;
+    display: block;
+    position: relative;
+    z-index: 999;
+    overflow: visible !important;
+}
+
+    .recaptcha-wrap .g-recaptcha {
+        position: relative;
+        z-index: 1000;
+        overflow: visible !important;
+    }
+
+    .recaptcha-wrap iframe {
+        position: relative;
+        z-index: 1001;
+        pointer-events: auto !important;
+    }
+
+/* The login containers must not clip the Google iframe */
+.login-page,
+.login-wrap,
+.login-right,
+.login-form-card {
+    overflow: visible !important;
+}
+
+/* On small screens, use compact size from Google, not CSS scaling */
+@media (max-width: 480px) {
+    .recaptcha-wrap {
+        min-height: 150px;
+    }
+}

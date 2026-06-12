@@ -43,27 +43,30 @@ public class ObjectionFormService : IObjectionFormService
     }
 
     public async Task<ObjectionSubmitResult> SubmitAsync(
-     string rollSource,
-     string userId,
-     string appealStat,
-     string? objAppeal,
-     Obj_Property_InfoModel obj,
-     Obj_Section1Model obj1,
-     Obj_Section2Model obj2,
-     Obj_Section3ResModel objR3,
-     Obj_Section3BusModel objB3,
-     Obj_Section3AgriModel objA3,
-     Obj_Section4BusModel objB4,
-     Obj_Section4ResModel objR4,
-     Obj_Section5Model obj5,
-     Obj_Section6Model obj6,
-     Obj_Section7Model obj7,
-     Obj_Files objFile,
-     List<IFormFile> files,
-     List<IFormFile> fileR,
-     Obj_Property_Info_AppealModel appeal)
+ string rollSource,
+ string userId,
+ string appealStat,
+ string? objAppeal,
+ string? propertyFrom,
+ Obj_Property_InfoModel obj,
+ Obj_Section1Model obj1,
+ Obj_Section2Model obj2,
+ Obj_Section3ResModel objR3,
+ Obj_Section3BusModel objB3,
+ Obj_Section3AgriModel objA3,
+ Obj_Section4BusModel objB4,
+ Obj_Section4ResModel objR4,
+ Obj_Section5Model obj5,
+ Obj_Section6Model obj6,
+ Obj_Section7Model obj7,
+ Obj_Files objFile,
+ List<IFormFile> files,
+ List<IFormFile> fileR,
+ Obj_Property_Info_AppealModel appeal)
     {
         rollSource = NormalizeRollSource(rollSource);
+
+        propertyFrom = NormalizePropertyFrom(propertyFrom, rollSource);
 
         var cfg = _rollSettings.For(rollSource);
 
@@ -82,6 +85,7 @@ public class ObjectionFormService : IObjectionFormService
                     cfg,
                     userId,
                     objAppeal,
+                    propertyFrom,
                     obj,
                     obj1,
                     obj2,
@@ -103,9 +107,12 @@ public class ObjectionFormService : IObjectionFormService
             return await SubmitObjectionAsync(
                 db,
                 rollSource,
+                 propertyFrom,
                 cfg,
                 userId,
+
                 obj,
+               
                 obj1,
                 obj2,
                 objR3,
@@ -134,7 +141,40 @@ public class ObjectionFormService : IObjectionFormService
             };
         }
     }
+    private static string NormalizePropertyFrom(string? propertyFrom, string rollSource)
+    {
+        if (string.IsNullOrWhiteSpace(propertyFrom))
+            return RollSourceToSourceTableValue(rollSource);
 
+        var value = propertyFrom.Trim();
+
+        if (value.Equals("LIS", StringComparison.OrdinalIgnoreCase))
+            return "LIS";
+
+        if (value.Equals("Omission", StringComparison.OrdinalIgnoreCase))
+            return "Omission";
+
+        if (value.Equals("Omitted", StringComparison.OrdinalIgnoreCase))
+            return "Omission";
+
+        return value;
+    }
+
+    private static string RollSourceToSourceTableValue(string rollSource)
+    {
+        rollSource = NormalizeRollSource(rollSource);
+
+        return rollSource switch
+        {
+            "Objection_Supp5" => "GV23-SUP5",
+            "Objection_Supp4" => "GV23-SUP4",
+            "Objection_Supp3" => "GV23-SUP3",
+            "Objection_Supp2" => "GV23-SUP2",
+            "Objection_Supp1" => "GV23-SUP1",
+            "Objection" => "GV23",
+            _ => rollSource
+        };
+    }
     private ApplicationDbContext CreateDbContextForRoll(string rollSource)
     {
         rollSource = NormalizeRollSource(rollSource);
@@ -203,6 +243,7 @@ public class ObjectionFormService : IObjectionFormService
     private async Task<ObjectionSubmitResult> SubmitObjectionAsync(
      ApplicationDbContext db,
      string rollSource,
+     string propertyFrom,
      ObjectionRollEntry cfg,
      string userId,
      Obj_Property_InfoModel obj,
@@ -222,7 +263,7 @@ public class ObjectionFormService : IObjectionFormService
      bool isMulti)
     {
         // ── 1. Property Info ─────────────────────────────────────────
-        obj.PropertyFrom = cfg.ObjPrefix;
+        obj.PropertyFrom = propertyFrom;
         obj.UserID = userId;
         obj.objection_Status = "Obj-Lodging";
 
@@ -346,6 +387,7 @@ public class ObjectionFormService : IObjectionFormService
         string rollSource,
         ObjectionRollEntry cfg,
         string userId,
+        string propertyFrom,
         string? objAppeal,
         Obj_Property_InfoModel obj,
         Obj_Section1Model obj1,
@@ -367,6 +409,7 @@ public class ObjectionFormService : IObjectionFormService
         // ── 1. Appeal Info ───────────────────────────────────────────
         var appealPropertyType = NormalizePropertyType(obj.Property_Type, isMulti);
 
+       
         appeal.A_UserID = userId;
         appeal.Appeal_Status = "App-Lodging";
         appeal.Obj_Ref = objAppeal;

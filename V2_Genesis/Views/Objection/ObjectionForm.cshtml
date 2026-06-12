@@ -42,6 +42,7 @@
         ?? ViewBag.SapNumeric?.ToString()
         ?? "";
 
+
     if (string.IsNullOrWhiteSpace(_sapNumeric) && !string.IsNullOrWhiteSpace(_sapFull))
     {
         _sapNumeric = _sapFull.Contains('\\')
@@ -67,7 +68,9 @@
     var messageProp = TempData.Peek("CurrentFilter_Prop")?.ToString()
                       ?? TempData.Peek("CurrentFilter_PD")?.ToString()
                       ?? "";
+   
 
+    
     var propertyDescription = _isAppeal ? messageProp : messagePD;
 
 
@@ -76,6 +79,18 @@
                          ?? TempData.Peek("SourceTable")?.ToString()
                          ?? TempData.Peek("PropertyFrom")?.ToString()
                          ?? "";
+    string propertyFrom =
+TempData.Peek("PropertyFrom")?.ToString()
+?? ViewData["PropertyFrom"]?.ToString()
+?? sourceTable
+?? "";
+
+    bool isLisProperty = propertyFrom.Equals("LIS", StringComparison.OrdinalIgnoreCase);
+
+    bool isOmissionProperty =
+        propertyFrom.Equals("Omission", StringComparison.OrdinalIgnoreCase)
+        || TempData.Peek("OmissionStatus")?.ToString() == "True";
+
 
     string rollSource = TempData.Peek("RollSource")?.ToString() ?? "";
 
@@ -125,6 +140,11 @@
     var _keysToKeep = new[]
     {
         "AppealStatus",
+      
+    "RollSource",
+    "SourceTable",
+    "PropertyFrom",
+    "OmissionStatus",
         "CurrentFilter_Id",
         "CurrentFilter_PD",   "CurrentFilter_Prop",
         "CurrentFilter_CD",   "CurrentFilter_LSA",
@@ -292,11 +312,17 @@
 
 
 
-<form id="myForm" method="post" enctype="multipart/form-data"asp-controller="Objection"asp-action="SubmitObjectionForm"asp-route-PropertyFrom="@sourceTable">
-
-    <input type="hidden" name="PropertyFrom" value="@sourceTable" />
-    <input type="hidden" name="RollSource" value="@rollSource" />
+<form id="myForm" method="post" enctype="multipart/form-data"asp-controller="Objection"asp-action="SubmitObjectionForm"asp-route-PropertyFrom="@propertyFrom">
    
+
+    @* <input type="hidden" name="PropertyFrom" value="@sourceTable" />
+    <input type="hidden" name="RollSource" value="@rollSource" /> *@
+
+   <input type="hidden" name="PropertyFrom" value="@propertyFrom" />
+<input type="hidden" name="SourceTable" value="@sourceTable" />
+<input type="hidden" name="RollSource" value="@rollSource" />
+
+
     <div style="display:flex;justify-content: center;">
         <div style="margin-top: 12px; border-radius: 12px; border: 3px solid #e6b000; padding: 20px; width: 1050px; background-color: #ffffff; box-shadow: 0 10px 40px rgba(0, 101, 112, 0.15);">
 

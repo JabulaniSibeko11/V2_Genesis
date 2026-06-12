@@ -52,33 +52,40 @@ public class AnnouncementService : IAnnouncementService
     {
         // Admin override takes priority
         if (!string.IsNullOrWhiteSpace(_cfg.CustomAnnouncementOverride))
+        {
             return new AnnouncementResult
             {
                 Message = _cfg.CustomAnnouncementOverride,
                 Status = RollStatus.Open,
+                DaysLeft = 0,
                 BadgeText = "NOTICE",
                 BadgeCss = "badge-info",
                 DaysCss = "days-info"
             };
+        }
 
         var now = DateTime.Now;
-        var daysLeft = (int)Math.Ceiling((_cfg.CloseDate - now).TotalDays);
 
+        // IMPORTANT:
+        // Coming soon means the roll has NOT opened yet.
         if (now < _cfg.OpenDate)
         {
             var daysToOpen = (int)Math.Ceiling((_cfg.OpenDate - now).TotalDays);
+
             return new AnnouncementResult
             {
                 Status = RollStatus.BeforeOpen,
                 DaysLeft = daysToOpen,
-                Message = $"{_cfg.RollName} {_cfg.RollNumber} opens on {_cfg.OpenDate:dd MMMM yyyy} — {daysToOpen} days to go.",
-                BadgeText = "OPENING SOON",
+                Message = $"{_cfg.RollName} {_cfg.RollNumber} is coming soon — opens on {_cfg.OpenDate:dd MMMM yyyy} at 08:00.",
+                BadgeText = "COMING SOON",
                 BadgeCss = "badge-upcoming",
                 DaysCss = "days-upcoming"
             };
         }
 
+        // Closed means today is after the closing date.
         if (now > _cfg.CloseDate)
+        {
             return new AnnouncementResult
             {
                 Status = RollStatus.Closed,
@@ -88,18 +95,25 @@ public class AnnouncementService : IAnnouncementService
                 BadgeCss = "badge-closed",
                 DaysCss = "days-closed"
             };
+        }
 
+        var daysLeft = (int)Math.Ceiling((_cfg.CloseDate - now).TotalDays);
+
+        // Warning before close
         if (daysLeft <= _cfg.WarningDaysBeforeClose)
+        {
             return new AnnouncementResult
             {
                 Status = RollStatus.WarningClose,
                 DaysLeft = daysLeft,
-                Message = $"⚠️ {_cfg.RollName} {_cfg.RollNumber} closes in {daysLeft} {(daysLeft == 1 ? "day" : "days")} — {_cfg.CloseDate:dd MMM yyyy} at 15:00.",
+                Message = $"⚠️ {_cfg.RollName} {_cfg.RollNumber} closes in {daysLeft} {(daysLeft == 1 ? "day" : "days")} — {_cfg.CloseDate:dd MMMM yyyy} at 15:00.",
                 BadgeText = "CLOSING SOON",
                 BadgeCss = "badge-warning",
                 DaysCss = "days-warning"
             };
+        }
 
+        // Normal open period
         return new AnnouncementResult
         {
             Status = RollStatus.Open,

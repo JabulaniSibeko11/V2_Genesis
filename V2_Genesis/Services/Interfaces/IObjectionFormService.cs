@@ -10,6 +10,7 @@ public interface IObjectionFormService
         string userId,
         string appealStat,
         string? objAppeal,
+        string?PropertyFrom,
         Obj_Property_InfoModel obj,
         Obj_Section1Model obj1,
         Obj_Section2Model obj2,

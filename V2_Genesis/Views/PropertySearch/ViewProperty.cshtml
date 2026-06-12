@@ -20,10 +20,25 @@
     bool isQuery = string.Equals(Context?.Request?.Query["rollSource"].FirstOrDefault(), "Query", StringComparison.OrdinalIgnoreCase) ||
                    string.Equals(Context?.Request?.Query["propertyFrom"].FirstOrDefault(), "Query", StringComparison.OrdinalIgnoreCase) ||
                    string.Equals(Context?.Session?.GetString("RollSource"), "Query", StringComparison.OrdinalIgnoreCase);
+    bool isLis = Model?.IsLis == true ||
+string.Equals(Context?.Request?.Query["propertyFrom"].FirstOrDefault(), "LIS", StringComparison.OrdinalIgnoreCase) ||
+string.Equals(Context?.Session?.GetString("PropertyFrom"), "LIS", StringComparison.OrdinalIgnoreCase);
 
-    string rollName = isAttributes ? "Attributes Property Information" : roll?.Name ?? "Property Information";
-    string rollShort = isAttributes ? "Attributes" : roll?.Short ?? "";
-    string rollSource = isAttributes ? "Attributes" : roll?.Source ?? "";
+    string rollName = isAttributes
+     ? "Attributes Property Information"
+     : isLis
+         ? "Land Information System Property Information"
+         : roll?.Name ?? "Property Information";
+
+    string rollShort = isAttributes
+        ? "Attributes"
+        : isLis
+            ? "LIS"
+            : roll?.Short ?? "";
+
+    string rollSource = isAttributes
+        ? "Attributes"
+        : roll?.Source ?? "";
     string sourceTableCode = roll?.SourceTableCode ?? "";
     string returnUrl = $"{Context?.Request?.Path}{Context?.Request?.QueryString}";
 
@@ -319,41 +334,84 @@
                 <button class="ppd-btn ppd-btn-outline" onclick="history.back()">
                     <i class="fa-solid fa-arrow-left"></i> Cancel
                 </button>
-                @if (!string.IsNullOrWhiteSpace(rollSource) && !string.IsNullOrWhiteSpace(sourceTableCode))
+
+                @if (!string.IsNullOrWhiteSpace(rollSource))
                 {
-                    <a class="ppd-btn ppd-btn-primary"
-                           href="/property/save?rollSource=@rollSource&key=@d.Id&sourceTable=@sourceTableCode">
+                                            
+                            var linkKey = isLis
+                                ? (!string.IsNullOrWhiteSpace(d.PropertyId)
+                                    ? d.PropertyId
+                                    : !string.IsNullOrWhiteSpace(d.UnitKey)
+                                        ? d.UnitKey
+                                        : d.ValuationKey)
+                                : d.Id.ToString();
+
+                            var linkPropertyFrom = isLis ? "LIS" : sourceTableCode;
+                        
+
+                        <a class="ppd-btn ppd-btn-primary"
+                           href="/property/save?rollSource=@rollSource&key=@linkKey&sourceTable=@sourceTableCode&propertyFrom=@linkPropertyFrom&unitKey=@d.UnitKey&valuationKey=@d.ValuationKey&propertyId=@d.PropertyId">
+                            <i class="fa-solid fa-link"></i> Link Property
+                        </a>
+                   @*  <a class="ppd-btn ppd-btn-primary"
+                           href="/property/save?rollSource=@rollSource&key=@d.Id&sourceTable=@sourceTableCode&propertyFrom=@(isLis ? "LIS" : rollSource)">
                         <i class="fa-solid fa-link"></i> Link Property
-                    </a>
-                    <a class="ppd-btn ppd-btn-secondary"
-                           href="/notice/section49?rollSource=@rollSource&unitKey=@d.UnitKey&valuationKey=@d.ValuationKey">
-                        <i class="fa-solid fa-eye"></i> View Section 49
-                    </a>
-                    <a class="ppd-btn ppd-btn-outline"
-                           href="/notice/section49/download?rollSource=@rollSource&unitKey=@d.UnitKey&valuationKey=@d.ValuationKey">
-                        <i class="fa-solid fa-download"></i> Download Section 49
-                    </a>
+                    </a> *@
+
+                    @if (!isLis && !string.IsNullOrWhiteSpace(sourceTableCode))
+                    {
+                        <a class="ppd-btn ppd-btn-secondary"
+                               href="/notice/section49?rollSource=@rollSource&unitKey=@d.UnitKey&valuationKey=@d.ValuationKey">
+                            <i class="fa-solid fa-eye"></i> View Section 49
+                        </a>
+
+                        <a class="ppd-btn ppd-btn-outline"
+                               href="/notice/section49/download?rollSource=@rollSource&unitKey=@d.UnitKey&valuationKey=@d.ValuationKey">
+                            <i class="fa-solid fa-download"></i> Download Section 49
+                        </a>
+                    }
                 }
             }
-            else if (Model.IsWithinObjectionPeriod)
+            else if (Model.IsWithinObjectionPeriod || isLis)
             {
                 <button class="ppd-btn ppd-btn-outline" onclick="history.back()">
                     <i class="fa-solid fa-arrow-left"></i> Cancel
                 </button>
-                @if (!string.IsNullOrWhiteSpace(rollSource) && !string.IsNullOrWhiteSpace(sourceTableCode))
+
+                @if (!string.IsNullOrWhiteSpace(rollSource))
                 {
+                    var linkKey = isLis
+                              ? (!string.IsNullOrWhiteSpace(d.PropertyId)
+                                  ? d.PropertyId
+                                  : !string.IsNullOrWhiteSpace(d.UnitKey)
+                                      ? d.UnitKey
+                                      : d.ValuationKey)
+                              : d.Id.ToString();
+
+                    var linkPropertyFrom = isLis ? "LIS" : sourceTableCode;
+
+                        
                     <a class="ppd-btn ppd-btn-primary"
-                           href="/property/save?rollSource=@rollSource&key=@d.Id&sourceTable=@sourceTableCode">
+                           href="/property/save?rollSource=@rollSource&key=@linkKey&sourceTable=@sourceTableCode&propertyFrom=@linkPropertyFrom&unitKey=@d.UnitKey&valuationKey=@d.ValuationKey&propertyId=@d.PropertyId">
                         <i class="fa-solid fa-link"></i> Link Property
                     </a>
-                    <a class="ppd-btn ppd-btn-secondary"
-                           href="/notice/section49?rollSource=@rollSource&unitKey=@d.UnitKey&valuationKey=@d.ValuationKey">
-                        <i class="fa-solid fa-eye"></i> View Section 49
-                    </a>
-                    <a class="ppd-btn ppd-btn-outline"
-                           href="/notice/section49/download?rollSource=@rollSource&unitKey=@d.UnitKey&valuationKey=@d.ValuationKey">
-                        <i class="fa-solid fa-download"></i> Download Section 49
-                    </a>
+                 @*    <a class="ppd-btn ppd-btn-primary"
+                           href="/property/save?rollSource=@rollSource&key=@d.Id&sourceTable=@sourceTableCode&propertyFrom=@(isLis ? "LIS" : rollSource)">
+                        <i class="fa-solid fa-link"></i> Link Property
+                    </a> *@
+
+                    @if (!isLis && !string.IsNullOrWhiteSpace(sourceTableCode))
+                    {
+                        <a class="ppd-btn ppd-btn-secondary"
+                               href="/notice/section49?rollSource=@rollSource&unitKey=@d.UnitKey&valuationKey=@d.ValuationKey">
+                            <i class="fa-solid fa-eye"></i> View Section 49
+                        </a>
+
+                        <a class="ppd-btn ppd-btn-outline"
+                               href="/notice/section49/download?rollSource=@rollSource&unitKey=@d.UnitKey&valuationKey=@d.ValuationKey">
+                            <i class="fa-solid fa-download"></i> Download Section 49
+                        </a>
+                    }
                 }
             }
             else

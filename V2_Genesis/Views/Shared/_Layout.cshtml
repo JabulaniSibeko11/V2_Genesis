@@ -45,7 +45,7 @@
 
             <!-- Desktop links -->
             <ul class="pub-nav-links">
-                @if (isAuth && !isAdmin)
+                @if (isAuth && isAdmin)
                 {
                     <li>
                         <a href="/dashboard"
@@ -70,7 +70,8 @@
 
                 <!-- Evidence dropdown -->
                 <div class="pub-nav-dropdown" id="pubEvidenceDrop">
-                    <button class="pub-nav-action-link pub-nav-dropdown-toggle"
+                    <button type="button"
+                            class="pub-nav-action-link pub-nav-dropdown-toggle"
                             id="pubEvidenceBtn"
                             onclick="togglePubDrop('pubEvidenceDrop')">
                         <i class="fa-solid fa-upload"></i>
@@ -78,6 +79,7 @@
                         <i class="fa-solid fa-chevron-down"
                            style="font-size:10px; margin-left:2px;"></i>
                     </button>
+
                     <ul class="pub-nav-drop-menu">
                         <li>
                             <a href="/evidence/verify" class="pub-nav-drop-item">
@@ -106,11 +108,47 @@
                     </ul>
                 </div>
 
-                <!-- Rebates — standalone -->
+                <!-- Rebates -->
                 <a href="/Rebates/Index" class="pub-nav-action-link">
                     <i class="fa-solid fa-percent"></i>
                     Rebates
                 </a>
+
+                <!-- Help dropdown -->
+                <div class="pub-nav-dropdown" id="pubHelpDrop">
+                    <button type="button"
+                            class="pub-nav-action-link pub-nav-dropdown-toggle"
+                            id="pubHelpBtn"
+                            onclick="togglePubDrop('pubHelpDrop')">
+                        <i class="fa-solid fa-circle-question"></i>
+                        Help
+                        <i class="fa-solid fa-chevron-down"
+                           style="font-size:10px; margin-left:2px;"></i>
+                    </button>
+
+                    <ul class="pub-nav-drop-menu">
+                        <li>
+                            <a href="/Sup1/ViewGuide" class="pub-nav-drop-item">
+                                <i class="fa-solid fa-book-open"></i>
+                                User Guidelines
+                            </a>
+                        </li>
+
+                        <li>
+                            <a href="/Sup1/viewFAQ" class="pub-nav-drop-item">
+                                <i class="fa-solid fa-comments"></i>
+                                FAQ
+                            </a>
+                        </li>
+
+                        <li>
+                            <a href="/Home/ContactUs" class="pub-nav-drop-item">
+                                <i class="fa-solid fa-headset"></i>
+                                Contact Support
+                            </a>
+                        </li>
+                    </ul>
+                </div>
 
             </div>
             <!-- Right side — auth or sign in -->
@@ -252,58 +290,72 @@
         </div>
     </footer>
 
+    <!-- Core JS libraries: jQuery must load before validation scripts in child views -->
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+
     <script src="~/js/site.js" asp-append-version="true"></script>
 
     <script>
-        // ── User dropdown ──────────────────────────────────────────────
-        const pubUserBtn  = document.getElementById('pubUserBtn');
-        const pubUserMenu = document.getElementById('pubUserMenu');
+            // ── User dropdown ──────────────────────────────────────────────
+            const pubUserBtn = document.getElementById('pubUserBtn');
+            const pubUserMenu = document.getElementById('pubUserMenu');
 
-        if (pubUserBtn) {
-            pubUserBtn.addEventListener('click', e => {
-                e.stopPropagation();
-                pubUserMenu.classList.toggle('open');
-            });
-            document.addEventListener('click', () => {
-                pubUserMenu?.classList.remove('open');
-            });
-        }
-
-        // ── Mobile drawer ──────────────────────────────────────────────
-        const pubHam     = document.getElementById('pubHamburger');
-        const pubDrawer  = document.getElementById('pubDrawer');
-        const pubOverlay = document.getElementById('pubOverlay');
-        const pubClose   = document.getElementById('pubDrawerClose');
-
-        function openPubDrawer() {
-            pubDrawer?.classList.add('open');
-            pubOverlay?.classList.add('open');
-            document.body.style.overflow = 'hidden';
-        }
-        function closePubDrawer() {
-            pubDrawer?.classList.remove('open');
-            pubOverlay?.classList.remove('open');
-            document.body.style.overflow = '';
-        }
-                    function togglePubDrop(id) {
-                const el = document.getElementById(id);
-                el.classList.toggle('open');
-                // close others
-                document.querySelectorAll('.pub-nav-dropdown.open')
-                    .forEach(d => { if (d.id !== id) d.classList.remove('open'); });
+            if (pubUserBtn && pubUserMenu) {
+                pubUserBtn.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    pubUserMenu.classList.toggle('open');
+                });
             }
 
-            // Close on outside click
+            // ── Mobile drawer ──────────────────────────────────────────────
+            const pubHam = document.getElementById('pubHamburger');
+            const pubDrawer = document.getElementById('pubDrawer');
+            const pubOverlay = document.getElementById('pubOverlay');
+            const pubClose = document.getElementById('pubDrawerClose');
+
+            function openPubDrawer() {
+                pubDrawer?.classList.add('open');
+                pubOverlay?.classList.add('open');
+                document.body.style.overflow = 'hidden';
+            }
+
+            function closePubDrawer() {
+                pubDrawer?.classList.remove('open');
+                pubOverlay?.classList.remove('open');
+                document.body.style.overflow = '';
+            }
+
+            pubHam?.addEventListener('click', openPubDrawer);
+            pubClose?.addEventListener('click', closePubDrawer);
+            pubOverlay?.addEventListener('click', closePubDrawer);
+
+            // ── Public nav dropdowns: Evidence / Help ──────────────────────
+            function togglePubDrop(dropId) {
+                const dropdown = document.getElementById(dropId);
+
+                if (!dropdown) return;
+
+                document.querySelectorAll('.pub-nav-dropdown').forEach(function (item) {
+                    if (item.id !== dropId) {
+                        item.classList.remove('open');
+                    }
+                });
+
+                dropdown.classList.toggle('open');
+            }
+
+            // ── Close menus on outside click ───────────────────────────────
             document.addEventListener('click', function (e) {
-                if (!e.target.closest('.pub-nav-dropdown'))
-                    document.querySelectorAll('.pub-nav-dropdown.open')
-                        .forEach(d => d.classList.remove('open'));
+                if (!e.target.closest('.pub-nav-dropdown')) {
+                    document.querySelectorAll('.pub-nav-dropdown').forEach(function (item) {
+                        item.classList.remove('open');
+                    });
+                }
+
+                if (!e.target.closest('#pubUserWrap')) {
+                    pubUserMenu?.classList.remove('open');
+                }
             });
-        pubHam?.addEventListener('click',      openPubDrawer);
-        pubClose?.addEventListener('click',    closePubDrawer);
-        pubOverlay?.addEventListener('click',  closePubDrawer);
-
-
     </script>
 
     @await RenderSectionAsync("Scripts", required: false)

@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 using V2_Genesis.Helpers;
 using V2_Genesis.Models.Objections;
 using V2_Genesis.Services.Interfaces;
+using V2_Genesis.Services.Lis;
 using V2_Genesis.Services.PropertySearch;
 
 namespace V2_Genesis.Services.Implementations;
@@ -23,8 +24,8 @@ public class ObjectionService : IObjectionService
         ["GV23-SUP3"] = ("Sup3Connection", "CheckPropertyFromSup3"),
         ["GV23-SUP2"] = ("Sup2Connection", "CheckPropertyFromSup2"),
         ["GV23-SUP1"] = ("Sup1Connection", "CheckPropertyFromSup1"),
-        ["GV23"] = ("DefaultConnection", "CheckProperty"),
-        ["LIS"] = ("LISConnection", "CheckPropertyFromLIS"),
+        ["GV23"] = ("DefaultConnection", "CheckProperty")
+        
     };
 
     // ── sourceTable → MVC controller name ─────────────────────────────
@@ -36,7 +37,7 @@ public class ObjectionService : IObjectionService
         ["GV23-SUP2"] = "Sup2",
         ["GV23-SUP1"] = "Sup1",
         ["GV23"] = "Objection",
-        ["LIS"] = "LIS",
+       
     };
 
     // ── rollSource → MVC controller name ──────────────────────────────
@@ -261,5 +262,131 @@ public class ObjectionService : IObjectionService
         }
 
         return key;
+    }
+    public async Task<List<CheckPropertyResult>> GetPropertyForLisAsync(
+    string rollSource,
+    string? unitKey,
+    string? valuationKey)
+    {
+        rollSource = NormalizeRollSource(rollSource);
+
+        unitKey = FloatKeyHelper.Normalize(unitKey);
+        valuationKey = FloatKeyHelper.Normalize(valuationKey);
+
+        if (string.IsNullOrWhiteSpace(unitKey) &&
+            string.IsNullOrWhiteSpace(valuationKey))
+        {
+            return new List<CheckPropertyResult>();
+        }
+
+        var lisRegistry = LisRollRegistry.Build();
+
+        if (!lisRegistry.TryGetValue(rollSource, out var lisCfg))
+            return new List<CheckPropertyResult>();
+
+        var connString = _config.GetConnectionString(lisCfg.ConnectionKey)
+                         ?? _config.GetConnectionString(GetConnectionKeyFromRollSource(rollSource))
+                         ?? _config.GetConnectionString("DefaultConnection")!;
+
+        await using var conn = new SqlConnection(connString);
+
+        var parameters = new DynamicParameters();
+        parameters.Add("@UnitKey", unitKey, DbType.String);
+        parameters.Add("@ValuationKey", valuationKey, DbType.String);
+
+        var raw = await conn.QueryAsync(
+            lisCfg.DetailSp, // IndexObjectionLIS
+            parameters,
+            commandType: CommandType.StoredProcedure);
+
+        return raw.Select(r => new CheckPropertyResult
+        {
+            TownNameDesc = r.Town_Name_Description?.ToString(),
+            OwnerName = r.Owner_Name?.ToString(),
+
+            Erf = ToInt(r.Erf_Number),
+            Ptn = ToInt(r.Portion_Number),
+            Re = r.Property_Remainder_Indicator?.ToString(),
+
+            LisStreetAddress = r.LisStreetAddress?.ToString(),
+            CatDesc = r.CAT_Description?.ToString(),
+            RateableArea = r.Rateable_Area?.ToString(),
+            MarketValue = r.Market_Value?.ToString(),
+
+            ValuationDate = FormatDate(r.Valuation_Effective_Date_Wef_Date),
+            WefDate = FormatDate(r.Valuation_Effective_Date_Wef_Date),
+
+            Reason = r.Reason?.ToString(),
+            SchemeName = r.Scheme_Name?.ToString(),
+            SchemeNumber = r.Scheme_Number?.ToString(),
+            SchemeYear = r.Scheme_Year?.ToString(),
+
+            UnitNo = ToInt(r.Unit_Number),
+            PropertyDesc = r.Property_Desc?.ToString(),
+
+            PremiseId = r.Premise_ID?.ToString(),
+            UnitKey = NormalizeKey(r.Unit_Key),
+            PropertyId = r.Property_ID?.ToString(),
+            ValuationKey = NormalizeKey(r.Valuation_Key),
+
+            Sector = r.sector?.ToString() ,
+
+            // Use SAP address as extra owner/postal address if you need it later
+           
+        }).ToList();
+    }
+    private static int ToInt(object? value)
+    {
+        if (value == null)
+            return 0;
+
+        var text = value.ToString();
+
+        if (int.TryParse(text, out var i))
+            return i;
+
+        if (double.TryParse(text, out var d))
+            return Convert.ToInt32(d);
+
+        return 0;
+    }
+
+    private static string FormatDate(object? value)
+    {
+        if (value == null)
+            return "";
+
+        var text = value.ToString();
+
+        if (string.IsNullOrWhiteSpace(text))
+            return "";
+
+        return DateTime.TryParse(text, out var date)
+            ? date.ToString("dd MMMM yyyy")
+            : text;
+    }
+
+    private static string? BuildAddress(
+        string? addr1,
+        string? addr2,
+        string? addr3,
+        string? addr4,
+        string? addr5)
+    {
+        var parts = new[]
+        {
+        addr1,
+        addr2,
+        addr3,
+        addr4,
+        addr5
+    }
+        .Where(x => !string.IsNullOrWhiteSpace(x))
+        .Select(x => x!.Trim())
+        .ToList();
+
+        return parts.Any()
+            ? string.Join(", ", parts)
+            : null;
     }
 }

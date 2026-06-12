@@ -18,5 +18,6 @@ namespace V2_Genesis.Models.Results
             DateTime.Now > OpenDate && DateTime.Now < VisibleUntil;
 
         public bool IsAttributes { get; set; }
+        public bool IsLis { get; set; }
     }
 }

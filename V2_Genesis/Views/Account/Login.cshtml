@@ -111,10 +111,14 @@
                     </label>
 
                     <!-- reCAPTCHA v2 -->
-                    <div class="recaptcha-wrap">
+                   @*  <div class="recaptcha-wrap">
                         <div class="g-recaptcha" data-sitekey="@siteKey"></div>
                     </div>
+ *@
 
+                    <div class="recaptcha-wrap">
+                        <div id="recaptchaContainer"></div>
+                    </div>
                     <button type="submit" class="login-submit">
                         <i class="fa-solid fa-right-to-bracket"></i> Sign In
                     </button>
@@ -134,13 +138,30 @@
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
-    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+
     <script>
         function togglePw(id, btn) {
-        const inp = document.getElementById(id);
-        const ico = btn.querySelector('i');
-        inp.type = inp.type === 'password' ? 'text' : 'password';
-        ico.className = inp.type === 'password' ? 'fa-solid fa-eye' : 'fa-solid fa-eye-slash';
+            const inp = document.getElementById(id);
+            const ico = btn.querySelector('i');
+
+            inp.type = inp.type === 'password' ? 'text' : 'password';
+            ico.className = inp.type === 'password'
+                ? 'fa-solid fa-eye'
+                : 'fa-solid fa-eye-slash';
         }
+
+        window.onRecaptchaLoad = function () {
+            const container = document.getElementById('recaptchaContainer');
+            if (!container) return;
+
+            const isSmall = window.matchMedia('(max-width: 480px)').matches;
+
+            grecaptcha.render('recaptchaContainer', {
+                sitekey: '@siteKey',
+                size: isSmall ? 'compact' : 'normal'
+            });
+        };
     </script>
+
+    <script src="https://www.google.com/recaptcha/api.js?onload=onRecaptchaLoad&render=explicit" async defer></script>
 }

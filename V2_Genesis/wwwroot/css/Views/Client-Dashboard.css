@@ -1,0 +1,425 @@
+﻿/* ═══════════════════════════════════════════════════════════════
+   APPEND to ClientDashboardCss.css
+   
+   PART 1 — Big-screen responsiveness (Bootstrap-style breakpoints)
+   PART 2 — Lighter, cleaner client dashboard (less dark, more COJ brand)
+═══════════════════════════════════════════════════════════════ */
+
+
+/* ═══════════════════════════════════════════════════════════════
+   PART 1 — BIG SCREEN BREAKPOINTS
+   Bootstrap scale: sm 576 / md 768 / lg 992 / xl 1200 / xxl 1400
+   We extend beyond xxl for 1920px and 2560px (4K) monitors.
+═══════════════════════════════════════════════════════════════ */
+
+/* xl: 1200px+ — slightly wider container */
+@media (min-width: 1200px) {
+    .cd-body, .cd-stats-row, .ann-inner, .cl-nav-inner, .cl-footer-inner,
+    .cd-welcome-inner {
+        max-width: 1400px;
+    }
+}
+
+/* xxl: 1400px+ — give more breathing room */
+@media (min-width: 1400px) {
+    .cd-body, .cd-stats-row, .cd-welcome-inner {
+        max-width: 1600px;
+    }
+
+    .cd-stats-row {
+        gap: 16px;
+    }
+
+    .cd-stat-card {
+        padding: 16px 22px;
+    }
+}
+
+/* Full HD: 1920px+ */
+@media (min-width: 1920px) {
+    .cd-body, .cd-stats-row, .cd-welcome-inner,
+    .cl-nav-inner, .cl-footer-inner, .ann-inner {
+        max-width: 1800px;
+    }
+
+    .cd-body {
+        gap: 24px;
+        padding: 32px 24px;
+    }
+
+    .cd-roll-name {
+        font-size: 16px;
+    }
+
+    .cd-table {
+        font-size: 13.5px;
+    }
+
+        .cd-table thead th, .cd-table tbody td {
+            padding: 12px 18px;
+        }
+}
+
+/* 2K / 4K: 2560px+ */
+@media (min-width: 2560px) {
+    .cd-body, .cd-stats-row, .cd-welcome-inner,
+    .cl-nav-inner, .cl-footer-inner, .ann-inner {
+        max-width: 2200px;
+    }
+
+    .cd-body {
+        gap: 28px;
+        padding: 40px 32px;
+    }
+
+    .cd-table {
+        font-size: 15px;
+    }
+
+        .cd-table thead th, .cd-table tbody td {
+            padding: 14px 20px;
+        }
+
+    .cd-roll-header {
+        padding: 20px 28px;
+    }
+
+    .cd-widget-toggle {
+        padding: 16px 28px;
+    }
+
+    .cd-roll-icon {
+        width: 48px;
+        height: 48px;
+        font-size: 20px;
+    }
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   PART 2 — CLEANER / LIGHTER CLIENT DASHBOARD
+   
+   The dark teal (#36626d) roll headers feel heavy across an entire
+   dashboard. This lightens the overall feel while keeping COJ gold
+   and teal as accents — clean white cards, teal as a thin accent
+   line and icon colour, gold for highlights and CTAs.
+═══════════════════════════════════════════════════════════════ */
+
+/* ── Page background — soft, not stark white ──────────────── */
+/* ═══════════════════════════════════════════════════════════════
+   APPEND to ClientDashboardCss.css (replaces the previous
+   "Lighter Client Dashboard" block — Part 1 big-screen breakpoints
+   stay exactly the same, only Part 2 styling changes)
+
+   PREMIUM WHITE + GOLD REDESIGN
+   One accent colour — COJ gold. Teal used ONLY for plain body
+   text/icons where gold would be too loud. No sky-blue, no
+   turquoise, no multi-coloured roll types. Every roll section
+   looks the same — calm, consistent, easy to scan.
+═══════════════════════════════════════════════════════════════ */
+
+
+/* ── Page background — soft warm white ─────────────────────── */
+.cl-main {
+    background: #f9f9f7;
+}
+
+/* ── Welcome strip — pure white, single gold underline ──────── */
+.cd-welcome {
+    background: #ffffff;
+    border-bottom: 3px solid var(--coj-gold);
+    padding: 24px;
+}
+
+.cd-welcome-name {
+    color: #1a1a1a;
+    font-weight: 700;
+}
+
+    .cd-welcome-name span {
+        color: var(--coj-gold);
+    }
+
+.cd-welcome-sub {
+    color: #8b8b8b;
+}
+
+/* ── Announcement bar — soft gold tint, not teal ────────────── */
+.ann-bar {
+    background: var(--coj-gold-light);
+    border-bottom: 1px solid rgba(230,176,0,.25);
+}
+
+.ann-badge {
+    background: var(--coj-gold);
+    color: #1a1a1a;
+}
+
+.ann-text {
+    color: #4a4a4a;
+}
+
+/* ── Stats row — clean white cards, single gold top accent ──── */
+.cd-stat-card {
+    background: #ffffff;
+    border: 1px solid #efefef;
+    border-top: 3px solid var(--coj-gold);
+    box-shadow: 0 1px 3px rgba(0,0,0,.03);
+}
+
+.cd-stat-label {
+    color: #9a9a9a;
+}
+
+.cd-stat-nums span {
+    color: #1a1a1a;
+}
+
+.cd-stat-nums i {
+    color: var(--coj-gold);
+}
+/* Query stat card — same as everything else, no special colour */
+.cd-stat-card-query {
+    border-top: 3px solid var(--coj-gold);
+}
+
+    .cd-stat-card-query .cd-stat-label {
+        color: #9a9a9a;
+    }
+
+
+/* ══════════════════════════════════════════════════════════════
+   ROLL SECTIONS — every roll looks IDENTICAL.
+   White card, thin gold left accent, gold icon. No exceptions
+   for Query / Rebates / Attributes — consistency = simplicity.
+══════════════════════════════════════════════════════════════ */
+.cd-roll-section {
+    box-shadow: 0 1px 4px rgba(0,0,0,.04);
+    border: 1px solid #f0f0f0;
+}
+
+.cd-roll-header,
+.cd-roll-query,
+.cd-roll-inactive,
+.cd-roll-rebates,
+.cd-roll-attributes {
+    background: #ffffff;
+    border: none;
+    border-left: 4px solid var(--coj-gold);
+    padding: 18px 24px;
+    transition: background .15s;
+}
+
+    .cd-roll-header:hover,
+    .cd-roll-query:hover,
+    .cd-roll-rebates:hover,
+    .cd-roll-attributes:hover {
+        background: #fffdf5;
+    }
+
+/* Roll name / subtitle — plain dark text */
+.cd-roll-name {
+    color: #1a1a1a;
+    font-weight: 700;
+}
+
+.cd-roll-short {
+    color: #9a9a9a;
+}
+
+/* Roll icon — soft gold circle, every roll the same */
+.cd-roll-icon {
+    background: var(--coj-gold-light);
+    border: 1px solid rgba(230,176,0,.3);
+    color: var(--gold-dark, #c49a00);
+    width: 44px;
+    height: 44px;
+}
+
+/* Roll search / learn buttons — single gold-outline style */
+.cd-roll-search-btn,
+.cd-roll-learn-btn {
+    background: #fff;
+    color: #1a1a1a;
+    border: 1.5px solid var(--coj-gold);
+    font-weight: 700;
+}
+
+    .cd-roll-search-btn:hover,
+    .cd-roll-learn-btn:hover {
+        background: var(--coj-gold);
+        color: #1a1a1a;
+    }
+
+/* Period dates — muted grey, gold calendar icon */
+.cd-period-dates {
+    color: #8b8b8b;
+}
+
+    .cd-period-dates i {
+        color: var(--coj-gold);
+    }
+
+/* Badge — gold, single style for "open" everywhere */
+.cd-roll-badge.cd-badge-open,
+.cd-roll-badge.cd-badge-active {
+    background: var(--coj-gold-light);
+    color: #7a5800;
+    border: 1px solid var(--coj-gold);
+}
+
+.cd-roll-badge.cd-badge-upcoming,
+.cd-roll-badge.cd-badge-closed,
+.cd-roll-badge.cd-badge-unknown {
+    background: #f5f5f5;
+    color: #9a9a9a;
+    border: 1px solid #e8e8e8;
+}
+
+/* Chevron — gold */
+.cd-roll-chevron {
+    color: var(--coj-gold);
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   WIDGETS — minimal dividers, no colour noise
+══════════════════════════════════════════════════════════════ */
+.cd-widget {
+    border-top: 1px solid #f5f5f5;
+}
+
+.cd-widget-toggle:hover {
+    background: #fffdf5;
+}
+
+.cd-widget-toggle-left i {
+    color: var(--coj-gold);
+}
+
+.cd-widget-toggle-left h3 {
+    color: #1a1a1a;
+}
+
+.cd-widget-chevron {
+    color: #c9c9c9;
+}
+
+/* Count badges — gold only, drop the orange/red/blue variants */
+.cd-count-badge,
+.cd-count-orange,
+.cd-count-red,
+.cd-count-amber,
+.cd-count-blue {
+    background: var(--coj-gold-light);
+    color: #7a5800;
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   TABLES — gold header, clean rows
+══════════════════════════════════════════════════════════════ */
+.cd-table thead th {
+    background: var(--coj-gold);
+    color: #1a1a1a !important;
+    font-weight: 700;
+}
+
+.cd-table tbody tr:hover {
+    background: var(--coj-gold-light);
+}
+
+/* Add / Action buttons — black on gold accent kept minimal */
+.cd-add-btn {
+    background: #1a1a1a;
+    color: var(--coj-gold);
+}
+
+    .cd-add-btn:hover {
+        background: #333;
+        color: var(--coj-gold);
+    }
+
+.cd-action-btn {
+    background: #1a1a1a;
+    color: var(--coj-gold);
+}
+
+    .cd-action-btn:hover {
+        background: #333;
+    }
+
+
+/* ══════════════════════════════════════════════════════════════
+   STATUS PILLS — simplified to 3 states only
+   (gold = pending/in progress, green = done, red = rejected)
+══════════════════════════════════════════════════════════════ */
+.cd-pill-pending,
+.cd-pill-inprogress,
+.cd-pill-lodging {
+    background: var(--coj-gold-light);
+    color: #7a5800;
+    border: 1px solid var(--coj-gold);
+}
+
+.cd-pill-completed {
+    background: #f0f9f0;
+    color: #166534;
+    border: 1px solid #bbf7d0;
+}
+
+.cd-pill-rejected {
+    background: #fef2f2;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   CTA CARDS (Rebates empty state, Attributes) — gold only
+══════════════════════════════════════════════════════════════ */
+.cd-cta-icon-gold,
+.cd-cta-icon-black {
+    background: var(--coj-gold-light);
+    color: #c49a00;
+    border: 2px solid var(--coj-gold);
+}
+
+.cd-cta-btn-primary,
+.cd-cta-btn-black {
+    background: #1a1a1a;
+    color: var(--coj-gold);
+}
+
+    .cd-cta-btn-primary:hover,
+    .cd-cta-btn-black:hover {
+        background: #333;
+        color: var(--coj-gold);
+    }
+
+.cd-chip {
+    background: var(--coj-gold-light);
+    border: 1px solid var(--coj-gold);
+    color: #7a5800;
+}
+
+    .cd-chip i {
+        color: #c49a00;
+    }
+
+
+/* ── Roll section shadow — soft ─────────────────────────────── */
+.cd-roll-section {
+    box-shadow: 0 1px 4px rgba(0,0,0,.04);
+}
+
+/* ── Mobile ──────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+    .cd-roll-header,
+    .cd-roll-query,
+    .cd-roll-rebates,
+    .cd-roll-attributes {
+        border-left-width: 3px;
+        padding: 12px 14px;
+    }
+}

@@ -130,6 +130,10 @@ public class ObjectionController : Controller
         List<CheckPropertyResult> items = new();
         List<Section78PropertyDetail> Queitems = new();
 
+        var propertyFromValue = PropertyFrom ?? sourceTable ?? rollSource ?? "";
+
+        bool isLis = propertyFromValue.Equals("LIS", StringComparison.OrdinalIgnoreCase);
+
         if (rollSource.Contains("Query", StringComparison.OrdinalIgnoreCase))
         {
             var queItem = await _section78Service
@@ -160,6 +164,16 @@ public class ObjectionController : Controller
 
                 KeepObjectionFormTempData();
             }
+        }
+        else if (isLis)
+        {
+            items = await _objectionService.GetPropertyForLisAsync(
+                rollSource,
+                unitKey,
+                valuationKey);
+
+            TempData["PropertyFrom"] = "LIS";
+            TempData.Keep("PropertyFrom");
         }
         else
         {
@@ -241,7 +255,7 @@ public class ObjectionController : Controller
             RollSource = rollSource,
             AppealStatus = appealStatus ?? "False",
             IsAppeal = appealStatus == "True",
-            PropertyFrom = PropertyFrom ?? sourceTable ?? rollSource,
+            PropertyFrom = isLis ? "LIS" : PropertyFrom ?? sourceTable ?? rollSource,
             ControllerName = rollSource.Contains("Query", StringComparison.OrdinalIgnoreCase)
                 ? "Query"
                 : ObjectionService.SourceToController
@@ -448,12 +462,15 @@ public class ObjectionController : Controller
     //    return View(vm);
     //}
 
-  
+
 
     // ── GET /objection/form ───────────────────────────────────────────────
     [HttpGet]
     [Route("objection/form")]
-    public IActionResult ViewObjectionForm(string? propertyFrom, string? objectorType, string? appeal)
+    public IActionResult ViewObjectionForm(
+     string? propertyFrom,
+     string? objectorType,
+     string? appeal)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         var userEmail = User.FindFirstValue(ClaimTypes.Name) ?? "";
@@ -465,6 +482,34 @@ public class ObjectionController : Controller
         RestorePropertyContextFromSession();
         KeepObjectionFormTempData();
 
+        // ------------------------------------------------------------
+        // PropertyFrom must survive:
+        // LIS       -> PropertyFrom = LIS
+        // Omission  -> PropertyFrom = Omission
+        // Roll      -> PropertyFrom = GV23-SUP3 / GV23-SUP4 / etc.
+        // ------------------------------------------------------------
+        var tempPropertyFrom = TempData.Peek("PropertyFrom")?.ToString();
+        var tempSourceTable = TempData.Peek("SourceTable")?.ToString();
+        var tempRollSource = TempData.Peek("RollSource")?.ToString();
+
+        var resolvedPropertyFrom = ResolvePropertyFromForForm(
+            propertyFrom,
+            tempPropertyFrom,
+            tempSourceTable,
+            tempRollSource);
+
+        var resolvedSourceTable = ResolveSourceTableForForm(
+            resolvedPropertyFrom,
+            tempSourceTable,
+            tempRollSource);
+
+        TempData["PropertyFrom"] = resolvedPropertyFrom;
+        TempData["SourceTable"] = resolvedSourceTable;
+
+        TempData.Keep("PropertyFrom");
+        TempData.Keep("SourceTable");
+        TempData.Keep("RollSource");
+
         if (TempData.Peek("AppealStatus") == null)
         {
             TempData["AppealStatus"] =
@@ -475,15 +520,16 @@ public class ObjectionController : Controller
 
         TempData.Keep("AppealStatus");
 
-        bool isAdmin = userEmail.Equals(
-                           "AdministrationEnquiries@Joburg.org.za",
-                           StringComparison.OrdinalIgnoreCase)
-                       || AdminEmailRx.IsMatch(userEmail);
+        bool isAdmin =
+            userEmail.Equals(
+                "AdministrationEnquiries@Joburg.org.za",
+                StringComparison.OrdinalIgnoreCase)
+            || AdminEmailRx.IsMatch(userEmail);
 
         var sapFull =
-     User.FindFirstValue("SAPNumber")
-     ?? HttpContext.Session.GetString("AdminSapNumber")
-     ?? "";
+            User.FindFirstValue("SAPNumber")
+            ?? HttpContext.Session.GetString("AdminSapNumber")
+            ?? "";
 
         var adminFullName =
             User.FindFirstValue("FullName")
@@ -500,9 +546,16 @@ public class ObjectionController : Controller
             : sapFull;
 
         ViewData["UserEmail"] = userEmail;
-        ViewData["SourceTable"] = propertyFrom;
+
+        // IMPORTANT:
+        // SourceTable remains the roll source table.
+        // PropertyFrom is the origin: LIS / Omission / GV23-SUP3.
+        ViewData["SourceTable"] = resolvedSourceTable;
+        ViewData["PropertyFrom"] = resolvedPropertyFrom;
 
         ViewBag.IsAdmin = isAdmin;
+        ViewBag.PropertyFrom = resolvedPropertyFrom;
+        ViewBag.SourceTable = resolvedSourceTable;
 
         if (isAdmin)
         {
@@ -536,6 +589,71 @@ public class ObjectionController : Controller
         KeepObjectionFormTempData();
 
         return View("ObjectionForm");
+    }
+    private static string ResolvePropertyFromForForm(
+    string? routePropertyFrom,
+    string? tempPropertyFrom,
+    string? tempSourceTable,
+    string? tempRollSource)
+    {
+        var value =
+            FirstNotEmpty(routePropertyFrom, tempPropertyFrom, tempSourceTable, tempRollSource)
+            ?? "";
+
+        value = value.Trim();
+
+        if (value.Equals("LIS", StringComparison.OrdinalIgnoreCase))
+            return "LIS";
+
+        if (value.Equals("Omission", StringComparison.OrdinalIgnoreCase) ||
+            value.Equals("Omitted", StringComparison.OrdinalIgnoreCase))
+            return "Omission";
+
+        return value;
+    }
+
+    private static string ResolveSourceTableForForm(
+        string propertyFrom,
+        string? tempSourceTable,
+        string? tempRollSource)
+    {
+        // If origin is LIS or Omission, SourceTable must still be the real roll table.
+        if (propertyFrom.Equals("LIS", StringComparison.OrdinalIgnoreCase) ||
+            propertyFrom.Equals("Omission", StringComparison.OrdinalIgnoreCase))
+        {
+            if (!string.IsNullOrWhiteSpace(tempSourceTable) &&
+                !tempSourceTable.Equals("LIS", StringComparison.OrdinalIgnoreCase) &&
+                !tempSourceTable.Equals("Omission", StringComparison.OrdinalIgnoreCase))
+            {
+                return tempSourceTable.Trim();
+            }
+
+            return tempRollSource switch
+            {
+                "Objection" => "GV23",
+                "Objection_Supp1" => "GV23-SUP1",
+                "Objection_Supp2" => "GV23-SUP2",
+                "Objection_Supp3" => "GV23-SUP3",
+                "Objection_Supp4" => "GV23-SUP4",
+                "Objection_Supp5" => "GV23-SUP5",
+                _ => tempRollSource ?? ""
+            };
+        }
+
+        return !string.IsNullOrWhiteSpace(tempSourceTable)
+            ? tempSourceTable.Trim()
+            : propertyFrom;
+    }
+
+    private static string? FirstNotEmpty(params string?[] values)
+    {
+        foreach (var value in values)
+        {
+            if (!string.IsNullOrWhiteSpace(value))
+                return value.Trim();
+        }
+
+        return null;
     }
     private void KeepObjectionFormTempData()
     {
@@ -691,44 +809,67 @@ public class ObjectionController : Controller
     [Route("objection/form")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> SubmitObjectionForm(
-    Obj_Property_InfoModel obj,
-    Obj_Section1Model obj1,
-    Obj_Section2Model obj2,
-    Obj_Section3ResModel objR3,
-    Obj_Section3BusModel objB3,
-    Obj_Section3AgriModel objA3,
-    Obj_Section4BusModel objB4,
-    Obj_Section4ResModel objR4,
-    Obj_Section5Model obj5,
-    Obj_Section6Model obj6,
-    Obj_Section7Model obj7,
-    Obj_Files obj_file,
-    List<IFormFile> files,
-    List<IFormFile> fileR,
-    string AppealStat,
-    string obj_appeal,
-    Obj_Property_Info_AppealModel appeal,
-    string? PropertyFrom)
+       Obj_Property_InfoModel obj,
+       Obj_Section1Model obj1,
+       Obj_Section2Model obj2,
+       Obj_Section3ResModel objR3,
+       Obj_Section3BusModel objB3,
+       Obj_Section3AgriModel objA3,
+       Obj_Section4BusModel objB4,
+       Obj_Section4ResModel objR4,
+       Obj_Section5Model obj5,
+       Obj_Section6Model obj6,
+       Obj_Section7Model obj7,
+       Obj_Files obj_file,
+       List<IFormFile> files,
+       List<IFormFile> fileR,
+       string AppealStat,
+       string obj_appeal,
+       Obj_Property_Info_AppealModel appeal,
+       string? PropertyFrom,
+       string? SourceTable,
+       string? RollSource)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
         if (string.IsNullOrWhiteSpace(userId))
             return RedirectToAction("Login", "Account");
 
-        var rollSource = ResolveSubmissionRollSource(PropertyFrom);
-        var sourceTable = ResolveSourceTable(rollSource);
+        // Real roll source must remain Objection_Supp3 / Objection_Supp4 etc.
+        var rollSource = !string.IsNullOrWhiteSpace(RollSource)
+            ? RollSource.Trim()
+            : ResolveSubmissionRollSource(SourceTable ?? PropertyFrom);
+
+        // Real source table must remain GV23-SUP3 / GV23-SUP4 etc.
+        var sourceTable = !string.IsNullOrWhiteSpace(SourceTable)
+            ? SourceTable.Trim()
+            : ResolveSourceTable(rollSource);
+
+        // PropertyFrom is the property origin:
+        // LIS / Omission / GV23-SUP3
+        var propertyFrom = ResolveSubmittedPropertyFrom(
+            PropertyFrom,
+            SourceTable,
+            rollSource);
 
         HttpContext.Session.SetString("RollSource", rollSource);
+        HttpContext.Session.SetString("SourceTable", sourceTable);
+        HttpContext.Session.SetString("PropertyFrom", propertyFrom);
 
         TempData["RollSource"] = rollSource;
         TempData["SourceTable"] = sourceTable;
-        TempData["PropertyFrom"] = sourceTable;
+        TempData["PropertyFrom"] = propertyFrom;
+
+        TempData.Keep("RollSource");
+        TempData.Keep("SourceTable");
+        TempData.Keep("PropertyFrom");
 
         var result = await _objectionFormService.SubmitAsync(
             rollSource,
             userId,
             AppealStat,
             obj_appeal,
+            propertyFrom,
             obj,
             obj1,
             obj2,
@@ -766,10 +907,6 @@ public class ObjectionController : Controller
         TempData["successmessage"] = isAppeal
             ? "Appeal Submitted Successfully"
             : "Objection Submitted Successfully";
-
-        //TempData["EmailStatus"] = result.EmailSent
-        //    ? "Acknowledgement email sent to the client."
-        //    : "Submission saved, but the email was not sent. Please check the logs.";
 
         TempData["desc"] = obj.Property_Desc;
 
@@ -824,6 +961,25 @@ public class ObjectionController : Controller
         }
 
         return RedirectToAction(isMulti ? nameof(MultiPurposeDisplay) : nameof(Display));
+    }
+    private static string ResolveSubmittedPropertyFrom(
+    string? propertyFrom,
+    string? sourceTable,
+    string? rollSource)
+    {
+        var value = propertyFrom?.Trim();
+
+        if (value?.Equals("LIS", StringComparison.OrdinalIgnoreCase) == true)
+            return "LIS";
+
+        if (value?.Equals("Omission", StringComparison.OrdinalIgnoreCase) == true ||
+            value?.Equals("Omitted", StringComparison.OrdinalIgnoreCase) == true)
+            return "Omission";
+
+        if (!string.IsNullOrWhiteSpace(sourceTable))
+            return sourceTable.Trim();
+
+        return rollSource?.Trim() ?? "";
     }
     private string ResolveSubmissionRollSource(string? sourceFromForm)
     {

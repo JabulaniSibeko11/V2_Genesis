@@ -1102,3 +1102,72 @@ img {
     color: #7a5800;
     border: 1px solid #f0d060;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   APPEND to site.css
+   
+   Big-screen responsiveness (Bootstrap-style breakpoints)
+   Matches the same breakpoints added to ClientDashboardCss.css
+   so the public/auth navbar, footer, and main content scale
+   consistently with the dashboard on large monitors.
+═══════════════════════════════════════════════════════════════ */
+
+/* xl: 1200px+ — slightly wider container */
+@media (min-width: 1200px) {
+    .nav-inner, .pub-nav-inner, .footer-inner {
+        max-width: 1400px;
+    }
+}
+
+/* xxl: 1400px+ */
+@media (min-width: 1400px) {
+    .nav-inner, .pub-nav-inner, .footer-inner {
+        max-width: 1600px;
+    }
+}
+
+/* Full HD: 1920px+ */
+@media (min-width: 1920px) {
+    .nav-inner, .pub-nav-inner, .footer-inner {
+        max-width: 1800px;
+    }
+
+    /* Slightly larger nav text/links on big screens */
+    .nav-link, .pub-nav-link {
+        font-size: 14px;
+    }
+
+    .nav-brand-name, .pub-brand-name {
+        font-size: 15px;
+    }
+
+    /* Forms / cards centred content gets a bit more room */
+    .f-row {
+        gap: 18px;
+    }
+}
+
+/* 2K / 4K: 2560px+ */
+@media (min-width: 2560px) {
+    .nav-inner, .pub-nav-inner, .footer-inner {
+        max-width: 2200px;
+    }
+
+    html {
+        font-size: 17px;
+    }
+
+    .nav-link, .pub-nav-link {
+        font-size: 15px;
+        padding: 0 18px;
+    }
+
+    .nav-brand-mark {
+        width: 56px;
+        height: 56px;
+    }
+
+    .site-footer {
+        padding: 40px 32px;
+    }
+}

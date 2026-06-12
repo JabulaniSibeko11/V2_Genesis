@@ -9,5 +9,10 @@ namespace V2_Genesis.Services.Interfaces
         string rollSource, LisSearchParams p);
 
         Task<List<LisProperty>> GetTownSchemesAsync(string rollSource);
+
+        Task<LisProperty?> GetPropertyByKeysAsync(
+    string rollSource,
+    string unitKey,
+    string valuationKey);
     }
 }

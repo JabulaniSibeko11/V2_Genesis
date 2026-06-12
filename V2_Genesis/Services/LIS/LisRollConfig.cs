@@ -1,4 +1,6 @@
 ﻿
+using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.Blazor;
+
 namespace V2_Genesis.Services.Lis;
 
 
@@ -13,7 +15,8 @@ public record LisRollConfig(
     string SchemeUnit,             // SearchTownSchemeUnitLIS
     string TownErfScheme,          // SearchTownERFSchemeLIS
     string TownAddressScheme,      // SearchTownAddressSchemeLIS
-    string TownAndScheme           // GetDistinctTownAndScheme (dropdown)
+    string TownAndScheme  ,         // GetDistinctTownAndScheme (dropdown)
+    string DetailSp
 );
 
 public static class LisRollRegistry
@@ -31,8 +34,9 @@ public static class LisRollRegistry
             SchemeUnit: $"SearchTownSchemeUnitLIS{suffix}",
             TownErfScheme: $"SearchTownERFSchemeLIS{suffix}",
             TownAddressScheme: $"SearchTownAddressSchemeLIS{suffix}",
-            TownAndScheme: $"GetDistinctTownAndScheme{suffix}"
-        );
+            TownAndScheme: $"GetDistinctTownAndScheme{suffix}",
+            DetailSp: "IndexObjectionLIS"        
+            );
 
         return new Dictionary<string, LisRollConfig>
         {

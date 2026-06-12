@@ -20,5 +20,10 @@ namespace V2_Genesis.Services.Interfaces
         Task<List<CheckPropertyResult>> GetPropertyForAppealAsync(
             string rollSource,
             string objectionNo);
+
+        Task<List<CheckPropertyResult>> GetPropertyForLisAsync(
+    string rollSource,
+    string? unitKey,
+    string? valuationKey);
     }
 }

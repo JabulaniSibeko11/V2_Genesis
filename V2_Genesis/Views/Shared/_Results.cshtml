@@ -43,11 +43,24 @@
                        knows this came from the Land Information System   *@
 
                      @{
-                    var viewUrl = $"/property/view?rollSource={roll?.Source?.Trim()}" +
-                                  $"&unitKey={item.UnitKey}" +
-                                  $"&valuationKey={item.ValuationKey}" +
-                                  $"&propertyFrom={propFrom?.Trim()}";
-                        }
+                    // var viewUrl = $"/property/view?rollSource={roll?.Source?.Trim()}" +
+                    //               $"&unitKey={item.UnitKey}" +
+                    //               $"&valuationKey={item.ValuationKey}" +
+                    //               $"&propertyFrom={propFrom?.Trim()}";
+
+                   
+    var rollSource = roll?.Source?.Trim() ?? "";
+    var propertyFrom = propFrom?.Trim() ?? "";
+
+    var viewUrl = Url.Action("ViewProperty", "PropertySearch", new
+    {
+        rollSource = rollSource,
+        unitKey = item.UnitKey,
+        valuationKey = item.ValuationKey,
+        propertyFrom = propertyFrom
+    });
+}
+                        
 
                     <a  class="ps-town-link" href="@viewUrl">
                   

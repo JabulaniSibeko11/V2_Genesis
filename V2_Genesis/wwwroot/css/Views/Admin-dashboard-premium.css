@@ -1,0 +1,491 @@
+﻿/* ═══════════════════════════════════════════════════════════════
+   ADMIN DASHBOARD — PREMIUM LIGHT REDESIGN
+   admin-dashboard.css
+
+   Replaces the dark-teal "control panel" look with a clean,
+   professional, light admin console — white cards, thin teal/gold
+   accents, big full-width tables matching the client dashboard.
+
+   Loaded AFTER ClientDashboardCss.css — these rules override the
+   shared .cd-* classes specifically inside .adm-page / admin views.
+═══════════════════════════════════════════════════════════════ */
+
+/* ── Top bar — keep dark, it's a system/utility bar ─────────── */
+.adm-topbar {
+    background: #1a2e35;
+    border-bottom: 3px solid var(--coj-gold, #e6b000);
+    padding: 10px 0;
+}
+
+.adm-topbar-inner {
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.adm-topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.adm-topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+}
+
+.adm-admin-badge {
+    background: var(--coj-gold, #e6b000);
+    color: #1a1a1a;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    padding: 4px 12px;
+    border-radius: 100px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.adm-email {
+    font-size: 13px;
+    color: var(--coj-gold, #e6b000);
+    font-weight: 600;
+}
+
+.adm-sap {
+    font-size: 11.5px;
+    color: rgba(255,255,255,.55);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+    .adm-sap strong {
+        color: #fff;
+    }
+
+.adm-topbar-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-family: 'Poppins',sans-serif;
+    font-size: 12.5px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all .15s;
+    white-space: nowrap;
+}
+
+.adm-search-modal-btn {
+    background: var(--coj-gold, #e6b000);
+    color: #1a1a1a;
+}
+
+    .adm-search-modal-btn:hover {
+        background: #f5c200;
+        color: #1a1a1a;
+    }
+
+.adm-audit-btn {
+    background: rgba(255,255,255,.06);
+    color: var(--coj-gold, #e6b000);
+    border: 1px solid rgba(230,176,0,.35);
+}
+
+    .adm-audit-btn:hover {
+        background: rgba(255,255,255,.12);
+        color: var(--coj-gold, #e6b000);
+    }
+
+
+/* ── Welcome strip — light, premium ─────────────────────────── */
+.adm-page .cd-welcome,
+.cd-welcome {
+    background: #ffffff;
+    border-bottom: 3px solid var(--coj-gold, #e6b000);
+    padding: 22px 24px;
+}
+
+.adm-page .cd-welcome-inner {
+    max-width: 1600px;
+}
+
+.adm-page .cd-welcome-name {
+    color: #1a2e35;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.adm-page .cd-welcome-sub {
+    color: #6b7280;
+}
+
+.adm-badge-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: #1a2e35;
+    color: var(--coj-gold, #e6b000);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    padding: 4px 11px;
+    border-radius: 100px;
+    vertical-align: middle;
+}
+
+
+/* ── Stats row — clean white cards, teal top accent ─────────── */
+.adm-page .cd-stats-row {
+    max-width: 1600px;
+    background: transparent;
+    border-bottom: none;
+    padding: 20px 24px 4px;
+}
+
+.adm-page .cd-stat-card {
+    background: #fff;
+    border: 1.5px solid #e8ecee;
+    border-top: 3px solid var(--coj-green, #36626d);
+    border-radius: 12px;
+    padding: 16px 22px;
+    min-width: 150px;
+    box-shadow: 0 1px 3px rgba(26,46,53,.04);
+}
+
+.adm-page .cd-stat-label {
+    color: #8b96a0;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .8px;
+}
+
+.adm-page .cd-stat-nums span {
+    color: #1a2e35;
+    font-size: 14px;
+}
+
+.adm-page .cd-stat-nums i {
+    color: var(--coj-gold, #e6b000);
+}
+
+
+/* ── Dashboard body — wider, more breathing room ────────────── */
+.adm-page .cd-body {
+    max-width: 1600px;
+    padding: 20px 24px 48px;
+    gap: 18px;
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   ROLL SECTION — light card, teal left-accent (kills the
+   "wall of dark teal" feeling, premium console look)
+══════════════════════════════════════════════════════════════ */
+.adm-page .cd-roll-section {
+    border-radius: 12px;
+    box-shadow: 0 1px 4px rgba(26,46,53,.06);
+    border: 1px solid #eef1f3;
+}
+
+.adm-page .cd-roll-header {
+    background: #ffffff;
+    border: none;
+    border-left: 4px solid var(--coj-green, #36626d);
+    border-radius: 12px 12px 0 0;
+    padding: 18px 24px;
+    transition: background .15s, border-left-color .15s;
+}
+
+    .adm-page .cd-roll-header:hover {
+        background: #fafbfc;
+        border-left-color: var(--coj-gold, #e6b000);
+    }
+
+    /* When the roll body is collapsed, header keeps full radius */
+    .adm-page .cd-roll-body:not(.open) ~ .cd-roll-header,
+    .adm-page .cd-roll-header:has(+ .cd-roll-body:not(.open)) {
+        border-radius: 12px;
+    }
+
+/* Query roll — sky accent instead of dark gradient */
+.adm-page .cd-roll-query {
+    background: #ffffff;
+    border-left: 4px solid #0ea5e9;
+}
+
+    .adm-page .cd-roll-query:hover {
+        background: #f0f9ff;
+    }
+
+/* Rebates / Attributes — premium light with brand accents */
+.adm-page .cd-roll-rebates {
+    background: #ffffff;
+    border-left: 4px solid var(--coj-gold, #e6b000);
+}
+
+    .adm-page .cd-roll-rebates:hover {
+        background: #fffdf5;
+    }
+
+.adm-page .cd-roll-attributes {
+    background: #ffffff;
+    border-left: 4px solid var(--coj-turq, #89b7b2);
+    border-top: none;
+}
+
+    .adm-page .cd-roll-attributes:hover {
+        background: #f5fbfb;
+    }
+
+/* Roll name / subtitle — dark text on white now */
+.adm-page .cd-roll-name {
+    color: #1a2e35;
+    font-size: 16px;
+}
+
+.adm-page .cd-roll-short {
+    color: #8b96a0;
+    font-size: 11.5px;
+}
+
+/* Roll icon — soft tinted circle, not gold-on-dark */
+.adm-page .cd-roll-icon {
+    background: var(--coj-green-pale, #e8f3f4);
+    border: 1px solid rgba(54,98,109,.15);
+    color: var(--coj-green, #36626d);
+    width: 44px;
+    height: 44px;
+    font-size: 18px;
+}
+
+.adm-page .cd-roll-query .cd-roll-icon {
+    background: #e0f2fe;
+    border-color: rgba(14,165,233,.25);
+    color: #0ea5e9;
+}
+
+.adm-page .cd-roll-rebates .cd-roll-icon {
+    background: var(--coj-gold-light, #fdf6d8);
+    border-color: rgba(230,176,0,.3);
+    color: #c49a00;
+}
+
+.adm-page .cd-roll-attributes .cd-roll-icon {
+    background: rgba(137,183,178,.15);
+    border-color: rgba(137,183,178,.3);
+    color: var(--coj-turq, #89b7b2);
+}
+
+/* Period dates + badge — dark text on white header */
+.adm-page .cd-period-dates {
+    color: #6b7280;
+}
+
+    .adm-page .cd-period-dates i {
+        color: var(--coj-gold, #e6b000);
+    }
+
+.adm-page .cd-roll-badge.cd-badge-open {
+    background: var(--coj-green-pale, #e8f3f4);
+    color: var(--coj-green, #36626d);
+    border: 1px solid var(--coj-turq, #89b7b2);
+}
+
+/* Search button — outline style, fills on hover */
+.adm-page .cd-roll-search-btn {
+    background: #fff;
+    color: var(--coj-green, #36626d);
+    border: 1.5px solid var(--coj-green, #36626d);
+}
+
+    .adm-page .cd-roll-search-btn:hover {
+        background: var(--coj-green, #36626d);
+        color: #fff;
+    }
+
+/* Chevron — teal on light bg */
+.adm-page .cd-roll-chevron {
+    color: var(--coj-green, #36626d);
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   WIDGETS — lighter dividers, premium spacing
+══════════════════════════════════════════════════════════════ */
+.adm-page .cd-widget {
+    border-top: 1px solid #f1f3f5;
+}
+
+.adm-page .cd-widget-toggle {
+    padding: 15px 24px;
+    background: #fff;
+}
+
+    .adm-page .cd-widget-toggle:hover {
+        background: #fafbfc;
+    }
+
+.adm-page .cd-widget-toggle-left i {
+    color: var(--coj-green, #36626d);
+}
+
+.adm-page .cd-widget-toggle-left h3 {
+    color: #1a2e35;
+    font-weight: 700;
+}
+
+.adm-page .cd-widget-chevron {
+    color: #c4ccd2;
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   BIG TABLES — full-width, matches client dashboard scale
+══════════════════════════════════════════════════════════════ */
+.adm-page .cd-widget-body {
+    padding: 0;
+}
+
+    .adm-page .cd-widget-body .table-responsive {
+        width: 100%;
+        margin: 0;
+        overflow-x: auto;
+    }
+
+    .adm-page .cd-widget-body .dataTables_wrapper {
+        padding: 12px 24px;
+    }
+
+.adm-page .cd-table {
+    width: 100% !important;
+    font-size: 13.5px;
+    margin: 0 !important;
+}
+
+    .adm-page .cd-table thead th {
+        background: var(--coj-gold, #e6b000);
+        color: #1a2e35 !important;
+        font-size: 12.5px;
+        font-weight: 700;
+        padding: 12px 18px;
+    }
+
+    .adm-page .cd-table tbody td {
+        padding: 12px 18px;
+        vertical-align: middle;
+    }
+
+    .adm-page .cd-table tbody tr:hover {
+        background: var(--coj-green-pale, #e8f3f4);
+    }
+
+/* Toolbar (Link New Property buttons) */
+.adm-page .cd-widget-toolbar {
+    padding: 14px 24px 12px;
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   CTA CARDS (Rebates empty state / Attributes) — light premium
+══════════════════════════════════════════════════════════════ */
+.adm-page .cd-cta-icon-gold {
+    background: var(--coj-gold-light, #fdf6d8);
+    color: #c49a00;
+    border: 2px solid var(--coj-gold, #e6b000);
+}
+
+.adm-page .cd-cta-icon-black {
+    background: var(--coj-green-pale, #e8f3f4);
+    color: var(--coj-green, #36626d);
+    border: 2px solid var(--coj-turq, #89b7b2);
+}
+
+.adm-page .cd-cta-btn-black {
+    background: var(--coj-green, #36626d);
+}
+
+    .adm-page .cd-cta-btn-black:hover {
+        background: var(--coj-green-mid, #4a7d8a);
+    }
+
+
+/* ══════════════════════════════════════════════════════════════
+   BIG-SCREEN SCALING (matches site-wide breakpoints)
+══════════════════════════════════════════════════════════════ */
+@media (min-width: 1920px) {
+    .adm-page .cd-body,
+    .adm-topbar-inner,
+    .adm-page .cd-welcome-inner,
+    .adm-page .cd-stats-row {
+        max-width: 1800px;
+    }
+
+    .adm-page .cd-table {
+        font-size: 14.5px;
+    }
+
+        .adm-page .cd-table thead th,
+        .adm-page .cd-table tbody td {
+            padding: 14px 20px;
+        }
+
+    .adm-page .cd-roll-header {
+        padding: 20px 28px;
+    }
+}
+
+@media (min-width: 2560px) {
+    .adm-page .cd-body,
+    .adm-topbar-inner,
+    .adm-page .cd-welcome-inner,
+    .adm-page .cd-stats-row {
+        max-width: 2200px;
+    }
+
+    .adm-page .cd-table {
+        font-size: 16px;
+    }
+
+        .adm-page .cd-table thead th,
+        .adm-page .cd-table tbody td {
+            padding: 16px 24px;
+        }
+}
+
+
+/* ── Responsive ──────────────────────────────────────────────── */
+@media (max-width: 600px) {
+    .adm-topbar-inner {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .adm-page .cd-roll-header {
+        padding: 12px 16px;
+        border-left-width: 3px;
+    }
+
+    .adm-page .cd-widget-toggle {
+        padding: 12px 16px;
+    }
+
+    .adm-page .cd-widget-toolbar {
+        padding: 10px 16px;
+    }
+}
