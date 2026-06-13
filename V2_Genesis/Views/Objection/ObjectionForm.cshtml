@@ -104,7 +104,29 @@ TempData.Peek("PropertyFrom")?.ToString()
     var messageLSA = TempData.Peek("CurrentFilter_LSA")?.ToString() ?? "";
     var messageRA = TempData.Peek("CurrentFilter_RA")?.ToString() ?? "";
     var messageMV = TempData.Peek("CurrentFilter_MV")?.ToString() ?? "";
+    var rollDisplayName = TempData.Peek("RollDisplayName")?.ToString()
+                      ?? "Valuation Roll";
+
+    var oldMarketValueRaw = NormaliseMoneyForDb(messageMV);
+    var oldMarketValueDisplay = FormatRand(messageMV);
+
+    var omissionRequestedDescription = TempData.Peek("Omission_PropertyDesc")?.ToString() ?? "";
     var messageON = TempData.Peek("CurrentFilter_ON")?.ToString() ?? "";
+    if (isOmissionProperty)
+    {
+        messagePD = "";
+        messageProp = "";
+        messageCD = "";
+        messageLSA = "";
+        messageRA = "";
+        messageMV = "";
+        messageON = "";
+
+        oldMarketValueRaw = "";
+        oldMarketValueDisplay = "";
+    }
+
+    
     var messageTN = TempData.Peek("CurrentFilter_TN")?.ToString() ?? "";
     var messagePID = TempData.Peek("CurrentFilter_P_ID")?.ToString() ?? "";
     var messagePI = TempData.Peek("CurrentFilter_P_I")?.ToString() ?? "";
@@ -161,6 +183,33 @@ TempData.Peek("PropertyFrom")?.ToString()
         if (TempData.ContainsKey(_k)) TempData.Keep(_k);
 }
 
+@functions {
+    private static string NormaliseMoneyForDb(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return "";
+
+        var cleaned = new string(value.Where(char.IsDigit).ToArray());
+
+        return string.IsNullOrWhiteSpace(cleaned)
+            ? ""
+            : cleaned;
+    }
+
+    private static string FormatRand(string? value)
+    {
+        var raw = NormaliseMoneyForDb(value);
+
+        if (string.IsNullOrWhiteSpace(raw))
+            return "";
+
+        if (!decimal.TryParse(raw, out var amount))
+            return value ?? "";
+
+        return "R " + amount.ToString("#,0", System.Globalization.CultureInfo.InvariantCulture)
+                            .Replace(",", " ");
+    }
+}
 @section Styles {
 
 @* 4. Add this CSS link at the top *@
@@ -315,8 +364,7 @@ TempData.Peek("PropertyFrom")?.ToString()
 <form id="myForm" method="post" enctype="multipart/form-data"asp-controller="Objection"asp-action="SubmitObjectionForm"asp-route-PropertyFrom="@propertyFrom">
    
 
-    @* <input type="hidden" name="PropertyFrom" value="@sourceTable" />
-    <input type="hidden" name="RollSource" value="@rollSource" /> *@
+    
 
    <input type="hidden" name="PropertyFrom" value="@propertyFrom" />
 <input type="hidden" name="SourceTable" value="@sourceTable" />
@@ -326,7 +374,7 @@ TempData.Peek("PropertyFrom")?.ToString()
     <div style="display:flex;justify-content: center;">
         <div style="margin-top: 12px; border-radius: 12px; border: 3px solid #e6b000; padding: 20px; width: 1050px; background-color: #ffffff; box-shadow: 0 10px 40px rgba(0, 101, 112, 0.15);">
 
-            <div style="text-align: center; margin-bottom: 25px; border-bottom: 3px solid #e6b000; padding-bottom: 20px; background-color: #006570; border-radius: 10px; padding: 30px; margin-bottom: 30px;">
+            @* <div style="text-align: center; margin-bottom: 25px; border-bottom: 3px solid #e6b000; padding-bottom: 20px; background-color: #006570; border-radius: 10px; padding: 30px; margin-bottom: 30px;">
                 <h1 style="color: #ffffff; font-size: 22px; font-weight: 700; margin: 0 0 15px 0; line-height: 1.4; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 1px;">
                     LODGING OF AN OBJECTION AGAINST A MATTER REFLECTED IN OR OMITTED FROM THE
                     <span style="color: #e6b000;">VALUATION ROLL/ SUPPLEMENTARY VALUATION ROLL</span>
@@ -335,20 +383,44 @@ TempData.Peek("PropertyFrom")?.ToString()
                     FOR THE PERIOD 1 JULY 2023 TO 30 JUNE 2027
                 </h2>
             </div>
-
+ *@
+                             <div class="obj-form-banner">
+                                <span class="obj-form-chip">
+                                    <i class="fa-solid @(_isAppeal ? "fa-gavel" : "fa-file-pen")"></i>
+                                    @(_isAppeal ? "Appeal Form" : "Objection Form")
+                                </span>
+                                @if (_isAppeal)
+                                {
+                                    <h1>
+                                        LODGING OF AN APPEAL AGAINST A MATTER REFLECTED IN OR OMITTED FROM THE
+                                        <span>VALUATION ROLL / SUPPLEMENTARY VALUATION ROLL</span>
+                                    </h1>
+                                }
+                                else
+                                {
+                                    <h1>
+                                        LODGING OF AN OBJECTION AGAINST A MATTER REFLECTED IN OR OMITTED FROM THE
+                                        <span>VALUATION ROLL / SUPPLEMENTARY VALUATION ROLL</span>
+                                    </h1>
+                                }
+                                <h2>FOR THE PERIOD 1 JULY 2023 TO 30 JUNE 2027</h2>
+                            </div>
             <div style="text-align: center; background-color: #fff3cd; border: 2px solid #e6b000; border-radius: 10px; padding: 20px 15px; margin-bottom: 25px; font-family: 'Poppins', sans-serif;">
-                <h3 style="color: #006570; font-size: 18px; font-weight: 700; margin: 0 0 8px 0; text-transform: uppercase; font-family: 'Poppins', sans-serif; letter-spacing: 0.5px;">
+            @*     <h3 style="color: #006570; font-size: 18px; font-weight: 700; margin: 0 0 8px 0; text-transform: uppercase; font-family: 'Poppins', sans-serif; letter-spacing: 0.5px;">
                     DESCRIPTION OF PROPERTY IN RESPECT OF WHICH THE OBJECTION IS MADE
+                </h3> *@
+                <h3 style="color: #006570; font-size: 18px; font-weight: 700; margin: 0 0 8px 0; text-transform: uppercase; font-family: 'Poppins', sans-serif; letter-spacing: 0.5px;">
+                    DESCRIPTION OF PROPERTY IN RESPECT OF WHICH THE @(_isAppeal ? "APPEAL" : "OBJECTION") IS MADE
                 </h3>
                 <p style="color: #006570; font-size: 14px; font-weight: 600; margin: 0; letter-spacing: 0.5px; font-family: 'Poppins', sans-serif;">
                     (COMPLETE A SEPARATE FORM FOR EACH ENTRY OBJECTED TO)
                 </p>
             </div>
 
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <div style="height: 2px; background-color: #e6b000; width: 45%;"></div>
-                <div style="height: 8px; width: 8px; border-radius: 50%; background-color: #006570; border: 2px solid #e6b000;"></div>
-                <div style="height: 2px; background-color: #e6b000; width: 45%;"></div>
+            <div class="obj-step-divider">
+                <div class="line"></div>
+                <div class="dot"></div>
+                <div class="line"></div>
             </div>
         </div>
     </div>
@@ -361,18 +433,34 @@ TempData.Peek("PropertyFrom")?.ToString()
                     TempData.Keep("CurrentFilter_PD");
                     if (TempData["AppealStatus"].ToString() == "True")
                     {
-                        <div style="display: flex; align-items: center; flex-wrap: wrap; background-color: #f8f9fa; padding: 15px; border-radius: 8px; border: 2px solid #e6b000;">
-                            <span style="font-weight: 700; font-size: 16px; color: #006570; margin-right: 10px; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.5px;">Property Description:</span>
-                            <span style="font-size: 15px; color: #333; background-color: #ffffff; padding: 10px 15px; border-radius: 5px; border: 1px solid #e6b000; font-weight: 500;">@messageProp</span>
+                        // <div style="display: flex; align-items: center; flex-wrap: wrap; background-color: #f8f9fa; padding: 15px; border-radius: 8px; border: 2px solid #e6b000;">
+                        //     <span style="font-weight: 700; font-size: 16px; color: #006570; margin-right: 10px; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.5px;">Property Description:</span>
+                        //     <span style="font-size: 15px; color: #333; background-color: #ffffff; padding: 10px 15px; border-radius: 5px; border: 1px solid #e6b000; font-weight: 500;">@messageProp</span>
+                        //     <input value="@messageProp" type="hidden" name="Property_Desc" id="Property_Desc" asp-for="Property_Desc" />
+                        // </div>
+                        <div class="obj-prop-card">
+                            <div class="obj-prop-icon"><i class="fa-solid fa-location-dot"></i></div>
+                            <div>
+                                <span class="obj-prop-label">Property Description</span>
+                                <span class="obj-prop-value">@messageProp</span>
+                            </div>
                             <input value="@messageProp" type="hidden" name="Property_Desc" id="Property_Desc" asp-for="Property_Desc" />
                         </div>
                     }
                     else
                     {
-                        <div style="display: flex; align-items: center; flex-wrap: wrap; background-color: #f8f9fa; padding: 15px; border-radius: 8px; border: 2px solid #e6b000;">
-                            <span style="font-weight: 700; font-size: 16px; color: #006570; margin-right: 10px; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.5px;">Property Description:</span>
-                            <span style="font-size: 15px; color: #333; background-color: #ffffff; padding: 10px 15px; border-radius: 5px; border: 1px solid #e6b000; font-weight: 500;">@messagePD</span>
-                            <input value="@messagePD" type="hidden" name="Property_Desc" id="Property_Desc" asp-for="Property_Desc" />
+                        // <div style="display: flex; align-items: center; flex-wrap: wrap; background-color: #f8f9fa; padding: 15px; border-radius: 8px; border: 2px solid #e6b000;">
+                        //     <span style="font-weight: 700; font-size: 16px; color: #006570; margin-right: 10px; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.5px;">Property Description:</span>
+                        //     <span style="font-size: 15px; color: #333; background-color: #ffffff; padding: 10px 15px; border-radius: 5px; border: 1px solid #e6b000; font-weight: 500;">@messagePD</span>
+                        //     <input value="@messagePD" type="hidden" name="Property_Desc" id="Property_Desc" asp-for="Property_Desc" />
+                        // </div>
+                        <div class="obj-prop-card">
+                            <div class="obj-prop-icon"><i class="fa-solid fa-location-dot"></i></div>
+                            <div>
+                                <span class="obj-prop-label">Property Description</span>
+                                <span class="obj-prop-value">@messageProp</span>
+                            </div>
+                            <input value="@messageProp" type="hidden" name="Property_Desc" id="Property_Desc" asp-for="Property_Desc" />
                         </div>
                     }
                     TempData.Keep("AppealStatus");
@@ -404,17 +492,17 @@ TempData.Peek("PropertyFrom")?.ToString()
             <div style="width: 100%; margin: 20px 0; padding: 10px 0; position: relative;">
                 <h4 style="text-align: center;color: #006570" id="s_head"><strong>SECTION 1: OBJECTOR INFORMATION</strong></h4>
 
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <div style="height: 2px; background-color: #e6b000; width: 45%;"></div>
-                    <div style="height: 8px; width: 8px; border-radius: 50%; background-color: #006570; border: 2px solid #e6b000;"></div>
-                    <div style="height: 2px; background-color: #e6b000; width: 45%;"></div>
+                <div class="obj-step-divider">
+                    <div class="line"></div>
+                    <div class="dot"></div>
+                    <div class="line"></div>
                 </div>
             </div>
           
             <div class="Div1-1">
-                <div style="border-left: 5px solid #e6b000; background-color: #006572; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                    <span style="font-weight: bold; color: white; margin-right: 8px;">1.1</span>
-                    <span style="font-weight: bold; font-size: 16px;color:white; text-transform: uppercase; letter-spacing: 0.5px;">OBJECTOR IS THE OWNER</span>
+                <div class="obj-section-bar">
+                    <span class="obj-bar-num">1.1</span>
+                    <span >OBJECTOR IS THE OWNER</span>
                 </div>
              
 
@@ -458,7 +546,7 @@ TempData.Peek("PropertyFrom")?.ToString()
                     </div>
 
                 
-                    <div style="border-left: 5px solid #e6b000; background-color: #006572; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <div class="obj-section-bar">
 
                           <span style="font-weight: bold; color:white; font-size: 16px; text-transform: uppercase; letter-spacing: 0.5px;">PHYSICAL ADDRESS OF OWNER</span>
                   </div>
@@ -494,12 +582,12 @@ TempData.Peek("PropertyFrom")?.ToString()
 
                     </br>
                   
-                    <div style="border-left: 5px solid #e6b000; background-color: #006572; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <div class="obj-section-bar">
 
-                        <span style="font-weight: bold; font-size: 16px;color:white; text-transform: uppercase; letter-spacing: 0.5px;">POSTAL ADDRESS OF OWNER</span>
+                        <span>POSTAL ADDRESS OF OWNER</span>
                     </div>
                   
-                  <div style="border-left: 5px solid #e6b000; background-color: #006572; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                  <div class="obj-section-bar">
                     
                       <fieldset class="col-md-6" style="width: 100%;">
                     <p style="color:white;">
@@ -545,9 +633,9 @@ TempData.Peek("PropertyFrom")?.ToString()
                 
 
            
-                <div style="border-left: 5px solid #e6b000; background-color: #006572; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <div class="obj-section-bar">
                   
-                    <span style="font-weight: bold; font-size: 16px;color:white; text-transform: uppercase; letter-spacing: 0.5px;">CONTACT DETAILS</span>
+                    <span >CONTACT DETAILS</span>
                   </div>
             
                 <div class="alert-notice">
@@ -601,9 +689,9 @@ TempData.Peek("PropertyFrom")?.ToString()
        
               
 
-                <div style="border-left: 5px solid #e6b000; background-color: #006572; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                    <span style="font-weight: bold; color: white; margin-right: 8px;">1.2</span>
-                    <span style="font-weight: bold; font-size: 16px;color:white; text-transform: uppercase; letter-spacing: 0.5px;">OBJECTOR IS NOT THE OWNER OR REPRESENTATIVE</span>
+                <div class="obj-section-bar">
+                    <span class="obj-bar-num">1.2</span>
+                    <span >OBJECTOR IS NOT THE OWNER OR REPRESENTATIVE</span>
                   </div>
 
                 <div class="col-sm-12">
@@ -642,7 +730,7 @@ TempData.Peek("PropertyFrom")?.ToString()
             </div>
              <br></br>
              
-                <div style="border-left: 5px solid #e6b000; background-color: #006572; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <div class="obj-section-bar">
                  
                     <span style="font-weight: bold; font-size: 16px; color: white; text-transform: uppercase; letter-spacing: 0.5px;">POSTAL ADDRESS OF OBJECTOR</span>
                   </div>
@@ -677,9 +765,9 @@ TempData.Peek("PropertyFrom")?.ToString()
       
              
 
-                <div style="border-left: 5px solid #e6b000; background-color: #006572; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <div class="obj-section-bar">
                
-                    <span style="font-weight: bold; font-size: 16px;color:white; text-transform: uppercase; letter-spacing: 0.5px;">CONTACT DETAILS</span>
+                    <span >CONTACT DETAILS</span>
                   </div>
                
               
@@ -732,8 +820,8 @@ TempData.Peek("PropertyFrom")?.ToString()
             <div class="Div1-3">  
               <br/>
               
-                <div style="border-left: 5px solid #e6b000; background-color: #006572; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                    <span style="font-weight: bold; color: white; margin-right: 8px;">1.3</span>
+                <div class="obj-section-bar">
+                    <span class="obj-bar-num">1.3</span>
                     <span style="font-weight: bold; color: white; font-size: 16px; text-transform: uppercase; letter-spacing: 0.5px;">AUTHORISED REPRESENTATIVE OF THE OBJECTOR</span>
                   </div>
                  <div class="col-sm-12">
@@ -744,7 +832,7 @@ TempData.Peek("PropertyFrom")?.ToString()
                     <br></br>
             
 
-                <div style="border-left: 5px solid #e6b000; background-color: #006572; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <div class="obj-section-bar">
                     
                     <span style="font-weight: bold; font-size: 16px; color:white; text-transform: uppercase; letter-spacing: 0.5px;">POSTAL ADDRESS OF REPRESENTATIVE</span>
                   </div>
@@ -782,9 +870,9 @@ TempData.Peek("PropertyFrom")?.ToString()
                 
              <br></br>
              
-                <div style="border-left: 5px solid #e6b000; background-color: #006572; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <div class="obj-section-bar">
                    
-                    <span style="font-weight: bold; font-size: 16px;color:white; text-transform: uppercase; letter-spacing: 0.5px;">CONTACT DETAILS</span>
+                    <span >CONTACT DETAILS</span>
                   </div>
                @*  <div class="text-danger fw-semibold small mt-1" id="rep_cd_invalid">
                     Please fill in at least one of the contact details fields.
@@ -877,17 +965,17 @@ TempData.Peek("PropertyFrom")?.ToString()
             <div style="width: 100%; margin: 20px 0; padding: 10px 0; position: relative;">
 
                  <h4 style="text-align: center;color:#006572;"  id="s_head"><strong>SECTION 2: PROPERTY DETAILS (FOR SECTIONAL TITLES SEE SECTION 4)</strong></h4>
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                        <div style="height: 2px; background-color: #e6b000; width: 45%;"></div>
-                        <div style="height: 8px; width: 8px; border-radius: 50%; background-color: #006570; border: 2px solid #e6b000;"></div>
-                        <div style="height: 2px; background-color: #e6b000; width: 45%;"></div>
+                    <div class="obj-step-divider">
+                        <div class="line"></div>
+                        <div class="dot"></div>
+                        <div class="line"></div>
                     </div>
             </div>
     
 
           
 
-            <div style="border-left: 5px solid #e6b000; background-color: #006572; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <div class="obj-section-bar">
                 
                     <span style="font-weight: bold; font-size: 16px; color:white; text-transform: uppercase; letter-spacing: 0.5px;">PHYSICAL ADDRESS</span>
             </div>
@@ -1043,17 +1131,17 @@ TempData.Peek("PropertyFrom")?.ToString()
           <div style="width: 100%; margin: 20px 0; padding: 10px 0; position: relative;">
 
                 <h4 style="text-align: center; color:#006572;" id="s_head"><strong>SECTION 3: DESCRIPTION OF RESIDENTIAL DWELLING (FOR SECTIONAL TITLES SEE SECTION 4)</strong></h4>
-                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <div style="height: 2px; background-color: #e6b000; width: 45%;"></div>
-                    <div style="height: 8px; width: 8px; border-radius: 50%; background-color: #006570; border: 2px solid #e6b000;"></div>
-                    <div style="height: 2px; background-color: #e6b000; width: 45%;"></div>
+                 <div class="obj-step-divider">
+                    <div class="line"></div>
+                    <div class="dot"></div>
+                    <div class="line"></div>
                 </div>
           </div>
 
           
-                   <div style="border-left: 5px solid #e6b000; background-color: #006572; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                        <span style="font-weight: bold; color: white; margin-right: 8px;">3.1</span>
-                    <span style="font-weight: bold; font-size: 16px;color:white; text-transform: uppercase; letter-spacing: 0.5px;">MAIN DWELLING</span>
+                   <div class="obj-section-bar">
+                        <span class="obj-bar-num">3.1</span>
+                    <span >MAIN DWELLING</span>
                   </div>
             <div class="row mb-2">
                 <div class="col-sm-6">
@@ -1069,7 +1157,7 @@ TempData.Peek("PropertyFrom")?.ToString()
             <br></br>
 
    
-                  <div style="border-left: 5px solid #e6b000; background-color: #006572; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                  <div class="obj-section-bar">
                
                 <span style="font-weight: bold; font-size: 16px; color:white; text-transform: uppercase; letter-spacing: 0.5px;">STATE YES OR NO <small style="color:white;">(If Yes, indicate number of rooms)</small></span>
             </div>
@@ -1458,8 +1546,8 @@ TempData.Peek("PropertyFrom")?.ToString()
             <br></br>
 
           
-            <div style="border-left: 5px solid #e6b000; background-color: #006572; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                <span style="font-weight: bold; color: white; margin-right: 8px;">3.2</span>
+            <div class="obj-section-bar">
+                <span class="obj-bar-num">3.2</span>
                     <span style="font-weight: bold; font-size: 16px; color:white; : uppercase; letter-spacing: 0.5px;">OUTBUILDING</span>
            </div>
 
@@ -1510,9 +1598,9 @@ TempData.Peek("PropertyFrom")?.ToString()
             <br></br>
 
            
-            <div style="border-left: 5px solid #e6b000; background-color: #006572; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                <span style="font-weight: bold; color: white; margin-right: 8px;">3.3</span>
-                    <span style="font-weight: bold; font-size: 16px;color:white; text-transform: uppercase; letter-spacing: 0.5px;">OTHER BUILDINGS <small style="color:white;">(ATTACH ANNEXURE)</small></span>
+            <div class="obj-section-bar">
+                <span class="obj-bar-num">3.3</span>
+                    <span >OTHER BUILDINGS <small style="color:white;">(ATTACH ANNEXURE)</small></span>
             </div>
 
             <div class="d-flex">
@@ -1802,17 +1890,17 @@ TempData.Peek("PropertyFrom")?.ToString()
 
             <div style="width: 100%; margin: 20px 0; padding: 10px 0; position: relative;">
                 <h4 style="text-align: center;color:#006572" id="s_head"><strong>SECTION 3: DESCRIPTION OF BUILDINGS (INFORMATION UNDER 3.1 TO 3.4 TO BE SUPPLIED BY MEANS OF ANNEXURES AS FOLLOWS)</strong></h4>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <div style="height: 2px; background-color: #e6b000; width: 45%;"></div>
-                    <div style="height: 8px; width: 8px; border-radius: 50%; background-color: #006570; border: 2px solid #e6b000;"></div>
-                    <div style="height: 2px; background-color: #e6b000; width: 45%;"></div>
+                <div class="obj-step-divider">
+                    <div class="line"></div>
+                    <div class="dot"></div>
+                    <div class="line"></div>
                 </div>
             </div>
 
 
             
 
-            <div style="border-left: 5px solid #e6b000; background-color: #006572; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <div class="obj-section-bar">
                 <span style="font-weight: bold; color:white; margin-right: 8px;">3.1</span>
                     <span style="font-weight: bold; font-size: 16px; color:white; text-transform: uppercase; letter-spacing: 0.5px;">MAIN DWELLING ON FARM/HOLDING</span>
                   </div>
@@ -1831,7 +1919,7 @@ TempData.Peek("PropertyFrom")?.ToString()
             <br></br>
 
            
-                   <div style="border-left: 5px solid #e6b000; background-color: #006572; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                   <div class="obj-section-bar">
 
                          <span style="font-weight: bold; font-size: 16px; color:white; text-transform: uppercase; letter-spacing: 0.5px;">STATE YES OR NO (IF YES INDICATE NUMBER OF ROOMS)</span>
                   </div>
@@ -2207,7 +2295,7 @@ TempData.Peek("PropertyFrom")?.ToString()
 
 
           
-                 <div style="border-left: 5px solid #e6b000; background-color: #006572; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                 <div class="obj-section-bar">
                       <span style="font-weight: bold; color:white; margin-right: 8px;">3.2</span>
                          <span style="font-weight: bold; font-size: 16px; color:white; text-transform: uppercase; letter-spacing: 0.5px;">OTHER BUILDING<small style="color:white">(ATTACH ANNEXTURE A)</small></span>
                  </div>
@@ -2251,7 +2339,7 @@ TempData.Peek("PropertyFrom")?.ToString()
             </div>
 
       
-                    <div style="border-left: 5px solid #e6b000; background-color: #006572; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <div class="obj-section-bar">
 
                             <span style="font-weight: bold; color:white; margin-right: 8px;">3.3</span>
                             <span style="font-weight: bold; font-size: 16px; color:white; text-transform: uppercase; letter-spacing: 0.5px;">IS ANY PORTION OF THE PROPERTY USED FOR ANY PURPOSE OTHER THAN AGRICULTURAL?<small style="color:white;">(e.g Business, mining, eco-tourism, trading in or hunting of game)</small></span>
@@ -2301,14 +2389,14 @@ TempData.Peek("PropertyFrom")?.ToString()
             </script>
             <br></br>
          
-                    <div style="border-left: 5px solid #e6b000; background-color: #006572; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <div class="obj-section-bar">
                 
                          <span style="font-weight: bold; font-size: 16px; color:white; text-transform: uppercase; letter-spacing: 0.5px;">IF NECESSARY PROVIDE ANNEXURE B</span>
                     </div>
                
       
-                    <div style="border-left: 5px solid #e6b000; background-color: #006572; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                            <span style="font-weight: bold; color: white; margin-right: 8px;">3.4</span>
+                    <div class="obj-section-bar">
+                            <span class="obj-bar-num">3.4</span>
                             <span style="font-weight: bold; font-size: 16px; color:white; text-transform: uppercase; letter-spacing: 0.5px;">LAND ANALYSIS</span>
                      </div>
 
@@ -2423,7 +2511,7 @@ TempData.Peek("PropertyFrom")?.ToString()
             </div>
 
 
-            <div style="border-left: 5px solid #e6b000; background-color: #006572; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <div class="obj-section-bar">
                 <fieldset class="col-md-6" style="width: 100%;">
                     <label class="form-label fw-semibold  mb-2"style="color:white;">IS THE PROPERTY EXPOSED TO RIVER</label>
                     <div class="d-flex gap-4">
@@ -2439,13 +2527,13 @@ TempData.Peek("PropertyFrom")?.ToString()
                 </fieldset>
             </div>
 
-            <div style="border-left: 5px solid #e6b000; background-color: #006572; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                <span style="font-weight: bold; color: white; margin-right: 8px;">3.5</span>
-                    <span style="font-weight: bold; font-size: 16px;color:white; text-transform: uppercase; letter-spacing: 0.5px;">OTHER</span>
+            <div class="obj-section-bar">
+                <span class="obj-bar-num">3.5</span>
+                    <span >OTHER</span>
             </div>
 
 
-            <div style="border-left: 5px solid #e6b000; background-color: #006572; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <div class="obj-section-bar">
                 <fieldset class="col-md-6" style="width: 100%;">
                     <label class="form-label fw-semibold  mb-2" style="color:white;">IS YOUR PROPERTY AFFECTED BY LAND CLAIM</label>
                     <div class="d-flex gap-4">
@@ -2492,7 +2580,7 @@ TempData.Peek("PropertyFrom")?.ToString()
             </script>
             
             
-            <div style="border-left: 5px solid #e6b000; background-color: #006572; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <div class="obj-section-bar">
                 <fieldset class="col-md-6" style="width: 100%;">
                     <label class="form-label fw-semibold  mb-2"style="color:white;">DO YOU HAVE WATER RIGHTS?</label>
                     <div class="d-flex gap-4">
@@ -2538,7 +2626,7 @@ TempData.Peek("PropertyFrom")?.ToString()
                 });
             </script>
 
-            <div style="border-left: 5px solid #e6b000; background-color: #006572; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <div class="obj-section-bar">
                 <fieldset class="col-md-6" style="width: 100%;">
                     <label class="form-label fw-semibold  mb-2" style="color:white;">HAVE YOU APPLIED FOR A REZONING OR CONSENT USE?</label>
                     <div class="d-flex gap-4">
@@ -2585,7 +2673,7 @@ TempData.Peek("PropertyFrom")?.ToString()
                 toggleDescSection();
             });
         </script>
-             <div style="border-left: 5px solid #e6b000; background-color: #006572; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+             <div class="obj-section-bar">
                          <fieldset class="col-md-6" style="width: 100%;">
                     <label class="form-label fw-semibold  mb-2" style="color:white;">HAS YOUR AGRICULTURAL HOLDINGS PROPERTY BEEN EXCISED?</label>
                     <div class="d-flex gap-4">
@@ -2632,7 +2720,7 @@ TempData.Peek("PropertyFrom")?.ToString()
             });
         </script>
      
-          <div style="border-left: 5px solid #e6b000; background-color: #006572; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          <div class="obj-section-bar">
                          <fieldset class="col-md-6" style="width: 100%;">
                     <label class="form-label fw-semibold  mb-2" style="color:white;">HAS THE TOWNSHIP APPLIED FOR OR PROCLAIMED?</label>
                     <div class="d-flex gap-4">
@@ -2677,7 +2765,7 @@ TempData.Peek("PropertyFrom")?.ToString()
             });
         </script>
 
-           <div style="border-left: 5px solid #e6b000; background-color: #006572; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+           <div class="obj-section-bar">
                             
                     <span style="font-weight: bold; font-size: 16px; color: white; text-transform: uppercase; letter-spacing: 0.5px;">TENANT AND RENT INFORMATION - ANNEXURE C</span>
               </div>
@@ -2749,19 +2837,19 @@ TempData.Peek("PropertyFrom")?.ToString()
 
             <div style="width: 100%; margin: 20px 0; padding: 10px 0; position: relative;">
                  <h4 style="text-align: center; color:white;" id="s_head"><strong>SECTION 3: DESCRIPTION OF BUILDINGS (FOR SECTIONAL TITLES SEE SECTION 4)</strong></h4>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <div style="height: 2px; background-color: #e6b000; width: 45%;"></div>
-                    <div style="height: 8px; width: 8px; border-radius: 50%; background-color: #006570; border: 2px solid #e6b000;"></div>
-                    <div style="height: 2px; background-color: #e6b000; width: 45%;"></div>
+                <div class="obj-step-divider">
+                    <div class="line"></div>
+                    <div class="dot"></div>
+                    <div class="line"></div>
                 </div>
             </div>
-             <div style="border-left: 5px solid #e6b000; background-color: #006572; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+             <div class="obj-section-bar">
      
-                <span style="font-weight: bold; font-size: 16px;color:white; text-transform: uppercase; letter-spacing: 0.5px;">(INFORMATION UNDER 3.1 TO 3.4 TO BE SUPPLIED BY MEANS OF ANNEXURES AS FOLLOWS)</span>
+                <span >(INFORMATION UNDER 3.1 TO 3.4 TO BE SUPPLIED BY MEANS OF ANNEXURES AS FOLLOWS)</span>
             </div>
 
-            <div style="border-left: 5px solid #e6b000; background-color: #006572; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                <span style="font-weight: bold; font-size: 16px;color:white; text-transform: uppercase; letter-spacing: 0.5px;">TENANT AND RENT INFORMATION - ANNEXURE A</span>
+            <div class="obj-section-bar">
+                <span >TENANT AND RENT INFORMATION - ANNEXURE A</span>
             </div>
 
             <div class="row mb-2">
@@ -2805,21 +2893,21 @@ TempData.Peek("PropertyFrom")?.ToString()
             <br></br>
            
 
-            <div style="border-left: 5px solid #e6b000; background-color: #006572; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                <span style="font-weight: bold; color: white; margin-right: 8px;">3.2</span>
-                    <span style="font-weight: bold; font-size: 16px;color:white; text-transform: uppercase; letter-spacing: 0.5px;">SCHEDULE OF EXPENSES INCLUDING: MUNICIPAL, ADMINISTRATION, INSURANCES, SECURITY ETC. - ANNEXURE B</span>
+            <div class="obj-section-bar">
+                <span class="obj-bar-num">3.2</span>
+                    <span >SCHEDULE OF EXPENSES INCLUDING: MUNICIPAL, ADMINISTRATION, INSURANCES, SECURITY ETC. - ANNEXURE B</span>
               </div>
                 
 
-            <div style="border-left: 5px solid #e6b000; background-color: #006572; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <div class="obj-section-bar">
                 <span style="font-weight: bold; color: white;; margin-right: 8px;">3.3</span>
-                    <span style="font-weight: bold; font-size: 16px;color:white; text-transform: uppercase; letter-spacing: 0.5px;">STATEMENT OF INCOME & EXPENDITURE FOR PREVIOUS FINANCIAL YEAR - ANNEXURE C</span>
+                    <span >STATEMENT OF INCOME & EXPENDITURE FOR PREVIOUS FINANCIAL YEAR - ANNEXURE C</span>
               </div>
 
                   
-              <div style="border-left: 5px solid #e6b000; background-color: #006572; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                     <span style="font-weight: bold; color: white; margin-right: 8px;">3.4</span>
-                    <span style="font-weight: bold; font-size: 16px;color:white; text-transform: uppercase; letter-spacing: 0.5px;">BUILDING SIZES - ANNEXURE D</span>
+              <div class="obj-section-bar">
+                     <span class="obj-bar-num">3.4</span>
+                    <span >BUILDING SIZES - ANNEXURE D</span>
               </div>
 
             <div class="row mb-2">
@@ -2877,15 +2965,15 @@ TempData.Peek("PropertyFrom")?.ToString()
 
                  <div style="width: 100%; margin: 20px 0; padding: 10px 0; position: relative;">
                         <h4 style="text-align: center;color:white;" id="s_head"><strong>SECTION 4: SECTIONAL TITLE UNITS</strong></h4>
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                                <div style="height: 2px; background-color: #e6b000; width: 45%;"></div>
-                                <div style="height: 8px; width: 8px; border-radius: 50%; background-color: #006570; border: 2px solid #e6b000;"></div>
-                                <div style="height: 2px; background-color: #e6b000; width: 45%;"></div>
+                            <div class="obj-step-divider">
+                                <div class="line"></div>
+                                <div class="dot"></div>
+                                <div class="line"></div>
                             </div>
                     </div>
                        
-                 <div style="border-left: 5px solid #e6b000; background-color: #006572; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                    <span style="font-weight: bold; color: white; margin-right: 8px;">4.1</span>
+                 <div class="obj-section-bar">
+                    <span class="obj-bar-num">4.1</span>
                     <span style="font-weight: bold; font-size: 16px; color:white; text-transform: uppercase; letter-spacing: 0.5px;">SECTIONAL TITLE UNITS</span>
                   </div>
 
@@ -2962,7 +3050,7 @@ TempData.Peek("PropertyFrom")?.ToString()
             </div>
            
           
-                <div style="border-left: 5px solid #e6b000; background-color: #006572; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <div class="obj-section-bar">
                   
                     <span style="font-weight: bold; font-size: 16px; color:white; text-transform: uppercase; letter-spacing: 0.5px;">TENANT AND RENT INFORMATION - ANNEXURE A (ADD ANNEXURE FOR ADDITIONAL INFORMATION)</span>
                 </div>
@@ -3103,15 +3191,15 @@ TempData.Peek("PropertyFrom")?.ToString()
           
             <div style="width: 100%; margin: 20px 0; padding: 10px 0; position: relative;">
              <h4 style="text-align: center;color:#006572" id="s_head"><strong>SECTION 4: SECTIONAL TITLE UNITS</strong></h4>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <div style="height: 2px; background-color: #e6b000; width: 45%;"></div>
-                    <div style="height: 8px; width: 8px; border-radius: 50%; background-color: #006570; border: 2px solid #e6b000;"></div>
-                    <div style="height: 2px; background-color: #e6b000; width: 45%;"></div>
+                <div class="obj-step-divider">
+                    <div class="line"></div>
+                    <div class="dot"></div>
+                    <div class="line"></div>
                 </div>
             </div>
 
-            <div style="border-left: 5px solid #e6b000; background-color: #006572; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                <span style="font-weight: bold; color: white; margin-right: 8px;">4.1</span>
+            <div class="obj-section-bar">
+                <span class="obj-bar-num">4.1</span>
                     <span style="font-weight: bold; font-size: 16px; color:white; text-transform: uppercase; letter-spacing: 0.5px;">SECTIONAL TITLE UNITS</span>
               </div>
 
@@ -3655,10 +3743,10 @@ TempData.Peek("PropertyFrom")?.ToString()
             <div>
                 <div style="width: 100%; margin: 20px 0; padding: 10px 0; position: relative;">
                   <h4 style="text-align: center; color:#006572;" id="s_head"><strong>SECTION 5: MARKET INFORMATION</strong></h4>
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                            <div style="height: 2px; background-color: #e6b000; width: 45%;"></div>
-                            <div style="height: 8px; width: 8px; border-radius: 50%; background-color: #006570; border: 2px solid #e6b000;"></div>
-                            <div style="height: 2px; background-color: #e6b000; width: 45%;"></div>
+                        <div class="obj-step-divider">
+                            <div class="line"></div>
+                            <div class="dot"></div>
+                            <div class="line"></div>
                         </div>
                 </div>
 
@@ -3756,10 +3844,10 @@ TempData.Peek("PropertyFrom")?.ToString()
 
                     <div style="width: 100%; margin: 20px 0; padding: 10px 0; position: relative;">
                         <h4 style="text-align: center;color:#006572;" id="s_head"><strong>SECTION 6: OBJECTION DETAILS</strong></h4>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <div style="height: 2px; background-color: #e6b000; width: 45%;"></div>
-                    <div style="height: 8px; width: 8px; border-radius: 50%; background-color: #006570; border: 2px solid #e6b000;"></div>
-                    <div style="height: 2px; background-color: #e6b000; width: 45%;"></div>
+                <div class="obj-step-divider">
+                    <div class="line"></div>
+                    <div class="dot"></div>
+                    <div class="line"></div>
                 </div>
                     </div>
                        <div class="alert-notice">
@@ -3795,7 +3883,7 @@ TempData.Peek("PropertyFrom")?.ToString()
                       <!-- Left Column: PARTICULARS AS REFLECTED IN VALUATION ROLL -->
                     <div class="col-md-6">
                     <div style="padding: 20px; border: 3px solid #006570; border-radius: 12px; background: linear-gradient(135deg, #e8f5e9 0%, #f1f8f4 100%); box-shadow: 0 4px 15px rgba(0, 101, 112, 0.15);">
-                        <h6 style="margin-top: 0; margin-bottom: 20px; color: white; background: #006570; padding: 12px 15px; border-radius: 8px; text-align: center; font-size: 16px; font-weight: 700; letter-spacing: 0.5px;" id="Section6_roll" class="mb-3" id="Section6_roll">PARTICULARS AS REFLECTED IN VALUATION ROLL</h6>
+                    <h6 style="margin-top: 0; margin-bottom: 20px; color: white; background: #006570; padding: 12px 15px; border-radius: 8px; text-align: center; font-size: 16px; font-weight: 700; letter-spacing: 0.5px;" id="Section6_roll" class="mb-3" id="Section6_roll">PARTICULARS AS REFLECTED IN @rollDisplayName</h6>
 
                         <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #006570; font-size: 13px; text-transform: uppercase; letter-spacing: 0.3px;" class="form-label fw-semibold text-dark">DESCRIPTION OF THE PROPERTY/UNIT</label>
                         <input style="width: 100%; padding: 12px 16px; margin-bottom: 15px; border: 2px solid #006570; border-radius: 8px; background: white; font-size: 14px; color: #333; box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);" id="desc"  type="text" disabled value="@messagePD">
@@ -3810,7 +3898,8 @@ TempData.Peek("PropertyFrom")?.ToString()
                         <input style="width: 100%; padding: 12px 16px; margin-bottom: 15px; border: 2px solid #006570; border-radius: 8px; background: white; font-size: 14px; color: #333; box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);" id="extent" type="text" disabled value="@messageRA">
 
                         <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #006570; font-size: 13px; text-transform: uppercase; letter-spacing: 0.3px;" class="form-label fw-semibold text-dark">MARKET VALUE</label>
-                        <input style="width: 100%; padding: 12px 16px; margin-bottom: 15px; border: 2px solid #006570; border-radius: 8px; background: white; font-size: 14px; color: #333; box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);" id="Market_Value" type="text" disabled value="@messageMV">
+
+                        <input style="width: 100%; padding: 12px 16px; margin-bottom: 15px; border: 2px solid #006570; border-radius: 8px; background: white; font-size: 14px; color: #333; box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);" id="Market_Value" type="text" disabled value="@oldMarketValueDisplay">
 
                         <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #006570; font-size: 13px; text-transform: uppercase; letter-spacing: 0.3px;" class="form-label fw-semibold text-dark">NAME OF OWNER</label>
                         <input style="width: 100%; padding: 12px 16px; margin-bottom: 15px; border: 2px solid #006570; border-radius: 8px; background: white; font-size: 14px; color: #333; box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);" id="owner" type="text" disabled value="@messageON">
@@ -3820,8 +3909,10 @@ TempData.Peek("PropertyFrom")?.ToString()
                             <input hidden asp-for="Old_Category" value="@messageCD" />
                             <input hidden asp-for="Old_Address" value="@messageLSA" />
                             <input hidden asp-for="Old_Extent" value="@messageRA" />
-                            <input hidden asp-for="Old_Market_Value" value="@messageMV" />
+                            @* <input hidden asp-for="Old_Market_Value" value="@messageMV" /> *@
+                    <input hidden asp-for="Old_Market_Value" value="@oldMarketValueRaw" />
                             <input hidden asp-for="Old_Owner" value="@messageON" />
+                    <input type="hidden" id="NewMarketValueRaw" name="New_Market_Value" />
                         </div>
                     </div>
 
@@ -3830,13 +3921,13 @@ TempData.Peek("PropertyFrom")?.ToString()
                     <div style="padding: 20px; border: 3px solid #e6b000; border-radius: 12px; background: linear-gradient(135deg, #fff9e6 0%, #fffbf0 100%); box-shadow: 0 6px 20px rgba(230, 176, 0, 0.2);">
                         <h6 style="margin-top: 0; margin-bottom: 20px; color: white; background: linear-gradient(135deg, #e6b000 0%, #d4a000 100%); padding: 12px 15px; border-radius: 8px; text-align: center; font-size: 16px; font-weight: 700; letter-spacing: 0.5px; box-shadow: 0 3px 10px rgba(230, 176, 0, 0.3);"><strong>CHANGES REQUESTED BY OBJECTOR</strong></h6>
                         <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #d4a000; font-size: 13px; text-transform: uppercase; letter-spacing: 0.3px;" >DESCRIPTION OF THE PROPERTY/UNIT</label>
-                        <input style="width: 100%; padding: 12px 16px; margin-bottom: 15px; border: 2px solid #e6b000; border-radius: 8px; background: white; font-size: 14px; color: #333; transition: all 0.3s; box-shadow: 0 2px 8px rgba(230, 176, 0, 0.1);" id="NewPropDesc" maxlength="80" type="text" asp-for="New_Property_Description" />
+                    <input style="width: 100%; padding: 12px 16px; margin-bottom: 15px; border: 2px solid #e6b000; border-radius: 8px; background: white; font-size: 14px; color: #333; transition: all 0.3s; box-shadow: 0 2px 8px rgba(230, 176, 0, 0.1);" id="NewPropDesc" maxlength="80" type="text" asp-for="New_Property_Description" value="@(isOmissionProperty ? omissionRequestedDescription : "")" /> />
 
                         <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #d4a000; font-size: 13px; text-transform: uppercase; letter-spacing: 0.3px;">CATEGORY</label>
                         <select asp-for="New_Category" id="NewCat" style="width: 100%; padding: 12px 16px; margin-bottom: 15px; border: 2px solid #e6b000; border-radius: 8px; background: white; font-size: 14px; color: #333; transition: all 0.3s; box-shadow: 0 2px 8px rgba(230, 176, 0, 0.1); cursor: pointer;">
                                             <option value="" selected disabled>--Select Category--</option>
                                              <option value="Agricultural">Agricultural</option>
-                        <option value="Business and Commercial">Business and Commercial</option>
+                                             <option value="Business and Commercial">Business and Commercial</option>
                                           
                                              <option value="Industrial">Industrial</option>
                                             <option value="Mining Land">Mining Land</option>
@@ -3862,7 +3953,7 @@ TempData.Peek("PropertyFrom")?.ToString()
                         <input id="NewExtent" style="width: 100%; padding: 12px 16px; margin-bottom: 15px; border: 2px solid #e6b000; border-radius: 8px; background: white; font-size: 14px; color: #333; transition: all 0.3s; box-shadow: 0 2px 8px rgba(230, 176, 0, 0.1);" maxlength="10" onkeypress="return onlyNumberKey(event)" type="text" asp-for="New_Extent" />
 
                         <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #d4a000; font-size: 13px; text-transform: uppercase; letter-spacing: 0.3px;">MARKET VALUE</label>
-                        <input id="NewMarketValue"  inputmode="numeric" style="width: 100%; padding: 12px 16px; margin-bottom: 15px; border: 2px solid #e6b000; border-radius: 8px; background: white; font-size: 14px; color: #333; transition: all 0.3s; box-shadow: 0 2px 8px rgba(230, 176, 0, 0.1);" maxlength="19"  type="text" asp-for="New_Market_Value" />
+                        <input id="NewMarketValue"  inputmode="numeric" style="width: 100%; padding: 12px 16px; margin-bottom: 15px; border: 2px solid #e6b000; border-radius: 8px; background: white; font-size: 14px; color: #333; transition: all 0.3s; box-shadow: 0 2px 8px rgba(230, 176, 0, 0.1);" maxlength="19"  type="text" />
                    
                   
                        
@@ -3921,9 +4012,9 @@ TempData.Peek("PropertyFrom")?.ToString()
         <div class="divU " style="margin-top: 12px;border-radius: 12px;border: 3px solid #e6b000;padding: 20px;width: 100%;max-width: 1050px;background-color: #ffffff;box-shadow: 0 10px 40px rgba(0, 101, 112, 0.15);font-family: 'Poppins' , sans-serif;">
 
 
-            <div style="border-left: 5px solid #e6b000; background-color: #006572; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <div class="obj-section-bar">
                
-                    <span style="font-weight: bold; font-size: 16px;color:white; text-transform: uppercase; letter-spacing: 0.5px;">Upload Documents</span>
+                    <span >Upload Documents</span>
                   </div>
 
             <div class="card shadow-sm border-0 mt-4">
@@ -3956,159 +4047,160 @@ TempData.Peek("PropertyFrom")?.ToString()
 
     @*----------------------------------------Section 7  ---------------------------------------*@
 
-  <div id="section7" style="display:flex;justify-content: center;">
+<div id="section7" style="display:flex;justify-content: center;">
 
-        <div class="div7" style="margin-top: 12px;border-radius: 12px;border: 3px solid #e6b000;padding: 20px;width: 100%;max-width: 1050px;background-color: #ffffff;box-shadow: 0 10px 40px rgba(0, 101, 112, 0.15);font-family: 'Poppins' , sans-serif;">
+    <div class="div7" style="margin-top: 12px;border-radius: 12px;border: 3px solid #e6b000;padding: 20px;width: 100%;max-width: 1050px;background-color: #ffffff;box-shadow: 0 10px 40px rgba(0, 101, 112, 0.15);font-family: 'Poppins' , sans-serif;">
 
         <div style="width: 100%; margin: 20px 0; padding: 10px 0; position: relative;">
-
-                <h4 style="text-align: center;color:#006572" id="s_head"><strong>SECTION 7: DECLARATION</strong></h4>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <div style="height: 2px; background-color: #e6b000; width: 45%;"></div>
-                    <div style="height: 8px; width: 8px; border-radius: 50%; background-color: #006570; border: 2px solid #e6b000;"></div>
-                    <div style="height: 2px; background-color: #e6b000; width: 45%;"></div>
-                </div>
+            <h4 class="obj-section-title" id="s_head"><strong>Section 7: Declaration</strong></h4>
+            <div class="obj-step-divider">
+                <div class="line"></div>
+                <div class="dot"></div>
+                <div class="line"></div>
             </div>
-
-            <div style="border-left: 5px solid #e6b000; background-color: #006572; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                <span style="font-weight: bold; font-size: 16px;color:white; text-transform: uppercase; letter-spacing: 0.5px;">SECTION 6: OBJECTION DETAILS</span>
-            </div>
-
-
-            <div class="form-control border-2 rounded shadow-sm px-4 py-2" style="overflow:hidden; margin-top: 15px; border:2px solid #e6b000 !important;background:#f8f9fa;border-radius:10px;padding:25px;">
-
-                <h6 style="margin-top: 15px;margin-bottom:2%;font-family: 'Poppins', sans-serif;color:#006570;font-weight:600;line-height:1.8;">
-
-                    ATTENTION IS HEREBY DRAWN TO SECTION 42(2) OF THE ACT WHICH STATES THAT WHERE ANY DOCUMENT, INFORMATION OR
-                    PARTICULARS WERE NOT PROVIDED WHEN REQUIRED IN TERMS OF SUBSECTION 42(1) OF THE ACT AND THE OWNER CONCERNED
-                    RELIES ON SUCH DOCUMENT, INFORMATION OR PARTICULARS IN AN APPEAL TO AN APPEAL BOARD, THE APPEAL BOARD MAY MAKE
-                    AN ORDER AS TO COSTS IN TERMS OF SECTION 70 OF THE ACT IF THE APPEAL BOARD IS OF THE VIEW THAT THE FAILURE TO SO
-                    HAVE PROVIDED ANY SUCH DOCUMENT, INFORMATION OR PARTICULARS HAS PLACED AN UNNECESSARY BURDEN ON THE FUNCTIONS OF
-                    THE MUNICIPAL VALUER OR THE APPEAL BOARD.
-                </h6>
-
-                <div class="declaration-text" style="color:#006572;font-weight:600;font-size:15px;line-height:1.8;">
-                    I/WE <input style="margin-top: -1px; font-family: 'Poppins', sans-serif;border:2px solid #006570;border-radius:5px;padding:5px 10px;background:white;" id="sign_obj" maxlength="80" required asp-for="Signature_Name" type="text" onpaste="return false;" ondrop="return false;"> HEREBY DECLARE THAT THE INFORMATION AND PARTICULARS SUPPLIED ARE TRUE AND CORRECT.
-                </div>
-
-               @*  <div id="capturer" style="margin-top:15px;color:#006572;font-weight:500;">
-                    <strong style="color:#006570;">Capturer (Sap no.):</strong> <input style="margin-top: -1px;font-family: 'Poppins', sans-serif;border:2px solid #006570;border-radius:5px;padding:5px 10px;background:white;" id="sapNo" maxlength="10" required asp-for="Capturer" type="text" onpaste="return false;" ondrop="return false;" />
-                    <br />
-                </div> *@
-                                 @if (_isAdmin)
-                                {
-                                    <div id="capturer" style="display:flex;align-items:center;gap:14px;
-                                         background:linear-gradient(135deg,#1a2e35,#2d4f58);
-                                         border:1.5px solid rgba(230,176,0,.4);border-radius:10px;
-                                         padding:14px 18px;margin-bottom:18px;flex-wrap:wrap;">
-
-                                        <div style="width:42px;height:42px;border-radius:9px;flex-shrink:0;
-                                             background:rgba(230,176,0,.15);border:1.5px solid rgba(230,176,0,.4);
-                                             display:flex;align-items:center;justify-content:center;
-                                             color:#e6b000;font-size:18px;">
-                                            <i class="fa-solid fa-id-badge"></i>
-                                        </div>
-
-                                        <div style="flex:1;">
-                                            <div style="font-size:9.5px;font-weight:700;letter-spacing:1.5px;
-                                                 color:rgba(255,255,255,.4);text-transform:uppercase;margin-bottom:1px;">
-                                                Captured by Windows Authenticator
-                                            </div>
-
-                                            <div style="font-size:15px;font-weight:800;color:#fff;line-height:1.2;">
-                                                @(!string.IsNullOrWhiteSpace(_fullName) ? _fullName : "Admin User")
-                                            </div>
-
-                                            @if (!string.IsNullOrWhiteSpace(_adminPosition))
-                                            {
-                                                <div style="font-size:11.5px;color:rgba(230,176,0,.7);font-weight:600;margin-top:1px;">
-                                                    @_adminPosition
-                                                </div>
-                                            }
-
-                                            @if (!string.IsNullOrWhiteSpace(_sapFull))
-                                            {
-                                                <div style="font-size:11px;color:rgba(255,255,255,.35);margin-top:2px;font-family:monospace;">
-                                                    @_sapFull
-                                                </div>
-                                            }
-
-                                            @if (!string.IsNullOrWhiteSpace(_windowsUser))
-                                            {
-                                                <div style="font-size:10.5px;color:rgba(255,255,255,.3);margin-top:2px;font-family:monospace;">
-                                                    Windows: @_windowsUser
-                                                </div>
-                                            }
-                                        </div>
-
-                                        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0;">
-                                            <span style="font-size:9px;font-weight:700;letter-spacing:1.5px;
-                                                  color:rgba(255,255,255,.3);text-transform:uppercase;">
-                                                SAP No.
-                                            </span>
-
-                                            <span style="font-size:14px;font-weight:800;color:#e6b000;font-family:monospace;">
-                                                @_sapNumeric
-                                            </span>
-                                        </div>
-
-                                        <!-- Section 7 Capturer should save the Windows-authenticated SAP number -->
-                                        <input type="hidden" id="sapNo" asp-for="Capturer" value="@_sapNumeric" />
-
-                                        <!-- Optional audit values if your model/table has these fields later -->
-                                        <input type="hidden" name="AdminCapturedFullName" value="@_fullName" />
-                                        <input type="hidden" name="AdminCapturedPosition" value="@_adminPosition" />
-                                        <input type="hidden" name="AdminCapturedWindowsUser" value="@_windowsUser" />
-                                        <input type="hidden" name="AdminCapturedSapFull" value="@_sapFull" />
-                                    </div>
-                                }
-                                else
-                                {
-                                    <input type="hidden" asp-for="Capturer" value="" />
-                                }
-                <label hidden style="margin-top:1%"><span style="color: red;">*</span>DATE (<span style="color: red;">required</span>)</label>
-                <input hidden style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" id="signDate" required type="datetime-local" asp-for="Declaration_Date">
-                <br>
-
-                <h5 style="margin-left:2%;font-family: 'Poppins', sans-serif;color:#006570;font-weight:700;">SIGNATURE:<span style="color: red;">*</span></h5>
-
-                <div style="max-width:100%;padding:10px;box-sizing:border-box;">
-                    <canvas width="500" height="200" id="signature"
-                            style="width:100%;max-width:500px;height:auto;aspect-ratio:500/200;border:2px solid #006570;background-color:white;border-radius:5px;display:block;touch-action:none;"></canvas>
-                    <img width="500" height="200" id="savetarget"
-                         style="width:100%;max-width:500px;height:auto;border:2px solid #006570;border-radius:5px;display:block;" hidden="hidden"><br>
-
-                    <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:15px;justify-content:center;">
-                        <button style="flex:1;min-width:140px;max-width:200px;color:white;background:#006570;border:2px solid #e6b000;padding:12px 20px;font-size:14px;font-weight:600;border-radius:8px;cursor:pointer;transition:all 0.3s;font-family:'Poppins',sans-serif;white-space:nowrap;"
-                                type="button" id="Clear" class="btn"
-                                onmouseover="this.style.background='#004d56';this.style.transform='translateY(-2px)';this.style.boxShadow='0 5px 15px rgba(0,101,112,0.3)'"
-                                onmouseout="this.style.background='#006570';this.style.transform='translateY(0)';this.style.boxShadow='none'"
-                                ontouchstart="this.style.background='#004d56'"
-                                ontouchend="this.style.background='#006570'">
-                            Clear
-                        </button>
-
-                        <button type="button" id="accept" class="btn"
-                                style="flex:1;min-width:140px;max-width:200px;color:white;background:#006570;border:2px solid #e6b000;padding:12px 20px;font-size:14px;font-weight:600;border-radius:8px;cursor:pointer;transition:all 0.3s;font-family:'Poppins',sans-serif;white-space:nowrap;"
-                                onclick="checkCanvas()"
-                                onmouseover="this.style.background='#004d56';this.style.transform='translateY(-2px)';this.style.boxShadow='0 5px 15px rgba(0,101,112,0.3)'"
-                                onmouseout="this.style.background='#006570';this.style.transform='translateY(0)';this.style.boxShadow='none'"
-                                ontouchstart="this.style.background='#004d56'"
-                                ontouchend="this.style.background='#006570'">
-                            Accept signature
-                        </button>
-                    </div>
-
-                    <input type="text" onpaste="return false;" ondrop="return false;" id="SignatureDataUrl" asp-for="Signature_Picture" hidden="hidden">
-                </div>
-
-            </div>
-                <div>
-                    <button style="margin-top: 10px; margin-left: 2%;color:white; background-color:#006572;" type="button" class="btn_p7 btn"><strong>Previous</strong></button>
-                    <button type="submit" class="btn" disabled id="submitForm" onclick="showInput()" style="margin-top: 10px;float:right;margin-right: 2%;color:white; background-color:#006572;"><strong>Submit</strong></button>
-                </div>
         </div>
 
+        <div class="obj-section-bar">
+            <span>Declaration &amp; @(_isAppeal ? "Appeal" : "Objection") Details</span>
+        </div>
+
+        <!-- ── Legal notice (Section 42(2)) ───────────────────────── -->
+        <div class="obj-legal-box">
+            <h6>
+                Attention is hereby drawn to Section 42(2) of the Act, which states that where any document, information or
+                particulars were not provided when required in terms of subsection 42(1) of the Act and the owner concerned
+                relies on such document, information or particulars in an appeal to an Appeal Board, the Appeal Board may make
+                an order as to costs in terms of Section 70 of the Act if the Appeal Board is of the view that the failure to so
+                have provided any such document, information or particulars has placed an unnecessary burden on the functions of
+                the Municipal Valuer or the Appeal Board.
+            </h6>
+        </div>
+
+        <!-- ── "I/WE ... declare" ─────────────────────────────────── -->
+        <div class="obj-declaration-row">
+            <span>I / WE</span>
+            <input id="sign_obj" maxlength="80" required asp-for="Signature_Name"
+                   type="text" onpaste="return false;" ondrop="return false;"
+                   placeholder="Full name(s)" />
+            <span>hereby declare that the information and particulars supplied are true and correct.</span>
+        </div>
+
+        <!-- ── Capturer (admin only) ───────────────────────────────── -->
+        @if (_isAdmin)
+        {
+            <div id="capturer" style="display:flex;align-items:center;gap:14px;
+                background:linear-gradient(135deg,#1a2e35,#2d4f58);
+                border:1.5px solid rgba(230,176,0,.4);border-radius:10px;
+                padding:14px 18px;margin-bottom:18px;flex-wrap:wrap;">
+
+                <div style="width:42px;height:42px;border-radius:9px;flex-shrink:0;
+                    background:rgba(230,176,0,.15);border:1.5px solid rgba(230,176,0,.4);
+                    display:flex;align-items:center;justify-content:center;
+                    color:#e6b000;font-size:18px;">
+                    <i class="fa-solid fa-id-badge"></i>
+                </div>
+
+                <div style="flex:1;">
+                    <div style="font-size:9.5px;font-weight:700;letter-spacing:1.5px;
+                        color:rgba(255,255,255,.4);text-transform:uppercase;margin-bottom:1px;">
+                        Captured by Windows Authenticator
+                    </div>
+
+                    <div style="font-size:15px;font-weight:800;color:#fff;line-height:1.2;">
+                        @(!string.IsNullOrWhiteSpace(_fullName) ? _fullName : "Admin User")
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(_adminPosition))
+                    {
+                        <div style="font-size:11.5px;color:rgba(230,176,0,.7);font-weight:600;margin-top:1px;">
+                            @_adminPosition
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrWhiteSpace(_sapFull))
+                    {
+                        <div style="font-size:11px;color:rgba(255,255,255,.35);margin-top:2px;font-family:monospace;">
+                            @_sapFull
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrWhiteSpace(_windowsUser))
+                    {
+                        <div style="font-size:10.5px;color:rgba(255,255,255,.3);margin-top:2px;font-family:monospace;">
+                            Windows: @_windowsUser
+                        </div>
+                    }
+                </div>
+
+                <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0;">
+                    <span style="font-size:9px;font-weight:700;letter-spacing:1.5px;
+                        color:rgba(255,255,255,.3);text-transform:uppercase;">
+                        SAP No.
+                    </span>
+                    <span style="font-size:14px;font-weight:800;color:#e6b000;font-family:monospace;">
+                        @_sapNumeric
+                    </span>
+                </div>
+
+                <input type="hidden" id="sapNo" asp-for="Capturer" value="@_sapNumeric" />
+                <input type="hidden" name="AdminCapturedFullName" value="@_fullName" />
+                <input type="hidden" name="AdminCapturedPosition" value="@_adminPosition" />
+                <input type="hidden" name="AdminCapturedWindowsUser" value="@_windowsUser" />
+                <input type="hidden" name="AdminCapturedSapFull" value="@_sapFull" />
+            </div>
+        }
+        else
+        {
+            <input type="hidden" asp-for="Capturer" value="" />
+        }
+
+        <input hidden style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2"
+               id="signDate" required type="datetime-local" asp-for="Declaration_Date">
+
+        <!-- ── Signature ───────────────────────────────────────────── -->
+        <div class="obj-signature-card">
+            <div class="obj-signature-label">
+                <i class="fa-solid fa-signature"></i>
+                Signature <span class="req">*</span>
+            </div>
+
+            <canvas width="500" height="200" id="signature"></canvas>
+            <img width="500" height="200" id="savetarget"
+                 style="width:100%;max-width:500px;height:auto;border:2px solid #006570;border-radius:8px;display:block;margin-top:14px;"
+                 hidden="hidden">
+
+            <div class="obj-signature-actions">
+                <button type="button" id="Clear" class="obj-sig-btn">
+                    <i class="fa-solid fa-eraser"></i> Clear
+                </button>
+                <button type="button" id="accept" class="obj-sig-btn obj-sig-btn-accept" onclick="checkCanvas()">
+                    <i class="fa-solid fa-check"></i> Accept Signature
+                </button>
+            </div>
+
+            <input type="text" onpaste="return false;" ondrop="return false;"
+                   id="SignatureDataUrl" asp-for="Signature_Picture" hidden="hidden">
+        </div>
+
+        <!-- ── Navigation ──────────────────────────────────────────── -->
+        <div style="margin-top:18px;">
+            <button style="margin-top: 10px; margin-left: 2%;color:white; background-color:#006572;" type="button" class="btn_p7 btn"><strong>Previous</strong></button>
+            <button type="submit" class="btn" disabled id="submitForm" onclick="showInput()" style="margin-top: 10px;float:right;margin-right: 2%;color:white; background-color:#006572;"><strong>Submit</strong></button>
+        </div>
+    </div>
+
+</div>
+
+
+
+    <div id="objLoaderOverlay" class="obj-loader-overlay">
+        <div class="obj-loader-spinner"></div>
+        <div class="obj-loader-text">
+            <strong>Submitting your @(_isAppeal ? "Appeal" : "Objection")...</strong>
+            Please wait while the Valuation Department receives your
+            @(_isAppeal ? "appeal" : "objection"). Do not close or refresh
+            this page.
+        </div>
     </div>
 
 
@@ -4123,6 +4215,7 @@ TempData.Peek("PropertyFrom")?.ToString()
    @*  <script asp-append-version="true" src="~/js/ObjectionMulti_Section78.js" type="text/javascript"> </script> *@
             <script type="text/javascript">load();</script>
         
+
         }
 
    

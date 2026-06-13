@@ -151,42 +151,113 @@ function foreigner() {
 var cat = ""; var Market_value = ""; var extent = "";
 var desc = ""; var owner = ""; var objId = ""; var pin;
 
+let isSubmittingObjectionForm = false;
+
 function showInput() {
-    desc = document.getElementById("Property_Desc").value;
+    if (isSubmittingObjectionForm) {
+        return false;
+    }
+
+    // 1. Validate Section 6 before submit
+    if (typeof section6ValidateBeforeNext === "function") {
+        if (!section6ValidateBeforeNext()) {
+            hideSubmitLoader();
+            return false;
+        }
+    }
+
+    // 2. Store property summary in sessionStorage
+    const propertyDescEl = document.getElementById("Property_Desc");
+    const marketValueEl = document.getElementById("Market_Value");
+    const extentEl = document.getElementById("extent");
+    const catEl = document.getElementById("cat");
+    const ownerEl = document.getElementById("owner");
+
+    desc = propertyDescEl ? propertyDescEl.value : "";
+    Market_value = marketValueEl ? marketValueEl.value : "";
+    extent = extentEl ? extentEl.value : "";
+    Cat = catEl ? catEl.value : "";
+    owner = ownerEl ? ownerEl.value : "";
+
     sessionStorage.setItem("desc", desc);
-    Market_value = document.getElementById("Market_Value").value;
     sessionStorage.setItem("Market_Value", Market_value);
-    extent = document.getElementById("extent").value;
     sessionStorage.setItem("extent", extent);
-    Cat = document.getElementById("cat").value;
     sessionStorage.setItem("cat", Cat);
-    owner = document.getElementById("owner").value;
     sessionStorage.setItem("owner", owner);
 
-    if (userEmailElement) {
-        if (regex.test(userEmail) || userEmail === 'AdministrationEnquiries@Joburg.org.za') {
-            if (document.getElementById("sign_obj").value.trim() !== "" &&
-                document.getElementById("sapNo").value.trim() !== "") {
-                const submitButton = document.getElementById("submitForm");
-                submitButton.disabled = true;
-                submitButton.innerHTML = 'Please wait...';
-                document.getElementById("myForm").submit();
-            }
-        } else {
-            if (document.getElementById("sign_obj").value.trim() !== "") {
-                const submitButton = document.getElementById("submitForm");
-                submitButton.disabled = true;
-                submitButton.innerHTML = 'Please wait...';
-                document.getElementById("myForm").submit();
-            }
-        }
-    } else {
-        if (document.getElementById("sign_obj").value.trim() !== "") {
-            const submitButton = document.getElementById("submitForm");
-            submitButton.disabled = true;
-            submitButton.innerHTML = 'Please wait...';
-            document.getElementById("myForm").submit();
-        }
+    // 3. Validate signature
+    const signObj = document.getElementById("sign_obj");
+
+    if (!signObj || signObj.value.trim() === "") {
+        alert("Please sign the form before submitting.");
+        hideSubmitLoader();
+        return false;
+    }
+
+    // 4. Validate admin SAP only when admin
+    const sapNo = document.getElementById("sapNo");
+
+    if (isAdminFlag === true && (!sapNo || sapNo.value.trim() === "")) {
+        alert("Admin SAP number is required before submitting.");
+        hideSubmitLoader();
+        return false;
+    }
+
+    // 5. Push raw money values before submit
+    syncMoneyFieldsBeforeSubmit();
+
+    // 6. Submit once only
+    isSubmittingObjectionForm = true;
+
+    showSubmitLoader();
+
+    const submitButton = document.getElementById("submitForm");
+
+    if (submitButton) {
+        submitButton.disabled = true;
+        submitButton.innerHTML = "Please wait...";
+    }
+
+    const form = document.getElementById("myForm");
+
+    if (!form) {
+        hideSubmitLoader();
+        isSubmittingObjectionForm = false;
+        alert("Form was not found. Please refresh and try again.");
+        return false;
+    }
+
+    form.submit();
+
+    return false;
+}
+
+function showSubmitLoader() {
+    const overlay = document.getElementById("objLoaderOverlay");
+
+    if (overlay) {
+        overlay.classList.add("show");
+        overlay.style.display = "flex";
+    }
+
+    document.body.classList.add("loading");
+}
+
+function hideSubmitLoader() {
+    const overlay = document.getElementById("objLoaderOverlay");
+
+    if (overlay) {
+        overlay.classList.remove("show");
+        overlay.style.display = "none";
+    }
+
+    document.body.classList.remove("loading");
+
+    const submitButton = document.getElementById("submitForm");
+
+    if (submitButton) {
+        submitButton.disabled = false;
+        submitButton.innerHTML = "Submit";
     }
 }
 
@@ -1160,3 +1231,150 @@ style.textContent = `
 `;
 
 document.head.appendChild(style);
+function normaliseMoney(value) {
+    if (!value) return "";
+    return value.toString().replace(/[^\d]/g, "");
+}
+
+function formatRand(value) {
+    const raw = normaliseMoney(value);
+
+    if (!raw) return "";
+
+    return "R " + Number(raw).toLocaleString("en-ZA", {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+    }).replace(/,/g, " ");
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    const newMv = document.getElementById("NewMarketValue");
+    const newMvRaw = document.getElementById("NewMarketValueRaw");
+
+    if (newMv && newMvRaw) {
+        newMv.addEventListener("input", function () {
+            const raw = normaliseMoney(newMv.value);
+            newMvRaw.value = raw;
+            newMv.value = raw ? formatRand(raw) : "";
+        });
+
+        const form = document.getElementById("myForm");
+
+        if (form) {
+            form.addEventListener("submit", function () {
+                newMvRaw.value = normaliseMoney(newMv.value);
+            });
+        }
+    }
+});
+
+
+
+let isResettingCategoryDropdown = false;
+
+function resetCategoryDropdown(selectElement) {
+    if (!selectElement) return;
+
+    isResettingCategoryDropdown = true;
+
+    selectElement.value = "";
+
+    setTimeout(function () {
+        isResettingCategoryDropdown = false;
+        selectElement.focus();
+    }, 100);
+}
+
+function validateCategoryChange(selectId, oldCategoryId) {
+    const ddl = document.getElementById(selectId);
+    const oldInput = document.getElementById(oldCategoryId);
+
+    if (!ddl || !oldInput) return;
+
+    ddl.addEventListener("change", function () {
+        if (isResettingCategoryDropdown) {
+            return;
+        }
+
+        const selectedCategory = normaliseCategory(ddl.value);
+        const oldCategory = normaliseCategory(oldInput.value);
+
+        if (!selectedCategory || !oldCategory) return;
+
+        if (selectedCategory === oldCategory) {
+            showCategorySameModal(ddl);
+        }
+    });
+}
+
+function validateCategoryChange(selectId, oldCategoryId) {
+    const ddl = document.getElementById(selectId);
+    const oldInput = document.getElementById(oldCategoryId);
+
+    if (!ddl || !oldInput) return;
+
+    ddl.addEventListener("change", function () {
+        const selectedCategory = normaliseCategory(ddl.value);
+        const oldCategory = normaliseCategory(oldInput.value);
+
+        if (!selectedCategory || !oldCategory) return;
+
+        if (selectedCategory === oldCategory) {
+            alert("You cannot select the same category that is already on the current valuation roll. Please select a different category.");
+
+            resetCategoryDropdown(ddl);
+
+            setTimeout(function () {
+                ddl.focus();
+            }, 100);
+        }
+    });
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    // Single-purpose category dropdown
+    validateCategoryChange("NewCategory", "OldCategoryValue");
+
+    // Multipurpose category dropdowns
+    validateCategoryChange("NewCategory1", "OldCategoryValue1");
+    validateCategoryChange("NewCategory2", "OldCategoryValue2");
+    validateCategoryChange("NewCategory3", "OldCategoryValue3");
+});
+
+function syncMoneyFieldsBeforeSubmit() {
+    const newMv = document.getElementById("NewMarketValue");
+    const newMvRaw = document.getElementById("NewMarketValueRaw");
+
+    if (newMv && newMvRaw) {
+        newMvRaw.value = normaliseMoney(newMv.value);
+    }
+
+    const multiMoneyPairs = [
+        ["NewMarketValue1", "NewMarketValueRaw1"],
+        ["NewMarketValue2", "NewMarketValueRaw2"],
+        ["NewMarketValue3", "NewMarketValueRaw3"]
+    ];
+
+    multiMoneyPairs.forEach(pair => {
+        const visible = document.getElementById(pair[0]);
+        const raw = document.getElementById(pair[1]);
+
+        if (visible && raw) {
+            raw.value = normaliseMoney(visible.value);
+        }
+    });
+}
+function showCategorySameModal(dropdown) {
+    section6SetFieldError(
+        dropdown,
+        "You cannot select the same category that is already on the current valuation roll. Please select a different category."
+    );
+
+    showLocusStandModal("Objection", [
+        {
+            label: "Category"
+        }
+    ]);
+
+    resetCategoryDropdown(dropdown);
+}

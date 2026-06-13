@@ -80,14 +80,14 @@ public class PropertySearchService : IPropertySearchService
 
     // ── Property Detail — uses roll-specific DB connection ────────────
     public async Task<List<PropertyDetailResult>> GetPropertyDetailsAsync(
-        string rollSource,
-        string unitKey,
-        string valuationKey)
+     string rollSource,
+     string unitKey,
+     string valuationKey)
     {
         if (!RollSearchRegistry.Configs.TryGetValue(rollSource, out var config))
             return new List<PropertyDetailResult>();
 
-        var connString = GetRollConnection(config);   // ← roll-specific DB
+        var connString = GetRollConnection(config);
 
         await using var conn = new SqlConnection(connString);
 
@@ -96,7 +96,39 @@ public class PropertySearchService : IPropertySearchService
             new { UnitKey = unitKey, ValuationKey = valuationKey },
             commandType: CommandType.StoredProcedure);
 
-        return results.ToList();
+        return DeduplicatePropertyDetails(results.ToList());
+    }
+    private static List<PropertyDetailResult> DeduplicatePropertyDetails(
+    List<PropertyDetailResult> rows)
+    {
+        return rows
+            .GroupBy(x => new
+            {
+                UnitKey = Clean(x.UnitKey),
+                ValuationKey = Clean(x.ValuationKey),
+                PropertyId = Clean(x.PropertyId),
+                Category = Clean(x.CatDesc),
+                Extent = Clean(x.RateableArea),
+                MarketValue = CleanMoney(x.MarketValue),
+                WefDate = Clean(x.WefDate)
+            })
+            .Select(g => g.First())
+            .ToList();
+    }
+
+    private static string Clean(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value)
+            ? ""
+            : value.Trim().ToUpperInvariant();
+    }
+
+    private static string CleanMoney(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return "";
+
+        return new string(value.Where(char.IsDigit).ToArray());
     }
 
     // ── SP selection (mirrors V1 if/else logic) ───────────────────────

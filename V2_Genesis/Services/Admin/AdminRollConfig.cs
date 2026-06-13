@@ -41,7 +41,7 @@
                     StatsSp: "AdminDashboardStats_Sup3",
                     ConnectionKey: "Sup3Connection"
                 ),
-                ["Objection_Supp3"] = new(
+                ["Objection_Supp4"] = new(
                     ObjSearchSp: "GetObjectionDetailsBySearch_Sup4",
                     AppSearchSp: "GV_App_Search_Sup4",
                     PropSearchSp: "GV_Prop_Search_Sup4",

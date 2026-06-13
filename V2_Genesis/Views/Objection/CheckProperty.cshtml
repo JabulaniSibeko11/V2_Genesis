@@ -657,11 +657,19 @@ function updateLodgeSummary() {
     if (el) el.innerHTML = '<i class="fa-solid fa-circle-check" style="color:#22c55e;margin-right:6px;"></i>Section 78 Query as <strong>' + (objector_type==='Owner'?'Owner':'Representative') + '</strong> on a <strong>' + (propLabels[property_type]||property_type) + '</strong> property';
 }
 
-function buildLodgeUrl(isMulti) {
-    var qs = '?PropertyFrom='+encodeURIComponent(SOURCE)+'&objectorType='+encodeURIComponent(selectedObjector)+'&appeal='+(IS_APPEAL?'True':'False');
-    if (IS_LIS) return isMulti ? '/LIS/ViewMultiPurposeFormSup3'+qs : '/LIS/ViewResidentialFormSup3'+qs;
-    return isMulti ? '/objection/multipurpose'+qs : '/objection/form'+qs;
-}
+        function buildLodgeUrl(isMulti) {
+            var qs =
+                '?PropertyFrom=' + encodeURIComponent(SOURCE) +
+                '&objectorType=' + encodeURIComponent(selectedObjector) +
+                '&appeal=' + (IS_APPEAL ? 'True' : 'False');
+
+            // Do not hard-code Sup3 here.
+            // LIS/Omission must still go through the same Objection form route
+            // and keep PropertyFrom=LIS/Omission in TempData/form hidden fields.
+            return isMulti
+                ? '/objection/multipurpose' + qs
+                : '/objection/form' + qs;
+        }
 
 function checkBothSelected() {
     if (!selectedProperty || !selectedObjector) return;

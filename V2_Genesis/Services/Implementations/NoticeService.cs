@@ -1601,5 +1601,67 @@ public class NoticeService : INoticeService
             AppealCloseDate = appealClose,
         };
     }
+    public async Task<(bool Success, byte[]? FileBytes, string? FileName, string? Error)>
+    GetSavedAcknowledgementAsync(string referenceNo, string rollSource)
+    {
+        if (string.IsNullOrWhiteSpace(referenceNo))
+            return (false, null, null, "Reference number is required.");
+
+        referenceNo = referenceNo.Trim();
+
+        try
+        {
+            /*
+             IMPORTANT:
+             Change this base folder to the same root folder where your acknowledgement
+             and evidence files are saved.
+
+             Example:
+             C:\ObjectionEvidence
+             C:\V2_Genesis\Evidence
+             \\server\ObjectionEvidence
+            */
+            var rootFolder =
+                _config["FileStorage:EvidenceRoot"]
+                ?? _config["EvidenceRoot"]
+                ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "Evidence");
+
+            if (!Directory.Exists(rootFolder))
+            {
+                return (false, null, null, $"Evidence folder does not exist: {rootFolder}");
+            }
+
+            // Search recursively because each reference usually has its own folder
+            var matchingFiles = Directory
+                .EnumerateFiles(rootFolder, "*.pdf", SearchOption.AllDirectories)
+                .Where(path =>
+                {
+                    var fileName = Path.GetFileName(path);
+
+                    return fileName.Contains(referenceNo, StringComparison.OrdinalIgnoreCase)
+                           && fileName.Contains("Acknowledgement", StringComparison.OrdinalIgnoreCase);
+                })
+                .OrderByDescending(File.GetCreationTime)
+                .ToList();
+
+            var ackPath = matchingFiles.FirstOrDefault();
+
+            if (string.IsNullOrWhiteSpace(ackPath) || !File.Exists(ackPath))
+            {
+                return (false, null, null,
+                    $"Acknowledgement PDF was not found for reference {referenceNo}.");
+            }
+
+            var bytes = await File.ReadAllBytesAsync(ackPath);
+            var fileNameToDownload = Path.GetFileName(ackPath);
+
+            return (true, bytes, fileNameToDownload, null);
+        }
+        catch (Exception ex)
+        {
+            return (false, null, null,
+                $"Could not read acknowledgement PDF. {ex.Message}");
+        }
+    }
 }
  

@@ -1,0 +1,689 @@
+﻿/* ═══════════════════════════════════════════════════════════════
+   info-pages.css
+   Shared styles for Privacy.cshtml + Contact.cshtml (and any future
+   static/info pages — Terms, Help, etc.)
+   Uses the same COJ palette as site.css (gold #e6b000, teal #006570/
+   #36626d, Poppins).
+═══════════════════════════════════════════════════════════════ */
+
+/* ── Hero strip ──────────────────────────────────────────────── */
+.info-hero {
+    background: linear-gradient(135deg, #1a2e35, #006570);
+    border-bottom: 4px solid #e6b000;
+    padding: 48px 24px;
+    text-align: center;
+}
+
+.info-hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(230,176,0,.15);
+    border: 1px solid rgba(230,176,0,.4);
+    color: #e6b000;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 6px 16px;
+    border-radius: 100px;
+    margin-bottom: 14px;
+}
+
+.info-hero h1 {
+    color: #ffffff;
+    font-size: 28px;
+    font-weight: 800;
+    margin: 0 0 8px;
+    font-family: 'Poppins', sans-serif;
+}
+
+    .info-hero h1 span {
+        color: #e6b000;
+    }
+
+.info-hero p {
+    color: rgba(255,255,255,.65);
+    font-size: 14px;
+    max-width: 560px;
+    margin: 0 auto;
+}
+
+/* ── Page layout ─────────────────────────────────────────────── */
+.info-page {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 36px 24px 64px;
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    gap: 32px;
+    font-family: 'Poppins', sans-serif;
+}
+
+/* ── Sticky table of contents ───────────────────────────────── */
+.info-toc {
+    align-self: start;
+    position: sticky;
+    top: 24px;
+    background: #ffffff;
+    border: 1.5px solid #eef1f3;
+    border-radius: 12px;
+    padding: 18px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.04);
+}
+
+    .info-toc h4 {
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: #8b96a0;
+        margin: 0 0 12px;
+    }
+
+    .info-toc a {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        color: #1a1a1a;
+        padding: 7px 0;
+        border-left: 3px solid transparent;
+        padding-left: 10px;
+        text-decoration: none;
+        transition: border-color .15s, color .15s;
+    }
+
+        .info-toc a:hover,
+        .info-toc a.active {
+            border-left-color: #e6b000;
+            color: #006570;
+        }
+
+/* ── Content card ────────────────────────────────────────────── */
+.info-content {
+    background: #ffffff;
+    border: 1.5px solid #eef1f3;
+    border-radius: 12px;
+    padding: 32px 36px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.04);
+}
+
+.info-updated {
+    font-size: 12px;
+    color: #8b96a0;
+    font-weight: 600;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+    .info-updated i {
+        color: #e6b000;
+    }
+
+.info-content section {
+    margin-bottom: 32px;
+}
+
+    .info-content section:last-child {
+        margin-bottom: 0;
+    }
+
+.info-content h2 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 17px;
+    font-weight: 800;
+    color: #006570;
+    margin: 0 0 12px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #f5f5f5;
+}
+
+    .info-content h2 .num {
+        background: #e6b000;
+        color: #1a1a1a;
+        font-size: 12px;
+        font-weight: 800;
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+.info-content h3 {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin: 18px 0 8px;
+}
+
+.info-content p,
+.info-content li {
+    font-size: 13.5px;
+    line-height: 1.75;
+    color: #4a4a4a;
+}
+
+.info-content ul {
+    margin: 0 0 0 20px;
+    padding: 0;
+}
+
+.info-content li {
+    margin-bottom: 6px;
+}
+
+.info-content a {
+    color: #006570;
+    font-weight: 700;
+    text-decoration: none;
+    border-bottom: 1px solid rgba(0,101,112,.25);
+}
+
+    .info-content a:hover {
+        color: #e6b000;
+        border-bottom-color: #e6b000;
+    }
+
+/* Highlighted note box */
+.info-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    background: var(--coj-gold-light, #fdf6d8);
+    border: 1px solid #e6b000;
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 12.5px;
+    color: #7a5800;
+    margin-top: 12px;
+}
+
+    .info-note i {
+        color: #c49a00;
+        margin-top: 2px;
+        flex-shrink: 0;
+    }
+
+
+/* ══════════════════════════════════════════════════════════════
+   CONTACT PAGE SPECIFIC
+══════════════════════════════════════════════════════════════ */
+.contact-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+    margin-bottom: 36px;
+}
+
+.contact-card {
+    background: #ffffff;
+    border: 1.5px solid #eef1f3;
+    border-left: 4px solid #e6b000;
+    border-radius: 12px;
+    padding: 22px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.04);
+}
+
+    .contact-card .icon {
+        width: 42px;
+        height: 42px;
+        background: #fdf6d8;
+        border: 1px solid rgba(230,176,0,.3);
+        color: #c49a00;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        margin-bottom: 12px;
+    }
+
+    .contact-card h3 {
+        font-size: 14px;
+        font-weight: 800;
+        color: #1a1a1a;
+        margin: 0 0 4px;
+    }
+
+    .contact-card p {
+        font-size: 12.5px;
+        color: #8b96a0;
+        margin: 0 0 14px;
+        line-height: 1.6;
+    }
+
+    .contact-card .detail {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        font-weight: 700;
+        color: #006570;
+        text-decoration: none;
+        margin-bottom: 6px;
+    }
+
+        .contact-card .detail i {
+            color: #e6b000;
+            width: 16px;
+        }
+
+        .contact-card .detail:hover {
+            color: #e6b000;
+        }
+
+/* Office hours table */
+.hours-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+    .hours-table td {
+        padding: 9px 0;
+        border-bottom: 1px solid #f5f5f5;
+    }
+
+        .hours-table td:first-child {
+            font-weight: 700;
+            color: #1a1a1a;
+            width: 50%;
+        }
+
+        .hours-table td:last-child {
+            color: #6b6b6b;
+            text-align: right;
+        }
+
+    .hours-table tr:last-child td {
+        border-bottom: none;
+    }
+
+/* Map placeholder */
+.contact-map {
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1.5px solid #eef1f3;
+    height: 280px;
+}
+
+    .contact-map iframe {
+        width: 100%;
+        height: 100%;
+        border: 0;
+        display: block;
+    }
+
+
+/* ── Responsive ──────────────────────────────────────────────── */
+@media (max-width: 900px) {
+    .info-page {
+        grid-template-columns: 1fr;
+    }
+
+    .info-toc {
+        position: static;
+    }
+
+    .contact-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 600px) {
+    .info-hero {
+        padding: 32px 16px;
+    }
+
+        .info-hero h1 {
+            font-size: 21px;
+        }
+
+    .info-content {
+        padding: 22px 18px;
+    }
+
+    .info-page {
+        padding: 24px 14px 48px;
+    }
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   BIG-SCREEN SCALING (matches site-wide breakpoints)
+══════════════════════════════════════════════════════════════ */
+@media (min-width: 1400px) {
+    .info-page {
+        max-width: 1280px;
+    }
+}
+
+@media (min-width: 1920px) {
+    .info-page {
+        max-width: 1500px;
+    }
+
+    .info-content {
+        padding: 40px 48px;
+    }
+}
+
+/* Contact page office/hours two-column grid */
+@media (max-width: 800px) {
+    .contact-office-grid {
+        grid-template-columns: 1fr !important;
+        gap: 24px !important;
+    }
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   FAQ PAGE
+══════════════════════════════════════════════════════════════ */
+
+/* Search box */
+.faq-search-wrap {
+    position: relative;
+    margin-bottom: 28px;
+}
+
+    .faq-search-wrap i {
+        position: absolute;
+        left: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #c4ccd2;
+        font-size: 14px;
+    }
+
+.faq-search {
+    width: 100%;
+    padding: 13px 16px 13px 44px;
+    border: 1.5px solid #e8ecee;
+    border-radius: 10px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 13.5px;
+    color: #1a1a1a;
+    background: #ffffff;
+    transition: border-color .15s, box-shadow .15s;
+}
+
+    .faq-search:focus {
+        outline: none;
+        border-color: #e6b000;
+        box-shadow: 0 0 0 3px rgba(230,176,0,.15);
+    }
+
+.faq-no-results {
+    display: none;
+    text-align: center;
+    padding: 32px 16px;
+    color: #8b96a0;
+    font-size: 13.5px;
+}
+
+    .faq-no-results.show {
+        display: block;
+    }
+
+/* Category pills */
+.faq-cats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 28px;
+}
+
+.faq-cat-btn {
+    background: #ffffff;
+    border: 1.5px solid #e8ecee;
+    color: #4a4a4a;
+    font-family: 'Poppins', sans-serif;
+    font-size: 12.5px;
+    font-weight: 700;
+    padding: 8px 16px;
+    border-radius: 100px;
+    cursor: pointer;
+    transition: all .15s;
+}
+
+    .faq-cat-btn:hover {
+        border-color: #e6b000;
+        color: #006570;
+    }
+
+    .faq-cat-btn.active {
+        background: #006570;
+        border-color: #006570;
+        color: #ffffff;
+    }
+
+/* Section group heading */
+.faq-group-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    font-weight: 800;
+    color: #006570;
+    text-transform: uppercase;
+    letter-spacing: .8px;
+    margin: 28px 0 12px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #f5f5f5;
+}
+
+    .faq-group-title:first-child {
+        margin-top: 0;
+    }
+
+    .faq-group-title i {
+        background: #fdf6d8;
+        color: #c49a00;
+        width: 30px;
+        height: 30px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+    }
+
+/* Accordion item */
+.faq-item {
+    border: 1.5px solid #eef1f3;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    overflow: hidden;
+    transition: border-color .15s;
+}
+
+    .faq-item.open {
+        border-color: #e6b000;
+    }
+
+.faq-question {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 16px 20px;
+    cursor: pointer;
+    background: #ffffff;
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #1a1a1a;
+    transition: background .15s;
+}
+
+    .faq-question:hover {
+        background: #fffdf5;
+    }
+
+.faq-item.open .faq-question {
+    background: #fffdf5;
+}
+
+.faq-chevron {
+    color: #c4ccd2;
+    font-size: 13px;
+    flex-shrink: 0;
+    transition: transform .25s, color .25s;
+}
+
+.faq-item.open .faq-chevron {
+    transform: rotate(180deg);
+    color: #e6b000;
+}
+
+.faq-answer {
+    display: none;
+    padding: 0 20px 18px;
+    font-size: 13px;
+    line-height: 1.75;
+    color: #5a5a5a;
+}
+
+.faq-item.open .faq-answer {
+    display: block;
+}
+
+.faq-answer p {
+    margin: 0 0 10px;
+}
+
+    .faq-answer p:last-child {
+        margin-bottom: 0;
+    }
+
+.faq-answer ul {
+    margin: 0 0 10px 18px;
+    padding: 0;
+}
+
+.faq-answer li {
+    margin-bottom: 4px;
+}
+
+.faq-answer a {
+    color: #006570;
+    font-weight: 700;
+    text-decoration: none;
+    border-bottom: 1px solid rgba(0,101,112,.25);
+}
+
+    .faq-answer a:hover {
+        color: #e6b000;
+        border-bottom-color: #e6b000;
+    }
+
+.faq-answer code {
+    background: #f5f5f5;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 12px;
+}
+
+/* Still need help CTA */
+.faq-cta {
+    margin-top: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+    background: linear-gradient(135deg, #1a2e35, #006570);
+    border-radius: 12px;
+    padding: 24px 28px;
+}
+
+.faq-cta-text h3 {
+    color: #ffffff;
+    font-size: 16px;
+    font-weight: 800;
+    margin: 0 0 4px;
+}
+
+.faq-cta-text p {
+    color: rgba(255,255,255,.6);
+    font-size: 13px;
+    margin: 0;
+}
+
+.faq-cta-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #e6b000;
+    color: #1a1a1a;
+    font-weight: 800;
+    font-size: 13px;
+    padding: 11px 22px;
+    border-radius: 8px;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background .15s;
+}
+
+    .faq-cta-btn:hover {
+        background: #f5c200;
+        color: #1a1a1a;
+    }
+
+@media (max-width: 600px) {
+    .faq-cta {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   CLIENT LAYOUT FOOTER — Privacy / FAQ / Contact links
+   Append to ClientDashboardCss.css (or clientdashboardcss.css)
+══════════════════════════════════════════════════════════════ */
+.cl-footer-inner {
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.cl-footer-links {
+    display: flex;
+    gap: 18px;
+    flex-wrap: wrap;
+}
+
+    .cl-footer-links a {
+        font-size: 12px;
+        font-weight: 600;
+        color: rgba(255,255,255,.6);
+        text-decoration: none;
+        transition: color .15s;
+    }
+
+        .cl-footer-links a:hover {
+            color: var(--coj-gold, #e6b000);
+        }
+
+@media (max-width: 600px) {
+    .cl-footer-inner {
+        flex-direction: column;
+        align-items: flex-start;
+        text-align: left;
+    }
+
+    .cl-footer-links {
+        order: 2;
+    }
+
+    .cl-footer-copy {
+        order: 3;
+    }
+}

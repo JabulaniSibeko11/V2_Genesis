@@ -1,11 +1,13 @@
 ﻿@using System.Security.Claims
 @{
-    var reqPath  = Context.Request.Path.Value?.ToLower() ?? "";
-    bool isAttr  = reqPath.StartsWith("/attributes");
-    bool isAuth  = User?.Identity?.IsAuthenticated ?? false;
+    var reqPath = Context.Request.Path.Value?.ToLower() ?? "";
+    var openRoll = Context.Request.Query["openRoll"].ToString();
 
-    // ── Admin detection ────────────────────────────────────────────
+    bool isAttr = reqPath.StartsWith("/attributes");
+    bool isAuth = User?.Identity?.IsAuthenticated ?? false;
+
     var currentEmail = User.FindFirstValue(ClaimTypes.Name) ?? "";
+
     bool isAdmin = !string.IsNullOrEmpty(currentEmail) && (
         currentEmail.Equals("AdministrationEnquiries@Joburg.org.za",
             StringComparison.OrdinalIgnoreCase) ||
@@ -13,6 +15,26 @@
             currentEmail,
             @"^val\.admin(1[0-9]?|[1-9])@joburg\.org\.za$",
             System.Text.RegularExpressions.RegexOptions.IgnoreCase));
+
+    bool isAdminArea =
+        reqPath.StartsWith("/admin");
+
+    bool isPropertySearchArea =
+        reqPath.StartsWith("/search")
+        || reqPath.StartsWith("/attributes/search")
+        || !string.IsNullOrWhiteSpace(openRoll);
+
+    bool isServiceArea =
+        reqPath.StartsWith("/evidence")
+        || reqPath.StartsWith("/attributes")
+        || reqPath.StartsWith("/rebates")
+        || reqPath.StartsWith("/notices");
+
+    bool isSupportArea =
+         reqPath.StartsWith("/Home/viewguide")
+         || reqPath.StartsWith("/Home/faq")
+         || reqPath.StartsWith("/Home/contact")
+         || reqPath.StartsWith("/Home/privacy");
 }
 
 <!DOCTYPE html>
@@ -20,49 +42,103 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
     <title>@ViewData["Title"] – City of Johannesburg Portal</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap"
+          rel="stylesheet" />
+
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
     <link rel="icon" type="image/png" sizes="32x32" href="~/images/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="~/images/favicon-16x16.png" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/datatables.net-bs5@1.13.6/css/dataTables.bootstrap5.min.css" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/datatables.net-responsive-bs5@2.4.1/css/responsive.bootstrap5.min.css" />
-    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.bootstrap5.min.css" />
+
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/datatables.net-bs5@1.13.6/css/dataTables.bootstrap5.min.css" />
+
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/datatables.net-responsive-bs5@2.4.1/css/responsive.bootstrap5.min.css" />
+
+    <link rel="stylesheet"
+          href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.bootstrap5.min.css" />
+
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/views/client-dashboard.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/views/client-dashboard-light.css" asp-append-version="true" />
+
     <style>
-        .nav-brand {
-            display: flex; align-items: center; gap: 10px;
-            text-decoration: none; flex-shrink: 0; margin-right: 24px;
-        }
-        .nav-brand-mark {
-            width: 44px; height: 44px; background: #fff;
-            border-radius: 8px; display: flex; align-items: center;
-            justify-content: center; overflow: hidden; padding: 4px; flex-shrink: 0;
-        }
-        .brand-logo { width: 100%; height: 100%; object-fit: contain; }
-        .nav-brand-text { display: flex; flex-direction: column; line-height: 1.2; }
-        .nav-brand-name { font-size: 13px; font-weight: 700; color: #1a1a1a; letter-spacing: 1.5px; }
-        .nav-brand-sub  { font-size: 9.5px; color: rgba(0,0,0,.5); letter-spacing: .5px; }
-        .cl-nav-link.active {
-            background: rgba(0,0,0,.1);
-            border-bottom: 2px solid #1a1a1a;
-        }
-        .cl-drawer-section-title {
-            padding: 10px 20px 4px;
-            font-size: 10px; font-weight: 700;
-            letter-spacing: 1.5px; color: #999;
-            text-transform: uppercase;
-        }
+            .nav-brand {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                text-decoration: none;
+                flex-shrink: 0;
+                margin-right: 24px;
+            }
+
+            .nav-brand-mark {
+                width: 44px;
+                height: 44px;
+                background: #fff;
+                border-radius: 8px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                overflow: hidden;
+                padding: 4px;
+                flex-shrink: 0;
+            }
+
+            .brand-logo {
+                width: 100%;
+                height: 100%;
+                object-fit: contain;
+            }
+
+            .nav-brand-text {
+                display: flex;
+                flex-direction: column;
+                line-height: 1.2;
+            }
+
+            .nav-brand-name {
+                font-size: 13px;
+                font-weight: 700;
+                color: #1a1a1a;
+                letter-spacing: 1.5px;
+            }
+
+            .nav-brand-sub {
+                font-size: 9.5px;
+                color: rgba(0,0,0,.5);
+                letter-spacing: .5px;
+            }
+
+            .cl-nav-link.active {
+                background: rgba(0,0,0,.1);
+                border-bottom: 2px solid #1a1a1a;
+            }
+
+            .cl-drawer-section-title {
+                padding: 10px 20px 4px;
+                font-size: 10px;
+                font-weight: 700;
+                letter-spacing: 1.5px;
+                color: #999;
+                text-transform: uppercase;
+            }
     </style>
 
     @await RenderSectionAsync("Styles", required: false)
 </head>
+
 <body>
 
     <!-- ══ NAVBAR ══════════════════════════════════════════════════ -->
@@ -72,138 +148,303 @@
             <!-- Brand -->
             <a href="/" class="nav-brand">
                 <div class="nav-brand-mark">
-                    <img src="~/images/joburg_logo.png" class="brand-logo" alt="City of Johannesburg" />
+                    <img src="~/images/joburg_logo.png"
+                         class="brand-logo"
+                         alt="City of Johannesburg" />
                 </div>
+
                 <div class="nav-brand-text">
                     <span class="nav-brand-name">City of Johannesburg</span>
-                    <span class="nav-brand-sub">@(isAttr ? "Property Attributes" : "Valuation Portal")</span>
+                    <span class="nav-brand-sub">
+                        @(isAttr ? "Property Attributes" : "Valuation Portal")
+                    </span>
                 </div>
             </a>
 
             <!-- Desktop links -->
             <ul class="cl-nav-links" id="clNavLinks">
 
+                <!-- Dashboard -->
                 <li class="cl-nav-item">
-                    <a class="cl-nav-link @(reqPath == "/dashboard" ? "active" : "")" href="/dashboard">
-                        <i class="fa-solid fa-gauge-high"></i> Dashboard
+                    <a class="cl-nav-link @(isAdmin ? (reqPath == "/admin" ? "active" : "") : (reqPath == "/dashboard" ? "active" : ""))"
+                           href="@(isAdmin ? "/admin" : "/dashboard")">
+                        <i class="fa-solid fa-gauge-high"></i>
+                        @(isAdmin ? "Admin Dashboard" : "Dashboard")
                     </a>
                 </li>
-
-                @if (!isAdmin)
-                {
-                    <!-- Client-only: Notices -->
-                    <li class="cl-nav-item">
-                        <a class="cl-nav-link @(reqPath.StartsWith("/notices") ? "active" : "")"
-                           href="/notices">
-                            <i class="fa-solid fa-bell"></i> Notices
-                        </a>
-                    </li>
-                }
 
                 @if (isAdmin)
                 {
-                    <!-- Admin: Admin Dashboard -->
-                    <li class="cl-nav-item">
-                        <a class="cl-nav-link @(reqPath == "/admin" ? "active" : "")"
-                           href="/admin">
-                            <i class="fa-solid fa-shield-halved"></i> Admin
-                        </a>
+                    <!-- Admin Tools Dropdown -->
+                    <li class="cl-nav-item cl-dropdown">
+                        <button type="button"
+                                class="cl-nav-link cl-dropdown-toggle @(isAdminArea ? "active" : "")">
+                            <i class="fa-solid fa-shield-halved"></i>
+                            Admin Tools
+                            <i class="fa-solid fa-chevron-down cl-dd-chevron"></i>
+                        </button>
+
+                        <ul class="cl-dropdown-menu">
+                            <li>
+                                <a class="cl-dd-item" href="/admin">
+                                    <i class="fa-solid fa-gauge-high"></i>
+                                    Admin Dashboard
+                                </a>
+                            </li>
+
+                            <li class="cl-dd-divider"></li>
+
+                            <li>
+                                <a class="cl-dd-item" href="/admin/search">
+                                    <i class="fa-solid fa-magnifying-glass"></i>
+                                    Search Enquiry
+                                </a>
+                            </li>
+
+                            <li class="cl-dd-divider"></li>
+
+                            <li>
+                                <a class="cl-dd-item" href="/admin/notices">
+                                    <i class="fa-solid fa-bell"></i>
+                                    Client Notices
+                                </a>
+                            </li>
+                        </ul>
                     </li>
-                    <!-- Admin: Client Notices -->
-                    <li class="cl-nav-item">
-                        <a class="cl-nav-link @(reqPath.StartsWith("/admin/notices") ? "active" : "")"
-                           href="/admin/notices">
-                            <i class="fa-solid fa-bell"></i> Client Notices
-                        </a>
-                    </li>
-                    <!-- Admin: Search Enquiry -->
-                    <li class="cl-nav-item">
-                        <a class="cl-nav-link @(reqPath.StartsWith("/admin/search") ? "active" : "")"
-                           href="/admin/search">
-                            <i class="fa-solid fa-magnifying-glass"></i> Search
-                        </a>
+                }
+                else
+                {
+                    <!-- Property Search Dropdown -->
+                    <li class="cl-nav-item cl-dropdown">
+                        <button type="button"
+                                class="cl-nav-link cl-dropdown-toggle @(isPropertySearchArea ? "active" : "")">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            Property Search
+                            <i class="fa-solid fa-chevron-down cl-dd-chevron"></i>
+                        </button>
+
+                        <ul class="cl-dropdown-menu">
+                            <li>
+                                <a class="cl-dd-item" href="/search/Objection">
+                                    <i class="fa-solid fa-landmark"></i>
+                                    General Valuation Roll
+                                </a>
+                            </li>
+
+                            <li class="cl-dd-divider"></li>
+
+                            <li>
+                                <a class="cl-dd-item" href="/search/Objection_Supp1">
+                                    <i class="fa-solid fa-scroll"></i>
+                                    Supplementary Roll 1
+                                </a>
+                            </li>
+
+                            <li>
+                                <a class="cl-dd-item" href="/search/Objection_Supp2">
+                                    <i class="fa-solid fa-scroll"></i>
+                                    Supplementary Roll 2
+                                </a>
+                            </li>
+
+                            <li>
+                                <a class="cl-dd-item" href="/search/Objection_Supp3">
+                                    <i class="fa-solid fa-scroll"></i>
+                                    Supplementary Roll 3
+                                </a>
+                            </li>
+
+                            <li>
+                                <a class="cl-dd-item" href="/search/Objection_Supp4">
+                                    <i class="fa-solid fa-scroll"></i>
+                                    Supplementary Roll 4
+                                </a>
+                            </li>
+
+                            <li>
+                                <a class="cl-dd-item" href="/search/Objection_Supp5">
+                                    <i class="fa-solid fa-scroll"></i>
+                                    Supplementary Roll 5
+                                </a>
+                            </li>
+
+                            <li class="cl-dd-divider"></li>
+
+                            <li>
+                                <a class="cl-dd-item" href="/search/Query">
+                                    <i class="fa-solid fa-magnifying-glass-chart"></i>
+                                    Section 78 Query / Review
+                                </a>
+                            </li>
+
+                            <li>
+                                <a class="cl-dd-item" href="/attributes/search">
+                                    <i class="fa-solid fa-clipboard-list"></i>
+                                    Property Attributes
+                                </a>
+                            </li>
+                        </ul>
                     </li>
                 }
 
-                <li class="cl-nav-item">
-                    <a class="cl-nav-link cl-nav-evidence @(reqPath.StartsWith("/evidence") || reqPath.StartsWith("/attributes/evidence") ? "active" : "")"
-                       href="@(isAttr ? "/attributes/evidence" : "/evidence/verifyObj")">
-                        <i class="fa-solid fa-paperclip"></i> Add Evidence
-                    </a>
-                </li>
-
-                <li class="cl-nav-item">
-                    <a class="cl-nav-link @(reqPath.StartsWith("/rebates") ? "active" : "")" href="/Rebates/Index">
-                        <i class="fa-solid fa-percent"></i> Rebates
-                    </a>
-                </li>
-
+                <!-- Services Dropdown -->
                 <li class="cl-nav-item cl-dropdown">
-                    <button class="cl-nav-link cl-dropdown-toggle">
-                        <i class="fa-solid fa-circle-question"></i> Help
+                    <button type="button"
+                            class="cl-nav-link cl-dropdown-toggle @(isServiceArea ? "active" : "")">
+                        <i class="fa-solid fa-briefcase"></i>
+                        Services
                         <i class="fa-solid fa-chevron-down cl-dd-chevron"></i>
                     </button>
+
                     <ul class="cl-dropdown-menu">
+                        @if (!isAdmin)
+                        {
+                            <li>
+                                <a class="cl-dd-item" href="/notices">
+                                    <i class="fa-solid fa-bell"></i>
+                                    Notices
+                                </a>
+                            </li>
+
+                            <li class="cl-dd-divider"></li>
+                        }
+
                         <li>
-                            <a class="cl-dd-item" href="/Sup1/ViewGuide">
-                                <i class="fa-solid fa-book-open"></i> User Guidelines
+                            <a class="cl-dd-item" href="@(isAttr ? "/attributes/evidence" : "/evidence/verifyObj")">
+                                <i class="fa-solid fa-paperclip"></i>
+                                Add Evidence
                             </a>
                         </li>
+
                         <li class="cl-dd-divider"></li>
+
                         <li>
-                            <a class="cl-dd-item" href="/Sup1/viewFAQ">
-                                <i class="fa-solid fa-comments"></i> FAQ
+                            <a class="cl-dd-item" href="/Rebates/Index">
+                                <i class="fa-solid fa-percent"></i>
+                                Rebates
                             </a>
                         </li>
-                        <li class="cl-dd-divider"></li>
+
                         <li>
-                            <a class="cl-dd-item" href="/Home/ContactUs">
-                                <i class="fa-solid fa-headset"></i> Contact Support
+                            <a class="cl-dd-item" href="/attributes/about">
+                                <i class="fa-solid fa-clipboard-list"></i>
+                                Property Attributes
                             </a>
                         </li>
                     </ul>
                 </li>
 
-                <li class="cl-nav-item">
-                    <a class="cl-nav-link @(reqPath == "/home/privacy" ? "active" : "")" href="/Home/Privacy">
-                        <i class="fa-solid fa-shield-halved"></i> Privacy
-                    </a>
+                <!-- Help Dropdown -->
+                <li class="cl-nav-item cl-dropdown">
+                    <button type="button"
+                            class="cl-nav-link cl-dropdown-toggle @(isSupportArea ? "active" : "")">
+                        <i class="fa-solid fa-circle-question"></i>
+                        Help
+                        <i class="fa-solid fa-chevron-down cl-dd-chevron"></i>
+                    </button>
+
+                    <ul class="cl-dropdown-menu">
+                        <li>
+                            <a class="cl-dd-item" href="/Sup1/ViewGuide">
+                                <i class="fa-solid fa-book-open"></i>
+                                User Guidelines
+                            </a>
+                        </li>
+
+                        <li class="cl-dd-divider"></li>
+
+                        <li>
+                            <a class="cl-dd-item" href="/Home/FAQ">
+                                <i class="fa-solid fa-comments"></i>
+                                FAQ
+                            </a>
+                        </li>
+
+                        <li class="cl-dd-divider"></li>
+
+                        <li>
+                            <a class="cl-dd-item" href="/Home/Contact">
+                                <i class="fa-solid fa-headset"></i>
+                                Contact Support
+                            </a>
+                        </li>
+
+                        <li class="cl-dd-divider"></li>
+
+                        <li>
+                            <a class="cl-dd-item @(reqPath == "/home/privacy" ? "active" : "")" href="/Home/Privacy">
+                                <i class="fa-solid fa-shield-halved"></i>
+                                Privacy Policy
+                            </a>
+                        </li>
+                    </ul>
                 </li>
 
+                <!-- Privacy -->
+                <li class="cl-nav-item">
+                    <a class="cl-nav-link @(reqPath == "/home/privacy" ? "active" : "")"
+                           href="/Home/Privacy">
+                        <i class="fa-solid fa-shield-halved"></i>
+                        Privacy
+                    </a>
+                </li>
             </ul>
 
             <!-- User pill -->
             @if (isAuth)
             {
                 <div class="cl-user" id="clUser">
-                    <button class="cl-user-btn" id="clUserBtn">
-                        <div class="cl-avatar">@(User.Identity?.Name?.Substring(0,1).ToUpper() ?? "?")</div>
-                        <span class="cl-user-name d-none d-lg-inline">@User.Identity?.Name?.Split('@')[0]</span>
+                    <button type="button" class="cl-user-btn" id="clUserBtn">
+                        <div class="cl-avatar">
+                            @(User.Identity?.Name?.Substring(0, 1).ToUpper() ?? "?")
+                        </div>
+
+                        <span class="cl-user-name d-none d-lg-inline">
+                            @User.Identity?.Name?.Split('@')[0]
+                        </span>
+
                         <i class="fa-solid fa-chevron-down" style="font-size:11px;"></i>
                     </button>
+
                     <div class="cl-user-menu" id="clUserMenu">
                         <div style="padding:12px 16px 8px; border-bottom:1px solid #f0f0f0;">
                             <div style="font-size:11px; color:#888;">Signed in as</div>
+
                             <div style="font-size:13px; font-weight:600; color:#1a1a1a;
-                                        white-space:nowrap; overflow:hidden;
-                                        text-overflow:ellipsis; max-width:180px;">
+                                white-space:nowrap; overflow:hidden;
+                                text-overflow:ellipsis; max-width:180px;">
                                 @User.Identity?.Name
                             </div>
                         </div>
-                        <a href="/my-profile" class="cl-user-item"><i class="fa-solid fa-user"></i> My Profile</a>
-                        <a href="/dashboard"  class="cl-user-item"><i class="fa-solid fa-gauge-high"></i> Dashboard</a>
+
+                        <a href="/my-profile" class="cl-user-item">
+                            <i class="fa-solid fa-user"></i>
+                            My Profile
+                        </a>
+
+                        <a href="@(isAdmin ? "/admin" : "/dashboard")" class="cl-user-item">
+                            <i class="fa-solid fa-gauge-high"></i>
+                            @(isAdmin ? "Admin Dashboard" : "Dashboard")
+                        </a>
+
                         @if (isAdmin)
                         {
                             <div class="cl-dd-divider"></div>
+
                             <a href="/admin" class="cl-user-item">
-                                <i class="fa-solid fa-shield-halved"></i> Admin Panel
+                                <i class="fa-solid fa-shield-halved"></i>
+                                Admin Panel
                             </a>
                         }
+
                         <div class="cl-dd-divider"></div>
+
                         <form asp-action="Logout" asp-controller="Account" method="post">
                             @Html.AntiForgeryToken()
+
                             <button type="submit" class="cl-user-item cl-logout">
-                                <i class="fa-solid fa-right-from-bracket"></i> Sign Out
+                                <i class="fa-solid fa-right-from-bracket"></i>
+                                Sign Out
                             </button>
                         </form>
                     </div>
@@ -212,18 +453,24 @@
             else
             {
                 <div style="display:flex; gap:6px; margin-left:auto; flex-shrink:0;">
-                    <a href="/account/login?returnUrl=@Context.Request.Path@Context.Request.QueryString" class="cl-nav-link">
-                        <i class="fa-solid fa-right-to-bracket"></i> Sign In
+                    <a href="/account/login?returnUrl=@Context.Request.Path@Context.Request.QueryString"
+                           class="cl-nav-link">
+                        <i class="fa-solid fa-right-to-bracket"></i>
+                        Sign In
                     </a>
+
                     <a href="/account/register" class="cl-nav-link cl-nav-evidence">
-                        <i class="fa-solid fa-user-plus"></i> Register
+                        <i class="fa-solid fa-user-plus"></i>
+                        Register
                     </a>
                 </div>
             }
 
             <!-- Hamburger -->
-            <button class="cl-hamburger" id="clHamburger" aria-label="Open menu">
-                <span></span><span></span><span></span>
+            <button type="button" class="cl-hamburger" id="clHamburger" aria-label="Open menu">
+                <span></span>
+                <span></span>
+                <span></span>
             </button>
 
         </div>
@@ -231,18 +478,21 @@
 
     <!-- ══ MOBILE DRAWER ═══════════════════════════════════════════ -->
     <div class="cl-mobile-backdrop" id="clBackdrop"></div>
+
     <div class="cl-mobile-drawer" id="clDrawer">
 
         <div class="cl-drawer-header">
             <div style="display:flex; align-items:center; gap:10px;">
                 <img src="~/images/joburg_logo.png"
                      style="width:32px; height:32px; object-fit:contain;
-                            background:#e6b000; border-radius:6px; padding:3px;" />
+                background:#e6b000; border-radius:6px; padding:3px;" />
+
                 <span style="font-weight:700; font-size:12px; letter-spacing:1.5px; color:#fff;">
                     CITY OF JOHANNESBURG
                 </span>
             </div>
-            <button id="clDrawerClose" aria-label="Close menu">
+
+            <button type="button" id="clDrawerClose" aria-label="Close menu">
                 <i class="fa-solid fa-xmark"></i>
             </button>
         </div>
@@ -250,76 +500,189 @@
         @if (isAuth)
         {
             <div style="padding:14px 20px; background:#f7f5f2; border-bottom:1px solid #ede9e3;">
-                <div style="font-size:11px; color:#888; margin-bottom:2px;">Signed in as</div>
+                <div style="font-size:11px; color:#888; margin-bottom:2px;">
+                    Signed in as
+                </div>
+
                 <div style="font-size:13px; font-weight:600; color:#1a1a1a; word-break:break-all;">
                     @User.Identity?.Name
                 </div>
             </div>
         }
 
+        <!-- Navigation -->
         <div class="cl-drawer-section-title">Navigation</div>
-        <a href="/dashboard" class="cl-drawer-link @(reqPath == "/dashboard" ? "active" : "")">
-            <i class="fa-solid fa-gauge-high"></i> Dashboard
-        </a>
 
-        @if (!isAdmin)
-        {
-            <a href="/notices" class="cl-drawer-link @(reqPath.StartsWith("/notices") ? "active" : "")">
-                <i class="fa-solid fa-bell"></i> Notices
-            </a>
-        }
+        <a href="@(isAdmin ? "/admin" : "/dashboard")"
+               class="cl-drawer-link @(isAdmin ? (reqPath == "/admin" ? "active" : "") : (reqPath == "/dashboard" ? "active" : ""))">
+            <i class="fa-solid fa-gauge-high"></i>
+            @(isAdmin ? "Admin Dashboard" : "Dashboard")
+        </a>
 
         @if (isAdmin)
         {
             <div class="cl-drawer-section-title">Admin</div>
-            <a href="/admin" class="cl-drawer-link @(reqPath == "/admin" ? "active" : "")">
-                <i class="fa-solid fa-shield-halved"></i> Admin Dashboard
+
+            <a href="/admin"
+                   class="cl-drawer-link @(reqPath == "/admin" ? "active" : "")">
+                <i class="fa-solid fa-shield-halved"></i>
+                Admin Dashboard
             </a>
+
             <a href="/admin/search" class="cl-drawer-link">
-                <i class="fa-solid fa-magnifying-glass"></i> Search Enquiry
+                <i class="fa-solid fa-magnifying-glass"></i>
+                Search Enquiry
             </a>
+
             <a href="/admin/notices" class="cl-drawer-link">
-                <i class="fa-solid fa-bell"></i> Client Notices
+                <i class="fa-solid fa-bell"></i>
+                Client Notices
+            </a>
+        }
+        else
+        {
+            <!-- Property Search via one Dashboard -->
+            <div class="cl-drawer-section-title">Property Search</div>
+
+            <a href="/Dashboard?openRoll=Objection"
+                   class="cl-drawer-link @(openRoll == "Objection" ? "active" : "")">
+                <i class="fa-solid fa-landmark"></i>
+                General Valuation Roll
+            </a>
+
+            <a href="/Dashboard?openRoll=Objection_Supp1"
+                   class="cl-drawer-link @(openRoll == "Objection_Supp1" ? "active" : "")">
+                <i class="fa-solid fa-scroll"></i>
+                Supplementary Roll 1
+            </a>
+
+            <a href="/Dashboard?openRoll=Objection_Supp2"
+                   class="cl-drawer-link @(openRoll == "Objection_Supp2" ? "active" : "")">
+                <i class="fa-solid fa-scroll"></i>
+                Supplementary Roll 2
+            </a>
+
+            <a href="/Dashboard?openRoll=Objection_Supp3"
+                   class="cl-drawer-link @(openRoll == "Objection_Supp3" ? "active" : "")">
+                <i class="fa-solid fa-scroll"></i>
+                Supplementary Roll 3
+            </a>
+
+            <a href="/Dashboard?openRoll=Objection_Supp4"
+                   class="cl-drawer-link @(openRoll == "Objection_Supp4" ? "active" : "")">
+                <i class="fa-solid fa-scroll"></i>
+                Supplementary Roll 4
+            </a>
+
+            <a href="/Dashboard?openRoll=Objection_Supp5"
+                   class="cl-drawer-link @(openRoll == "Objection_Supp5" ? "active" : "")">
+                <i class="fa-solid fa-scroll"></i>
+                Supplementary Roll 5
+            </a>
+
+            <a href="/Dashboard?openRoll=Query"
+                   class="cl-drawer-link @(openRoll == "Query" ? "active" : "")">
+                <i class="fa-solid fa-magnifying-glass-chart"></i>
+                Section 78 Query / Review
+            </a>
+
+            <a href="/Dashboard?openRoll=attributes"
+                   class="cl-drawer-link @(openRoll == "attributes" ? "active" : "")">
+                <i class="fa-solid fa-clipboard-list"></i>
+                Property Attributes
             </a>
         }
 
+        <!-- Services -->
         <div class="cl-drawer-section-title">Services</div>
+
+        @if (!isAdmin)
+        {
+            <a href="/notices"
+                   class="cl-drawer-link @(reqPath.StartsWith("/notices") ? "active" : "")">
+                <i class="fa-solid fa-bell"></i>
+                Notices
+            </a>
+        }
+
         <a href="@(isAttr ? "/attributes/evidence" : "/evidence/verifyObj")"
-           class="cl-drawer-link cl-drawer-evidence">
-            <i class="fa-solid fa-paperclip"></i> Add Evidence
-        </a>
-        <a href="/Rebates/Index" class="cl-drawer-link">
-            <i class="fa-solid fa-percent"></i> Rebates
+               class="cl-drawer-link cl-drawer-evidence">
+            <i class="fa-solid fa-paperclip"></i>
+            Add Evidence
         </a>
 
+        <a href="/Rebates/Index"
+               class="cl-drawer-link @(reqPath.StartsWith("/rebates") ? "active" : "")">
+            <i class="fa-solid fa-percent"></i>
+            Rebates
+        </a>
+
+        <a href="/attributes/about"
+               class="cl-drawer-link @(reqPath.StartsWith("/attributes") ? "active" : "")">
+            <i class="fa-solid fa-clipboard-list"></i>
+            Property Attributes
+        </a>
+
+        <!-- Support -->
         <div class="cl-drawer-section-title">Support</div>
-        <a href="/Sup1/ViewGuide"  class="cl-drawer-link"><i class="fa-solid fa-book-open"></i> User Guidelines</a>
-        <a href="/Sup1/viewFAQ"    class="cl-drawer-link"><i class="fa-solid fa-comments"></i> FAQ</a>
-        <a href="/Home/ContactUs"  class="cl-drawer-link"><i class="fa-solid fa-headset"></i> Contact Support</a>
-        <a href="/Home/Privacy"    class="cl-drawer-link"><i class="fa-solid fa-shield-halved"></i> Privacy Policy</a>
+
+        <a href="/Sup1/ViewGuide" class="cl-drawer-link @(reqPath.StartsWith("/sup1/viewguide") ? "active" : "")">
+            <i class="fa-solid fa-book-open"></i>
+            User Guidelines
+        </a>
+
+        <a href="/Home/FAQ" class="cl-drawer-link @(reqPath == "/home/faq" ? "active" : "")">
+            <i class="fa-solid fa-comments"></i>
+            FAQ
+        </a>
+
+        <a href="/Home/Contact" class="cl-drawer-link @(reqPath == "/home/contact" ? "active" : "")">
+            <i class="fa-solid fa-headset"></i>
+            Contact Support
+        </a>
+
+        <a href="/Home/Privacy" class="cl-drawer-link @(reqPath == "/home/privacy" ? "active" : "")">
+            <i class="fa-solid fa-shield-halved"></i>
+            Privacy Policy
+        </a>
 
         <div class="cl-dd-divider" style="margin:8px 0;"></div>
 
         @if (isAuth)
         {
-            <a href="/my-profile" class="cl-drawer-link"><i class="fa-solid fa-user"></i> My Profile</a>
+            <a href="/my-profile" class="cl-drawer-link">
+                <i class="fa-solid fa-user"></i>
+                My Profile
+            </a>
+
             <form asp-action="Logout" asp-controller="Account" method="post">
                 @Html.AntiForgeryToken()
+
                 <button type="submit" class="cl-drawer-link cl-drawer-logout">
-                    <i class="fa-solid fa-right-from-bracket"></i> Sign Out
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    Sign Out
                 </button>
             </form>
         }
         else
         {
-            <a href="/account/login"    class="cl-drawer-link"><i class="fa-solid fa-right-to-bracket"></i> Sign In</a>
-            <a href="/account/register" class="cl-drawer-link cl-drawer-evidence"><i class="fa-solid fa-user-plus"></i> Register</a>
+            <a href="/account/login" class="cl-drawer-link">
+                <i class="fa-solid fa-right-to-bracket"></i>
+                Sign In
+            </a>
+
+            <a href="/account/register" class="cl-drawer-link cl-drawer-evidence">
+                <i class="fa-solid fa-user-plus"></i>
+                Register
+            </a>
         }
 
     </div>
 
     <!-- ══ MAIN ════════════════════════════════════════════════════ -->
-    <main class="cl-main">@RenderBody()</main>
+    <main class="cl-main">
+        @RenderBody()
+    </main>
 
     <!-- ══ FOOTER ══════════════════════════════════════════════════ -->
     <footer class="cl-footer">
@@ -328,63 +691,120 @@
                 <i class="fa-solid fa-city" style="margin-right:6px;"></i>
                 City of Johannesburg Valuation Portal
             </span>
-            <span class="cl-footer-copy">© @DateTime.Now.Year City of Johannesburg. All rights reserved.</span>
+
+            <nav class="cl-footer-links">
+                <a href="/Home/Privacy">Privacy Policy</a>
+                <a href="/Home/FAQ">FAQ</a>
+                <a href="/Home/Contact">Contact Us</a>
+            </nav>
+
+            <span class="cl-footer-copy">
+                © @DateTime.Now.Year City of Johannesburg. All rights reserved.
+            </span>
         </div>
     </footer>
-
     <!-- ══ SCRIPTS ═════════════════════════════════════════════════ -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
     <script src="https://cdn.jsdelivr.net/npm/datatables.net@1.13.6/js/jquery.dataTables.min.js"></script>
+
     <script src="https://cdn.jsdelivr.net/npm/datatables.net-bs5@1.13.6/js/dataTables.bootstrap5.min.js"></script>
+
     <script src="https://cdn.jsdelivr.net/npm/datatables.net-responsive@2.4.1/js/dataTables.responsive.min.js"></script>
+
     <script src="https://cdn.jsdelivr.net/npm/datatables.net-buttons@2.4.1/js/dataTables.buttons.min.js"></script>
+
     <script src="https://cdn.jsdelivr.net/npm/datatables.net-buttons-bs5@2.4.1/js/buttons.bootstrap5.min.js"></script>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+
     <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
 
     <script>
-    document.querySelectorAll('.cl-dropdown').forEach(dd => {
+        // Desktop dropdowns
+        document.querySelectorAll('.cl-dropdown').forEach(dd => {
         const toggle = dd.querySelector('.cl-dropdown-toggle');
-        const menu   = dd.querySelector('.cl-dropdown-menu');
+        const menu = dd.querySelector('.cl-dropdown-menu');
+
         if (!toggle || !menu) return;
+
         toggle.addEventListener('click', e => {
-            e.stopPropagation();
-            document.querySelectorAll('.cl-dropdown-menu.open').forEach(m => {
-                if (m !== menu) m.classList.remove('open');
-            });
-            document.querySelectorAll('.cl-dd-chevron').forEach(c => {
-                if (c !== toggle.querySelector('.cl-dd-chevron')) c.style.transform = '';
-            });
-            menu.classList.toggle('open');
-            const chev = toggle.querySelector('.cl-dd-chevron');
-            if (chev) chev.style.transform = menu.classList.contains('open') ? 'rotate(180deg)' : '';
+        e.stopPropagation();
+
+        document.querySelectorAll('.cl-dropdown-menu.open').forEach(m => {
+        if (m !== menu) {
+        m.classList.remove('open');
+        }
         });
-    });
 
-    document.addEventListener('click', () => {
-        document.querySelectorAll('.cl-dropdown-menu.open').forEach(m => m.classList.remove('open'));
-        document.querySelectorAll('.cl-dd-chevron').forEach(c => c.style.transform = '');
+        document.querySelectorAll('.cl-dd-chevron').forEach(c => {
+        if (c !== toggle.querySelector('.cl-dd-chevron')) {
+        c.style.transform = '';
+        }
+        });
+
+        menu.classList.toggle('open');
+
+        const chev = toggle.querySelector('.cl-dd-chevron');
+
+        if (chev) {
+        chev.style.transform = menu.classList.contains('open')
+        ? 'rotate(180deg)'
+        : '';
+        }
+        });
+        });
+
+        document.addEventListener('click', () => {
+        document.querySelectorAll('.cl-dropdown-menu.open').forEach(m => {
+        m.classList.remove('open');
+        });
+
+        document.querySelectorAll('.cl-dd-chevron').forEach(c => {
+        c.style.transform = '';
+        });
+
         document.getElementById('clUserMenu')?.classList.remove('open');
-    });
+        });
 
-    document.getElementById('clUserBtn')?.addEventListener('click', e => {
+        // User menu
+        document.getElementById('clUserBtn')?.addEventListener('click', e => {
         e.stopPropagation();
         document.getElementById('clUserMenu')?.classList.toggle('open');
-    });
+        });
 
-    const drawer   = document.getElementById('clDrawer');
-    const backdrop = document.getElementById('clBackdrop');
+        // Mobile drawer
+        const drawer = document.getElementById('clDrawer');
+        const backdrop = document.getElementById('clBackdrop');
 
-    function openDrawer()  { drawer?.classList.add('open'); backdrop?.classList.add('open'); document.body.style.overflow = 'hidden'; }
-    function closeDrawer() { drawer?.classList.remove('open'); backdrop?.classList.remove('open'); document.body.style.overflow = ''; }
+        function openDrawer() {
+        drawer?.classList.add('open');
+        backdrop?.classList.add('open');
+        document.body.style.overflow = 'hidden';
+        }
 
-    document.getElementById('clHamburger')?.addEventListener('click', openDrawer);
-    document.getElementById('clDrawerClose')?.addEventListener('click', closeDrawer);
-    backdrop?.addEventListener('click', closeDrawer);
-    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
+        function closeDrawer() {
+        drawer?.classList.remove('open');
+        backdrop?.classList.remove('open');
+        document.body.style.overflow = '';
+        }
+
+        document.getElementById('clHamburger')?.addEventListener('click', openDrawer);
+        document.getElementById('clDrawerClose')?.addEventListener('click', closeDrawer);
+
+        backdrop?.addEventListener('click', closeDrawer);
+
+        document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') {
+        closeDrawer();
+        }
+        });
     </script>
 
     @await RenderSectionAsync("Scripts", required: false)

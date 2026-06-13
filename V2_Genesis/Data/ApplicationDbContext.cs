@@ -20,6 +20,7 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using V2_Genesis.Models;
 using V2_Genesis.Models.Entities;
+using V2_Genesis.Models.Notifications;
 
 namespace V2_Genesis.Data
 {
@@ -46,6 +47,7 @@ namespace V2_Genesis.Data
         public DbSet<Obj_Section_51_Uploads> Obj_Section_51_Uploads { get; set; }
         public DbSet<Obj_WithdrawalsModel> Obj_Withdrawals { get; set; }
         public DbSet<Que_WithdrawalsModel> Que_Withdrawals { get; set; }
+        public DbSet<Notifications> Notifications { get; set; }
 
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options) { }

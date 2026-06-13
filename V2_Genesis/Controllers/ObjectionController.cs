@@ -27,8 +27,10 @@ public class ObjectionController : Controller
     private readonly IObjectionFormService _objectionFormService;
     private readonly ISection78Service _section78Service;
     private readonly ISubmittedFormPdfService _submittedFormPdfService;
-
+    private readonly INotificationService _notificationService;
     private readonly IEmailService _emailService;
+
+  
     private readonly IConfiguration _config;
     private readonly INoticeService _noticeService;
     private readonly ILogger<ObjectionController> _logger;
@@ -36,12 +38,15 @@ public class ObjectionController : Controller
     public ObjectionController(
         IObjectionService objectionService,
         ApplicationDbContext db,
-        IObjectionFormService objectionFormService,ISection78Service section78Service, INoticeService noticeService,IEmailService emailService, IConfiguration config,ISubmittedFormPdfService submittedFormPdfService, ILogger<ObjectionController> logger)
+        IObjectionFormService objectionFormService,ISection78Service section78Service, INoticeService noticeService
+        ,IEmailService emailService, IConfiguration config,ISubmittedFormPdfService submittedFormPdfService
+        ,INotificationService notificationService, ILogger<ObjectionController> logger)
     {
         _objectionService = objectionService;
         _db = db;
         _objectionFormService = objectionFormService;
         _emailService = emailService;
+        _notificationService = notificationService;
       _submittedFormPdfService = submittedFormPdfService;   
         _config = config;
         _noticeService = noticeService;
@@ -87,6 +92,16 @@ public class ObjectionController : Controller
         ViewData["SourceTable"] = sourceTable;
         ViewBag.GvList = await _db.GvList.OrderBy(r => r.ID).ToListAsync();
 
+        var rollRecord = await _db.GvList
+    .FirstOrDefaultAsync(r => r.Source == rollSource);
+
+        var rollDisplayName = rollRecord == null
+            ? "Valuation Roll"
+            : $"{rollRecord.Name} ({sourceTable})";
+
+        TempData["RollDisplayName"] = rollDisplayName;
+        TempData.Keep("RollDisplayName");
+
         bool isOmission = omission ||
             TempData.Peek("OmissionStatus")?.ToString() == "True";
 
@@ -94,11 +109,28 @@ public class ObjectionController : Controller
         {
             TempData["AppealStatus"] = "False";
 
-            TempData["CurrentFilter_TN"] = TempData.Peek("OmittedTownName")?.ToString();
-            TempData["CurrentFilter_PD"] = TempData.Peek("OmittedPropertyDesc")?.ToString();
-            TempData["CurrentFilter_Prop"] = TempData.Peek("OmittedPropertyDesc")?.ToString();
-            TempData["CurrentFilter_LSA"] = TempData.Peek("Omission_Address")?.ToString();
+            TempData["PropertyFrom"] = "Omission";
+            TempData["OmissionStatus"] = "True";
 
+            // Keep omission details separately
+            TempData["Omission_PropertyDesc"] = TempData.Peek("OmittedPropertyDesc")?.ToString();
+            TempData["Omission_TownName"] = TempData.Peek("OmittedTownName")?.ToString();
+            TempData["Omission_Address"] = TempData.Peek("Omission_Address")?.ToString();
+
+            // Section 6 old roll side must be blank because property is not on the roll
+            TempData["CurrentFilter_PD"] = "";
+            TempData["CurrentFilter_Prop"] = "";
+            TempData["CurrentFilter_CD"] = "";
+            TempData["CurrentFilter_LSA"] = "";
+            TempData["CurrentFilter_RA"] = "";
+            TempData["CurrentFilter_MV"] = "";
+            TempData["CurrentFilter_ON"] = "";
+            TempData["CurrentFilter_TN"] = TempData.Peek("OmittedTownName")?.ToString();
+            TempData["CurrentFilter_P_ID"] = "";
+            TempData["CurrentFilter_P_I"] = "";
+            TempData["CurrentFilter_UK"] = "";
+            TempData["CurrentFilter_VK"] = "";
+            TempData["CurrentFilter_S"] = "";
             KeepObjectionFormTempData();
 
             var omitVm = new CheckPropertyViewModel
@@ -123,6 +155,11 @@ public class ObjectionController : Controller
                 OmittedScheme = TempData.Peek("Omission_Scheme")?.ToString(),
                 OmittedUnit = TempData.Peek("Omission_Unit")?.ToString(),
             };
+            TempData.Keep("PropertyFrom");
+            TempData.Keep("OmissionStatus");
+            TempData.Keep("Omission_PropertyDesc");
+            TempData.Keep("Omission_TownName");
+            TempData.Keep("Omission_Address");
 
             return View(omitVm);
         }
@@ -809,44 +846,40 @@ public class ObjectionController : Controller
     [Route("objection/form")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> SubmitObjectionForm(
-       Obj_Property_InfoModel obj,
-       Obj_Section1Model obj1,
-       Obj_Section2Model obj2,
-       Obj_Section3ResModel objR3,
-       Obj_Section3BusModel objB3,
-       Obj_Section3AgriModel objA3,
-       Obj_Section4BusModel objB4,
-       Obj_Section4ResModel objR4,
-       Obj_Section5Model obj5,
-       Obj_Section6Model obj6,
-       Obj_Section7Model obj7,
-       Obj_Files obj_file,
-       List<IFormFile> files,
-       List<IFormFile> fileR,
-       string AppealStat,
-       string obj_appeal,
-       Obj_Property_Info_AppealModel appeal,
-       string? PropertyFrom,
-       string? SourceTable,
-       string? RollSource)
+    Obj_Property_InfoModel obj,
+    Obj_Section1Model obj1,
+    Obj_Section2Model obj2,
+    Obj_Section3ResModel objR3,
+    Obj_Section3BusModel objB3,
+    Obj_Section3AgriModel objA3,
+    Obj_Section4BusModel objB4,
+    Obj_Section4ResModel objR4,
+    Obj_Section5Model obj5,
+    Obj_Section6Model obj6,
+    Obj_Section7Model obj7,
+    Obj_Files obj_file,
+    List<IFormFile> files,
+    List<IFormFile> fileR,
+    string AppealStat,
+    string obj_appeal,
+    Obj_Property_Info_AppealModel appeal,
+    string? PropertyFrom,
+    string? SourceTable,
+    string? RollSource)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
         if (string.IsNullOrWhiteSpace(userId))
             return RedirectToAction("Login", "Account");
 
-        // Real roll source must remain Objection_Supp3 / Objection_Supp4 etc.
         var rollSource = !string.IsNullOrWhiteSpace(RollSource)
-            ? RollSource.Trim()
-            : ResolveSubmissionRollSource(SourceTable ?? PropertyFrom);
+     ? RollSource.Trim()
+     : ResolveSubmissionRollSource(SourceTable ?? PropertyFrom);
 
-        // Real source table must remain GV23-SUP3 / GV23-SUP4 etc.
         var sourceTable = !string.IsNullOrWhiteSpace(SourceTable)
             ? SourceTable.Trim()
             : ResolveSourceTable(rollSource);
 
-        // PropertyFrom is the property origin:
-        // LIS / Omission / GV23-SUP3
         var propertyFrom = ResolveSubmittedPropertyFrom(
             PropertyFrom,
             SourceTable,
@@ -864,27 +897,12 @@ public class ObjectionController : Controller
         TempData.Keep("SourceTable");
         TempData.Keep("PropertyFrom");
 
+        TempData["RollDisplayName"] = BuildRollDisplayName(rollSource, sourceTable);
+        TempData.Keep("RollDisplayName");
+
         var result = await _objectionFormService.SubmitAsync(
-            rollSource,
-            userId,
-            AppealStat,
-            obj_appeal,
-            propertyFrom,
-            obj,
-            obj1,
-            obj2,
-            objR3,
-            objB3,
-            objA3,
-            objB4,
-            objR4,
-            obj5,
-            obj6,
-            obj7,
-            obj_file,
-            files,
-            fileR,
-            appeal);
+            rollSource,userId,AppealStat,obj_appeal,propertyFrom,obj,obj1, obj2,objR3,objB3,
+            objA3,objB4,objR4,obj5,obj6,obj7,obj_file,files,fileR,appeal);
 
         if (!result.Success)
         {
@@ -892,9 +910,51 @@ public class ObjectionController : Controller
             return RedirectToAction("CheckProperty");
         }
 
+
+
         var objectionRef = result.ObjectionNo;
         var isAppeal = result.IsAppeal;
         var isMulti = obj.Property_Type?.Equals("Multi", StringComparison.OrdinalIgnoreCase) ?? false;
+
+        var currentUserEmail = GetCurrentUserEmail();
+
+        var notificationTitle = isAppeal
+            ? "Appeal lodged successfully"
+            : "Objection lodged successfully";
+
+        var notificationMessage = isAppeal
+            ? $"Your appeal {objectionRef} has been received."
+            : $"Your objection {objectionRef} has been received.";
+
+        var adminTitle = isAppeal
+            ? "New appeal lodged"
+            : "New objection lodged";
+
+        var adminMessage = isAppeal
+            ? $"A new appeal {objectionRef} was lodged on {sourceTable}."
+            : $"A new objection {objectionRef} was lodged on {sourceTable}.";
+
+        await _notificationService.CreateClientNotificationAsync(
+            userId: userId,
+            userEmail: currentUserEmail,
+            title: notificationTitle,
+            message: notificationMessage,
+            referenceNumber: objectionRef,
+            premiseId: obj.Premise_id,
+            rollSource: rollSource,
+            sourceTable: sourceTable,
+            url: BuildClientNotificationUrl(rollSource),
+            createdBy: userId);
+
+        await _notificationService.CreateAdminNotificationAsync(
+            title: adminTitle,
+            message: adminMessage,
+            referenceNumber: objectionRef,
+            premiseId: obj.Premise_id,
+            rollSource: rollSource,
+            sourceTable: sourceTable,
+            url: BuildAdminNotificationUrl(objectionRef),
+            createdBy: userId);
 
         TempData["pin"] = result.Pin;
         TempData["Id"] = objectionRef;
@@ -962,6 +1022,19 @@ public class ObjectionController : Controller
 
         return RedirectToAction(isMulti ? nameof(MultiPurposeDisplay) : nameof(Display));
     }
+    private static string BuildRollDisplayName(string? rollSource, string? sourceTable)
+    {
+        return rollSource switch
+        {
+            "Objection" => $"General Valuation Roll ({sourceTable ?? "GV23"})",
+            "Objection_Supp1" => $"Supplementary Valuation Roll 1 ({sourceTable ?? "GV23-SUP1"})",
+            "Objection_Supp2" => $"Supplementary Valuation Roll 2 ({sourceTable ?? "GV23-SUP2"})",
+            "Objection_Supp3" => $"Supplementary Valuation Roll 3 ({sourceTable ?? "GV23-SUP3"})",
+            "Objection_Supp4" => $"Supplementary Valuation Roll 4 ({sourceTable ?? "GV23-SUP4"})",
+            "Objection_Supp5" => $"Supplementary Valuation Roll 5 ({sourceTable ?? "GV23-SUP5"})",
+            _ => "Valuation Roll"
+        };
+    }
     private static string ResolveSubmittedPropertyFrom(
     string? propertyFrom,
     string? sourceTable,
@@ -1007,10 +1080,20 @@ public class ObjectionController : Controller
             "GV23-SUP1" => "Objection_Supp1",
             "GV23-SUP2" => "Objection_Supp2",
             "GV23-SUP3" => "Objection_Supp3",
+            "GV23-SUP4" => "Objection_Supp4",
+            "GV23-SUP5" => "Objection_Supp5",
 
             "Sup1" => "Objection_Supp1",
             "Sup2" => "Objection_Supp2",
             "Sup3" => "Objection_Supp3",
+            "Sup4" => "Objection_Supp4",
+            "Sup5" => "Objection_Supp5",
+
+            "SUP1" => "Objection_Supp1",
+            "SUP2" => "Objection_Supp2",
+            "SUP3" => "Objection_Supp3",
+            "SUP4" => "Objection_Supp4",
+            "SUP5" => "Objection_Supp5",
 
             var s => s
         };
@@ -1026,6 +1109,8 @@ public class ObjectionController : Controller
                 "Objection_Supp1" => "GV23-SUP1",
                 "Objection_Supp2" => "GV23-SUP2",
                 "Objection_Supp3" => "GV23-SUP3",
+                "Objection_Supp4" => "GV23-SUP4",
+                "Objection_Supp5" => "GV23-SUP5",
                 _ => rollSource
             };
     }
@@ -1214,6 +1299,37 @@ public class ObjectionController : Controller
             $"{(isAppeal ? "Appeal" : isQuery ? "Query" : "Objection")} " +
             $"{objectionNo} has been successfully withdrawn.";
 
+        var sourceTable = ResolveSourceTable(rollSource);
+        var currentUserEmail = GetCurrentUserEmail();
+
+        var withdrawLabel = isAppeal
+            ? "Appeal"
+            : isQuery
+                ? "Query"
+                : "Objection";
+
+        await _notificationService.CreateClientNotificationAsync(
+            userId: userId,
+            userEmail: currentUserEmail,
+            title: $"{withdrawLabel} withdrawn successfully",
+            message: $"Your {withdrawLabel.ToLower()} {objectionNo} has been withdrawn.",
+            referenceNumber: objectionNo,
+            premiseId: null,
+            rollSource: rollSource,
+            sourceTable: sourceTable,
+            url: BuildClientNotificationUrl(rollSource),
+            createdBy: userId);
+
+        await _notificationService.CreateAdminNotificationAsync(
+            title: $"{withdrawLabel} withdrawn",
+            message: $"{withdrawLabel} {objectionNo} was withdrawn by the client.",
+            referenceNumber: objectionNo,
+            premiseId: null,
+            rollSource: rollSource,
+            sourceTable: sourceTable,
+            url: BuildAdminNotificationUrl(objectionNo),
+            createdBy: userId);
+
         // Redirect back to wherever the user came from (dashboard, admin, etc.)
         if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
             return LocalRedirect(returnUrl);
@@ -1239,25 +1355,109 @@ public class ObjectionController : Controller
     [Authorize]
     [Route("property/unlink")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> UnlinkPropertyConfirm(long linkedId, string? returnUrl)
+    public async Task<IActionResult> UnlinkPropertyConfirm(
+    long linkedId,
+    string rollSource,
+    string? returnUrl)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
+        if (string.IsNullOrWhiteSpace(rollSource))
+        {
+            rollSource = TempData.Peek("UnlinkRollSource")?.ToString()
+                         ?? HttpContext.Session.GetString("RollSource")
+                         ?? "Objection_Supp3";
+        }
+
+        ;
+
         var (success, error) = await _objectionFormService.UnlinkPropertyAsync(linkedId, userId);
+
 
         if (!success)
         {
             TempData["UnlinkError"] = error;
-            return RedirectToAction("Index", "Dashboard");
+
+            return RedirectToAction("Index", "Dashboard", new
+            {
+                openRoll = rollSource
+            });
         }
 
         TempData["UnlinkSuccess"] =
             "Property has been removed from your profile. " +
             "You can search and link it again at any time.";
 
+        var currentUserEmail = GetCurrentUserEmail();
+
+        await _notificationService.CreateClientNotificationAsync(
+            userId: userId,
+            userEmail: currentUserEmail,
+            title: "Property removed from profile",
+            message: "A linked property has been removed from your profile.",
+            referenceNumber: null,
+            premiseId: null,
+            rollSource: rollSource,
+            sourceTable: ResolveSourceTable(rollSource),
+            url: $"/Dashboard?openRoll={rollSource}",
+            createdBy: userId);
+
         if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
             return LocalRedirect(returnUrl);
 
-        return RedirectToAction("Index", "Dashboard");
+        return RedirectToAction("Index", "Dashboard", new
+        {
+            openRoll = rollSource
+        });
+    }
+    private string GetCurrentUserEmail()
+    {
+        return User.FindFirstValue(ClaimTypes.Email)
+               ?? User.FindFirstValue(ClaimTypes.Name)
+               ?? User.Identity?.Name
+               ?? "";
+    }
+
+    private string BuildClientNotificationUrl(string rollSource)
+    {
+        return $"/Dashboard?openRoll={rollSource}";
+    }
+
+    private string BuildAdminNotificationUrl(string referenceNumber)
+    {
+        return $"/Admin/Search?reference={Uri.EscapeDataString(referenceNumber)}";
+    }
+    [HttpGet]
+    [Authorize]
+    [Route("notice/acknowledgement/download")]
+    public async Task<IActionResult> DownloadAcknowledgement(
+    string objectionNo,
+    string rollSource)
+    {
+        if (string.IsNullOrWhiteSpace(objectionNo))
+        {
+            TempData["DownloadError"] = "Reference number is missing.";
+            return RedirectToAction("Index", "Dashboard");
+        }
+
+        var result = await _noticeService.GetSavedAcknowledgementAsync(
+            objectionNo,
+            rollSource);
+
+        if (!result.Success || result.FileBytes == null)
+        {
+            TempData["DownloadError"] = result.Error
+                ?? "Acknowledgement PDF was not found.";
+
+            return RedirectToAction("Index", "Dashboard", new
+            {
+                openRoll = rollSource
+            });
+        }
+
+        return File(
+            result.FileBytes,
+            "application/pdf",
+            result.FileName ?? $"{objectionNo}_Acknowledgement.pdf");
     }
 }

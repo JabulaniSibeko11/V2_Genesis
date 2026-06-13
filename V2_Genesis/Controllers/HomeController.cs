@@ -28,7 +28,17 @@ public class HomeController : Controller
         _homeSearchService = homeSearchService;
         _logger = logger;
     }
-
+    public IActionResult Contact() { 
+    return View();
+    }
+    public IActionResult FAQ()
+    {
+        return View();
+    }
+    public IActionResult Privacy()
+    {
+        return View();
+    }
     [HttpGet]
     [Route("/")]
     public IActionResult Index()

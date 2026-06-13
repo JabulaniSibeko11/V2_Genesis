@@ -496,10 +496,16 @@ public class PropertySearchController : Controller
 
         if (isAdmin)
         {
-            return RedirectToAction("Index", "Admin");
+            return RedirectToAction("Index", "Admin", new
+            {
+                openRoll = rollSource
+            });
         }
 
-        return RedirectToAction("Index", "Dashboard");
+        return RedirectToAction("Index", "Dashboard", new
+        {
+            openRoll = rollSource
+        });
     }
     private static string? FirstNotEmpty(params string?[] values)
 {

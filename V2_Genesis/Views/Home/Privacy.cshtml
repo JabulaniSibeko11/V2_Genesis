@@ -1,6 +1,253 @@
 ﻿@{
     ViewData["Title"] = "Privacy Policy";
+    Layout = "_Layout";
 }
-<h1>@ViewData["Title"]</h1>
 
-<p>Use this page to detail your site's privacy policy.</p>
+<link href="~/css/views/info-pages.css" rel="stylesheet" asp-append-version="true" />
+
+<!-- ── Hero ──────────────────────────────────────────────────────── -->
+<div class="info-hero">
+    <span class="info-hero-badge">
+        <i class="fa-solid fa-shield-halved"></i> POPIA Compliant
+    </span>
+    <h1>Privacy <span>Policy</span></h1>
+    <p>
+        How the City of Johannesburg Valuation Portal collects, uses, and
+        protects your personal information.
+    </p>
+</div>
+
+<div class="info-page">
+
+    <!-- ── Table of contents ──────────────────────────────────────── -->
+    <aside class="info-toc">
+        <h4>On This Page</h4>
+        <a href="#introduction">1. Introduction</a>
+        <a href="#information-we-collect">2. Information We Collect</a>
+        <a href="#how-we-use">3. How We Use Your Information</a>
+        <a href="#legal-basis">4. Legal Basis for Processing</a>
+        <a href="#sharing">5. Sharing of Information</a>
+        <a href="#security">6. Data Security</a>
+        <a href="#retention">7. Data Retention</a>
+        <a href="#cookies">8. Cookies &amp; Tracking</a>
+        <a href="#your-rights">9. Your Rights Under POPIA</a>
+        <a href="#changes">10. Changes to This Policy</a>
+        <a href="#contact">11. Contact Us</a>
+    </aside>
+
+    <!-- ── Content ─────────────────────────────────────────────────── -->
+    <div class="info-content">
+
+        <div class="info-updated">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+            Last updated: 1 July 2025
+        </div>
+
+        <section id="introduction">
+            <h2><span class="num">1</span> Introduction</h2>
+            <p>
+                The City of Johannesburg ("the City", "we", "us", or "our") is committed
+                to protecting the privacy and personal information of all users of the
+                Valuation Portal ("the Portal"). This Privacy Policy explains how we
+                collect, use, store, and protect your personal information when you
+                use the Portal to search the Valuation Roll, lodge objections or
+                appeals, submit property attributes, or apply for rebates.
+            </p>
+            <p>
+                This Policy is published in accordance with the Protection of Personal
+                Information Act 4 of 2013 ("POPIA") and applies to all individuals who
+                access or use the Portal, including registered account holders,
+                property owners, ratepayers, and authorised representatives.
+            </p>
+        </section>
+
+        <section id="information-we-collect">
+            <h2><span class="num">2</span> Information We Collect</h2>
+            <p>We may collect and process the following categories of personal information:</p>
+            <h3>Account Information</h3>
+            <ul>
+                <li>Full name, surname, and contact details (email address, telephone, cellphone)</li>
+                <li>Identity number or passport number</li>
+                <li>Login credentials and account security information</li>
+            </ul>
+            <h3>Property &amp; Objection Information</h3>
+            <ul>
+                <li>Property descriptions, addresses, and valuation roll references</li>
+                <li>Details submitted in objection, appeal, and Section 78 query forms</li>
+                <li>Property attribute submissions (e.g. number of rooms, building size, improvements)</li>
+                <li>Supporting documents and evidence uploaded (e.g. proof of authorisation, photographs)</li>
+                <li>Electronic signatures captured for declaration purposes</li>
+            </ul>
+            <h3>Rebate Applications</h3>
+            <ul>
+                <li>Municipal account numbers and billing information</li>
+                <li>Information relevant to rebate eligibility (e.g. pensioner status, disability status, household composition)</li>
+            </ul>
+            <h3>Technical Information</h3>
+            <ul>
+                <li>IP address, browser type, and device information</li>
+                <li>Login timestamps and session activity for security and audit purposes</li>
+            </ul>
+
+            <div class="info-note">
+                <i class="fa-solid fa-circle-info"></i>
+                Where your objection or rebate application relates to information
+                about another person (e.g. a co-owner or household member), you
+                confirm that you have the necessary consent or authority to submit
+                that information on their behalf.
+            </div>
+        </section>
+
+        <section id="how-we-use">
+            <h2><span class="num">3</span> How We Use Your Information</h2>
+            <p>We use your personal information to:</p>
+            <ul>
+                <li>Create and manage your Portal account</li>
+                <li>Process objections, appeals, Section 78 queries, and property attribute submissions</li>
+                <li>Verify your identity and your relationship to the property in question</li>
+                <li>Generate official acknowledgements, notices, and decision letters</li>
+                <li>Assess and process rebate applications</li>
+                <li>Communicate with you regarding the status of your submissions</li>
+                <li>Maintain audit trails for administrative and legal accountability</li>
+                <li>Improve the functionality, security, and performance of the Portal</li>
+                <li>Comply with our legal obligations under the Local Government: Municipal Property Rates Act and related legislation</li>
+            </ul>
+        </section>
+
+        <section id="legal-basis">
+            <h2><span class="num">4</span> Legal Basis for Processing</h2>
+            <p>
+                We process your personal information on the following legal grounds
+                recognised under POPIA:
+            </p>
+            <ul>
+                <li><strong>Performance of a public function</strong> — processing objections, appeals, and valuation roll administration in terms of the Municipal Property Rates Act 6 of 2004</li>
+                <li><strong>Consent</strong> — where you voluntarily register an account or submit information through the Portal</li>
+                <li><strong>Legal obligation</strong> — retaining records as required by municipal record-keeping policies and legislation</li>
+                <li><strong>Legitimate interest</strong> — maintaining the security, integrity, and audit trail of the Portal</li>
+            </ul>
+        </section>
+
+        <section id="sharing">
+            <h2><span class="num">5</span> Sharing of Information</h2>
+            <p>
+                Your information is accessible to authorised City of Johannesburg
+                officials within the Group Finance and Valuation Services
+                departments for the purposes described in this Policy. We do not
+                sell or rent your personal information to third parties.
+            </p>
+            <p>We may share information with:</p>
+            <ul>
+                <li>Municipal Valuers and Appeal Boards, where required to assess objections and appeals</li>
+                <li>Other City of Johannesburg departments responsible for billing, rates, and property records</li>
+                <li>Service providers who process data on our behalf (e.g. hosting and IT support), under strict confidentiality obligations</li>
+                <li>Law enforcement or regulatory authorities, where required by law or a valid legal process</li>
+            </ul>
+        </section>
+
+        <section id="security">
+            <h2><span class="num">6</span> Data Security</h2>
+            <p>
+                We implement reasonable technical and organisational measures to
+                protect your personal information against loss, unauthorised access,
+                alteration, or disclosure. These measures include:
+            </p>
+            <ul>
+                <li>Secure authentication and access control for Portal accounts and administrative systems</li>
+                <li>Encrypted transmission of data between your browser and our servers</li>
+                <li>Role-based access restrictions for City officials</li>
+                <li>Audit logging of administrative actions on objection and appeal records</li>
+            </ul>
+            <p>
+                While we take reasonable steps to secure your information, no system
+                can be guaranteed to be 100% secure. Please keep your login
+                credentials confidential and notify us immediately if you suspect
+                unauthorised access to your account.
+            </p>
+        </section>
+
+        <section id="retention">
+            <h2><span class="num">7</span> Data Retention</h2>
+            <p>
+                We retain personal information for as long as necessary to fulfil
+                the purposes outlined in this Policy, including:
+            </p>
+            <ul>
+                <li>The duration of the relevant Valuation Roll cycle and any subsequent appeal periods</li>
+                <li>Periods required by municipal record-keeping policies and the National Archives and Records Service of South Africa Act</li>
+                <li>Periods required to resolve disputes, audits, or legal proceedings</li>
+            </ul>
+            <p>
+                When no longer required, personal information is securely deleted or
+                anonymised in accordance with our records management policies.
+            </p>
+        </section>
+
+        <section id="cookies">
+            <h2><span class="num">8</span> Cookies &amp; Tracking</h2>
+            <p>
+                The Portal uses essential cookies required for login sessions,
+                security (including reCAPTCHA), and to remember your preferences
+                (such as "Keep me signed in"). These cookies do not track you across
+                other websites and are not used for advertising purposes.
+            </p>
+            <p>
+                You can configure your browser to refuse cookies; however, doing so
+                may prevent you from logging in or using certain features of the
+                Portal.
+            </p>
+        </section>
+
+        <section id="your-rights">
+            <h2><span class="num">9</span> Your Rights Under POPIA</h2>
+            <p>As a data subject, you have the right to:</p>
+            <ul>
+                <li>Request confirmation of whether we hold personal information about you</li>
+                <li>Request access to the personal information we hold about you</li>
+                <li>Request correction or updating of inaccurate, outdated, or incomplete information</li>
+                <li>Request deletion of personal information that we are no longer authorised to retain</li>
+                <li>Object to the processing of your personal information on reasonable grounds</li>
+                <li>Lodge a complaint with the Information Regulator of South Africa</li>
+            </ul>
+            <p>
+                To exercise any of these rights, please contact our Information
+                Officer using the details in section 11 below.
+            </p>
+            <div class="info-note">
+                <i class="fa-solid fa-circle-info"></i>
+                The Information Regulator (South Africa) can be contacted at
+                <a href="https://inforegulator.org.za" target="_blank" rel="noopener">inforegulator.org.za</a>
+                or via email at <a href="mailto:complaints.IR@justice.gov.za">complaints.IR@justice.gov.za</a>.
+            </div>
+        </section>
+
+        <section id="changes">
+            <h2><span class="num">10</span> Changes to This Policy</h2>
+            <p>
+                We may update this Privacy Policy from time to time to reflect
+                changes in our practices, technology, legal requirements, or other
+                operational reasons. The "Last updated" date at the top of this page
+                indicates when this Policy was last revised. We encourage you to
+                review this page periodically.
+            </p>
+        </section>
+
+        <section id="contact">
+            <h2><span class="num">11</span> Contact Us</h2>
+            <p>
+                If you have questions about this Privacy Policy, or wish to exercise
+                any of your rights under POPIA, please contact:
+            </p>
+            <ul>
+                <li><strong>Information Officer:</strong> City of Johannesburg — Property Branch: Valuation Services</li>
+                <li><strong>Email:</strong> <a href="mailto:valuationenquiries@joburg.org.za">valuationenquiries@joburg.org.za</a></li>
+                <li><strong>Address:</strong> Valuation Administrations, 1st Floor, East Wing, 66 Jorissen Street, Braamfontein, Johannesburg</li>
+            </ul>
+            <p>
+                For general enquiries about the Portal, visit our
+                <a href="/contact">Contact page</a>.
+            </p>
+        </section>
+
+    </div>
+</div>

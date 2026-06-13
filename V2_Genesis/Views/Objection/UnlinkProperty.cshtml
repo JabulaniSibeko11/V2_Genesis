@@ -1,0 +1,48 @@
+﻿@{
+    ViewData["Title"] = "Unlink Property";
+
+    var linkedId = TempData.Peek("UnlinkId")?.ToString() ?? "";
+    var rollSource = TempData.Peek("UnlinkRollSource")?.ToString() ?? "";
+    var returnUrl = TempData.Peek("ReturnUrl")?.ToString() ?? "/dashboard";
+
+    TempData.Keep("UnlinkId");
+    TempData.Keep("UnlinkRollSource");
+    TempData.Keep("ReturnUrl");
+}
+
+<div class="container mt-4">
+    <div class="card shadow-sm border-0">
+        <div class="card-body">
+            <h4 class="mb-3">
+                <i class="fa-solid fa-link-slash text-danger"></i>
+                Unlink Property
+            </h4>
+
+            <p>
+                Are you sure you want to remove this property from your profile?
+            </p>
+
+            <p class="text-muted">
+                This will only remove the property from your dashboard. It will not delete any submitted objection, appeal, query, review, or evidence.
+            </p>
+
+            <form asp-action="UnlinkPropertyConfirm"
+                  asp-controller="Objection"
+                  method="post">
+                @Html.AntiForgeryToken()
+
+                <input type="hidden" name="linkedId" value="@linkedId" />
+                <input type="hidden" name="rollSource" value="@rollSource" />
+                <input type="hidden" name="returnUrl" value="@returnUrl" />
+
+                <button type="submit" class="btn btn-danger">
+                    Yes, Unlink Property
+                </button>
+
+                <a href="@returnUrl" class="btn btn-secondary">
+                    Cancel
+                </a>
+            </form>
+        </div>
+    </div>
+</div>

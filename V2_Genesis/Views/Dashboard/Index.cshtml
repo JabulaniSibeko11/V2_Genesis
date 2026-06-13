@@ -1,10 +1,42 @@
-﻿@using V2_Genesis.Services.Implementations
+﻿@using System.Security.Claims
+@using System.Net
+@using V2_Genesis.Helpers
+@using V2_Genesis.Services.Interfaces
+@using V2_Genesis.Services.Implementations
 @using V2_Genesis.Services.PropertySearch
+@inject INotificationService NotificationService
 @model V2_Genesis.Models.ViewModels.Dashboard.ClientDashboardViewModel
 @{
     ViewData["Title"] = "My Dashboard";
     Layout = "~/Views/Shared/_ClientLayout.cshtml";
+
     var ann = Model.Announcement;
+
+    var dashboardUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+    var dashboardUserEmail =
+        User.FindFirstValue(ClaimTypes.Email)
+        ?? User.FindFirstValue(ClaimTypes.Name)
+        ?? User.Identity?.Name
+        ?? "";
+
+    var isDashboardAdmin =
+        User.IsInRole("Admin")
+        || dashboardUserEmail.Equals("AdministrationEnquiries@Joburg.org.za", StringComparison.OrdinalIgnoreCase)
+        || System.Text.RegularExpressions.Regex.IsMatch(
+            dashboardUserEmail,
+            @"^val\.admin(1[0-9]?|[1-9])@joburg\.org\.za$",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+    var unreadNotificationCount = await NotificationService.GetUnreadCountAsync(
+        dashboardUserId,
+        dashboardUserEmail,
+        isDashboardAdmin);
+
+    var latestNotifications = await NotificationService.GetLatestAsync(
+        dashboardUserId,
+        dashboardUserEmail,
+        isDashboardAdmin,
+        10);
 }
 @functions {
 
@@ -76,6 +108,8 @@
     };
 }
 
+
+
 @section Styles {
    
     <link href="~/css/views/clientdashboardcss.css" rel="stylesheet" asp-append-version="true" />
@@ -122,22 +156,74 @@
     </div>
 </div>
 
-<div class="cd-welcome">
-    <div class="cd-welcome-inner">
-        <div>
-            <h1 class="cd-welcome-name">
-                Welcome back, <span>@Model.DisplayName</span>
-                <span class="cd-welcome-wave">👋</span>
-            </h1>
-            <p class="cd-welcome-sub">
-                @(Model.IsCompany ? "Company Account" : "Individual Account") &nbsp;·&nbsp;
-                Property Dashboard
-            </p>
+<div class="cd-welcome-inner">
+    <div>
+        <h1 class="cd-welcome-name">
+            Welcome back, <span>@Model.DisplayName</span>
+            <span class="cd-welcome-wave">👋</span>
+        </h1>
+        <p class="cd-welcome-sub">
+            @(Model.IsCompany ? "Company Account" : "Individual Account") &nbsp;·&nbsp;
+            Property Dashboard
+        </p>
+    </div>
+
+    <div class="cd-notification-wrap">
+        <button type="button"
+                class="cd-notification-btn"
+                id="notificationBellBtn">
+            <i class="fa-solid fa-bell"></i>
+
+            @if (unreadNotificationCount > 0)
+            {
+                <span class="cd-notification-count">@unreadNotificationCount</span>
+            }
+        </button>
+
+        <div class="cd-notification-panel" id="notificationPanel">
+            <div class="cd-notification-head">
+                <strong>Notifications</strong>
+                <span>@unreadNotificationCount unread</span>
+            </div>
+
+            @if (!latestNotifications.Any())
+            {
+                <div class="cd-notification-empty">
+                    <i class="fa-solid fa-circle-info"></i>
+                    No notifications yet.
+                </div>
+            }
+            else
+            {
+                <div class="cd-notification-list">
+                    @foreach (var note in latestNotifications)
+                    {
+                        var noteType = string.IsNullOrWhiteSpace(note.NotificationType)
+                            ? "Info"
+                            : note.NotificationType;
+
+                        <a class="cd-notification-item @(note.IsRead ? "" : "unread")"
+                               href="@(string.IsNullOrWhiteSpace(note.Url) ? "#" : note.Url)">
+                            <div class="cd-note-icon cd-note-@noteType.ToLower()">
+                                <i class="fa-solid @(noteType == "Success" ? "fa-circle-check" : noteType == "Warning" ? "fa-triangle-exclamation" : noteType == "Error" ? "fa-circle-xmark" : "fa-circle-info")"></i>
+                            </div>
+
+                            <div class="cd-note-body">
+                                <strong>@(note.Title ?? "Notification")</strong>
+                                <p>@note.Message</p>
+
+                                @if (!string.IsNullOrWhiteSpace(note.ReferenceNumber))
+                                {
+                                    <span class="cd-note-ref">@note.ReferenceNumber</span>
+                                }
+
+                                <small>@note.CreatedDate.ToString("dd MMM yyyy HH:mm")</small>
+                            </div>
+                        </a>
+                    }
+                </div>
+            }
         </div>
-       @*  <div class="cd-ann-pill @ann.BadgeCss">
-            <span class="cd-ann-dot"></span>
-            <span>@ann.Message</span>
-        </div> *@
     </div>
 </div>
 
@@ -225,7 +311,9 @@
         var rollKey = roll.Source.Replace("_", "");
         var isActive = roll == Model.Rolls.First();
 
-        <div class="cd-roll-section" id="roll-@rollKey">
+        <div class="cd-roll-section"
+             id="roll-@rollKey"
+             data-roll-source="@roll.Source">
 
             <!-- Roll header (click to collapse the whole roll) -->
             <div class="cd-roll-header @(roll.IsQuery ? "cd-roll-query" : "") @(roll.HasObjection == false && !roll.IsQuery ? "cd-roll-inactive" : "")"
@@ -364,7 +452,7 @@ else if (roll.IsQuery)
                                             </li>
                                             <li>
                                                                 <a class="dropdown-item"
-                                                                       href="/property/unlink?linkedId=@item.Id&returnUrl=/dashboard">
+                                                                       href="/property/unlink?linkedId=@item.Id&rollSource=@roll.Source&returnUrl=/Dashboard?openRoll=@roll.Source">
                                                                     <i class="fa-solid fa-link-slash"></i> Unlink Property
                                                                 </a>
                                             </li>
@@ -648,7 +736,7 @@ else if (roll.IsQuery)
                                                 }
                                                 <li>
                                                     <a class="dropdown-item"
-                                                       href="/Home/Delete@(roll.ControllerName)?id=@item.Id">
+                                                                       href="/property/unlink?linkedId=@item.Id&rollSource=@roll.Source&returnUrl=/Dashboard?openRoll=@roll.Source">
                                                         <i class="fa-solid fa-link-slash"></i> Unlink
                                                     </a>
                                                 </li>
@@ -889,7 +977,7 @@ else if (roll.IsQuery)
         var rebateCount = Model.Rebates?.Count ?? 0;
     }
 
-    <div class="cd-roll-section">
+    <div class="cd-roll-section" id="roll-rebates" data-roll-source="rebates">
 
    
         <div class="cd-roll-header cd-roll-rebates" onclick="toggleRoll('rebates')">
@@ -1041,7 +1129,7 @@ else if (roll.IsQuery)
 
 
     @* ── Property Attributes ───────────────────────────────────────────────── *@
-    <div class="cd-roll-section">
+    <div class="cd-roll-section" id="roll-attributes" data-roll-source="attributes">
         <div class="cd-roll-header cd-roll-attributes" onclick="toggleRoll('attributes')">
             <div class="cd-roll-header-left">
                 <div class="cd-roll-icon">
@@ -1351,84 +1439,227 @@ else if (roll.IsQuery)
     </div>
 
 </div>
+<div id="statusExplainModal" class="status-modal-backdrop" style="display:none;">
+    <div class="status-modal">
+        <div class="status-modal-header">
+            <div>
+                <h4 id="statusExplainTitle">Status Information</h4>
+                <p>What this status means</p>
+            </div>
+
+            <button type="button" id="closeStatusExplainModal">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <div class="status-modal-body">
+            <p id="statusExplainMessage"></p>
+        </div>
+
+        <div class="status-modal-footer">
+            <button type="button" id="okayStatusExplainModal">
+                Okay
+            </button>
+        </div>
+    </div>
+</div>
 
 
 @functions {
-    string GetStatusPill(string? status) => status switch
+    string Enc(string? value)
     {
-        // ── Objection statuses ────────────────────────────────────
-        "Obj-Unallocated" or "Obj-Section51"
-            => "<span class='cd-pill cd-pill-pending'>Obj-Pending</span>",
-        "Obj-Inprogress" or "Obj-Pending-Approval" or "Obj-Rejected"
-            => "<span class='cd-pill cd-pill-inprogress'>Obj-InProgress</span>",
-        "Obj-Lodging"
-            => "<span class='cd-pill cd-pill-lodging'>Obj-Lodging</span>",
-        "Obj-PenTest"
-            => "<span class='cd-pill cd-pill-rejected'>Invalid</span>",
+        return WebUtility.HtmlEncode(value ?? "");
+    }
 
-        // ── Appeal statuses ───────────────────────────────────────
-        "App-Unallocated" or "App-Lodging"
-            => $"<span class='cd-pill cd-pill-pending'>{status}</span>",
-        "App-Finalized"
-            => "<span class='cd-pill cd-pill-completed'>App-Finalized</span>",
+    string GetStatusDisplayText(string? status) => status switch
+    {
+        "Obj-Unallocated" or "Obj-Section51" => "Obj-Pending",
+        "Obj-Inprogress" or "Obj-Pending-Approval" or "Obj-Rejected" => "Obj-InProgress",
+        "Obj-Lodging" => "Obj-Lodging",
+        "Obj-PenTest" => "Invalid",
 
-        // ── Section 78 Query statuses ─────────────────────────────
-        "Query-Lodging"
-            => "<span class='cd-pill cd-pill-lodging'>Query-Lodging</span>",
-        "Query-Unallocated"
-            => "<span class='cd-pill cd-pill-pending'>Query-Pending</span>",
-        "Query-Inprogress"
-            => "<span class='cd-pill cd-pill-inprogress'>Query-InProgress</span>",
-        "Query-Finalized" or "Notice-Sent"
-            => "<span class='cd-pill cd-pill-completed'>Finalised</span>",
-        "Query-Withdrawn"
-            => "<span class='cd-pill cd-pill-rejected'>Withdrawn</span>",
+        "App-Unallocated" => "App-Unallocated",
+        "App-Lodging" => "App-Lodging",
+        "App-Finalized" => "App-Finalized",
 
-        null or ""
-            => "<span class='cd-pill cd-pill-pending'>Pending</span>",
-        _ => $"<span class='cd-pill cd-pill-completed'>{status}</span>"
+        "Query-Lodging" => "Query-Lodging",
+        "Query-Unallocated" => "Query-Pending",
+        "Query-Inprogress" => "Query-InProgress",
+        "Query-Finalized" or "Notice-Sent" => "Finalised",
+        "Query-Withdrawn" => "Withdrawn",
+
+        null or "" => "Pending",
+        _ => status
     };
+
+    string GetStatusPill(string? status)
+    {
+        var title = StatusExplanationHelper.GetTitle(status);
+        var description = StatusExplanationHelper.GetDescription(status);
+        var badgeClass = StatusExplanationHelper.GetBadgeClass(status);
+        var displayText = GetStatusDisplayText(status);
+
+        return $@"
+<span class='client-status-badge cd-pill {Enc(badgeClass)}'
+      title='{Enc(description)}'
+      data-status-title='{Enc(title)}'
+      data-status-message='{Enc(description)}'>
+    {Enc(displayText)}
+    <i class='fa-solid fa-circle-question status-help-icon'></i>
+</span>";
+    }
 }
 
 @section Scripts {
+   
     <script>
         // ── Roll section toggle ────────────────────────────────────────────
         function toggleRoll(key) {
-            const body    = document.getElementById('rollbody-' + key);
+            const body = document.getElementById('rollbody-' + key);
             const chevron = document.getElementById('chevron-' + key);
+
             if (!body) return;
+
             const isOpen = body.classList.toggle('open');
-            if (chevron) chevron.style.transform = isOpen ? 'rotate(180deg)' : 'rotate(0deg)';
+
+            if (chevron) {
+                chevron.style.transform = isOpen ? 'rotate(180deg)' : 'rotate(0deg)';
+            }
         }
 
         // ── Widget sub-section toggle ──────────────────────────────────────
         function toggleWidget(key) {
-            const body    = document.getElementById('widget-' + key);
+            const body = document.getElementById('widget-' + key);
             const chevron = document.getElementById('wchev-' + key);
+
             if (!body) return;
+
             const isOpen = body.classList.toggle('open');
-            if (chevron) chevron.style.transform = isOpen ? 'rotate(180deg)' : 'rotate(0deg)';
+
+            if (chevron) {
+                chevron.style.transform = isOpen ? 'rotate(180deg)' : 'rotate(0deg)';
+            }
         }
 
         // ── Init DataTables on visible tables ─────────────────────────────
         function initDataTable(selector) {
+            if (!selector || !$(selector).length) return;
             if ($.fn.DataTable.isDataTable(selector)) return;
+
             $(selector).DataTable({
-                responsive : true,
-                dom        : '<"cd-dt-top"lBf>rt<"cd-dt-bottom"ip>',
-                lengthMenu : [[5, 10, 25, -1], [5, 10, 25, 'All']],
-                buttons    : [
-                    { extend:'excel', text:'<i class="fa-solid fa-file-excel"></i> Excel', className:'cd-dt-btn' },
-                    { extend:'pdf',   text:'<i class="fa-solid fa-file-pdf"></i> PDF',     className:'cd-dt-btn' }
+                responsive: true,
+                dom: '<"cd-dt-top"lBf>rt<"cd-dt-bottom"ip>',
+                lengthMenu: [[5, 10, 25, -1], [5, 10, 25, 'All']],
+                buttons: [
+                    {
+                        extend: 'excel',
+                        text: '<i class="fa-solid fa-file-excel"></i> Excel',
+                        className: 'cd-dt-btn'
+                    },
+                    {
+                        extend: 'pdf',
+                        text: '<i class="fa-solid fa-file-pdf"></i> PDF',
+                        className: 'cd-dt-btn'
+                    }
                 ],
                 language: {
-                    search: '_INPUT_', searchPlaceholder: 'Search...',
+                    search: '_INPUT_',
+                    searchPlaceholder: 'Search...',
                     lengthMenu: '_MENU_ per page'
                 }
             });
         }
 
-        // Init tables inside open sections on load
+        // ── Open roll after property link redirect ─────────────────────────
+        function openLinkedRollFromQueryString() {
+            const params = new URLSearchParams(window.location.search);
+            const openRoll = params.get('openRoll');
+
+            if (!openRoll) {
+                return;
+            }
+
+                   let rollSection = document.querySelector(
+            `.cd-roll-section[data-roll-source="${openRoll}"]`
+        );
+
+        if (!rollSection && openRoll.toLowerCase() === "attributes") {
+            rollSection = document.getElementById("roll-attributes");
+        }
+
+        if (!rollSection && openRoll.toLowerCase() === "rebates") {
+            rollSection = document.getElementById("roll-rebates");
+        }
+
+            if (!rollSection) {
+                console.warn('Roll section not found for:', openRoll);
+                return;
+            }
+
+            const rollKey = rollSection.id.replace('roll-', '');
+
+            // Close all other roll sections first
+            document.querySelectorAll('.cd-roll-body.open').forEach(body => {
+                if (body.id !== 'rollbody-' + rollKey) {
+                    body.classList.remove('open');
+                }
+            });
+
+            document.querySelectorAll('.cd-roll-chevron').forEach(icon => {
+                icon.style.transform = 'rotate(0deg)';
+            });
+
+            // Open selected roll section
+            const rollBody = document.getElementById('rollbody-' + rollKey);
+            const rollChevron = document.getElementById('chevron-' + rollKey);
+
+            if (rollBody) {
+                rollBody.classList.add('open');
+            }
+
+            if (rollChevron) {
+                rollChevron.style.transform = 'rotate(180deg)';
+            }
+
+            // Open Linked Properties widget inside selected roll
+            const linkedWidget = document.getElementById('widget-' + rollKey + '-linked');
+            const linkedChevron = document.getElementById('wchev-' + rollKey + '-linked');
+
+            if (linkedWidget) {
+                linkedWidget.classList.add('open');
+            }
+
+            if (linkedChevron) {
+                linkedChevron.style.transform = 'rotate(180deg)';
+            }
+
+            // Initialise linked properties DataTable after opening
+            setTimeout(function () {
+                const linkedTable = document.querySelector(
+                    '#widget-' + rollKey + '-linked .cd-table'
+                );
+
+                if (linkedTable && linkedTable.id) {
+                    initDataTable('#' + linkedTable.id);
+                }
+            }, 150);
+
+            // Highlight selected roll
+            rollSection.classList.add('linked-roll-active');
+
+            // Scroll to selected roll
+            setTimeout(function () {
+                rollSection.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }, 250);
+
+            // Remove openRoll from URL after opening
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+
+        // Init tables and auto-open linked roll
         $(document).ready(function () {
             // Auto-init tables already visible
             document.querySelectorAll('.cd-widget-body.open .cd-table').forEach(t => {
@@ -1439,15 +1670,76 @@ else if (roll.IsQuery)
             document.querySelectorAll('.cd-widget-toggle').forEach(toggle => {
                 toggle.addEventListener('click', function () {
                     const bodyId = this.nextElementSibling?.id;
+
                     if (!bodyId) return;
+
                     setTimeout(() => {
                         const table = document.querySelector('#' + bodyId + ' .cd-table');
-                        if (table) initDataTable('#' + table.id);
+
+                        if (table && table.id) {
+                            initDataTable('#' + table.id);
+                        }
                     }, 100);
                 });
             });
 
-           
+            // Open the roll after linking property
+            openLinkedRollFromQueryString();
+        });
+                // ── Notification Bell ─────────────────────────────────────────────
+        document.addEventListener("DOMContentLoaded", function () {
+            const bellBtn = document.getElementById("notificationBellBtn");
+            const panel = document.getElementById("notificationPanel");
+
+            bellBtn?.addEventListener("click", function (e) {
+                e.stopPropagation();
+                panel?.classList.toggle("open");
+            });
+
+            panel?.addEventListener("click", function (e) {
+                e.stopPropagation();
+            });
+
+            document.addEventListener("click", function () {
+                panel?.classList.remove("open");
+            });
+        });
+
+        // ── Status Explanation Modal ─────────────────────────────────────
+        document.addEventListener("DOMContentLoaded", function () {
+            const modal = document.getElementById("statusExplainModal");
+            const title = document.getElementById("statusExplainTitle");
+            const message = document.getElementById("statusExplainMessage");
+
+            document.querySelectorAll(".client-status-badge").forEach(badge => {
+                badge.addEventListener("click", function () {
+                    if (!modal || !title || !message) return;
+
+                    title.innerText = this.dataset.statusTitle || "Status Information";
+                    message.innerText = this.dataset.statusMessage || "No explanation available.";
+
+                    modal.style.display = "flex";
+                    document.body.style.overflow = "hidden";
+                });
+            });
+
+            function closeStatusModal() {
+                if (modal) {
+                    modal.style.display = "none";
+                }
+
+                document.body.style.overflow = "";
+            }
+
+            document.getElementById("closeStatusExplainModal")?.addEventListener("click", closeStatusModal);
+            document.getElementById("okayStatusExplainModal")?.addEventListener("click", closeStatusModal);
+
+            modal?.addEventListener("click", function (e) {
+                if (e.target === modal) {
+                    closeStatusModal();
+                }
+            });
         });
     </script>
+}
 }

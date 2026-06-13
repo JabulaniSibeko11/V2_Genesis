@@ -222,61 +222,127 @@ var owner = "";
 var objId = "";
 var pin
 
+let isSubmittingMultiForm = false;
+
 function showInput() {
+    if (isSubmittingMultiForm) {
+        return false;
+    }
 
-    desc = document.getElementById("Property_Desc").value;
+    // Validate Section 6 before final submit
+    if (typeof section6ValidateBeforeNext === "function") {
+        if (!section6ValidateBeforeNext()) {
+            hideSubmitLoader();
+            return false;
+        }
+    }
+
+    // Store summary values
+    const propertyDescEl = document.getElementById("Property_Desc");
+    const marketValueEl =
+        document.getElementById("Market_Value") ||
+        document.getElementById("market_Value");
+
+    const extentEl = document.getElementById("extent");
+    const catEl = document.getElementById("cat");
+    const ownerEl = document.getElementById("owner");
+
+    desc = propertyDescEl ? propertyDescEl.value : "";
+    market_Value = marketValueEl ? marketValueEl.value : "";
+    extent = extentEl ? extentEl.value : "";
+    cat = catEl ? catEl.value : "";
+    owner = ownerEl ? ownerEl.value : "";
+
     sessionStorage.setItem("desc", desc);
-    
-    Market_value = document.getElementById("market_Value").value;
     sessionStorage.setItem("market_Value", market_Value);
-    
-
-    extent = document.getElementById("extent").value;
     sessionStorage.setItem("extent", extent);
-    
-    Cat = document.getElementById("cat").value;
-    sessionStorage.setItem("cat", Cat);
-    
-    owner = document.getElementById("cat").value;
     sessionStorage.setItem("cat", cat);
-
-    owner = document.getElementById("owner").value;
     sessionStorage.setItem("owner", owner);
 
+    // Signature name required
+    const signObj = document.getElementById("sign_obj");
 
-    
-    
-    if (userEmailElement) {
-        if (regex.test(userEmail) || userEmail === 'AdministrationEnquiries@Joburg.org.za') {
-            if (document.getElementById("sign_obj").value.trim() !== "" && document.getElementById("sapNo").value.trim() !== "") {
-                const submitButton = document.getElementById("submitForm");
-                submitButton.disabled = true;
-                submitButton.innerHTML = 'Please wait...';
-                document.getElementById("myForm").submit();
-            }
-
-        }
-        else {
-            if (document.getElementById("sign_obj").value.trim() !== "") {
-                const submitButton = document.getElementById("submitForm");
-                submitButton.disabled = true;
-                submitButton.innerHTML = 'Please wait...';
-                document.getElementById("myForm").submit();
-            }
-        }
-    }
-    else {
-
-        if (document.getElementById("sign_obj").value.trim() !== "") {
-            const submitButton = document.getElementById("submitForm");
-            submitButton.disabled = true;
-            submitButton.innerHTML = 'Please wait...';
-            document.getElementById("myForm").submit();
-        }
+    if (!signObj || signObj.value.trim() === "") {
+        alert("Please enter the name of the person signing the form.");
+        hideSubmitLoader();
+        return false;
     }
 
-    //obj_Id = document.getElementById("pin").value;
-    //sessionStorage.setItem("pin", pin);
+    // Signature pad accepted required
+    const signatureData = document.getElementById("SignatureDataUrl");
+
+    if (!signatureData || signatureData.value.trim() === "") {
+        alert("Please accept your signature before submitting.");
+        hideSubmitLoader();
+        return false;
+    }
+
+    // Admin SAP validation
+    const sapNo = document.getElementById("sapNo");
+
+    if (isAdminFlag === true && (!sapNo || sapNo.value.trim() === "")) {
+        alert("Admin SAP number is required before submitting.");
+        hideSubmitLoader();
+        return false;
+    }
+
+    // Make sure formatted Rand values post as plain numbers
+    syncMultiMoneyFieldsBeforeSubmit();
+
+    const form = document.getElementById("myForm");
+
+    if (!form) {
+        alert("Form was not found. Please refresh and try again.");
+        hideSubmitLoader();
+        return false;
+    }
+
+    isSubmittingMultiForm = true;
+
+    showSubmitLoader();
+
+    const submitButton = document.getElementById("submitForm");
+
+    if (submitButton) {
+        submitButton.disabled = true;
+        submitButton.innerHTML = "Please wait...";
+    }
+
+    setTimeout(function () {
+        form.submit();
+    }, 300);
+
+    return false;
+}
+function showSubmitLoader() {
+    const overlay = document.getElementById("objLoaderOverlay");
+
+    if (overlay) {
+        overlay.style.display = "flex";
+        overlay.classList.add("show");
+    }
+
+    document.body.classList.add("loading");
+}
+
+function hideSubmitLoader() {
+    const overlay = document.getElementById("objLoaderOverlay");
+
+    if (overlay) {
+        overlay.style.display = "none";
+        overlay.classList.remove("show");
+    }
+
+    document.body.classList.remove("loading");
+
+    const submitButton = document.getElementById("submitForm");
+
+    if (submitButton) {
+        submitButton.disabled = false;
+        submitButton.innerHTML = "Submit";
+    }
+
+    isSubmittingMultiForm = false;
 }
 
 String.prototype.reverse = function () {
@@ -1800,191 +1866,222 @@ $(document).ready(function () {
             $(".div5").show();
             $(".div6").hide();
         });
-        $(".btn_n6").click(function () {
-            if (objector_key == "Owner") {
-                if ((document.getElementById("NewCat").value) == '' &&
-                    (document.getElementById("NewMarketValue").value) == '' &&
-                    (document.getElementById("NewExtent").value) == '' &&
-                    (document.getElementById("NewPropDesc").value) == '' &&
-                    (document.getElementById("NewAddress").value) == '' &&
-                    (document.getElementById("NewOwner").value) == '' &&
-                    (document.getElementById("NewCat1").value) == '' &&
-                    (document.getElementById("NewMarketValue1").value) == '' &&
-                    (document.getElementById("NewExtent1").value) == '' &&
-                    (document.getElementById("NewCat2").value) == '' &&
-                    (document.getElementById("NewMarketValue2").value) == '' &&
-                    (document.getElementById("NewExtent2").value) == '' &&
-                    (document.getElementById("NewCat3").value) == '' &&
-                    (document.getElementById("NewMarketValue3").value) == '' &&
-                    (document.getElementById("NewExtent3").value) == ''
+        //$(".btn_n6").click(function () {
+        //    if (objector_key == "Owner") {
+        //        if ((document.getElementById("NewCat").value) == '' &&
+        //            (document.getElementById("NewMarketValue").value) == '' &&
+        //            (document.getElementById("NewExtent").value) == '' &&
+        //            (document.getElementById("NewPropDesc").value) == '' &&
+        //            (document.getElementById("NewAddress").value) == '' &&
+        //            (document.getElementById("NewOwner").value) == '' &&
+        //            (document.getElementById("NewCat1").value) == '' &&
+        //            (document.getElementById("NewMarketValue1").value) == '' &&
+        //            (document.getElementById("NewExtent1").value) == '' &&
+        //            (document.getElementById("NewCat2").value) == '' &&
+        //            (document.getElementById("NewMarketValue2").value) == '' &&
+        //            (document.getElementById("NewExtent2").value) == '' &&
+        //            (document.getElementById("NewCat3").value) == '' &&
+        //            (document.getElementById("NewMarketValue3").value) == '' &&
+        //            (document.getElementById("NewExtent3").value) == ''
 
-                ) {
-                    document.getElementById("new_change_invalid").innerHTML = "Please fill at least one of the change you want to make.";
-                    document.getElementById("new_change_invalid").style.color = "red";
-                    document.getElementById("NewCat").style.border = "2px solid red";
-                    document.getElementById("NewMarketValue").style.border = "2px solid red";
-                    document.getElementById("NewExtent").style.border = "2px solid red";
-                    document.getElementById("NewPropDesc").style.border = "2px solid red";
-                    document.getElementById("NewAddress").style.border = "2px solid red";
-                    document.getElementById("NewOwner").style.border = "2px solid red";
-                    document.getElementById("NewCat1").style.border = "2px solid red";
-                    document.getElementById("NewMarketValue1").style.border = "2px solid red";
-                    document.getElementById("NewExtent1").style.border = "2px solid red";
-                    document.getElementById("NewCat2").style.border = "2px solid red";
-                    document.getElementById("NewMarketValue2").style.border = "2px solid red";
-                    document.getElementById("NewExtent2").style.border = "2px solid red";
-                    document.getElementById("NewCat3").style.border = "2px solid red";
-                    document.getElementById("NewMarketValue3").style.border = "2px solid red";
-                    document.getElementById("NewExtent3").style.border = "2px solid red";
-                }
-                else {
-                    NewChange = 'true';
-                    document.getElementById("new_change_invalid").innerHTML = "";
-                    document.getElementById("NewCat").style.border = "";
-                    document.getElementById("NewMarketValue").style.border = "";
-                    document.getElementById("NewExtent").style.border = "";
-                    document.getElementById("NewPropDesc").style.border = "";
-                    document.getElementById("NewAddress").style.border = "";
-                    document.getElementById("NewOwner").style.border = "";
-                    document.getElementById("NewCat1").style.border = "";
-                    document.getElementById("NewMarketValue1").style.border = "";
-                    document.getElementById("NewExtent1").style.border = "";
-                    document.getElementById("NewCat2").style.border = "";
-                    document.getElementById("NewMarketValue2").style.border = "";
-                    document.getElementById("NewExtent2").style.border = "";
-                    document.getElementById("NewCat3").style.border = "";
-                    document.getElementById("NewMarketValue3").style.border = "";
-                    document.getElementById("NewExtent3").style.border = "";
+        //        ) {
+        //            document.getElementById("new_change_invalid").innerHTML = "Please fill at least one of the change you want to make.";
+        //            document.getElementById("new_change_invalid").style.color = "red";
+        //            document.getElementById("NewCat").style.border = "2px solid red";
+        //            document.getElementById("NewMarketValue").style.border = "2px solid red";
+        //            document.getElementById("NewExtent").style.border = "2px solid red";
+        //            document.getElementById("NewPropDesc").style.border = "2px solid red";
+        //            document.getElementById("NewAddress").style.border = "2px solid red";
+        //            document.getElementById("NewOwner").style.border = "2px solid red";
+        //            document.getElementById("NewCat1").style.border = "2px solid red";
+        //            document.getElementById("NewMarketValue1").style.border = "2px solid red";
+        //            document.getElementById("NewExtent1").style.border = "2px solid red";
+        //            document.getElementById("NewCat2").style.border = "2px solid red";
+        //            document.getElementById("NewMarketValue2").style.border = "2px solid red";
+        //            document.getElementById("NewExtent2").style.border = "2px solid red";
+        //            document.getElementById("NewCat3").style.border = "2px solid red";
+        //            document.getElementById("NewMarketValue3").style.border = "2px solid red";
+        //            document.getElementById("NewExtent3").style.border = "2px solid red";
+        //        }
+        //        else {
+        //            NewChange = 'true';
+        //            document.getElementById("new_change_invalid").innerHTML = "";
+        //            document.getElementById("NewCat").style.border = "";
+        //            document.getElementById("NewMarketValue").style.border = "";
+        //            document.getElementById("NewExtent").style.border = "";
+        //            document.getElementById("NewPropDesc").style.border = "";
+        //            document.getElementById("NewAddress").style.border = "";
+        //            document.getElementById("NewOwner").style.border = "";
+        //            document.getElementById("NewCat1").style.border = "";
+        //            document.getElementById("NewMarketValue1").style.border = "";
+        //            document.getElementById("NewExtent1").style.border = "";
+        //            document.getElementById("NewCat2").style.border = "";
+        //            document.getElementById("NewMarketValue2").style.border = "";
+        //            document.getElementById("NewExtent2").style.border = "";
+        //            document.getElementById("NewCat3").style.border = "";
+        //            document.getElementById("NewMarketValue3").style.border = "";
+        //            document.getElementById("NewExtent3").style.border = "";
 
-                    $(".div6").hide();
-                    $(".divU").show();
-                    document.getElementById("sectionUpload").focus();
-                }
+        //            $(".div6").hide();
+        //            $(".divU").show();
+        //            document.getElementById("sectionUpload").focus();
+        //        }
+        //    }
+
+        //    if (objector_key == "Third_Party") {
+        //        if ((document.getElementById("NewCat").value) == '' &&
+        //            (document.getElementById("NewMarketValue").value) == '' &&
+        //            (document.getElementById("NewExtent").value) == '' &&
+        //            (document.getElementById("NewPropDesc").value) == '' &&
+        //            (document.getElementById("NewAddress").value) == '' &&
+        //            (document.getElementById("NewOwner").value) == '' &&
+        //            (document.getElementById("NewCat1").value) == '' &&
+        //            (document.getElementById("NewMarketValue1").value) == '' &&
+        //            (document.getElementById("NewExtent1").value) == '' &&
+        //            (document.getElementById("NewCat2").value) == '' &&
+        //            (document.getElementById("NewMarketValue2").value) == '' &&
+        //            (document.getElementById("NewExtent2").value) == '' &&
+        //            (document.getElementById("NewCat3").value) == '' &&
+        //            (document.getElementById("NewMarketValue3").value) == '' &&
+        //            (document.getElementById("NewExtent3").value) == ''
+        //        ) {
+        //            document.getElementById("new_change_invalid").innerHTML = "Please fill at least one of the change you want to make.";
+        //            document.getElementById("new_change_invalid").style.color = "red";
+        //            document.getElementById("NewCat").style.border = "2px solid red";
+        //            document.getElementById("NewMarketValue").style.border = "2px solid red";
+        //            document.getElementById("NewExtent").style.border = "2px solid red";
+        //            document.getElementById("NewPropDesc").style.border = "2px solid red";
+        //            document.getElementById("NewAddress").style.border = "2px solid red";
+        //            document.getElementById("NewOwner").style.border = "2px solid red";
+        //            document.getElementById("NewCat1").style.border = "2px solid red";
+        //            document.getElementById("NewMarketValue1").style.border = "2px solid red";
+        //            document.getElementById("NewExtent1").style.border = "2px solid red";
+        //            document.getElementById("NewCat2").style.border = "2px solid red";
+        //            document.getElementById("NewMarketValue2").style.border = "2px solid red";
+        //            document.getElementById("NewExtent2").style.border = "2px solid red";
+        //            document.getElementById("NewCat3").style.border = "2px solid red";
+        //            document.getElementById("NewMarketValue3").style.border = "2px solid red";
+        //            document.getElementById("NewExtent3").style.border = "2px solid red";
+        //        }
+        //        else {
+        //            NewChange = 'true';
+        //            document.getElementById("new_change_invalid").innerHTML = "";
+        //            document.getElementById("NewCat").style.border = "";
+        //            document.getElementById("NewMarketValue").style.border = "";
+        //            document.getElementById("NewExtent").style.border = "";
+        //            document.getElementById("NewPropDesc").style.border = "";
+        //            document.getElementById("NewAddress").style.border = "";
+        //            document.getElementById("NewOwner").style.border = "";
+        //            document.getElementById("NewCat1").style.border = "";
+        //            document.getElementById("NewMarketValue1").style.border = "";
+        //            document.getElementById("NewExtent1").style.border = "";
+        //            document.getElementById("NewCat2").style.border = "";
+        //            document.getElementById("NewMarketValue2").style.border = "";
+        //            document.getElementById("NewExtent2").style.border = "";
+        //            document.getElementById("NewCat3").style.border = "";
+        //            document.getElementById("NewMarketValue3").style.border = "";
+        //            document.getElementById("NewExtent3").style.border = "";
+
+        //            $(".div6").hide();
+        //            $(".divU").show();
+        //            document.getElementById("sectionUpload").focus();
+        //        }
+        //    }
+
+        //    if (objector_key == "Representative") {
+        //        if ((document.getElementById("NewCat").value) == '' &&
+        //            (document.getElementById("NewMarketValue").value) == '' &&
+        //            (document.getElementById("NewExtent").value) == '' &&
+        //            (document.getElementById("NewPropDesc").value) == '' &&
+        //            (document.getElementById("NewAddress").value) == '' &&
+        //            (document.getElementById("NewOwner").value) == '' &&
+        //            (document.getElementById("NewCat1").value) == '' &&
+        //            (document.getElementById("NewMarketValue1").value) == '' &&
+        //            (document.getElementById("NewExtent1").value) == '' &&
+        //            (document.getElementById("NewCat2").value) == '' &&
+        //            (document.getElementById("NewMarketValue2").value) == '' &&
+        //            (document.getElementById("NewExtent2").value) == '' &&
+        //            (document.getElementById("NewCat3").value) == '' &&
+        //            (document.getElementById("NewMarketValue3").value) == '' &&
+        //            (document.getElementById("NewExtent3").value) == ''
+        //        ) {
+        //            document.getElementById("new_change_invalid").innerHTML = "Please fill at least one of the change you want to make.";
+        //            document.getElementById("new_change_invalid").style.color = "red";
+        //            document.getElementById("NewCat").style.border = "2px solid red";
+        //            document.getElementById("NewMarketValue").style.border = "2px solid red";
+        //            document.getElementById("NewExtent").style.border = "2px solid red";
+        //            document.getElementById("NewPropDesc").style.border = "2px solid red";
+        //            document.getElementById("NewAddress").style.border = "2px solid red";
+        //            document.getElementById("NewOwner").style.border = "2px solid red";
+        //            document.getElementById("NewCat1").style.border = "2px solid red";
+        //            document.getElementById("NewMarketValue1").style.border = "2px solid red";
+        //            document.getElementById("NewExtent1").style.border = "2px solid red";
+        //            document.getElementById("NewCat2").style.border = "2px solid red";
+        //            document.getElementById("NewMarketValue2").style.border = "2px solid red";
+        //            document.getElementById("NewExtent2").style.border = "2px solid red";
+        //            document.getElementById("NewCat3").style.border = "2px solid red";
+        //            document.getElementById("NewMarketValue3").style.border = "2px solid red";
+        //            document.getElementById("NewExtent3").style.border = "2px solid red";
+        //        }
+        //        else {
+        //            NewChange = 'true';
+        //            document.getElementById("new_change_invalid").innerHTML = "";
+        //            document.getElementById("NewCat").style.border = "";
+        //            document.getElementById("NewMarketValue").style.border = "";
+        //            document.getElementById("NewExtent").style.border = "";
+        //            document.getElementById("NewPropDesc").style.border = "";
+        //            document.getElementById("NewAddress").style.border = "";
+        //            document.getElementById("NewOwner").style.border = "";
+        //            document.getElementById("NewCat1").style.border = "";
+        //            document.getElementById("NewMarketValue1").style.border = "";
+        //            document.getElementById("NewExtent1").style.border = "";
+        //            document.getElementById("NewCat2").style.border = "";
+        //            document.getElementById("NewMarketValue2").style.border = "";
+        //            document.getElementById("NewExtent2").style.border = "";
+        //            document.getElementById("NewCat3").style.border = "";
+        //            document.getElementById("NewMarketValue3").style.border = "";
+        //            document.getElementById("NewExtent3").style.border = "";
+
+        //            $(".div6").hide();
+        //            $(".divU").show();
+        //            document.getElementById("sectionUpload").focus();
+        //        }
+        //    }
+
+        //    //$(".div6").hide();
+        //    //$(".divU").show();
+        //});
+    $(document).ready(function () {
+        $(".btn_n6").off("click").on("click", function (e) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+
+            if (!section6ValidateBeforeNext()) {
+                return false;
             }
 
-            if (objector_key == "Third_Party") {
-                if ((document.getElementById("NewCat").value) == '' &&
-                    (document.getElementById("NewMarketValue").value) == '' &&
-                    (document.getElementById("NewExtent").value) == '' &&
-                    (document.getElementById("NewPropDesc").value) == '' &&
-                    (document.getElementById("NewAddress").value) == '' &&
-                    (document.getElementById("NewOwner").value) == '' &&
-                    (document.getElementById("NewCat1").value) == '' &&
-                    (document.getElementById("NewMarketValue1").value) == '' &&
-                    (document.getElementById("NewExtent1").value) == '' &&
-                    (document.getElementById("NewCat2").value) == '' &&
-                    (document.getElementById("NewMarketValue2").value) == '' &&
-                    (document.getElementById("NewExtent2").value) == '' &&
-                    (document.getElementById("NewCat3").value) == '' &&
-                    (document.getElementById("NewMarketValue3").value) == '' &&
-                    (document.getElementById("NewExtent3").value) == ''
-                ) {
-                    document.getElementById("new_change_invalid").innerHTML = "Please fill at least one of the change you want to make.";
-                    document.getElementById("new_change_invalid").style.color = "red";
-                    document.getElementById("NewCat").style.border = "2px solid red";
-                    document.getElementById("NewMarketValue").style.border = "2px solid red";
-                    document.getElementById("NewExtent").style.border = "2px solid red";
-                    document.getElementById("NewPropDesc").style.border = "2px solid red";
-                    document.getElementById("NewAddress").style.border = "2px solid red";
-                    document.getElementById("NewOwner").style.border = "2px solid red";
-                    document.getElementById("NewCat1").style.border = "2px solid red";
-                    document.getElementById("NewMarketValue1").style.border = "2px solid red";
-                    document.getElementById("NewExtent1").style.border = "2px solid red";
-                    document.getElementById("NewCat2").style.border = "2px solid red";
-                    document.getElementById("NewMarketValue2").style.border = "2px solid red";
-                    document.getElementById("NewExtent2").style.border = "2px solid red";
-                    document.getElementById("NewCat3").style.border = "2px solid red";
-                    document.getElementById("NewMarketValue3").style.border = "2px solid red";
-                    document.getElementById("NewExtent3").style.border = "2px solid red";
-                }
-                else {
-                    NewChange = 'true';
-                    document.getElementById("new_change_invalid").innerHTML = "";
-                    document.getElementById("NewCat").style.border = "";
-                    document.getElementById("NewMarketValue").style.border = "";
-                    document.getElementById("NewExtent").style.border = "";
-                    document.getElementById("NewPropDesc").style.border = "";
-                    document.getElementById("NewAddress").style.border = "";
-                    document.getElementById("NewOwner").style.border = "";
-                    document.getElementById("NewCat1").style.border = "";
-                    document.getElementById("NewMarketValue1").style.border = "";
-                    document.getElementById("NewExtent1").style.border = "";
-                    document.getElementById("NewCat2").style.border = "";
-                    document.getElementById("NewMarketValue2").style.border = "";
-                    document.getElementById("NewExtent2").style.border = "";
-                    document.getElementById("NewCat3").style.border = "";
-                    document.getElementById("NewMarketValue3").style.border = "";
-                    document.getElementById("NewExtent3").style.border = "";
+            NewChange = "true";
 
-                    $(".div6").hide();
-                    $(".divU").show();
-                    document.getElementById("sectionUpload").focus();
-                }
+            const invalid = document.getElementById("new_change_invalid");
+
+            if (invalid) {
+                invalid.innerHTML = "";
+                invalid.style.color = "";
             }
 
-            if (objector_key == "Representative") {
-                if ((document.getElementById("NewCat").value) == '' &&
-                    (document.getElementById("NewMarketValue").value) == '' &&
-                    (document.getElementById("NewExtent").value) == '' &&
-                    (document.getElementById("NewPropDesc").value) == '' &&
-                    (document.getElementById("NewAddress").value) == '' &&
-                    (document.getElementById("NewOwner").value) == '' &&
-                    (document.getElementById("NewCat1").value) == '' &&
-                    (document.getElementById("NewMarketValue1").value) == '' &&
-                    (document.getElementById("NewExtent1").value) == '' &&
-                    (document.getElementById("NewCat2").value) == '' &&
-                    (document.getElementById("NewMarketValue2").value) == '' &&
-                    (document.getElementById("NewExtent2").value) == '' &&
-                    (document.getElementById("NewCat3").value) == '' &&
-                    (document.getElementById("NewMarketValue3").value) == '' &&
-                    (document.getElementById("NewExtent3").value) == ''
-                ) {
-                    document.getElementById("new_change_invalid").innerHTML = "Please fill at least one of the change you want to make.";
-                    document.getElementById("new_change_invalid").style.color = "red";
-                    document.getElementById("NewCat").style.border = "2px solid red";
-                    document.getElementById("NewMarketValue").style.border = "2px solid red";
-                    document.getElementById("NewExtent").style.border = "2px solid red";
-                    document.getElementById("NewPropDesc").style.border = "2px solid red";
-                    document.getElementById("NewAddress").style.border = "2px solid red";
-                    document.getElementById("NewOwner").style.border = "2px solid red";
-                    document.getElementById("NewCat1").style.border = "2px solid red";
-                    document.getElementById("NewMarketValue1").style.border = "2px solid red";
-                    document.getElementById("NewExtent1").style.border = "2px solid red";
-                    document.getElementById("NewCat2").style.border = "2px solid red";
-                    document.getElementById("NewMarketValue2").style.border = "2px solid red";
-                    document.getElementById("NewExtent2").style.border = "2px solid red";
-                    document.getElementById("NewCat3").style.border = "2px solid red";
-                    document.getElementById("NewMarketValue3").style.border = "2px solid red";
-                    document.getElementById("NewExtent3").style.border = "2px solid red";
-                }
-                else {
-                    NewChange = 'true';
-                    document.getElementById("new_change_invalid").innerHTML = "";
-                    document.getElementById("NewCat").style.border = "";
-                    document.getElementById("NewMarketValue").style.border = "";
-                    document.getElementById("NewExtent").style.border = "";
-                    document.getElementById("NewPropDesc").style.border = "";
-                    document.getElementById("NewAddress").style.border = "";
-                    document.getElementById("NewOwner").style.border = "";
-                    document.getElementById("NewCat1").style.border = "";
-                    document.getElementById("NewMarketValue1").style.border = "";
-                    document.getElementById("NewExtent1").style.border = "";
-                    document.getElementById("NewCat2").style.border = "";
-                    document.getElementById("NewMarketValue2").style.border = "";
-                    document.getElementById("NewExtent2").style.border = "";
-                    document.getElementById("NewCat3").style.border = "";
-                    document.getElementById("NewMarketValue3").style.border = "";
-                    document.getElementById("NewExtent3").style.border = "";
+            $(".div6").hide();
+            $(".divU").show();
 
-                    $(".div6").hide();
-                    $(".divU").show();
-                    document.getElementById("sectionUpload").focus();
-                }
+            const upload = document.getElementById("sectionUpload");
+
+            if (upload) {
+                upload.focus();
             }
 
-            //$(".div6").hide();
-            //$(".divU").show();
+            return false;
         });
+    });
+
 
         //divUpload
         $(".btn_pU").click(function () {
@@ -2703,3 +2800,530 @@ function validateCustomerName() {
         document.getElementById("destinationTextField").value = validatedName;
     }
 }
+
+function normaliseMoney(value) {
+    if (!value) return "";
+    return value.toString().replace(/[^\d]/g, "");
+}
+
+function formatRand(value) {
+    const raw = normaliseMoney(value);
+
+    if (!raw) return "";
+
+    return "R " + Number(raw)
+        .toLocaleString("en-ZA", {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        })
+        .replace(/,/g, " ");
+}
+
+function syncMultiMoneyFieldsBeforeSubmit() {
+    const pairs = [
+        ["NewMarketValue", "NewMarketValueRaw"],
+        ["NewMarketValue1", "NewMarketValueRaw1"],
+        ["NewMarketValue2", "NewMarketValueRaw2"],
+        ["NewMarketValue3", "NewMarketValueRaw3"]
+    ];
+
+    pairs.forEach(pair => {
+        const visible = document.getElementById(pair[0]);
+        const raw = document.getElementById(pair[1]);
+
+        if (visible && raw) {
+            raw.value = normaliseMoney(visible.value);
+        }
+    });
+}
+
+function initialiseMultiMoneyFormatting() {
+    const pairs = [
+        ["NewMarketValue", "NewMarketValueRaw"],
+        ["NewMarketValue1", "NewMarketValueRaw1"],
+        ["NewMarketValue2", "NewMarketValueRaw2"],
+        ["NewMarketValue3", "NewMarketValueRaw3"]
+    ];
+
+    pairs.forEach(pair => {
+        const visible = document.getElementById(pair[0]);
+        const raw = document.getElementById(pair[1]);
+
+        if (!visible || !raw) return;
+
+        visible.addEventListener("input", function () {
+            const clean = normaliseMoney(visible.value);
+            raw.value = clean;
+            visible.value = clean ? formatRand(clean) : "";
+        });
+
+        visible.addEventListener("blur", function () {
+            const clean = normaliseMoney(visible.value);
+            raw.value = clean;
+            visible.value = clean ? formatRand(clean) : "";
+        });
+    });
+}
+function getSubmissionMode() {
+    const appealHidden = document.getElementById("AppealStat")?.value;
+    const sessionAppeal = sessionStorage.getItem("AppealStatus");
+
+    const isAppeal =
+        appealHidden === "True" ||
+        appealHidden === "true" ||
+        sessionAppeal === "True" ||
+        sessionAppeal === "true";
+
+    return isAppeal ? "Appeal" : "Objection";
+}
+
+function normaliseText(value) {
+    if (!value) return "";
+
+    return value
+        .toString()
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, " ")
+        .replace(/[.,;:]+$/g, "");
+}
+
+function normaliseCategory(value) {
+    let v = normaliseText(value);
+
+    const map = {
+        "residential": "residential property",
+        "residential property": "residential property",
+
+        "business": "business and commercial",
+        "commercial": "business and commercial",
+        "business and commercial": "business and commercial",
+
+        "agric": "agricultural",
+        "agriculture": "agricultural",
+        "agricultural": "agricultural",
+
+        "multiple purposes": "multipurpose",
+        "multipurpose": "multipurpose",
+        "multipurpose*": "multipurpose",
+        "multi purpose": "multipurpose",
+        "multi-purpose": "multipurpose",
+
+        "vacant": "vacant land",
+        "vacant land": "vacant land"
+    };
+
+    return map[v] || v;
+}
+
+function normaliseNumber(value) {
+    if (!value) return "";
+
+    let cleaned = value
+        .toString()
+        .replace(/R/gi, "")
+        .replace(/\s/g, "")
+        .replace(/,/g, "")
+        .trim();
+
+    if (cleaned === "") return "";
+
+    const num = Number(cleaned);
+
+    return Number.isNaN(num)
+        ? cleaned.toLowerCase()
+        : num.toString();
+}
+
+function normaliseExtent(value) {
+    if (!value) return "";
+
+    let cleaned = value
+        .toString()
+        .replace(/\s/g, "")
+        .replace(/,/g, ".")
+        .trim();
+
+    const num = Number(cleaned);
+
+    return Number.isNaN(num)
+        ? cleaned.toLowerCase()
+        : num.toString();
+}
+
+function section6GetFieldPairs() {
+    return [
+        // General values
+        {
+            label: "Description of the Property/Unit",
+            newId: "NewPropDesc",
+            oldId: "desc",
+            type: "text"
+        },
+        {
+            label: "Physical Address / Door No. / Flat No.",
+            newId: "NewAddress",
+            oldId: "add",
+            type: "text"
+        },
+        {
+            label: "Name of Owner",
+            newId: "NewOwner",
+            oldId: "owner",
+            type: "text"
+        },
+
+        // Purpose 1
+        {
+            label: "Purpose 1 Category",
+            newId: "NewCat",
+            oldId: "cat",
+            type: "category"
+        },
+        {
+            label: "Purpose 1 Extent",
+            newId: "NewExtent",
+            oldId: "extent",
+            type: "extent"
+        },
+        {
+            label: "Purpose 1 Market Value",
+            newId: "NewMarketValue",
+            oldId: "Market_Value",
+            type: "market"
+        },
+
+        // Purpose 2
+        {
+            label: "Purpose 2 Category",
+            newId: "NewCat1",
+            oldId: "cat1",
+            type: "category"
+        },
+        {
+            label: "Purpose 2 Extent",
+            newId: "NewExtent1",
+            oldId: "extent1",
+            type: "extent"
+        },
+        {
+            label: "Purpose 2 Market Value",
+            newId: "NewMarketValue1",
+            oldId: "Market_Value1",
+            type: "market"
+        },
+
+        // Purpose 3
+        {
+            label: "Purpose 3 Category",
+            newId: "NewCat2",
+            oldId: "cat2",
+            type: "category"
+        },
+        {
+            label: "Purpose 3 Extent",
+            newId: "NewExtent2",
+            oldId: "extent2",
+            type: "extent"
+        },
+        {
+            label: "Purpose 3 Market Value",
+            newId: "NewMarketValue2",
+            oldId: "Market_Value2",
+            type: "market"
+        },
+
+        // Purpose 4
+        {
+            label: "Purpose 4 Category",
+            newId: "NewCat3",
+            oldId: "cat3",
+            type: "category"
+        },
+        {
+            label: "Purpose 4 Extent",
+            newId: "NewExtent3",
+            oldId: "extent3",
+            type: "extent"
+        },
+        {
+            label: "Purpose 4 Market Value",
+            newId: "NewMarketValue3",
+            oldId: "Market_Value3",
+            type: "market"
+        }
+    ];
+}
+
+function section6Normalise(value, type) {
+    if (type === "category") return normaliseCategory(value);
+    if (type === "market") return normaliseNumber(value);
+    if (type === "extent") return normaliseExtent(value);
+
+    return normaliseText(value);
+}
+
+function section6ClearFieldError(input) {
+    if (!input) return;
+
+    input.style.border = "";
+    input.style.backgroundColor = "";
+
+    const err = document.getElementById(input.id + "_same_error");
+
+    if (err) {
+        err.remove();
+    }
+}
+
+function section6SetFieldError(input, message) {
+    if (!input) return;
+
+    input.style.border = "2px solid #d00000";
+    input.style.backgroundColor = "#fff1f1";
+
+    const errorId = input.id + "_same_error";
+    let err = document.getElementById(errorId);
+
+    if (!err) {
+        err = document.createElement("span");
+        err.id = errorId;
+        err.style.display = "block";
+        err.style.color = "#d00000";
+        err.style.fontSize = "12px";
+        err.style.fontWeight = "700";
+        err.style.marginTop = "4px";
+        err.style.marginBottom = "10px";
+        input.parentNode.insertBefore(err, input.nextSibling);
+    }
+
+    err.innerText = message;
+}
+
+function section6ValidateSameValues() {
+    const duplicates = [];
+
+    section6GetFieldPairs().forEach(pair => {
+        const newEl = document.getElementById(pair.newId);
+        const oldEl = document.getElementById(pair.oldId);
+
+        if (!newEl || !oldEl) return;
+
+        section6ClearFieldError(newEl);
+
+        const newRaw = newEl.value || "";
+        const oldRaw = oldEl.value || "";
+
+        if (newRaw.trim() === "") return;
+
+        const newValue = section6Normalise(newRaw, pair.type);
+        const oldValue = section6Normalise(oldRaw, pair.type);
+
+        if (newValue !== "" && oldValue !== "" && newValue === oldValue) {
+            duplicates.push(pair);
+
+            section6SetFieldError(
+                newEl,
+                "This value is the same as the value on the Valuation Roll / MVD. Please enter a different value."
+            );
+
+            if (pair.type === "category") {
+                resetCategoryDropdown(newEl);
+            }
+        }
+    });
+
+    return duplicates;
+}
+
+function section6HasAtLeastOneChange() {
+    return section6GetFieldPairs().some(pair => {
+        const el = document.getElementById(pair.newId);
+        return el && el.value.trim() !== "";
+    });
+}
+
+function ensureLocusStandModalExists() {
+    if (document.getElementById("locusStandModal")) return;
+
+    const modal = document.createElement("div");
+    modal.id = "locusStandModal";
+    modal.className = "locus-modal-backdrop";
+    modal.style.display = "none";
+
+    modal.innerHTML = `
+        <div class="locus-modal">
+            <div class="locus-modal-header">
+                <div class="locus-modal-icon">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+                <div>
+                    <h3 id="locusModalTitle">Different Values Required</h3>
+                    <p id="locusModalSub">Validation failed</p>
+                </div>
+            </div>
+
+            <div class="locus-modal-body">
+                <p id="locusModalMessage">
+                    You cannot continue with the same details that are reflected on the Valuation Roll / MVD.
+                </p>
+
+                <div id="locusDuplicateList" class="locus-duplicate-list"></div>
+            </div>
+
+            <div class="locus-modal-footer">
+                <button type="button"
+                        onclick="closeLocusStandModal()"
+                        class="locus-modal-btn">
+                    Okay, I will update the values
+                </button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+}
+
+function showLocusStandModal(mode, duplicates) {
+    ensureLocusStandModalExists();
+
+    const modal = document.getElementById("locusStandModal");
+    const title = document.getElementById("locusModalTitle");
+    const sub = document.getElementById("locusModalSub");
+    const msg = document.getElementById("locusModalMessage");
+    const list = document.getElementById("locusDuplicateList");
+
+    if (mode === "Appeal") {
+        title.innerText = "Locus Standi Required";
+        sub.innerText = "Appeal cannot continue with unchanged MVD details";
+        msg.innerText =
+            "You cannot appeal with the same details that are reflected on the Municipal Valuation Roll / MVD. Please enter different values before continuing.";
+    } else {
+        title.innerText = "Different Values Required";
+        sub.innerText = "Objection cannot continue with unchanged roll details";
+        msg.innerText =
+            "You cannot lodge an objection using the same details that are reflected on the Valuation Roll. Please enter different values before continuing.";
+    }
+
+    if (list) {
+        if (duplicates && duplicates.length > 0) {
+            list.style.display = "block";
+            list.innerHTML =
+                "<strong>Same values found:</strong><br/>" +
+                duplicates.map(x => "• " + x.label).join("<br/>");
+        } else {
+            list.style.display = "none";
+            list.innerHTML = "";
+        }
+    }
+
+    modal.style.display = "flex";
+    document.body.style.overflow = "hidden";
+}
+
+function closeLocusStandModal() {
+    const modal = document.getElementById("locusStandModal");
+
+    if (modal) {
+        modal.style.display = "none";
+    }
+
+    document.body.style.overflow = "";
+}
+
+let isResettingCategoryDropdown = false;
+
+function resetCategoryDropdown(selectElement) {
+    if (!selectElement) return;
+
+    isResettingCategoryDropdown = true;
+
+    selectElement.value = "";
+
+    setTimeout(function () {
+        isResettingCategoryDropdown = false;
+        selectElement.focus();
+    }, 100);
+}
+
+function section6ValidateBeforeNext() {
+    const mode = getSubmissionMode();
+    const pairs = section6GetFieldPairs();
+
+    pairs.forEach(pair => {
+        const el = document.getElementById(pair.newId);
+
+        if (el) {
+            section6ClearFieldError(el);
+        }
+    });
+
+    if (!section6HasAtLeastOneChange()) {
+        const msg = document.getElementById("new_change_invalid");
+
+        if (msg) {
+            msg.innerHTML = "Please fill at least one of the changes you want to make.";
+            msg.style.color = "red";
+        }
+
+        pairs.forEach(pair => {
+            const el = document.getElementById(pair.newId);
+
+            if (el) {
+                el.style.border = "2px solid #d00000";
+                el.style.backgroundColor = "#fff1f1";
+            }
+        });
+
+        showLocusStandModal(mode, []);
+
+        return false;
+    }
+
+    const duplicates = section6ValidateSameValues();
+
+    if (duplicates.length > 0) {
+        showLocusStandModal(mode, duplicates);
+
+        const first = document.getElementById(duplicates[0].newId);
+
+        if (first) {
+            setTimeout(() => first.focus(), 250);
+        }
+
+        return false;
+    }
+
+    const msg = document.getElementById("new_change_invalid");
+
+    if (msg) {
+        msg.innerHTML = "";
+        msg.style.color = "";
+    }
+
+    return true;
+}
+document.addEventListener("DOMContentLoaded", function () {
+    ensureLocusStandModalExists();
+    initialiseMultiMoneyFormatting();
+
+    section6GetFieldPairs().forEach(pair => {
+        const el = document.getElementById(pair.newId);
+
+        if (!el) return;
+
+        const eventName = el.tagName === "SELECT" ? "change" : "input";
+
+        el.addEventListener(eventName, function () {
+            if (isResettingCategoryDropdown) return;
+
+            section6ValidateSameValues();
+        });
+
+        el.addEventListener("blur", function () {
+            if (isResettingCategoryDropdown) return;
+
+            section6ValidateSameValues();
+        });
+    });
+});

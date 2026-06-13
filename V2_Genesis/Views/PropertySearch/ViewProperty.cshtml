@@ -10,6 +10,18 @@
 
     var items = Model?.Items ?? new List<V2_Genesis.Models.Results.PropertyDetailResult>();
     var d = Model?.Main ?? items.FirstOrDefault();
+    var valuationItems = items
+    .GroupBy(x => new
+    {
+        Cat = x.CatDesc?.Trim()?.ToUpperInvariant() ?? "",
+        Ext = x.RateableArea?.Trim() ?? "",
+        Mv = new string((x.MarketValue ?? "").Where(char.IsDigit).ToArray()),
+        Wef = x.WefDate?.Trim() ?? "",
+        UnitKey = x.UnitKey?.Trim() ?? "",
+        ValuationKey = x.ValuationKey?.Trim() ?? ""
+    })
+    .Select(g => g.First())
+    .ToList();
     var roll = Model?.Roll;
 
     bool isAttributes = Model?.IsAttributes == true ||
@@ -89,7 +101,7 @@ string.Equals(Context?.Session?.GetString("PropertyFrom"), "LIS", StringComparis
                 </h1>
                 <p class="ppd-hero-sub">
                     @rollName &nbsp;·&nbsp; @(d.TownNameDesc ?? "") &nbsp;·&nbsp;
-                    @(items.Count) categor@(items.Count == 1 ? "y" : "ies")
+                    @(valuationItems.Count) categor@(valuationItems.Count == 1 ? "y" : "ies")
                 </p>
             </div>
             <div class="ppd-hero-right">
@@ -181,7 +193,7 @@ string.Equals(Context?.Session?.GetString("PropertyFrom"), "LIS", StringComparis
                     <i class="fa-solid fa-chart-line"></i>
                     Property Categories &amp; Valuations
                     <span class="ppd-toggle-count">
-                        @items.Count @(items.Count == 1 ? "item" : "items")
+                        @valuationItems.Count @(valuationItems.Count == 1 ? "item" : "items")
                     </span>
                 </div>
                 <i class="fa-solid fa-chevron-down ppd-chevron" id="valuation-chev"
@@ -189,9 +201,9 @@ string.Equals(Context?.Session?.GetString("PropertyFrom"), "LIS", StringComparis
             </div>
             <div class="ppd-collapse-body open" id="valuation-body">
                 <div class="ppd-collapse-inner">
-                    @for (int i = 0; i < items.Count; i++)
+                    @for (int i = 0; i < valuationItems.Count; i++)
                     {
-                        var item = items[i];
+                        var item = valuationItems[i];
                         if (i > 0)
                         {
                             <div class="ppd-divider"></div>

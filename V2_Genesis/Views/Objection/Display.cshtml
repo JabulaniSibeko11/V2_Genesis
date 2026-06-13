@@ -24,12 +24,86 @@
     var newMV       = TempData.Peek("new_Market_Value")?.ToString();
     var newOwner    = TempData.Peek("new_Owner")?.ToString();
 
+    
+
+    var old2Cat = TempData.Peek("Old2_Category")?.ToString();
+    var old2Extent = TempData.Peek("Old2_Extent")?.ToString();
+    var old2MV = TempData.Peek("Old2_Market_Value")?.ToString();
+
+    var old3Cat = TempData.Peek("Old3_Category")?.ToString();
+    var old3Extent = TempData.Peek("Old3_Extent")?.ToString();
+    var old3MV = TempData.Peek("Old3_Market_Value")?.ToString();
+
+   
+
+    var new2Cat = TempData.Peek("new2_Category")?.ToString();
+    var new2Extent = TempData.Peek("new2_Extent")?.ToString();
+    var new2MV = TempData.Peek("new2_Market_Value")?.ToString();
+
+    var new3Cat = TempData.Peek("new3_Category")?.ToString();
+    var new3Extent = TempData.Peek("new3_Extent")?.ToString();
+    var new3MV = TempData.Peek("new3_Market_Value")?.ToString();
+
     var reason      = TempData.Peek("objection_reason")?.ToString();
 
     TempData.Keep();
 
-    bool hasChanges = new[] { newPropDesc, newCat, newAddress, newExtent, newMV, newOwner }
-                          .Any(v => !string.IsNullOrWhiteSpace(v));
+    bool hasChanges = new[]
+ {
+    newPropDesc,
+    newCat,
+    newAddress,
+    newExtent,
+    newMV,
+    newOwner,
+    new2Cat,
+    new2Extent,
+    new2MV,
+    new3Cat,
+    new3Extent,
+    new3MV
+}
+ .Any(v => !string.IsNullOrWhiteSpace(v));
+
+    string FormatDisplayMoney(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return "";
+
+        var digits = new string(value.Where(char.IsDigit).ToArray());
+
+        if (string.IsNullOrWhiteSpace(digits))
+            return value;
+
+        if (!decimal.TryParse(digits, out var amount))
+            return value;
+
+        return "R " + amount.ToString("#,0", System.Globalization.CultureInfo.InvariantCulture)
+                           .Replace(",", " ");
+    }
+
+    var rollDisplayName = TempData.Peek("RollDisplayName")?.ToString();
+
+    if (string.IsNullOrWhiteSpace(rollDisplayName))
+    {
+        var rollSource = TempData.Peek("RollSource")?.ToString();
+        var sourceTable = TempData.Peek("SourceTable")?.ToString();
+
+        rollDisplayName = rollSource switch
+        {
+            "Objection" => $"General Valuation Roll ({sourceTable ?? "GV23"})",
+            "Objection_Supp1" => $"Supplementary Valuation Roll 1 ({sourceTable ?? "GV23-SUP1"})",
+            "Objection_Supp2" => $"Supplementary Valuation Roll 2 ({sourceTable ?? "GV23-SUP2"})",
+            "Objection_Supp3" => $"Supplementary Valuation Roll 3 ({sourceTable ?? "GV23-SUP3"})",
+            "Objection_Supp4" => $"Supplementary Valuation Roll 4 ({sourceTable ?? "GV23-SUP4"})",
+            "Objection_Supp5" => $"Supplementary Valuation Roll 5 ({sourceTable ?? "GV23-SUP5"})",
+            _ => "Valuation Roll"
+        };
+    }
+
+    TempData.Keep("RollDisplayName");
+    TempData.Keep("RollSource");
+    TempData.Keep("SourceTable");
 }
 @section Styles{
     <link href="~/css/views/objection-display.css" rel="stylesheet" asp-append-version="true" />
@@ -102,46 +176,180 @@
                 <div class="dp-section-body">
                     <div class="dp-compare">
 
-                       
                         <div>
                             <div class="dp-compare-col-head current">
                                 <i class="fa-solid fa-book" style="margin-right:6px;"></i>
-                                Current Valuation Roll
+                                Entry on @rollDisplayName
                             </div>
+
                             <table class="dp-compare-table">
                                 <tr><td>Property</td><td>@oldPropDesc</td></tr>
-                                <tr><td>Category</td><td>@oldCat</td></tr>
                                 <tr><td>Address</td><td>@oldAddress</td></tr>
-                                <tr><td>Extent</td><td>@oldExtent</td></tr>
-                                <tr><td>Market Value</td><td>@oldMV</td></tr>
                                 <tr><td>Owner</td><td>@oldOwner</td></tr>
                             </table>
+
+                            @if (isMulti)
+                            {
+                                <div class="dp-multi-title">Multipurpose Current Values — @rollDisplayName</div>
+
+                                <table class="dp-compare-table dp-multi-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Purpose</th>
+                                            <th>Category</th>
+                                            <th>Extent</th>
+                                            <th>Market Value</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>Purpose 1</td>
+                                            <td>@oldCat</td>
+                                            <td>@oldExtent</td>
+                                            <td>@oldMV</td>
+                                        </tr>
+
+                                        @if (!string.IsNullOrWhiteSpace(old2Cat) ||
+                                             !string.IsNullOrWhiteSpace(old2Extent) ||
+                                             !string.IsNullOrWhiteSpace(old2MV))
+                                        {
+                                            <tr>
+                                                <td>Purpose 2</td>
+                                                <td>@old2Cat</td>
+                                                <td>@old2Extent</td>
+                                                <td>@old2MV</td>
+                                            </tr>
+                                        }
+
+                                        @if (!string.IsNullOrWhiteSpace(old3Cat) ||
+                                             !string.IsNullOrWhiteSpace(old3Extent) ||
+                                             !string.IsNullOrWhiteSpace(old3MV))
+                                        {
+                                            <tr>
+                                                <td>Purpose 3</td>
+                                                <td>@old3Cat</td>
+                                                <td>@old3Extent</td>
+                                                <td>@old3MV</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            }
+                            else
+                            {
+                                <table class="dp-compare-table">
+                                    <tr><td>Category</td><td>@oldCat</td></tr>
+                                    <tr><td>Extent</td><td>@oldExtent</td></tr>
+                                    <tr><td>Market Value</td><td>@oldMV</td></tr>
+                                </table>
+                            }
                         </div>
 
-                       
                         <div>
                             <div class="dp-compare-col-head requested">
                                 <i class="fa-solid fa-pen-to-square" style="margin-right:6px;"></i>
                                 Requested Changes
                             </div>
-                            <table class="dp-compare-table">
-                                @{
-                                    void NewVal(string? v) {
-                                        <td class="dp-new-val @(string.IsNullOrWhiteSpace(v) ? "empty" : "")">
-                                            @(string.IsNullOrWhiteSpace(v) ? "No change requested" : v)
-                                        </td>
-                                    }
-                                }
-                                <tr><td>Property</td>@{ NewVal(newPropDesc); }</tr>
-                                <tr><td>Category</td>@{ NewVal(newCat); }</tr>
-                                <tr><td>Address</td>@{ NewVal(newAddress); }</tr>
-                                <tr><td>Extent</td>@{ NewVal(newExtent); }</tr>
-                                <tr><td>Market Value</td>@{ NewVal(newMV); }</tr>
-                                <tr><td>Owner</td>@{ NewVal(newOwner); }</tr>
-                            </table>
-                        </div>
 
-                    </div>
+                            @{
+                                void NewVal(string? v)
+                                {
+                                    <td class="dp-new-val @(string.IsNullOrWhiteSpace(v) ? "empty" : "")">
+                                        @(string.IsNullOrWhiteSpace(v) ? "No change requested" : v)
+                                    </td>
+                                }
+                            }
+
+                            <table class="dp-compare-table">
+                                <tr><td>Property</td>@{
+                                    NewVal(newPropDesc);
+                                }
+                            </tr>
+                            <tr><td>Address</td>@{
+                                NewVal(newAddress);
+                            }
+                        </tr>
+                        <tr><td>Owner</td>@{
+                            NewVal(newOwner);
+                        }
+                    </tr>
+                </table>
+
+                @if (isMulti)
+                {
+                    <div class="dp-multi-title">Multipurpose Requested Changes</div>
+
+                    <table class="dp-compare-table dp-multi-table">
+                        <thead>
+                            <tr>
+                                <th>Purpose</th>
+                                <th>Category</th>
+                                <th>Extent</th>
+                                <th>Market Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Purpose 1</td>
+                                @{
+                                    NewVal(newCat);
+                                }
+                                @{
+                                    NewVal(newExtent);
+                                }
+                                @{
+                                    NewVal(newMV);
+                                }
+                            </tr>
+
+                            <tr>
+                                <td>Purpose 2</td>
+                                @{
+                                    NewVal(new2Cat);
+                                }
+                                @{
+                                    NewVal(new2Extent);
+                                }
+                                @{
+                                    NewVal(new2MV);
+                                }
+                            </tr>
+
+                            <tr>
+                                <td>Purpose 3</td>
+                                @{
+                                    NewVal(new3Cat);
+                                }
+                                @{
+                                    NewVal(new3Extent);
+                                }
+                                @{
+                                    NewVal(new3MV);
+                                }
+                            </tr>
+                        </tbody>
+                    </table>
+                }
+                else
+                {
+                    <table class="dp-compare-table">
+                        <tr><td>Category</td>@{
+                            NewVal(newCat);
+                        }
+                    </tr>
+                    <tr><td>Extent</td>@{
+                        NewVal(newExtent);
+                    }
+                </tr>
+                <tr><td>Market Value</td>@{
+                    NewVal(newMV);
+                }
+            </tr>
+        </table>
+    }
+</div>
+
+</div>
 
                     @if (!string.IsNullOrWhiteSpace(reason))
                     {
@@ -149,7 +357,7 @@
                             <div class="dp-reason">
                                 <div class="dp-reason-label">
                                     <i class="fa-solid fa-quote-left" style="margin-right:5px;"></i>
-                                    @typeWord Reason / Adverse Features
+                                    @typeWord Objection Reason 
                                 </div>
                                 @reason
                             </div>

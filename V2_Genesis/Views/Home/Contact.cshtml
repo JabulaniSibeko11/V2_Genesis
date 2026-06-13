@@ -1,0 +1,156 @@
+﻿@{
+    ViewData["Title"] = "Contact Us";
+    Layout = "_Layout";
+}
+
+<link href="~/css/views/info-pages.css" rel="stylesheet" asp-append-version="true" />
+
+<!-- ── Hero ──────────────────────────────────────────────────────── -->
+<div class="info-hero">
+    <span class="info-hero-badge">
+        <i class="fa-solid fa-headset"></i> We're Here to Help
+    </span>
+    <h1>Contact <span>Us</span></h1>
+    <p>
+        Get in touch with the City of Johannesburg Valuation Services team for
+        enquiries about the Valuation Roll, objections, appeals, and rebates.
+    </p>
+</div>
+
+<div class="info-page" style="display:block; max-width:1100px;">
+
+    <!-- ── Contact cards ───────────────────────────────────────────── -->
+    <div class="contact-grid">
+
+        <div class="contact-card">
+            <div class="icon"><i class="fa-solid fa-scale-balanced"></i></div>
+            <h3>Valuation Enquiries</h3>
+            <p>Objections, appeals, Section 78 queries, and general valuation roll questions.</p>
+            <a class="detail" href="mailto:valuationenquiries@joburg.org.za">
+                <i class="fa-solid fa-envelope"></i> valuationenquiries@joburg.org.za
+            </a>
+            <a class="detail" href="https://www.joburg.org.za" target="_blank" rel="noopener">
+                <i class="fa-solid fa-globe"></i> www.joburg.org.za
+            </a>
+        </div>
+
+        <div class="contact-card">
+            <div class="icon"><i class="fa-solid fa-percent"></i></div>
+            <h3>Rebates &amp; Billing</h3>
+            <p>Property rates rebates, municipal account queries, and billing support.</p>
+            <a class="detail" href="mailto:valuationenquiries@joburg.org.za">
+                <i class="fa-solid fa-envelope"></i> valuationenquiries@joburg.org.za
+            </a>
+            <a class="detail" href="https://www.joburg.org.za" target="_blank" rel="noopener">
+                <i class="fa-solid fa-globe"></i> www.joburg.org.za
+            </a>
+        </div>
+
+        <div class="contact-card">
+            <div class="icon"><i class="fa-solid fa-laptop-code"></i></div>
+            <h3>Portal Technical Support</h3>
+            <p>Trouble logging in, registering, or uploading documents to the Portal.</p>
+            <a class="detail" href="mailto:valuationenquiries@joburg.org.za">
+                <i class="fa-solid fa-envelope"></i> valuationenquiries@joburg.org.za
+            </a>
+            <a class="detail" href="/Home/FAQ">
+                <i class="fa-solid fa-circle-question"></i> Visit FAQ
+            </a>
+        </div>
+
+    </div>
+
+    <!-- ── Office details + map ───────────────────────────────────── -->
+    <div class="info-content" style="margin-bottom:24px;">
+
+        <!-- Letterhead-style identity strip -->
+        <div style="display:flex; align-items:center; gap:18px; padding-bottom:20px; margin-bottom:24px; border-bottom:2px solid #e6b000;">
+            <img src="~/images/joburg_logo.png" alt="City of Johannesburg" style="height:54px; width:auto;" />
+            <div>
+                <div style="font-size:15px; font-weight:800; color:#1a1a1a;">City of Johannesburg</div>
+                <div style="font-size:13px; font-weight:700; color:#8b96a0;">Property Branch: Valuation Services</div>
+            </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1.2fr 1fr; gap:32px;" class="contact-office-grid">
+
+            <div>
+                <h2><span class="num"><i class="fa-solid fa-building" style="font-size:11px;"></i></span> Valuation Administrations</h2>
+                <p>
+                    <strong>Valuation Administrations</strong><br />
+                    1st Floor, East Wing<br />
+                    66 Jorissen Street<br />
+                    Braamfontein, Johannesburg<br />
+                    South Africa
+                </p>
+
+                <h3>Email</h3>
+                <p>
+                    <a href="mailto:valuationenquiries@joburg.org.za">
+                        <i class="fa-solid fa-envelope"></i> valuationenquiries@joburg.org.za
+                    </a>
+                </p>
+
+                <h3>Website</h3>
+                <p>
+                    <a href="https://www.joburg.org.za" target="_blank" rel="noopener">
+                        <i class="fa-solid fa-globe"></i> www.joburg.org.za
+                    </a>
+                </p>
+
+                <div class="info-note">
+                    <i class="fa-solid fa-circle-info"></i>
+                    For the fastest response on objections, appeals, or property
+                    attribute submissions, please use the Portal's
+                    <a href="/dashboard">My Dashboard</a> to track your case status
+                    rather than emailing — your reference number will help our staff
+                    assist you faster.
+                </div>
+            </div>
+
+            <div>
+                <h2><span class="num"><i class="fa-solid fa-clock" style="font-size:11px;"></i></span> Office Hours</h2>
+                <table class="hours-table">
+                    <tr><td>Monday – Friday</td><td>07:30 – 16:00</td></tr>
+                    <tr><td>Saturday</td><td>Closed</td></tr>
+                    <tr><td>Sunday &amp; Public Holidays</td><td>Closed</td></tr>
+                </table>
+
+                <div class="info-note" style="margin-top:18px;">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    During an active objection or appeal period, enquiry volumes
+                    are high. Please allow up to <strong>5 working days</strong>
+                    for a response to emails.
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ── Map ──────────────────────────────────────────────────────── -->
+    <div class="contact-map">
+        <iframe src="https://www.google.com/maps?q=66+Jorissen+Street,+Braamfontein,+Johannesburg&output=embed"
+                loading="lazy"
+                referrerpolicy="no-referrer-when-downgrade"
+                title="Valuation Administrations, 66 Jorissen Street, Braamfontein">
+        </iframe>
+    </div>
+
+</div>
+
+@*
+    ─────────────────────────────────────────────────────────────────
+    Contact details on this page are sourced from the official
+    Valuation Services letterhead (Property Branch: Valuation
+    Services — Valuation Administrations, 1st Floor East Wing,
+    66 Jorissen Street, Braamfontein).
+
+    NOT YET CONFIRMED:
+    - Postal address (P.O. Box) — letterhead only shows physical address
+    - Phone / switchboard number — not shown on letterhead, removed
+    - Separate emails for Rebates/Billing and Technical Support —
+      currently point to valuationenquiries@joburg.org.za; update if
+      dedicated addresses exist
+    - Office hours — using standard COJ hours, confirm with department
+    ─────────────────────────────────────────────────────────────────
+*@

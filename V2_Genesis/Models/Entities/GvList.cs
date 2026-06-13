@@ -27,6 +27,8 @@ public class GvList
         "Objection_Supp1" => "Sup1",
         "Objection_Supp2" => "Sup2",
         "Objection_Supp3" => "Sup3",
+        "Objection_Supp4" => "Sup4",
+        "Objection_Supp5" => "Sup5",
         "Objection_Query" => "Query",
         _ => "Home"
     };
@@ -39,6 +41,8 @@ public class GvList
         "Objection_Supp1" => "DashBoardSup1",
         "Objection_Supp2" => "DashboardSup2",
         "Objection_Supp3" => "DashboardSup3",
+        "Objection_Supp4" => "DashboardSup4",
+        "Objection_Supp5" => "DashboardSup5",
         _ => "Index"
     };
 
@@ -49,6 +53,8 @@ public class GvList
         "Objection_Supp1" => "GV23-SUP1",
         "Objection_Supp2" => "GV23-SUP2",
         "Objection_Supp3" => "GV23-SUP3",
+        "Objection_Supp4" => "GV23-SUP4",
+        "Objection_Supp5" => "GV23-SUP5",
         "Objection_Query" => "Query",
         _ => Source
     };

@@ -1,0 +1,577 @@
+﻿@{
+    ViewData["Title"] = "Frequently Asked Questions";
+    Layout = "_Layout";
+}
+
+<link href="~/css/views/info-pages.css" rel="stylesheet" asp-append-version="true" />
+
+<!-- ── Hero ──────────────────────────────────────────────────────── -->
+<div class="info-hero">
+    <span class="info-hero-badge">
+        <i class="fa-solid fa-circle-question"></i> Help Centre
+    </span>
+    <h1>Frequently Asked <span>Questions</span></h1>
+    <p>
+        Answers to common questions about the Valuation Roll, objections,
+        appeals, property attributes, rebates, and using the Portal.
+    </p>
+</div>
+
+<div class="info-page" style="display:block; max-width:1100px;">
+
+    <!-- ── Search ──────────────────────────────────────────────────── -->
+    <div class="faq-search-wrap">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" id="faqSearch" class="faq-search"
+               placeholder="Search FAQs — e.g. 'objection deadline', 'upload document', 'reset password'" />
+    </div>
+
+    <!-- ── Category filters ────────────────────────────────────────── -->
+    <div class="faq-cats" id="faqCats">
+        <button class="faq-cat-btn active" data-cat="all">All</button>
+        <button class="faq-cat-btn" data-cat="account">Account &amp; Login</button>
+        <button class="faq-cat-btn" data-cat="roll">Valuation Roll</button>
+        <button class="faq-cat-btn" data-cat="objections">Objections &amp; Appeals</button>
+        <button class="faq-cat-btn" data-cat="attributes">Property Attributes</button>
+        <button class="faq-cat-btn" data-cat="rebates">Rebates</button>
+        <button class="faq-cat-btn" data-cat="documents">Documents &amp; Notices</button>
+    </div>
+
+    <div class="info-content">
+
+        <p id="faqNoResults" class="faq-no-results">
+            <i class="fa-solid fa-circle-info" style="color:#e6b000;margin-right:6px;"></i>
+            No FAQs match your search. Try different keywords, or
+            <a href="/Home/Contact">contact us</a> directly.
+        </p>
+
+        <!-- ══════════════ ACCOUNT & LOGIN ══════════════ -->
+        <div class="faq-group" data-group="account">
+            <div class="faq-group-title">
+                <i class="fa-solid fa-user-lock"></i> Account &amp; Login
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    How do I register for a Portal account?
+                    <i class="fa-solid fa-chevron-down faq-chevron"></i>
+                </div>
+                <div class="faq-answer">
+                    <p>
+                        Click <strong>Register</strong> on the home page and complete the
+                        registration form with your name, ID or passport number, email
+                        address, and a secure password. You'll receive a confirmation
+                        email — follow the link to activate your account before logging in.
+                    </p>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    I forgot my password. How do I reset it?
+                    <i class="fa-solid fa-chevron-down faq-chevron"></i>
+                </div>
+                <div class="faq-answer">
+                    <p>
+                        On the <a href="/login">Sign In</a> page, click
+                        <strong>Forgot password?</strong> and enter the email address
+                        linked to your account. We'll send you a secure link to reset
+                        your password. The link expires after a limited time for security
+                        reasons — request a new one if it has expired.
+                    </p>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    What does "Keep me signed in for 8 hours" do?
+                    <i class="fa-solid fa-chevron-down faq-chevron"></i>
+                </div>
+                <div class="faq-answer">
+                    <p>
+                        Selecting this option keeps your session active for up to 8 hours,
+                        so you won't be logged out while completing a long objection or
+                        attribute form. Avoid selecting this on a shared or public computer.
+                    </p>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    I'm not receiving the reCAPTCHA challenge or it isn't working on my phone.
+                    <i class="fa-solid fa-chevron-down faq-chevron"></i>
+                </div>
+                <div class="faq-answer">
+                    <p>
+                        Make sure your browser allows third-party content from
+                        <code>google.com</code> and that you have a stable internet
+                        connection. On small screens, the verification box automatically
+                        adjusts to fit — try rotating your phone to landscape if the
+                        checkbox is difficult to tap, or switch to a different browser
+                        (Chrome or Safari are recommended).
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══════════════ VALUATION ROLL ══════════════ -->
+        <div class="faq-group" data-group="roll">
+            <div class="faq-group-title">
+                <i class="fa-solid fa-landmark"></i> Valuation Roll
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    What is the General Valuation Roll (GV23)?
+                    <i class="fa-solid fa-chevron-down faq-chevron"></i>
+                </div>
+                <div class="faq-answer">
+                    <p>
+                        The General Valuation Roll is a list of all properties in the
+                        City of Johannesburg, showing the market value the City has
+                        assigned to each property for the purpose of calculating
+                        property rates. GV23 is valid for the period
+                        <strong>1 July 2023 to 30 June 2027</strong>, with
+                        Supplementary Valuation Rolls issued periodically to capture
+                        changes (new buildings, subdivisions, etc.).
+                    </p>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    How do I search for my property on the Valuation Roll?
+                    <i class="fa-solid fa-chevron-down faq-chevron"></i>
+                </div>
+                <div class="faq-answer">
+                    <p>
+                        From <strong>My Dashboard</strong>, click
+                        <strong>Search Property</strong> under the relevant roll
+                        (GV23, Supplementary Roll 1–4). You can search by address,
+                        property description, or account number. Once found, you can
+                        link the property to your account to view its details and
+                        lodge an objection if needed.
+                    </p>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    What is a Supplementary Valuation Roll (Sup 1–4)?
+                    <i class="fa-solid fa-chevron-down faq-chevron"></i>
+                </div>
+                <div class="faq-answer">
+                    <p>
+                        Supplementary Valuation Rolls capture changes to properties
+                        that occur after the General Valuation Roll is published —
+                        for example, new buildings, demolitions, subdivisions, or
+                        corrections to errors. Each supplementary roll has its own
+                        objection period, shown on your dashboard.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══════════════ OBJECTIONS & APPEALS ══════════════ -->
+        <div class="faq-group" data-group="objections">
+            <div class="faq-group-title">
+                <i class="fa-solid fa-file-pen"></i> Objections &amp; Appeals
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    What is the difference between an objection, a query, and an appeal?
+                    <i class="fa-solid fa-chevron-down faq-chevron"></i>
+                </div>
+                <div class="faq-answer">
+                    <p>
+                        An <strong>objection</strong> is a formal challenge to the value,
+                        category, or description of your property as it appears on the
+                        Valuation Roll, lodged during an open objection period.
+                    </p>
+                    <p>
+                        A <strong>Section 78 query</strong> is an informal enquiry you
+                        can submit at any time about your property's valuation — it does
+                        not require an open objection period, but does not carry the same
+                        legal appeal rights as a formal objection.
+                    </p>
+                    <p>
+                        An <strong>appeal</strong> is the next step if you are not
+                        satisfied with the outcome of your objection. Appeals are only
+                        available once a decision (Notice) has been issued on your
+                        objection, and must be lodged within the timeframe stated on
+                        that notice.
+                    </p>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    How do I lodge an objection?
+                    <i class="fa-solid fa-chevron-down faq-chevron"></i>
+                </div>
+                <div class="faq-answer">
+                    <p>From your dashboard:</p>
+                    <ul>
+                        <li>Search for and link your property under the relevant roll</li>
+                        <li>Select <strong>Lodge Objection</strong> from the property's action menu</li>
+                        <li>Complete all required sections of the objection form (objector information, property details, description of buildings, market information, and your reasons for objecting)</li>
+                        <li>Upload any supporting documents (proof of authorisation, photos, etc.)</li>
+                        <li>Sign electronically and submit</li>
+                    </ul>
+                    <p>
+                        You'll receive an acknowledgement that you can download from
+                        your dashboard at any time.
+                    </p>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    What is the deadline to lodge an objection?
+                    <i class="fa-solid fa-chevron-down faq-chevron"></i>
+                </div>
+                <div class="faq-answer">
+                    <p>
+                        Each Valuation Roll has its own objection period, displayed on
+                        your dashboard next to the roll name (e.g.
+                        <strong>"Objection Open — 15 Feb 2023 – 31 May 2026"</strong>).
+                        Objections submitted after the closing date cannot be accepted
+                        through the Portal. Once the period closes, the badge will
+                        change to <strong>"Period Closed"</strong>.
+                    </p>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    Can I withdraw an objection, query, or appeal after submitting it?
+                    <i class="fa-solid fa-chevron-down faq-chevron"></i>
+                </div>
+                <div class="faq-answer">
+                    <p>
+                        Yes — while your submission is still in a <strong>Lodging</strong>
+                        or <strong>Unallocated</strong> status, you can select
+                        <strong>Withdraw</strong> from the Actions menu on your dashboard.
+                        Once a submission has moved to <strong>In Progress</strong> or
+                        later, it can no longer be withdrawn through the Portal —
+                        contact us if you need to discuss your case.
+                    </p>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    How do I lodge an appeal?
+                    <i class="fa-solid fa-chevron-down faq-chevron"></i>
+                </div>
+                <div class="faq-answer">
+                    <p>
+                        Once your objection's status changes to <strong>Notice-Sent</strong>,
+                        a <strong>Lodge Appeal</strong> option becomes available on that
+                        item in your dashboard. The appeal form is similar to the
+                        objection form, but compares your requested changes against the
+                        decision made on your objection.
+                    </p>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    What does "Lodge Review" mean for Section 78 Queries?
+                    <i class="fa-solid fa-chevron-down faq-chevron"></i>
+                </div>
+                <div class="faq-answer">
+                    <p>
+                        Once your Section 78 query reaches a
+                        <strong>Query-Finalized</strong> status, a
+                        <strong>Lodge Review</strong> option appears, allowing you to
+                        request a further review of the outcome using the same property
+                        details.
+                    </p>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    What does "Locus Standi Required" mean when lodging an appeal?
+                    <i class="fa-solid fa-chevron-down faq-chevron"></i>
+                </div>
+                <div class="faq-answer">
+                    <p>
+                        This message appears if the values you've entered for an appeal
+                        are identical to the values already reflected on the Valuation
+                        Roll. To have legal standing for an appeal, you must indicate
+                        the change(s) you are appealing for — simply re-submitting the
+                        existing values is not accepted. Update the relevant field(s)
+                        in Section 6 before continuing.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══════════════ PROPERTY ATTRIBUTES ══════════════ -->
+        <div class="faq-group" data-group="attributes">
+            <div class="faq-group-title">
+                <i class="fa-solid fa-clipboard-list"></i> Property Attributes
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    What is the Property Attributes feature?
+                    <i class="fa-solid fa-chevron-down faq-chevron"></i>
+                </div>
+                <div class="faq-answer">
+                    <p>
+                        Property Attributes allows you to submit or update information
+                        about your property (such as number of rooms, building size,
+                        and improvements) that the City uses when preparing future
+                        valuation rolls — independent of the objection process.
+                    </p>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    Can I edit a property attribute submission after sending it?
+                    <i class="fa-solid fa-chevron-down faq-chevron"></i>
+                </div>
+                <div class="faq-answer">
+                    <p>
+                        Yes — submissions have a <strong>48-hour edit window</strong>
+                        from the time of submission. Your dashboard shows the time
+                        remaining (e.g. "6h 23m left"). Once this window closes, the
+                        submission is locked and you can no longer make changes, but
+                        you can still add supporting evidence.
+                    </p>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    What if I'm asked to attend an appointment with a Valuer?
+                    <i class="fa-solid fa-chevron-down faq-chevron"></i>
+                </div>
+                <div class="faq-answer">
+                    <p>
+                        Some attribute submissions require a site visit or meeting with
+                        a Municipal Valuer to verify the information provided. If an
+                        appointment is scheduled, it will appear under
+                        <strong>My Appointments with Valuer</strong> on your dashboard,
+                        showing the date, time, and assigned Valuer.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══════════════ REBATES ══════════════ -->
+        <div class="faq-group" data-group="rebates">
+            <div class="faq-group-title">
+                <i class="fa-solid fa-percent"></i> Rebates
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    Who qualifies for a property rates rebate?
+                    <i class="fa-solid fa-chevron-down faq-chevron"></i>
+                </div>
+                <div class="faq-answer">
+                    <p>The City offers rebates to qualifying property owners, including:</p>
+                    <ul>
+                        <li>Pensioners</li>
+                        <li>Persons with disabilities</li>
+                        <li>Child-headed households</li>
+                        <li>Public Benefit Organisations (PBOs)</li>
+                    </ul>
+                    <p>
+                        Each category has its own eligibility criteria and required
+                        supporting documents, detailed on the rebate application form.
+                    </p>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    How do I apply for a rebate?
+                    <i class="fa-solid fa-chevron-down faq-chevron"></i>
+                </div>
+                <div class="faq-answer">
+                    <p>
+                        From your dashboard, go to the <strong>Rebates</strong> section
+                        and click <strong>Apply for Rebates</strong>. Select the rebate
+                        type, complete the form with your municipal account details and
+                        supporting information, and submit. You can track the status of
+                        your application under <strong>My Applications</strong>.
+                    </p>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    What does "Auto Reject" or "Acknowledged" mean on my rebate application?
+                    <i class="fa-solid fa-chevron-down faq-chevron"></i>
+                </div>
+                <div class="faq-answer">
+                    <p>
+                        <strong>Acknowledged</strong> means your application has been
+                        received and is queued for review.
+                        <strong>Auto Reject</strong> means the application did not meet
+                        the basic eligibility criteria based on the information
+                        provided (e.g. missing required documents or incorrect account
+                        details) and was automatically declined. You can submit a new
+                        application with corrected information.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══════════════ DOCUMENTS & NOTICES ══════════════ -->
+        <div class="faq-group" data-group="documents">
+            <div class="faq-group-title">
+                <i class="fa-solid fa-file-pdf"></i> Documents &amp; Notices
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    What file types and sizes can I upload?
+                    <i class="fa-solid fa-chevron-down faq-chevron"></i>
+                </div>
+                <div class="faq-answer">
+                    <p>
+                        Supporting documents accept <strong>PDF, PNG, JPEG, and HEIC</strong>
+                        formats, up to <strong>10 MB per file</strong>, with a maximum of
+                        <strong>10 files</strong> per submission. Letters of authorisation
+                        for representatives must be in PDF format and not exceed 10 MB.
+                    </p>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    Where can I download my acknowledgement letter?
+                    <i class="fa-solid fa-chevron-down faq-chevron"></i>
+                </div>
+                <div class="faq-answer">
+                    <p>
+                        From your dashboard, find the relevant objection, appeal, query,
+                        or rebate item and select <strong>Acknowledgement</strong> from
+                        the Actions menu. This downloads a PDF confirming your reference
+                        number and the details you submitted.
+                    </p>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    What is a "Section 53 Notice"?
+                    <i class="fa-solid fa-chevron-down faq-chevron"></i>
+                </div>
+                <div class="faq-answer">
+                    <p>
+                        A Section 53 Notice is the official decision letter issued once
+                        the Municipal Valuer has considered your objection. It will
+                        confirm whether your objection was upheld, partially upheld, or
+                        dismissed, and explain your right to appeal. Once issued, you
+                        can download it from your dashboard via
+                        <strong>Download Section 53 Notice</strong>.
+                    </p>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    I added supporting evidence — why don't I see it reflected immediately?
+                    <i class="fa-solid fa-chevron-down faq-chevron"></i>
+                </div>
+                <div class="faq-answer">
+                    <p>
+                        Evidence uploads are attached to your case file but may take a
+                        short time to be processed by our backend systems before they
+                        appear as part of the official record. Your acknowledgement of
+                        the upload itself is immediate — the case status will update
+                        once a City official has reviewed the new information.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ── Still need help CTA ─────────────────────────────────────── -->
+    <div class="faq-cta">
+        <div class="faq-cta-text">
+            <h3>Still need help?</h3>
+            <p>Our team is ready to assist with anything not covered above.</p>
+        </div>
+        <a href="/Home/Contact" class="faq-cta-btn">
+            <i class="fa-solid fa-headset"></i> Contact Support
+        </a>
+    </div>
+
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            // ── Accordion toggle ──────────────────────────────────────
+            document.querySelectorAll('.faq-question').forEach(function (q) {
+                q.addEventListener('click', function () {
+                    q.closest('.faq-item').classList.toggle('open');
+                });
+            });
+
+            // ── Category filter ───────────────────────────────────────
+            var catButtons = document.querySelectorAll('.faq-cat-btn');
+            var groups = document.querySelectorAll('.faq-group');
+
+            catButtons.forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    catButtons.forEach(function (b) { b.classList.remove('active'); });
+                    btn.classList.add('active');
+
+                    var cat = btn.getAttribute('data-cat');
+                    groups.forEach(function (g) {
+                        g.style.display = (cat === 'all' || g.getAttribute('data-group') === cat)
+                            ? '' : 'none';
+                    });
+
+                    runSearch(); // re-apply search within visible categories
+                });
+            });
+
+            // ── Search filter ─────────────────────────────────────────
+            var searchInput = document.getElementById('faqSearch');
+            var noResults = document.getElementById('faqNoResults');
+
+            function runSearch() {
+                var term = searchInput.value.trim().toLowerCase();
+                var anyVisible = false;
+
+                document.querySelectorAll('.faq-group').forEach(function (group) {
+                    if (group.style.display === 'none') return;
+
+                    var groupHasMatch = false;
+                    group.querySelectorAll('.faq-item').forEach(function (item) {
+                        var text = item.textContent.toLowerCase();
+                        var match = term === '' || text.indexOf(term) !== -1;
+                        item.style.display = match ? '' : 'none';
+                        if (match) {
+                            groupHasMatch = true;
+                            anyVisible = true;
+                            if (term !== '') item.classList.add('open');
+                        } else if (term === '') {
+                            item.classList.remove('open');
+                        }
+                    });
+
+                    group.querySelector('.faq-group-title').style.display =
+                        groupHasMatch ? '' : 'none';
+                });
+
+                noResults.classList.toggle('show', !anyVisible);
+            }
+
+            searchInput.addEventListener('input', runSearch);
+        })();
+    </script>
+}

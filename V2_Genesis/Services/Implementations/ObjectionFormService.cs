@@ -322,6 +322,9 @@ public class ObjectionFormService : IObjectionFormService
         obj5.Objection_Ref_S5 = objRef;
         db.Obj_Section5.Add(obj5);
 
+
+        NormaliseSection6MoneyForDb(obj6);
+
         obj6.Ref = objId;
         obj6.Objection_Ref_S6 = objRef;
         db.Obj_Section6.Add(obj6);
@@ -381,6 +384,29 @@ public class ObjectionFormService : IObjectionFormService
         };
     }
 
+    private static void NormaliseSection6MoneyForDb(Obj_Section6Model obj6)
+    {
+        obj6.Old_Market_Value = MoneyToPlainNumber(obj6.Old_Market_Value);
+        obj6.New_Market_Value = MoneyToPlainNumber(obj6.New_Market_Value);
+
+        obj6.Old2_Market_Value = MoneyToPlainNumber(obj6.Old2_Market_Value);
+        obj6.New2_Market_Value = MoneyToPlainNumber(obj6.New2_Market_Value);
+
+        obj6.Old3_Market_Value = MoneyToPlainNumber(obj6.Old3_Market_Value);
+        obj6.New3_Market_Value = MoneyToPlainNumber(obj6.New3_Market_Value);
+    }
+
+    private static string? MoneyToPlainNumber(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return value;
+
+        var digits = new string(value.Where(char.IsDigit).ToArray());
+
+        return string.IsNullOrWhiteSpace(digits)
+            ? null
+            : digits;
+    }
     // ── APPEAL ───────────────────────────────────────────────────────
     private async Task<ObjectionSubmitResult> SubmitAppealAsync(
         ApplicationDbContext db,

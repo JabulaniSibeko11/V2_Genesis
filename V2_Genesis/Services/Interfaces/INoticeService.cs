@@ -31,6 +31,9 @@ namespace V2_Genesis.Services.Interfaces
 
         Task<NoticesDashboardViewModel> GetNoticesDashboardAsync(string userId, string displayName);
         (bool exists, string path, string ext) FindNoticeFile(string folder, string subFolder);
+        Task<(bool Success, byte[]? FileBytes, string? FileName, string? Error)> GetSavedAcknowledgementAsync(
+    string referenceNo,
+    string rollSource);
     }
 
 
