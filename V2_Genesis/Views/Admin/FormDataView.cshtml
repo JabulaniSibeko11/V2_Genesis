@@ -1,0 +1,2053 @@
+﻿@model V2_Genesis.Models.Results.AdminFormViewResult
+@using System.Text.Json
+@using System.Text.Json.Serialization
+
+@{
+    Layout = "~/Views/Shared/_ClientLayout.cshtml";
+    ViewData["Title"] = "Submitted Form View";
+
+    var formItem = Model.Items.FirstOrDefault();
+
+    var jsonOptions = new JsonSerializerOptions
+    {
+        PropertyNamingPolicy = null
+    };
+
+    var formJson = JsonSerializer.Serialize(formItem, jsonOptions);
+    var section78Json = JsonSerializer.Serialize(Model.Section78, jsonOptions);
+}
+@section Styles{
+<link href="~/css/views/admin-form-view.css" rel="stylesheet" asp-append-version="true" />
+}
+
+
+<div class="fv-hero">
+    <div class="fv-hero-inner">
+
+        <!-- Left: logo + title -->
+        <div class="fv-hero-left">
+            <div class="fv-hero-logo">
+                <img src="~/images/joburg_logo.png" alt="City of Johannesburg" />
+            </div>
+            <div>
+                <div class="fv-hero-org">City of Johannesburg · Property Branch: Valuation Services</div>
+                <div class="fv-hero-eyebrow">
+                    <span></span>
+                    @(Model.IsQuery ? "Section 78 Query" : "Objection / Appeal") &nbsp;·&nbsp; Submitted Form View
+                </div>
+                <h1 class="fv-hero-title" id="fv-hero-form-title">
+                    @(Model.IsQuery ? "Section 78 Query" : "Valuation")
+                    <em id="fv-hero-form-type">Form</em>
+                </h1>
+                <p class="fv-hero-sub">
+                    <i class="fa-solid fa-eye" style="color:rgba(255,255,255,.35);font-size:11px;"></i>
+                    Read-only view
+                    <span class="fv-hero-sub-dot"></span>
+                    GV23 / Supplementary Valuation Roll
+                    <span class="fv-hero-sub-dot"></span>
+                    1 July 2023 – 30 June 2027
+                </p>
+            </div>
+        </div>
+
+        <!-- Right: form type badge + property pill -->
+        <div class="fv-hero-right">
+            <span class="fv-hero-badge" id="fv-hero-badge">
+                <i class="fa-solid fa-file-pen"></i>
+                <span id="fv-hero-badge-text">Objection Form</span>
+            </span>
+            <span class="fv-hero-badge read-only">
+                <i class="fa-solid fa-lock"></i> Read Only
+            </span>
+            <div class="fv-hero-prop" id="fv-hero-prop" style="display:none;">
+                <div class="fv-hero-prop-icon">
+                    <i class="fa-solid fa-location-dot"></i>
+                </div>
+                <div>
+                    <span class="fv-hero-prop-label">Property</span>
+                    <span class="fv-hero-prop-value" id="fv-hero-prop-value">—</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reference pills row -->
+    <div class="fv-hero-refs" id="fv-hero-refs">
+        <span class="fv-hero-ref-pill" id="fv-ref-objno" style="display:none;">
+            <i class="fa-solid fa-hashtag"></i>
+            <span id="fv-ref-objno-label">Objection No.</span>
+            <strong id="fv-ref-objno-val">—</strong>
+        </span>
+        <span class="fv-hero-ref-pill" id="fv-ref-owner" style="display:none;">
+            <i class="fa-solid fa-user"></i>
+            <strong id="fv-ref-owner-val">—</strong>
+        </span>
+        <span class="fv-hero-ref-pill" id="fv-ref-roll" style="display:none;">
+            <i class="fa-solid fa-landmark"></i>
+            <strong id="fv-ref-roll-val">—</strong>
+        </span>
+        <span class="fv-hero-ref-pill" id="fv-ref-mv" style="display:none;">
+            <i class="fa-solid fa-coins"></i>
+            Market Value: <strong id="fv-ref-mv-val">—</strong>
+        </span>
+        <span class="fv-hero-ref-pill" id="fv-ref-cat" style="display:none;">
+            <i class="fa-solid fa-tag"></i>
+            <strong id="fv-ref-cat-val">—</strong>
+        </span>
+    </div>
+</div>
+
+    
+    
+<div class="fv-tabs">
+    <a class="fv-tab-btn" onclick="showSection1()"><i class="fa-solid fa-user"></i> Section 1</a>
+    <a class="fv-tab-btn" onclick="showSection2()"><i class="fa-solid fa-map-marker-alt"></i> Section 2</a>
+    <a class="fv-tab-btn" onclick="showSection3res()"><i class="fa-solid fa-house"></i> Section 3</a>
+    <a class="fv-tab-btn" onclick="showSection4res()"><i class="fa-solid fa-building"></i> Section 4</a>
+    <a class="fv-tab-btn" onclick="showSection5()"><i class="fa-solid fa-chart-line"></i> Section 5</a>
+    <a class="fv-tab-btn" onclick="showSection6()"><i class="fa-solid fa-file-pen"></i> Section 6</a>
+    <a class="fv-tab-btn" onclick="showSection7()"><i class="fa-solid fa-signature"></i> Section 7</a>
+</div>
+<div style="display:flex;justify-content: center;">
+
+       @*-----------------------------------------------------------------SECTION 1 -----------------------------------------------------------*@
+
+    <div id="section1" style="display:flex;justify-content: left;">
+
+       <div class="div1  fv-card">
+              <h4 style="text-align:center">SECTION 1: OBJECTOR INFORMATION</h4>
+              <div class="Div1-1">
+              @*   <h4 id="owner_head">1.1 OBJECTOR IS THE OWNER</h4> *@
+
+                <div class="fv-sub-bar" id="owner_head"><span class="num">1.1</span> OBJECTOR IS THE OWNER</div>
+
+                <label id="o_name_l"> REGISTERED OWNER OF PROPERTY </label>
+                <input name="owner_name" id="o_name" style="margin-top: -1px;"  maxlength="100" class="form-control"  type="text" onpaste="return false;" ondrop="return false;">
+                <select hidden class="form-control mt-2" style="width:150px">
+                    <option selected value="RSA" id="O_RSA" onselect="RSA()">
+                        South African
+                    </option>
+                    <option value="foreigner" id="o_foreigner" onselect="foreigner()">
+                        Foreigner
+                    </option>
+                </select>
+
+                <label hidden id="o_pass_label"><span></span>Passport NO.</label>
+                    <input hidden id="o_pass" style="margin-top: -1px;"  class="form-control" maxlength="13" type="text" onpaste="return false;" ondrop="return false;" >
+
+                <div id="owner_details">
+                    <label > <span></span>IDENTITY NO.</label>
+                    <input style="margin-top: -1px;" id="o_id" class="form-control" maxlength="13" type="text" onpaste="return false;" ondrop="return false;" >
+                    <span id="id-status" style="color: red;"></span><br>
+
+                 <label > COMPANY OR C.C REGISTRATION NO. </label>
+                    <input style="margin-top: -1px;" class="form-control" maxlength="30"  type="text" onpaste="return false;" ondrop="return false;">
+
+                 <h5 style="margin-top: 5px;"> PHYSICAL ADDRESS OF OWNER </h5>
+
+                 <label > <span></span>OWNER NAME</label>
+                      <input style="margin-top: -1px;" id="o_st_1" class="form-control" maxlength="100" type="text" onpaste="return false;" ondrop="return false;">
+
+                <label> <span></span>STREET NAME</label>
+                      <input style="margin-top: -1px;" id="o_st_2" class="form-control" maxlength="100" type="text" onpaste="return false;" ondrop="return false;">
+
+                <label> <span></span>SUBURB NAME</label>
+                      <input style="margin-top: -1px;" id="o_st_3" class="form-control" maxlength="100" type="text" onpaste="return false;" ondrop="return false;">
+
+                <label> <span></span>TOWN NAME</label>
+                    <input style="margin-top: -1px;" id="o_st_4" class="form-control" maxlength="100" type="text" onpaste="return false;" ondrop="return false;">
+
+                <label > <span></span>POSTAL CODE</label>
+                    <input style="margin-top: -1px;" id="o_st_5" class="form-control" maxlength="10" type="text" onpaste="return false;" ondrop="return false;">
+
+                <h5 style="margin-top: 5px;">POSTAL ADDRESS OF OWNER </h5>
+                <p style="color:black;">
+                    <label>Postal Address is the same as Physical Address? &nbsp;</label>
+                    <span>
+                        <label>No</label>
+                        <input type="radio" name="add_pos" value="No" onclick="pos_no()" checked/>
+                        <label>Yes</label>
+                        <input type="radio" name="add_pos" onclick="pos_yes()" value="Yes"/>
+                    </span>
+                </p>
+  
+
+                <label> <span></span>OWNER NAME</label>
+                      <input style="margin-top: -1px;" id="o_p_1" class="form-control" maxlength="100" type="text" onpaste="return false;" ondrop="return false;">
+
+                <label> <span></span>STREET NAME</label>
+                      <input style="margin-top: -1px;" id="o_p_2" class="form-control" maxlength="100" type="text" onpaste="return false;" ondrop="return false;">
+
+                <label> <span></span>SUBURB NAME</label>
+                      <input style="margin-top: -1px;" id="o_p_3" class="form-control" maxlength="100" type="text" onpaste="return false;" ondrop="return false;">
+
+                <label>TOWN NAME</label>
+                    <input style="margin-top: -1px;" id="o_p_4" class="form-control" maxlength="100" type="text" onpaste="return false;" ondrop="return false;">
+
+                <label>POSTAL CODE</label>
+                <input style="margin-top: -1px;" id="o_p_5" class="form-control" maxlength="10" type="text" onpaste="return false;" ondrop="return false;">
+
+                </div>
+
+
+                <h5 style="margin-top: 15px;">CONTACT DETAILS</h5>
+            
+
+                <label ></label>
+                <input style="margin-top: -1px;" id="o_cd_1" class="form-control o_cell_no" maxlength="15"  onkeypress="return onlyNumberKey(event)" type="tel" onpaste="return false;" ondrop="return false;">
+
+                 <label >WORK TELEPHONE</label>
+                    <input style="margin-top: -1px;" id="o_cd_2" class="form-control o_cell_no" maxlength="15" onkeypress="return onlyNumberKey(event)"  type="text" onpaste="return false;" ondrop="return false;">
+
+                <label>CELL </label>
+                <input style="margin-top: -1px;" id="o_cd_3" class="form-control o_cell_no" maxlength="15" onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;">
+
+                 <label > FAX </label>
+                    <input style="margin-top: -1px;" id="o_cd_4" class="form-control"  maxlength="15"  onkeypress="return onlyNumberKey(event)"  type="text" onpaste="return false;" ondrop="return false;">
+ 
+                 <label>E-MAIL ADDRESS</label>
+                    <input style="margin-top: -1px;" id="o_cd_5" class="form-control"  maxlength="100" type="text" onpaste="return false;" ondrop="return false;">
+
+            
+               </div>
+            
+          <div class="Div1-2">      
+       
+                @* <h4>1.2 OBJECTOR IS NOT THE OWNER OR MUNICIPALITY IS THE OBJECTOR</h4> *@
+                <div class="fv-sub-bar"><span class="num">1.2</span> OBJECTOR IS NOT THE OWNER OR MUNICIPALITY IS THE OBJECTOR</div>
+                <label > NAME OF OBJECTOR </label>
+                    <input style="margin-top: -1px;" id="objector_name" class="form-control" maxlength="100" type="text" onpaste="return false;" ondrop="return false;">
+
+                <label > <span></span>IDENTITY NO.</label>
+                    <input style="margin-top: -1px;" id="objector_id" class="form-control" maxlength="13" type="text" onpaste="return false;" ondrop="return false;">
+                    <span id="obj_id_status"></span><br>
+                <label > COMPANY OR CC REGISTRATION NO. </label>
+                    <input style="margin-top: -1px;" class="form-control" maxlength="20"  type="text" onpaste="return false;" ondrop="return false;">
+
+                <h6 style="margin-top: 5px;">POSTAL ADDRESS OF OBJECTOR </h6>
+            
+                <label>OWNER NAME</label>
+                <input style="margin-top: -1px;" id="obj_p_1" class="form-control" maxlength="100" type="text" onpaste="return false;" ondrop="return false;">
+
+                <label>TREET NAME</label>
+                      <input style="margin-top: -1px;" id="obj_p_2" class="form-control" maxlength="100" type="text" onpaste="return false;" ondrop="return false;">
+
+                <label>SUBURB NAME</label>
+                      <input style="margin-top: -1px;" id="obj_p_3" class="form-control" maxlength="100" type="text" onpaste="return false;" ondrop="return false;">
+
+                <label>TOWN NAME </label>
+                    <input style="margin-top: -1px;" id="obj_p_4" class="form-control" maxlength="100" type="text" onpaste="return false;" ondrop="return false;">
+
+                <label>POSTAL CODE</label>
+                <input style="margin-top: -1px;" id="obj_p_5" class="form-control" maxlength="10" type="text" onpaste="return false;" ondrop="return false;"  onkeypress="return onlyNumberKey(event)">
+
+
+               <h5 style="margin-top: 15px;">CONTACT DETAILS</h5>
+
+                <label >HOME TELEPHONE</label>
+                    <input style="margin-top: -1px;" id="obj_cd_1" class="form-control" maxlength="15"  onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;">
+
+                 <label>WORK TELEPHONE</label>
+                    <input style="margin-top: -1px;" id="obj_cd_2" class="form-control" maxlength="15"  onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;">
+
+                 <label>CELL </label>
+                    <input style="margin-top: -1px;" id="obj_cd_3" class="form-control" maxlength="15"  onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;">
+
+                 <label > FAX </label>
+                    <input style="margin-top: -1px;" id="obj_cd_4" class="form-control" maxlength="15"  onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;">
+ 
+                 <label>E-MAIL ADDRESS</label>
+                    <input style="margin-top: -1px;" id="obj_cd_5" class="form-control" maxlength="100"  type="text" onpaste="return false;" ondrop="return false;">
+
+                 <label>STATUS OF OBJECTOR (e.g. Tenant, Pending Purchaser, Municipality, etc)</label>
+                    <input style="margin-top: -1px;" id="objector_stat"  class="form-control" maxlength="100" type="text" onpaste="return false;" ondrop="return false;">
+          </div>
+
+          <div class="Div1-3">  
+              <br/>
+               @*  <h4>1.3 AUTHORISED REPRESENTATIVE OF THE OBJECTOR</h4> *@
+                <div class="fv-sub-bar" id="owner_head"><span class="num">1.3</span> AUTHORISED REPRESENTATIVE OF THE OBJECTOR</div>
+                <label>NAME OF REPRESENTATIVE</label>
+                    <input style="margin-top: -1px;" class="form-control" id="rep_name" maxlength="100"  type="text" onpaste="return false;" ondrop="return false;">
+
+                <h6 style="margin-top: 5px;">POSTAL ADDRESS OF REPRESENTATIVE </h6>
+
+                <label>OWNER NAME</label>
+                      <input style="margin-top: -1px;" id="rep_p_1" class="form-control" maxlength="100" type="text" onpaste="return false;" ondrop="return false;">
+
+                 <label>STREET NAME</label>
+                      <input style="margin-top: -1px;" id="rep_p_2" class="form-control" maxlength="100" type="text" onpaste="return false;" ondrop="return false;">
+
+                 <label>SUBURB NAME</label>
+                      <input style="margin-top: -1px;" id="rep_p_3" class="form-control" maxlength="100" type="text" onpaste="return false;" ondrop="return false;">
+
+                <label>TOWN NAME</label>
+                    <input style="margin-top: -1px;" id="rep_p_4" class="form-control" maxlength="100" type="text" onpaste="return false;" ondrop="return false;">
+
+                <label>POSTAL CODE</label>
+                <input style="margin-top: -1px;" id="rep_p_5" class="form-control" maxlength="10" onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;">
+
+               <h5 style="margin-top: 15px;">CONTACT DETAILS</h5>
+
+                <label>HOME TELEPHONE</label>
+                    <input style="margin-top: -1px;" id="rep_cd_1" class="form-control" maxlength="15"  onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;">
+
+                <label>WORK TELEPHONE</label>
+                    <input style="margin-top: -1px;" id="rep_cd_2" class="form-control" maxlength="15"  onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;">
+
+                <label>CELL </label>
+                    <input style="margin-top: -1px;" id="rep_cd_3" class="form-control" maxlength="15"  onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;">
+
+                 <label > FAX </label>
+                    <input style="margin-top: -1px;" id="rep_cd_4" class="form-control" maxlength="15"  onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;">
+ 
+                 <label>E-MAIL ADDRESS</label>
+                <input style="margin-top: -1px;" id="rep_cd_5" class="form-control" maxlength="100" type="text" onpaste="return false;" ondrop="return false;"><br />
+
+                <b>IF A REPRESENTATIVE IS APPOINTED, PROOF OF AUTHORISATION MUST BE ATTACHED, TO THIS FORM </b>
+          </div>
+        </div>
+    </div> @* End of section 1*@
+
+
+    @if (Model.IsQuery && Model.Section78 != null)
+    {
+        @await Html.PartialAsync("_Section78ReasonView", Model.Section78)
+    }
+    <script type="text/javascript">
+
+        $(document).ready(function() {
+          $("#section2").hide();
+          $("#section3-res").hide();
+          $("#section4-res").hide();
+          $("#section5").hide();
+          $("#section6").hide();
+          $("#section7").hide();
+        });
+
+        function showSection1()
+        {
+            $("#section1").show();
+            $("#section2").hide();
+            $("#section3-res").hide();
+            $("#section4-res").hide();
+            $("#section5").hide();
+            $("#section6").hide();
+            $("#section7").hide();
+        }
+
+        function showSection2()
+        {
+            $("#section1").hide();
+            $("#section2").show();
+            $("#section3-res").hide();
+            $("#section4-res").hide();
+            $("#section5").hide();
+            $("#section6").hide();
+            $("#section7").hide();
+        }
+
+         function showSection3res()
+        {
+            $("#section1").hide();
+            $("#section2").hide();
+            $("#section3-res").show();
+            $("#section4-res").hide();
+            $("#section5").hide();
+            $("#section6").hide();
+            $("#section7").hide();
+        }
+        function showSection4res()
+        {
+            $("#section1").hide();
+            $("#section2").hide();
+            $("#section3-res").hide();
+            $("#section4-res").show();
+            $("#section5").hide();
+            $("#section6").hide();
+            $("#section7").hide();
+        }
+
+        function showSection5()
+        {
+            $("#section1").hide();
+            $("#section2").hide();
+            $("#section3-res").hide();
+            $("#section4-res").hide();
+            $("#section5").show();
+            $("#section6").hide();
+            $("#section7").hide();
+        }
+        
+        function showSection6()
+        {
+            $("#section1").hide();
+            $("#section2").hide();
+            $("#section3-res").hide();
+            $("#section4-res").hide();
+            $("#section5").hide();
+            $("#section6").show();
+            $("#section7").hide();
+        }
+
+        function showSection7()
+        {
+            $("#section1").hide();
+            $("#section2").hide();
+            $("#section3-res").hide();
+            $("#section4-res").hide();
+            $("#section5").hide();
+            $("#section6").hide();
+            $("#section7").show();
+        }
+        
+    </script>
+
+    @*-----------------------------------------------------------------SECTION 2 -----------------------------------------------------------*@
+   
+   <div id="section2" style="display:flex;justify-content: left;">
+
+
+       <div class="div2  fv-card">
+          <h4 style="text-align:center">SECTION 2: PROPERTY DETAILS (FOR SECTIONAL TITLES SEE SECTION 4)</h4>
+       
+     
+            <h5 style="margin-top: 5px;"> PHYSICAL ADDRESS </h5>
+
+            <input style="margin-top: -1px;" class="form-control" value="" maxlength="100" type="text" onpaste="return false;" ondrop="return false;">
+               
+                    <input style="margin-top: -1px;" class="form-control" maxlength="100" value="" type="text" onpaste="return false;" ondrop="return false;">
+              
+                <label>POSTAL CODE</label>
+            <input style="margin-top: -1px;" id="phy_c" class="form-control" maxlength="4" onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;">
+
+                <label > EXTENT OF PROPERTY (m2) </label>
+                    <input style="margin-top: -1px;" class="form-control" value="" maxlength="12" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)">
+
+                <label > MUNICIPAL ACCOUNT NO (if available) </label>
+                    <input style="margin-top: -1px;" class="form-control" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" maxlength="12">
+
+            <label> NAME OF BOND HOLDER </label>
+                    <input style="margin-top: -1px;" class="form-control" maxlength="100"  type="text" onpaste="return false;" ondrop="return false;">
+
+                <label > REGISTERED AMOUNT OF BOND (if applicable)</label>
+                    <input style="margin-top: -1px;" class="form-control" maxlength="12" step="0.01" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)">
+               
+                <div>
+                    <label>PROVIDE FULL DETAILS OF ALL SERVITUDES, ROAD PROCLAMATIONS OR OTHER ENDORSEMENTS AGAINST THE PROPERTY (if applicable) </label>
+                    <textarea class="form-control" maxlength="500" style="margin-top: -1px;"  rows="4" cols="150" disabled></textarea>
+                </div>
+
+                <label > SERVITUDE NO. </label>
+                    <input style="margin-top: -1px;" class="form-control" maxlength="100"  type="text" onpaste="return false;" ondrop="return false;">
+
+                <label > AFFECTED AREA (m2)</label>
+                    <input style="margin-top: -1px;" class="form-control" maxlength="12" step="0.01"  min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)">
+
+                <label > IN FAVOUR OF </label>
+                    <input style="margin-top: -1px;" class="form-control" maxlength="100"  type="text" onpaste="return false;" ondrop="return false;">
+
+                <div>
+                    <label>FOR WHAT PURPOSE</label>
+                <textarea class="form-control" maxlength="250" style="margin-top: -1px;" rows="3" cols="150" disabled></textarea>
+                </div>
+
+          <div class="d-flex">
+                <fieldset class="col-md-3 mt-3" >
+          <label style="vertical-align:middle"> WAS COMPENSATION PAID </label>
+          <span>
+            <label class="btn" autocomplete="off" >
+              <input type="radio" class="form-check-input" value="Yes"   style="accent-color: green;">
+              Yes
+            </label>
+          </span>
+          <span>
+            <label class="btn" autocomplete="off" >
+              <input type="radio" class="form-check-input" value="No" style="accent-color: green;" >
+              No
+            </label>
+          </span>
+        </fieldset>
+          </div>
+
+        <label > IF YES, DATE OF PAYMENT </label>
+           <input style="margin-top: -1px;" class="form-control"  type="date">
+
+        <label > AMOUNT R </label>
+           <input style="margin-top: -1px;" class="form-control" maxlength="12" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)"  onkeyup="reformatText(this)" >
+           <input id="Compensation_Amount" hidden/>
+           
+         </div>
+
+    </div> @* End of section 2*@
+
+    @*-----------------------------------------------------------------SECTION 3 RESIDENTIAL-----------------------------------------------------------*@
+
+       <div id="section3-res" style="display:flex;justify-content: left;">
+        
+
+           <div class="div3_R   fv-card">
+           <h4 style="text-align:center">SECTION 3: DESCRIPTION OF RESIDENTIAL DWELLING (FOR SECTIONAL TITLES SEE SECTION 4)</h4>
+             @*   <h5>3.1 MAIN DWELLING</h5> *@
+            <div class="fv-sub-bar" ><span class="num">3.1</span> MAIN DWELLING</div>
+                <label> NO. OF BEDROOMS </label>
+                 <input style="margin-top: -1px;" disabled id="s3r" class="form-control" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" maxlength="3"">
+           
+                <label > NO. OF BATHROOMS</label>
+                <input style="margin-top: -1px;" disabled class="form-control"  min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" maxlength="3">
+
+           <h6 class="mt-3">STATE YES OR NO (IF YES INDICATE NUMBER OF ROOMS)</h6>
+     <div class="d-flex">
+                <fieldset class="col-md-4" >
+          <label> KITCHEN </label>
+          <span >
+            <label class="btn px-0 py-2" autocomplete="off" >
+              <input type="radio" name="k_res" class="form-check-input" onclick="show_res_kitchins()" >
+              Yes
+            </label>
+          </span>
+          <span>
+            <label class="btn px-0 py-2" autocomplete="off" >
+              <input type="radio" name="k_res" class="form-check-input" onclick="hide_res_kitchins()" value="No"  >
+              No
+            </label>
+            </span>
+            <div id="res_kitchins">
+            
+                <select name="Res_Kitchen">
+
+                <option id="kitchen_one" selected>
+                    
+                </option>
+                <option id="kitchen_two">
+                    
+                </option>
+                <option id="kitchen_three">
+                 
+                </option>
+                 <option id="kitchen_four">
+                   
+                </option>
+                <option id="kitchen_five">
+                    
+                </option>
+                </select>
+            </div>
+            
+        </fieldset>
+
+           <fieldset class="col-md-4 px-3">
+          <label style="vertical-align:middle"> LOUNGE </label>
+          <span >
+            <label class="btn px-0 py-2" autocomplete="off" >
+              <input type="radio" name="l_res" class="form-check-input" onclick="show_res_lounge()" >
+              Yes
+            </label>
+          </span>
+          <span>
+            <label class="btn px-0 py-2" autocomplete="off" >
+              <input type="radio" name="l_res" class="form-check-input" onclick="hide_res_lounge()" value="No" >
+              No
+            </label>
+            </span>
+
+            <div id="res_lounges">
+             
+                <select name="Res_Lounge" >
+
+                 
+                <option id="lounge_one" selected>
+                    
+                </option>
+                <option id="lounge_two">
+                    
+                </option>
+                <option id="lounge_three">
+                 
+                </option>
+                 <option id="lounge_four">
+                   
+                </option>
+                <option id="lounge_five">
+                    
+                </option>
+                </select>
+            </div>
+
+        </fieldset>
+
+           
+                 <fieldset class="col-md-4 px-0">
+          <label style="vertical-align:middle"> DINING ROOM </label>
+          <span >
+            <label class="btn px-0 py-2" autocomplete="off" >
+              <input type="radio" name="d_res" class="form-check-input" onclick="show_res_dining_room()" >
+              Yes
+            </label>
+          </span>
+          <span>
+            <label class="btn px-0 py-2" autocomplete="off" >
+              <input type="radio" name="d_res" class="form-check-input" onclick="hide_res_dining_room()" name="Res_Dinning_Room" value="No">
+              No
+            </label>
+            </span>
+
+            <div id="res_dining_room">
+              
+                <select name="Res_Dinning_Room">
+
+                 
+                <option id="dining_room_one" selected>
+                    
+                </option>
+                <option id="dining_room_two">
+                    
+                </option>
+                <option id="dining_room_three">
+                 
+                </option>
+                 <option id="dining_room_four">
+                   
+                </option>
+                <option id="dining_room_five">
+                    
+                </option>
+                </select>
+            </div>
+        </fieldset>
+
+     </div>
+
+     <div class="d-flex">
+          <fieldset class="col-md-4 mt-3">
+          <label style="vertical-align:middle"> LAUNDRY</label>
+          <span >
+            <label class="btn px-0 py-2" autocomplete="off" >
+              <input type="radio" name="la_res" class="form-check-input" onclick="show_res_laundry()"    >
+              Yes
+            </label>
+          </span>
+          <span  @*style="margin-left: 11.2%; margin-top: -7.3%"*@>
+            <label class="btn px-0 py-2" autocomplete="off" >
+              <input type="radio" name="la_res" class="form-check-input" onclick="hide_res_laundry()" value="No" >
+              No
+            </label>
+            </span>
+
+            <div id="res_laundry">
+               
+                <select name="Res_Laundry">
+                     
+                    <option id="laundry_one" selected>
+                    
+                    </option>
+                    <option id="laundry_two">
+                    
+                    </option>
+                    <option id="laundry_three">
+                 
+                    </option>
+                     <option id="laundry_four">
+                   
+                    </option>
+                    <option id="laundry_five">
+                    
+                    </option>
+                </select>
+            </div>
+        </fieldset>
+
+
+
+           <fieldset class="col-md-4 mt-3 px-3" @*style="margin-left: 60%; margin-top: -6.70%"*@ >
+          <label style="vertical-align:middle"> STUDY</label>
+          <span >
+            <label class="btn px-0 py-2" autocomplete="off" >
+              <input type="radio" name="s_res" class="form-check-input" onclick="show_res_study()" >
+              Yes
+            </label>
+          </span>
+          <span  @*style="margin-left: 15.5%; margin-top: -10%"*@>
+            <label class="btn px-0 py-2" autocomplete="off" >
+              <input type="radio" name="s_res" class="form-check-input" onclick="hide_res_study()" value="No" >
+              No
+            </label>
+            </span>
+            <div id="res_study">
+               
+                <select name="Res_Study">
+                     
+                    <option id="study_one" selected>
+                    
+                    </option>
+                    <option id="study_two">
+                    
+                    </option>
+                    <option id="study_three">
+                 
+                    </option>
+                     <option id="study_four">
+                   
+                    </option>
+                    <option id="study_five">
+                    
+                    </option>
+                </select>
+            </div>
+        </fieldset>
+
+        <fieldset class="col-md-4 mt-3 px-0">
+      <label style="vertical-align:middle"> PLAYROOM</label>
+      <span >
+        <label class="btn px-0 py-2" autocomplete="off" >
+          <input type="radio" name="p_res" class="form-check-input" onclick="show_res_playroom()"   >
+          Yes
+        </label>
+      </span>
+      <span >
+        <label class="btn px-0 py-2" autocomplete="off" >
+          <input type="radio" name="p_res" class="form-check-input" onclick="hide_res_playroom()" value="No" >
+          No
+        </label>
+        </span>
+
+        <div id="res_playroom">
+               
+                <select name="Res_Play_Room">
+                    
+                    <option id="playroom_one" selected>
+                    
+                    </option>
+                    <option id="playroom_two">
+                    
+                    </option>
+                    <option id="playroom_three">
+                 
+                    </option>
+                     <option id="playroom_four">
+                   
+                    </option>
+                    <option id="playroom_five">
+                    
+                    </option>
+                </select>
+            </div>
+    </fieldset>
+
+        
+     </div>
+
+    <div class="d-flex">
+        <fieldset class="col-md-4 mt-3" >
+      <label style="vertical-align:middle;"> TV ROOM</label>
+      <span >
+        <label class="btn px-0 py-2" autocomplete="off" >
+          <input type="radio" name="tv_res" class="form-check-input" onclick="show_res_television()" >
+          Yes
+        </label>
+      </span>
+      <span>
+        <label class="btn px-0 py-2" autocomplete="off" >
+          <input type="radio" name="tv_res" class="form-check-input" onclick="hide_res_television()" value="No"  >
+          No
+        </label>
+        </span>
+
+        <div id="res_television">
+               
+                <select name="Res_Television">
+                    
+                    <option id="television_one" selected>
+                    
+                    </option>
+                    <option id="television_two">
+                    
+                    </option>
+                    <option id="television_three">
+                 
+                    </option>
+                     <option id="television_four">
+                   
+                    </option>
+                    <option id="television_five">
+                    
+                    </option>
+                </select>
+            </div>
+    </fieldset>
+   
+
+
+        <fieldset class="col-md-4 mt-3 mb-3 px-3">
+      <label style="vertical-align:middle"> SEPARATE TOILET</label>
+      <span >
+        <label class="btn px-0 py-2" autocomplete="off" >
+          <input type="radio" name="st_res" class="form-check-input" onclick="show_res_separate_toilets()"  >
+          Yes
+        </label>
+      </span>
+      <span  >
+        <label class="btn px-0 py-2" autocomplete="off" >
+          <input type="radio" name="st_res" class="form-check-input" onclick="hide_res_separate_toilets()" value="No"  >
+          No
+        </label>
+        </span>
+
+        <div id="res_separate_toilets">
+               
+                <select name="Res_Seperate_Toilet">
+                    
+                    <option id="separate_toilets_one" selected>
+                    
+                    </option>
+                    <option id="separate_toilets_two">
+                    
+                    </option>
+                    <option id="separate_toilets_three">
+                 
+                    </option>
+                     <option id="separate_toilets_four">
+                   
+                    </option>
+                    <option id="separate_toilets_five">
+                    
+                    </option>
+                </select>
+            </div>
+    </fieldset>
+
+     <fieldset class="col-md-5 mt-3" >
+      <label style="vertical-align:middle"> LOUNGE WITH DINING ROOM </label>
+      <span >
+        <label class="btn px-0 py-2" autocomplete="off" >
+          <input type="radio"  name="ld_res" class="form-check-input" onclick="show_res_lounge_dining_room()" >
+          Yes
+        </label>
+      </span>
+      <span >
+        <label class="btn px-0 py-2" autocomplete="off"  >
+          <input type="radio" name="ld_res" class="form-check-input" onclick="hide_res_lounge_dining_room()" value="No">
+          No
+        </label>
+        </span>
+
+        <div id="res_lounge_dining_room">
+               
+                <select name="Res_Lounge_Dining_Room">
+                    
+                    <option id="lounge_dining_room_one" selected>
+                    
+                    </option>
+                    <option id="lounge_dining_room_two">
+                    
+                    </option>
+                    <option id="lounge_dining_room_three">
+                 
+                    </option>
+                     <option id="lounge_dining_room_four">
+                   
+                    </option>
+                    <option id="lounge_dining_room_five">
+                    
+                    </option>
+                </select>
+            </div>
+    </fieldset>
+    </div>
+
+
+    
+
+            <label > OTHER"1" </label>
+                <input style="margin-top: -1px;" class="form-control"  type="text" onpaste="return false;" ondrop="return false;" maxlength="100">
+
+            <label > OTHER"2"  </label>
+                <input style="margin-top: -1px;" class="form-control"  type="text" onpaste="return false;" ondrop="return false;" maxlength="100">
+
+            <label > OTHER"3" </label>
+                <input style="margin-top: -1px;" class="form-control"  type="text" onpaste="return false;" ondrop="return false;" maxlength="100">
+
+            <label >OTHER"4" </label>
+                <input style="margin-top: -1px;" class="form-control"  type="text" onpaste="return false;" ondrop="return false;" maxlength="100">
+
+            <h5 style="margin-top: 15px;">3.2 OUTBUILDING</h5>
+
+            <label > NO. OF GARAGES </label>
+                <input style="margin-top: -1px;" class="form-control"  min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" maxlength="3">
+
+           <label > GRANNY FLAT/ROOMS </label>
+                <input style="margin-top: -1px;" class="form-control"  type="text" onpaste="return false;" ondrop="return false;" maxlength="100">
+          
+            <label > OTHER</label>
+                <input style="margin-top: -1px;" class="form-control"  type="text" onpaste="return false;" ondrop="return false;" maxlength="100">
+          
+            <label > SIZE OF MAIN DWELLING (m2)</label>
+                <input style="margin-top: -1px;" class="form-control"  min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" maxlength="6" step="0.01" >
+       
+            <label > SIZE OF OUTBUILDING (m2)</label>
+                <input style="margin-top: -1px;" class="form-control"  min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" maxlength="6" step="0.01">
+        
+            <label > SIZE OF OTHER BUILDING (m2)</label>
+                <input style="margin-top: -1px;" class="form-control"  min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" maxlength="6" step="0.01">
+            
+                <label > TOTAL SIZE OF ALL BUILDING BUILDINGS (m2)</label>
+                <input style="margin-top: -1px;" class="form-control"  min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" maxlength="6" step="0.01">
+
+
+            <h5 style="margin-top: 15px;">3.3 OTHER BUILDINGS (ATTACH ANNEXURE)</h5>
+ 
+   
+            <div class="d-flex">
+                          <fieldset class="col-md-4 mt-3" >
+          <label style="vertical-align:middle">SWIMMING POOL</label>
+          <span >
+            <label class="btn px-0 py-2" autocomplete="off" >
+              <input type="radio" class="form-check-input" value="Yes"  >
+              Yes
+            </label>
+          </span>
+          <span>
+            <label class="btn px-0 py-2" autocomplete="off" >
+              <input type="radio" class="form-check-input" value="No" >
+              No
+            </label>
+            </span>
+        </fieldset>
+
+        <fieldset class="col-md-3 mt-3" >
+          <label style="vertical-align:middle">BORE HOLE</label>
+          <span >
+            <label class="btn px-0 py-2" autocomplete="off" >
+              <input type="radio" class="form-check-input" value="Yes" >
+              Yes
+            </label>
+          </span>
+          <span >
+            <label class="btn px-0 py-2" autocomplete="off" >
+              <input type="radio" class="form-check-input" value="No" >
+              No
+            </label>
+            </span>
+        </fieldset>
+
+
+        <fieldset class="col-md-4 mt-3" >
+          <label style="vertical-align:middle">TENNIS COURT</label>
+          <span >
+            <label class="btn px-0 py-2" autocomplete="off" >
+              <input type="radio" class="form-check-input" value="Yes" >
+              Yes
+            </label>
+          </span>
+          <span  >
+            <label class="btn px-0 py-2" autocomplete="off" >
+              <input type="radio" class="form-check-input" value="No" >
+              No
+            </label>
+            </span>
+        </fieldset>
+            </div>
+
+            <div class="d-flex">
+                         <fieldset class="col-md-5 mb-3 mt-3" >
+          <label style="vertical-align:middle">GARDEN</label>
+          <span >
+            <label class="btn px-0 py-2" autocomplete="off" >
+              <input type="radio" class="form-check-input" value="Good" >
+              GOOD
+            </label>
+          </span>
+          <span>
+            <label class="btn px-0 py-2" autocomplete="off" >
+              <input type="radio" class="form-check-input" value="Average" >
+              AVERAGE
+            </label>
+            </span>
+
+            <span >
+            <label class="btn px-0 py-2" autocomplete="off" >
+              <input type="radio" class="form-check-input" value="Poor" >
+              POOR
+            </label>
+            </span>
+        </fieldset>
+            </div>
+        
+        <label > OTHER"1" </label>
+                <input style="margin-top: -1px;" class="form-control" maxlength="100" type="text" onpaste="return false;" ondrop="return false;">
+
+        <label > OTHER"2" </label>
+            <input style="margin-top: -1px;" class="form-control" maxlength="100" type="text" onpaste="return false;" ondrop="return false;">
+
+
+            <div class="d-flex">
+                <fieldset class="col-md-3 mt-3" >
+          <label style="vertical-align:middle">FENCING</label>
+          <span >
+            <label class="btn px-0 py-2" autocomplete="off" >
+              <input type="radio" class="form-check-input" value="Yes">
+              Yes
+            </label>
+          </span>
+          <span >
+            <label class="btn px-0 py-2" autocomplete="off" >
+              <input type="radio" class="form-check-input" value="No" >
+              No
+            </label>
+            </span>
+        </fieldset>
+            </div>
+
+       <div id="fence_table">
+            <table class="table table-bordered table-hover" >
+                <thead  class="thead-light">
+                    <tr>
+                        <th scope="col" class="col-1">
+                            FENCING&nbsp;&nbsp;
+                        </th>
+                        <th scope="col" class="col-1">
+                            FRONT
+                        </th>
+                        <th scope="col" class="col-1">
+                            BACK
+                        </th>
+                        <th scope="col" class="col-1">
+                            SIDE 1
+                        </th>
+                            <th scope="col" class="col-1">
+                            SIDE 2
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <th scope="row">
+                            Type
+                        </th>
+                        <td >
+                            <input style="border:none;" placeholder="e.g. Wood, Masonry" maxlength="30" onpaste="return false;" ondrop="return false;"/>
+                        </td>
+                        <td >
+                            <input style="border:none;" placeholder="e.g. Wood, Masonry" maxlength="30" onpaste="return false;" ondrop="return false;"/>
+                        </td>
+                        <td >
+                            <input style="border:none;" placeholder="e.g. Wood, Masonry" maxlength="30" onpaste="return false;" ondrop="return false;"/>
+                        </td>
+                        <td >
+                                <input style="border:none;" placeholder="e.g. Wood, Masonry" maxlength="30" onpaste="return false;" ondrop="return false;" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row">
+                            Height (CM)
+                        </th>
+                        <td >
+                            <input style="border:none;"  onpaste="return false;" maxlength="4" ondrop="return false;" onkeypress="return onlyNumberKey(event)" />
+                        </td>
+                        <td >
+                            <input style="border:none;" onpaste="return false;" maxlength="4" ondrop="return false;" onkeypress="return onlyNumberKey(event)" />
+                        </td>
+                        <td >
+                            <input style="border:none;" onpaste="return false;" maxlength="4" ondrop="return false;" onkeypress="return onlyNumberKey(event)" />
+                        </td>
+                        <td >
+                            <input style="border:none;" onpaste="return false;" maxlength="4" ondrop="return false;" onkeypress="return onlyNumberKey(event)" />
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+       </div>
+
+             <label >  DRIVEAWAY (e.g. Bricks, pavers) </label>
+                <input style="margin-top: -1px;" class="form-control" maxlength="50" type="text" onpaste="return false;" ondrop="return false;">
+
+                <div class="d-flex mb-3">
+                              <fieldset class="col-md-6 mt-3" >
+          <label style="vertical-align:middle">IS YOUR PROPERTY SITUATED IN A BOOMED AREA OR SECURITY</label>
+          <span >
+            <label class="btn px-0 py-2" autocomplete="off">
+              <input type="radio" class="form-check-input" value="Yes" >
+              Yes
+            </label>
+          </span>
+          <span >
+            <label class="btn px-0 py-2" autocomplete="off">
+              <input type="radio" class="form-check-input"  value="No" >
+              No
+            </label>
+            </span>
+        </fieldset>
+                </div>
+
+         <label > OTHER FEATURES: </label>
+                <input style="margin-top: -1px;" maxlength="100" class="form-control"  type="text" onpaste="return false;" ondrop="return false;">
+
+            <div class="d-flex">
+            <div class="d-flex col-md-4">
+            <fieldset class="col-md-12 mb-3 mt-3" >
+              <label style="vertical-align:middle">OTHER FEATURE CONDITION </label>
+              <br/>
+              <span >
+                <label class="btn px-0 py-2" autocomplete="off" >
+                  <input type="radio" class="form-check-input" value="Good" >
+                  GOOD
+                </label>
+              </span>
+              <span >
+                <label class="btn px-0 py-2" autocomplete="off" >
+                  <input type="radio" class="form-check-input" value="Average" >
+                  AVERAGE
+                </label>
+                </span>
+
+                <span  >
+                <label class="btn px-0 py-2" autocomplete="off" >
+                  <input type="radio" class="form-check-input" value="Poor" >
+                  POOR
+                </label>
+                </span>
+            </fieldset>
+        </div>
+        <div class="d-flex  col-md-6">
+         <fieldset class="col-md-12 mb-3 mt-3" >
+          <label style="vertical-align:middle">GENERAL CONDITION OF PROPERTY </label>
+          <br/>
+          <span >
+            <label class="btn px-0 py-2" autocomplete="off" >
+              <input type="radio" class="form-check-input" value="Good"  >
+              GOOD
+            </label>
+          </span>
+          <span >
+            <label class="btn px-0 py-2" autocomplete="off" >
+              <input type="radio" class="form-check-input" value="Average" >
+              AVERAGE
+            </label>
+            </span>
+
+            <span >
+            <label class="btn px-0 py-2" autocomplete="off" >
+              <input type="radio" class="form-check-input" value="Poor" >
+              POOR
+            </label>
+            </span>
+        </fieldset>
+        </div>
+            </div>
+    </div>
+
+
+        </div> @* End of section 3*@
+
+ @*-----------------------------------------------------------------SECTION 4 RESIDENTIAL-----------------------------------------------------------*@
+
+  <div id="section4-res" style="display:flex;justify-content: left;">
+     <div class="div4_R   fv-card">
+         <h5 style="text-align:center">SECTION 4: SECTIONAL TITLE UNITS</h5>
+           <h5>4.1 SECTIONAL TITLE UNITS</h5>
+
+           <label > SCHEME NAME</label>
+           <input style="margin-top: -1px;" id="sch_name" maxlength="100" class="form-control"  type="text" onpaste="return false;" ondrop="return false;" name="Res4_Scheme_Name">
+
+           <label > SCHEME NO.</label>
+           <input style="margin-top: -1px;" id="sch_no" maxlength="8" class="form-control"  min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" name="Res4_Scheme_No">
+
+           <label hidden > FLAT NO/DOOR NO.</label><label> FLAT NO/UNIT NO.</label>
+           <input style="margin-top: -1px;" id="flat_no" class="form-control" maxlength="8" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" name="Res4_Flat_No">
+
+           
+           <label > UNIT SIZE (m2)</label>
+           <input style="margin-top: -1px;" id="unit_size" class="form-control" maxlength="8" step="0.01" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" name="Res4_Unit_Size">
+
+           <label > NAME OF MANAGEMENT AGENT</label>
+           <input style="margin-top: -1px;" class="form-control" maxlength="100"  type="text" onpaste="return false;" ondrop="return false;" name="Res4_Managing_Agent_Name">
+
+           <label >TEL NO.</label>
+            <input style="margin-top: -1px;" class="form-control" maxlength="15" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" name="Res4_Managing_Agent_Tel_No">
+
+
+           <label> NO OF BEDROOMS </label>
+           <input style="margin-top: -1px;" class="form-control" maxlength="5" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" name="Res4_No_of_Bedroom">
+           
+           <label > NO OF BATHROOMS</label>
+           <input style="margin-top: -1px;" class="form-control" maxlength="5" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" name="Res4_No_of_BathRoom">
+
+           <label > Monthly Levy</label>
+            <input style="margin-top: -1px;" class="form-control" maxlength="8" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" name="Res4_Monthly_Levy_Res">
+
+
+            <div class="d-flex">
+                <fieldset class="col-md-4 mt-3" >
+          <label> KITCHEN </label>
+          <span >
+            <label class="btn px-0 py-2" autocomplete="off" >
+              <input type="radio" name="k_res2" class="form-check-input" onclick="show_res_st_kitchins()" >
+              Yes
+            </label>
+          </span>
+          <span>
+            <label class="btn px-0 py-2" autocomplete="off" >
+              <input type="radio" name="k_res2" class="form-check-input" onclick="hide_res_st_kitchins()" name="Res4_Kitchen" value="No">
+              No
+            </label>
+            </span>
+            <div id="res_st_kitchins">
+             
+                <select name="Res4_Kitchen">
+
+                 
+                <option id="kitchen_st_one" selected>
+                    
+                </option>
+                <option id="kitchen_st_two">
+                    
+                </option>
+                <option id="kitchen_st_three">
+                 
+                </option>
+                 <option id="kitchen_st_four">
+                   
+                </option>
+                <option id="kitchen_st_five">
+                    
+                </option>
+                </select>
+            </div>
+            
+        </fieldset>
+
+           <fieldset class="col-md-4 mt-3 px-3">
+          <label style="vertical-align:middle"> LOUNGE </label>
+          <span >
+            <label class="btn px-0 py-2" autocomplete="off" >
+              <input type="radio"name="l_res2" class="form-check-input" onclick="show_res_st_lounge()" >
+              Yes
+            </label>
+          </span>
+          <span>
+            <label class="btn px-0 py-2" autocomplete="off" >
+              <input type="radio"name="l_res2" class="form-check-input" onclick="hide_res_st_lounge()" name="Res4_Lounge" value="No" >
+              No
+            </label>
+            </span>
+
+            <div id="res_st_lounges">
+             
+                <select name="Res4_Lounge" >
+
+                
+                <option id="lounge_st_one" selected>
+                    
+                </option>
+                <option id="lounge_st_two">
+                    
+                </option>
+                <option id="lounge_st_three">
+                 
+                </option>
+                 <option id="lounge_st_four">
+                   
+                </option>
+                <option id="lounge_st_five">
+                    
+                </option>
+                </select>
+            </div>
+
+        </fieldset>
+
+           
+                 <fieldset class="col-md-4 mt-3 px-0">
+          <label style="vertical-align:middle"> DINING ROOM </label>
+          <span >
+            <label class="btn px-0 py-2" autocomplete="off" >
+              <input type="radio"name="d_res2" class="form-check-input" onclick="show_res_st_dining_room()" >
+              Yes
+            </label>
+          </span>
+          <span>
+            <label class="btn px-0 py-2" autocomplete="off" >
+              <input type="radio"name="d_res2" class="form-check-input" onclick="hide_res_st_dining_room()" name="Res4_Dinning_Room" value="No">
+              No
+            </label>
+            </span>
+
+            <div id="res_st_dining_room">
+              
+                <select name="Res4_Dinning_Room">
+
+                
+                <option id="dining_room_st_one" selected>
+                    
+                </option>
+                <option id="dining_room_st_two">
+                    
+                </option>
+                <option id="dining_room_st_three">
+                 
+                </option>
+                 <option id="dining_room_st_four">
+                   
+                </option>
+                <option id="dining_room_st_five">
+                    
+                </option>
+                </select>
+            </div>
+        </fieldset>
+
+     </div>
+
+
+
+     <div class="d-flex">
+          <fieldset class="col-md-4 mt-3">
+          <label style="vertical-align:middle"> LAUNDRY</label>
+          <span >
+            <label class="btn px-0 py-2" autocomplete="off" >
+              <input type="radio" name="la_res2" class="form-check-input" onclick="show_res_st_laundry()" >
+              Yes
+            </label>
+          </span>
+          <span>
+            <label class="btn px-0 py-2" autocomplete="off" >
+              <input type="radio" name="la_res2" class="form-check-input" onclick="hide_res_st_laundry()" name="Res4_Laundry" value="No" >
+              No
+            </label>
+            </span>
+
+            <div id="res_st_laundry">
+               
+                <select name="Res4_Laundry">
+                    
+                    <option id="laundry_st_one" selected>
+                    
+                    </option>
+                    <option id="laundry_st_two">
+                    
+                    </option>
+                    <option id="laundry_st_three">
+                 
+                    </option>
+                     <option id="laundry_st_four">
+                   
+                    </option>
+                    <option id="laundry_st_five">
+                    
+                    </option>
+                </select>
+            </div>
+        </fieldset>
+
+
+
+           <fieldset class="col-md-4 mt-3 px-3">
+          <label style="vertical-align:middle"> STUDY</label>
+          <span >
+            <label class="btn px-0 py-2" autocomplete="off" >
+              <input type="radio" name="s_res2" class="form-check-input" onclick="show_res_st_study()" >
+              Yes
+            </label>
+          </span>
+          <span>
+            <label class="btn px-0 py-2" autocomplete="off" >
+              <input type="radio" name="s_res2" class="form-check-input" onclick="hide_res_st_study()" name="Res4_Study" value="No" >
+              No
+            </label>
+            </span>
+            <div id="res_st_study">
+               
+                <select name="Res4_Study">
+                     
+                    <option id="study_st_one" selected>
+                    
+                    </option>
+                    <option id="study_st_two">
+                    
+                    </option>
+                    <option id="study_st_three">
+                 
+                    </option>
+                     <option id="study_st_four">
+                   
+                    </option>
+                    <option id="study_st_five">
+                    
+                    </option>
+                </select>
+            </div>
+        </fieldset>
+
+        <fieldset class="col-md-4 mt-3 px-0">
+      <label style="vertical-align:middle"> PLAYROOM</label>
+      <span >
+        <label class="btn px-0 py-2" autocomplete="off" >
+          <input type="radio" name="p_res2" class="form-check-input" onclick="show_res_st_playroom()"  >
+          Yes
+        </label>
+      </span>
+      <span >
+        <label class="btn px-0 py-2" autocomplete="off" >
+          <input type="radio" name="p_res2" class="form-check-input" onclick="hide_res_st_playroom()" name="Res4_Play_Room" value="No" >
+          No
+        </label>
+        </span>
+
+        <div id="res_st_playroom">
+               
+                <select name="Res4_Play_Room">
+                     
+                    <option id="playroom_st_one" selected>
+                    
+                    </option>
+                    <option id="playroom_st_two">
+                    
+                    </option>
+                    <option id="playroom_st_three">
+                 
+                    </option>
+                     <option id="playroom_st_four">
+                   
+                    </option>
+                    <option id="playroom_st_five">
+                    
+                    </option>
+                </select>
+            </div>
+    </fieldset>   
+    </div>
+
+    <div class="d-flex">
+        <fieldset class="col-md-4 mt-3" >
+      <label style="vertical-align:middle;"> TV ROOM</label>
+      <span >
+        <label class="btn px-0 py-2" autocomplete="off" >
+          <input type="radio" name="tv_res2" class="form-check-input" onclick="show_res_st_television()">
+          Yes
+        </label>
+      </span>
+      <span>
+        <label class="btn px-0 py-2" autocomplete="off" >
+          <input type="radio" name="tv_res2" class="form-check-input" onclick="hide_res_st_television()" name="Res4_Television" value="No"  >
+          No
+        </label>
+        </span>
+
+        <div id="res_st_television">
+               
+                <select name="Res4_Television">
+                     
+                    <option id="television_st_one" selected>
+                    
+                    </option>
+                    <option id="television_st_two">
+                    
+                    </option>
+                    <option id="television_st_three">
+                 
+                    </option>
+                     <option id="television_st_four">
+                   
+                    </option>
+                    <option id="television_st_five">
+                    
+                    </option>
+                </select>
+            </div>
+    </fieldset>
+   
+
+
+        <fieldset class="col-md-4 mt-3 mb-3 px-3">
+      <label style="vertical-align:middle"> SEPARATE TOILET</label>
+      <span >
+        <label class="btn px-0 py-2" autocomplete="off" >
+          <input type="radio" name="st_res2" class="form-check-input" onclick="show_res_st_separate_toilets()" >
+          Yes
+        </label>
+      </span>
+      <span  >
+        <label class="btn px-0 py-2" autocomplete="off" >
+          <input type="radio" name="st_res2" class="form-check-input" onclick="hide_res_st_separate_toilets()" name="Res4_Seperate_Toilet" value="No"  >
+          No
+        </label>
+        </span>
+
+        <div id="res_st_separate_toilets">
+               
+                <select name="Res4_Seperate_Toilet">
+                     
+                    <option id="separate_toilets_st_one" selected>
+                    
+                    </option>
+                    <option id="separate_toilets_st_two">
+                    
+                    </option>
+                    <option id="separate_toilets_st_three">
+                 
+                    </option>
+                     <option id="separate_toilets_st_four">
+                   
+                    </option>
+                    <option id="separate_toilets_st_five">
+                    
+                    </option>
+                </select>
+            </div>
+    </fieldset>
+
+     <fieldset class="col-md-5 mt-3" >
+      <label style="vertical-align:middle"> LOUNGE WITH DINING ROOM </label>
+      <span >
+        <label class="btn px-0 py-2" autocomplete="off" >
+          <input type="radio" name="ld_res2" class="form-check-input" onclick="show_res_st_lounge_dining_room()">
+          Yes
+        </label>
+      </span>
+      <span >
+        <label class="btn px-0 py-2" autocomplete="off"  >
+          <input type="radio" name="ld_res2" class="form-check-input" onclick="hide_res_st_lounge_dining_room()" name="Res4_Lounge_Dining_Room" value="No">
+          No
+        </label>
+        </span>
+
+        <div id="res_st_lounge_dining_room">
+               
+                        <select name="Res4_Lounge_Dining_Room">
+                     
+                            <option id="lounge_dining_room_st_one" selected>
+                    
+                            </option>
+                            <option id="lounge_dining_room_st_two">
+                    
+                            </option>
+                            <option id="lounge_dining_room_st_three">
+                 
+                            </option>
+                             <option id="lounge_dining_room_st_four">
+                   
+                            </option>
+                            <option id="lounge_dining_room_st_five">
+                    
+                            </option>
+                        </select>
+                    </div>
+            </fieldset>
+            </div>
+
+        <div>
+
+           <label style="margin-top: 15px"> OTHER"1" </label>
+                <input style="margin-top: -1px;" class="form-control"  maxlength="100" type="text" onpaste="return false;" ondrop="return false;" name="Res4_Dwell_Other1">
+
+            <label > OTHER"2"  </label>
+                <input style="margin-top: -1px;" class="form-control"  maxlength="100" type="text" onpaste="return false;" ondrop="return false;" name="Res4_Dwell_Other2">
+
+            <label > OTHER"3" </label>
+                <input style="margin-top: -1px;" class="form-control"  maxlength="100" type="text" onpaste="return false;" ondrop="return false;" name="Res4_Dwell_Other3">
+
+            <label >OTHER"4" </label>
+                <input style="margin-top: -1px;" class="form-control"  maxlength="100" type="text" onpaste="return false;" ondrop="return false;" name="Res4_Dwell_Other4">
+       </div>
+
+       <div style=" width:50%; overflow:hidden; margin-top: 15px; border:none;">
+            <h6 style="margin-top: 15px;">COMMON PROPERTY CONSISTS OF:</h6>
+            <label >SWIMMING POOL</label>
+            <input style="margin-top: -1px;" class="form-control" maxlength="5" step="0.01" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" name="Res4_Pool_Size">  
+
+            <label >TENNIS COURT</label>
+            <input style="margin-top: -1px;" class="form-control" maxlength="5" step="0.01" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" name="Res4_Tennis_Court_Size"> 
+
+            <label > OTHER"1" </label>
+            <input style="margin-top: -1px;" class="form-control" maxlength="100" type="text" onpaste="return false;" ondrop="return false;" name="Res4_Common_Property_Other_1">
+
+            <label > OTHER"2"  </label>
+            <input style="margin-top: -1px;" class="form-control" maxlength="100" type="text" onpaste="return false;" ondrop="return false;" name="Res4_Common_Property_Other_2">
+
+            <label > OTHER"3" </label>
+            <input style="margin-top: -1px;" class="form-control" maxlength="100" type="text" onpaste="return false;" ondrop="return false;" name="Res4_Common_Property_Other_3">
+
+        </div>
+
+        <div style="  width:50%; overflow:hidden; margin-left: 50.5%; margin-top: -32.67%; border:none;">
+                <h6 style="margin-top: 15px;">DETAILS OF EXCLUSIVE AREAS</h6>
+                <label >GARAGE (m2)</label>
+                <input style="margin-top: -1px;" class="form-control" maxlength="5" step="0.01" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" name="Res4_Garage_Size">  
+
+                <label >CARPORT (m2)</label>
+                <input style="margin-top: -1px;" class="form-control" maxlength="5" step="0.01" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" name="Res4_Carport_Size"> 
+
+                <label > OPEN PARKING (m2)</label>
+                <input style="margin-top: -1px;" class="form-control" maxlength="5" step="0.01" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" name="Res4_Open_Parking_Size">
+
+                 <label > STORE ROOM (m2)</label>
+                 <input style="margin-top: -1px;" class="form-control" maxlength="5" step="0.01" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" name="Res4_Store_Room_Size">
+
+                 <label > GARDEN (m2)</label>
+                <input style="margin-top: -1px;" class="form-control" maxlength="5" step="0.01" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" name="Res4_Garden_Size">
+
+                <label > OTHER"4"</label>
+                <input style="margin-top: -1px;" class="form-control" maxlength="100"  type="text" onpaste="return false;" ondrop="return false;" name="Res4_Exclusive_Other">
+
+            </div>
+
+   </div>
+  </div>@* End of section 4*@
+
+
+      @*----------------------------------------Section 5  ---------------------------------------*@
+   <div id="section5" style="display:flex;justify-content: left;">
+
+
+        <div class="div5  fv-card">
+            <h5 style="text-align:center">SECTION 5: MARKET INFORMATION</h5>
+            <div>
+                <div class="fv-two-col">
+                <h6 style="margin-top: 15px;">IF YOUR PROPERTY IS CURRENTLY ON THE MARKET, WHAT IS THE ASKING PRICE?</h6>
+
+                    <label>R</label>
+                    <input style="margin-top: -1px;" id="s5" maxlength="12" class="form-control"  min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" name="Current_Asking_price">
+        
+                
+                <h6 style="margin-top: 15px;">IF YOUR PROPERTY HAS BEEN ON THE MARKET IN THE LAST 3 YEARS, WHAT WAS THE ASKING PRICE</h6>
+                
+                    <label>R</label>
+                    <input style="margin-top: -1px;" class="form-control"  maxlength="10"  min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" name="Previous_Asking_price">
+
+                    <label>NAME OF AGENT</label>
+                    <input style="margin-top: -1px;" class="form-control" maxlength="100" type="text" onpaste="return false;" ondrop="return false;" name="Agent_Name">
+
+                    <label>SALES TRANSACTIONS(OF OTHER PROPERTIES IN THE VICINITY) USED BY OBJECTOR IN DETERMINING THE MARKET VALUES OF THE PROPERTY OBJECTED TO</label>
+                    <input style="margin-top: -1px;" class="form-control" type="text" onpaste="return false;" ondrop="return false;" maxlength="10" name="Other_Nearby_Sales">
+
+                    <label> ERF/UNIT</label>
+                    <input style="margin-top: -1px;" class="form-control" min="0" maxlength="5" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" name="Unit_No">
+
+                    <label> DATE OF SALE</label>
+                    <input style="margin-top: -1px;" class="form-control"  type="date" name="StartDate2" name="Sale_Date">
+                </div>
+
+
+    
+                <div>
+
+                    <label style="margin-top: 8.4%">OFFER RECEIVED "R"</label>
+                    <input style="margin-top: -1px;" class="form-control" min="0" maxlength="12" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)">
+
+                    <label style="margin-top: 10.5%;"> OFFER RECEIVED "R" </label>
+                    <input style="margin-top: -1px;" class="form-control" min="0" maxlength="12" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)">
+
+                    <label> TEL NO.</label>
+                    <input style="margin-top: -1px;" class="form-control" type="text" onpaste="return false;" ondrop="return false;" maxlength="15" onkeypress="return onlyNumberKey(event)">
+
+                    <label style="margin-top: 8.5%"> SUBURB/FARM/SCHEME NAME</label>
+                    <input style="margin-top: -1px;" class="form-control" type="text" onpaste="return false;" ondrop="return false;" maxlength="100">
+
+                    <label> SELLING PRICE</label>
+                    <input style="margin-top: -1px;" class="form-control" min="0" maxlength="10" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)">
+
+                </div>
+            </div>
+         
+        </div>
+
+    </div> @* End of section 5*@
+
+    @*----------------------------------------Section 6  ---------------------------------------*@
+    <div id="section6" style="display:flex;justify-content: left;">
+
+           <div class="div6   fv-card">
+                   <h5 style="text-align:center">SECTION 6: OBJECTION DETAILS</h5>
+                      <div style=" width:50%; overflow:hidden; margin-top: 15px; border:none;">
+                            <div class="fv-compare">
+                                <div class="fv-compare-col original">
+                            <h6>PARTICULARS AS REFLECTED IN VALUATION ROLL</h6>
+
+                            <label> DESCRIPTION OF THE PROPERTY/UNIT</label>
+                            <input style="margin-top: -1px;" id ="desc" class="form-control" type="text" onpaste="return false;" ondrop="return false;" disabled value="" >
+                    
+                            <label> CATEGORY </label>
+                            <input style="margin-top: -1px;" id="cat" class="form-control" type="text" onpaste="return false;" ondrop="return false;" disabled value="">
+
+                            <label> PHYSICAL ADDRESS/DOOR NO./FLAT NO.</label>
+                            <input style="margin-top: -1px;" id="add" class="form-control" type="text" onpaste="return false;" ondrop="return false;" disabled  value="">
+
+                            <label> EXTENT</label>
+                            <input style="margin-top: -1px;" id="extent" class="form-control" type="text" onpaste="return false;" ondrop="return false;" disabled  value="">
+
+                            <label> MARKET VALUE</label>
+                            <input style="margin-top: -1px;" id="Market_Value" class="form-control" type="text" onpaste="return false;" ondrop="return false;" disabled value="">
+
+                            <label> NAME OF OWNER</label>
+                            <input style="margin-top: -1px;" id="owner" class="form-control" type="text" onpaste="return false;" ondrop="return false;" disabled value="">
+                    
+                            @*Submit Fields*@
+                            </div>
+                            </div>
+                    </div>
+
+    
+           <div class="fv-compare-col requested">
+
+                <h6>CHANGES REQUESTED BY OBJECTOR</h6>
+                <label>DESCRIPTION OF THE PROPERTY/UNIT</label>
+                    <input style="margin-top: -1px;" id="desc_in" class="form-control" maxlength="100" type="text" onpaste="return false;" ondrop="return false;" name="New_Property_Description">
+                <label>CATEGORY</label>
+                <select name="New_Category" class="form-control" >
+                    <option value="Agricultural">Agricultural </option>
+                    <option value="Agricultural Business">Agricultural Business</option>
+                    <option value="Agricultural Residential">Agricultural Residential </option>
+                    <option value="Business & Commercial (Including Sect. Title units)">Business & Commercial (Including Sect. Title units) </option>
+                    <option value="Consent Use">Consent Use </option>
+                    <option value="Education">Education</option>
+                    <option value="Industrial">Industrial</option>
+                    <option value="Mining">Mining </option>
+                    <option value="Multiple Purpose">Multiple Purpose </option>
+                    <option value="Municipal">Municipal</option>
+                    <option value="Public Benefit Organisations">Public Benefit Organisations </option>
+                    <option value="Public Service Infrastructure">Public Service Infrastructure </option>
+                    <option value="Public Service Infrastructure Private">Public Service Infrastructure Private </option>
+                    <option value="Public Service Purpose">Public Service Purpose </option>
+                    <option value="Public Open Space">Public Open Space</option>
+                    <option value="Private Open Space">Private Open Space</option>
+                    <option value="R.E. of Township">R.E. of Township</option>
+                    <option value="Religious">Religious</option>
+                    <option value="Residential (Including Sect. Title units)">Residential (Including Sect. Title units)</option>
+                    <option value="Sectional Title Other">Sectional Title Other</option>
+                    <option value="State">State</option>
+                    <option value="Township Establishment">Township Establishment </option>
+                    <option value="Vacant Land">Vacant Land </option>
+                    <option selected></option>
+
+                </select>
+
+                <label>PHYSICAL ADDRESS/DOOR NO./FLAT NO.</label>
+                <input style="margin-top: -1px;" class="form-control" maxlength="100" type="text" onpaste="return false;" ondrop="return false;" name="New_Address">
+                <label>EXTENT</label>
+                <input style="margin-top: -1px;" class="form-control" min="0" type="text" onpaste="return false;" ondrop="return false;" maxlength="10" onkeypress="return onlyNumberKey(event)" name="New_Extent">
+                <label>MARKET VALUE</label>
+                    <input style="margin-top: -1px;" class="form-control" min="0" type="text" onpaste="return false;" ondrop="return false;" maxlength="12" onkeypress="return onlyNumberKey(event)" name="New_Market_Value">
+                <label>NAME OF OWNER</label>
+                <input style="margin-top: -1px;" class="form-control" maxlength="100" type="text" onpaste="return false;" ondrop="return false;" name="Owner_Name">
+    
+            </div>
+            <br/>
+            <div style="margin-top:20px;">
+                <label>ADVERSE FEATURES AND/OR FURTHER REASONS IN SUPPORT OF THIS OBJECTION (ANNEXURE CAN BE PROVIDED)</label>
+                <textarea class="form-control" style="margin-top: -1px;" maxlength="500" name="Objection_Reasons" rows="4" cols="150"></textarea>
+            </div>
+
+        </div>
+    </div>
+   </div>@* End of section 6*@
+
+   @*----------------------------------------Section 7  ---------------------------------------*@
+
+   <div  id="section7" style="display:flex;justify-content: left;">
+
+           <div  class="div7 fv-card">
+
+                    <h5 style="text-align:center" >SECTION 7: DECLARATION</h5>
+                    <div style=" width:50%; overflow:hidden; margin-top: 15px; border:none;">
+
+                    <h6 style="margin-top: 15px;">
+                ATTENTION IS HEREBY DRAWN TO SECTION 42(2) OF THE ACT WHICH STATES THAT WHERE ANY DOCUMENT, INFORMATION OR 
+                PARTICULARS WERE NOT PROVIDED WHEN REQUIRED IN TERMS OF SUBSECTION 42(1) OF THE ACT AND THE OWNER CONCERNED 
+                RELIES ON SUCH DOCUMENT, INFORMATION OR PARTICULARS IN AN APPEAL TO AN APPEAL BOARD, THE APPEAL BOARD MAY MAKE 
+                AN ORDER AS TO COSTS IN TERMS OF SECTION 70 OF THE ACT IF THE APPEAL BOARD IS OF THE VIEW THAT THE FAILURE TO SO 
+                HAVE PROVIDED ANY SUCH DOCUMENT, INFORMATION OR PARTICULARS HAS PLACED AN UNNECESSARY BURDEN ON THE FUNCTIONS OF 
+                THE MUNICIPAL VALUER OR THE APPEAL BOARD.</h6>
+
+                I/WE <input style="margin-top: -1px;" id="sign_obj" maxlength="100" name="Signature_Name" type="text" onpaste="return false;" ondrop="return false;"> HEREBY DECLARE THAT THE INFORMATION AND PARTICULARS SUPPLIED ARE TRUE AND CORRECT.
+                <br/>
+                <label hidden style="margin-top:1%"><span></span>DATE</label>
+                <input hidden style="margin-top: -1px;" class="form-control" id="signDate" type="datetime-local" name="Declaration_Date" >
+                <br>
+                <script>
+                    var date = new Date();
+                    var currentDate = date.toISOString().slice(0,16);
+
+                    document.getElementById('signDate').value = currentDate;
+                </script>
+
+
+                <h5 style="margin-left:2%">SIGNATURE</h5>
+
+               <p>
+                    <canvas width="500" height="200" id="signature" 
+                            style="border:2px solid black; background-color:white;">BX Maluleque</canvas>
+                    <img width="500" height="200" id="savetarget" 
+                            style="border:1px solid black" hidden="hidden"><br>
+                            <span style="width: 1%"></span>
+                           
+                    <input type="text" onpaste="return false;" ondrop="return false;"  id="SignatureDataUrl" name="Signature_Picture" hidden="hidden" >
+                </p>
+                                
+            </div>            
+         </div>       
+    </div>@* End of section 7*@
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        var data = typeof adminFormData !== "undefined" ? adminFormData : null;
+        if (!data) return;
+
+        // Form type
+        var isAppeal = data.AppealStat === "True" || data.AppealStat === true;
+        var isQuery  = @(Model.IsQuery ? "true" : "false");
+
+        var typeText = isQuery ? "Section 78 Query"
+                     : isAppeal ? "Appeal Form"
+                     : "Objection Form";
+
+        var titleEm = isQuery ? "Query"
+                    : isAppeal ? "<em style='color:#e6b000'>Appeal</em>"
+                    : "<em style='color:#e6b000'>Objection</em>";
+
+        var icon = isQuery ? "fa-magnifying-glass-chart"
+                 : isAppeal ? "fa-gavel"
+                 : "fa-file-pen";
+
+        document.getElementById("fv-hero-badge-text").textContent = typeText;
+        document.getElementById("fv-hero-form-type").innerHTML = titleEm;
+        document.querySelector("#fv-hero-badge i").className = "fa-solid " + icon;
+
+        // Property description
+        var prop = data.PropertyDesc || data.Property_Desc || data.OldPropertyDescription || "";
+        if (prop) {
+            document.getElementById("fv-hero-prop-value").textContent = prop;
+            document.getElementById("fv-hero-prop").style.display = "flex";
+        }
+
+        // Reference pills
+        function showPill(id, val, labelId, label) {
+            if (!val) return;
+            var el = document.getElementById(id);
+            if (el) {
+                el.style.display = "flex";
+                if (labelId && label) {
+                    var lbl = document.getElementById(labelId);
+                    if (lbl) lbl.textContent = label;
+                }
+                var valEl = document.getElementById(id + "-val");
+                if (valEl) valEl.textContent = val;
+            }
+        }
+
+        var objLabel = isQuery ? "Query No." : isAppeal ? "Appeal No." : "Objection No.";
+        showPill("fv-ref-objno", data.ObjectionNo || data.Objection_No, "fv-ref-objno-label", objLabel);
+        showPill("fv-ref-owner", data.OwnerName || data.Owner_Name, null, null);
+        showPill("fv-ref-roll",  data.RollSource || data.RollDisplayName, null, null);
+
+        var mv = data.OldMarketValue || data.Old_Market_Value || data.MarketValue || "";
+        if (mv) {
+            var num = parseFloat(mv.toString().replace(/[^0-9.]/g, ""));
+            if (!isNaN(num) && num > 0) {
+                mv = "R " + num.toLocaleString("en-ZA", { maximumFractionDigits: 0 });
+            }
+        }
+        showPill("fv-ref-mv", mv, null, null);
+        showPill("fv-ref-cat", data.OldCategory || data.Old_Category, null, null);
+    });
+</script>
+
+<script>
+    const adminFormData = @Html.Raw(formJson);
+    const section78Data = @Html.Raw(section78Json);
+
+    function setInputValue(selector, value) {
+    if (value === null || value === undefined) return;
+
+    const elements = document.querySelectorAll(selector);
+
+    elements.forEach(function (el) {
+    if (!el) return;
+
+    if (el.type === "checkbox") {
+    el.checked =
+    value === true ||
+    value === "True" ||
+    value === "true" ||
+    value === "Yes" ||
+    value === "yes";
+    return;
+    }
+
+    if (el.type === "radio") {
+    el.checked = el.value?.toString().toLowerCase() === value?.toString().toLowerCase();
+    return;
+    }
+
+    el.value = value;
+    });
+    }
+
+    function bindByPropertyName(data) {
+    if (!data) return;
+
+    Object.keys(data).forEach(function (key) {
+    const value = data[key];
+
+    setInputValue(`[name="${key}"]`, value);
+    setInputValue(`#${key}`, value);
+    });
+    }
+
+    function bindOldFormAliases(data) {
+    if (!data) return;
+
+    const map = {
+    // Section 1 - Owner
+    OwnerName: ["#o_name", "[name='owner_name']"],
+    OwnerIdentity: ["#o_id"],
+    OwnerCompany: ["[name='Owner_Company']"],
+    OwnerAddress1: ["#o_st_1"],
+    OwnerAddress2: ["#o_st_2"],
+    OwnerAddress3: ["#o_st_3"],
+    OwnerAddress4: ["#o_st_4"],
+    OwnerAddress5: ["#o_st_5"],
+    OwnerPostal1: ["#o_po_1"],
+    OwnerPostal2: ["#o_po_2"],
+    OwnerPostal3: ["#o_po_3"],
+    OwnerPostal4: ["#o_po_4"],
+    OwnerPostal5: ["#o_po_5"],
+    OwnerHomePhone: ["#o_home"],
+    OwnerCellPhone: ["#o_cell"],
+    OwnerWorkPhone: ["#o_work"],
+    OwnerFaxPhone: ["#o_fax"],
+    OwnerEmail: ["#o_email"],
+
+    // Section 1 - Objector
+    ObjectorName: ["#objector_name"],
+    ObjectorIdentity: ["#objector_id"],
+    ObjectorCompany: ["#objector_company"],
+    ObjectorPostal1: ["#objector_postal_1"],
+    ObjectorPostal2: ["#objector_postal_2"],
+    ObjectorPostal3: ["#objector_postal_3"],
+    ObjectorPostal4: ["#objector_postal_4"],
+    ObjectorPostal5: ["#objector_postal_5"],
+    ObjectorHome: ["#objector_home"],
+    ObjectorCell: ["#objector_cell"],
+    ObjectorWork: ["#objector_work"],
+    ObjectorFax: ["#objector_fax"],
+    ObjectorEmail: ["#objector_email"],
+    ObjectorStatus: ["#objector_status"],
+
+    // Representative
+    RepresentativeName: ["#rep_name"],
+    RepPostal1: ["#rep_postal_1"],
+    RepPostal2: ["#rep_postal_2"],
+    RepPostal3: ["#rep_postal_3"],
+    RepPostal4: ["#rep_postal_4"],
+    RepPostal5: ["#rep_postal_5"],
+    RepHomePhone: ["#rep_home"],
+    RepCellPhone: ["#rep_cell"],
+    RepWorkPhone: ["#rep_work"],
+    RepFaxPhone: ["#rep_fax"],
+    RepEmail: ["#rep_email"],
+
+    // Section 2
+    PhysicalAddress: ["[name='physical_address']", "#PhysicalAddress"],
+    TownName: ["[name='Town_Name']", "#TownName"],
+    Code: ["[name='Code']", "#Code"],
+    Extent: ["[name='Extent']", "#Extent"],
+    MunicipalAccountNo: ["[name='Municipal_Account_No']", "#MunicipalAccountNo"],
+    BondHolderName: ["[name='BondHolder_Name']", "#BondHolderName"],
+    RegisteredAmount: ["[name='Registered_Amount']", "#RegisteredAmount"],
+    FullDetails: ["[name='Full_Details']", "#FullDetails"],
+    ServitudeNo: ["[name='Servitude_No']", "#ServitudeNo"],
+    AffectedArea: ["[name='Affected_Area']", "#AffectedArea"],
+    PropertyFavourOf: ["[name='Property_Favour_Of']", "#PropertyFavourOf"],
+    PropertyPurpose: ["[name='Property_Purpose']", "#PropertyPurpose"],
+    CompensationPaid: ["[name='Compensation_Paid']", "#CompensationPaid"],
+    PaymentDate: ["[name='Payment_Date']", "#PaymentDate"],
+    CompensationAmount: ["[name='Compensation_Amount']", "#CompensationAmount"],
+
+    // Section 6
+    OldPropertyDescription: ["[name='Old_Property_Description']", "#old_desc"],
+    OldCategory: ["[name='Old_Category']", "#old_cat"],
+    OldAddress: ["[name='Old_Address']", "#old_address"],
+    OldExtent: ["[name='Old_Extent']", "#old_extent"],
+    OldMarketValue: ["[name='Old_Market_Value']", "#old_mv"],
+    OldOwner: ["[name='Old_Owner']", "#old_owner"],
+
+    NewPropertyDescription: ["[name='New_Property_Description']", "#desc_in"],
+    NewCategory: ["[name='New_Category']"],
+    NewAddress: ["[name='New_Address']"],
+    NewExtent: ["[name='New_Extent']"],
+    NewMarketValue: ["[name='New_Market_Value']"],
+    NewOwner: ["[name='Owner_Name']", "[name='New_Owner']"],
+    ObjectionReasons: ["[name='Objection_Reasons']"],
+
+    Old2Category: ["[name='Old2_Category']"],
+    Old2Extent: ["[name='Old2_Extent']"],
+    Old2MarketValue: ["[name='Old2_Market_Value']"],
+    New2Category: ["[name='New2_Category']"],
+    New2Extent: ["[name='New2_Extent']"],
+    New2MarketValue: ["[name='New2_Market_Value']"],
+
+    Old3Category: ["[name='Old3_Category']"],
+    Old3Extent: ["[name='Old3_Extent']"],
+    Old3MarketValue: ["[name='Old3_Market_Value']"],
+    New3Category: ["[name='New3_Category']"],
+    New3Extent: ["[name='New3_Extent']"],
+    New3MarketValue: ["[name='New3_Market_Value']"],
+
+    // Section 7
+    SignatureName: ["#sign_obj", "[name='Signature_Name']"],
+    SignaturePicture: ["#SignatureDataUrl", "[name='Signature_Picture']"],
+    Declaration_Date: ["#signDate", "[name='Declaration_Date']"]
+    };
+
+    Object.keys(map).forEach(function (property) {
+    const value = data[property];
+
+    if (value === null || value === undefined) return;
+
+    map[property].forEach(function (selector) {
+    setInputValue(selector, value);
+    });
+    });
+
+    if (data.SignaturePicture) {
+    const image = document.getElementById("savetarget");
+    const canvas = document.getElementById("signature");
+
+    if (image) {
+    image.src = data.SignaturePicture;
+    image.hidden = false;
+    }
+
+    if (canvas) {
+    canvas.style.display = "none";
+    }
+    }
+    }
+
+    function makeAdminFormReadOnly() {
+    document.querySelectorAll("input, textarea, select").forEach(function (el) {
+    el.setAttribute("readonly", "readonly");
+    el.setAttribute("disabled", "disabled");
+    });
+
+    document.querySelectorAll("button, .btn_n, .btn_p, .btn_submit, #submitForm").forEach(function (btn) {
+    const text = btn.innerText?.toLowerCase() ?? "";
+
+    if (
+    text.includes("submit") ||
+    text.includes("next") ||
+    text.includes("previous") ||
+    text.includes("clear") ||
+    text.includes("accept")
+    ) {
+    btn.style.display = "none";
+    }
+    });
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+    bindByPropertyName(adminFormData);
+    bindOldFormAliases(adminFormData);
+    makeAdminFormReadOnly();
+    });
+</script>

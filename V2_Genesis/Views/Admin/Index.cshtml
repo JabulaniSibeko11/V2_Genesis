@@ -96,110 +96,130 @@
             <span class="adm-admin-badge">
                 <i class="fa-solid fa-shield-halved"></i> ADMIN
             </span>
-          
-
-
-
-<span class="adm-email">@Model.AdminEmail</span>
-
-@if (!string.IsNullOrWhiteSpace(_adminFullName))
-{
- 
-    <span class="adm-sap">
-        <i class="fa-solid fa-user" style="margin-right:4px;font-size:11px;"></i>
-        <strong>@_adminFullName</strong>
-        @if (!string.IsNullOrWhiteSpace(_adminPosition))
-        {
-            <span style="opacity:.55; margin: 0 4px;">·</span>
-            <span style="opacity:.75;">@_adminPosition</span>
-        }
-        <span style="opacity:.45; margin-left:8px; font-size:10px; letter-spacing:.5px;">
-            @_sapNumeric
-        </span>
-    </span>
-}
-else if (!string.IsNullOrEmpty(_sapFull))
-{
-    <span class="adm-sap">SAP: @_sapFull</span>
-}
-
+            <span class="adm-email">@Model.AdminEmail</span>
+            @if (!string.IsNullOrWhiteSpace(_adminFullName))
+            {
+                <span class="adm-sap">
+                    <i class="fa-solid fa-user" style="margin-right:3px;font-size:11px;"></i>
+                    <strong>@_adminFullName</strong>
+                    @if (!string.IsNullOrWhiteSpace(_adminPosition))
+                    {
+                        <span style="opacity:.4;margin:0 4px;">·</span>
+                        <span style="opacity:.65;">@_adminPosition</span>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(_sapNumeric))
+                    {
+                        <span style="opacity:.35;margin-left:8px;font-size:10px;letter-spacing:.5px;font-family:monospace;">
+                            @_sapNumeric
+                        </span>
+                    }
+                </span>
+            }
         </div>
         <div class="adm-topbar-right">
-            <a href="/admin/search" class="adm-topbar-btn adm-search-modal-btn">
+            <a href="/admin/search"  class="adm-topbar-btn adm-search-modal-btn">
                 <i class="fa-solid fa-magnifying-glass"></i> Search Enquiry
             </a>
-            <a href="/admin/audit" class="adm-topbar-btn adm-audit-btn">
+            <a href="/admin/audit"   class="adm-topbar-btn adm-audit-btn">
                 <i class="fa-solid fa-clock-rotate-left"></i> Audit Trail
             </a>
-             <a href="/admin/notices" class="adm-topbar-btn">
-        <i class="fa-solid fa-bell"></i> Client Notices
-    </a>
+            <a href="/admin/notices" class="adm-topbar-btn">
+                <i class="fa-solid fa-bell"></i> Client Notices
+            </a>
         </div>
     </div>
 </div>
 
+
 <!-- ── Welcome strip ──────────────────────────────────────────────── -->
 <div class="cd-welcome">
     <div class="cd-welcome-inner">
-        <div>
-     
-<h1 class="cd-welcome-name">
-    @if (!string.IsNullOrWhiteSpace(_adminFullName))
-    {
-        <span>Welcome, @_adminFullName</span>
-    }
-    else
-    {
-        <text>Admin Dashboard</text>
-    }
-    <span class="adm-badge-inline">
-        <i class="fa-solid fa-shield-halved"></i> ADMIN
-    </span>
-</h1>
-            @if (!string.IsNullOrWhiteSpace(_adminPosition))
-{
-    <p class="cd-welcome-sub" style="margin-top:2px;">
-        <i class="fa-solid fa-briefcase"
-           style="color:#e6b000;margin-right:5px;font-size:11px;"></i>
-        @_adminPosition
-        <span style="opacity:.4; margin: 0 6px;">·</span>
-        City of Johannesburg — Valuation Portal Administration
-    </p>
-}
-else
-{
-    <p class="cd-welcome-sub">
-        City of Johannesburg — Valuation Portal Administration
-    </p>
-}
+        <div style="display:flex;align-items:center;gap:18px;">
+
+            <!-- Admin icon box (teal, not gold) -->
+            <div style="width:54px;height:54px;border-radius:14px;
+                        background:rgba(54,98,109,.2);border:1.5px solid rgba(54,98,109,.4);
+                        display:flex;align-items:center;justify-content:center;
+                        font-size:22px;color:#89b7b2;flex-shrink:0;">
+                <i class="fa-solid fa-shield-halved"></i>
+            </div>
+
+            <div>
+                <!-- Eyebrow -->
+                <div style="font-size:10px;font-weight:700;letter-spacing:2.5px;
+                            text-transform:uppercase;color:#89b7b2;
+                            display:flex;align-items:center;gap:8px;margin-bottom:5px;">
+                    <span style="display:inline-block;width:18px;height:2px;
+                                 background:#36626d;border-radius:1px;"></span>
+                    Administration Panel &nbsp;·&nbsp; Valuation Services
+                </div>
+
+                <h1 class="cd-welcome-name" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                    @if (!string.IsNullOrWhiteSpace(_adminFullName))
+                    {
+                        <span>Welcome, <em style="font-style:normal;color:#e6b000;">@_adminFullName</em></span>
+                    }
+                    else
+                    {
+                        <span>Admin Dashboard</span>
+                    }
+                    <span class="adm-badge-inline">
+                        <i class="fa-solid fa-shield-halved"></i> ADMIN
+                    </span>
+                </h1>
+
+                <p class="cd-welcome-sub">
+                    @if (!string.IsNullOrWhiteSpace(_adminPosition))
+                    {
+                        <i class="fa-solid fa-briefcase" style="color:#e6b000;margin-right:5px;font-size:11px;"></i>
+                        @_adminPosition
+                        <span style="opacity:.35;margin:0 6px;">·</span>
+                    }
+                    City of Johannesburg — Valuation Portal Administration
+                </p>
+            </div>
         </div>
     </div>
 </div>
 
 <!-- ── Quick stats row ────────────────────────────────────────────── -->
-<div class="cd-stats-row">
+<div class="adm-kpi-strip">
     @foreach (var roll in Model.Rolls.Where(r => !r.IsQuery))
     {
         var rd = Model.DataFor(roll.Source);
-        <div class="cd-stat-card">
-            <div class="cd-stat-label">@roll.Short</div>
-            <div class="cd-stat-nums">
-                <span title="Linked">
-                    <i class="fa-solid fa-link"></i> @rd.LinkedCount
-                </span>
+        <div class="adm-kpi">
+            <div class="adm-kpi-label">@roll.Short</div>
+            <div class="adm-kpi-value">@rd.LinkedCount</div>
+            <div class="adm-kpi-sub">
                 @if (roll.HasObjection)
                 {
-                    <span title="Objections">
-                        <i class="fa-solid fa-file-pen"></i> @rd.ObjectedCount
-                    </span>
+                    <i class="fa-solid fa-file-pen"></i>
+                    <span>@rd.ObjectedCount obj</span>
                 }
                 @if (roll.HasAppeal)
                 {
-                    <span title="Appeals">
-                        <i class="fa-solid fa-gavel"></i> @rd.AppealsCount
-                    </span>
+                    <span style="margin-left:4px;">·</span>
+                    <i class="fa-solid fa-gavel"></i>
+                    <span>@rd.AppealsCount app</span>
                 }
             </div>
+            <div class="adm-kpi-accent"></div>
+        </div>
+    }
+    @foreach (var roll in Model.Rolls.Where(r => r.IsQuery))
+    {
+        var rd = Model.DataFor(roll.Source);
+        <div class="adm-kpi">
+            <div class="adm-kpi-label">
+                <i class="fa-solid fa-magnifying-glass-chart" style="margin-right:4px;"></i>
+                @roll.Short
+            </div>
+            <div class="adm-kpi-value">@rd.LinkedCount</div>
+            <div class="adm-kpi-sub">
+                <i class="fa-solid fa-file-magnifying-glass"></i>
+                <span>@rd.ObjectedCount queries</span>
+            </div>
+            <div class="adm-kpi-accent"></div>
         </div>
     }
 </div>
@@ -375,10 +395,25 @@ else
                                                 data-bs-toggle="dropdown">Actions</button>
                                         <ul class="dropdown-menu">
                                             <li>
-                                                <a class="dropdown-item"
-                                                   href="/Home/FormData@(roll.ControllerName)?propertyID=@item.Property_Type&objectionNo=@item.Objection_No&AppealStatus=False">
-                                                    <i class="fa-solid fa-eye"></i> View Form
-                                                </a>
+                                              @{
+    var queryRefNo = !string.IsNullOrWhiteSpace(item.Query_No)
+        ? item.Query_No
+        : item.Objection_No;
+
+    var viewQueryFormUrl =
+        "/admin/enquiry/form-view"
+        + "?referenceNo=" + Uri.EscapeDataString(queryRefNo ?? "")
+        + "&rollSource=Objection_Query"
+        + "&propertyType=" + Uri.EscapeDataString(item.Property_Type ?? "")
+        + "&appealStatus=False"
+        + "&isQuery=true";
+}
+
+<a class="dropdown-item"
+   href="@viewQueryFormUrl"
+   target="_blank">
+    <i class="fa-solid fa-eye"></i> View Query Form
+</a>
                                             </li>
                                             <li>
                                                 <a class="dropdown-item"
@@ -488,10 +523,25 @@ else
                                                     data-bs-toggle="dropdown">Actions</button>
                                             <ul class="dropdown-menu">
                                                 <li>
-                                                    <a class="dropdown-item"
-                                                       href="/Home/FormData@(roll.ControllerName)?propertyID=@item.Property_Type&objectionNo=@item.Objection_No&AppealStatus=False">
-                                                        <i class="fa-solid fa-eye"></i> View Form
-                                                    </a>
+                                                  @{
+    var queryRefNo = !string.IsNullOrWhiteSpace(item.Query_No)
+        ? item.Query_No
+        : item.Query_No ?? item.Objection_No;
+
+    var viewQueryFormUrl =
+        "/admin/enquiry/form-view"
+        + "?referenceNo=" + Uri.EscapeDataString(queryRefNo ?? "")
+        + "&rollSource=Objection_Query"
+        + "&propertyType=" + Uri.EscapeDataString(item.Property_Type ?? "")
+        + "&appealStatus=False"
+        + "&isQuery=true";
+}
+
+<a class="dropdown-item"
+   href="@viewQueryFormUrl"
+   target="_blank">
+    <i class="fa-solid fa-eye"></i> View Query Form
+</a>
                                                 </li>
                                                 <li>
                                                     <a class="dropdown-item"
@@ -650,11 +700,21 @@ else
                                                             </button>
                                                             <ul class="dropdown-menu">
                                                                 <li>
-                                                                    <a class="dropdown-item"
-                                                                           href="/Home/FormData@(roll.ControllerName)?propertyID=@item.Property_Type&objectionNo=@item.Objection_No&AppealStatus=False"
-                                                                           onclick="logAction('ViewForm', '@roll.Source', '@item.Objection_No')">
-                                                                         View Form
-                                                                    </a>
+                                                                    @{
+    var viewFormUrl =
+        "/admin/enquiry/form-view"
+        + "?referenceNo=" + Uri.EscapeDataString(item.Objection_No ?? "")
+        + "&rollSource=" + Uri.EscapeDataString(roll.Source ?? "")
+        + "&propertyType=" + Uri.EscapeDataString(item.Property_Type ?? "")
+        + "&appealStatus=False"
+        + "&isQuery=false";
+}
+
+<a class="dropdown-item"
+   href="@viewFormUrl"
+   target="_blank">
+    <i class="fa-solid fa-eye"></i> View Form
+</a>
                                                                 </li>
                                                                 <li>
                                                                   
@@ -771,11 +831,25 @@ else
                                                             </button>
                                                             <ul class="dropdown-menu">
                                                                 <li>
-                                                                    <a class="dropdown-item"
-                                                                           href="/Home/FormData@(roll.ControllerName)?propertyID=@item.Property_Type&objectionNo=@item.Objection_No&AppealStatus=True"
-                                                                           onclick="logAction('ViewForm', '@roll.Source', '@item.Objection_No')">
-                                                                         View Form
-                                                                    </a>
+                                                                   @{
+    var refNo = !string.IsNullOrWhiteSpace(item.Appeal_No)
+        ? item.Appeal_No
+        : item.Objection_No;
+
+    var viewAppealFormUrl =
+        "/admin/enquiry/form-view"
+        + "?referenceNo=" + Uri.EscapeDataString(refNo ?? "")
+        + "&rollSource=" + Uri.EscapeDataString(roll.Source ?? "")
+        + "&propertyType=" + Uri.EscapeDataString(item.Property_Type ?? "")
+        + "&appealStatus=True"
+        + "&isQuery=false";
+}
+
+<a class="dropdown-item"
+   href="@viewAppealFormUrl"
+   target="_blank">
+    <i class="fa-solid fa-eye"></i> View Appeal Form
+</a>
                                                                 </li>
 
                                                                  @if ( item.objection_Status == "App-Unallocated")

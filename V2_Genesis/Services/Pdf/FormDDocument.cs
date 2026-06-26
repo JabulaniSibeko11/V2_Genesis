@@ -2107,13 +2107,13 @@ namespace GV_Forms.Pdf
                     {
                         r.AutoItem().Text("MARKET VALUE: ").FontSize(8);
                         r.RelativeColumn().BorderBottom(1).PaddingBottom(2)
-                         .Text((string)Str(s?.Old_Market_Value))
+                         .Text((string)Rand(s?.Old_Market_Value))
                          .FontSize(8).AlignCenter();
                     });
                     row.RelativeColumn().PaddingLeft(10).Row(r =>
                     {
                         r.RelativeColumn().BorderBottom(1).PaddingBottom(2)
-                         .Text((string)Str(s?.New_Market_Value))
+                         .Text((string)Rand(s?.New_Market_Value))
                          .FontSize(8).AlignCenter();
                     });
                 });
@@ -2124,13 +2124,13 @@ namespace GV_Forms.Pdf
                     {
                         r.AutoItem().Text("MARKET VALUE 1: ").FontSize(8);
                         r.RelativeColumn().BorderBottom(1).PaddingBottom(2)
-                         .Text((string)Str(s?.Old1_Market_Value))
+                         .Text((string)Rand(s?.Old1_Market_Value))
                          .FontSize(8).AlignCenter();
                     });
                     row.RelativeColumn().PaddingLeft(10).Row(r =>
                     {
                         r.RelativeColumn().BorderBottom(1).PaddingBottom(2)
-                         .Text((string)Str(s?.New1_Market_Value))
+                         .Text((string)Rand(s?.New1_Market_Value))
                          .FontSize(8).AlignCenter();
                     });
                 });
@@ -2141,13 +2141,13 @@ namespace GV_Forms.Pdf
                     {
                         r.AutoItem().Text("MARKET VALUE 2: ").FontSize(8);
                         r.RelativeColumn().BorderBottom(1).PaddingBottom(2)
-                         .Text((string)Str(s?.Old2_Market_Value))
+                         .Text((string)Rand(s?.Old2_Market_Value))
                          .FontSize(8).AlignCenter();
                     });
                     row.RelativeColumn().PaddingLeft(10).Row(r =>
                     {
                         r.RelativeColumn().BorderBottom(1).PaddingBottom(2)
-                         .Text((string)Str(s?.New2_Market_Value))
+                         .Text((string)Rand(s?.New2_Market_Value))
                          .FontSize(8).AlignCenter();
                     });
                 });
@@ -2480,5 +2480,24 @@ namespace GV_Forms.Pdf
             return decimal.TryParse(raw, out decimal d) ? d.ToString("N2") : raw;
         }
         private static string Str(dynamic value) => (value ?? string.Empty).ToString();
+
+        private static string Rand(object? value)
+        {
+            var text = value?.ToString()?.Trim();
+
+            if (string.IsNullOrWhiteSpace(text))
+                return "";
+
+            text = text
+                .Replace("R", "", StringComparison.OrdinalIgnoreCase)
+                .Replace(",", "")
+                .Replace(" ", "")
+                .Trim();
+
+            if (!decimal.TryParse(text, out var amount))
+                return "R " + value;
+
+            return "R " + amount.ToString("N0", new System.Globalization.CultureInfo("en-ZA"));
+        }
     }
 }

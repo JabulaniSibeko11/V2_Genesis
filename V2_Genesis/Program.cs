@@ -126,6 +126,8 @@ builder.Services.AddScoped<ISection78Service, Section78Service>();
 builder.Services.AddScoped<IRebatesService, RebatesService>();
 builder.Services.AddScoped<ISubmittedFormPdfService, SubmittedFormPdfService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IAdminFormViewService, AdminFormViewService>();
+builder.Services.AddScoped<ISupportingDocumentService, SupportingDocumentService>();
 builder.Services.AddDataProtection();
 
 // ── App Pipeline ──────────────────────────────────────────────────────────────

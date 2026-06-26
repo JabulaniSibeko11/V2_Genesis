@@ -1,0 +1,1202 @@
+﻿/* ═══════════════════════════════════════════════════════════════
+   objection-form.css  — UNIFIED PREMIUM STYLING
+   Append this file (or replace existing content).
+   Covers:  ObjectionForm · ObjectionFormMulti
+            QueryForm    · QueryFormMulti
+   All scoped to #myForm where possible so nothing bleeds out.
+═══════════════════════════════════════════════════════════════ */
+
+/* ── Root tokens ─────────────────────────────────────────────── */
+:root {
+    --of-gold: #e6b000;
+    --of-gold-light: #fdf6d8;
+    --of-gold-border: rgba(230,176,0,.3);
+    --of-teal: #006570;
+    --of-teal-mid: #36626d;
+    --of-teal-deep: #1a2e35;
+    --of-white: #ffffff;
+    --of-warm: #f7f5f2;
+    --of-shadow: 0 10px 40px rgba(0,101,112,.12);
+    --of-texture: repeating-linear-gradient( 45deg,#fff 0,#fff 1px,transparent 0,transparent 50% );
+}
+
+/* ══════════════════════════════════════════════════════════════
+   1. FORM HERO BANNER (top of page)
+══════════════════════════════════════════════════════════════ */
+.obj-hero {
+    background: linear-gradient(135deg, var(--of-teal-deep), var(--of-teal));
+    border-bottom: 4px solid var(--of-gold);
+    position: relative;
+    overflow: hidden;
+    font-family: 'Poppins', sans-serif;
+}
+
+    .obj-hero::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        opacity: .04;
+        background: var(--of-texture);
+        background-size: 24px 24px;
+        pointer-events: none;
+    }
+
+.obj-hero-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 28px 28px 0;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 20px;
+    position: relative;
+    z-index: 1;
+}
+
+.obj-hero-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex: 1;
+}
+
+.obj-hero-logo {
+    width: 52px;
+    height: 52px;
+    flex-shrink: 0;
+}
+
+    .obj-hero-logo img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+
+.obj-hero-org {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,.5);
+    margin-bottom: 6px;
+}
+
+.obj-hero-title {
+    font-size: 24px;
+    font-weight: 800;
+    color: #fff;
+    margin: 0 0 5px;
+    line-height: 1.15;
+}
+
+    .obj-hero-title span {
+        color: var(--of-gold);
+    }
+
+.obj-hero-sub {
+    font-size: 13px;
+    color: rgba(255,255,255,.55);
+    margin: 0;
+}
+
+.obj-hero-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.obj-hero-type-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: var(--of-gold-border);
+    border: 1px solid var(--of-gold);
+    color: var(--of-gold);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 6px 16px;
+    border-radius: 100px;
+}
+
+.obj-hero-prop {
+    font-size: 12.5px;
+    color: rgba(255,255,255,.65);
+    background: rgba(255,255,255,.07);
+    padding: 5px 14px;
+    border-radius: 8px;
+    max-width: 340px;
+    text-align: right;
+}
+
+.obj-form-head {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 12px 28px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-top: 1px solid rgba(255,255,255,.08);
+    position: relative;
+    z-index: 1;
+}
+
+.obj-form-head-label {
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,.35);
+    white-space: nowrap;
+}
+
+.obj-form-head-title {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--of-gold);
+    letter-spacing: .3px;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   2. SECTION CARDS  (.obj-form-card)
+   Replaces the repeated inline style on every div1-div7
+══════════════════════════════════════════════════════════════ */
+.obj-form-card {
+    margin: 12px auto;
+    border-radius: 14px;
+    border: 2.5px solid var(--of-gold);
+    padding: 28px 28px 24px;
+    width: 100%;
+    max-width: 1050px;
+    background: var(--of-white);
+    box-shadow: var(--of-shadow);
+    font-family: 'Poppins', sans-serif;
+}
+
+/* Big screens — wider cards */
+@media (min-width: 1400px) {
+    .obj-form-card {
+        max-width: 1200px;
+    }
+}
+
+@media (min-width: 1920px) {
+    .obj-form-card {
+        max-width: 1400px;
+    }
+}
+
+@media (min-width: 2560px) {
+    .obj-form-card {
+        max-width: 1700px;
+    }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   3. SECTION TITLE  h4.obj-section-title
+   Replaces:  style="text-align:center;color:#006572"
+              style="text-align:center;color:#006570"
+              style="text-align:center;color:white"
+══════════════════════════════════════════════════════════════ */
+.obj-section-title {
+    text-align: center;
+    color: var(--of-teal);
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: .6px;
+    text-transform: uppercase;
+    margin: 0 0 4px;
+    line-height: 1.4;
+}
+
+    .obj-section-title strong {
+        font-weight: 800;
+    }
+
+/* ══════════════════════════════════════════════════════════════
+   4. SECTION BARS  .obj-section-bar
+   (already defined in ObjectionForm_Premium.css — keep as-is)
+   These just ensure the style is present if that file isn't loaded.
+══════════════════════════════════════════════════════════════ */
+.obj-section-bar {
+    border-left: 5px solid var(--of-gold);
+    background: linear-gradient(135deg, var(--of-teal), #00474f);
+    padding: 13px 18px;
+    margin-bottom: 20px;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 6px rgba(0,0,0,.12);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #fff;
+    font-weight: 700;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    flex-wrap: wrap;
+}
+
+.obj-bar-num {
+    background: var(--of-gold);
+    color: #1a1a1a;
+    font-size: 11px;
+    font-weight: 800;
+    padding: 3px 9px;
+    border-radius: 100px;
+    flex-shrink: 0;
+}
+
+.obj-section-bar small {
+    color: rgba(255,255,255,.55);
+    font-weight: 500;
+    text-transform: none;
+    letter-spacing: normal;
+    margin-left: 4px;
+}
+
+/* Fieldset inside a section bar (for Yes/No questions on the bar itself) */
+.obj-section-bar fieldset {
+    width: 100%;
+}
+
+.obj-section-bar label.form-label {
+    color: #fff !important;
+    font-weight: 600;
+}
+
+.obj-section-bar label.btn {
+    color: #fff !important;
+    font-weight: 600;
+    padding: 2px 8px;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   5. STEP DIVIDER
+══════════════════════════════════════════════════════════════ */
+.obj-step-divider {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 22px;
+    gap: 10px;
+}
+
+    .obj-step-divider .line {
+        height: 2px;
+        background: var(--of-gold);
+        flex: 1;
+    }
+
+    .obj-step-divider .dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: var(--of-teal);
+        border: 2px solid var(--of-gold);
+        flex-shrink: 0;
+    }
+
+/* ══════════════════════════════════════════════════════════════
+   6. ALL INPUTS / SELECTS / TEXTAREAS (scoped to #myForm)
+   Removes the need for  style="margin-top:-1px;font-family:'poppins'..."
+   on every single input element.
+══════════════════════════════════════════════════════════════ */
+#myForm .form-control,
+#myForm input[type="text"],
+#myForm input[type="tel"],
+#myForm input[type="date"],
+#myForm input[type="datetime-local"],
+#myForm input[type="file"],
+#myForm select,
+#myForm textarea {
+    font-family: 'Poppins', sans-serif;
+    font-size: 13.5px;
+    color: #1a1a1a;
+    background: #fff;
+    border: 1.5px solid #d8dde0;
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-top: 0;
+    transition: border-color .15s, box-shadow .15s;
+}
+
+    #myForm .form-control:focus,
+    #myForm input:focus,
+    #myForm select:focus,
+    #myForm textarea:focus {
+        border-color: var(--of-gold);
+        box-shadow: 0 0 0 3px rgba(230,176,0,.15);
+        outline: none;
+    }
+
+#myForm .form-label,
+#myForm label.form-label {
+    font-family: 'Poppins', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--of-teal);
+    letter-spacing: .3px;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+    display: block;
+}
+
+#myForm .text-dark.form-label,
+#myForm label.fw-semibold.text-dark {
+    color: var(--of-teal) !important;
+}
+
+#myForm input[disabled],
+#myForm input:disabled {
+    background: #f3f4f6;
+    color: #666;
+    border-color: #e2e6e8;
+    cursor: not-allowed;
+}
+/* Textarea */
+#myForm textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+/* Select arrow */
+#myForm select {
+    appearance: auto;
+    cursor: pointer;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   7. RADIO BUTTONS (styled circles)
+══════════════════════════════════════════════════════════════ */
+#myForm input[type="radio"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border: 2px solid #b9c2c6;
+    border-radius: 50%;
+    margin-right: 5px;
+    vertical-align: middle;
+    cursor: pointer;
+    position: relative;
+    transition: border-color .15s;
+    flex-shrink: 0;
+}
+
+    #myForm input[type="radio"]:hover {
+        border-color: var(--of-gold);
+    }
+
+    #myForm input[type="radio"]:checked {
+        border-color: var(--of-teal);
+        background: var(--of-teal);
+    }
+
+        #myForm input[type="radio"]:checked::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--of-gold);
+            transform: translate(-50%, -50%);
+        }
+/* Label wrapper for radio */
+#myForm label.btn.fw-semibold {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 8px 4px 2px;
+    border-radius: 100px;
+    font-weight: 600;
+    color: #1a1a1a;
+    transition: background .15s;
+}
+
+    #myForm label.btn.fw-semibold:hover {
+        background: var(--of-gold-light);
+    }
+
+/* ══════════════════════════════════════════════════════════════
+   8. NAVIGATION BUTTONS  (Previous / Next / Submit)
+   Replaces:  style="color:white;background-color:#006572;..."
+══════════════════════════════════════════════════════════════ */
+.obj-nav-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--of-teal);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 22px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background .15s, transform .15s;
+    margin-top: 10px;
+}
+
+    .obj-nav-btn:hover {
+        background: #004d56;
+        transform: translateY(-1px);
+        color: #fff;
+    }
+
+.obj-nav-btn-prev {
+    margin-left: 2%;
+}
+
+.obj-nav-btn-next {
+    float: right;
+    margin-right: 2%;
+}
+
+.obj-nav-btn-submit {
+    float: right;
+    margin-right: 2%;
+    background: linear-gradient(135deg, var(--of-teal), #004d56);
+    box-shadow: 0 2px 10px rgba(0,101,112,.3);
+}
+
+    .obj-nav-btn-submit:disabled,
+    .obj-nav-btn[disabled] {
+        background: #a0aeb0;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+    }
+
+    .obj-nav-btn-submit:not(:disabled):hover {
+        background: linear-gradient(135deg, #004d56, #003840);
+    }
+
+/* ══════════════════════════════════════════════════════════════
+   9. PROPERTY CARD  .obj-prop-card
+══════════════════════════════════════════════════════════════ */
+.obj-prop-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    background: linear-gradient(135deg, #fffdf5, #fff9e6);
+    border: 1.5px solid var(--of-gold);
+    border-radius: 10px;
+    padding: 14px 18px;
+    box-shadow: 0 2px 8px rgba(230,176,0,.08);
+    margin-bottom: 16px;
+}
+
+.obj-prop-icon {
+    width: 40px;
+    height: 40px;
+    background: var(--of-teal);
+    color: var(--of-gold);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 17px;
+    flex-shrink: 0;
+}
+
+.obj-prop-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--of-teal);
+    display: block;
+    margin-bottom: 2px;
+}
+
+.obj-prop-value {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1a1a1a;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   10. FORM BANNER (.obj-form-banner inside the card)
+══════════════════════════════════════════════════════════════ */
+.obj-form-banner {
+    text-align: center;
+    border-bottom: 3px solid var(--of-gold);
+    padding: 28px 20px;
+    margin-bottom: 24px;
+    background: linear-gradient(135deg, var(--of-teal), #00474f);
+    border-radius: 10px;
+    box-shadow: inset 0 0 0 1px rgba(230,176,0,.1);
+}
+
+    .obj-form-banner h1 {
+        color: #fff;
+        font-size: 20px;
+        font-weight: 700;
+        margin: 0 0 8px;
+        line-height: 1.4;
+        font-family: 'Poppins', sans-serif;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+        .obj-form-banner h1 span {
+            color: var(--of-gold);
+        }
+
+    .obj-form-banner h2 {
+        color: var(--of-gold);
+        font-size: 14px;
+        font-weight: 600;
+        margin: 0;
+        font-family: 'Poppins', sans-serif;
+    }
+
+    .obj-form-banner .obj-form-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        background: rgba(230,176,0,.15);
+        border: 1px solid rgba(230,176,0,.4);
+        color: var(--of-gold);
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        padding: 5px 14px;
+        border-radius: 100px;
+        margin-bottom: 12px;
+    }
+
+/* ══════════════════════════════════════════════════════════════
+   11. ALERT / INSTRUCTION BOXES
+══════════════════════════════════════════════════════════════ */
+.alert-notice {
+    background: linear-gradient(135deg, #fff9e6, #fffdf5);
+    border: 1.5px solid var(--of-gold);
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin-bottom: 18px;
+}
+
+.alert-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.alert-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--of-teal);
+    margin: 0;
+}
+
+.instruction-box p {
+    font-size: 13px;
+    color: #5a5a5a;
+    margin: 4px 0;
+}
+
+.bullet {
+    color: var(--of-gold);
+    font-weight: 800;
+    margin-right: 6px;
+}
+
+.warning-box {
+    background: rgba(220,38,38,.05);
+    border-left: 3px solid #dc2626;
+    border-radius: 0 6px 6px 0;
+    padding: 10px 14px;
+    margin-top: 10px;
+}
+
+.warning-icon {
+    margin-right: 6px;
+}
+
+.highlight {
+    color: #dc2626;
+    font-weight: 700;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   12. SECTION 7 — DECLARATION
+══════════════════════════════════════════════════════════════ */
+.obj-legal-box {
+    background: #f8f9fa;
+    border: 1.5px solid var(--of-gold);
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-bottom: 18px;
+}
+
+    .obj-legal-box h6 {
+        font-family: 'Poppins', sans-serif;
+        color: var(--of-teal);
+        font-weight: 600;
+        font-size: 12.5px;
+        line-height: 1.8;
+        margin: 0;
+        text-align: justify;
+    }
+
+.obj-declaration-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    color: var(--of-teal);
+    font-weight: 600;
+    font-size: 14px;
+    background: #fffdf5;
+    border: 1.5px solid var(--of-gold);
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin-bottom: 18px;
+}
+
+    .obj-declaration-row input#sign_obj {
+        border: 1.5px solid var(--of-teal);
+        border-radius: 6px;
+        padding: 8px 14px;
+        font-family: 'Poppins', sans-serif;
+        background: #fff;
+        font-weight: 700;
+        min-width: 200px;
+        flex: 1;
+    }
+
+        .obj-declaration-row input#sign_obj:focus {
+            border-color: var(--of-gold);
+            box-shadow: 0 0 0 3px rgba(230,176,0,.15);
+            outline: none;
+        }
+
+.obj-signature-card {
+    background: #f8f9fa;
+    border: 1.5px solid var(--of-teal);
+    border-radius: 10px;
+    padding: 20px;
+    margin-top: 4px;
+}
+
+.obj-signature-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Poppins', sans-serif;
+    color: var(--of-teal);
+    font-weight: 800;
+    font-size: 13.5px;
+    letter-spacing: .5px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+}
+
+    .obj-signature-label .req {
+        color: #dc2626;
+    }
+
+#signature {
+    width: 100%;
+    max-width: 500px;
+    height: auto;
+    aspect-ratio: 500/200;
+    border: 2px solid var(--of-teal);
+    background: #fff;
+    border-radius: 8px;
+    display: block;
+    touch-action: none;
+}
+
+.obj-signature-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 14px;
+    justify-content: center;
+}
+
+.obj-sig-btn {
+    flex: 1;
+    min-width: 140px;
+    max-width: 200px;
+    color: #fff;
+    background: var(--of-teal);
+    border: 2px solid var(--of-gold);
+    padding: 10px 18px;
+    font-size: 13px;
+    font-weight: 700;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: 'Poppins', sans-serif;
+    white-space: nowrap;
+    transition: background .2s, transform .2s;
+}
+
+    .obj-sig-btn:hover {
+        background: #004d56;
+        transform: translateY(-2px);
+    }
+
+.obj-sig-btn-accept {
+    background: #1a4731;
+    border-color: var(--of-teal-mid);
+}
+
+    .obj-sig-btn-accept:hover {
+        background: #14391f;
+    }
+
+/* ══════════════════════════════════════════════════════════════
+   13. FILE UPLOADS
+══════════════════════════════════════════════════════════════ */
+#myForm input[type="file"] {
+    width: 100%;
+    padding: 10px;
+    border: 2px dashed var(--of-teal) !important;
+    border-radius: 8px;
+    background: #f8fbfb;
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    color: #555;
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+}
+
+    #myForm input[type="file"]:hover {
+        border-color: var(--of-gold) !important;
+        background: #fffdf5;
+    }
+
+    #myForm input[type="file"]::file-selector-button {
+        background: var(--of-teal);
+        color: var(--of-gold);
+        border: none;
+        border-radius: 6px;
+        padding: 7px 14px;
+        font-family: 'Poppins', sans-serif;
+        font-size: 12px;
+        font-weight: 700;
+        margin-right: 12px;
+        cursor: pointer;
+        transition: background .15s;
+    }
+
+        #myForm input[type="file"]::file-selector-button:hover {
+            background: #004d56;
+        }
+
+/* ══════════════════════════════════════════════════════════════
+   14. SUBMIT LOADER OVERLAY
+══════════════════════════════════════════════════════════════ */
+.obj-loader-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(26,46,53,.82);
+    backdrop-filter: blur(2px);
+    z-index: 99999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 20px;
+    font-family: 'Poppins', sans-serif;
+}
+
+    .obj-loader-overlay.show {
+        display: flex;
+    }
+
+.obj-loader-spinner {
+    width: 54px;
+    height: 54px;
+    border: 5px solid rgba(230,176,0,.2);
+    border-top-color: var(--of-gold);
+    border-radius: 50%;
+    animation: of-spin .9s linear infinite;
+}
+
+@keyframes of-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.obj-loader-text {
+    color: #fff;
+    font-size: 15px;
+    font-weight: 600;
+    text-align: center;
+    max-width: 320px;
+    line-height: 1.5;
+}
+
+    .obj-loader-text strong {
+        color: var(--of-gold);
+        display: block;
+        font-size: 17px;
+        margin-bottom: 6px;
+    }
+
+/* ══════════════════════════════════════════════════════════════
+   15a. WIDTH FIX
+   The outer banner/prop-desc wrappers use display:flex;justify-content:center
+   with a hard width:1050px child — match them to .obj-form-card width.
+   These are the two divs ABOVE the section cards.
+══════════════════════════════════════════════════════════════ */
+
+/* The centering wrapper divs that hold the first two cards */
+#myForm > div[style*="justify-content: center"],
+#myForm > div[style*="justify-content:center"] {
+    display: flex;
+    justify-content: center;
+    padding: 0 12px; /* matches the body padding so edges align */
+    box-sizing: border-box;
+    width: 100%;
+}
+
+    /* The banner card (first div inside the centering wrapper) */
+    #myForm > div[style*="justify-content: center"] > div:first-child,
+    #myForm > div[style*="justify-content:center"] > div:first-child {
+        width: 100% !important;
+        max-width: 1050px !important;
+    }
+
+/* Big screen overrides — keep in sync with .obj-form-card */
+@media (min-width: 1400px) {
+    #myForm > div[style*="justify-content: center"] > div:first-child,
+    #myForm > div[style*="justify-content:center"] > div:first-child {
+        max-width: 1200px !important;
+    }
+}
+
+@media (min-width: 1920px) {
+    #myForm > div[style*="justify-content: center"] > div:first-child,
+    #myForm > div[style*="justify-content:center"] > div:first-child {
+        max-width: 1400px !important;
+    }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   15b. RADIO BUTTONS — force horizontal layout
+   The d-flex fieldsets make the group horizontal but the
+   individual Yes/No labels were stacking. Fix:
+══════════════════════════════════════════════════════════════ */
+
+/* Every radio group row */
+#myForm .d-flex fieldset,
+#myForm .col-md-3 fieldset,
+#myForm .col-md-4 fieldset,
+#myForm .col-md-5 fieldset,
+#myForm .col-md-6 fieldset {
+    display: flex;
+    flex-direction: column; /* label on top, options below */
+}
+
+    /* The Yes / No / Good / Average options sit in a row */
+    #myForm .d-flex fieldset > span,
+    #myForm .col-md-3 fieldset > span,
+    #myForm .col-md-4 fieldset > span,
+    #myForm .col-md-5 fieldset > span,
+    #myForm .col-md-6 fieldset > span {
+        display: inline-flex;
+        align-items: center;
+    }
+
+/* Wrap all the radio spans in a flex row */
+#myForm fieldset > .form-label + span,
+#myForm fieldset > label.form-label + span {
+    display: inline-flex;
+    align-items: center;
+}
+
+/* The key fix: the label.btn elements must sit side by side */
+#myForm label.btn.px-0 {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 10px !important;
+    margin-right: 6px;
+    white-space: nowrap;
+    border-radius: 100px;
+    font-weight: 600;
+    color: #1a1a1a;
+    transition: background .15s;
+}
+
+    #myForm label.btn.px-0:hover {
+        background: var(--of-gold-light);
+    }
+
+/* Make the entire radio row horizontal */
+#myForm fieldset {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 8px;
+}
+
+    #myForm fieldset > .form-label,
+    #myForm fieldset > label.form-label {
+        width: 100%; /* label takes full width, options wrap below */
+        margin-bottom: 4px;
+    }
+/* Inline variant used in section bars */
+#myForm .obj-section-bar fieldset {
+    flex-direction: column;
+}
+
+    #myForm .obj-section-bar fieldset .d-flex {
+        flex-direction: row;
+        gap: 12px;
+    }
+
+/* ══════════════════════════════════════════════════════════════
+   15c. PROPERTY DESCRIPTION CARD — premium pill style
+══════════════════════════════════════════════════════════════ */
+.obj-prop-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: linear-gradient(135deg, #fffdf5, #fff9e6);
+    border: 2px solid var(--of-gold);
+    border-radius: 12px;
+    padding: 16px 20px;
+    box-shadow: 0 3px 14px rgba(230,176,0,.1);
+    max-width: 560px; /* keeps it as a contained "badge" not full-width */
+    margin: 8px 0 4px;
+}
+
+.obj-prop-icon {
+    width: 44px;
+    height: 44px;
+    background: var(--of-teal);
+    color: var(--of-gold);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(0,101,112,.2);
+}
+
+.obj-prop-label {
+    font-size: 9.5px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--of-teal);
+    display: block;
+    margin-bottom: 3px;
+}
+
+.obj-prop-value {
+    font-size: 15px;
+    font-weight: 800;
+    color: #1a1a1a;
+    line-height: 1.3;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   15. RESPONSIVE
+══════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+    .obj-form-card {
+        padding: 18px 16px;
+    }
+
+    .obj-hero-inner {
+        padding: 20px 16px 0;
+    }
+
+    .obj-hero-right {
+        display: none;
+    }
+
+    .obj-hero-title {
+        font-size: 19px;
+    }
+}
+
+@media (max-width: 480px) {
+    .obj-section-bar {
+        padding: 10px 12px;
+        font-size: 12.5px;
+    }
+
+    .obj-form-banner {
+        padding: 20px 14px;
+    }
+
+        .obj-form-banner h1 {
+            font-size: 16px;
+        }
+
+    .obj-nav-btn-next, .obj-nav-btn-submit {
+        float: none;
+        display: block;
+        width: calc(100% - 4%);
+        margin: 8px 2%;
+    }
+
+    .obj-nav-btn-prev {
+        display: block;
+        width: calc(100% - 4%);
+    }
+}
+/* ── Property header card (merged title + property pill) ──── */
+.obj-prop-header-card {
+    background: linear-gradient(135deg, #fffdf5, #fff9e6);
+    border: 2px solid var(--of-gold);
+    border-radius: 12px;
+    padding: 22px 24px 18px;
+    margin-bottom: 24px;
+    box-shadow: 0 3px 14px rgba(230,176,0,.1);
+}
+
+.obj-prop-header-eyebrow {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--of-teal);
+    opacity: .7;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 8px;
+}
+
+    .obj-prop-header-eyebrow i {
+        color: var(--of-gold);
+    }
+
+.obj-prop-header-title {
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--of-teal);
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    margin: 0 0 6px;
+    line-height: 1.4;
+}
+
+    .obj-prop-header-title span {
+        color: var(--of-gold);
+    }
+
+.obj-prop-header-sub {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--of-teal);
+    opacity: .65;
+    margin: 0 0 16px;
+    letter-spacing: .3px;
+}
+/* Property pill inside the card */
+.obj-prop-header-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    background: #fff;
+    border: 1.5px solid var(--of-gold);
+    border-radius: 10px;
+    padding: 12px 16px;
+    box-shadow: 0 2px 8px rgba(230,176,0,.08);
+}
+
+    .obj-prop-header-pill .obj-prop-icon {
+        width: 38px;
+        height: 38px;
+        font-size: 16px;
+    }
+
+    .obj-prop-header-pill .obj-prop-label {
+        font-size: 9px;
+        letter-spacing: 2px;
+    }
+
+    .obj-prop-header-pill .obj-prop-value {
+        font-size: 14px;
+        font-weight: 800;
+    }
+/* ── ID Number / Passport Number radio row ───────────────── */
+#myForm .form-group {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+    margin-bottom: 8px;
+}
+
+    #myForm .form-group label.form-label {
+        width: auto !important; /* override the 100% width rule */
+        margin-bottom: 0 !important;
+        white-space: nowrap;
+    }
+
+    #myForm .form-group input[type="radio"] {
+        margin-right: 4px;
+        flex-shrink: 0;
+    }
+/* ── ID / Passport radio row ─────────────────────────────── */
+#myForm .col-sm-8 .form-group {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px 16px;
+    margin-bottom: 10px;
+}
+
+    #myForm .col-sm-8 .form-group label.form-label {
+        width: auto !important;
+        margin: 0 !important;
+        white-space: nowrap;
+    }
+
+    #myForm .col-sm-8 .form-group input[type="radio"] {
+        margin: 0 4px 0 0;
+    }
+
+/* ── form-floating — fix label overlapping the value ─────── */
+#myForm .form-floating {
+    position: relative;
+    margin-bottom: 10px;
+}
+
+    #myForm .form-floating > .form-control {
+        padding-top: 22px !important;
+        padding-bottom: 6px !important;
+        height: auto !important;
+        min-height: 52px;
+    }
+
+    #myForm .form-floating > label {
+        position: absolute;
+        top: 6px;
+        left: 14px;
+        font-size: 10px !important;
+        font-weight: 700 !important;
+        color: var(--of-teal) !important;
+        text-transform: uppercase;
+        letter-spacing: .8px;
+        pointer-events: none;
+        margin: 0 !important;
+        width: auto !important;
+        padding: 0 !important;
+        line-height: 1;
+        opacity: 1 !important;
+        transform: none !important;
+    }

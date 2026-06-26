@@ -365,5 +365,23 @@ namespace GV_Forms.Pdf
                 });
             });
         }
+        private static string Rand(object? value)
+        {
+            var text = value?.ToString()?.Trim();
+
+            if (string.IsNullOrWhiteSpace(text))
+                return "";
+
+            text = text
+                .Replace("R", "", StringComparison.OrdinalIgnoreCase)
+                .Replace(",", "")
+                .Replace(" ", "")
+                .Trim();
+
+            if (!decimal.TryParse(text, out var amount))
+                return "R " + value;
+
+            return "R " + amount.ToString("N0", new System.Globalization.CultureInfo("en-ZA"));
+        }
     }
 }

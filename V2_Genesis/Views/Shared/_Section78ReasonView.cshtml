@@ -1,0 +1,78 @@
+﻿@using Microsoft.AspNetCore.Html
+@model V2_Genesis.Models.ViewModels.Section78FormViewModel
+
+<div id="section78_1" style="display:flex;justify-content:center;">
+    <div class="div781" style="margin-top:12px;border-radius:25px;border:2px solid #C69E63;padding:20px;width:1050px;">
+
+        <div style="border-left:5px solid #e6b000;background-color:#006572;padding:12px 15px;margin-bottom:20px;box-shadow:0 2px 4px rgba(0,0,0,0.1);">
+            <span style="font-weight:bold;font-size:16px;color:white;text-transform:uppercase;letter-spacing:0.5px;">
+                SELECTED REASON FOR THE SUPPLEMENTARY REQUEST
+            </span>
+        </div>
+
+        <div style="overflow-x:auto;margin-bottom:30px;">
+            <table style="width:100%;border-collapse:collapse;border:2px solid #e6b000;border-radius:10px;overflow:hidden;box-shadow:0 2px 10px rgba(0,101,112,0.1);">
+                <thead>
+                    <tr style="background:#e6b000;">
+                        <th style="padding:15px;text-align:left;font-weight:600;font-size:14px;color:white;text-transform:uppercase;letter-spacing:0.5px;border-right:2px solid #e6b000;width:60px;">
+                            Section 78
+                        </th>
+                        <th colspan="2" style="padding:15px;text-align:left;font-weight:600;font-size:14px;color:white;text-transform:uppercase;letter-spacing:0.5px;">
+                            Supplementary valuations
+                        </th>
+                    </tr>
+                    <tr style="background:#fff3cd;">
+                        <td colspan="3" style="padding:15px;font-size:14px;color:#333;font-weight:500;border-top:2px solid #e6b000;">
+                            (1) A municipality must, whenever necessary, cause a supplementary valuation to be made in respect of any rate-able property.
+                        </td>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @RenderOption("A", "incorrectly omitted from the valuation roll;", Model.Option_A)
+                    @RenderOption("B", "included in a municipality after the last general valuation;", Model.Option_B)
+                    @RenderOption("C", "subdivided or consolidated after the last general valuation;", Model.Option_C)
+                    @RenderOption("D", "of which the market value has substantially increased or decreased for any reason after the last general valuation;", Model.Option_D)
+                    @RenderOption("E", "substantially incorrectly valued during the last general valuation;", Model.Option_E)
+                    @RenderOption("F", "that must be revalued for any other exceptional reason.", Model.Option_F)
+                    @RenderOption("G", "of which the category has changed;", Model.Option_G)
+                    @RenderOption("H", "the value of which was incorrectly recorded in the valuation roll as a result of a clerical or typing error.", Model.Option_H)
+                </tbody>
+            </table>
+        </div>
+
+        <div style="border-left:5px solid #e6b000;background-color:#006572;padding:12px 15px;margin-bottom:20px;box-shadow:0 2px 4px rgba(0,0,0,0.1);">
+            <span style="font-weight:bold;font-size:16px;color:white;text-transform:uppercase;letter-spacing:0.5px;">
+                Reasons/Motivation why above supplementary is to be done
+            </span>
+        </div>
+
+        <textarea class="form-control"
+                  rows="8"
+                  readonly
+                  disabled>@Model.Motivation_for_Supp_Request</textarea>
+    </div>
+</div>
+
+@functions {
+    IHtmlContent RenderOption(string letter, string description, bool selected)
+    {
+        var checkedText = selected ? "checked" : "";
+
+        var html = $@"
+<tr style='border-bottom:2px solid #e6b000;'>
+    <td style='padding:15px;font-size:14px;color:#006570;font-weight:700;text-align:center;border-right:2px solid #e6b000;width:60px;'>
+        {letter}
+    </td>
+    <td style='padding:15px;font-size:14px;color:#333;font-weight:500;border-right:2px solid #e6b000;'>
+        {description}
+    </td>
+    <td style='padding:15px;text-align:center;width:80px;'>
+        <input type='checkbox' disabled {checkedText}
+               style='width:20px;height:20px;accent-color:#006570;' />
+    </td>
+</tr>";
+
+        return new HtmlString(html);
+    }
+}

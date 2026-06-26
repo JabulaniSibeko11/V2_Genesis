@@ -437,3 +437,85 @@
             white-space: nowrap;
         }
 
+.dp-doc-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.dp-doc-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border: 1px solid rgba(0, 101, 112, .18);
+    background: #ffffff;
+    border-radius: 10px;
+}
+
+.dp-doc-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 101, 112, .08);
+    color: #006572;
+    flex-shrink: 0;
+}
+
+.dp-doc-main {
+    flex: 1;
+    min-width: 0;
+}
+
+.dp-doc-name {
+    color: #006572;
+    font-weight: 800;
+    text-decoration: none;
+    word-break: break-word;
+}
+
+    .dp-doc-name:hover {
+        text-decoration: underline;
+    }
+
+.dp-doc-meta {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-top: 3px;
+    font-size: 12px;
+    color: #777;
+}
+
+.dp-doc-empty {
+    padding: 14px;
+    background: #f8f9fa;
+    border: 1px dashed #ccc;
+    border-radius: 10px;
+    color: #666;
+}
+
+.dp-add-doc-box {
+    margin-top: 18px;
+    padding: 16px;
+    border: 2px solid #e6b000;
+    border-radius: 12px;
+    background: #fffaf0;
+}
+
+.dp-add-doc-message {
+    margin-bottom: 12px;
+    color: #333;
+}
+
+.dp-doc-limit {
+    margin-top: 16px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    background: #f2f2f2;
+    color: #555;
+    font-weight: 700;
+}

@@ -1347,12 +1347,12 @@ namespace GV_Forms.Pdf
                     {
                         r.AutoItem().Text("MARKET VALUE: ").FontSize(8);
                         //r.RelativeColumn().BorderBottom(1).PaddingBottom(2).Text(StrD(s?.Old_Market_Value)).FontSize(8).AlignCenter();
-                        r.RelativeColumn().BorderBottom(1).PaddingBottom(2).Text((string)Str(s?.Old_Market_Value)).FontSize(8).AlignCenter();
+                        r.RelativeColumn().BorderBottom(1).PaddingBottom(2).Text((string)Rand(s?.Old_Market_Value)).FontSize(8).AlignCenter();
                     });
                     row.RelativeColumn().PaddingLeft(10).Row(r =>
                     {
                         //r.RelativeColumn().BorderBottom(1).PaddingBottom(2).Text(StrD(s?.New_Market_Value)).FontSize(8).AlignCenter();
-                        r.RelativeColumn().BorderBottom(1).PaddingBottom(2).Text((string)Str(s?.New_Market_Value)).FontSize(8).AlignCenter();
+                        r.RelativeColumn().BorderBottom(1).PaddingBottom(2).Text((string)Rand(s?.New_Market_Value)).FontSize(8).AlignCenter();
                     });
                 });
 
@@ -1497,7 +1497,7 @@ namespace GV_Forms.Pdf
                     row.RelativeItem(1).Row(r =>
                     {
                         r.AutoItem().Text("MARKET VALUE: ").FontSize(8);
-                        r.RelativeItem().BorderBottom(1).PaddingBottom(2).Text((string)Str(s?.MarketValue)).FontSize(8).AlignCenter();
+                        r.RelativeItem().BorderBottom(1).PaddingBottom(2).Text((string)Rand(s?.MarketValue)).FontSize(8).AlignCenter();
                     });
 
                     row.RelativeItem(2).PaddingLeft(10).Row(r =>
@@ -1684,5 +1684,23 @@ namespace GV_Forms.Pdf
         }
       
         private static string Str(dynamic value) => (value ?? string.Empty).ToString();
+        private static string Rand(object? value)
+        {
+            var text = value?.ToString()?.Trim();
+
+            if (string.IsNullOrWhiteSpace(text))
+                return "";
+
+            text = text
+                .Replace("R", "", StringComparison.OrdinalIgnoreCase)
+                .Replace(",", "")
+                .Replace(" ", "")
+                .Trim();
+
+            if (!decimal.TryParse(text, out var amount))
+                return "R " + value;
+
+            return "R " + amount.ToString("N0", new System.Globalization.CultureInfo("en-ZA"));
+        }
     }
 }

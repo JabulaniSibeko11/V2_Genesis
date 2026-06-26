@@ -1,6 +1,7 @@
 ﻿// ═══════════════════════════════════════════════════════════════
 //  Controllers/AdminController.cs  — REPLACE full file
 // ═══════════════════════════════════════════════════════════════
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -29,6 +30,7 @@ public class AdminController : Controller
     private readonly IRebatesService _rebates;
     private readonly IPropertySearchService _search;
     private readonly INoticeService _noticeService;
+    private readonly IAdminFormViewService _adminFormViewService;
     private readonly ILogger<AdminController> _logger;
 
     private static readonly Regex AdminPattern =
@@ -46,12 +48,14 @@ public class AdminController : Controller
         IRebatesService rebates,
         IPropertySearchService search,
         INoticeService noticeService,
+        IAdminFormViewService adminFormViewService,
         ILogger<AdminController> logger)
     {
         _dashboardService = dashboardService;
         _adminService = adminService;
         _audit = audit;
         _db = db;
+        _adminFormViewService = adminFormViewService;
         _rollDates = rollDatesOpts.Value;
         _announcement = announcement;
         _attributesService = attributesService;
@@ -335,6 +339,47 @@ public class AdminController : Controller
             rollSource: req.RollSource, entityRef: req.EntityRef, ipAddress: ClientIp);
         return Ok();
     }
+    [HttpGet]
+    [Authorize(Roles = "Admin")]
+    [Route("admin/enquiry/form-view")]
+    public async Task<IActionResult> FormView(
+    string referenceNo,
+    string rollSource,
+    string? propertyType,
+    string appealStatus = "False",
+    bool isQuery = false)
+    {
+        var isAppeal =
+            appealStatus.Equals("True", StringComparison.OrdinalIgnoreCase)
+            || referenceNo.StartsWith("APP", StringComparison.OrdinalIgnoreCase);
+
+        if (rollSource.Equals("Objection_Query", StringComparison.OrdinalIgnoreCase)
+            || rollSource.Equals("Query", StringComparison.OrdinalIgnoreCase)
+            || referenceNo.Contains("Que", StringComparison.OrdinalIgnoreCase)
+            || referenceNo.Contains("Review", StringComparison.OrdinalIgnoreCase))
+        {
+            isQuery = true;
+        }
+
+        var result = await _adminFormViewService.GetFormViewAsync(
+            referenceNo,
+            rollSource,
+            propertyType,
+            isAppeal,
+            isQuery);
+
+        if (!result.Success)
+        {
+            TempData["SearchError"] = result.Error;
+            return RedirectToAction("Search", "Admin");
+        }
+
+        ViewBag.IsAdminView = true;
+        ViewBag.ReadOnly = true;
+
+        return View("FormDataView", result);
+    }
 }
 
 public record AdminActionRequest(string Action, string RollSource, string EntityRef);
+

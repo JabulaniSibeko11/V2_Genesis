@@ -5,34 +5,72 @@
 
     string StatusPill(string? s) => s switch
     {
-        "Obj-Lodging"         => "<span class='cd-pill cd-pill-lodging'>Lodging</span>",
-        "Obj-Unallocated"     => "<span class='cd-pill cd-pill-pending'>Pending</span>",
-        "Obj-Inprogress"      => "<span class='cd-pill cd-pill-inprogress'>In Progress</span>",
-        "Notice-Sent"         => "<span class='cd-pill cd-pill-completed'>Notice Sent</span>",
-        "Query-Lodging"       => "<span class='cd-pill cd-pill-lodging'>Query Lodging</span>",
-        "Query-Finalized"     => "<span class='cd-pill cd-pill-completed'>Finalised</span>",
-        "App-Finalized"       => "<span class='cd-pill cd-pill-completed'>App Finalised</span>",
-        "App-Lodging"         => "<span class='cd-pill cd-pill-lodging'>App Lodging</span>",
-        _                     => $"<span class='cd-pill cd-pill-pending'>{s ?? "Unknown"}</span>"
+        "Obj-Lodging" => "<span class='cd-pill cd-pill-lodging'>Lodging</span>",
+        "Obj-Unallocated" => "<span class='cd-pill cd-pill-pending'>Pending</span>",
+        "Obj-Inprogress" => "<span class='cd-pill cd-pill-inprogress'>In Progress</span>",
+        "Obj-Pending-Approval" => "<span class='cd-pill cd-pill-inprogress'>Pending Approval</span>",
+        "Notice-Sent" => "<span class='cd-pill cd-pill-completed'>Notice Sent</span>",
+
+        "Query-Lodging" => "<span class='cd-pill cd-pill-lodging'>Query Lodging</span>",
+        "Query-Unallocated" => "<span class='cd-pill cd-pill-pending'>Query Pending</span>",
+        "Query-Inprogress" => "<span class='cd-pill cd-pill-inprogress'>Query In Progress</span>",
+        "Query-Finalized" => "<span class='cd-pill cd-pill-completed'>Query Finalised</span>",
+        "Query-Withdrawn" => "<span class='cd-pill cd-pill-rejected'>Withdrawn</span>",
+
+        "App-Lodging" => "<span class='cd-pill cd-pill-lodging'>Appeal Lodging</span>",
+        "App-Unallocated" => "<span class='cd-pill cd-pill-pending'>Appeal Pending</span>",
+        "App-Inprogress" => "<span class='cd-pill cd-pill-inprogress'>Appeal In Progress</span>",
+        "App-Finalized" => "<span class='cd-pill cd-pill-completed'>Appeal Finalised</span>",
+
+        null or "" => "<span class='cd-pill cd-pill-pending'>Unknown</span>",
+        _ => $"<span class='cd-pill cd-pill-pending'>{s}</span>"
     };
 
-    string TypeIcon(string t) => t switch
+    string TypeIcon(string? t) => t switch
     {
-        "Appeal"    => "fa-gavel",
-        "Query"     => "fa-magnifying-glass-chart",
-        _           => "fa-file-pen"
+        "Appeal" => "fa-gavel",
+        "Query" => "fa-magnifying-glass-chart",
+        "Review" => "fa-magnifying-glass",
+        _ => "fa-file-pen"
     };
 
-    string TypeColour(string t) => t switch
+    string TypeColour(string? t) => t switch
     {
         "Appeal" => "#7c3aed",
-        "Query"  => "#0ea5e9",
-        _        => "#36626d"
+        "Query" => "#0ea5e9",
+        "Review" => "#e6b000",
+        _ => "#36626d"
     };
+
+    string FormatMoney(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return "—";
+
+        var clean = value.Replace("R", "")
+                         .Replace(",", "")
+                         .Replace(" ", "")
+                         .Trim();
+
+        if (!decimal.TryParse(clean, out var amount))
+            return value;
+
+        return "R " + amount.ToString("N0", new System.Globalization.CultureInfo("en-ZA"));
+    }
+
+    string RefNo(V2_Genesis.Models.Results.Admin.AdminRefMatch m)
+    {
+        return m.ReferenceNo
+               ?? m.Objection_No
+               ?? m.Appeal_No
+               ?? m.Query_No
+               ?? m.Review_No
+               ?? "—";
+    }
 }
 
 @section Styles {
-<link href="~/css/views/clientdashboardcss.css" rel="stylesheet" asp-append-version="true"/>
+    <link href="~/css/views/clientdashboardcss.css" rel="stylesheet" asp-append-version="true" />
     <link href="~/css/views/admin-search-result.css" rel="stylesheet" asp-append-version="true" />
 }
 
@@ -40,13 +78,16 @@
     <div class="res-hero">
         <div class="res-hero-inner">
             <div>
-                <h1>Search Results</h1>
+                <h1>Admin Enquiry Search Results</h1>
                 <p>
                     @Model.SearchType search
-                    @if (!string.IsNullOrEmpty(Model.RollFilter))
-                    {<span>· @Model.RollFilter</span>}
+                    @if (!string.IsNullOrWhiteSpace(Model.RollFilter))
+                    {
+                        <span>· @Model.RollFilter</span>
+                    }
                 </p>
             </div>
+
             <a href="/admin/search" class="res-back">
                 <i class="fa-solid fa-arrow-left"></i> New Search
             </a>
@@ -55,17 +96,19 @@
 
     <div class="res-body">
 
-        
         <div class="res-context">
             <span class="res-context-type">@Model.SearchType</span>
             <span class="res-context-val">@Model.SearchInput</span>
-            @if (!string.IsNullOrEmpty(Model.RollFilter))
+
+            @if (!string.IsNullOrWhiteSpace(Model.RollFilter))
             {
                 <span class="res-context-sub">on @Model.RollFilter</span>
             }
+
             @{
-                int count = Model.RefMatches.Count + Model.PropMatches.Count;
+                var count = Model.RefMatches.Count + Model.PropMatches.Count;
             }
+
             <span class="res-count @(count == 0 ? "zero" : "")">
                 @count result@(count == 1 ? "" : "s")
             </span>
@@ -77,103 +120,173 @@
                 <i class="fa-solid fa-magnifying-glass"></i>
                 <h3>No Results Found</h3>
                 <p>
-                    No records match "<strong>@Model.SearchInput</strong>"
-                    @if (!string.IsNullOrEmpty(Model.RollFilter))
-                    {<span>on @Model.RollFilter</span>}
-                    . Try a different reference or broaden your property search.
+                    No records match "<strong>@Model.SearchInput</strong>".
+
+                    @if (!string.IsNullOrWhiteSpace(Model.RollFilter))
+                    {
+                        <span> Search was limited to <strong>@Model.RollFilter</strong>.</span>
+                    }
                 </p>
+
                 <a href="/admin/search" class="res-btn res-btn-primary" style="margin-top:16px;display:inline-flex;">
                     <i class="fa-solid fa-magnifying-glass"></i> New Search
                 </a>
             </div>
         }
 
-   
-        @foreach (var m in Model.RefMatches)
+        @if (Model.RefMatches.Any())
         {
-            <div class="res-ref-card">
-                <div class="res-ref-head">
-                    <span class="res-ref-type"
-                          style="background:@TypeColour(m.RefType);">
-                        <i class="fa-solid @TypeIcon(m.RefType)"></i>
-                        @m.RefType
-                    </span>
-                    <span class="res-ref-no">
-                        @(m.Objection_No ?? m.Appeal_No ?? m.Query_No)
-                    </span>
-                    <span class="res-ref-roll">@m.RollName</span>
-                </div>
-                <div class="res-ref-body">
-                    <div class="res-field res-field-full">
-                        <span class="res-label">Property Description</span>
-                        <span class="res-value">@(m.Property_Desc ?? "—")</span>
-                    </div>
-                    <div class="res-field">
-                        <span class="res-label">Township</span>
-                        <span class="res-value">@(m.Town_Name ?? "—")</span>
-                    </div>
-                    <div class="res-field">
-                        <span class="res-label">Category</span>
-                        <span class="res-value">@(m.Old_Category ?? "—")</span>
-                    </div>
-                    <div class="res-field">
-                        <span class="res-label">Market Value</span>
-                        <span class="res-value">@(m.Old_Market_Value ?? "—")</span>
-                    </div>
-                    <div class="res-field">
-                        <span class="res-label">Status</span>
-                        <span class="res-value">
-                            @Html.Raw(StatusPill(m.objection_Status ?? m.Appeal_Status ?? m.Query_Status))
+            foreach (var m in Model.RefMatches)
+            {
+                var referenceNo = RefNo(m);
+
+                <div class="res-ref-card">
+                    <div class="res-ref-head">
+                        <span class="res-ref-type" style="background:@TypeColour(m.RefType);">
+                            <i class="fa-solid @TypeIcon(m.RefType)"></i>
+                            @m.RefType
+                        </span>
+
+                        <span class="res-ref-no">@referenceNo</span>
+
+                        <span class="res-ref-roll">
+                            @m.RollName
+                            @if (!string.IsNullOrWhiteSpace(m.SourceTable))
+                            {
+                                <span>(@m.SourceTable)</span>
+                            }
                         </span>
                     </div>
-                    <div class="res-field">
-                        <span class="res-label">Roll</span>
-                        <span class="res-value">@m.RollName</span>
+
+                    <div class="res-ref-body">
+                        <div class="res-field res-field-full">
+                            <span class="res-label">Property Description</span>
+                            <span class="res-value">@(m.Property_Desc ?? "—")</span>
+                        </div>
+
+                        <div class="res-field">
+                            <span class="res-label">Township</span>
+                            <span class="res-value">@(m.Town_Name ?? "—")</span>
+                        </div>
+
+                        <div class="res-field">
+                            <span class="res-label">Category</span>
+                            <span class="res-value">@(m.Old_Category ?? "—")</span>
+                        </div>
+
+                        <div class="res-field">
+                            <span class="res-label">Market Value</span>
+                            <span class="res-value">@FormatMoney(m.Old_Market_Value)</span>
+                        </div>
+
+                        <div class="res-field">
+                            <span class="res-label">Current Status</span>
+                            <span class="res-value">@Html.Raw(StatusPill(m.CurrentStatus))</span>
+                        </div>
+
+                        <div class="res-field">
+                            <span class="res-label">Property Type</span>
+                            <span class="res-value">@(m.Property_Type ?? "—")</span>
+                        </div>
+
+                        <div class="res-field">
+                            <span class="res-label">Unit Key</span>
+                            <span class="res-value">@(m.Unit_key ?? "—")</span>
+                        </div>
+
+                        <div class="res-field">
+                            <span class="res-label">Valuation Key</span>
+                            <span class="res-value">@(m.Valuation_Key ?? "—")</span>
+                        </div>
+
+                        <div class="res-field">
+                            <span class="res-label">Premise ID</span>
+                            <span class="res-value">@(m.PremiseId ?? "—")</span>
+                        </div>
+
+                        <div class="res-field">
+                            <span class="res-label">Origin</span>
+                            <span class="res-value">@(m.PropertyFrom ?? m.SourceTable ?? "—")</span>
+                        </div>
+                    </div>
+
+                    <div class="res-ref-footer">
+
+                        @if (!string.IsNullOrWhiteSpace(m.Unit_key) || !string.IsNullOrWhiteSpace(m.Valuation_Key))
+                        {
+                            <a class="res-btn res-btn-primary"
+                                   href="/property/view?rollSource=@m.RollSource&unitKey=@m.Unit_key&valuationKey=@m.Valuation_Key">
+                                <i class="fa-solid fa-eye"></i> View Property
+                            </a>
+                        }
+
+                        @if (m.RefType == "Query" || m.RefType == "Review")
+                        {
+                            <a class="res-btn" style="background:#e8f3ff;color:#005da8;"
+                                   href="/Section78/Display?queryNo=@referenceNo">
+                                <i class="fa-solid fa-eye"></i> View @m.RefType
+                            </a>
+                        }
+                    </div>
+
+                    <div class="admin-notice-panel">
+                        <h4>
+                            <i class="fa-solid fa-folder-open"></i>
+                            Available Documents / Actions
+                        </h4>
+
+                        @if (m.Notices == null || !m.Notices.Any())
+                        {
+                            <div class="admin-notice-empty">
+                                No documents configured for this reference.
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="admin-notice-list">
+                                @foreach (var notice in m.Notices)
+                                {
+                                    if (notice.IsAvailable)
+                                    {
+                                        <a class="admin-notice-btn"
+                                               href="@notice.Url"
+                                               target="_blank">
+                                            <i class="fa-solid @notice.Icon"></i>
+                                            @notice.NoticeName
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <span class="admin-notice-btn disabled"
+                                              title="@notice.ReasonUnavailable">
+                                            <i class="fa-solid fa-lock"></i>
+                                            @notice.NoticeName
+                                        </span>
+                                    }
+                                }
+                            </div>
+                        }
                     </div>
                 </div>
-                <div class="res-ref-footer">
-                    @if (m.RefType == "Objection" && !string.IsNullOrEmpty(m.Unit_key))
-                    {
-                        <a class="res-btn res-btn-primary"
-                           href="/property/view?rollSource=@m.RollSource&unitKey=@m.Unit_key&valuationKey=@m.Valuation_Key">
-                            <i class="fa-solid fa-eye"></i> View Property
-                        </a>
-                        <a class="res-btn" style="background:#f0f2f5;color:#36626d;"
-                           href="/Home/FormData@(m.PropertyFrom)?propertyID=@m.Property_Type&objectionNo=@m.Objection_No&AppealStatus=False">
-                            <i class="fa-solid fa-file-pen"></i> View Objection Form
-                        </a>
-                    }
-                    @if (m.RefType == "Appeal" && !string.IsNullOrEmpty(m.Unit_key))
-                    {
-                        <a class="res-btn res-btn-primary"
-                           href="/property/view?rollSource=@m.RollSource&unitKey=@m.Unit_key&valuationKey=@m.Valuation_Key">
-                            <i class="fa-solid fa-eye"></i> View Property
-                        </a>
-                    }
-                    @if (m.RefType == "Query")
-                    {
-                        <a class="res-btn res-btn-primary"
-                           href="/Section78/Display?queryNo=@m.Query_No">
-                            <i class="fa-solid fa-eye"></i> View Query
-                        </a>
-                    }
-                </div>
-            </div>
+            }
         }
 
-      
         @if (Model.PropMatches.Any())
         {
             <div class="res-table-card">
                 <div class="res-table-head">
                     <i class="fa-solid fa-list" style="color:#e6b000;"></i>
-                    <h3>Matching Objections — @Model.PropMatches.Count result@(Model.PropMatches.Count==1?"":"s")</h3>
+                    <h3>
+                        Matching Property Cases —
+                        @Model.PropMatches.Count result@(Model.PropMatches.Count == 1 ? "" : "s")
+                    </h3>
                 </div>
+
                 <div class="table-responsive">
                     <table class="res-table" id="resTable">
                         <thead>
                             <tr>
-                                <th>Objection No.</th>
+                                <th>Reference</th>
                                 <th>Property Description</th>
                                 <th>Roll</th>
                                 <th>Township</th>
@@ -183,35 +296,40 @@
                                 <th>Options</th>
                             </tr>
                         </thead>
+
                         <tbody>
                             @foreach (var m in Model.PropMatches)
                             {
                                 <tr>
                                     <td><strong>@m.Objection_No</strong></td>
-                                    <td style="max-width:200px;word-break:break-word;">@m.Property_Desc</td>
+                                    <td style="max-width:240px;word-break:break-word;">@m.Property_Desc</td>
                                     <td><span class="res-roll-badge">@m.RollName</span></td>
                                     <td>@(m.Town_Name ?? "—")</td>
                                     <td>@(m.Old_Category ?? "—")</td>
-                                    <td>@(m.Old_Market_Value ?? "—")</td>
+                                    <td>@FormatMoney(m.Old_Market_Value)</td>
                                     <td>@Html.Raw(StatusPill(m.objection_Status))</td>
                                     <td>
                                         <div class="dropdown">
                                             <button class="cd-action-btn dropdown-toggle"
-                                                    data-bs-toggle="dropdown">Actions</button>
+                                                    data-bs-toggle="dropdown">
+                                                Actions
+                                            </button>
+
                                             <ul class="dropdown-menu">
-                                                @if (!string.IsNullOrEmpty(m.Unit_key))
+                                                @if (!string.IsNullOrWhiteSpace(m.Unit_key) || !string.IsNullOrWhiteSpace(m.Valuation_Key))
                                                 {
                                                     <li>
                                                         <a class="dropdown-item"
-                                                           href="/property/view?rollSource=@m.RollSource&unitKey=@m.Unit_key&valuationKey=@m.Valuation_Key">
+                                                               href="/property/view?rollSource=@m.RollSource&unitKey=@m.Unit_key&valuationKey=@m.Valuation_Key">
                                                             <i class="fa-solid fa-eye"></i> View Property
                                                         </a>
                                                     </li>
                                                 }
+
                                                 <li>
                                                     <a class="dropdown-item"
-                                                       href="/admin/search?refNo=@m.Objection_No">
-                                                        <i class="fa-solid fa-magnifying-glass"></i> Search This Ref
+                                                           href="/admin/search/ref?refNo=@m.Objection_No&rollSource=@m.RollSource">
+                                                        <i class="fa-solid fa-magnifying-glass"></i> Open Case Details
                                                     </a>
                                                 </li>
                                             </ul>
@@ -229,21 +347,32 @@
 </div>
 
 @section Scripts {
-<script>
-$(document).ready(function() {
-    if ($('#resTable').length && !$.fn.DataTable.isDataTable('#resTable')) {
-        $('#resTable').DataTable({
-            responsive: true,
-            dom: '<"cd-dt-top"lBf>rt<"cd-dt-bottom"ip>',
-            lengthMenu: [[10, 25, 50, -1],[10, 25, 50, 'All']],
-            buttons: [
-                { extend:'excel', className:'cd-dt-btn', text:'<i class="fa-solid fa-file-excel"></i> Excel' },
-                { extend:'pdf',   className:'cd-dt-btn', text:'<i class="fa-solid fa-file-pdf"></i> PDF' }
-            ],
-            language: { search:'_INPUT_', searchPlaceholder:'Filter results…' },
-            order: [[0,'desc']]
+    <script>
+        $(document).ready(function () {
+            if ($('#resTable').length && !$.fn.DataTable.isDataTable('#resTable')) {
+                $('#resTable').DataTable({
+                    responsive: true,
+                    dom: '<"cd-dt-top"lBf>rt<"cd-dt-bottom"ip>',
+                    lengthMenu: [[10, 25, 50, -1], [10, 25, 50, 'All']],
+                    buttons: [
+                        {
+                            extend: 'excel',
+                            className: 'cd-dt-btn',
+                            text: '<i class="fa-solid fa-file-excel"></i> Excel'
+                        },
+                        {
+                            extend: 'pdf',
+                            className: 'cd-dt-btn',
+                            text: '<i class="fa-solid fa-file-pdf"></i> PDF'
+                        }
+                    ],
+                    language: {
+                        search: '_INPUT_',
+                        searchPlaceholder: 'Filter results…'
+                    },
+                    order: [[0, 'desc']]
+                });
+            }
         });
-    }
-});
-</script>
+    </script>
 }

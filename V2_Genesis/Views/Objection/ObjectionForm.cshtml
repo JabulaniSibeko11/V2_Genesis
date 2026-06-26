@@ -181,6 +181,7 @@ TempData.Peek("PropertyFrom")?.ToString()
     };
     foreach (var _k in _keysToKeep)
         if (TempData.ContainsKey(_k)) TempData.Keep(_k);
+    
 }
 
 @functions {
@@ -217,104 +218,10 @@ TempData.Peek("PropertyFrom")?.ToString()
 <link href="~/css/views/clientdashboardcss.css" rel="stylesheet" asp-append-version="true" />
 <link href="~/css/views/property-search.css" rel="stylesheet" asp-append-version="true" />
 <link href="~/css/views/searchpropertycss.css" rel="stylesheet" asp-append-version="true" />
-
-<style>
-    .locus-modal-backdrop {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, .65);
-    z-index: 25000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-}
-
-.locus-modal {
-    width: min(620px, 94vw);
-    background: #ffffff;
-    border-radius: 16px;
-    overflow: hidden;
-    box-shadow: 0 25px 80px rgba(0, 0, 0, .35);
-    border: 2px solid #e6b000;
-    font-family: 'Poppins', Arial, sans-serif;
-}
-
-.locus-modal-header {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 20px 24px;
-    background: linear-gradient(135deg, #1a2e35, #006572);
-    color: #ffffff;
-    border-bottom: 4px solid #e6b000;
-}
-
-.locus-modal-icon {
-    width: 46px;
-    height: 46px;
-    border-radius: 12px;
-    background: rgba(230, 176, 0, .18);
-    border: 1.5px solid rgba(230, 176, 0, .6);
-    color: #e6b000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 20px;
-}
-
-.locus-modal-header h3 {
-    margin: 0;
-    font-size: 20px;
-    font-weight: 800;
-}
-
-.locus-modal-header p {
-    margin: 3px 0 0;
-    color: rgba(255, 255, 255, .7);
-    font-size: 13px;
-}
-
-.locus-modal-body {
-    padding: 24px;
-    color: #333;
-    font-size: 14px;
-}
-
-.locus-duplicate-list {
-    margin-top: 14px;
-    padding: 12px 14px;
-    background: #fff5f5;
-    border: 1px solid #f5b5b5;
-    border-radius: 10px;
-    color: #9f1d1d;
-    font-weight: 600;
-    display: none;
-}
-
-.locus-modal-footer {
-    padding: 16px 24px 22px;
-    text-align: right;
-}
-
-.locus-modal-btn {
-    border: none;
-    background: #006572;
-    color: #ffffff;
-    font-weight: 800;
-    padding: 11px 18px;
-    border-radius: 9px;
-    cursor: pointer;
-}
-
-.locus-modal-btn:hover {
-    background: #004f59;
-}
-    </style>
+<link href="~/css/views/objection-form-css.css" rel="stylesheet" asp-append-version="true" />
     }
 
-
-    <div class="obj-hero">
+<div class="obj-hero">
     <div class="obj-hero-inner">
         <div class="obj-hero-left">
             <div class="obj-hero-logo">
@@ -360,117 +267,76 @@ TempData.Peek("PropertyFrom")?.ToString()
 </div>
 
 
-
 <form id="myForm" method="post" enctype="multipart/form-data"asp-controller="Objection"asp-action="SubmitObjectionForm"asp-route-PropertyFrom="@propertyFrom">
-   
-
-    
-
-   <input type="hidden" name="PropertyFrom" value="@propertyFrom" />
+<input type="hidden" name="PropertyFrom" value="@propertyFrom" />
 <input type="hidden" name="SourceTable" value="@sourceTable" />
 <input type="hidden" name="RollSource" value="@rollSource" />
 
 
-    <div style="display:flex;justify-content: center;">
-        <div style="margin-top: 12px; border-radius: 12px; border: 3px solid #e6b000; padding: 20px; width: 1050px; background-color: #ffffff; box-shadow: 0 10px 40px rgba(0, 101, 112, 0.15);">
+    <div style="display:flex;justify-content:center;">
+        <div class="obj-form-card" style="margin-top:12px;">
 
-            @* <div style="text-align: center; margin-bottom: 25px; border-bottom: 3px solid #e6b000; padding-bottom: 20px; background-color: #006570; border-radius: 10px; padding: 30px; margin-bottom: 30px;">
-                <h1 style="color: #ffffff; font-size: 22px; font-weight: 700; margin: 0 0 15px 0; line-height: 1.4; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 1px;">
-                    LODGING OF AN OBJECTION AGAINST A MATTER REFLECTED IN OR OMITTED FROM THE
-                    <span style="color: #e6b000;">VALUATION ROLL/ SUPPLEMENTARY VALUATION ROLL</span>
-                </h1>
-                <h2 style="color: #e6b000; font-size: 16px; font-weight: 600; margin: 0; font-family: 'Poppins', sans-serif;">
-                    FOR THE PERIOD 1 JULY 2023 TO 30 JUNE 2027
-                </h2>
+            <!-- Banner -->
+            <div class="obj-form-banner">
+                <span class="obj-form-chip">
+                    <i class="fa-solid @(_isAppeal ? "fa-gavel" : "fa-file-pen")"></i>
+                    @(_isAppeal ? "Appeal Form" : "Objection Form")
+                </span>
+                @if (_isAppeal)
+                {
+                    <h1>
+                        LODGING OF AN APPEAL AGAINST A MATTER REFLECTED IN OR OMITTED FROM THE
+                        <span>VALUATION ROLL / SUPPLEMENTARY VALUATION ROLL</span>
+                    </h1>
+                }
+                else
+                {
+                    <h1>
+                        LODGING OF AN OBJECTION AGAINST A MATTER REFLECTED IN OR OMITTED FROM THE
+                        <span>VALUATION ROLL / SUPPLEMENTARY VALUATION ROLL</span>
+                    </h1>
+                }
+                <h2>FOR THE PERIOD 1 JULY 2023 TO 30 JUNE 2027</h2>
             </div>
- *@
-                             <div class="obj-form-banner">
-                                <span class="obj-form-chip">
-                                    <i class="fa-solid @(_isAppeal ? "fa-gavel" : "fa-file-pen")"></i>
-                                    @(_isAppeal ? "Appeal Form" : "Objection Form")
-                                </span>
-                                @if (_isAppeal)
-                                {
-                                    <h1>
-                                        LODGING OF AN APPEAL AGAINST A MATTER REFLECTED IN OR OMITTED FROM THE
-                                        <span>VALUATION ROLL / SUPPLEMENTARY VALUATION ROLL</span>
-                                    </h1>
-                                }
-                                else
-                                {
-                                    <h1>
-                                        LODGING OF AN OBJECTION AGAINST A MATTER REFLECTED IN OR OMITTED FROM THE
-                                        <span>VALUATION ROLL / SUPPLEMENTARY VALUATION ROLL</span>
-                                    </h1>
-                                }
-                                <h2>FOR THE PERIOD 1 JULY 2023 TO 30 JUNE 2027</h2>
-                            </div>
-            <div style="text-align: center; background-color: #fff3cd; border: 2px solid #e6b000; border-radius: 10px; padding: 20px 15px; margin-bottom: 25px; font-family: 'Poppins', sans-serif;">
-            @*     <h3 style="color: #006570; font-size: 18px; font-weight: 700; margin: 0 0 8px 0; text-transform: uppercase; font-family: 'Poppins', sans-serif; letter-spacing: 0.5px;">
-                    DESCRIPTION OF PROPERTY IN RESPECT OF WHICH THE OBJECTION IS MADE
-                </h3> *@
-                <h3 style="color: #006570; font-size: 18px; font-weight: 700; margin: 0 0 8px 0; text-transform: uppercase; font-family: 'Poppins', sans-serif; letter-spacing: 0.5px;">
-                    DESCRIPTION OF PROPERTY IN RESPECT OF WHICH THE @(_isAppeal ? "APPEAL" : "OBJECTION") IS MADE
+
+            <!-- Property header card -->
+            <div class="obj-prop-header-card">
+                <div class="obj-prop-header-eyebrow">
+                    <i class="fa-solid fa-file-pen"></i>
+                    @(_isAppeal ? "Appeal Form" : "Objection Form") &nbsp;·&nbsp; GV23 / Supplementary Valuation Roll
+                </div>
+                <h3 class="obj-prop-header-title">
+                    Description of Property in Respect of which the
+                    <span>@(_isAppeal ? "Appeal" : "Objection")</span> is Made
                 </h3>
-                <p style="color: #006570; font-size: 14px; font-weight: 600; margin: 0; letter-spacing: 0.5px; font-family: 'Poppins', sans-serif;">
-                    (COMPLETE A SEPARATE FORM FOR EACH ENTRY OBJECTED TO)
-                </p>
+                <p class="obj-prop-header-sub">(Complete a separate form for each entry objected to)</p>
+
+                <div class="obj-prop-header-pill">
+                    <div class="obj-prop-icon"><i class="fa-solid fa-location-dot"></i></div>
+                    <div>
+                        <span class="obj-prop-label">Property</span>
+                        <span class="obj-prop-value">
+                            @(TempData["AppealStatus"]?.ToString() == "True" ? messageProp : messagePD)
+                        </span>
+                    </div>
+                    <input value="@(TempData["AppealStatus"]?.ToString() == "True" ? messageProp : messagePD)"
+                           type="hidden" name="Property_Desc" id="Property_Desc" asp-for="Property_Desc" />
+                    @{
+                        TempData.Keep("AppealStatus");
+                    }
+                </div>
             </div>
 
+            <!-- Step divider -->
             <div class="obj-step-divider">
                 <div class="line"></div>
                 <div class="dot"></div>
                 <div class="line"></div>
             </div>
+
         </div>
     </div>
-
-    <div style="display:flex;justify-content: center;">
-        <div style="margin-top: 12px; border-radius: 12px; border: 3px solid #e6b000; padding: 25px; width: 1050px; background-color: #ffffff; box-shadow: 0 10px 40px rgba(0, 101, 112, 0.15);">
-
-            <span style="display: inline-block;">
-                @{
-                    TempData.Keep("CurrentFilter_PD");
-                    if (TempData["AppealStatus"].ToString() == "True")
-                    {
-                        // <div style="display: flex; align-items: center; flex-wrap: wrap; background-color: #f8f9fa; padding: 15px; border-radius: 8px; border: 2px solid #e6b000;">
-                        //     <span style="font-weight: 700; font-size: 16px; color: #006570; margin-right: 10px; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.5px;">Property Description:</span>
-                        //     <span style="font-size: 15px; color: #333; background-color: #ffffff; padding: 10px 15px; border-radius: 5px; border: 1px solid #e6b000; font-weight: 500;">@messageProp</span>
-                        //     <input value="@messageProp" type="hidden" name="Property_Desc" id="Property_Desc" asp-for="Property_Desc" />
-                        // </div>
-                        <div class="obj-prop-card">
-                            <div class="obj-prop-icon"><i class="fa-solid fa-location-dot"></i></div>
-                            <div>
-                                <span class="obj-prop-label">Property Description</span>
-                                <span class="obj-prop-value">@messageProp</span>
-                            </div>
-                            <input value="@messageProp" type="hidden" name="Property_Desc" id="Property_Desc" asp-for="Property_Desc" />
-                        </div>
-                    }
-                    else
-                    {
-                        // <div style="display: flex; align-items: center; flex-wrap: wrap; background-color: #f8f9fa; padding: 15px; border-radius: 8px; border: 2px solid #e6b000;">
-                        //     <span style="font-weight: 700; font-size: 16px; color: #006570; margin-right: 10px; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.5px;">Property Description:</span>
-                        //     <span style="font-size: 15px; color: #333; background-color: #ffffff; padding: 10px 15px; border-radius: 5px; border: 1px solid #e6b000; font-weight: 500;">@messagePD</span>
-                        //     <input value="@messagePD" type="hidden" name="Property_Desc" id="Property_Desc" asp-for="Property_Desc" />
-                        // </div>
-                        <div class="obj-prop-card">
-                            <div class="obj-prop-icon"><i class="fa-solid fa-location-dot"></i></div>
-                            <div>
-                                <span class="obj-prop-label">Property Description</span>
-                                <span class="obj-prop-value">@messageProp</span>
-                            </div>
-                            <input value="@messageProp" type="hidden" name="Property_Desc" id="Property_Desc" asp-for="Property_Desc" />
-                        </div>
-                    }
-                    TempData.Keep("AppealStatus");
-                }
-            </span>
-        </div>
-    </div>
-      @{
-          TempData.Keep("CurrentFilter_PD");
-      }
+    
     @*-----------------------------------------------------------------SECTION 1 -----------------------------------------------------------*@
 
     <input type="text" hidden onpaste="return false;" ondrop="return false;" class="form-control" id="Objector_Type" asp-for="Objector_Type" />
@@ -485,12 +351,13 @@ TempData.Peek("PropertyFrom")?.ToString()
     <input type="hidden" id="userEmail" value="@ViewData["UserEmail"]" />
     <input type="hidden" id="isAdminFlag" value="@(_isAdmin ? "true" : "false")" />
 
+
     <div id="section1" style="display:flex;justify-content: center;">
 
-       <div class="div1" style="margin-top: 12px;border-radius: 12px;border: 3px solid #e6b000;padding: 20px;width: 100%;max-width: 1050px;background-color: #ffffff;box-shadow: 0 10px 40px rgba(0, 101, 112, 0.15);font-family: 'Poppins' , sans-serif;">
-       
+     <div class="div1 obj-form-card">  
+
             <div style="width: 100%; margin: 20px 0; padding: 10px 0; position: relative;">
-                <h4 style="text-align: center;color: #006570" id="s_head"><strong>SECTION 1: OBJECTOR INFORMATION</strong></h4>
+               <h4 class="obj-section-title" id="s_head"><strong>SECTION 1: OBJECTOR INFORMATION</strong></h4>
 
                 <div class="obj-step-divider">
                     <div class="line"></div>
@@ -540,7 +407,7 @@ TempData.Peek("PropertyFrom")?.ToString()
                         <div class="col-sm-4">
                             <!--rIGHT-->
                             <label class="form-label fw-semibold  text-dark"> COMPANY OR C.C REGISTRATION NO. </label>
-                            <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="30" type="text" onpaste="return false;" ondrop="return false;" asp-for="Owner_Company" placeholder="Enter Company or C.C Registration Number">
+                            <input class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="30" type="text" onpaste="return false;" ondrop="return false;" asp-for="Owner_Company" placeholder="Enter Company or C.C Registration Number">
 
                         </div>
                     </div>
@@ -555,16 +422,16 @@ TempData.Peek("PropertyFrom")?.ToString()
                             <label class="form-label fw-semibold text-dark" for="o_st_1">
                                 STREET NUMBER <span class="text-danger" title="This field is required">*</span>
                             </label>
-                            <input style="margin-top: -1px; font-family:'poppins', sans-serif;" id="o_st_1" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="10" type="text" onpaste="return false;" ondrop="return false;" asp-for="Owner_Address_1">
+                            <input  id="o_st_1" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="10" type="text" onpaste="return false;" ondrop="return false;" asp-for="Owner_Address_1">
                         </div>
                         <div class="col-sm-9">
                             <!--LEFT-->
                             <label class="form-label fw-semibold  text-dark"> STREET NAME: <span class="text-danger" title="This field is required">*</span></label>
-                            <input style="margin-top: -1px; font-family:'poppins', sans-serif;" id="o_st_2" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Owner_Address_2">
+                            <input  id="o_st_2" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Owner_Address_2">
                         </div>
                         <div class="col-sm-12">
                             <label class="form-label fw-semibold  text-dark"> SUBURB NAME:<span class="text-danger" title="This field is required">*</span></label>
-                            <input style="margin-top: -1px; font-family:'poppins', sans-serif;" id="o_st_3" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Owner_Address_3">
+                            <input  id="o_st_3" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Owner_Address_3">
                         </div>
                     </div>
 
@@ -572,11 +439,11 @@ TempData.Peek("PropertyFrom")?.ToString()
                     <div class="row mb-2">
                         <div class="col-sm-9">
                             <label class="form-label fw-semibold  text-dark"> TOWN NAME: <span class="text-danger" title="This field is required">*</span></label>
-                            <input style="margin-top: -1px; font-family:'poppins', sans-serif;" id="o_st_4" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Owner_Address_4">
+                            <input  id="o_st_4" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Owner_Address_4">
                         </div>
                         <div class="col-sm-3">
                             <label class="form-label fw-semibold  text-dark"> POSTAL CODE: <span class="text-danger" title="This field is required">*</span></label>
-                            <input style="margin-top: -1px; font-family:'poppins', sans-serif;" id="o_st_5" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="10" type="text" onpaste="return false;" ondrop="return false;" asp-for="Owner_Address_5">
+                            <input  id="o_st_5" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="10" type="text" onpaste="return false;" ondrop="return false;" asp-for="Owner_Address_5">
                         </div>
                     </div>
 
@@ -605,28 +472,28 @@ TempData.Peek("PropertyFrom")?.ToString()
                     <div class="row mb-2">
                         <div class="col-sm-3">
                             <label class="form-label fw-semibold  text-dark"> STREET NUMBER <span style="color: red;">*</span></label>
-                            <input style="margin-top: -1px; font-family:'poppins', sans-serif;" id="o_p_1" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="10" type="text" onpaste="return false;" ondrop="return false;" asp-for="Owner_Postal_1">
+                            <input  id="o_p_1" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="10" type="text" onpaste="return false;" ondrop="return false;" asp-for="Owner_Postal_1">
 
                         </div>
                         <div class="col-sm-9">
                             <label class="form-label fw-semibold  text-dark">STREET NAME<span style="color: red;">*</span></label>
-                            <input style="margin-top: -1px; font-family:'poppins', sans-serif;" id="o_p_2" class="form-control" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Owner_Postal_2">
+                            <input  id="o_p_2" class="form-control" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Owner_Postal_2">
 
                         </div>
                     </div>
 
                     <div class="col-sm-12">
                         <label class="form-label fw-semibold  text-dark"> SUBURB NAME <span style="color: red;">*</span></label>
-                        <input style="margin-top: -1px; font-family:'poppins', sans-serif;" id="o_p_3" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Owner_Postal_3">
+                        <input  id="o_p_3" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Owner_Postal_3">
                     </div>
                     <div class="row mb-2">
                         <div class="col-sm-9">
                             <label class="form-label fw-semibold  text-dark"> TOWN NAME <span style="color: red;">*</span></label>
-                            <input style="margin-top: -1px; font-family:'poppins', sans-serif;" id="o_p_4" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Owner_Postal_4">
+                            <input  id="o_p_4" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Owner_Postal_4">
                         </div>
                         <div class="col-sm-3">
                             <label class="form-label fw-semibold  text-dark"> POSTAL CODE <span style="color: red;">*</span></label>
-                            <input style="margin-top: -1px; font-family:'poppins', sans-serif;" id="o_p_5" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="10" type="text" onpaste="return false;" ondrop="return false;" asp-for="Owner_Postal_5">
+                            <input  id="o_p_5" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="10" type="text" onpaste="return false;" ondrop="return false;" asp-for="Owner_Postal_5">
                         </div>
                     </div>
                 </div>
@@ -654,30 +521,30 @@ TempData.Peek("PropertyFrom")?.ToString()
                 <div class="row mb-2">
                     <div class="col-sm-6">
                         <label class="form-label fw-semibold  text-dark"> HOME TELEPHONE <span style="color: red;">*</span></label>
-                        <input style="margin-top: -1px; font-family:'poppins', sans-serif;" id="o_cd_1" class="form-control o_cell_no border-2 rounded shadow-sm px-4 py-2" maxlength="13" onkeypress="return onlyNumberKey(event)" type="tel" onpaste="return false;" ondrop="return false;" asp-for="Owner_Home_Phone"placeholder="0112345678">
+                        <input  id="o_cd_1" class="form-control o_cell_no border-2 rounded shadow-sm px-4 py-2" maxlength="13" onkeypress="return onlyNumberKey(event)" type="tel" onpaste="return false;" ondrop="return false;" asp-for="Owner_Home_Phone"placeholder="0112345678">
 
                     </div>
                     <div class="col-sm-6">
                         <label class="form-label fw-semibold  text-dark"> WORK TELEPHONE <span style="color: red;">*</span></label>
-                        <input style="margin-top: -1px; font-family:'poppins', sans-serif;" id="o_cd_2" class="form-control o_cell_no border-2 rounded shadow-sm px-4 py-2" maxlength="13" onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;" asp-for="Owner_Work_Phone" placeholder="0112345678">
+                        <input  id="o_cd_2" class="form-control o_cell_no border-2 rounded shadow-sm px-4 py-2" maxlength="13" onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;" asp-for="Owner_Work_Phone" placeholder="0112345678">
 
                     </div>
                 </div>
                 <div class="row mb-2">
                     <div class="col-sm-6">
                         <label class="form-label fw-semibold  text-dark"> CELLPHONE NUMBER<span style="color: red;">*</span> </label>
-                        <input style="margin-top: -1px; font-family:'poppins', sans-serif;" id="o_cd_3" class="form-control o_cell_no border-2 rounded shadow-sm px-4 py-2" maxlength="13" onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;" asp-for="Owner_Cell_Phone" placeholder="0712345678">
+                        <input  id="o_cd_3" class="form-control o_cell_no border-2 rounded shadow-sm px-4 py-2" maxlength="13" onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;" asp-for="Owner_Cell_Phone" placeholder="0712345678">
 
                     </div>
                     <div class="col-sm-6">
                         <label class="form-label fw-semibold  text-dark"> FAX </label>
-                        <input style="margin-top: -1px; font-family:'poppins', sans-serif;" id="o_cd_4" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="13" onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;" asp-for="Owner_Fax_Phone" placeholder="0112345678">
+                        <input  id="o_cd_4" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="13" onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;" asp-for="Owner_Fax_Phone" placeholder="0112345678">
                     </div>
                 </div>
 
                 <div class="col-sm-12">
                     <label class="form-label fw-semibold  text-dark">E-MAIL ADDRESS <span style="color: red;">*</span></label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" id="o_cd_5" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Owner_Email"placeholder="objection@mail.com">
+                    <input  id="o_cd_5" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Owner_Email"placeholder="objection@mail.com">
                 </div>
 
 
@@ -696,7 +563,7 @@ TempData.Peek("PropertyFrom")?.ToString()
 
                 <div class="col-sm-12">
                      <label class="form-label fw-semibold  text-dark"> <span id="TP_Name">NAME OF OBJECTOR</span>  <span style="color: red;">*</span> </label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" id="objector_name" class="form-control rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Objector_Name">
+                    <input  id="objector_name" class="form-control rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Objector_Name">
 
                 </div>
                
@@ -738,26 +605,26 @@ TempData.Peek("PropertyFrom")?.ToString()
                 <div class="row mb-2">
                     <div class="col-sm-3">
                         <label class="form-label fw-semibold  text-dark">STREET NUMBER  <span style="color: red;">*</span></label>
-                        <input style="margin-top: -1px; font-family:'poppins', sans-serif;" id="obj_p_1" class="form-control rounded shadow-sm px-4 py-2" maxlength="10" type="text" onpaste="return false;" ondrop="return false;" asp-for="Objector_Postal_1">
+                        <input  id="obj_p_1" class="form-control rounded shadow-sm px-4 py-2" maxlength="10" type="text" onpaste="return false;" ondrop="return false;" asp-for="Objector_Postal_1">
                     </div>
                      <div class="col-sm-9">
                         <label class="form-label fw-semibold  text-dark"> STREET NAME  <span style="color: red;">*</span></label>
-                        <input style="margin-top: -1px; font-family:'poppins', sans-serif;" id="obj_p_2" class="form-control rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Objector_Postal_2">
+                        <input  id="obj_p_2" class="form-control rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Objector_Postal_2">
                      </div>
                      <div class="col-sm-12">
                             <label class="form-label fw-semibold  text-dark"> SUBURB NAME  <span style="color: red;">*</span></label>
-                            <input style="margin-top: -1px; font-family:'poppins', sans-serif;" id="obj_p_3" class="form-control rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Objector_Postal_3">
+                            <input  id="obj_p_3" class="form-control rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Objector_Postal_3">
                      </div>
 
 
                      <div class="col-sm-9">
                          <label class="form-label fw-semibold  text-dark"> TOWN NAME  <span style="color: red;">*</span></label>
-                          <input style="margin-top: -1px; font-family:'poppins', sans-serif;" id="obj_p_4" class="form-control rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Objector_Postal_4">
+                          <input  id="obj_p_4" class="form-control rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Objector_Postal_4">
 
                      </div>
                      <div class="col-sm-3">
                            <label class="form-label fw-semibold  text-dark"> POSTAL CODE  <span style="color: red;">*</span></label>
-                        <input style="margin-top: -1px; font-family:'poppins', sans-serif;" id="obj_p_5" class="form-control rounded shadow-sm px-4 py-2" maxlength="10" type="text" onpaste="return false;" ondrop="return false;" asp-for="Objector_Postal_5">
+                        <input  id="obj_p_5" class="form-control rounded shadow-sm px-4 py-2" maxlength="10" type="text" onpaste="return false;" ondrop="return false;" asp-for="Objector_Postal_5">
 
                      </div>
                 </div>
@@ -787,32 +654,32 @@ TempData.Peek("PropertyFrom")?.ToString()
                 <div class="row mb-2">
                     <div class="col-sm-6">
                         <label class="form-label fw-semibold  text-dark"> HOME TELEPHONE <span style="color: red;">*</span></label>
-                        <input style="margin-top: -1px; font-family:'poppins', sans-serif;" id="obj_cd_1" class="form-control rounded shadow-sm px-4 py-2" maxlength="13" onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;" asp-for="Objector_Home" placeholder="0112345678">
+                        <input  id="obj_cd_1" class="form-control rounded shadow-sm px-4 py-2" maxlength="13" onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;" asp-for="Objector_Home" placeholder="0112345678">
 
                     </div>
                       <div class="col-sm-6">
                            <label class="form-label fw-semibold  text-dark"> WORK TELEPHONE<span style="color: red;">*</span></label>
-                             <input style="margin-top: -1px; font-family:'poppins', sans-serif;" id="obj_cd_2" class="form-control rounded shadow-sm px-4 py-2" maxlength="13"  onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;" asp-for="Objector_Work" placeholder="0112345678">
+                             <input  id="obj_cd_2" class="form-control rounded shadow-sm px-4 py-2" maxlength="13"  onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;" asp-for="Objector_Work" placeholder="0112345678">
 
                       </div>
                         <div class="col-sm-6">
                               <label class="form-label fw-semibold  text-dark"> CELL <span style="color: red;">*</span></label>
-                             <input style="margin-top: -1px; font-family:'poppins', sans-serif;" id="obj_cd_3" class="form-control rounded shadow-sm px-4 py-2" maxlength="13"  onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;" asp-for="Objector_Cell" placeholder="0712345678">
+                             <input  id="obj_cd_3" class="form-control rounded shadow-sm px-4 py-2" maxlength="13"  onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;" asp-for="Objector_Cell" placeholder="0712345678">
 
                         </div>
                           <div class="col-sm-6">
                                <label class="form-label fw-semibold  text-dark"> FAX </label>
-                        <input style="margin-top: -1px; font-family:'poppins', sans-serif;" id="obj_cd_4" class="form-control rounded shadow-sm px-4 py-2" maxlength="13" onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;" asp-for="Objector_Fax" placeholder="0112345678">
+                        <input  id="obj_cd_4" class="form-control rounded shadow-sm px-4 py-2" maxlength="13" onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;" asp-for="Objector_Fax" placeholder="0112345678">
  
                           </div>
                            <div class="col-sm-12">
                                  <label class="form-label fw-semibold  text-dark">E-MAIL ADDRESS <span style="color: red;">*</span></label>
-                        <input style="margin-top: -1px; font-family:'poppins', sans-serif;" id="obj_cd_5" class="form-control rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Objector_Email" placeholder="objection@mail.com">
+                        <input  id="obj_cd_5" class="form-control rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Objector_Email" placeholder="objection@mail.com">
 
                            </div>
                           <div class="col-sm-12">
                                <label class="form-label fw-semibold  text-dark"> <span id="tp_status">STATUS OF OBJECTOR</span><span style="color: red;">*</span><small class="text-muted fst-italic ms-2">(e.g. Tenant, Pending Purchaser, Municipality, etc)</small>  </label>
-                                 <input style="margin-top: -1px; font-family:'poppins', sans-serif;" id="objector_stat"  class="form-control rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Objector_Status">
+                                 <input  id="objector_stat"  class="form-control rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Objector_Status">
                           </div>
                 </div>
           </div>
@@ -826,7 +693,7 @@ TempData.Peek("PropertyFrom")?.ToString()
                   </div>
                  <div class="col-sm-12">
                      <label class="form-label fw-semibold  text-dark"> NAME OF REPRESENTATIVE <span style="color: red;">*</span> </label>
-                     <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control rounded shadow-sm px-4 py-2" id="rep_name" maxlength="80"  type="text" onpaste="return false;" ondrop="return false;" asp-for="Representative_name">
+                     <input  class="form-control rounded shadow-sm px-4 py-2" id="rep_name" maxlength="80"  type="text" onpaste="return false;" ondrop="return false;" asp-for="Representative_name">
 
                     </div>
                     <br></br>
@@ -841,27 +708,27 @@ TempData.Peek("PropertyFrom")?.ToString()
                   
                      <div class="col-sm-3">
                         <label class="form-label fw-semibold  text-dark"> STREET NUMBER <span style="color: red;">*</span></label>
-                      <input style="margin-top: -1px; font-family:'poppins', sans-serif;" id="rep_p_1" class="form-control rounded shadow-sm px-4 py-2" maxlength="10" type="text" onpaste="return false;" ondrop="return false;" asp-for="Rep_Postal_1">
+                      <input  id="rep_p_1" class="form-control rounded shadow-sm px-4 py-2" maxlength="10" type="text" onpaste="return false;" ondrop="return false;" asp-for="Rep_Postal_1">
 
                      </div>
                       <div class="col-sm-9">
                         <label class="form-label fw-semibold  text-dark"> STREET NAME <span style="color: red;">*</span></label>
-                      <input style="margin-top: -1px; font-family:'poppins', sans-serif;" id="rep_p_2" class="form-control rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Rep_Postal_2">
+                      <input  id="rep_p_2" class="form-control rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Rep_Postal_2">
 
                       </div>
                        <div class="col-sm-12">
                         <label class="form-label fw-semibold  text-dark"> SUBURB NAME<span style="color: red;">*</span></label>
-                        <input style="margin-top: -1px; font-family:'poppins', sans-serif;" id="rep_p_3" class="form-control rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Rep_Postal_3">
+                        <input  id="rep_p_3" class="form-control rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Rep_Postal_3">
 
                        </div>
                         <div class="col-sm-9">
                             <label class="form-label fw-semibold  text-dark"> TOWN NAME <span style="color: red;">*</span></label>
-                            <input style="margin-top: -1px; font-family:'poppins', sans-serif;" id="rep_p_4" class="form-control rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Rep_Postal_4">
+                            <input  id="rep_p_4" class="form-control rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Rep_Postal_4">
 
                         </div>
                         <div class="col-sm-3">
                                <label class="form-label fw-semibold  text-dark"> POSTAL CODE <span style="color: red;">*</span></label>
-                            <input style="margin-top: -1px; font-family:'poppins', sans-serif;" id="rep_p_5" class="form-control rounded shadow-sm px-4 py-2" maxlength="10" type="text" onpaste="return false;" ondrop="return false;" asp-for="Rep_Postal_5">
+                            <input  id="rep_p_5" class="form-control rounded shadow-sm px-4 py-2" maxlength="10" type="text" onpaste="return false;" ondrop="return false;" asp-for="Rep_Postal_5">
 
                         </div>
                 </div>
@@ -895,28 +762,28 @@ TempData.Peek("PropertyFrom")?.ToString()
                 <div class="row mb-2">
                     <div class="col-sm-6">
                          <label class="form-label fw-semibold  text-dark"> HOME TELEPHONE <span style="color: red;">*</span></label>
-                        <input style="margin-top: -1px; font-family:'poppins', sans-serif;" id="rep_cd_1" class="form-control rounded shadow-sm px-4 py-2" maxlength="13" onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;" asp-for="Rep_Home_Phone" placeholder="0112345678">
+                        <input  id="rep_cd_1" class="form-control rounded shadow-sm px-4 py-2" maxlength="13" onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;" asp-for="Rep_Home_Phone" placeholder="0112345678">
 
                     </div>
                     <div class="col-sm-6">
                     <label class="form-label fw-semibold  text-dark"> WORK TELEPHONE<span style="color: red;">*</span></label>
-                        <input style="margin-top: -1px; font-family:'poppins', sans-serif;" id="rep_cd_2" class="form-control rounded shadow-sm px-4 py-2" maxlength="13" onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;" asp-for="Rep_Work_Phone" placeholder="0112345678">
+                        <input  id="rep_cd_2" class="form-control rounded shadow-sm px-4 py-2" maxlength="13" onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;" asp-for="Rep_Work_Phone" placeholder="0112345678">
 
                     </div>
                     <div class="col-sm-6">
                           
                 <label class="form-label fw-semibold  text-dark"> CELL<span style="color: red;">*</span> </label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" id="rep_cd_3" class="form-control rounded shadow-sm px-4 py-2" maxlength="13"  onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;" asp-for="Rep_Cell_Phone"placeholder="0712345678">
+                    <input  id="rep_cd_3" class="form-control rounded shadow-sm px-4 py-2" maxlength="13"  onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;" asp-for="Rep_Cell_Phone"placeholder="0712345678">
 
                     </div>
                     <div class="col-sm-6">
                          <label class="form-label fw-semibold  text-dark"> FAX </label>
-                        <input style="margin-top: -1px; font-family:'poppins', sans-serif;" id="rep_cd_4" class="form-control rounded shadow-sm px-4 py-2" maxlength="13" onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;" asp-for="Rep_Fax_Phone" placeholder="0112345678">
+                        <input  id="rep_cd_4" class="form-control rounded shadow-sm px-4 py-2" maxlength="13" onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;" asp-for="Rep_Fax_Phone" placeholder="0112345678">
  
                     </div>
                     <div class="col-sm-12">
                          <label class="form-label fw-semibold  text-dark">E-MAIL ADDRESS <span style="color: red;">*</span></label>
-                        <input style="margin-top: -1px; font-family:'poppins', sans-serif;" id="rep_cd_5" class="form-control rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Rep_Email" placeholder="objectionRep@mail.com"><br />
+                        <input  id="rep_cd_5" class="form-control rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Rep_Email" placeholder="objectionRep@mail.com"><br />
 
                     </div>
                 </div>
@@ -946,10 +813,12 @@ TempData.Peek("PropertyFrom")?.ToString()
            
           <div>
                 <br />
-                <a href="javascript:history.back()"  id="form_back" class="form_back btn" style=" font-weight:bold;color:white;background-color:#006572;margin-left:5px;margin-top:5px;"><strong>Back</strong></a>
-            
-                <button style=" margin-right: 2%; float:right; color:white; background-color:#006572;" type="button" class="btn_n1 btn"><strong>Next</strong></button><br />
-            </div>
+            <a href="javascript:history.back()" id="form_back" class="form_back btn obj-nav-btn obj-nav-btn-prev">
+                <i class="fa-solid fa-arrow-left"></i> <strong>Back</strong>
+            </a>            
+
+<button type="button" class="btn_n1 btn obj-nav-btn obj-nav-btn-next"><strong>Next</strong></button>
+        </div>
             
         </div>
     </div>
@@ -958,13 +827,10 @@ TempData.Peek("PropertyFrom")?.ToString()
 
     <div id="section2" style="display:flex;justify-content: center;">
 
-        <div class="div2" style="margin-top: 12px;border-radius: 12px;border: 3px solid #e6b000;padding: 20px;width: 100%;max-width: 1050px;background-color: #ffffff;box-shadow: 0 10px 40px rgba(0, 101, 112, 0.15);font-family: 'Poppins' , sans-serif;">
+      <div class="div2 obj-form-card">        
+          <div style="width: 100%; margin: 20px 0; padding: 10px 0; position: relative;">
 
-          
-
-            <div style="width: 100%; margin: 20px 0; padding: 10px 0; position: relative;">
-
-                 <h4 style="text-align: center;color:#006572;"  id="s_head"><strong>SECTION 2: PROPERTY DETAILS (FOR SECTIONAL TITLES SEE SECTION 4)</strong></h4>
+                <h4 class="obj-section-title" id="s_head"><strong>SECTION 2: PROPERTY DETAILS (FOR SECTIONAL TITLES SEE SECTION 4)</strong></h4>
                     <div class="obj-step-divider">
                         <div class="line"></div>
                         <div class="dot"></div>
@@ -989,23 +855,23 @@ TempData.Peek("PropertyFrom")?.ToString()
             <div class="row mb-2">
                 <div class="col-sm-9">
                     <label class="form-label fw-semibold text-dark">TOWN NAME</label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" value="@messageTN" type="text" onpaste="return false;" ondrop="return false;" asp-for="Town_Name">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" value="@messageTN" type="text" onpaste="return false;" ondrop="return false;" asp-for="Town_Name">
                 </div>
                 <div class="col-sm-3">
                     <label class="form-label fw-semibold text-dark">POSTAL CODE<span style="color: red;">*</span> </label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" id="phy_c" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="4" onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;" asp-for="Code">
+                    <input  id="phy_c" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="4" onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;" asp-for="Code">
                 </div>
             </div>
 
             <div class="row mb-2">
                 <div class="col-sm-4">
                     <label class="form-label fw-semibold text-dark d-flex"> EXTENT OF PROPERTY<small class="text-muted fst-italic ms-2">(m²)</small> </label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" value="@messageEX" maxlength="12" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" asp-for="Extent">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" value="@messageEX" maxlength="12" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" asp-for="Extent">
 
                 </div>
                 <div class="col-sm-8">
                     <label class="form-label fw-semibold text-dark d-flex"> MUNICIPAL ACCOUNT NO<small class="text-muted fst-italic d-block">(if applicable)</small> </label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" maxlength="12" asp-for="Municipal_Account_No">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" maxlength="12" asp-for="Municipal_Account_No">
 
                 </div>
             </div>
@@ -1013,52 +879,52 @@ TempData.Peek("PropertyFrom")?.ToString()
             <div class="row mb-2">
                 <div class="col-sm-6">
                     <label class="form-label fw-semibold text-dark"> NAME OF BOND HOLDER </label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="BondHolder_Name">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="BondHolder_Name">
 
                 </div>
                 <div class="col-sm-6">
                     <label class="form-label fw-semibold text-dark d-flex"> REGISTERED AMOUNT OF BOND <small class="text-muted fst-italic d-block">(if applicable)</small></label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="12" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" asp-for="Registered_Amount">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="12" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" asp-for="Registered_Amount">
 
                 </div>
             </div>
 
             <div class="mb-4">
                 <label for="textarea" class="form-label fw-semibold text-dark">PROVIDE FULL DETAILS OF ALL SERVITUDES, ROAD PROCLAMATIONS OR OTHER ENDORSEMENTS AGAINST THE PROPERTY  <small class="text-muted fst-italic d-block">(if applicable)</small> </label>
-                <textarea class="form-control" id="textarea" maxlength="500" style="margin-top: -1px; font-family:'poppins', sans-serif;" asp-for="Full_Details" rows="4" cols="150" class="form-control border-2 shadow-sm rounded px-3 py-2" placeholder="Enter details here..."></textarea>
+                <textarea class="form-control" id="textarea" maxlength="500"  asp-for="Full_Details" rows="4" cols="150" class="form-control border-2 shadow-sm rounded px-3 py-2" placeholder="Enter details here..."></textarea>
                 <small class="form-text text-muted">Max 500 characters.</small>
             </div>
 
             <div class="row mb-2">
                 <div class="col-sm-6">
                     <label class="form-label fw-semibold text-dark"> SERVITUDE NO. </label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="20" type="text" onpaste="return false;" ondrop="return false;" asp-for="Servitude_No">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="20" type="text" onpaste="return false;" ondrop="return false;" asp-for="Servitude_No">
                 </div>
                 <div class="col-sm-6">
                     <label class="form-label fw-semibold text-dark d-flex">
                         AFFECTED AREA
                         <small class="text-muted fst-italic ms-2">(m²)</small>
                     </label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="12" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" asp-for="Affected_Area">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="12" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" asp-for="Affected_Area">
                 </div>
             </div>
 
 
             <div class="col-sm-12">
                 <label class="form-label fw-semibold text-dark"> IN FAVOUR OF </label>
-                <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Property_Favour_Of">
+                <input  class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Property_Favour_Of">
 
             </div>
 
 
             <div class="mb-4">
                 <label for="textarea" class="form-label fw-semibold text-dark">FOR WHAT PURPOSE</label>
-                <textarea class="form-control" id="textarea" maxlength="500" style="margin-top: -1px; font-family:'poppins', sans-serif;" asp-for="Property_Purpose" rows="4" cols="150" class="form-control border-2 shadow-sm rounded px-3 py-2" placeholder="Enter details here..."></textarea>
+                <textarea class="form-control" id="textarea" maxlength="500"  asp-for="Property_Purpose" rows="4" cols="150" class="form-control border-2 shadow-sm rounded px-3 py-2" placeholder="Enter details here..."></textarea>
                 <small class="form-text text-muted">Max 250 characters.</small>
             </div>
             @*    <div>
             <label class="form-label fw-semibold text-dark">FOR WHAT PURPOSE</label>
-            <textarea class="form-control" id="textarea" maxlength="250" style="margin-top: -1px; font-family:'poppins', sans-serif;" asp-for="Property_Purpose" rows="3" cols="150"></textarea>
+            <textarea class="form-control" id="textarea" maxlength="250"  asp-for="Property_Purpose" rows="3" cols="150"></textarea>
             </div> *@
 
             <div class="d-flex">
@@ -1086,11 +952,11 @@ TempData.Peek("PropertyFrom")?.ToString()
                 <div class="row mb-2">
                     <div class="col-sm-6">
                         <label class="form-label fw-semibold text-dark"> IF YES, DATE OF PAYMENT </label>
-                        <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control" type="date" asp-for="Payment_Date">
+                        <input  class="form-control" type="date" asp-for="Payment_Date">
                     </div>
                     <div class="col-sm-6">
                         <label class="form-label fw-semibold text-dark"> AMOUNT (R) </label>
-                        <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="12" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" onkeyup="reformatText(this)" id="Compensation_Amount" asp-for="Compensation_Amount">
+                        <input  class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="12" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" onkeyup="reformatText(this)" id="Compensation_Amount" asp-for="Compensation_Amount">
 
                     </div>
                 </div>
@@ -1114,10 +980,9 @@ TempData.Peek("PropertyFrom")?.ToString()
 
             <input id="Compensation_Amount" asp-for="Compensation_Amount" hidden />
             <div>
-                <button style="margin-top: 10px; margin-left: 2%;color:white; background-color:#006572;" type="button" class="btn_p2 btn"><strong>Previous</strong></button>
-
-                <button style="margin-top: 10px; margin-right: 2%; float:right;color:white; background-color:#006572;" type="button" class="btn_n2 btn"><strong>Next</strong></button><br />
-            </div>
+            <button type="button" class="btn_p2 btn obj-nav-btn obj-nav-btn-prev"><strong>Previous</strong></button>
+               <button type="button" class="btn_n2 btn obj-nav-btn obj-nav-btn-next"><strong>Next</strong></button> 
+           </div>
         </div>
 
     </div>
@@ -1126,11 +991,10 @@ TempData.Peek("PropertyFrom")?.ToString()
 
     <div id="section3-res" style="display:flex;justify-content: center;">
 
-        <div class="div3_R " style="margin-top: 12px;border-radius: 12px;border: 3px solid #e6b000;padding: 20px;width: 100%;max-width: 1050px;background-color: #ffffff;box-shadow: 0 10px 40px rgba(0, 101, 112, 0.15);font-family: 'Poppins' , sans-serif;">
-
+        <div class="div3_R obj-form-card">
           <div style="width: 100%; margin: 20px 0; padding: 10px 0; position: relative;">
 
-                <h4 style="text-align: center; color:#006572;" id="s_head"><strong>SECTION 3: DESCRIPTION OF RESIDENTIAL DWELLING (FOR SECTIONAL TITLES SEE SECTION 4)</strong></h4>
+                <h4 class="obj-section-title" id="s_head"><strong>SECTION 3: DESCRIPTION OF RESIDENTIAL DWELLING (FOR SECTIONAL TITLES SEE SECTION 4)</strong></h4>
                  <div class="obj-step-divider">
                     <div class="line"></div>
                     <div class="dot"></div>
@@ -1146,12 +1010,12 @@ TempData.Peek("PropertyFrom")?.ToString()
             <div class="row mb-2">
                 <div class="col-sm-6">
                     <label class="form-label fw-semibold text-dark"> NO. OF BEDROOMS </label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" id="s3r" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" maxlength="3" asp-for="Res_No_of_Bedroom">
+                    <input  id="s3r" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" maxlength="3" asp-for="Res_No_of_Bedroom">
                 </div>
                
                 <div class="col-sm-6">
                     <label class="form-label fw-semibold text-dark"> NO. OF BATHROOMS</label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" maxlength="3" asp-for="Res_No_of_BathRoom">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" maxlength="3" asp-for="Res_No_of_BathRoom">
                 </div>
             </div>
             <br></br>
@@ -1524,22 +1388,22 @@ TempData.Peek("PropertyFrom")?.ToString()
             <div class="row mb-2">
                 <div class="col-sm-3">
                     <label class="form-label fw-semibold text-dark"> OTHER (1) </label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" maxlength="80" asp-for="Res_Dwell_Other1">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" maxlength="80" asp-for="Res_Dwell_Other1">
 
                 </div>
                 <div class="col-sm-3">
                     <label class="form-label fw-semibold text-dark">OTHER (2)   </label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" maxlength="80" asp-for="Res_Dwell_Other2">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" maxlength="80" asp-for="Res_Dwell_Other2">
 
                 </div>
                 <div class="col-sm-3">
                     <label class="form-label fw-semibold text-dark"> OTHER (3)  </label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" maxlength="80" asp-for="Res_Dwell_Other3">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" maxlength="80" asp-for="Res_Dwell_Other3">
 
                 </div>
                 <div class="col-sm-3">
                     <label class="form-label fw-semibold text-dark">OTHER (4)  </label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" maxlength="80" asp-for="Res_Dwell_Other4">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" maxlength="80" asp-for="Res_Dwell_Other4">
 
                 </div>
             </div>
@@ -1554,18 +1418,18 @@ TempData.Peek("PropertyFrom")?.ToString()
             <div class="row mb-2">
                 <div class="col-sm-4">
                     <label class="form-label fw-semibold text-dark"> NO. OF GARAGES </label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" maxlength="3" asp-for="Res_No_of_Garages">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" maxlength="3" asp-for="Res_No_of_Garages">
 
                 </div>
                 <div class="col-sm-4">
                     <label class="form-label fw-semibold text-dark"> GRANNY FLAT/ROOMS </label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" maxlength="80" asp-for="Res_Granny_Room">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" maxlength="80" asp-for="Res_Granny_Room">
 
                 </div>
 
                 <div class="col-sm-4">
                     <label class="form-label fw-semibold text-dark"> SIZE OF MAIN DWELLING<small class="text-muted fst-italic ms-2">(m²)</small></label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" maxlength="6" asp-for="Res_Main_Dwelling_Size">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" maxlength="6" asp-for="Res_Main_Dwelling_Size">
 
                 </div>
 
@@ -1573,24 +1437,24 @@ TempData.Peek("PropertyFrom")?.ToString()
 
             <div class="col-sm-12">
                 <label class="form-label fw-semibold text-dark"> OTHER</label>
-                <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" maxlength="80" asp-for="Res_Outbuild_Other">
+                <input  class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" maxlength="80" asp-for="Res_Outbuild_Other">
 
             </div>
            
             <div class="row mb-2">
                 <div class="col-sm-4">
                     <label class="form-label fw-semibold text-dark"> SIZE OF OUTBUILDING <small class="text-muted fst-italic ms-2">(m²)</small></label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" maxlength="6" asp-for="Res_Outside_Building_Size">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" maxlength="6" asp-for="Res_Outside_Building_Size">
 
                 </div>
                 <div class="col-sm-4">
                     <label class="form-label fw-semibold text-dark"> SIZE OF OTHER BUILDING <small class="text-muted fst-italic ms-2">(m²)</small></label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" maxlength="6" asp-for="Res_Other_Building_Size">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" maxlength="6" asp-for="Res_Other_Building_Size">
 
                 </div>
                 <div class="col-sm-4">
                     <label class="form-label fw-semibold text-dark"> TOTAL SIZE OF ALL BUILDINGS <small class="text-muted fst-italic ms-2">(m²)</small></label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" maxlength="6" asp-for="Res_Total_Building_Size">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" maxlength="6" asp-for="Res_Total_Building_Size">
 
                 </div>
             </div>
@@ -1682,11 +1546,11 @@ TempData.Peek("PropertyFrom")?.ToString()
             <div class="row mb-2">
                 <div class="col-sm-6">
                     <label class="form-label fw-semibold text-dark"> OTHER (1) </label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Res_other_dwell1">
+                    <input  class="form-control" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Res_other_dwell1">
                 </div>
                 <div class="col-sm-6">
                     <label class="form-label fw-semibold text-dark"> OTHER (2) </label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Res_other_dwell2">
+                    <input  class="form-control" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Res_other_dwell2">
 
                 </div>
             </div>
@@ -1792,7 +1656,7 @@ TempData.Peek("PropertyFrom")?.ToString()
 
             <div class="col-sm-12">
                 <label class="form-label fw-semibold text-dark">  DRIVEWAY<small class="text-muted fst-italic d-block">((e.g. Bricks, pavers))</small>  </label>
-                <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="50" type="text" onpaste="return false;" ondrop="return false;" asp-for="Res_Drive_Way">
+                <input  class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="50" type="text" onpaste="return false;" ondrop="return false;" asp-for="Res_Drive_Way">
             </div>
 
 
@@ -1815,7 +1679,7 @@ TempData.Peek("PropertyFrom")?.ToString()
             </div>
 
             <label class="form-label fw-semibold text-dark"> OTHER FEATURES: </label>
-            <input style="margin-top: -1px; font-family:'poppins', sans-serif;" maxlength="80" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" asp-for="Res_Other_features">
+            <input  maxlength="80" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" asp-for="Res_Other_features">
 
             <div class="d-flex">
                 <div class="d-flex col-md-4">
@@ -1871,10 +1735,12 @@ TempData.Peek("PropertyFrom")?.ToString()
             </div>
 
             <div>
-                <button style="margin-top: 10px; margin-left: 2%;color:white; background-color:#006572;" type="button" class="btn_p3 btn"><strong>Previous</strong></button>
+               @*  <button style="margin-top: 10px; margin-left: 2%;color:white; background-color:#006572;" type="button" class="btn_p3 btn"><strong>Previous</strong></button>
 
                 <button style="margin-top: 10px; margin-right: 2%; float:right;color:white; background-color:#006572;" type="button" class="btn_n3 btn"><strong>Next</strong></button><br />
-
+          *@  
+          <button type="button" class="btn_p3 btn obj-nav-btn obj-nav-btn-prev"><strong>Previous</strong></button>
+            <button type="button" class="btn_n3 btn obj-nav-btn obj-nav-btn-next"><strong>Next</strong></button>
             </div>
         </div>
 
@@ -1884,12 +1750,11 @@ TempData.Peek("PropertyFrom")?.ToString()
     @*---------------------------------------- Section 3 Agricultural Section ---------------------------------------*@
     <div id="section3-agric" style="display:flex;justify-content: center;">
 
-        <div class="div3_A " style="margin-top: 12px;border-radius: 12px;border: 3px solid #e6b000;padding: 20px;width: 100%;max-width: 1050px;background-color: #ffffff;box-shadow: 0 10px 40px rgba(0, 101, 112, 0.15);font-family: 'Poppins' , sans-serif;">
-
+        <div class="div3_A obj-form-card">
             
 
             <div style="width: 100%; margin: 20px 0; padding: 10px 0; position: relative;">
-                <h4 style="text-align: center;color:#006572" id="s_head"><strong>SECTION 3: DESCRIPTION OF BUILDINGS (INFORMATION UNDER 3.1 TO 3.4 TO BE SUPPLIED BY MEANS OF ANNEXURES AS FOLLOWS)</strong></h4>
+                <h4 class="obj-section-title" id="s_head"><strong>SECTION 3: DESCRIPTION OF BUILDINGS (INFORMATION UNDER 3.1 TO 3.4 TO BE SUPPLIED BY MEANS OF ANNEXURES AS FOLLOWS)</strong></h4>
                 <div class="obj-step-divider">
                     <div class="line"></div>
                     <div class="dot"></div>
@@ -1908,12 +1773,12 @@ TempData.Peek("PropertyFrom")?.ToString()
             <div class="row mb-2">
                 <div class="col-sm-6">
                     <label class="form-label fw-semibold text-dark"> NO OF BEDROOMS </label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" id="s3a" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" maxlength="4" asp-for="Agri_No_of_Bedroom">
+                    <input  id="s3a" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" maxlength="4" asp-for="Agri_No_of_Bedroom">
 
                 </div>
                 <div class="col-sm-6">
                     <label class="form-label fw-semibold text-dark"> NO OF BATHROOMS</label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" maxlength="4" asp-for="Agri_No_of_BathRoom">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" maxlength="4" asp-for="Agri_No_of_BathRoom">
                 </div>
             </div>
             <br></br>
@@ -2285,11 +2150,11 @@ TempData.Peek("PropertyFrom")?.ToString()
             <div class="row mb-2">
                 <div class="col-sm-6">
                     <label class="form-label fw-semibold text-dark"> OTHER (1) </label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" asp-for="Agri_Dwell_Other1">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" asp-for="Agri_Dwell_Other1">
                 </div>
                 <div class="col-sm-6">
                     <label class="form-label fw-semibold text-dark"> SIZE OF MAIN DWELLING <small class="text-muted fst-italic ms-2">(m²)</small></label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" maxlength="4" onkeypress="return onlyNumberKey(event)" asp-for="Agri_Main_Dwelling_Size">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" maxlength="4" onkeypress="return onlyNumberKey(event)" asp-for="Agri_Main_Dwelling_Size">
                 </div>
             </div>
 
@@ -2302,21 +2167,21 @@ TempData.Peek("PropertyFrom")?.ToString()
             <div class="row mb-2">
                 <div class="col-sm-3">
                     <label class="form-label fw-semibold text-dark"> BUILDING NO.</label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" asp-for="Agri_Building_No">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" asp-for="Agri_Building_No">
 
                 </div>
                 <div class="col-sm-3">
                     <label class="form-label fw-semibold text-dark">DESCRIPTION</label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" asp-for="Agri_Building_Description">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" asp-for="Agri_Building_Description">
                 </div>
                 <div class="col-sm-3">
                     <label class="form-label fw-semibold text-dark"> SIZE <small class="text-muted fst-italic ms-2">(m²)</small></label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" asp-for="Agri_Building_Size">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" asp-for="Agri_Building_Size">
 
                 </div>
                 <div class="col-sm-3">
                     <label class="form-label fw-semibold text-dark"> CONDITION </label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" asp-for="Agri_Building_Condition">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" asp-for="Agri_Building_Condition">
                 </div>
             </div>
 
@@ -2362,7 +2227,7 @@ TempData.Peek("PropertyFrom")?.ToString()
             </fieldset>
             <div id="desc_use_section" style="display:none">
                 <label class="form-label fw-semibold text-dark"> IF YES: DESCRIBE THE USE(S) </label>
-                <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" asp-for="Agri_Another_Purpose_Not_Agriculture_Desc">
+                <input  class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" asp-for="Agri_Another_Purpose_Not_Agriculture_Desc">
 
             </div>
             <script>
@@ -2404,28 +2269,28 @@ TempData.Peek("PropertyFrom")?.ToString()
                 <div class="col-sm-4">
                     
                     <label class="form-label fw-semibold text-dark"> GRAZING <small class="text-muted fst-italic ms-2">(ha)</small> </label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" maxlength="4" onkeypress="return onlyNumberKey(event)" asp-for="Agri_Grazing">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" maxlength="4" onkeypress="return onlyNumberKey(event)" asp-for="Agri_Grazing">
 
                 </div>
                
                 <div class="col-sm-4">
                     <label class="form-label fw-semibold text-dark"> UNDER IRRIGATION<small class="text-muted fst-italic ms-2">(ha)</small> </label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" maxlength="4" onkeypress="return onlyNumberKey(event)" asp-for="Agri_Under_Irrigation">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" maxlength="4" onkeypress="return onlyNumberKey(event)" asp-for="Agri_Under_Irrigation">
 
                 </div>
                
                 <div class="col-sm-4">
                     <label class="form-label fw-semibold text-dark"> PERMANENT CROPS <small class="text-muted fst-italic ms-2">(ha)</small> </label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" maxlength="4" onkeypress="return onlyNumberKey(event)" asp-for="Agri_Permanent_Crop">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" maxlength="4" onkeypress="return onlyNumberKey(event)" asp-for="Agri_Permanent_Crop">
 
                 </div>
                  <div class="col-sm-6">
                     <label class="form-label fw-semibold text-dark"> NON-AGRICULTURAL<small class="text-muted fst-italic ms-2">(REFER TO 3.3)(ha)</small> </label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" maxlength="4" onkeypress="return onlyNumberKey(event)" asp-for="Agri_Non_Agricultural">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" maxlength="4" onkeypress="return onlyNumberKey(event)" asp-for="Agri_Non_Agricultural">
                 </div>
                  <div class="col-sm-6">
                     <label class="form-label fw-semibold text-dark"> DRY LAND <small class="text-muted fst-italic ms-2">(ha)</small> </label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" maxlength="4" onkeypress="return onlyNumberKey(event)" asp-for="Agri_Dry_Land">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" maxlength="4" onkeypress="return onlyNumberKey(event)" asp-for="Agri_Dry_Land">
 
                 </div>
             </div>
@@ -2433,22 +2298,22 @@ TempData.Peek("PropertyFrom")?.ToString()
             <div class="row mb-2">
                 <div class="col-sm-3">
                     <label class="form-label fw-semibold text-dark"> OTHER (1) <small class="text-muted fst-italic ms-2">(ha)</small> </label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" maxlength="4" onkeypress="return onlyNumberKey(event)" asp-for="Agri_Other_ha_1">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" maxlength="4" onkeypress="return onlyNumberKey(event)" asp-for="Agri_Other_ha_1">
 
                 </div>
                 <div class="col-sm-3">
                     <label class="form-label fw-semibold text-dark">  OTHER (2) <small class="text-muted fst-italic ms-2">(ha)</small>  </label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" maxlength="4" onkeypress="return onlyNumberKey(event)" asp-for="Agri_Other_ha_2">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" maxlength="4" onkeypress="return onlyNumberKey(event)" asp-for="Agri_Other_ha_2">
 
                 </div>
                 <div class="col-sm-3">
                     <label class="form-label fw-semibold text-dark">  OTHER (3) <small class="text-muted fst-italic ms-2">(ha)</small>  </label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" maxlength="4" onkeypress="return onlyNumberKey(event)" asp-for="Agri_Other_ha_3">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" maxlength="4" onkeypress="return onlyNumberKey(event)" asp-for="Agri_Other_ha_3">
 
                 </div>
                 <div class="col-sm-3">
                     <label class="form-label fw-semibold text-dark">  TOTAL <small class="text-muted fst-italic ms-2">(ha)</small> </label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" maxlength="6" onkeypress="return onlyNumberKey(event)" asp-for="Agri_Total_ha">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" maxlength="6" onkeypress="return onlyNumberKey(event)" asp-for="Agri_Total_ha">
 
                 </div>
             </div>
@@ -2483,29 +2348,29 @@ TempData.Peek("PropertyFrom")?.ToString()
             <div class="row mb-2">
                 <div class="col-sm-3">
                     <label class="form-label fw-semibold text-dark"> AREA GAME FENCE <small class="text-muted fst-italic ms-2">(ha)</small> </label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" maxlength="4" onkeypress="return onlyNumberKey(event)" asp-for="Agri_Game_Area_Fenced">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" maxlength="4" onkeypress="return onlyNumberKey(event)" asp-for="Agri_Game_Area_Fenced">
 
                 </div>
                 <div class="col-sm-3">
                     <label class="form-label fw-semibold text-dark"> NO. OF BOREHOLES</label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" maxlength="4" onkeypress="return onlyNumberKey(event)" asp-for="Agri_Num_of_Boreholes">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" maxlength="4" onkeypress="return onlyNumberKey(event)" asp-for="Agri_Num_of_Boreholes">
 
                 </div>
 
                 <div class="col-sm-3">
                     <label class="form-label fw-semibold text-dark"> DAMS</label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" maxlength="4" onkeypress="return onlyNumberKey(event)" asp-for="Agri_Dams">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" maxlength="4" onkeypress="return onlyNumberKey(event)" asp-for="Agri_Dams">
 
                 </div>
                 <div class="col-sm-3">
                     <label class="form-label fw-semibold text-dark"> CAPACITY</label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" asp-for="Agri_Capacity">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" asp-for="Agri_Capacity">
 
                 </div>
 
                 <div class="col-sm-12">
                     <label class="form-label fw-semibold text-dark"> OUTPUT LITRES/HOURS</label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" maxlength="20" asp-for="Agri_Output_litres_Hours">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" maxlength="20" asp-for="Agri_Output_litres_Hours">
 
                 </div>
             </div>
@@ -2552,9 +2417,9 @@ TempData.Peek("PropertyFrom")?.ToString()
             
             <div id="Land_Claim_section" style="display: none; margin-top: -10px; padding: 15px; border-left: 5px solid #3498db; background-color: #f8f9fa; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                     <label class="form-label fw-semibold text-dark"> DATE OF CLAIM</label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="date" name="AgriClaim" asp-for="Agri_Claim_Date">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" type="date" name="AgriClaim" asp-for="Agri_Claim_Date">
                     <label class="form-label fw-semibold text-dark"> GAZETTE NO.</label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" asp-for="Agri_Gazette_No">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" asp-for="Agri_Gazette_No">
                 </div>
             <script>
                 document.addEventListener("DOMContentLoaded", function () {
@@ -2599,7 +2464,7 @@ TempData.Peek("PropertyFrom")?.ToString()
             <div id="Water_Right_section" style="display: none; margin-top: -10px; padding: 15px; border-left: 5px solid #3498db; background-color: #f8f9fa; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                     <div id="water-right">
                         <label class="form-label fw-semibold text-dark"> GIVE DETAILS:</label>
-                            <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control"  type="text" onpaste="return false;" ondrop="return false;" asp-for="Agri_Water_Rights_Details">
+                            <input  class="form-control"  type="text" onpaste="return false;" ondrop="return false;" asp-for="Agri_Water_Rights_Details">
                     </div>
             </div>
           
@@ -2647,7 +2512,7 @@ TempData.Peek("PropertyFrom")?.ToString()
                     <div id="water-right">
                         <h6 class="form-label fw-semibold text-dark">CONSENT USE e.g as guest house, business, etc</h6>
                         <label class="form-label fw-semibold text-dark"> GIVE DETAILS:</label>
-                        <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" asp-for="Agri_Consent_Use_Details">
+                        <input  class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" asp-for="Agri_Consent_Use_Details">
                     </div>
                 </div>
          
@@ -2693,7 +2558,7 @@ TempData.Peek("PropertyFrom")?.ToString()
            <div id="Agr_Land_section" style="display: none; margin-top: -10px; padding: 15px; border-left: 5px solid #3498db; background-color: #f8f9fa; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                 <div id="water-right">
                     <label class="form-label fw-semibold text-dark"> IF YES: GIVE NEW FARM DESCRIPTION</label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" asp-for="Agri_New_Farm_Desc">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" asp-for="Agri_New_Farm_Desc">
                 </div>
             </div>
 
@@ -2739,7 +2604,7 @@ TempData.Peek("PropertyFrom")?.ToString()
             <div id="Agr_township_section" style="display: none; margin-top: -10px; padding: 15px; border-left: 5px solid #3498db; background-color: #f8f9fa; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" >
                 <div id="water-right" >
                     <label class="form-label fw-semibold text-dark"> IF YES: GIVE DETAILS</label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control" type="text" onpaste="return false;" ondrop="return false;" asp-for="Agri_Township_Applied_Detail">
+                    <input  class="form-control" type="text" onpaste="return false;" ondrop="return false;" asp-for="Agri_Township_Applied_Detail">
                 </div>
             </div>
                  <script>
@@ -2773,11 +2638,11 @@ TempData.Peek("PropertyFrom")?.ToString()
         <div class=" row mb-2">
             <div class="col-sm-10">
                 <label class="form-label fw-semibold text-dark"> NAME OF TENANT</label>
-                <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" asp-for="Agri_Tenant_Name">
+                <input  class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" asp-for="Agri_Tenant_Name">
             </div>
             <div class="col-sm-2">
                 <label class="form-label fw-semibold text-dark"> SIZE<small class="text-muted fst-italic ms-2">(m²)</small></label>
-                <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" asp-for="Agri_Rental_Land_Size">
+                <input  class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" asp-for="Agri_Rental_Land_Size">
 
             </div>
         </div>
@@ -2785,12 +2650,12 @@ TempData.Peek("PropertyFrom")?.ToString()
         <div class=" row mb-2">
             <div class="col-sm-6">
                 <label class="form-label fw-semibold text-dark"> RENTAL (EXCL VAT)</label>
-                <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" maxlength="12" onkeypress="return onlyNumberKey(event)" asp-for="Agri_Rental">
+                <input  class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" maxlength="12" onkeypress="return onlyNumberKey(event)" asp-for="Agri_Rental">
 
             </div>
             <div class="col-sm-6">
                 <label class="form-label fw-semibold text-dark"> ESCALATION OF RENTAL</label>
-                <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" asp-for="Agri_Escalation">
+                <input  class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" asp-for="Agri_Escalation">
 
             </div>
 
@@ -2799,30 +2664,33 @@ TempData.Peek("PropertyFrom")?.ToString()
         <div class=" row mb-2">
             <div class="col-sm-3">
                 <label class="form-label fw-semibold text-dark"> OTHER CONTRIBUTIONS</label>
-                <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" asp-for="Agri_Other_contribution">
+                <input  class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" asp-for="Agri_Other_contribution">
 
             </div>
             <div class="col-sm-3">
                 <label class="form-label fw-semibold text-dark"> TERM OF LEASE</label>
-                <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" asp-for="Agri_Lease_Term">
+                <input  class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" asp-for="Agri_Lease_Term">
 
             </div>
             <div class="col-sm-3">
                 <label class="form-label fw-semibold text-dark"> START DATE</label>
-                <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="date" name="AgriStart" asp-for="Agri_Start_Date">
+                <input  class="form-control border-2 rounded shadow-sm px-4 py-2" type="date" name="AgriStart" asp-for="Agri_Start_Date">
 
             </div>
             <div class="col-sm-3">
                 <label class="form-label fw-semibold text-dark"> USE</label>
-                <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" asp-for="Agri_Use">
+                <input  class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" asp-for="Agri_Use">
             </div>
         </div>
 
 
             <div>
-                 <button style="margin-top: 10px; margin-left: 2%;color:white; background-color:#006572;" type="button" class="btn_p3 btn"><strong>Previous</strong></button>
+               @*   <button style="margin-top: 10px; margin-left: 2%;color:white; background-color:#006572;" type="button" class="btn_p3 btn"><strong>Previous</strong></button>
 
                 <button style="margin-top: 10px; margin-right: 2%; float:right;color:white; background-color:#006572;" type="button" class="btn_n3 btn"><strong>Next</strong></button><br />
+            *@
+            <button type="button" class="btn_p3 btn obj-nav-btn obj-nav-btn-prev"><strong>Previous</strong></button>
+            <button type="button" class="btn_n3 btn obj-nav-btn obj-nav-btn-next"><strong>Next</strong></button>
             </div>
        </div>
     </div>
@@ -2833,10 +2701,10 @@ TempData.Peek("PropertyFrom")?.ToString()
     <div id="section3-bus" style="display:flex;justify-content: center;">
 
 
-        <div class="div3_B" style="margin-top: 12px;border-radius: 12px;border: 3px solid #e6b000;padding: 20px;width: 100%;max-width: 1050px;background-color: #ffffff;box-shadow: 0 10px 40px rgba(0, 101, 112, 0.15);font-family: 'Poppins' , sans-serif;">
+       <div class="div3_B obj-form-card">
 
             <div style="width: 100%; margin: 20px 0; padding: 10px 0; position: relative;">
-                 <h4 style="text-align: center; color:white;" id="s_head"><strong>SECTION 3: DESCRIPTION OF BUILDINGS (FOR SECTIONAL TITLES SEE SECTION 4)</strong></h4>
+                <h4 class="obj-section-title" id="s_head"><strong>SECTION 3: DESCRIPTION OF BUILDINGS (FOR SECTIONAL TITLES SEE SECTION 4)</strong></h4>
                 <div class="obj-step-divider">
                     <div class="line"></div>
                     <div class="dot"></div>
@@ -2855,12 +2723,12 @@ TempData.Peek("PropertyFrom")?.ToString()
             <div class="row mb-2">
                 <div class="col-sm-10">
                     <label class="form-label fw-semibold text-dark"> NAME OF TENANT</label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" id="s3b" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" asp-for="Bus_Tenant_Name">
+                    <input  id="s3b" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" asp-for="Bus_Tenant_Name">
 
                 </div>
                 <div class="col-sm-2">
                     <label class="form-label fw-semibold text-dark">SIZE</labeL>
-                        <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" maxlength="12" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" asp-for="Bus_Rental_Land_Size">
+                        <input  class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" maxlength="12" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" asp-for="Bus_Rental_Land_Size">
 
                 </div>
             </div>
@@ -2868,26 +2736,26 @@ TempData.Peek("PropertyFrom")?.ToString()
             <div class="row mb-2">
                 <div class="col-sm-6">
                     <label class="form-label fw-semibold text-dark"> RENTAL (EXCL VAT)</label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" asp-for="Bus_Rental">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" asp-for="Bus_Rental">
                 </div>
                 <div class="col-sm-6">
                     <label class="form-label fw-semibold text-dark"> ESCALATION OF RENTAL</label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" maxlength="12" onpaste="return false;" ondrop="return false;" asp-for="Bus_Escalation">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" maxlength="12" onpaste="return false;" ondrop="return false;" asp-for="Bus_Escalation">
                 </div>
             </div>
 
             <div class="row mb-2">
                 <div class="col-sm-4">
                     <label class="form-label fw-semibold text-dark"> OTHER CONTRIBUTIONS</label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" maxlength="12" onpaste="return false;" ondrop="return false;" asp-for="Bus_Other_contribution">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" maxlength="12" onpaste="return false;" ondrop="return false;" asp-for="Bus_Other_contribution">
                 </div>
                 <div class="col-sm-4">
                     <label class="form-label fw-semibold text-dark"> TERM OF LEASE</label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" asp-for="Bus_Lease_Term">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" asp-for="Bus_Lease_Term">
                 </div>
                 <div class="col-sm-4">
                     <label class="form-label fw-semibold text-dark"> START DATE</label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="date" name="StartDate" asp-for="Bus_Start_Date">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" type="date" name="StartDate" asp-for="Bus_Start_Date">
                 </div>
             </div>
             <br></br>
@@ -2913,12 +2781,12 @@ TempData.Peek("PropertyFrom")?.ToString()
             <div class="row mb-2">
                 <div class="col-sm-8">
                     <label class="form-label fw-semibold text-dark"> BUILDING NO.</label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" maxlength="12" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" asp-for="Bus_Building_No">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" maxlength="12" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" asp-for="Bus_Building_No">
 
                 </div>
                 <div class="col-sm-4">
                     <label class="form-label fw-semibold text-dark"> SIZE <small class="text-muted fst-italic ms-2">(m²)</small></label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" maxlength="12" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" asp-for="Bus_Building_Size">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" maxlength="12" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" asp-for="Bus_Building_Size">
 
                 </div>
             </div>
@@ -2926,32 +2794,35 @@ TempData.Peek("PropertyFrom")?.ToString()
             <div class="row mb-2">
                 <div class="col-mb-6">
                     <label class="form-label fw-semibold text-dark"> DESCRIPTION <small class="text-muted fst-italic ms-2">(e.g. Used as a shop, office, etc)</small></label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" asp-for="Bus_Shops">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" asp-for="Bus_Shops">
 
                 </div>
                 <div class="col-mb-6">
                     <label class="form-label fw-semibold text-dark"> CONDITION </label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" asp-for="Bus_Building_Condition">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" asp-for="Bus_Building_Condition">
 
                 </div>
             </div>
 
             <div class="col-sm-12">
                 <h5 style="margin-top: 15px;">3.5 IF THE PROPERTY HAS NOT BEEN DEVELOPED TO ITS HIGHEST AND BEST USE, INDICATE THE EXTENT OF LAND THAT IS AVAILABLE FOR FURTHER DEVELOPMENT. <small class="text-muted fst-italic ms-2">(m²)</small></h5>
-                <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" asp-for="Bus_Extent_Land_further_Dev">
+                <input  class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" asp-for="Bus_Extent_Land_further_Dev">
 
             </div>
             
             <div class="col-sm-12">
                 <label class="form-label fw-semibold text-dark"> OTHER FEATURES OF BUILDINGS: (PROVIDE ANNEXURE IF NECESSARY) </label>
-                <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" asp-for="Bus_Other_features_Condition">
+                <input  class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" asp-for="Bus_Other_features_Condition">
             </div>
 
 
             <div>
-                <button style="margin-top: 10px; margin-left: 2%;color:white; background-color:#006572;" type="button" class="btn_p3 btn"><strong>Previous</strong></button>
+              @*   <button style="margin-top: 10px; margin-left: 2%;color:white; background-color:#006572;" type="button" class="btn_p3 btn"><strong>Previous</strong></button>
 
                 <button style="margin-top: 10px; margin-right: 2%; float:right;color:white; background-color:#006572;" type="button" class="btn_n3 btn"><strong></strong>Next</button><br />
+            *@
+            <button type="button" class="btn_p3 btn obj-nav-btn obj-nav-btn-prev"><strong>Previous</strong></button>
+            <button type="button" class="btn_n3 btn obj-nav-btn obj-nav-btn-next"><strong>Next</strong></button>
             </div>
         </div>
 
@@ -2961,10 +2832,10 @@ TempData.Peek("PropertyFrom")?.ToString()
     @*---------------------------------------------------------Section 4 Business -------------------------------------------------*@
 
  <div id="section4-bus" style="display:flex;justify-content: center;">
-        <div class="div4_B " style="margin-top: 12px;border-radius: 12px;border: 3px solid #e6b000;padding: 20px;width: 100%;max-width: 1050px;background-color: #ffffff;box-shadow: 0 10px 40px rgba(0, 101, 112, 0.15);font-family: 'Poppins' , sans-serif;">
+        <div class="div4_B obj-form-card">
 
                  <div style="width: 100%; margin: 20px 0; padding: 10px 0; position: relative;">
-                        <h4 style="text-align: center;color:white;" id="s_head"><strong>SECTION 4: SECTIONAL TITLE UNITS</strong></h4>
+                       <h4 class="obj-section-title" id="s_head"><strong>SECTION 4: SECTIONAL TITLE UNITS</strong></h4>
                             <div class="obj-step-divider">
                                 <div class="line"></div>
                                 <div class="dot"></div>
@@ -2980,22 +2851,22 @@ TempData.Peek("PropertyFrom")?.ToString()
             <div class="row mb-2">
                 <div class="col-sm-5">
                     <label class="form-label fw-semibold text-dark"> SCHEME NAME</label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" id="sch_name_b" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Bus4_Scheme_Name">
+                    <input  id="sch_name_b" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Bus4_Scheme_Name">
 
                 </div>
                 <div class="col-sm-2">
                     <label class="form-label fw-semibold text-dark"> SCHEME NO.</label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" id="sch_no_b" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" maxlength="5" onkeypress="return onlyNumberKey(event)" asp-for="Bus4_Scheme_No">
+                    <input  id="sch_no_b" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" maxlength="5" onkeypress="return onlyNumberKey(event)" asp-for="Bus4_Scheme_No">
 
                 </div>
                 <div class="col-sm-3">
                     <label class="form-label fw-semibold text-dark"> FLAT NO/DOOR NO.</label><label hidden> FLAT NO/UNIT NO.</label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" id="flat_no_b" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="5" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" asp-for="Bus4_Flat_No">
+                    <input  id="flat_no_b" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="5" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" asp-for="Bus4_Flat_No">
 
                 </div>
                 <div class="col-sm-2">
                     <label class="form-label fw-semibold text-dark"> UNIT SIZE <small class="text-muted fst-italic ms-2">(m²)</small></label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" id="unit_size_b" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="10" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" asp-for="Bus4_Unit_Size">
+                    <input  id="unit_size_b" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="10" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" asp-for="Bus4_Unit_Size">
 
                 </div>
             </div>
@@ -3003,12 +2874,12 @@ TempData.Peek("PropertyFrom")?.ToString()
             <div class="row mb-2">
                 <div class="col-sm-8">
                     <label class="form-label fw-semibold text-dark"> NAME OF MANAGEMENT AGENT</label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Bus4_Managing_Agent_Name">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Bus4_Managing_Agent_Name">
 
                 </div>
                 <div class="col-sm-4">
                     <label class="form-label fw-semibold text-dark">TEL NO.</label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" maxlength="13" onkeypress="return onlyNumberKey(event)" asp-for="Bus4_Managing_Agent_Tel_No">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" maxlength="13" onkeypress="return onlyNumberKey(event)" asp-for="Bus4_Managing_Agent_Tel_No">
 
                 </div>
             </div>
@@ -3016,36 +2887,36 @@ TempData.Peek("PropertyFrom")?.ToString()
             <div class="row mb-2">
                 <div class="col-sm-8">
                     <label class="form-label fw-semibold text-dark"> SHOPS <small class="text-muted fst-italic ms-2">(m²)</small></label>
-            <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="10" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" asp-for="Bus4_Shops">
+            <input  class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="10" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" asp-for="Bus4_Shops">
 
                 </div>
                 <div class="col-sm-4">
                     <label class="form-label fw-semibold text-dark">OTHER (1)</label>
-                <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Bus4_Bus_Sect_Title_Other1_name">
+                <input  class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Bus4_Bus_Sect_Title_Other1_name">
                 </div>
             </div>
             
             <div class="row mb-2">
                 <div class="col-sm-8">
                       <label class="form-label fw-semibold text-dark"> OFFICES <small class="text-muted fst-italic ms-2">(m²)</small></label>
-            <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="10" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" asp-for="Bus4_Offices">
+            <input  class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="10" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" asp-for="Bus4_Offices">
 
                 </div>
                 <div class="col-sm-4">
                     <label class="form-label fw-semibold text-dark">OTHER (2)</label>
-                <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Bus4_Bus_Sect_Title_Other2_name">
+                <input  class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Bus4_Bus_Sect_Title_Other2_name">
                 </div>
             </div>
           
             <div class="row mb-2">
                 <div class="col-sm-8">
                 <label class="form-label fw-semibold text-dark"> FACTORIES <small class="text-muted fst-italic ms-2">(m²)</small></label>
-                <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="10" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" asp-for="Bus4_Factories">
+                <input  class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="10" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" asp-for="Bus4_Factories">
 
                 </div>
                 <div class="col-sm-4">
                      <label class="form-label fw-semibold text-dark">OTHER (3)</label>
-                <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Bus4_Bus_Sect_Title_Other3_name">
+                <input  class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Bus4_Bus_Sect_Title_Other3_name">
                 </div>
             </div>
            
@@ -3059,11 +2930,11 @@ TempData.Peek("PropertyFrom")?.ToString()
             <div class="row mb-2">
                 <div class="col-sm-8">
                        <label class="form-label fw-semibold text-dark"> NAME OF TENANT</label>
-                <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Bus4_Tenant_Name">
+                <input  class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Bus4_Tenant_Name">
                 </div>
                 <div class="col-sm-4">
                        <label class="form-label fw-semibold text-dark"> SIZE <small class="text-muted fst-italic ms-2">(m²)</small></label>
-                <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="10" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" asp-for="Bus4_Rental_Land_Size">
+                <input  class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="10" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" asp-for="Bus4_Rental_Land_Size">
                
                 </div>
             </div>
@@ -3071,12 +2942,12 @@ TempData.Peek("PropertyFrom")?.ToString()
             <div class="row mb-2">
                 <div class="col-sm-8">
                       <label class="form-label fw-semibold text-dark"> RENTAL (EXCL VAT)</label>
-                <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="10" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" asp-for="Bus4_Rental">
+                <input  class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="10" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" asp-for="Bus4_Rental">
                
                 </div>
                 <div class="col-sm-4">
                 <label class="form-label fw-semibold text-dark"> ESCALATION</label>
-                <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="30" type="text" onpaste="return false;" ondrop="return false;" asp-for="Bus4_Escalation">
+                <input  class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="30" type="text" onpaste="return false;" ondrop="return false;" asp-for="Bus4_Escalation">
                 </div>
               
             </div>
@@ -3084,22 +2955,22 @@ TempData.Peek("PropertyFrom")?.ToString()
             <div class="row mb-2">
                 <div class="col-sm-4">
                       <label class="form-label fw-semibold text-dark"> OTHER CONTRIBUTIONS</label>
-                <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Bus4_Other_contribution">
+                <input  class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Bus4_Other_contribution">
                
                 </div>
                 <div class="col-sm-4">
                  <label class="form-label fw-semibold text-dark"> TERM OF LEASE</label>
-                <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="30" type="text" onpaste="return false;" ondrop="return false;" asp-for="Bus4_Lease_Term">
+                <input  class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="30" type="text" onpaste="return false;" ondrop="return false;" asp-for="Bus4_Lease_Term">
                 </div>
                 <div class="col-sm-4">
                       <label class="form-label fw-semibold text-dark"> START DATE</label>
-                <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="date" name="StartDate1" asp-for="Bus4_Start_Date">
+                <input  class="form-control border-2 rounded shadow-sm px-4 py-2" type="date" name="StartDate1" asp-for="Bus4_Start_Date">
                 </div>
             </div>
 
             <div class="col-sm-8">
                 <label class="form-label fw-semibold text-dark"> MONTHLY LEVY (R)</label>
-                <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="10" type="text" onpaste="return false;" ondrop="return false;" asp-for="Bus4_Monthly_Levy">
+                <input  class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="10" type="text" onpaste="return false;" ondrop="return false;" asp-for="Bus4_Monthly_Levy">
             </div>
 
                
@@ -3175,10 +3046,12 @@ TempData.Peek("PropertyFrom")?.ToString()
 
            <div>
 
-                <button style="margin-top: 10px; margin-left: 2%;color:white; background-color:#006572;" type="button" class="btn_p4 btn"><strong>Previous</strong></button>
+               @*  <button style="margin-top: 10px; margin-left: 2%;color:white; background-color:#006572;" type="button" class="btn_p4 btn"><strong>Previous</strong></button>
 
                 <button style="margin-top: 10px; margin-right: 2%; float:right;color:white; background-color:#63696B;" type="button" class="btn_n4 btn"><strong>Next</strong></button><br />
-
+                *@ 
+                <button type="button" class="btn_p4 btn obj-nav-btn obj-nav-btn-prev"><strong>Previous</strong></button>
+               <button type="button" class="btn_n4 btn obj-nav-btn obj-nav-btn-next"><strong>Next</strong></button> 
             </div>
      </div>
  </div>
@@ -3187,10 +3060,10 @@ TempData.Peek("PropertyFrom")?.ToString()
 
     <div id="section4-res" style="display:flex;justify-content: center;">
 
-        <div class="div4_R " style="margin-top: 12px;border-radius: 12px;border: 3px solid #e6b000;padding: 20px;width: 100%;max-width: 1050px;background-color: #ffffff;box-shadow: 0 10px 40px rgba(0, 101, 112, 0.15);font-family: 'Poppins' , sans-serif;">
-          
+        <div class="div4_R obj-form-card">
+
             <div style="width: 100%; margin: 20px 0; padding: 10px 0; position: relative;">
-             <h4 style="text-align: center;color:#006572" id="s_head"><strong>SECTION 4: SECTIONAL TITLE UNITS</strong></h4>
+             <h4 class="obj-section-title" id="s_head"><strong>SECTION 4: SECTIONAL TITLE UNITS</strong></h4>
                 <div class="obj-step-divider">
                     <div class="line"></div>
                     <div class="dot"></div>
@@ -3207,22 +3080,22 @@ TempData.Peek("PropertyFrom")?.ToString()
             <div class="row mb-2">
                 <div class="col-sm-5">
                     <label class="form-label fw-semibold text-dark"> SCHEME NAME</label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" id="sch_name" maxlength="80" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" asp-for="Res4_Scheme_Name">
+                    <input  id="sch_name" maxlength="80" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" asp-for="Res4_Scheme_Name">
 
                 </div>
                 <div class="col-sm-2">
                     <label class="form-label fw-semibold text-dark"> SCHEME NO.</label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" id="sch_no" maxlength="8" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" asp-for="Res4_Scheme_No">
+                    <input  id="sch_no" maxlength="8" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" asp-for="Res4_Scheme_No">
 
                 </div>
                 <div class="col-sm-3">
                     <label hidden> FLAT NO/DOOR NO.</label><label class="form-label fw-semibold text-dark"> FLAT NO/UNIT NO.</label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" id="flat_no" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="8" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" asp-for="Res4_Flat_No">
+                    <input  id="flat_no" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="8" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" asp-for="Res4_Flat_No">
 
                 </div>
                 <div class="col-sm-2">
                     <label class="form-label fw-semibold text-dark"> UNIT SIZE <small class="text-muted fst-italic ms-2">(m²)</small></label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" id="unit_size" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="8" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" asp-for="Res4_Unit_Size">
+                    <input  id="unit_size" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="8" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" asp-for="Res4_Unit_Size">
 
                 </div>
             </div>
@@ -3230,12 +3103,12 @@ TempData.Peek("PropertyFrom")?.ToString()
             <div class="row mb-2">
                 <div class="col-sm-9">
                     <label class="form-label fw-semibold text-dark"> NAME OF MANAGEMENT AGENT</label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Res4_Managing_Agent_Name">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Res4_Managing_Agent_Name">
 
                 </div>
                 <div class="col-sm-3">
                     <label class="form-label fw-semibold text-dark">TEL NO.</label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="13" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" asp-for="Res4_Managing_Agent_Tel_No">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="13" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" asp-for="Res4_Managing_Agent_Tel_No">
 
                 </div>
             </div>
@@ -3243,21 +3116,21 @@ TempData.Peek("PropertyFrom")?.ToString()
             <div class="row mb-2">
                 <div class="col-sm-4">
                     <label class="form-label fw-semibold text-dark"> NO OF BEDROOMS </label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="5" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" asp-for="Res4_No_of_Bedroom">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="5" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" asp-for="Res4_No_of_Bedroom">
 
                 </div>
                 <div class="col-sm-4">
                     <label class="form-label fw-semibold text-dark"> NO OF BATHROOMS</label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="5" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" asp-for="Res4_No_of_BathRoom">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="5" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" asp-for="Res4_No_of_BathRoom">
 
                 </div>
                 <div class="col-sm-8">
                     <label class="form-label fw-semibold text-dark">MONTHLY LEVY (R)</label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;"class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="15"type="text"onpaste="return false;"ondrop="return false;"id="Bus4_Monthly_Levy"asp-for="Bus4_Monthly_Levy">
+                    <input class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="15"type="text"onpaste="return false;"ondrop="return false;"id="Bus4_Monthly_Levy"asp-for="Bus4_Monthly_Levy">
                 </div>
                      @*  <div class="col-sm-4">
                     <label class="form-label fw-semibold text-dark"> Monthly Levy (R)</label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="8" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" asp-for="Res4_Monthly_Levy_Res">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="8" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" asp-for="Res4_Monthly_Levy_Res">
 
                 </div> *@
             </div>
@@ -3625,22 +3498,22 @@ TempData.Peek("PropertyFrom")?.ToString()
             <div class="row mb-2">
                 <div class="col-sm-3">
                     <label class="form-label fw-semibold text-dark"> OTHER (1) </label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Res4_Dwell_Other1">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Res4_Dwell_Other1">
 
                 </div>
                 <div class="col-sm-3">
                     <label class="form-label fw-semibold text-dark"> OTHER (2) </label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Res4_Dwell_Other2">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Res4_Dwell_Other2">
 
                 </div>
                 <div class="col-sm-3">
                     <label class="form-label fw-semibold text-dark"> OTHER (3) </label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Res4_Dwell_Other3">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Res4_Dwell_Other3">
 
                 </div>
                 <div class="col-sm-3">
                     <label class="form-label fw-semibold text-dark">OTHER (4) </label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Res4_Dwell_Other4">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Res4_Dwell_Other4">
                 </div>
             </div>
             </br>
@@ -3727,9 +3600,12 @@ TempData.Peek("PropertyFrom")?.ToString()
             </div>
 
             <div>
-                <button style="margin-top: 10px; margin-left: 2%;color:white; background-color:#006572;" type="button" class="btn_p4 btn"><strong>Previous</strong></button>
+           @*      <button style="margin-top: 10px; margin-left: 2%;color:white; background-color:#006572;" type="button" class="btn_p4 btn"><strong>Previous</strong></button>
 
                 <button style="margin-top: 10px; margin-right: 2%; float:right;color:white; background-color:#006572;" type="button" class="btn_n4 btn"><strong>Next</strong></button><br />
+     *@
+     <button type="button" class="btn_p4 btn obj-nav-btn obj-nav-btn-prev"><strong>Previous</strong></button>
+    <button type="button" class="btn_n4 btn obj-nav-btn obj-nav-btn-next"><strong>Next</strong></button>
             </div>
         </div>
     </div>
@@ -3738,11 +3614,10 @@ TempData.Peek("PropertyFrom")?.ToString()
     <div id="section5" style="display:flex;justify-content: center;">
 
 
-        <div class="div5" style="margin-top: 12px;border-radius: 12px;border: 3px solid #e6b000;padding: 20px;width: 100%;max-width: 1050px;background-color: #ffffff;box-shadow: 0 10px 40px rgba(0, 101, 112, 0.15);font-family: 'Poppins' , sans-serif;">
-
+        <div class="div5 obj-form-card">
             <div>
                 <div style="width: 100%; margin: 20px 0; padding: 10px 0; position: relative;">
-                  <h4 style="text-align: center; color:#006572;" id="s_head"><strong>SECTION 5: MARKET INFORMATION</strong></h4>
+                  <h4 class="obj-section-title" id="s_head"><strong>SECTION 5: MARKET INFORMATION</strong></h4>
                         <div class="obj-step-divider">
                             <div class="line"></div>
                             <div class="dot"></div>
@@ -3774,30 +3649,30 @@ TempData.Peek("PropertyFrom")?.ToString()
                 <div class="row mb-2">
                      <div class="col-sm-9">
                     <label class="form-label fw-semibold text-dark">NAME OF AGENT</label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Agent_Name">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Agent_Name">
 
                 </div>
                 <div class="col-sm-3">
                       <label class="form-label fw-semibold text-dark"> TEL NO.</label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" maxlength="13" onkeypress="return onlyNumberKey(event)" asp-for="Agent_Tel_No">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" maxlength="13" onkeypress="return onlyNumberKey(event)" asp-for="Agent_Tel_No">
 
                 </div>
                 </div>
               
                 <div class="col-sm-12">
                     <label class="form-label fw-semibold text-dark">SALES TRANSACTIONS(OF OTHER PROPERTIES IN THE VICINITY) USED BY OBJECTOR IN DETERMINING THE MARKET VALUES OF THE PROPERTY OBJECTED TO</label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" maxlength="12" asp-for="Other_Nearby_Sales">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" maxlength="12" asp-for="Other_Nearby_Sales">
 
                 </div>
                 <div class="row mb-2">
                     <div class="col-sm-4">
                         <label class="form-label fw-semibold text-dark"> ERF/UNIT</label>
-                        <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" maxlength="5" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" asp-for="Unit_No">
+                        <input  class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" maxlength="5" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" asp-for="Unit_No">
 
                     </div>
                     <div class="col-sm-8">
                       <label class="form-label fw-semibold text-dark"> SUBURB/FARM/SCHEME NAME</label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" maxlength="80" asp-for="Suburb_Name">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" maxlength="80" asp-for="Suburb_Name">
 
                     </div>
                 </div>
@@ -3805,12 +3680,12 @@ TempData.Peek("PropertyFrom")?.ToString()
                 <div class="row mb-2">
                     <div class="col-sm-6">
                         <label class="form-label fw-semibold text-dark"> DATE OF SALE</label>
-                        <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="date" name="StartDate2" asp-for="Sale_Date">
+                        <input  class="form-control border-2 rounded shadow-sm px-4 py-2" type="date" name="StartDate2" asp-for="Sale_Date">
 
                     </div>
                     <div class="col-sm-6">
                          <label class="form-label fw-semibold text-dark"> SELLING PRICE (R)</label>
-                    <input style="margin-top: -1px; font-family:'poppins', sans-serif;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" maxlength="10" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" asp-for="Selling_Price">
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" maxlength="10" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" asp-for="Selling_Price">
 
                     </div>
                 </div>
@@ -3818,10 +3693,12 @@ TempData.Peek("PropertyFrom")?.ToString()
             </div>
                 <div>
 
-                    <button style="margin-top: 10px; margin-left: 2%;color:white; background-color:#006572;" type="button" class="btn_p5 btn">Previous</button>
+                  @*   <button style="margin-top: 10px; margin-left: 2%;color:white; background-color:#006572;" type="button" class="btn_p5 btn">Previous</button>
 
                     <button style="margin-top: 10px; margin-right: 2%; float:right;color:white; background-color:#006572;" type="button" class="btn_n5 btn">Next</button><br />
-
+                   *@     
+                   <button type="button" class="btn_p5 btn obj-nav-btn obj-nav-btn-prev"><strong>Previous</strong></button>
+               <button type="button" class="btn_n5 btn obj-nav-btn obj-nav-btn-next"><strong>Next</strong></button> 
                 </div>
         </div>
 
@@ -3840,10 +3717,9 @@ TempData.Peek("PropertyFrom")?.ToString()
                 alert(mess);
         </script>
 
-        <div class="div6 " style="margin-top: 12px;border-radius: 12px;border: 3px solid #e6b000;padding: 20px;width: 100%;max-width: 1050px;background-color: #ffffff;box-shadow: 0 10px 40px rgba(0, 101, 112, 0.15);font-family: 'Poppins' , sans-serif;">
-
+        <div class="div6 obj-form-card">
                     <div style="width: 100%; margin: 20px 0; padding: 10px 0; position: relative;">
-                        <h4 style="text-align: center;color:#006572;" id="s_head"><strong>SECTION 6: OBJECTION DETAILS</strong></h4>
+                        <h4 class="obj-section-title" id="s_head"><strong>SECTION 6: OBJECTION DETAILS</strong></h4>
                 <div class="obj-step-divider">
                     <div class="line"></div>
                     <div class="dot"></div>
@@ -3921,7 +3797,7 @@ TempData.Peek("PropertyFrom")?.ToString()
                     <div style="padding: 20px; border: 3px solid #e6b000; border-radius: 12px; background: linear-gradient(135deg, #fff9e6 0%, #fffbf0 100%); box-shadow: 0 6px 20px rgba(230, 176, 0, 0.2);">
                         <h6 style="margin-top: 0; margin-bottom: 20px; color: white; background: linear-gradient(135deg, #e6b000 0%, #d4a000 100%); padding: 12px 15px; border-radius: 8px; text-align: center; font-size: 16px; font-weight: 700; letter-spacing: 0.5px; box-shadow: 0 3px 10px rgba(230, 176, 0, 0.3);"><strong>CHANGES REQUESTED BY OBJECTOR</strong></h6>
                         <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #d4a000; font-size: 13px; text-transform: uppercase; letter-spacing: 0.3px;" >DESCRIPTION OF THE PROPERTY/UNIT</label>
-                    <input style="width: 100%; padding: 12px 16px; margin-bottom: 15px; border: 2px solid #e6b000; border-radius: 8px; background: white; font-size: 14px; color: #333; transition: all 0.3s; box-shadow: 0 2px 8px rgba(230, 176, 0, 0.1);" id="NewPropDesc" maxlength="80" type="text" asp-for="New_Property_Description" value="@(isOmissionProperty ? omissionRequestedDescription : "")" /> />
+                    <input style="width: 100%; padding: 12px 16px; margin-bottom: 15px; border: 2px solid #e6b000; border-radius: 8px; background: white; font-size: 14px; color: #333; transition: all 0.3s; box-shadow: 0 2px 8px rgba(230, 176, 0, 0.1);" id="NewPropDesc" maxlength="80" type="text" asp-for="New_Property_Description" value="@(isOmissionProperty ? omissionRequestedDescription : "")" />
 
                         <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #d4a000; font-size: 13px; text-transform: uppercase; letter-spacing: 0.3px;">CATEGORY</label>
                         <select asp-for="New_Category" id="NewCat" style="width: 100%; padding: 12px 16px; margin-bottom: 15px; border: 2px solid #e6b000; border-radius: 8px; background: white; font-size: 14px; color: #333; transition: all 0.3s; box-shadow: 0 2px 8px rgba(230, 176, 0, 0.1); cursor: pointer;">
@@ -3968,11 +3844,14 @@ TempData.Peek("PropertyFrom")?.ToString()
                     <textarea style="width: 100%; padding: 15px; border: 2px solid #e6b000; border-radius: 8px; background: white; font-size: 14px; color: #333; resize: vertical; box-shadow: 0 2px 8px rgba(230, 176, 0, 0.1);" id="textarea" maxlength="500" asp-for="Objection_Reasons" rows="4" cols="150"></textarea>
                      </div>
 
-               <div>
-                    <button style="margin-top: 10px; margin-left: 2%;color:white; background-color:#006572;" type="button" class="btn_p6 btn"><strong>Previous</strong></button>
+                   <div>
+                       @*  <button style="margin-top: 10px; margin-left: 2%;color:white; background-color:#006572;" type="button" class="btn_p6 btn"><strong>Previous</strong></button>
 
-                    <button style="margin-top: 10px; margin-right: 2%; float:right;color:white; background-color:#006572;" type="button" class="btn_n6 btn"><strong>Next</strong></></button><br />
-            </div>
+                        <button style="margin-top: 10px; margin-right: 2%; float:right;color:white; background-color:#006572;" type="button" class="btn_n6 btn"><strong>Next</strong></></button><br />
+         *@      
+         <button type="button" class="btn_p6 btn obj-nav-btn obj-nav-btn-prev"><strong>Previous</strong></button>
+               <button type="button" class="btn_n6 btn obj-nav-btn obj-nav-btn-next"><strong>Next</strong></button> 
+                    </div>
 
                 </div>
         </div>
@@ -4009,8 +3888,7 @@ TempData.Peek("PropertyFrom")?.ToString()
 </div>
     @*  ------------------------------------------- Document Upload -------------------------------------------  *@
     <div id="sectionUpload" style="display:flex;justify-content: center;">
-        <div class="divU " style="margin-top: 12px;border-radius: 12px;border: 3px solid #e6b000;padding: 20px;width: 100%;max-width: 1050px;background-color: #ffffff;box-shadow: 0 10px 40px rgba(0, 101, 112, 0.15);font-family: 'Poppins' , sans-serif;">
-
+        <div class="divU obj-form-card">
 
             <div class="obj-section-bar">
                
@@ -4038,9 +3916,12 @@ TempData.Peek("PropertyFrom")?.ToString()
             </div>
 
             <div>
-                <button style="margin-top: 10px; margin-left: 2%;color:white; background-color:#006572;" type="button" class="btn_pU btn"><strong>Previous</strong></button>
+              @*   <button style="margin-top: 10px; margin-left: 2%;color:white; background-color:#006572;" type="button" class="btn_pU btn"><strong>Previous</strong></button>
 
                 <button style="margin-top: 10px; margin-right: 2%; float:right;color:white; background-color:#006572;" type="button" class="btn_nU btn"><strong>Next</strong></button><br />
+          *@ 
+          <button type="button" class="btn_pU btn obj-nav-btn obj-nav-btn-prev"><strong>Previous</strong></button>
+            <button type="button" class="btn_nU btn obj-nav-btn obj-nav-btn-next"><strong>Next</strong></button>
             </div>
         </div>
     </div>
@@ -4049,8 +3930,7 @@ TempData.Peek("PropertyFrom")?.ToString()
 
 <div id="section7" style="display:flex;justify-content: center;">
 
-    <div class="div7" style="margin-top: 12px;border-radius: 12px;border: 3px solid #e6b000;padding: 20px;width: 100%;max-width: 1050px;background-color: #ffffff;box-shadow: 0 10px 40px rgba(0, 101, 112, 0.15);font-family: 'Poppins' , sans-serif;">
-
+    <div class="div7 obj-form-card">
         <div style="width: 100%; margin: 20px 0; padding: 10px 0; position: relative;">
             <h4 class="obj-section-title" id="s_head"><strong>Section 7: Declaration</strong></h4>
             <div class="obj-step-divider">
@@ -4184,8 +4064,11 @@ TempData.Peek("PropertyFrom")?.ToString()
 
         <!-- ── Navigation ──────────────────────────────────────────── -->
         <div style="margin-top:18px;">
-            <button style="margin-top: 10px; margin-left: 2%;color:white; background-color:#006572;" type="button" class="btn_p7 btn"><strong>Previous</strong></button>
-            <button type="submit" class="btn" disabled id="submitForm" onclick="showInput()" style="margin-top: 10px;float:right;margin-right: 2%;color:white; background-color:#006572;"><strong>Submit</strong></button>
+            <button type="button" class="btn_p4 btn obj-nav-btn obj-nav-btn-prev"><strong>Previous</strong></button>
+          <button type="submit" class="btn obj-nav-btn obj-nav-btn-submit" disabled id="submitForm" onclick="showInput()"><i class="fa-solid fa-paper-plane"></i> <strong>Submit</strong></button>
+
+
+  
         </div>
     </div>
 
@@ -4203,22 +4086,11 @@ TempData.Peek("PropertyFrom")?.ToString()
         </div>
     </div>
 
-
-    @{
-        TempData.Keep("CurrentFilter_MV");
-    }
- 
       @section Scripts{
             <script src="https://cdnjs.cloudflare.com/ajax/libs/signature_pad/1.5.3/signature_pad.min.js"></script>
             <script src="https://code.jquery.com/jquery-latest.min.js" type="text/javascript"></script>
             <script asp-append-version="true" src="~/js/ObjectionJS.js" type="text/javascript"> </script>
-   @*  <script asp-append-version="true" src="~/js/ObjectionMulti_Section78.js" type="text/javascript"> </script> *@
-            <script type="text/javascript">load();</script>
-        
-
+               <script type="text/javascript">load();</script>
         }
-
-   
-
      </form>  
 

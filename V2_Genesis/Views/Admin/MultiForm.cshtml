@@ -1,0 +1,2993 @@
+﻿@{
+    Layout = "_Layout";
+}
+
+<link asp-append-version="true" href="~/css/CardDesign.css" rel="stylesheet">
+<link asp-append-version="true" href="~/css/Tabs.css" rel="stylesheet">
+<script src = "https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+  <link href="~/css/views/preloader.css" rel="stylesheet" />
+    <link href="~/css/views/toaster11.css" rel="stylesheet" />
+    <link href="~/css/views/formdata.css" rel="stylesheet" />
+
+@{
+    //Section1
+    var currentObjNo = TempData["currentObjNo"];
+    var OwnerName = TempData["OwnerName"];
+    var OwnerIdentity =TempData["OwnerIdentity"];
+    var OwnerCompany = TempData["OwnerCompany"];
+    var OwnerAddress1 = TempData["OwnerAddress1"];
+    var OwnerAddress2 = TempData["OwnerAddress2"];
+    var OwnerAddress3 = TempData["OwnerAddress3"];
+    var OwnerAddress4 = TempData["OwnerAddress4"];
+    var OwnerAddress5 = TempData["OwnerAddress5"];
+    var OwnerPostal1 = TempData["OwnerPostal1"];
+    var OwnerPostal2 = TempData["OwnerPostal2"];
+    var OwnerPostal3 = TempData["OwnerPostal3"];
+    var OwnerPostal4 = TempData["OwnerPostal4"];
+    var OwnerPostal5 = TempData["OwnerPostal5"];
+    var OwnerHomePhone = TempData["OwnerHomePhone"];
+    var OwnerCellPhone = TempData["OwnerCellPhone"];
+    var OwnerWorkPhone = TempData["OwnerWorkPhone"];
+    var OwnerFaxPhone = TempData["OwnerFaxPhone"];
+    var OwnerEmail = TempData["OwnerEmail"];
+    var ObjectorName = TempData["ObjectorName"];
+    var ObjectorIdentity = TempData["ObjectorIdentity"];
+    var ObjectorCompany = TempData["ObjectorCompany"];
+    var ObjectorPostal1 = TempData["ObjectorPostal1"];
+    var ObjectorPostal2 = TempData["ObjectorPostal2"];
+    var ObjectorPostal3 = TempData["ObjectorPostal3"];
+    var ObjectorPostal4 = TempData["ObjectorPostal4"];
+    var ObjectorPostal5 = TempData["ObjectorPostal5"];
+    var ObjectorHome = TempData["ObjectorHome"];
+    var ObjectorCell = TempData["ObjectorCell"];
+    var ObjectorWork = TempData["ObjectorWork"];
+    var ObjectorFax = TempData["ObjectorFax"];
+    var ObjectorEmail = TempData["ObjectorEmail"];
+    var ObjectorStatus = TempData["ObjectorStatus"];
+    var RepresentativeName = TempData["RepresentativeName"];
+    var RepPostal1 = TempData["RepPostal1"];
+    var RepPostal2 = TempData["RepPostal2"];
+    var RepPostal3 = TempData["RepPostal3"];
+    var RepPostal4 = TempData["RepPostal4"];
+    var RepPostal5 = TempData["RepPostal5"];
+    var RepHomePhone = TempData["RepHomePhone"];
+    var RepCellPhone = TempData["RepCellPhone"];
+    var RepWorkPhone = TempData["RepWorkPhone"];
+    var RepFaxPhone = TempData["RepFaxPhone"];
+    var RepEmail = TempData["RepEmail"];
+
+    TempData.Keep("currentObjNo");
+    TempData.Keep("OwnerName");
+    TempData.Keep("OwnerCompany");
+    TempData.Keep("OwnerAddress1");
+    TempData.Keep("OwnerAddress2");
+    TempData.Keep("OwnerAddress4");
+    TempData.Keep("OwnerAddress5");
+    TempData.Keep("OwnerPostal1");
+    TempData.Keep("OwnerPostal2");
+    TempData.Keep("OwnerPostal3");
+    TempData.Keep("OwnerPostal4");
+    TempData.Keep("OwnerPostal5");
+    TempData.Keep("OwnerHomePhone");
+    TempData.Keep("OwnerCellPhone");
+    TempData.Keep("OwnerWorkPhone");
+    TempData.Keep("OwnerFaxPhone");
+    TempData.Keep("OwnerEmail");
+    TempData.Keep("ObjectorIdentity");
+    TempData.Keep("ObjectorCompany");
+    TempData.Keep("ObjectorPostal1");
+    TempData.Keep("ObjectorPostal2");
+    TempData.Keep("ObjectorPostal3");
+    TempData.Keep("ObjectorPostal4");
+    TempData.Keep("ObjectorPostal5");
+    TempData.Keep("ObjectorHome");
+    TempData.Keep("ObjectorCell");
+    TempData.Keep("ObjectorWork");
+    TempData.Keep("ObjectorFax");
+    TempData.Keep("ObjectorEmail");
+    TempData.Keep("ObjectorStatus");
+    TempData.Keep("RepresentativeName");
+    TempData.Keep("RepPostal1");
+    TempData.Keep("RepPostal2");
+    TempData.Keep("RepPostal3");
+    TempData.Keep("RepPostal4");
+    TempData.Keep("RepPostal5");
+    TempData.Keep("RepHomePhone");
+    TempData.Keep("RepCellPhone");
+    TempData.Keep("RepWorkPhone");
+    TempData.Keep("RepFaxPhone");
+    TempData.Keep("RepEmail");
+
+    //Section 2
+
+    var PhysicalAddress = TempData["PhysicalAddress"];
+    var TownName = TempData["TownName"];
+    var Code = TempData["Code"];
+    var Extent = TempData["Extent"];
+    var MunicipalAccountNo = TempData["MunicipalAccountNo"];
+    var BondHolderName = TempData["BondHolderName"];
+    var RegisteredAmount = TempData["RegisteredAmount"];
+    var FullDetails = TempData["FullDetails"];
+    var ServitudeNo = TempData["ServitudeNo"];
+    var AffectedArea = TempData["AffectedArea"];
+    var PropertyFavourOf = TempData["PropertyFavourOf"];
+    var PropertyPurpose = TempData["PropertyPurpose"];
+    var CompensationPaid = TempData["CompensationPaid"];
+    var PaymentDate = TempData["PaymentDate"];
+    var CompensationAmount = TempData["CompensationAmount"];
+
+    TempData.Keep("PhysicalAddress");
+    TempData.Keep("TownName");
+    TempData.Keep("Code");
+    TempData.Keep("Extent");
+    TempData.Keep("MunicipalAccountNo");
+    TempData.Keep("BondHolderName");
+    TempData.Keep("RegisteredAmount");
+    TempData.Keep("FullDetails");
+    TempData.Keep("ServitudeNo");
+    TempData.Keep("AffectedArea");
+    TempData.Keep("PropertyFavourOf");
+    TempData.Keep("PropertyPurpose");
+    TempData.Keep("CompensationPaid");
+    TempData.Keep("PaymentDate");
+    TempData.Keep("CompensationAmount");
+
+    //Section 3 Residential
+    var ResNoOfBedroom = TempData["ResNoOfBedroom"];
+    var ResNoOfBathRoom = TempData["ResNoOfBathRoom"];
+    var ResKitchen = TempData["ResKitchen"];
+    var ResLounge = TempData["ResLounge"];
+    var ResDinningRoom = TempData["ResDinningRoom"];
+    var ResLoungeDiningRoom = TempData["ResLoungeDiningRoom"];
+    var ResStudy = TempData["ResStudy"];
+    var ResPlayRoom = TempData["ResPlayRoom"];
+    var ResTelevision = TempData["ResTelevision"];
+    var ResLaundry = TempData["ResLaundry"];
+    var ResSeperateToilet = TempData["ResSeperateToilet"];
+    var ResDwellOther1 = TempData["ResDwellOther1"];
+    var ResDwellOther2 = TempData["ResDwellOther2"];
+    var ResDwellOther3 = TempData["ResDwellOther3"];
+    var ResDwellOther4 = TempData["ResDwellOther4"];
+    var ResNoOfGarages = TempData["ResNoOfGarages"];
+    var ResGrannyRoom = TempData["ResGrannyRoom"];
+    var ResOutbuildOther = TempData["ResOutbuildOther"];
+    var ResMainDwellingSize = TempData["ResMainDwellingSize"];
+    var ResOutsideBuildingSize = TempData["ResOutsideBuildingSize"];
+    var ResOtherBuildingSize = TempData["ResOtherBuildingSize"];
+    var ResTotalBuildingSize = TempData["ResTotalBuildingSize"];
+    var ResSwimmingPool = TempData["ResSwimmingPool"];
+    var ResBoreHole = TempData["ResBoreHole"];
+    var ResTennisCourt = TempData["ResTennisCourt"];
+    var ResGarden = TempData["ResGarden"];
+    var ResOtherDwell1 = TempData["ResOtherDwell1"];
+    var ResOtherDwell2 = TempData["ResOtherDwell2"];
+    var ResFence = TempData["ResFence"];
+    var ResFenceFront = TempData["ResFenceFront"];
+    var ResFenceBack = TempData["ResFenceBack"];
+    var ResFenceSide1 = TempData["ResFenceSide1"];
+    var ResFenceSide2 = TempData["ResFenceSide2"];
+    var ResFenceHeightFront = TempData["ResFenceHeightFront"];
+    var ResFenceHeightBack = TempData["ResFenceHeightBack"];
+    var ResFenceHeightSide1 = TempData["ResFenceHeightSide1"];
+    var ResFenceHeightSide2 = TempData["ResFenceHeightSide2"];
+    var ResDriveWay = TempData["ResDriveWay"];
+    var ResSecurityBoomedArea = TempData["ResSecurityBoomedArea"];
+    var ResOtherFeatures = TempData["ResOtherFeatures"];
+    var ResOtherFeaturesCondition = TempData["ResOtherFeaturesCondition"];
+    var ResGeneralCondition = TempData["ResGeneralCondition"];
+
+    TempData.Keep("ResNoOfBedroom");
+    TempData.Keep("ResNoOfBathRoom");
+    TempData.Keep("ResKitchen");
+    TempData.Keep("ResLounge");
+    TempData.Keep("ResDinningRoom");
+    TempData.Keep("ResLoungeDiningRoom");
+    TempData.Keep("ResStudy");
+    TempData.Keep("ResPlayRoom");
+    TempData.Keep("ResTelevision");
+    TempData.Keep("ResLaundry");
+    TempData.Keep("ResSeperateToilet");
+    TempData.Keep("ResDwellOther2");
+    TempData.Keep("ResDwellOther3");
+    TempData.Keep("ResDwellOther4");
+    TempData.Keep("ResNoOfGarages");
+    TempData.Keep("ResGrannyRoom");
+    TempData.Keep("ResOutbuildOther");
+    TempData.Keep("ResMainDwellingSize");
+    TempData.Keep("ResOutsideBuildingSize");
+    TempData.Keep("ResOtherBuildingSize");
+    TempData.Keep("ResTotalBuildingSize");
+    TempData.Keep("ResSwimmingPool");
+    TempData.Keep("ResBoreHole");
+    TempData.Keep("ResTennisCourt");
+    TempData.Keep("ResGarden");
+    TempData.Keep("ResOtherDwell1");
+    TempData.Keep("ResOtherDwell2");
+    TempData.Keep("ResFence");
+    TempData.Keep("ResFenceFront");
+    TempData.Keep("ResFenceBack");
+    TempData.Keep("ResFenceSide1");
+    TempData.Keep("ResFenceSide2");
+    TempData.Keep("ResFenceHeightFront");
+    TempData.Keep("ResFenceHeightBack");
+    TempData.Keep("ResFenceHeightSide1");
+    TempData.Keep("ResFenceHeightSide2");
+    TempData.Keep("ResDriveWay");
+    TempData.Keep("ResSecurityBoomedArea");
+    TempData.Keep("ResOtherFeatures");
+    TempData.Keep("ResOtherFeaturesCondition");
+    TempData.Keep("ResGeneralCondition");
+
+     //Section 3 Business
+    var BusTenantName = TempData["BusTenantName"];
+    var BusRentalLandSize = TempData["BusRentalLandSize"];
+    var BusRental = TempData["BusRental"];
+    var BusEscalation = TempData["BusEscalation"];
+    var BusOtherContribution = TempData["BusOtherContribution"];
+    var BusLeaseTerm = TempData["BusLeaseTerm"];
+    var BusStartDate = TempData["BusStartDate"];
+    var BusBuildingNo = TempData["BusBuildingNo"];
+    var BusBuildingSize = TempData["BusBuildingSize"];
+    var BusShops = TempData["BusShops"];
+    var BusBuildingCondition = TempData["BusBuildingCondition"];
+    var BusExtentLandFurtherDev = TempData["BusExtentLandFurtherDev"];
+    var BusOtherFeaturesCondition = TempData["BusOtherFeaturesCondition"];
+
+    TempData.Keep("BusTenantName");
+    TempData.Keep("BusRentalLandSize");
+    TempData.Keep("BusRental");
+    TempData.Keep("Bus_Escalation");
+    TempData.Keep("Bus_Other_contribution");
+    TempData.Keep("Bus_Lease_Term");
+    TempData.Keep("Bus_Start_Date");
+    TempData.Keep("Bus_Building_No");
+    TempData.Keep("Bus_Building_Size");
+    TempData.Keep("Bus_Shops");
+    TempData.Keep("Bus_Building_Condition");
+    TempData.Keep("Bus_Extent_Land_further_Dev");
+    TempData.Keep("Bus_Other_features_Condition");
+
+     //Section 3 Agriculture
+    var AgriNoOfBedroom = TempData["AgriNoOfBedroom"];
+    var Agri_No_of_BathRoom = TempData["Agri_No_of_BathRoom"];
+    var Agri_Kitchen = TempData["Agri_Kitchen"];
+    var AgriLounge = TempData["AgriLounge"];
+    var AgriDinningRoom = TempData["AgriDinningRoom"];
+    var AgriLoungeDiningRoom = TempData["AgriLoungeDiningRoom"];
+    var AgriStudy = TempData["AgriStudy"];
+    var AgriPlayRoom = TempData["AgriPlayRoom"];
+    var AgriTelevision = TempData["AgriTelevision"];
+    var AgriLaundry = TempData["AgriLaundry"];
+    var AgriSeperateToilet = TempData["AgriSeperateToilet"];
+    var AgriDwellOther1 = TempData["AgriDwellOther1"];
+    var AgriMainDwellingSize = TempData["AgriMainDwellingSize"];
+    var AgriBuildingNo = TempData["AgriBuildingNo"];
+    var AgriBuildingDescription = TempData["AgriBuildingDescription"];
+    var AgriBuildingSize = TempData["AgriBuildingSize"];
+    var AgriBuildingCondition = TempData["AgriBuildingCondition"];
+    var AgriBuildingFunctional = TempData["AgriBuildingFunctional"];
+    var AgriAnotherPurposeNotAgriculture = TempData["AgriAnotherPurposeNotAgriculture"];
+    var AgriAnotherPurposeNotAgricultureDesc = TempData["AgriAnotherPurposeNotAgricultureDesc"];
+    var AgriNonAgricultural = TempData["AgriNonAgricultural"];
+    var AgriGrazing = TempData["AgriGrazing"];
+    var AgriUnderIrrigation = TempData["AgriUnderIrrigation"];
+    var AgriDryLand = TempData["AgriDryLand"];
+    var AgriPermanentCrop = TempData["AgriPermanentCrop"];
+    var AgriOtherHa1 = TempData["AgriOtherHa1"];
+    var AgriOtherHa2 = TempData["AgriOtherHa2"];
+    var AgriOtherHa3 = TempData["AgriOtherHa3"];
+    var AgriTotalHa = TempData["AgriTotalHa"];
+    var AgriFenceCondition = TempData["AgriFenceCondition"];
+    var AgriGameAreaFenced = TempData["AgriGameAreaFenced"];
+    var AgriNumOfBoreholes = TempData["AgriNumOfBoreholes"];
+    var AgriOutputLitresHours = TempData["AgriOutputLitresHours"];
+    var AgriDams = TempData["AgriDams"];
+    var AgriCapacity = TempData["AgriCapacity"];
+    var AgriExposedToRiver = TempData["AgriExposedToRiver"];
+    var AgriLandClaim = TempData["AgriLandClaim"];
+    var AgriClaimDate = TempData["AgriClaimDate"];
+    var AgriGazetteNo = TempData["AgriGazetteNo"];
+    var AgriWaterRights = TempData["AgriWaterRights"];
+    var AgriWaterRightsDetails = TempData["AgriWaterRightsDetails"];
+    var AgriRezoningConsentUse = TempData["AgriRezoningConsentUse"];
+    var AgriConsentUseDetails = TempData["AgriConsentUseDetails"];
+    var AgriLandExcised = TempData["AgriLandExcised"];
+    var AgriNewFarmDesc = TempData["AgriNewFarmDesc"];
+    var AgriTownshipApplied = TempData["AgriTownshipApplied"];
+    var AgriTownshipAppliedDetail = TempData["AgriTownshipAppliedDetail"];
+    var AgriTenantName = TempData["AgriTenantName"];
+    var AgriRentalLandSize = TempData["AgriRentalLandSize"];
+    var AgriRental = TempData["AgriRental"];
+    var AgriEscalation = TempData["AgriEscalation"];
+    var AgriOtherContribution = TempData["AgriOtherContribution"];
+    var AgriLeaseTerm = TempData["AgriLeaseTerm"];
+    var AgriStartDate = TempData["AgriStartDate"];
+    var AgriUse = TempData["AgriUse"];
+
+    TempData.Keep("AgriNoOfBedroom");
+    TempData.Keep("Agri_No_of_BathRoom");
+    TempData.Keep("Agri_Kitchen");
+    TempData.Keep("AgriLounge");
+    TempData.Keep("AgriDinningRoom");
+    TempData.Keep("AgriLoungeDiningRoom");
+    TempData.Keep("AgriStudy");
+    TempData.Keep("AgriPlayRoom");
+    TempData.Keep("AgriTelevision");
+    TempData.Keep("AgriLaundry");
+    TempData.Keep("AgriSeperateToilet");
+    TempData.Keep("AgriDwellOther1");
+    TempData.Keep("AgriMainDwellingSize");
+    TempData.Keep("AgriBuildingNo");
+    TempData.Keep("AgriBuildingDescription");
+    TempData.Keep("AgriBuildingSize");
+    TempData.Keep("AgriBuildingCondition");
+    TempData.Keep("AgriBuildingFunctional");
+    TempData.Keep("AgriAnotherPurposeNotAgriculture");
+    TempData.Keep("AgriNonAgricultural");
+    TempData.Keep("AgriGrazing");
+    TempData.Keep("AgriUnderIrrigation");
+    TempData.Keep("AgriDryLand");
+    TempData.Keep("AgriPermanentCrop");
+    TempData.Keep("AgriOtherHa1");
+    TempData.Keep("AgriOtherHa2");
+    TempData.Keep("AgriOtherHa3");
+    TempData.Keep("AgriTotalHa");
+    TempData.Keep("AgriFenceCondition");
+    TempData.Keep("AgriGameAreaFenced");
+    TempData.Keep("AgriNumOfBoreholes");
+    TempData.Keep("AgriOutputLitresHours");
+    TempData.Keep("AgriDams");
+    TempData.Keep("AgriCapacity");
+    TempData.Keep("AgriExposedToRiver");
+    TempData.Keep("AgriLandClaim");
+    TempData.Keep("AgriClaimDate");
+    TempData.Keep("AgriGazetteNo");
+    TempData.Keep("AgriWaterRights");
+    TempData.Keep("AgriWaterRightsDetails");
+    TempData.Keep("AgriRezoningConsentUse");
+    TempData.Keep("AgriConsentUseDetails");
+    TempData.Keep("AgriLandExcised");
+    TempData.Keep("AgriNewFarmDesc");
+    TempData.Keep("AgriTownshipApplied");
+    TempData.Keep("AgriTownshipAppliedDetail");
+    TempData.Keep("AgriTenantName");
+    TempData.Keep("AgriRentalLandSize");
+    TempData.Keep("AgriRental");
+    TempData.Keep("AgriEscalation");
+    TempData.Keep("AgriOtherContribution");
+    TempData.Keep("AgriLeaseTerm");
+    TempData.Keep("AgriStartDate");
+    TempData.Keep("AgriUse");
+
+    //Section 4 Residential
+    var Res4SchemeName = TempData["Res4SchemeName"];
+    var Res4SchemeNo = TempData["Res4SchemeNo"];
+    var Res4FlatNo = TempData["Res4FlatNo"];
+    var Res4UnitSize = TempData["Res4UnitSize"];
+    var Res4ManagingAgentName = TempData["Res4ManagingAgentName"];
+    var Res4ManagingAgentTelNo = TempData["Res4ManagingAgentTelNo"];
+    var Res4NoOfBedroom = TempData["Res4NoOfBedroom"];
+    var Res4NoOfBathRoom = TempData["Res4NoOfBathRoom"];
+    var Res4MonthlyLevyRes = TempData["Res4MonthlyLevyRes"];
+    var Res4Kitchen = TempData["Res4Kitchen"];
+    var Res4Lounge = TempData["Res4Lounge"];
+    var Res4DinningRoom = TempData["Res4DinningRoom"];
+    var Res4LoungeDiningRoom = TempData["Res4LoungeDiningRoom"];
+    var Res4Study = TempData["Res4Study"];
+    var Res4PlayRoom = TempData["Res4PlayRoom"];
+    var Res4Television = TempData["Res4Television"];
+    var Res4Laundry = TempData["Res4Laundry"];
+    var Res4SeperateToilet = TempData["Res4SeperateToilet"];
+    var Res4DwellOther1 = TempData["Res4DwellOther1"];
+    var Res4DwellOther2 = TempData["Res4DwellOther2"];
+    var Res4DwellOther3 = TempData["Res4DwellOther3"];
+    var Res4DwellOther4 = TempData["Res4DwellOther4"];
+    var Res4PoolSize = TempData["Res4PoolSize"];
+    var Res4CommonPropertyOther1 = TempData["Res4CommonPropertyOther1"];
+    var Res4CommonPropertyOther2 = TempData["Res4CommonPropertyOther2"];
+    var Res4CommonPropertyOther3 = TempData["Res4CommonPropertyOther3"];
+    var Res4TennisCourtSize = TempData["Res4TennisCourtSize"];
+    var Res4GarageSize = TempData["Res4GarageSize"];
+    var Res4CarportSize = TempData["Res4CarportSize"];
+    var Res4OpenParkingSize = TempData["Res4OpenParkingSize"];
+    var Res4StoreRoomSize = TempData["Res4StoreRoomSize"];
+    var Res4GardenSize = TempData["Res4GardenSize"];
+    var Res4ExclusiveOther = TempData["Res4ExclusiveOther"];
+
+    TempData.Keep("Res4SchemeName");
+    TempData.Keep("Res4SchemeNo");
+    TempData.Keep("Res4FlatNo");
+    TempData.Keep("Res4UnitSize");
+    TempData.Keep("Res4ManagingAgentName");
+    TempData.Keep("Res4ManagingAgentTelNo");
+    TempData.Keep("Res4NoOfBedroom");
+    TempData.Keep("Res4NoOfBathRoom");
+    TempData.Keep("Res4MonthlyLevyRes");
+    TempData.Keep("Res4Kitchen");
+    TempData.Keep("Res4Lounge");
+    TempData.Keep("Res4DinningRoom");
+    TempData.Keep("Res4LoungeDiningRoom");
+    TempData.Keep("Res4Study");
+    TempData.Keep("Res4PlayRoom");
+    TempData.Keep("Res4Television");
+    TempData.Keep("Res4Laundry");
+    TempData.Keep("Res4SeperateToilet");
+    TempData.Keep("Res4DwellOther1");
+    TempData.Keep("Res4DwellOther2");
+    TempData.Keep("Res4DwellOther3");
+    TempData.Keep("Res4DwellOther4");
+    TempData.Keep("Res4CommonPropertyOther1");
+    TempData.Keep("Res4CommonPropertyOther2");
+    TempData.Keep("Res4CommonPropertyOther3");
+    TempData.Keep("Res4TennisCourtSize");
+    TempData.Keep("Res4GarageSize");
+    TempData.Keep("Res4CarportSize");
+    TempData.Keep("Res4OpenParkingSize");
+    TempData.Keep("Res4StoreRoomSize");
+    TempData.Keep("Res4GardenSize");
+    TempData.Keep("Res4ExclusiveOther");
+
+    //Section 4 Business
+    var Bus4SchemeName = TempData["Bus4SchemeName"];
+    var Bus4SchemeNo = TempData["Bus4SchemeNo"];
+    var Bus4FlatNo = TempData["Bus4FlatNo"];
+    var Bus4UnitSize = TempData["Bus4UnitSize"];
+    var Bus4ManagingAgentName = TempData["Bus4ManagingAgentName"];
+    var Bus4ManagingAgentTelNo = TempData["Bus4ManagingAgentTelNo"];
+    var Bus4Shops = TempData["Bus4Shops"];
+    var Bus4Offices = TempData["Bus4Offices"];
+    var Bus4Factories = TempData["Bus4Factories"];
+    var Bus4BusSectTitleOther1Name = TempData["Bus4BusSectTitleOther1Name"];
+    var Bus4BusSectTitleOther2Name = TempData["Bus4BusSectTitleOther2Name"];
+    var Bus4BusSectTitleOther3Name = TempData["Bus4BusSectTitleOther3Name"];
+    var Bus4BusSectTitleOther1 = TempData["Bus4BusSectTitleOther1"];
+    var Bus4BusSectTitleOther2 = TempData["Bus4BusSectTitleOther2"];
+    var Bus4BusSectTitleOther3 = TempData["Bus4BusSectTitleOther3"];
+    var Bus4TenantName = TempData["Bus4TenantName"];
+    var Bus4Rental = TempData["Bus4Rental"];
+    var Bus4OtherContribution = TempData["Bus4OtherContribution"];
+    var Bus4MonthlyLevy = TempData["Bus4MonthlyLevy"];
+    var Bus4RentalLandSize = TempData["Bus4RentalLandSize"];
+    var Bus4Escalation = TempData["Bus4Escalation"];
+    var Bus4LeaseTerm = TempData["Bus4LeaseTerm"];
+    var Bus4StartDate = TempData["Bus4StartDate"];
+    var Bus4PoolSize = TempData["Bus4PoolSize"];
+    var Bus4TennisCourtSize = TempData["Bus4TennisCourtSize"];
+    var Bus4CommonPropertyOther1 = TempData["Bus4CommonPropertyOther1"];
+    var Bus4CommonPropertyOther2 = TempData["Bus4CommonPropertyOther2"];
+    var Bus4CommonPropertyOther3 = TempData["Bus4CommonPropertyOther3"];
+    var Bus4GarageSize = TempData["Bus4GarageSize"];
+    var Bus4CarportSize = TempData["Bus4CarportSize"];
+    var Bus4OpenParkingSize = TempData["Bus4OpenParkingSize"];
+    var Bus4StoreRoomSize = TempData["Bus4StoreRoomSize"];
+    var Bus4GardenSize = TempData["Bus4GardenSize"];
+    var Bus4ExclusiveOther = TempData["Bus4ExclusiveOther"];
+
+
+    TempData.Keep("Bus4SchemeName");
+    TempData.Keep("Bus4SchemeNo");
+    TempData.Keep("Bus4FlatNo");
+    TempData.Keep("Bus4UnitSize");
+    TempData.Keep("Bus4ManagingAgentName");
+    TempData.Keep("Bus4ManagingAgentTelNo");
+    TempData.Keep("Bus4Shops");
+    TempData.Keep("Bus4Offices");
+    TempData.Keep("Bus4Factories");
+    TempData.Keep("Bus4BusSectTitleOther1Name");
+    TempData.Keep("Bus4BusSectTitleOther2Name");
+    TempData.Keep("Bus4BusSectTitleOther3Name");
+    TempData.Keep("Bus4BusSectTitleOther1");
+    TempData.Keep("Bus4BusSectTitleOther2");
+    TempData.Keep("Bus4BusSectTitleOther3");
+    TempData.Keep("Bus4TenantName");
+    TempData.Keep("Bus4Rental");
+    TempData.Keep("Bus4OtherContribution");
+    TempData.Keep("Bus4MonthlyLevy");
+    TempData.Keep("Bus4RentalLandSize");
+    TempData.Keep("Bus4Escalation");
+    TempData.Keep("Bus4LeaseTerm");
+    TempData.Keep("Bus4StartDate");
+    TempData.Keep("Bus4PoolSize");
+    TempData.Keep("Bus4TennisCourtSize");
+    TempData.Keep("Bus4CommonPropertyOther1");
+    TempData.Keep("Bus4CommonPropertyOther2");
+    TempData.Keep("Bus4CommonPropertyOther3");
+    TempData.Keep("Bus4GarageSize");
+    TempData.Keep("Bus4CarportSize");
+    TempData.Keep("Bus4OpenParkingSize");
+    TempData.Keep("Bus4StoreRoomSize");
+    TempData.Keep("Bus4GardenSize");
+    TempData.Keep("Bus4ExclusiveOther");
+
+
+
+    //Section 5
+    var CurrentAskingPrice = TempData["CurrentAskingPrice"];
+    var PreviousAskingPrice = TempData["PreviousAskingPrice"];
+    var AgentName = TempData["AgentName"];
+    var UnitNo = TempData["UnitNo"];
+    var OtherNearbySales = TempData["OtherNearbySales"];
+    var SaleDate = TempData["SaleDate"];
+    var CurrentRecievedOffer = TempData["CurrentRecievedOffer"];
+    var PreviousRecievedOffer = TempData["PreviousRecievedOffer"];
+    var AgentTelNo = TempData["AgentTelNo"];
+    var SuburbName = TempData["SuburbName"];
+    var SellingPrice = TempData["SellingPrice"];
+
+    TempData.Keep("CurrentAskingPrice");
+    TempData.Keep("PreviousAskingPrice");
+    TempData.Keep("AgentName");
+    TempData.Keep("UnitNo");
+    TempData.Keep("OtherNearbySales");
+    TempData.Keep("SaleDate");
+    TempData.Keep("CurrentRecievedOffer");
+    TempData.Keep("PreviousRecievedOffer");
+    TempData.Keep("AgentTelNo");
+    TempData.Keep("SuburbName");
+    TempData.Keep("SellingPrice");
+
+    //Section 6
+
+    var OldPropertyDescription = TempData["OldPropertyDescription"];
+    var Old_Category = TempData["OldCategory"];
+    var OldAddress = TempData["OldAddress"];
+    var OldExtent = TempData["OldExtent"];
+    var OldMarketValue = TempData["OldMarketValue"];
+    var OldOwner = TempData["OldOwner"];
+    var NewPropertyDescription = TempData["NewPropertyDescription"];
+    var NewCategory = TempData["NewCategory"];
+    var NewAddress = TempData["NewAddress"];
+    var NewExtent = TempData["NewExtent"];
+    var NewMarketValue = TempData["NewMarketValue"];
+    var NewOwner = TempData["NewOwner"];
+    var ObjectionReasons = TempData["ObjectionReasons"];
+    var Old2Category = TempData["Old2Category"];
+    var Old2Extent = TempData["Old2Extent"];
+    var Old2MarketValue = TempData["Old2MarketValue"];
+    var New2Category = TempData["New2Category"];
+    var New2Extent = TempData["New2Extent"];
+    var New2MarketValue = TempData["New2MarketValue"];
+    var Old3Category = TempData["Old3Category"];
+    var Old3Extent = TempData["Old3Extent"];
+    var Old3MarketValue = TempData["Old3MarketValue"];
+    var New3Category = TempData["New3Category"];
+    var New3Extent = TempData["New3Extent"];
+    var New3MarketValue = TempData["New3MarketValue"];
+
+    //Section 7
+    var SignatureName = TempData["SignatureName"];
+    var SignaturePicture = TempData["SignaturePicture"];
+    var Declaration_Date = TempData["Declaration_Date"];
+}
+
+<div id="preloader" disabled>
+    <div id="container" disabled>
+        <div id="ring" disabled></div>
+        <div id="ring" disabled></div>
+        <div id="ring" disabled></div>
+        <div id="ring" disabled></div>
+        <div id="h3" disabled>loading</div>
+    </div>
+</div>
+<div class="form-header" disabled>
+    <h1>Property Objection Form</h1>
+    <p>Complete all sections accurately and provide supporting documentation</p>
+</div>
+
+    
+<div style="right: 150px; padding:10px; display:flex; justify-content: center;">
+  @*   <a class="tab-button active" onclick="showSection1()" id="all-areas">Back</a><br />
+    *@ <button class="tab-button" onclick="history.back()">
+        <i class="fas fa-arrow-left"></i> Back
+    </button>
+    <a class="tab-button active" onclick="showSection1()" id="all-areas" >Section 1</a><br />
+    <a class="tab-button" onclick="showSection2()" id="all-areas"  >Section 2</a><br />
+    <a class="tab-button" onclick="showSection3()" id="all-areas"  >Section 3</a><br />
+    <a class="tab-button" onclick="showSection4()" id="all-areas"  >Section 4</a><br />
+    <a class="tab-button" onclick="showSection5()" id="all-areas"  >Section 5</a><br />
+    <a class="tab-button" onclick="showSection6()" id="all-areas"  >Section 6</a><br />
+    <a class="tab-button" onclick="showSection7()" id="all-areas"  >Section 7</a>
+</div>
+
+<h4 style="justify-content: center; display:flex;  margin-top: 20px;color:#006570;">MULTIPLE PURPOSE FORM</h4>
+
+    
+    <div style="justify-content: center;">
+
+    @*-----------------------------------------------------------------SECTION 1 -----------------------------------------------------------*@
+       
+    <div id="section1" style="display:flex;justify-content: center;" disabled>
+
+
+        <div class="div1" style="margin-top: 20px;border-radius: 25px;border: 1px solid #e6b000;padding: 24px;width: 100%;max-width: 1050px;background-color: #fffbea;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    font-family: 'Poppins' , sans-serif;
+" disabled>
+
+
+            <div style="width: 100%; margin: 20px 0; padding: 10px 0; position: relative;" disabled>
+                <h4 style="text-align: center;" id="shead" disabled><strong>SECTION 1: OBJECTOR INFORMATION</strong></h4>
+                <div style="display: flex; justify-content: space-between; align-items: center;" disabled>
+                    <div style="height: 2px; background: linear-gradient(to right, #e6b000, transparent); width: 45%;" disabled></div>
+                    <div style="height: 6px; width: 6px; border-radius: 50%; background-color: #e6b000;" disabled></div>
+                    <div style="height: 2px; background: linear-gradient(to left, #e6b000, transparent); width: 45%;" disabled></div>
+                </div>
+            </div>
+
+
+            <div class="Div1-1" disabled>
+                <div style="border-left: 5px solid #2c3e50; background-color: #f8f9fa; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" disabled>
+                    <span style="font-weight: bold; color: #2c3e50; margin-right: 8px;" disabled>1.1</span>
+                    <span style="font-weight: bold; font-size: 16px; text-transform: uppercase; letter-spacing: 0.5px;" disabled>OBJECTOR IS THE OWNER</span>
+                </div>
+
+
+                <div class="mb-4" disabled>
+                    <label for="oname" class="form-label fw-semibold  text-dark" disabled>
+                        Registered Owner of Property<span style="color: red;" disabled>*</span>
+                    </label>
+                    <input name="ownername" id="oname"
+                           class="form-control border-2 rounded shadow-sm px-4 py-2"
+                           maxlength="80"
+                           type="text"
+                           onpaste="return false;"
+                           ondrop="return false;"
+                           value="@OwnerName" disabled />
+                </div>
+
+                <div id="ownerdetails" disabled>
+
+                    <div class="row mb-2" disabled>
+
+                        <div class="col-sm-8" disabled>
+
+                            <div class="form-floating" disabled>
+                                <input id="oid" class="form-control border-2 rounded shadow-sm px-4" autocomplete="username" aria-required="true" onkeypress="return onlyNumberKey(event)" value="@OwnerIdentity" disabled />
+                                <label id="idinputL" onpaste="return false;" ondrop="return false;" disabled>ID Number</label>
+                                <span id="idstatus" style="color: red;" disabled></span>
+                            </div>
+
+                            <div class="form-floating" disabled>
+                                <input id="opass" class="form-control border-2 rounded shadow-sm px-4" autocomplete="username" aria-required="true" value="" disabled />
+                                <label id="passinputL" onpaste="return false;" ondrop="return false;" disabled>Passport Number</label>
+                            </div>
+                        </div>
+
+                        <div class="col-sm-4" disabled>
+                            <!--rIGHT-->
+                            <label class="form-label fw-semibold  text-dark" disabled> COMPANY OR C.C REGISTRATION NO. </label>
+                            <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="30" type="text" onpaste="return false;" ondrop="return false;" value="@OwnerCompany" disabled>
+
+                        </div>
+                    </div>
+
+                    @*    <h5 style="margin-top: 5px;" disabled> PHYSICAL ADDRESS OF OWNER </h5> *@
+                    <div style="border-left: 5px solid #2c3e50; background-color: #f8f9fa; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" disabled>
+                        @* <span style="font-weight: bold; color: #2c3e50; margin-right: 8px;" disabled>1.1</span> *@
+                        <span style="font-weight: bold; font-size: 16px; text-transform: uppercase; letter-spacing: 0.5px;" disabled>PHYSICAL ADDRESS OF OWNER</span>
+                    </div>
+                    <div class="row mb-2" disabled>
+                        <div class="col-sm-3" disabled>
+                            <label class="form-label fw-semibold text-dark" for="ost1" disabled>
+                                STREET NUMBER <span class="text-danger" title="This field is required" disabled>*</span>
+                            </label>
+                            <input style="margin-top: -1px;" id="ost1" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="10" type="text" onpaste="return false;" ondrop="return false;" value="@OwnerAddress1" disabled>
+                        </div>
+                        <div class="col-sm-9" disabled>
+                            <!--LEFT-->
+                            <label class="form-label fw-semibold  text-dark" disabled> STREET NAME: <span class="text-danger" title="This field is required" disabled>*</span></label>
+                            <input style="margin-top: -1px;" id="ost2" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" value="@OwnerAddress2" disabled>
+                        </div>
+                        <div class="col-sm-12" disabled>
+                            <label class="form-label fw-semibold  text-dark" disabled> SUBURB NAME:<span class="text-danger" title="This field is required" disabled>*</span></label>
+                            <input style="margin-top: -1px;" id="ost3" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" value="@OwnerAddress3" disabled>
+                        </div>
+                    </div>
+
+
+                    <div class="row mb-2" disabled>
+                        <div class="col-sm-9" disabled>
+                            <label class="form-label fw-semibold  text-dark" disabled> TOWN NAME: <span class="text-danger" title="This field is required" disabled>*</span></label>
+                            <input style="margin-top: -1px;" id="ost4" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" value="@OwnerAddress4" disabled>
+                        </div>
+                        <div class="col-sm-3" disabled>
+                            <label class="form-label fw-semibold  text-dark" disabled> POSTAL CODE: <span class="text-danger" title="This field is required" disabled>*</span></label>
+                            <input style="margin-top: -1px;" id="ost5" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="10" type="text" onpaste="return false;" ondrop="return false;" value="@OwnerAddress5" disabled>
+                        </div>
+                    </div>
+
+                    </br>
+                    @* <h5 style="margin-top: 5px;" disabled>POSTAL ADDRESS OF OWNER </h5> *@
+
+                    <div style="border-left: 5px solid #2c3e50; background-color: #f8f9fa; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" disabled>
+                        @* <span style="font-weight: bold; color: #2c3e50; margin-right: 8px;" disabled>1.1</span> *@
+                        <span style="font-weight: bold; font-size: 16px; text-transform: uppercase; letter-spacing: 0.5px;" disabled>POSTAL ADDRESS OF OWNER</span>
+                    </div>
+
+                    @*  <div class="d-flex py-2" style="border-left: 5px solid #2c3e50; background-color: #f8f9fa; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" disabled>
+                        <fieldset class="col-md-6" style="width: 100%;" disabled>
+                            <p style="color:black;" disabled>
+                                <label class="form-label fw-semibold text-dark" disabled>Postal Address is the same as Physical Address? &nbsp;</label>
+                                <span>
+                                    <label class="form-label fw-semibold text-dark" disabled>No</label>
+                                    <input type="radio" name="addpos" value="No" onclick="posno()" checked />
+                                    <label class="form-label fw-semibold text-dark" disabled>Yes</label>
+                                    <input type="radio" name="addpos" onclick="posyes()" value="Yes" />
+                                </span>
+                            </p>
+                        </fieldset>
+                    </div> *@
+
+                    <div class="row mb-2" disabled>
+                        <div class="col-sm-3" disabled>
+                            <label class="form-label fw-semibold  text-dark" disabled> STREET NUMBER <span style="color: red;" disabled>*</span></label>
+                            <input style="margin-top: -1px;" id="op1" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="10" type="text" onpaste="return false;" ondrop="return false;" value="@OwnerPostal1" disabled>
+
+                        </div>
+                        <div class="col-sm-9" disabled>
+                            <label class="form-label fw-semibold  text-dark" disabled>STREET NAME<span style="color: red;" disabled>*</span></label>
+                            <input style="margin-top: -1px;" id="op2" class="form-control" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" value="@OwnerPostal2" disabled>
+
+                        </div>
+                    </div>
+
+                    <div class="col-sm-12" disabled>
+                        <label class="form-label fw-semibold  text-dark" disabled> SUBURB NAME <span style="color: red;" disabled>*</span></label>
+                        <input style="margin-top: -1px;" id="op3" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" value="@OwnerPostal3" disabled>
+                    </div>
+                    <div class="row mb-2" disabled>
+                        <div class="col-sm-9" disabled>
+                            <label class="form-label fw-semibold  text-dark" disabled> TOWN NAME <span style="color: red;" disabled>*</span></label>
+                            <input style="margin-top: -1px;" id="op4" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" value="@OwnerPostal4" disabled>
+                        </div>
+                        <div class="col-sm-3" disabled>
+                            <label class="form-label fw-semibold  text-dark" disabled> POSTAL CODE <span style="color: red;" disabled>*</span></label>
+                            <input style="margin-top: -1px;" id="op5" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="10" type="text" onpaste="return false;" ondrop="return false;" value="@OwnerPostal5" disabled>
+                        </div>
+                    </div>
+                </div>
+                @* <h5 style="margin-top: 15px;" disabled>CONTACT DETAILS</h5> *@
+
+                </br>
+                <div style="border-left: 5px solid #2c3e50; background-color: #f8f9fa; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" disabled>
+                    @* <span style="font-weight: bold; color: #2c3e50; margin-right: 8px;" disabled>1.1</span> *@
+                    <span style="font-weight: bold; font-size: 16px; text-transform: uppercase; letter-spacing: 0.5px;" disabled>CONTACT DETAILS</span>
+                </div>
+                @*  <span id="ocdinvalid" disabled>Please fill at least one of the contact details fields.</span><br> *@
+                <div class="text-danger fw-semibold small mt-1" id="ocdinvalid" disabled>
+                    Please fill in at least one of the contact details fields.
+                </div>
+
+                <div class="row mb-2" disabled>
+                    <div class="col-sm-6" disabled>
+                        <label class="form-label fw-semibold  text-dark" disabled> HOME TELEPHONE <span style="color: red;" disabled>*</span></label>
+                        <input style="margin-top: -1px;" id="ocd1" class="form-control ocellno border-2 rounded shadow-sm px-4 py-2" maxlength="13" onkeypress="return onlyNumberKey(event)" type="tel" onpaste="return false;" ondrop="return false;" value="@OwnerHomePhone" disabled>
+
+                    </div>
+                    <div class="col-sm-6" disabled>
+                        <label class="form-label fw-semibold  text-dark" disabled> WORK TELEPHONE <span style="color: red;" disabled>*</span></label>
+                        <input style="margin-top: -1px;" id="ocd2" class="form-control ocellno border-2 rounded shadow-sm px-4 py-2" maxlength="13" onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;" value="@OwnerWorkPhone" disabled>
+
+                    </div>
+                </div>
+                <div class="row mb-2" disabled>
+                    <div class="col-sm-6" disabled>
+                        <label class="form-label fw-semibold  text-dark" disabled> CELLPHONE NUMBER<span style="color: red;" disabled>*</span> </label>
+                        <input style="margin-top: -1px;" id="ocd3" class="form-control ocellno border-2 rounded shadow-sm px-4 py-2" maxlength="13" onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;" value="@OwnerCellPhone" disabled>
+
+                    </div>
+                    <div class="col-sm-6" disabled>
+                        <label class="form-label fw-semibold  text-dark" disabled> FAX </label>
+                        <input style="margin-top: -1px;" id="ocd4" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="13" onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;" value="@OwnerFaxPhone" disabled>
+                    </div>
+                </div>
+
+                <div class="col-sm-12" disabled>
+                    <label class="form-label fw-semibold  text-dark" disabled>E-MAIL ADDRESS <span style="color: red;" disabled>*</span></label>
+                    <input style="margin-top: -1px;" id="ocd5" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" value="@OwnerEmail" disabled>
+                </div>
+
+
+
+
+            </div>
+
+            <div class="Div1-2" disabled>
+
+                @* <h4 id="TPartyhead" disabled>1.2 OBJECTOR IS NOT THE OWNER OR REPRESENTATIVE</h4> *@
+
+                <div style="border-left: 5px solid #2c3e50; background-color: #f8f9fa; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" disabled>
+                    <span style="font-weight: bold; color: #2c3e50; margin-right: 8px;" disabled>1.2</span>
+                    <span style="font-weight: bold; font-size: 16px; text-transform: uppercase; letter-spacing: 0.5px;" disabled>OBJECTOR IS NOT THE OWNER OR REPRESENTATIVE</span>
+                </div>
+
+                <div class="col-sm-12" disabled>
+                    <label class="form-label fw-semibold  text-dark" disabled> <span id="TPName" disabled>NAME OF OBJECTOR</span>  <span style="color: red;" disabled>*</span> </label>
+                    <input style="margin-top: -1px;" id="objectorname" class="form-control rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" value="@ObjectorName" disabled>
+
+                </div>
+
+                <div class=" row mb-2" disabled>
+
+                    <div class="col-sm-8" disabled>
+
+
+                        <div class="form-floating" disabled>
+                            <input value="@ObjectorIdentity" id="objectorid" class="form-control" autocomplete="username" aria-required="true" onkeypress="return onlyNumberKey(event)" value="@ObjectorIdentity" />
+                            <label value="@ObjectorIdentity" id="idL" onpaste="return false;" ondrop="return false;" disabled>ID Number</label>
+                            <span id="objidstatus" style="color: red;" disabled></span>
+                        </div>
+
+                        <div class="form-floating" disabled>
+                            <input value="@ObjectorIdentity" id="objectorpass" class="form-control" autocomplete="username" aria-required="true" />
+                            <label value="@ObjectorIdentity" id="passL" onpaste="return false;" ondrop="return false;" disabled>Passport Number</label>
+                        </div>
+                    </div>
+
+                    <div class="col-sm-4" disabled>
+                        <label class="form-label fw-semibold  text-dark" disabled> COMPANY OR CC REGISTRATION NO. </label>
+                        <input class="form-control rounded shadow-sm px-4 py-2" maxlength="20" type="text" onpaste="return false;" ondrop="return false;" value="@ObjectorCompany" disabled>
+
+                    </div>
+                </div>
+                <br></br>
+                @* <h6 style="margin-top: 5px;" disabled>POSTAL ADDRESS OF OBJECTOR </h6> *@
+                <div style="border-left: 5px solid #2c3e50; background-color: #f8f9fa; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" disabled>
+                    @* <span style="font-weight: bold; color: #2c3e50; margin-right: 8px;" disabled>1.2</span> *@
+                    <span style="font-weight: bold; font-size: 16px; text-transform: uppercase; letter-spacing: 0.5px;" disabled>POSTAL ADDRESS OF OBJECTOR</span>
+                </div>
+
+                <div class="row mb-2" disabled>
+                    <div class="col-sm-3" disabled>
+                        <label class="form-label fw-semibold  text-dark" disabled>STREET NUMBER  <span style="color: red;" disabled>*</span></label>
+                        <input style="margin-top: -1px;" id="objp1" class="form-control rounded shadow-sm px-4 py-2" maxlength="10" type="text" onpaste="return false;" ondrop="return false;" value="@ObjectorPostal1" disabled>
+                    </div>
+                    <div class="col-sm-9" disabled>
+                        <label class="form-label fw-semibold  text-dark" disabled> STREET NAME  <span style="color: red;" disabled>*</span></label>
+                        <input style="margin-top: -1px;" id="objp2" class="form-control rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" value="@ObjectorPostal2" disabled>
+                    </div>
+                    <div class="col-sm-12" disabled>
+                        <label class="form-label fw-semibold  text-dark" disabled> <span style="color: red;" disabled>*</span>SUBURB NAME  <span style="color: red;" disabled>*</span></label>
+                        <input style="margin-top: -1px;" id="objp3" class="form-control rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" value="@ObjectorPostal3" disabled>
+                    </div>
+
+
+                    <div class="col-sm-9" disabled>
+                        <label class="form-label fw-semibold  text-dark" disabled> TOWN NAME  <span style="color: red;" disabled>*</span></label>
+                        <input style="margin-top: -1px;" id="objp4" class="form-control rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" value="@ObjectorPostal4" disabled>
+
+                    </div>
+                    <div class="col-sm-3" disabled>
+                        <label class="form-label fw-semibold  text-dark" disabled> POSTAL CODE  <span style="color: red;" disabled>*</span></label>
+                        <input style="margin-top: -1px;" id="objp5" class="form-control rounded shadow-sm px-4 py-2" maxlength="10" type="text" onpaste="return false;" ondrop="return false;" value="@ObjectorPostal5" disabled>
+
+                    </div>
+                </div>
+                <br></br>
+
+                @* <h5 style="margin-top: 15px;" disabled>CONTACT DETAILS</h5> *@
+
+                <div style="border-left: 5px solid #2c3e50; background-color: #f8f9fa; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" disabled>
+                    @* <span style="font-weight: bold; color: #2c3e50; margin-right: 8px;" disabled>1.2</span> *@
+                    <span style="font-weight: bold; font-size: 16px; text-transform: uppercase; letter-spacing: 0.5px;" disabled>CONTACT DETAILS</span>
+                </div>
+                <span id="objcdinvalid" disabled>Please fill at least one of the contact details fields.</span><br>
+                <div class="row mb-2" disabled>
+                    <div class="col-sm-6" disabled>
+                        <label class="form-label fw-semibold  text-dark" disabled> HOME TELEPHONE <span style="color: red;" disabled>*</span></label>
+                        <input style="margin-top: -1px;" id="objcd1" class="form-control rounded shadow-sm px-4 py-2" maxlength="13" onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;" value="@ObjectorHome" disabled>
+
+                    </div>
+                    <div class="col-sm-6" disabled>
+                        <label class="form-label fw-semibold  text-dark" disabled> WORK TELEPHONE<span style="color: red;" disabled>*</span></label>
+                        <input style="margin-top: -1px;" id="objcd2" class="form-control rounded shadow-sm px-4 py-2" maxlength="13" onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;" value="@ObjectorWork" disabled>
+
+                    </div>
+                    <div class="col-sm-6" disabled>
+                        <label class="form-label fw-semibold  text-dark" disabled> CELL <span style="color: red;" disabled>*</span></label>
+                        <input style="margin-top: -1px;" id="objcd3" class="form-control rounded shadow-sm px-4 py-2" maxlength="13" onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;" value="@ObjectorCell" disabled>
+
+                    </div>
+                    <div class="col-sm-6" disabled>
+                        <label class="form-label fw-semibold  text-dark" disabled> FAX </label>
+                        <input style="margin-top: -1px;" id="objcd4" class="form-control rounded shadow-sm px-4 py-2" maxlength="13" onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;" value="@ObjectorFax" disabled>
+
+                    </div>
+                    <div class="col-sm-12" disabled>
+                        <label class="form-label fw-semibold  text-dark" disabled>E-MAIL ADDRESS <span style="color: red;" disabled>*</span></label>
+                        <input style="margin-top: -1px;" id="objcd5" class="form-control rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" value="@ObjectorEmail" disabled>
+
+                    </div>
+                    <div class="col-sm-12" disabled>
+                        <label class="form-label fw-semibold  text-dark" disabled> <span id="tpstatus" disabled>STATUS OF OBJECTOR</span><span style="color: red;" disabled>*</span><small class="text-muted fst-italic ms-2" disabled>(e.g. Tenant, Pending Purchaser, Municipality, etc)</small>  </label>
+                        <input style="margin-top: -1px;" id="objectorstat" class="form-control rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" value="@ObjectorStatus" disabled>
+                    </div>
+                </div>
+            </div>
+
+            <div class="Div1-3" disabled>
+                <br />
+                @*   <h4 id="rhead" disabled>1.3 AUTHORISED REPRESENTATIVE OF THE OBJECTOR</h4> *@
+                <div style="border-left: 5px solid #2c3e50; background-color: #f8f9fa; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" disabled>
+                    <span style="font-weight: bold; color: #2c3e50; margin-right: 8px;" disabled>1.3</span>
+                    <span style="font-weight: bold; font-size: 16px; text-transform: uppercase; letter-spacing: 0.5px;" disabled>AUTHORISED REPRESENTATIVE OF THE OBJECTOR</span>
+                </div>
+                <div class="col-sm-12" disabled>
+                    <label class="form-label fw-semibold  text-dark" disabled> NAME OF REPRESENTATIVE <span style="color: red;" disabled>*</span> </label>
+                    <input style="margin-top: -1px;" class="form-control rounded shadow-sm px-4 py-2" id="repname" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" value="@RepresentativeName" disabled>
+
+                </div>
+                <br></br>
+                @*  <h6 style="margin-top: 5px;" disabled>POSTAL ADDRESS OF REPRESENTATIVE </h6> *@
+
+                <div style="border-left: 5px solid #2c3e50; background-color: #f8f9fa; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" disabled>
+                    @*   <span style="font-weight: bold; color: #2c3e50; margin-right: 8px;" disabled>1.3</span> *@
+                    <span style="font-weight: bold; font-size: 16px; text-transform: uppercase; letter-spacing: 0.5px;" disabled>POSTAL ADDRESS OF REPRESENTATIVE</span>
+                </div>
+
+                <div class="row mb-2" disabled>
+
+                    <div class="col-sm-3" disabled>
+                        <label class="form-label fw-semibold  text-dark" disabled> STREET NUMBER <span style="color: red;" disabled>*</span></label>
+                        <input style="margin-top: -1px;" id="repp1" class="form-control rounded shadow-sm px-4 py-2" maxlength="10" type="text" onpaste="return false;" ondrop="return false;" value="@RepPostal1" disabled>
+
+                    </div>
+                    <div class="col-sm-9" disabled>
+                        <label class="form-label fw-semibold  text-dark" disabled> STREET NAME <span style="color: red;" disabled>*</span></label>
+                        <input style="margin-top: -1px;" id="repp2" class="form-control rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" value="@RepPostal2" disabled>
+
+                    </div>
+                    <div class="col-sm-12" disabled>
+                        <label class="form-label fw-semibold  text-dark" disabled> SUBURB NAME<span style="color: red;" disabled>*</span></label>
+                        <input style="margin-top: -1px;" id="repp3" class="form-control rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" value="@RepPostal3" disabled>
+
+                    </div>
+                    <div class="col-sm-9" disabled>
+                        <label class="form-label fw-semibold  text-dark" disabled> TOWN NAME <span style="color: red;" disabled>*</span></label>
+                        <input style="margin-top: -1px;" id="repp4" class="form-control rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" value="@RepPostal4" disabled>
+
+                    </div>
+                    <div class="col-sm-3" disabled>
+                        <label class="form-label fw-semibold  text-dark" disabled> POSTAL CODE <span style="color: red;" disabled>*</span></label>
+                        <input style="margin-top: -1px;" id="repp5" class="form-control rounded shadow-sm px-4 py-2" maxlength="10" type="text" onpaste="return false;" ondrop="return false;" value="@RepPostal5" disabled>
+
+                    </div>
+                </div>
+
+
+
+                <br></br>
+                @* <h5 style="margin-top: 15px;" disabled>CONTACT DETAILS</h5> *@
+                <div style="border-left: 5px solid #2c3e50; background-color: #f8f9fa; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" disabled>
+                    @*   <span style="font-weight: bold; color: #2c3e50; margin-right: 8px;" disabled>1.3</span> *@
+                    <span style="font-weight: bold; font-size: 16px; text-transform: uppercase; letter-spacing: 0.5px;" disabled>CONTACT DETAILS</span>
+                </div>
+
+
+                <span id="repcdinvalid" disabled>Please fill at least one of the contact details fields.</span><br>
+
+                <div class="row mb-2" disabled>
+                    <div class="col-sm-6" disabled>
+                        <label class="form-label fw-semibold  text-dark" disabled> HOME TELEPHONE <span style="color: red;" disabled>*</span></label>
+                        <input style="margin-top: -1px;" id="repcd1" class="form-control rounded shadow-sm px-4 py-2" maxlength="13" onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;" value="@RepHomePhone" disabled>
+
+                    </div>
+                    <div class="col-sm-6" disabled>
+                        <label class="form-label fw-semibold  text-dark" disabled> WORK TELEPHONE<span style="color: red;" disabled>*</span></label>
+                        <input style="margin-top: -1px;" id="repcd2" class="form-control rounded shadow-sm px-4 py-2" maxlength="13" onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;" value="@RepWorkPhone" disabled>
+
+                    </div>
+                    <div class="col-sm-6" disabled>
+
+                        <label class="form-label fw-semibold  text-dark" disabled> CELL<span style="color: red;" disabled>*</span> </label>
+                        <input style="margin-top: -1px;" id="repcd3" class="form-control rounded shadow-sm px-4 py-2" maxlength="13" onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;" value="@RepCellPhone" disabled>
+
+                    </div>
+                    <div class="col-sm-6" disabled>
+                        <label class="form-label fw-semibold  text-dark" disabled> FAX </label>
+                        <input style="margin-top: -1px;" id="repcd4" class="form-control rounded shadow-sm px-4 py-2" maxlength="13" onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;" value="@RepFaxPhone" disabled>
+
+                    </div>
+                    <div class="col-sm-12" disabled>
+                        <label class="form-label fw-semibold  text-dark" disabled>E-MAIL ADDRESS <span style="color: red;" disabled>*</span></label>
+                        <input style="margin-top: -1px;" id="repcd5" class="form-control rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" value="@RepEmail" disabled><br />
+
+                    </div>
+                </div>
+                <b>IF A REPRESENTATIVE IS APPOINTED, PROOF OF AUTHORISATION MUST BE ATTACHED, TO THIS FORM </b>
+
+
+
+            </div>
+
+
+        </div>
+    </div>
+
+
+
+    <script type="text/javascript">
+
+         $(document).ready(function() {
+          $("#section2").hide();
+          $("#section3-res").hide();
+	      $("#section3-bus").hide();
+	      $("#section3-agric").hide();
+          $("#section4-res").hide();
+	      $("#section4-bus").hide();
+          $("#section5").hide();
+          $("#section6").hide();
+          $("#section7").hide();
+        });
+
+        function showSection1()
+        {
+            $("#section1").show();
+            $("#section2").hide();
+            $("#section3-res").hide();
+	        $("#section3-bus").hide();
+	        $("#section3-agric").hide();
+            $("#section4-res").hide();
+	        $("#section4-bus").hide();
+            $("#section5").hide();
+            $("#section6").hide();
+            $("#section7").hide();
+        }
+
+        function showSection2()
+        {
+            $("#section1").hide();
+            $("#section2").show();
+            $("#section3-res").hide();
+	        $("#section3-bus").hide();
+	        $("#section3-agric").hide();
+            $("#section4-res").hide();
+	        $("#section4-bus").hide();
+            $("#section5").hide();
+            $("#section6").hide();
+            $("#section7").hide();
+        }
+
+         function showSection3()
+        {
+            $("#section1").hide();
+            $("#section2").hide();
+            $("#section3-res").show();
+            $("#section3-bus").show();
+	        $("#section3-agric").show();
+            $("#section4-res").hide();
+	        $("#section4-bus").hide();
+            $("#section5").hide();
+            $("#section6").hide();
+            $("#section7").hide();
+        }
+        function showSection4()
+        {
+            $("#section1").hide();
+            $("#section2").hide();
+            $("#section3-res").hide();
+            $("#section3-bus").hide();
+            $("#section3-agric").hide();
+            $("#section4-res").show();
+            $("#section4-bus").show();
+            $("#section5").hide();
+            $("#section6").hide();
+            $("#section7").hide();
+        }
+
+        function showSection5()
+        {
+           $("#section1").hide();
+            $("#section2").hide();
+            $("#section3-res").hide();
+	        $("#section3-bus").hide();
+	        $("#section3-agric").hide();
+            $("#section4-res").hide();
+	        $("#section4-bus").hide();
+            $("#section5").show();
+            $("#section6").hide();
+            $("#section7").hide();
+        }
+
+        function showSection6()
+        {
+            $("#section1").hide();
+            $("#section2").hide();
+            $("#section3-res").hide();
+	        $("#section3-bus").hide();
+	        $("#section3-agric").hide();
+            $("#section4-res").hide();
+	        $("#section4-bus").hide();
+            $("#section5").hide();
+            $("#section6").show();
+            $("#section7").hide();
+        }
+
+        function showSection7()
+        {
+            $("#section1").hide();
+            $("#section2").hide();
+            $("#section3-res").hide();
+	        $("#section3-bus").hide();
+	        $("#section3-agric").hide();
+            $("#section4-res").hide();
+	        $("#section4-bus").hide();
+            $("#section5").hide();
+            $("#section6").hide();
+            $("#section7").show();
+        
+        }
+
+          setTimeout(function () {
+                        $("#preloader").fadeOut(600);
+                    }, 900);
+
+
+
+            // ========================= TOASTER FUNCTIONS =========================
+        function showToaster(title, message, duration = 4000) {
+            let container = document.querySelector('.toaster-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.className = 'toaster-container';
+                document.body.appendChild(container);
+            }
+
+            const toaster = document.createElement('div');
+            toaster.className = 'toaster';
+            toaster.innerHTML = `
+                <div class="toaster-icon">🎉</div>
+                <div class="toaster-content">
+                    <div class="toaster-title">${title}</div>
+                    <div class="toaster-message">${message}</div>
+                </div>
+                <button class="toaster-close" onclick="closeToaster(this)">×</button>
+            `;
+
+            container.appendChild(toaster);
+
+            setTimeout(() => {
+                closeToaster(toaster.querySelector('.toaster-close'));
+            }, duration);
+        }
+
+        function closeToaster(button) {
+            const toaster = button.closest('.toaster');
+            if (!toaster) return;
+
+            toaster.classList.add('hiding');
+
+            setTimeout(() => {
+                toaster.remove();
+                const container = document.querySelector('.toaster-container');
+                if (container && container.children.length === 0) {
+                    container.remove();
+                }
+            }, 400);
+        }
+
+        // ========================= DOWNLOAD TOAST =========================
+        function showDownloadToast() {
+            showToaster(
+                'Download Started 📥',
+                'Your acknowledgement document is being downloaded...',
+                5000
+            );
+        }
+
+        // ========================= FORMAT VALUES =========================
+        function formatValues() {
+            var marketValueElements = document.querySelectorAll('.MarketValue');
+            marketValueElements.forEach(function (element) {
+                var marketValueText = element.textContent.trim();
+                if (marketValueText && marketValueText !== 'null') {
+                    var marketValue = parseFloat(marketValueText.replace(/[^0-9.-]+/g, ""));
+                    if (!isNaN(marketValue)) {
+                        var formattedValue = marketValue.toLocaleString('en-ZA', {
+                            style: 'currency',
+                            currency: 'ZAR',
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 0
+                        });
+                        element.textContent = formattedValue;
+                    }
+                }
+            });
+        }
+
+        // ========================= VALIDATE MARKET VALUES =========================
+        function validateAllMarketValues() {
+            var marketValueElements = document.querySelectorAll('.MarketValue');
+            var allValid = true;
+            var invalidCount = 0;
+
+            marketValueElements.forEach(function (element, index) {
+                var originalText = element.textContent.trim();
+                var cleanValue = originalText.replace(/[^0-9.-]+/g, "");
+                var marketValue = parseFloat(cleanValue);
+
+                if (!cleanValue || cleanValue === '' || isNaN(marketValue)) {
+                    return;
+                }
+
+                element.style.backgroundColor = '';
+
+                if (marketValue < 0) {
+                    invalidCount++;
+                    element.style.backgroundColor = '#ffebee';
+                    allValid = false;
+                }
+                else if (marketValue > 1000000000) {
+                    invalidCount++;
+                    element.style.backgroundColor = '#fff3e0';
+                    allValid = false;
+                }
+            });
+
+            if (!allValid) {
+                showToaster('Validation Error ❌', `Found ${invalidCount} invalid market values. Please contact support.`, 6000);
+                return false;
+            } else {
+                console.log(`✅ Validation Success: All ${marketValueElements.length} market values are valid!`);
+                return true;
+            }
+        }
+
+        // ========================= PRELOADER HANDLING =========================
+        function done() {
+            document.body.classList.add('loading');
+
+            setTimeout(function() {
+                const preloader = document.getElementById("preloader");
+                if (preloader) {
+                    preloader.classList.add('fade-out');
+                    document.body.classList.remove('loading');
+
+                    setTimeout(() => {
+                        preloader.style.display = "none";
+                        showToaster('Acknowledgement Ready ✅', 'Your objection has been successfully processed!', 5000);
+                    }, 600);
+                }
+                formatValues();
+                validateAllMarketValues();
+            }, 1000);
+        }
+
+        // ========================= INITIALIZE ON PAGE LOAD =========================
+        document.addEventListener('DOMContentLoaded', function () {
+            formatValues();
+            validateAllMarketValues();
+
+            setTimeout(() => {
+                showToaster('Welcome 👋', 'Review your objection details below', 4000);
+            }, 1500);
+
+            const style = document.createElement('style');
+            style.textContent = `
+                .table-row-active {
+                    background: linear-gradient(90deg, #b8ecf1 0%, white 100%) !important;
+                    transition: background 0.3s ease;
+                }
+                .action-button:active {
+                    transform: scale(0.98);
+                }
+            `;
+            document.head.appendChild(style);
+        });
+
+        // ========================= OTHER SCRIPTS =========================
+        function toggleCompensationDetails(show) {
+            document.getElementById('compensationDetails').style.display = show ? 'block' : 'none';
+        }
+
+        window.onload = function () {
+            const yesChecked = document.querySelector('input[name="CompensationPaid"][value="Yes"]').checked;
+            toggleCompensationDetails(yesChecked);
+        };
+
+        document.addEventListener("DOMContentLoaded", function () {
+            const fenceInput = document.getElementById("fenceInput");
+            const fenceTable = document.getElementById("fencetable");
+
+            function toggleFenceTable() {
+                if (fenceInput.value === "1") {
+                    fenceTable.style.display = "block";
+                } else {
+                    fenceTable.style.display = "none";
+                }
+            }
+
+            if (fenceInput) {
+                fenceInput.addEventListener("input", toggleFenceTable);
+                toggleFenceTable();
+            }
+        });
+
+        function onlyNumberKey(evt) {
+            var charCode = (evt.which) ? evt.which : evt.keyCode;
+            if (charCode > 31 && (charCode < 48 || charCode > 57))
+                return false;
+            return true;
+        }
+    </script>
+
+    @*-----------------------------------------------------------------SECTION 2 -----------------------------------------------------------*@
+
+    <div id="section2" style="display:flex;justify-content: center;" disabled>
+
+
+        <div class="div2" style="margin-top: 20px;border-radius: 25px;border: 1px solid #e6b000;padding: 24px;width: 100%;max-width: 1050px;background-color: #fffbea;
+             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+             font-family: 'Segoe UI' , Tahoma, Geneva, Verdana, sans-serif;" disabled>
+            @* <h4 style="text-align:center" disabled>SECTION 2: PROPERTY DETAILS (FOR SECTIONAL TITLES SEE SECTION 4)</h4> *@
+
+            <div style="width: 100%; margin: 20px 0; padding: 10px 0; position: relative;" disabled>
+                <h4 style="text-align: center;" id="shead" disabled><strong>SECTION 2: PROPERTY DETAILS (FOR SECTIONAL TITLES SEE SECTION 4)</strong></h4>
+                <div style="display: flex; justify-content: space-between; align-items: center;" disabled>
+                    <div style="height: 2px; background: linear-gradient(to right, #e6b000, transparent); width: 45%;" disabled></div>
+                    <div style="height: 6px; width: 6px; border-radius: 50%; background-color: #e6b000;" disabled></div>
+                    <div style="height: 2px; background: linear-gradient(to left, #e6b000, transparent); width: 45%;" disabled></div>
+                </div>
+            </div>
+
+
+            @* <h5 style="margin-top: 5px;" disabled> PHYSICAL ADDRESS </h5> *@
+
+            <div style="border-left: 5px solid #2c3e50; background-color: #f8f9fa; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" disabled>
+                @* <span style="font-weight: bold; color: #2c3e50; margin-right: 8px;" disabled>1.3</span> *@
+                <span style="font-weight: bold; font-size: 16px; text-transform: uppercase; letter-spacing: 0.5px;" disabled>PHYSICAL ADDRESS</span>
+            </div>
+
+            <div class="row mb-2" disabled>
+                <div class="col-sm-12" disabled>
+                    <label class="form-label fw-semibold text-dark" disabled>PHYSICAL ADDRESS</label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" value="@PhysicalAddress" disabled>
+                </div>
+            </div>
+            <div class="row mb-2" disabled>
+                <div class="col-sm-9" disabled>
+                    <label class="form-label fw-semibold text-dark" disabled>TOWN NAME</label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" value="@TownName" disabled>
+                </div>
+                <div class="col-sm-3" disabled>
+                    <label class="form-label fw-semibold text-dark" disabled>POSTAL CODE<span style="color: red;" disabled>*</span> </label>
+                    <input style="margin-top: -1px;" id="phyc" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="4" onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;" value="@Code" disabled>
+                </div>
+            </div>
+
+            <div class="row mb-2" disabled>
+                <div class="col-sm-4" disabled>
+                    <label class="form-label fw-semibold text-dark d-flex" disabled> EXTENT OF PROPERTY<small class="text-muted fst-italic ms-2" disabled>(m²)</small> </label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="12" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" value="@Extent" disabled>
+
+                </div>
+                <div class="col-sm-8" disabled>
+                    <label class="form-label fw-semibold text-dark d-flex" disabled> MUNICIPAL ACCOUNT NO<small class="text-muted fst-italic d-block" disabled>(if applicable)</small> </label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" maxlength="12" value="@MunicipalAccountNo" disabled>
+
+                </div>
+            </div>
+
+            <div class="row mb-2" disabled>
+                <div class="col-sm-6" disabled>
+                    <label class="form-label fw-semibold text-dark" disabled> NAME OF BOND HOLDER </label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" value="@BondHolderName" disabled>
+
+                </div>
+                <div class="col-sm-6" disabled>
+                    <label class="form-label fw-semibold text-dark d-flex" disabled> REGISTERED AMOUNT OF BOND <small class="text-muted fst-italic d-block" disabled>(if applicable)</small></label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="12" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" value="@RegisteredAmount" disabled>
+
+                </div>
+            </div>
+
+            <div class="mb-4" disabled>
+                <label for="textarea" class="form-label fw-semibold text-dark" disabled>PROVIDE FULL DETAILS OF ALL SERVITUDES, ROAD PROCLAMATIONS OR OTHER ENDORSEMENTS AGAINST THE PROPERTY  <small class="text-muted fst-italic d-block" disabled>(if applicable)</small> </label>
+                <textarea class="form-control" id="textarea" maxlength="500" style="margin-top: -1px;" value="@FullDetails" rows="4" cols="150" class="form-control border-2 shadow-sm rounded px-3 py-2" disabled></textarea>
+                <small class="form-text text-muted" disabled>Max 500 characters.</small>
+            </div>
+
+            <div class="row mb-2" disabled>
+                <div class="col-sm-6" disabled>
+                    <label class="form-label fw-semibold text-dark" disabled> SERVITUDE NO. </label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="20" type="text" onpaste="return false;" ondrop="return false;" value="@ServitudeNo" disabled>
+                </div>
+                <div class="col-sm-6" disabled>
+                    <label class="form-label fw-semibold text-dark d-flex" disabled>
+                        AFFECTED AREA
+                        <small class="text-muted fst-italic ms-2" disabled>(m²)</small>
+                    </label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="12" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" value="@AffectedArea" disabled>
+                </div>
+            </div>
+
+
+            <div class="col-sm-12" disabled>
+                <label class="form-label fw-semibold text-dark" disabled> IN FAVOUR OF </label>
+                <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" value="@PropertyFavourOf" disabled>
+
+            </div>
+
+
+            <div class="mb-4" disabled>
+                <label for="textarea" class="form-label fw-semibold text-dark" disabled>FOR WHAT PURPOSE</label>
+                <textarea class="form-control" id="textarea" maxlength="500" style="margin-top: -1px;" value="@PropertyPurpose" rows="4" cols="150" class="form-control border-2 shadow-sm rounded px-3 py-2" disabled></textarea>
+                <small class="form-text text-muted" disabled>Max 250 characters.</small>
+            </div>
+            @*    <div>
+            <label class="form-label fw-semibold text-dark" disabled>FOR WHAT PURPOSE</label>
+            <textarea class="form-control" id="textarea" maxlength="250" style="margin-top: -1px;" value="@PropertyPurpose" rows="3" cols="150" disabled></textarea>
+            </div> *@
+
+            <div class="d-flex" disabled>
+                <fieldset class="col-md-3 mt-3" disabled>
+                    <label class="form-label fw-semibold text-dark d-block mb-2" disabled>
+                        WAS COMPENSATION PAID
+                    </label>
+                    <span>
+                        <label class="btn fw-semibold text-dark" autocomplete="off" disabled>
+                            <input type="radio" class="form-check-input" value="@CompensationPaid" value="Yes" style="accent-color: green;" onclick="toggleCompensationDetails(true)" disabled>
+                            Yes
+                        </label>
+                    </span>
+                    <span>
+                        <label class="btn fw-semibold text-dark" autocomplete="off" disabled>
+                            <input type="radio" class="form-check-input" value="@CompensationPaid" value="No" style="accent-color: green;" onclick="toggleCompensationDetails(false)" disabled>
+                            No
+                        </label>
+                    </span>
+                </fieldset>
+            </div>
+
+            <div id="compensationDetails" style="display:none;" disabled>
+
+                <div class="row mb-2" disabled>
+                    <div class="col-sm-6" disabled>
+                        <label class="form-label fw-semibold text-dark" disabled> IF YES, DATE OF PAYMENT </label>
+                        <input style="margin-top: -1px;" class="form-control" type="date" value="@PaymentDate" disabled>
+                    </div>
+                    <div class="col-sm-6" disabled>
+                        <label class="form-label fw-semibold text-dark" disabled> AMOUNT (R) </label>
+                        <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="12" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" onkeyup="reformatText(this)" id="CompensationAmount" value="@CompensationAmount" disabled>
+
+                    </div>
+                </div>
+
+
+
+            </div>
+
+            <script>
+                function toggleCompensationDetails(show) {
+                    document.getElementById('compensationDetails').style.display = show ? 'block' : 'none';
+                }
+
+                // Optionally show it if already selected on page load
+                window.onload = function () {
+                    const yesChecked = document.getElementById('compyes').checked;
+                    toggleCompensationDetails(yesChecked);
+                };
+            </script>
+
+
+            <input id="CompensationAmount" value="@CompensationAmount" hidden />
+
+        </div>
+
+    </div>
+
+    @*-----------------------------------------------------------------SECTION 3 RESIDENTIAL-----------------------------------------------------------*@
+
+  
+    <div id="section3-res" style="display:flex;justify-content: center;" disabled>
+        <div class="div3R" style="margin-top: 20px;border-radius: 25px;border: 1px solid #e6b000;padding: 24px;width: 100%;max-width: 1050px;background-color: #fffbea;box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;" disabled>
+            <div style="width: 100%; margin: 20px 0; padding: 10px 0; position: relative;" disabled>
+                <h4 style="text-align: center;" id="shead" disabled><strong>SECTION 3: DESCRIPTION OF RESIDENTIAL DWELLING (FOR SECTIONAL TITLES SEE SECTION 4)</strong></h4>
+                <div style="display: flex; justify-content: space-between; align-items: center;" disabled>
+                    <div style="height: 2px; background: linear-gradient(to right, #e6b000, transparent); width: 45%;" disabled></div>
+                    <div style="height: 6px; width: 6px; border-radius: 50%; background-color: #e6b000;" disabled></div>
+                    <div style="height: 2px; background: linear-gradient(to left, #e6b000, transparent); width: 45%;" disabled></div>
+                </div>
+            </div>
+
+            <div style="border-left: 5px solid #2c3e50; background-color: #f8f9fa; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" disabled>
+                <span style="font-weight: bold; color: #2c3e50; margin-right: 8px;" disabled>3.1</span>
+                <span style="font-weight: bold; font-size: 16px; text-transform: uppercase; letter-spacing: 0.5px;" disabled>MAIN DWELLING</span>
+            </div>
+            <div class="row mb-2" disabled>
+                <div class="col-sm-6" disabled>
+                    <label class="form-label fw-semibold text-dark" disabled> NO. OF BEDROOMS </label>
+                    <input style="margin-top: -1px;" id="s3r" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" maxlength="3" value="@ResNoOfBedroom" disabled>
+                </div>
+                <div class="col-sm-6" disabled>
+                    <label class="form-label fw-semibold text-dark" disabled> NO. OF BATHROOMS</label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" maxlength="3" value="@ResNoOfBathRoom" disabled>
+                </div>
+            </div>
+            <br></br>
+
+            <div style="border-left: 5px solid #2c3e50; background-color: #f8f9fa; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" disabled>
+                <span style="font-weight: bold; font-size: 16px; text-transform: uppercase; letter-spacing: 0.5px;" disabled>STATE YES OR NO <small class="text-muted" disabled>(If Yes, indicate number of rooms)</small></span>
+            </div>
+
+            <div class="d-flex" disabled>
+                <fieldset class="col-md-4" disabled>
+                    <label class="form-label fw-semibold text-dark" disabled> KITCHEN </label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" maxlength="3" onkeypress="return onlyNumberKey(event)" value="@ResKitchen" disabled>
+                </fieldset>
+                <fieldset class="col-md-4 px-3" disabled>
+                    <label class="form-label fw-semibold text-dark" style="vertical-align:middle" disabled> LOUNGE </label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" maxlength="3" onkeypress="return onlyNumberKey(event)" value="@ResLounge" disabled>
+                </fieldset>
+                <fieldset class="col-md-4 px-0" disabled>
+                    <label class="form-label fw-semibold text-dark" style="vertical-align:middle" disabled> DINING ROOM </label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" maxlength="3" onkeypress="return onlyNumberKey(event)" value="@ResDinningRoom" disabled>
+                </fieldset>
+            </div>
+
+            <div class="d-flex" disabled>
+                <fieldset class="col-md-4 mt-3" disabled>
+                    <label class="form-label fw-semibold text-dark" style="vertical-align:middle" disabled> LAUNDRY </label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" maxlength="3" onkeypress="return onlyNumberKey(event)" value="@ResLaundry" disabled>
+                </fieldset>
+                <fieldset class="col-md-4 mt-3 px-3" disabled>
+                    <label class="form-label fw-semibold text-dark" style="vertical-align:middle" disabled> STUDY </label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" maxlength="3" onkeypress="return onlyNumberKey(event)" value="@ResStudy" disabled>
+                </fieldset>
+                <fieldset class="col-md-4 mt-3 px-0" disabled>
+                    <label class="form-label fw-semibold text-dark" style="vertical-align:middle" disabled> PLAYROOM </label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" maxlength="3" onkeypress="return onlyNumberKey(event)" value="@ResPlayRoom" disabled>
+                </fieldset>
+            </div>
+
+            <div class="d-flex" disabled>
+                <fieldset class="col-md-4 mt-3" disabled>
+                    <label class="form-label fw-semibold text-dark" style="vertical-align:middle;" disabled> TV ROOM </label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" maxlength="3" onkeypress="return onlyNumberKey(event)" value="@ResTelevision" disabled>
+                </fieldset>
+                <fieldset class="col-md-4 mt-3 mb-3 px-3" disabled>
+                    <label class="form-label fw-semibold text-dark" style="vertical-align:middle" disabled> SEPARATE TOILET </label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" maxlength="3" onkeypress="return onlyNumberKey(event)" value="@ResSeperateToilet" disabled>
+                </fieldset>
+                <fieldset class="col-md-5 mt-3" disabled>
+                    <label class="form-label fw-semibold text-dark" style="vertical-align:middle" disabled>LOUNGE WITH DINING ROOM</label>
+                    <input style="margin-top: -1px; width: 100px;" class="form-control border-2 rounded shadow-sm px-2 py-1" type="text" onpaste="return false;" ondrop="return false;" maxlength="3" onkeypress="return onlyNumberKey(event)" value="@ResLoungeDiningRoom" disabled>
+                </fieldset>
+            </div>
+
+            <div class="row mb-2" disabled>
+                <div class="col-sm-3" disabled>
+                    <label class="form-label fw-semibold text-dark" disabled> OTHER (1) </label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" maxlength="80" value="@ResDwellOther1" disabled>
+                </div>
+                <div class="col-sm-3" disabled>
+                    <label class="form-label fw-semibold text-dark" disabled>OTHER (2)   </label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" maxlength="80" value="@ResDwellOther2" disabled>
+                </div>
+                <div class="col-sm-3" disabled>
+                    <label class="form-label fw-semibold text-dark" disabled> OTHER (3)  </label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" maxlength="80" value="@ResDwellOther3" disabled>
+                </div>
+                <div class="col-sm-3" disabled>
+                    <label class="form-label fw-semibold text-dark" disabled>OTHER (4)  </label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" maxlength="80" value="@ResDwellOther4" disabled>
+                </div>
+            </div>
+
+            <br></br>
+
+            <div style="border-left: 5px solid #2c3e50; background-color: #f8f9fa; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" disabled>
+                <span style="font-weight: bold; color: #2c3e50; margin-right: 8px;" disabled>3.2</span>
+                <span style="font-weight: bold; font-size: 16px; text-transform: uppercase; letter-spacing: 0.5px;" disabled>OUTBUILDING</span>
+            </div>
+
+            <div class="row mb-2" disabled>
+                <div class="col-sm-4" disabled>
+                    <label class="form-label fw-semibold text-dark" disabled> NO. OF GARAGES </label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" maxlength="3" value="@ResNoOfGarages" disabled>
+                </div>
+                <div class="col-sm-4" disabled>
+                    <label class="form-label fw-semibold text-dark" disabled> GRANNY FLAT/ROOMS </label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" maxlength="80" value="@ResGrannyRoom" disabled>
+                </div>
+                <div class="col-sm-4" disabled>
+                    <label class="form-label fw-semibold text-dark" disabled> SIZE OF MAIN DWELLING<small class="text-muted fst-italic ms-2" disabled>(m²)</small></label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" maxlength="6" value="@ResMainDwellingSize" disabled>
+                </div>
+            </div>
+            <div class="col-sm-12" disabled>
+                <label class="form-label fw-semibold text-dark" disabled> OTHER</label>
+                <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" maxlength="80" value="@ResOutbuildOther" disabled>
+            </div>
+            <div class="row mb-2" disabled>
+                <div class="col-sm-4" disabled>
+                    <label class="form-label fw-semibold text-dark" disabled> SIZE OF OUTBUILDING <small class="text-muted fst-italic ms-2" disabled>(m²)</small></label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" maxlength="6" value="@ResOutsideBuildingSize" disabled>
+                </div>
+                <div class="col-sm-4" disabled>
+                    <label class="form-label fw-semibold text-dark" disabled> SIZE OF OTHER BUILDING <small class="text-muted fst-italic ms-2" disabled>(m²)</small></label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" maxlength="6" value="@ResOtherBuildingSize" disabled>
+                </div>
+                <div class="col-sm-4" disabled>
+                    <label class="form-label fw-semibold text-dark" disabled> TOTAL SIZE OF ALL BUILDINGS <small class="text-muted fst-italic ms-2" disabled>(m²)</small></label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" maxlength="6" value="@ResTotalBuildingSize" disabled>
+                </div>
+            </div>
+
+            <br></br>
+
+            <div style="border-left: 5px solid #2c3e50; background-color: #f8f9fa; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" disabled>
+                <span style="font-weight: bold; color: #2c3e50; margin-right: 8px;" disabled>3.3</span>
+                <span style="font-weight: bold; font-size: 16px; text-transform: uppercase; letter-spacing: 0.5px;" disabled>OTHER BUILDINGS <small class="text-muted" disabled>(ATTACH ANNEXURE)</small></span>
+            </div>
+
+            <div class="d-flex" disabled>
+                <fieldset class="col-md-4 mt-3" disabled>
+                    <label class="form-label fw-semibold text-dark" style="vertical-align:middle" disabled>SWIMMING POOL</label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" maxlength="3" onkeypress="return onlyNumberKey(event)" value="@ResSwimmingPool" disabled>
+                </fieldset>
+                <fieldset class="col-md-3 mt-3" disabled>
+                    <label class="form-label fw-semibold text-dark" style="vertical-align:middle" disabled>BORE HOLE</label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" maxlength="3" onkeypress="return onlyNumberKey(event)" value="@ResBoreHole" disabled>
+                </fieldset>
+                <fieldset class="col-md-4 mt-3" disabled>
+                    <label class="form-label fw-semibold text-dark" style="vertical-align:middle" disabled>TENNIS COURT</label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" maxlength="3" onkeypress="return onlyNumberKey(event)" value="@ResTennisCourt" disabled>
+                </fieldset>
+            </div>
+
+            <div class="d-flex" disabled>
+                <fieldset class="col-md-5 mb-3 mt-3" disabled>
+                    <label class="form-label fw-semibold text-dark" style="vertical-align:middle" disabled>GARDEN</label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" maxlength="20" value="@ResGarden" disabled>
+                </fieldset>
+            </div>
+
+            <div class="row mb-2" disabled>
+                <div class="col-sm-6" disabled>
+                    <label class="form-label fw-semibold text-dark" disabled> OTHER (1) </label>
+                    <input style="margin-top: -1px;" class="form-control" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" value="@ResDwellOther1" disabled>
+                </div>
+                <div class="col-sm-6" disabled>
+                    <label class="form-label fw-semibold text-dark" disabled> OTHER (2) </label>
+                    <input style="margin-top: -1px;" class="form-control" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" value="@ResDwellOther2" disabled>
+                </div>
+            </div>
+
+            <div class="d-flex" disabled>
+                <fieldset class="col-md-3 mt-3" disabled>
+                    <label class="form-label fw-semibold text-dark" style="vertical-align:middle" disabled>FENCING</label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" maxlength="3" onkeypress="return onlyNumberKey(event)" value="@ResFence" id="fenceInput" disabled>
+                </fieldset>
+            </div>
+
+            <div id="fencetable" style="display: none" disabled>
+                <table class="table table-bordered table-hover mt-3" disabled>
+                    <thead class="thead-light" disabled>
+                        <tr>
+                            <th scope="col" class="col-1" disabled>FENCING&nbsp;&nbsp;</th>
+                            <th scope="col" class="col-1" disabled>FRONT</th>
+                            <th scope="col" class="col-1" disabled>BACK</th>
+                            <th scope="col" class="col-1" disabled>SIDE 1</th>
+                            <th scope="col" class="col-1" disabled>SIDE 2</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <th scope="row" disabled>Type</th>
+                            <td><input style="border:none;" value="@ResFenceFront" maxlength="30" onpaste="return false;" ondrop="return false;" disabled></td>
+                            <td><input style="border:none;" value="@ResFenceBack" maxlength="30" onpaste="return false;" ondrop="return false;" disabled></td>
+                            <td><input style="border:none;" value="@ResFenceSide1" maxlength="30" onpaste="return false;" ondrop="return false;" disabled></td>
+                            <td><input style="border:none;" value="@ResFenceSide2" maxlength="30" onpaste="return false;" ondrop="return false;" disabled></td>
+                        </tr>
+                        <tr>
+                            <th scope="row" disabled>Height (CM)</th>
+                            <td><input style="border:none;" value="@ResFenceHeightFront" onpaste="return false;" maxlength="4" ondrop="return false;" onkeypress="return onlyNumberKey(event)" disabled></td>
+                            <td><input style="border:none;" value="@ResFenceHeightBack" onpaste="return false;" maxlength="4" ondrop="return false;" onkeypress="return onlyNumberKey(event)" disabled></td>
+                            <td><input style="border:none;" value="@ResFenceHeightSide1" onpaste="return false;" maxlength="4" ondrop="return false;" onkeypress="return onlyNumberKey(event)" disabled></td>
+                            <td><input style="border:none;" value="@ResFenceHeightSide2" onpaste="return false;" maxlength="4" ondrop="return false;" onkeypress="return onlyNumberKey(event)" disabled></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <script>
+                document.addEventListener("DOMContentLoaded", function () {
+                    const fenceInput = document.getElementById("fenceInput");
+                    const fenceTable = document.getElementById("fencetable");
+
+                    function toggleFenceTable() {
+                        if (fenceInput.value === "1") {
+                            fenceTable.style.display = "block";
+                        } else {
+                            fenceTable.style.display = "none";
+                        }
+                    }
+
+                    fenceInput.addEventListener("input", toggleFenceTable);
+                    toggleFenceTable();
+                });
+
+                function onlyNumberKey(evt) {
+                    var charCode = (evt.which) ? evt.which : evt.keyCode;
+                    if (charCode > 31 && (charCode < 48 || charCode > 57))
+                        return false;
+                    return true;
+                }
+            </script>
+            <div class="col-sm-12" disabled>
+                <label class="form-label fw-semibold text-dark" disabled> DRIVEWAY <small class="text-muted fst-italic d-block" disabled>((e.g. Bricks, pavers))</small> </label>
+                <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="50" type="text" onpaste="return false;" ondrop="return false;" value="@ResDriveWay" disabled>
+            </div>
+
+            <div class="d-flex mb-3" disabled>
+                <fieldset class="col-md-6 mt-3" disabled>
+                    <label class="form-label fw-semibold text-dark" style="vertical-align:middle" disabled>IS YOUR PROPERTY SITUATED IN A BOOMED AREA OR SECURITY</label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" maxlength="3" onkeypress="return onlyNumberKey(event)" value="@ResSecurityBoomedArea" disabled>
+                </fieldset>
+            </div>
+
+            <label class="form-label fw-semibold text-dark" disabled> OTHER FEATURES: </label>
+            <input style="margin-top: -1px;" maxlength="80" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" value="@ResOtherFeatures" disabled>
+
+            <div class="d-flex" disabled>
+                <div class="d-flex col-md-4" disabled>
+                    <fieldset class="col-md-12 mb-3 mt-3" disabled>
+                        <label class="form-label fw-semibold text-dark" style="vertical-align:middle" disabled>OTHER FEATURE CONDITION </label>
+                        <br />
+                        <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" maxlength="20" value="@ResOtherFeaturesCondition" disabled>
+                    </fieldset>
+                </div>
+                <div class="d-flex col-md-6" disabled>
+                    <fieldset class="col-md-12 mb-3 mt-3" disabled>
+                        <label class="form-label fw-semibold text-dark" style="vertical-align:middle" disabled>GENERAL CONDITION OF PROPERTY </label>
+                        <br />
+                        <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" maxlength="20" value="@ResGeneralCondition" disabled>
+                    </fieldset>
+                </div>
+            </div>
+
+        </div>
+    </div>
+<br />
+@*---------------------------------------- Section 3 Agricultural Section ---------------------------------------*@
+    <div id="section3-agric" style="display:flex;justify-content: left;">
+
+        <div class="div3_A " style="margin-top: 20px;border-radius: 25px;border: 1px solid #e6b000;padding: 24px;width: 100%;max-width: 1050px;background-color: #fffbea;
+             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+             font-family: 'Segoe UI' , Tahoma, Geneva, Verdana, sans-serif;">
+
+            <div style="width: 100%; margin: 20px 0; padding: 10px 0; position: relative;">
+                <h4 style="text-align: center;" id="s_head"><strong>SECTION 3: DESCRIPTION OF BUILDINGS (INFORMATION UNDER 3.1 TO 3.4 TO BE SUPPLIED BY MEANS OF ANNEXURES AS FOLLOWS)</strong></h4>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="height: 2px; background: linear-gradient(to right, #e6b000, transparent); width: 45%;"></div>
+                    <div style="height: 6px; width: 6px; border-radius: 50%; background-color: #e6b000;"></div>
+                    <div style="height: 2px; background: linear-gradient(to left, #e6b000, transparent); width: 45%;"></div>
+                </div>
+            </div>
+
+            <div style="border-left: 5px solid #2c3e50; background-color: #f8f9fa; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <span style="font-weight: bold; color: #2c3e50; margin-right: 8px;">3.1</span>
+                <span style="font-weight: bold; font-size: 16px; text-transform: uppercase; letter-spacing: 0.5px;">MAIN DWELLING ON FARM/HOLDING</span>
+            </div>
+
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <label> NO OF BEDROOMS </label>
+                    <input style="margin-top: -1px;" id="s3a" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" value="@AgriNoOfBedroom" disabled>
+                </div>
+
+                <div class="col-sm-6">
+                    <label> NO OF BATHROOMS</label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" value="@Agri_No_of_BathRoom" disabled>
+                    <h6 class="mt-3">STATE YES OR NO (IF YES INDICATE NUMBER OF ROOMS)</h6>
+                </div>
+            </div>
+            <div class="d-flex">
+                <fieldset class="col-md-4">
+                    <label> KITCHEN </label>
+                    <input type="text" name="k_res" class="form-control border-2 rounded shadow-sm px-4 py-2" value="@Agri_Kitchen" disabled>
+
+                </fieldset>
+
+                <fieldset class="col-md-4 px-3">
+                    <label style="vertical-align:middle"> LOUNGE </label>
+                    <input type="text" name="l_res" class="form-control border-2 rounded shadow-sm px-4 py-2" value="@AgriLounge" disabled>
+
+                </fieldset>
+
+
+                <fieldset class="col-md-4 px-0">
+                    <label style="vertical-align:middle"> DINING ROOM </label>
+                    <input type="text" name="d_res" class="form-control border-2 rounded shadow-sm px-4 py-2" onclick="show_res_dining_room()" value="@AgriDinningRoom" disabled>
+                </fieldset>
+
+            </div>
+
+            <div class="d-flex">
+                <fieldset class="col-md-4 mt-3">
+                    <label style="vertical-align:middle"> LAUNDRY</label>
+
+                    <input type="text" name="la_res" class="form-control border-2 rounded shadow-sm px-4 py-2" onclick="show_res_laundry()" value="@AgriLaundry" disabled>
+                </fieldset>
+
+
+                <fieldset class="col-md-4 mt-3 px-3" @*style="margin-left: 60%; margin-top: -6.70%"*@ >
+                    <label style="vertical-align:middle"> STUDY</label>
+                    <input type="text" name="s_res" class="form-control border-2 rounded shadow-sm px-4 py-2" onclick="show_res_study()" value="@AgriStudy" disabled>
+                </fieldset>
+
+                <fieldset class="col-md-4 mt-3 px-0">
+                    <label style="vertical-align:middle"> PLAYROOM</label>
+                    <input type="text" name="p_res" class="form-control border-2 rounded shadow-sm px-4 py-2" onclick="show_res_playroom()" value="@AgriPlayRoom" disabled>
+                </fieldset>
+
+
+            </div>
+
+            <div class="d-flex">
+                <fieldset class="col-md-4 mt-3">
+                    <label style="vertical-align:middle;"> TV ROOM</label>
+                    <input type="text" name="tv_res" class="form-control border-2 rounded shadow-sm px-4 py-2" onclick="show_res_television()" value="@AgriTelevision" disabled>
+                </fieldset>
+
+                <fieldset class="col-md-4 mt-3 mb-3 px-3">
+                    <label style="vertical-align:middle"> SEPARATE TOILET</label>
+                    <input type="text" name="st_res" class="form-control border-2 rounded shadow-sm px-4 py-2" onclick="show_res_separate_toilets()" value="@AgriSeperateToilet" disabled>
+                </fieldset>
+
+                <fieldset class="col-md-4 mt-3 px-0">
+                    <label style="vertical-align:middle"> LOUNGE WITH DINING ROOM </label>
+                    <input type="text" name="ld_res" class="form-control border-2 rounded shadow-sm px-4 py-2" value="@AgriLoungeDiningRoom" disabled>
+                </fieldset>
+            </div>
+
+
+            <label> OTHER"1" </label>
+            <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" value="@AgriDwellOther1" disabled>
+
+
+            <label> SIZE OF MAIN DWELLING (m2)</label>
+            <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" step="0.01" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" value="@AgriMainDwellingSize" disabled>
+
+
+            <h5 style="margin-top: 15px;">3.2 OTHER BUILDING (ATTACH ANNEXTURE A)</h5>
+
+            <label> BUILDING NO.</label>
+            <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" value="@AgriBuildingNo" disabled>
+
+            <label> DESCRIPTION</label>
+            <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" value="@AgriBuildingDescription" disabled>
+
+            <label> SIZE (m2)</label>
+            <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" step="0.01" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" value="@AgriBuildingSize" disabled>
+
+            <label> CONDITION </label>
+            <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" value="@AgriBuildingCondition" disabled>
+
+
+            <div class="d-flex">
+                <fieldset class="col-md-5 mt-3">
+                    <label style="vertical-align:middle">IS THE BUILDING FUNCTIONAL</label>
+
+                </fieldset>
+            </div>
+
+            <h5 style="margin-top: 15px;">3.3 IS ANY PORTION OF THE PROPERTY USED FOR ANY PURPOSE OTHER THAN AGRICULTURAL? (e.g Business, mining, eco-tourism, trading in or hunting of game)</h5>
+
+            <fieldset class="d-flex px-2">
+                <label style="vertical-align:middle"></label>
+
+            </fieldset>
+
+            <label> IF YES: DESCRIBE THE USE(S) </label>
+            <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" value="@AgriAnotherPurposeNotAgriculture" disabled>
+
+            <h6 style="margin-top: 2%;">IF NECESSARY PROVIDE ANNEXURE B</h6>
+
+            <h5 style="margin-top: 15px;">3.4 LAND ANALYSIS</h5>
+
+            <label> NON-AGRICULTURAL (REFER TO 3.3)(ha) </label>
+            <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" value="@AgriNonAgricultural" disabled>
+
+            <label> GRAZING (ha) </label>
+            <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" value="@AgriGrazing" disabled>
+
+            <label> UNDER IRRIGATION(ha) </label>
+            <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" value="@AgriUnderIrrigation" disabled>
+
+            <label> DRY LAND (ha) </label>
+            <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" value="@AgriDryLand" disabled>
+
+            <label> PERMANET CROPS (ha) </label>
+            <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" value="@AgriPermanentCrop" disabled>
+
+            <label> OTHER "1" (ha) </label>
+            <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" value="@AgriOtherHa1" disabled>
+
+            <label>  OTHER "2" (ha)  </label>
+            <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" value="@AgriOtherHa2" disabled>
+
+            <label>  OTHER "3" (ha)  </label>
+            <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" value="@AgriOtherHa3" disabled>
+
+            <label>  TOTAL (ha)  </label>
+            <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" value="@AgriTotalHa" disabled>
+
+            <div class="d-flex mb-3">
+                <fieldset class="col-md-6 mt-3">
+                    <label style="vertical-align:middle">CONDITION OF FENCES</label>
+                    <br />
+
+                    <input type="text" class="form-control border-2 rounded shadow-sm px-4 py-2" value="@AgriFenceCondition" disabled>
+
+                </fieldset>
+            </div>
+
+            <label> AREA GAME FENCE (ha) </label>
+            <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" value="@AgriGameAreaFenced" disabled>
+
+            <label> NO. OF BOREHOLES</label>
+            <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" value="@AgriNumOfBoreholes" disabled>
+
+            <label> OUTPUT LITRES/HOURS</label>
+            <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" value="@AgriOutputLitresHours" disabled>
+
+            <label> DAMS</label>
+            <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" value="@AgriDams" disabled>
+
+            <label> CAPACITY</label>
+            <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" value="@AgriCapacity" disabled>
+
+            <div class="d-flex">
+                <fieldset class="col-md-6 mt-3">
+                    <label style="vertical-align:middle">IS THE PROPERTY EXPOSED TO RIVER</label>
+
+                </fieldset>
+            </div>
+
+
+            <h6 style="margin-top: 15px;">3.5 OTHER</h6>
+
+            <div class="d-flex py-2">
+                <fieldset class="col-md-6">
+                    <label style="vertical-align:middle">IS YOUR PROPERTY AFFECTED BY LAND CLAIM</label>
+                </fieldset>
+            </div>
+
+            <div id="affected-land">
+                <label> DATE OF CLAIM</label>
+                <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" value="@AgriClaimDate" disabled>
+                <label> GAZETTE NO.</label>
+                <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" value="@AgriGazetteNo" disabled>
+            </div>
+
+            <div class="d-flex  py-2">
+                <fieldset class="col-md-6">
+                    <label style="vertical-align:middle">DO YOU HAVE WATER RIGHTS?</label>
+
+                </fieldset>
+            </div>
+
+            <div id="water-right">
+                <label> GIVE DETAILS:</label>
+                <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" value="@AgriWaterRightsDetails" disabled>
+            </div>
+
+            <div class="d-flex  py-2">
+                <fieldset>
+                    <label style="vertical-align:middle">HAVE YOU APPLIED FOR A REZONING OR CONSENT USE?</label>
+
+                </fieldset>
+            </div>
+
+            <div id="water-right">
+                <h6>CONSENT USE e.g as guest house, business, etc</h6>
+                <label> GIVE DETAILS:</label>
+                <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" value="@AgriConsentUseDetails" disabled>
+            </div>
+
+
+            <div class="d-flex py-2">
+                <fieldset class="col-md-8">
+                    <label style="vertical-align:middle">HAS YOUR AGRICULTURAL HOLDINGS PROPERTY BEEN EXCISED?</label>
+
+                </fieldset>
+            </div>
+
+            <div id="water-right">
+                <label> IF YES: GIVE NEW FARM DESCRIPTION</label>
+                <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" value="@AgriNewFarmDesc" disabled>
+            </div>
+
+            <div class="d-flex py-2">
+                <fieldset class="col-md-7">
+                    <label style="vertical-align:middle">HAS THE TOWNSHIP APPLIED FOR OR PROCLAIMED?</label>
+
+                </fieldset>
+            </div>
+
+            <div id="water-right">
+                <label> IF YES: GIVE DETAILS</label>
+                <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" value="@AgriTownshipAppliedDetail" disabled>
+            </div>
+
+            <h6>TENANT AND RENT INFORMATION - ANNEXURE C</h6>
+            <label> NAME OF TENANT</label>
+            <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" value="@AgriTenantName" disabled>
+
+            <label> SIZE(m2)</label>
+            <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" value="@AgriRentalLandSize" disabled>
+
+            <label> RENTAL (EXCL VAT)</label>
+            <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" value="@AgriRental" disabled>
+
+            <label> ESCALATION OF RENTAL</label>
+            <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" value="@AgriEscalation" disabled>
+
+            <label> OTHER CONTRIBUTIONS</label>
+            <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" value="@AgriOtherContribution" disabled>
+
+            <label> TERM OF LEASE</label>
+            <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" value="@AgriLeaseTerm" disabled>
+
+            <label> START DATE</label>
+            <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" value="@AgriStartDate" disabled>
+
+            <label> USE</label>
+            <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" value="@AgriUse" disabled>
+
+        </div>
+
+    </div> @*End of Section 3*@
+
+<br />
+
+
+     @*---------------------------------------------------------Section 3 Business -------------------------------------------------*@
+
+  <div id="section3-bus" style="display:flex;justify-content: center;">
+
+
+        <div class="div3B" style="margin-top: 20px;border-radius: 25px;border: 1px solid #e6b000;padding: 24px;width: 100%;max-width: 1050px;background-color: #fffbea;
+             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+             font-family: 'Segoe UI' , Tahoma, Geneva, Verdana, sans-serif;">
+            @* <h4 style="text-align:center">SECTION 3: DESCRIPTION OF BUILDINGS (FOR SECTIONAL TITLES SEE SECTION 4)</h4> *@
+
+            <div style="width: 100%; margin: 20px 0; padding: 10px 0; position: relative;">
+                 <h4 style="text-align: center;" id="shead"><strong>SECTION 3: DESCRIPTION OF BUILDINGS (FOR SECTIONAL TITLES SEE SECTION 4)</strong></h4>
+               <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="height: 2px; background: linear-gradient(to right, #e6b000, transparent); width: 45%;"></div>
+                    <div style="height: 6px; width: 6px; border-radius: 50%; background-color: #e6b000;"></div>
+                    <div style="height: 2px; background: linear-gradient(to left, #e6b000, transparent); width: 45%;"></div>
+                </div>
+            </div>
+
+            @* <h6 style="margin-top: 15px;">(INFORMATION UNDER 3.1 TO 3.4 TO BE SUPPLIED BY MEANS OF ANNEXURES AS FOLLOWS)</h6> *@
+
+            <div style="border-left: 5px solid #2c3e50; background-color: #f8f9fa; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    @* <span style="font-weight: bold; color: #2c3e50; margin-right: 8px;">3.1</span> *@
+                    <span style="font-weight: bold; font-size: 16px; text-transform: uppercase; letter-spacing: 0.5px;">(INFORMATION UNDER 3.1 TO 3.4 TO BE SUPPLIED BY MEANS OF ANNEXURES AS FOLLOWS)</span>
+            </div>
+
+          
+
+           @*  <h5 style="margin-top: 15px;">TENANT AND RENT INFORMATION - ANNEXURE A</h5> *@
+
+             <div style="border-left: 5px solid #2c3e50; background-color: #f8f9fa; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    @* <span style="font-weight: bold; color: #2c3e50; margin-right: 8px;">3.1</span> *@
+                    <span style="font-weight: bold; font-size: 16px; text-transform: uppercase; letter-spacing: 0.5px;">TENANT AND RENT INFORMATION - ANNEXURE A</span>
+            </div>
+
+            <div class="row mb-2">
+                <div class="col-sm-10">
+                    <label class="form-label fw-semibold text-dark"> NAME OF TENANT</label>
+                    <input style="margin-top: -1px;" id="s3b" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" value="@BusTenantName">
+
+                </div>
+                <div class="col-sm-2">
+                    <label class="form-label fw-semibold text-dark">SIZE</labeL>
+                        <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" maxlength="12" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" value="@BusRentalLandSize">
+
+                </div>
+            </div>
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <label class="form-label fw-semibold text-dark"> RENTAL (EXCL VAT)</label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" value="@BusRental">
+                </div>
+                <div class="col-sm-6">
+                    <label class="form-label fw-semibold text-dark"> ESCALATION OF RENTAL</label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" maxlength="12" onpaste="return false;" ondrop="return false;" value="@BusEscalation">
+                </div>
+            </div>
+
+            <div class="row mb-2">
+                <div class="col-sm-4">
+                    <label class="form-label fw-semibold text-dark"> OTHER CONTRIBUTIONS</label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" maxlength="12" onpaste="return false;" ondrop="return false;" value="@BusOtherContribution">
+                </div>
+                <div class="col-sm-4">
+                    <label class="form-label fw-semibold text-dark"> TERM OF LEASE</label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" value="@BusLeaseTerm">
+                </div>
+                <div class="col-sm-4">
+                    <label class="form-label fw-semibold text-dark"> START DATE</label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="date" name="StartDate" value="@BusStartDate">
+                </div>
+            </div>
+            <br></br>
+            @* <h5 style="margin-top: 15px;">3.2 SCHEDULE OF EXPENSES INCLUDING: MUNICIPAL, ADMINISTRATION, INSURANCES, SECURITY ETC. - ANNEXURE B</h5>
+            <h5 style="margin-top: 15px;">3.3  STATEMENT OF INCOME & EXPENDITURE FOR PREVIOUS FINANCIAL YEAR - ANNEXURE C</h5>
+            <h5 style="margin-top: 15px;">3.4 BUILDING SIZES - ANNEXURE D</h5> *@
+
+              <div style="border-left: 5px solid #2c3e50; background-color: #f8f9fa; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <span style="font-weight: bold; color: #2c3e50; margin-right: 8px;">3.2</span>
+                    <span style="font-weight: bold; font-size: 16px; text-transform: uppercase; letter-spacing: 0.5px;">SCHEDULE OF EXPENSES INCLUDING: MUNICIPAL, ADMINISTRATION, INSURANCES, SECURITY ETC. - ANNEXURE B</span>
+              </div>
+                
+
+              <div style="border-left: 5px solid #2c3e50; background-color: #f8f9fa; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <span style="font-weight: bold; color: #2c3e50; margin-right: 8px;">3.3</span>
+                    <span style="font-weight: bold; font-size: 16px; text-transform: uppercase; letter-spacing: 0.5px;">STATEMENT OF INCOME & EXPENDITURE FOR PREVIOUS FINANCIAL YEAR - ANNEXURE C</span>
+              </div>
+
+                  
+              <div style="border-left: 5px solid #2c3e50; background-color: #f8f9fa; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <span style="font-weight: bold; color: #2c3e50; margin-right: 8px;">3.4</span>
+                    <span style="font-weight: bold; font-size: 16px; text-transform: uppercase; letter-spacing: 0.5px;">BUILDING SIZES - ANNEXURE D</span>
+              </div>
+
+            <div class="row mb-2">
+                <div class="col-sm-8">
+                    <label class="form-label fw-semibold text-dark"> BUILDING NO.</label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" maxlength="12" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" value="@BusBuildingNo">
+
+                </div>
+                <div class="col-sm-4">
+                    <label class="form-label fw-semibold text-dark"> SIZE <small class="text-muted fst-italic ms-2">(m²)</small></label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" maxlength="12" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" value="@BusBuildingSize">
+
+                </div>
+            </div>
+
+            <div class="row mb-2">
+                <div class="col-mb-6">
+                    <label class="form-label fw-semibold text-dark"> DESCRIPTION <small class="text-muted fst-italic ms-2">(e.g. Used as a shop, office, etc)</small></label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" value="@BusShops">
+
+                </div>
+                <div class="col-mb-6">
+                    <label class="form-label fw-semibold text-dark"> CONDITION </label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" value="@BusBuildingCondition">
+
+                </div>
+            </div>
+
+
+            <div class="col-sm-12">
+                <h5 style="margin-top: 15px;">3.5 IF THE PROPERTY HAS NOT BEEN DEVELOPED TO ITS HIGHEST AND BEST USE, INDICATE THE EXTENT OF LAND THAT IS AVAILABLE FOR FURTHER DEVELOPMENT. <small class="text-muted fst-italic ms-2">(m²)</small></h5>
+                <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" value="@BusExtentLandFurtherDev">
+
+            </div>
+            <div class="col-sm-12">
+                <label class="form-label fw-semibold text-dark"> OTHER FEATURES OF BUILDINGS: (PROVIDE ANNEXURE IF NECESSARY) </label>
+                <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" value="@BusOtherFeaturesCondition">
+            </div>
+
+
+          
+        </div>
+
+
+    </div>
+
+
+     @*---------------------------------------------------------Section 4 Business -------------------------------------------------*@
+
+    <div id="section4-bus" style="display:flex;justify-content: center;">
+        <div class="div4B" style="margin-top: 20px;border-radius: 25px;border: 1px solid #e6b000;padding: 24px;width: 100%;max-width: 1050px;background-color: #fffbea;
+           box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+           font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+            <div style="width: 100%; margin: 20px 0; padding: 10px 0; position: relative;">
+                <h4 style="text-align: center;" id="shead"><strong>SECTION 4: SECTIONAL TITLE UNITS</strong></h4>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="height: 2px; background: linear-gradient(to right, #e6b000, transparent); width: 45%;"></div>
+                    <div style="height: 6px; width: 6px; border-radius: 50%; background-color: #e6b000;"></div>
+                    <div style="height: 2px; background: linear-gradient(to left, #e6b000, transparent); width: 45%;"></div>
+                </div>
+            </div>
+
+            <div style="border-left: 5px solid #2c3e50; background-color: #f8f9fa; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <span style="font-weight: bold; font-size: 16px; text-transform: uppercase; letter-spacing: 0.5px;">SECTIONAL TITLE UNITS</span>
+            </div>
+
+            <div class="row mb-2">
+                <div class="col-sm-5">
+                    <label class="form-label fw-semibold text-dark"> SCHEME NAME</label>
+                    <input style="margin-top: -1px;" id="schnameb" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" value="@Bus4SchemeName" disabled>
+                </div>
+                <div class="col-sm-2">
+                    <label class="form-label fw-semibold text-dark"> SCHEME NO.</label>
+                    <input style="margin-top: -1px;" id="schnob" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" maxlength="5" onkeypress="return onlyNumberKey(event)" value="@Bus4SchemeNo" disabled>
+                </div>
+                <div class="col-sm-3">
+                    <label class="form-label fw-semibold text-dark"> FLAT NO/DOOR NO.</label><label hidden> FLAT NO/UNIT NO.</label>
+                    <input style="margin-top: -1px;" id="flatnob" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="5" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" value="@Bus4FlatNo" disabled>
+                </div>
+                <div class="col-sm-2">
+                    <label class="form-label fw-semibold text-dark"> UNIT SIZE <small class="text-muted fst-italic ms-2">(m²)</small></label>
+                    <input style="margin-top: -1px;" id="unitsizeb" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="10" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" value="@Bus4UnitSize" disabled>
+                </div>
+            </div>
+
+            <div class="row mb-2">
+                <div class="col-sm-8">
+                    <label class="form-label fw-semibold text-dark"> NAME OF MANAGEMENT AGENT</label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" value="@Bus4ManagingAgentName" disabled>
+                </div>
+                <div class="col-sm-4">
+                    <label class="form-label fw-semibold text-dark">TEL NO.</label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" maxlength="13" onkeypress="return onlyNumberKey(event)" value="@Bus4ManagingAgentTelNo" disabled>
+                </div>
+            </div>
+            <div class="row mb-2">
+                <div class="col-sm-8">
+                    <label class="form-label fw-semibold text-dark"> SHOPS <small class="text-muted fst-italic ms-2">(m²)</small></label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="10" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" value="@Bus4Shops" disabled>
+                </div>
+                <div class="col-sm-4">
+                    <label class="form-label fw-semibold text-dark">OTHER (1)</label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" value="@Bus4BusSectTitleOther1" disabled>
+                </div>
+            </div>
+
+            <div class="row mb-2">
+                <div class="col-sm-8">
+                    <label class="form-label fw-semibold text-dark"> OFFICES <small class="text-muted fst-italic ms-2">(m²)</small></label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="10" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" value="@Bus4Offices" disabled>
+                </div>
+                <div class="col-sm-4">
+                    <label class="form-label fw-semibold text-dark">OTHER (2)</label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" value="@Bus4BusSectTitleOther2" disabled>
+                </div>
+            </div>
+
+            <div class="row mb-2">
+                <div class="col-sm-8">
+                    <label class="form-label fw-semibold text-dark"> FACTORIES <small class="text-muted fst-italic ms-2">(m²)</small></label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="10" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" value="@Bus4Factories" disabled>
+                </div>
+                <div class="col-sm-4">
+                    <label class="form-label fw-semibold text-dark">OTHER (3)</label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" value="@Bus4BusSectTitleOther3" disabled>
+                </div>
+            </div>
+
+            <div style="border-left: 5px solid #2c3e50; background-color: #f8f9fa; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <span style="font-weight: bold; font-size: 16px; text-transform: uppercase; letter-spacing: 0.5px;">TENANT AND RENT INFORMATION - ANNEXURE A (ADD ANNEXURE FOR ADDITIONAL INFORMATION)</span>
+            </div>
+
+            <div class="row mb-2">
+                <div class="col-sm-8">
+                    <label class="form-label fw-semibold text-dark"> NAME OF TENANT</label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" value="@Bus4TenantName" disabled>
+                </div>
+                <div class="col-sm-4">
+                    <label class="form-label fw-semibold text-dark"> SIZE <small class="text-muted fst-italic ms-2">(m²)</small></label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="10" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" value="@Bus4RentalLandSize" disabled>
+                </div>
+            </div>
+
+            <div class="row mb-2">
+                <div class="col-sm-8">
+                    <label class="form-label fw-semibold text-dark"> RENTAL (EXCL VAT)</label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="10" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" value="@Bus4Rental" disabled>
+                </div>
+                <div class="col-sm-4">
+                    <label class="form-label fw-semibold text-dark"> ESCALATION</label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="30" type="text" onpaste="return false;" ondrop="return false;" value="@Bus4Escalation" disabled>
+                </div>
+            </div>
+
+            <div class="row mb-2">
+                <div class="col-sm-4">
+                    <label class="form-label fw-semibold text-dark"> OTHER CONTRIBUTIONS</label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" value="@Bus4OtherContribution" disabled>
+                </div>
+                <div class="col-sm-4">
+                    <label class="form-label fw-semibold text-dark"> TERM OF LEASE</label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="30" type="text" onpaste="return false;" ondrop="return false;" value="@Bus4LeaseTerm" disabled>
+                </div>
+                <div class="col-sm-4">
+                    <label class="form-label fw-semibold text-dark"> START DATE</label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="date" name="StartDate1" value="@Bus4StartDate" disabled>
+                </div>
+            </div>
+
+            <div class="col-sm-8">
+                <label class="form-label fw-semibold text-dark"> MONTHLY LEVY (R)</label>
+                <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="10" type="text" onpaste="return false;" ondrop="return false;" value="@Bus4MonthlyLevy" disabled>
+            </div>
+
+            <div class="d-flex">
+                <div class="col-md-3 mt-3">
+                    <label class="form-label fw-semibold text-dark">FENCING</label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" value="" disabled>
+                </div>
+            </div>
+
+            <!-- Fencing Table (Initially Hidden) -->
+            <div id="fencetable" style="display: none;">
+                <table class="table table-bordered table-hover mt-3">
+                    <thead class="thead-light">
+                        <tr>
+                            <th scope="col" class="col-1">FENCING</th>
+                            <th scope="col" class="col-1">FRONT</th>
+                            <th scope="col" class="col-1">BACK</th>
+                            <th scope="col" class="col-1">SIDE 1</th>
+                            <th scope="col" class="col-1">SIDE 2</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <th scope="row">Type</th>
+                            <td>
+                                <input style="border:none;" value="" maxlength="30" onpaste="return false;" ondrop="return false;" disabled />
+                            </td>
+                            <td>
+                                <input style="border:none;" value="" maxlength="30" onpaste="return false;" ondrop="return false;" disabled />
+                            </td>
+                            <td>
+                                <input style="border:none;" value="" maxlength="30" onpaste="return false;" ondrop="return false;" disabled />
+                            </td>
+                            <td>
+                                <input style="border:none;" value="" maxlength="30" onpaste="return false;" ondrop="return false;" disabled />
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Height (CM)</th>
+                            <td>
+                                <input style="border:none;" value="" onpaste="return false;" maxlength="4" ondrop="return false;" onkeypress="return onlyNumberKey(event)" disabled />
+                            </td>
+                            <td>
+                                <input style="border:none;" value="" onpaste="return false;" maxlength="4" ondrop="return false;" onkeypress="return onlyNumberKey(event)" disabled />
+                            </td>
+                            <td>
+                                <input style="border:none;" value="" onpaste="return false;" maxlength="4" ondrop="return false;" onkeypress="return onlyNumberKey(event)" disabled />
+                            </td>
+                            <td>
+                                <input style="border:none;" value="" onpaste="return false;" maxlength="4" ondrop="return false;" onkeypress="return onlyNumberKey(event)" disabled />
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- JavaScript to Toggle Fence Table -->
+            <script>
+                document.addEventListener("DOMContentLoaded", function () {
+                    const fenceInput = document.querySelector('input[name="ResFence"]');
+                    const fenceTable = document.getElementById("fencetable");
+
+                    function toggleFenceTable() {
+                        if (fenceInput.value.toLowerCase() === "yes") {
+                            fenceTable.style.display = "block";
+                        } else {
+                            fenceTable.style.display = "none";
+                        }
+                    }
+
+                    toggleFenceTable();
+                });
+            </script>
+
+            <div class="row mt-4">
+                <!-- COMMON PROPERTY SECTION -->
+                <div class="col-md-6">
+                    <div class="p-3 border rounded shadow-sm bg-light">
+                        <h6 class="fw-bold text-dark mb-3">COMMON PROPERTY CONSISTS OF:</h6>
+                        <div class="row mb-3">
+                            <div class="col-sm-6">
+                                <label class="form-label fw-semibold text-dark">SWIMMING POOL <small class="text-muted fst-italic ms-2">(m²)</small></label>
+                                <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="5" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" value="@Bus4PoolSize" disabled>
+                            </div>
+                            <div class="col-sm-6">
+                                <label class="form-label fw-semibold text-dark">TENNIS COURT <small class="text-muted fst-italic ms-2">(m²)</small></label>
+                                <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="5" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" value="@Bus4TennisCourtSize" disabled>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-4">
+                                <label class="form-label fw-semibold text-dark"> OTHER (1) </label>
+                                <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" value="@Bus4CommonPropertyOther1" disabled>
+                            </div>
+                            <div class="col-sm-4">
+                                <label class="form-label fw-semibold text-dark"> OTHER (2) </label>
+                                <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" value="@Bus4CommonPropertyOther2" disabled>
+                            </div>
+                            <div class="col-sm-4">
+                                <label class="form-label fw-semibold text-dark"> OTHER (3) </label>
+                                <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" value="@Bus4CommonPropertyOther3" disabled>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- EXCLUSIVE AREAS SECTION -->
+                <div class="col-md-6">
+                    <div class="p-3 border rounded shadow-sm bg-light">
+                        <h6 class="fw-bold text-dark mb-3">DETAILS OF EXCLUSIVE AREAS:</h6>
+                        <div class="row g-3">
+                            <div class="col-sm-4">
+                                <label class="form-label fw-semibold text-dark">GARAGE <small class="text-muted fst-italic ms-2">(m²)</small></label>
+                                <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="5" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" value="@Bus4GarageSize" disabled>
+                            </div>
+                            <div class="col-sm-4">
+                                <label class="form-label fw-semibold text-dark">CARPORT <small class="text-muted fst-italic ms-2">(m²)</small></label>
+                                <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="5" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" value="@Bus4CarportSize" disabled>
+                            </div>
+                            <div class="col-sm-4">
+                                <label class="form-label fw-semibold text-dark"> OPEN PARKING <small class="text-muted fst-italic ms-2">(m²)</small></label>
+                                <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="5" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" value="@Bus4OpenParkingSize" disabled>
+                            </div>
+                            <div class="col-sm-4">
+                                <label class="form-label fw-semibold text-dark"> STORE ROOM <small class="text-muted fst-italic ms-2">(m²)</small></label>
+                                <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="5" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" value="@Bus4StoreRoomSize" disabled>
+                            </div>
+                            <div class="col-sm-4">
+                                <label class="form-label fw-semibold text-dark"> GARDEN <small class="text-muted fst-italic ms-2">(m²)</small></label>
+                                <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="5" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" value="@Bus4GardenSize" disabled>
+                            </div>
+                            <div class="col-sm-4">
+                                <label class="form-label fw-semibold text-dark"> OTHER (4)</label>
+                                <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" value="@Bus4ExclusiveOther" disabled>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+    </div>
+
+               @*-----------------------------------------------------------------SECTION 4 RESIDENTIAL-----------------------------------------------------------*@
+
+    <div id="section4-res" style="display:flex;justify-content: center;">
+        <div class="div4R" style="margin-top: 20px;border-radius: 25px;border: 1px solid #e6b000;padding: 24px;width: 100%;max-width: 1050px;background-color: #fffbea;box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+            <div style="width: 100%; margin: 20px 0; padding: 10px 0; position: relative;">
+                <h4 style="text-align: center;" id="shead"><strong>SECTION 4: SECTIONAL TITLE UNITS</strong></h4>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="height: 2px; background: linear-gradient(to right, #e6b000, transparent); width: 45%;"></div>
+                    <div style="height: 6px; width: 6px; border-radius: 50%; background-color: #e6b000;"></div>
+                    <div style="height: 2px; background: linear-gradient(to left, #e6b000, transparent); width: 45%;"></div>
+                </div>
+            </div>
+
+            <div style="border-left: 5px solid #2c3e50; background-color: #f8f9fa; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <span style="font-weight: bold; color: #2c3e50; margin-right: 8px;">4.1</span>
+                <span style="font-weight: bold; font-size: 16px; text-transform: uppercase; letter-spacing: 0.5px;">SECTIONAL TITLE UNITS</span>
+            </div>
+
+            <div class="row mb-2">
+                <div class="col-sm-5">
+                    <label class="form-label fw-semibold text-dark"> SCHEME NAME</label>
+                    <input style="margin-top: -1px;" id="schname" maxlength="80" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" value="@Res4SchemeName" disabled>
+                </div>
+                <div class="col-sm-2">
+                    <label class="form-label fw-semibold text-dark"> SCHEME NO.</label>
+                    <input style="margin-top: -1px;" id="schno" maxlength="8" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" value="@Res4SchemeNo" disabled>
+                </div>
+                <div class="col-sm-3">
+                    <label hidden> FLAT NO/DOOR NO.</label><label class="form-label fw-semibold text-dark"> FLAT NO/UNIT NO.</label>
+                    <input style="margin-top: -1px;" id="flatno" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="8" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" value="@Res4FlatNo" disabled>
+                </div>
+                <div class="col-sm-2">
+                    <label class="form-label fw-semibold text-dark"> UNIT SIZE <small class="text-muted fst-italic ms-2">(m²)</small></label>
+                    <input style="margin-top: -1px;" id="unitsize" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="8" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" value="@Res4UnitSize" disabled>
+                </div>
+            </div>
+            <div class="row mb-2">
+                <div class="col-sm-9">
+                    <label class="form-label fw-semibold text-dark"> NAME OF MANAGEMENT AGENT</label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" value="@Res4ManagingAgentName" disabled>
+                </div>
+                <div class="col-sm-3">
+                    <label class="form-label fw-semibold text-dark">TEL NO.</label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="13" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" value="@Res4ManagingAgentTelNo" disabled>
+                </div>
+            </div>
+
+            <div class="row mb-2">
+                <div class="col-sm-4">
+                    <label class="form-label fw-semibold text-dark"> NO OF BEDROOMS </label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="5" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" value="@Res4NoOfBedroom" disabled>
+                </div>
+                <div class="col-sm-4">
+                    <label class="form-label fw-semibold text-dark"> NO OF BATHROOMS</label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="5" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" value="@Res4NoOfBathRoom" disabled>
+                </div>
+                <div class="col-sm-4">
+                    <label class="form-label fw-semibold text-dark"> Monthly Levy (R)</label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="8" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" value="@Res4MonthlyLevyRes" disabled>
+                </div>
+            </div>
+
+            <div class="d-flex">
+                <fieldset class="col-md-4 mt-3">
+                </fieldset>
+                <fieldset class="col-md-4 mt-3 px-3">
+                    <label class="form-label fw-semibold text-dark" style="vertical-align:middle"> LOUNGE </label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" maxlength="3" onkeypress="return onlyNumberKey(event)" value="@Res4Lounge" disabled>
+                </fieldset>
+                <fieldset class="col-md-4 mt-3 px-0">
+                    <label class="form-label fw-semibold text-dark" style="vertical-align:middle"> DINING ROOM </label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" maxlength="3" onkeypress="return onlyNumberKey(event)" value="@Res4DinningRoom" disabled>
+                </fieldset>
+            </div>
+
+            <div class="d-flex">
+                <fieldset class="col-md-4 mt-3">
+                    <label class="form-label fw-semibold text-dark" style="vertical-align:middle"> LAUNDRY </label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" maxlength="3" onkeypress="return onlyNumberKey(event)" value="@Res4Laundry" disabled>
+                </fieldset>
+                <fieldset class="col-md-4 mt-3 px-3">
+                    <label class="form-label fw-semibold text-dark" style="vertical-align:middle"> STUDY </label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" maxlength="3" onkeypress="return onlyNumberKey(event)" value="@Res4Study" disabled>
+                </fieldset>
+                <fieldset class="col-md-4 mt-3 px-0">
+                    <label class="form-label fw-semibold text-dark" style="vertical-align:middle"> PLAYROOM </label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" maxlength="3" onkeypress="return onlyNumberKey(event)" value="@Res4PlayRoom" disabled>
+                </fieldset>
+            </div>
+
+            <div class="d-flex">
+                <fieldset class="col-md-4 mt-3">
+                    <label class="form-label fw-semibold text-dark" style="vertical-align:middle;"> TV ROOM </label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" maxlength="3" onkeypress="return onlyNumberKey(event)" value="@Res4Television" disabled>
+                </fieldset>
+                <fieldset class="col-md-4 mt-3 mb-3 px-3">
+                    <label class="form-label fw-semibold text-dark" style="vertical-align:middle"> SEPARATE TOILET </label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" maxlength="3" onkeypress="return onlyNumberKey(event)" value="@Res4SeperateToilet" disabled>
+                </fieldset>
+                <fieldset class="col-md-5 mt-3" disabled>
+                    <label class="form-label fw-semibold text-dark" style="vertical-align:middle" disabled>LOUNGE WITH DINING ROOM</label>
+                    <input style="margin-top: -1px; width: 100px;" class="form-control border-2 rounded shadow-sm px-2 py-1" type="text" onpaste="return false;" ondrop="return false;" maxlength="3" onkeypress="return onlyNumberKey(event)" value="@ResLoungeDiningRoom" disabled>
+                </fieldset>
+            </div>
+
+            <div class="row mb-2">
+                <div class="col-sm-3">
+                    <label class="form-label fw-semibold text-dark"> OTHER (1) </label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" value="@Res4DwellOther1" disabled>
+                </div>
+                <div class="col-sm-3">
+                    <label class="form-label fw-semibold text-dark"> OTHER (2) </label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" value="@Res4DwellOther2" disabled>
+                </div>
+                <div class="col-sm-3">
+                    <label class="form-label fw-semibold text-dark"> OTHER (3) </label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" value="@Res4DwellOther3" disabled>
+                </div>
+                <div class="col-sm-3">
+                    <label class="form-label fw-semibold text-dark"> OTHER (4) </label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" value="@Res4DwellOther4" disabled>
+                </div>
+            </div>
+            </br>
+            </br>
+            <div class="row mt-4">
+                <!-- COMMON PROPERTY SECTION -->
+                <div class="col-md-6">
+                    <div class="p-3 border rounded shadow-sm">
+                        <h6 class="fw-bold text-dark mb-3">COMMON PROPERTY CONSISTS OF:</h6>
+                        <div class="row mb-3">
+                            <div class="col-sm-6">
+                                <label class="form-label fw-semibold text-dark">SWIMMING POOL <small class="text-muted fst-italic ms-1">(m²)</small></label>
+                                <input class="form-control" maxlength="5" type="text" value="@Res4PoolSize" onkeypress="return onlyNumberKey(event)" onpaste="return false;" ondrop="return false;" disabled>
+                            </div>
+                            <div class="col-sm-6">
+                                <label class="form-label fw-semibold text-dark">TENNIS COURT <small class="text-muted fst-italic ms-1">(m²)</small></label>
+                                <input class="form-control" maxlength="5" type="text" value="@Res4TennisCourtSize" onkeypress="return onlyNumberKey(event)" onpaste="return false;" ondrop="return false;" disabled>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-4">
+                                <label class="form-label fw-semibold text-dark">OTHER (1)</label>
+                                <input class="form-control" maxlength="80" type="text" value="@Res4CommonPropertyOther1" onpaste="return false;" ondrop="return false;" disabled>
+                            </div>
+                            <div class="col-sm-4">
+                                <label class="form-label fw-semibold text-dark">OTHER (2)</label>
+                                <input class="form-control" maxlength="80" type="text" value="@Res4CommonPropertyOther2" onpaste="return false;" ondrop="return false;" disabled>
+                            </div>
+                            <div class="col-sm-4">
+                                <label class="form-label fw-semibold text-dark">OTHER (3)</label>
+                                <input class="form-control" maxlength="80" type="text" value="@Res4CommonPropertyOther3" onpaste="return false;" ondrop="return false;" disabled>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- EXCLUSIVE AREAS SECTION -->
+                <div class="col-md-6">
+                    <div class="p-3 border rounded shadow-sm">
+                        <h6 class="fw-bold text-dark mb-3">DETAILS OF EXCLUSIVE AREAS:</h6>
+                        <div class="row g-3">
+                            <div class="col-sm-3">
+                                <label class="form-label fw-semibold text-dark">GARAGE <small class="text-muted fst-italic ms-1">(m²)</small></label>
+                                <input class="form-control" maxlength="5" type="text" value="@Res4GarageSize" onkeypress="return onlyNumberKey(event)" onpaste="return false;" ondrop="return false;" disabled>
+                            </div>
+                            <div class="col-sm-3">
+                                <label class="form-label fw-semibold text-dark">CARPORT <small class="text-muted fst-italic ms-1">(m²)</small></label>
+                                <input class="form-control" maxlength="5" type="text" value="@Res4CarportSize" onkeypress="return onlyNumberKey(event)" onpaste="return false;" ondrop="return false;" disabled>
+                            </div>
+                            <div class="col-sm-6">
+                                <label class="form-label fw-semibold text-dark">OPEN PARKING <small class="text-muted fst-italic ms-1">(m²)</small></label>
+                                <input class="form-control" maxlength="5" type="text" value="@Res4OpenParkingSize" onkeypress="return onlyNumberKey(event)" onpaste="return false;" ondrop="return false;" disabled>
+                            </div>
+                            <div class="col-sm-4">
+                                <label class="form-label fw-semibold text-dark">STORE ROOM <small class="text-muted fst-italic ms-1">(m²)</small></label>
+                                <input class="form-control" maxlength="5" type="text" value="@Res4StoreRoomSize" onkeypress="return onlyNumberKey(event)" onpaste="return false;" ondrop="return false;" disabled>
+                            </div>
+                            <div class="col-sm-4">
+                                <label class="form-label fw-semibold text-dark">GARDEN <small class="text-muted fst-italic ms-1">(m²)</small></label>
+                                <input class="form-control" maxlength="5" type="text" value="@Res4GardenSize" onkeypress="return onlyNumberKey(event)" onpaste="return false;" ondrop="return false;" disabled>
+                            </div>
+                            <div class="col-sm-4">
+                                <label class="form-label fw-semibold text-dark">OTHER (4)</label>
+                                <input class="form-control" maxlength="80" type="text" value="@Res4ExclusiveOther" onpaste="return false;" ondrop="return false;" disabled>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+    </div>
+
+               @*----------------------------------------Section 5  ---------------------------------------*@
+    <div id="section5" style="display:flex;justify-content: center;">
+
+
+        <div class="div5" style="margin-top: 20px;border-radius: 25px;border: 1px solid #e6b000;padding: 24px;width: 100%;max-width: 1050px;background-color: #fffbea;
+             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+             font-family: 'Segoe UI' , Tahoma, Geneva, Verdana, sans-serif;">
+            @* <h5 style="text-align:center">SECTION 5: MARKET INFORMATION</h5> *@
+            <div>
+
+                <div style="width: 100%; margin: 20px 0; padding: 10px 0; position: relative;">
+                    <h4 style="text-align: center;" id="shead"><strong>SECTION 5: MARKET INFORMATION</strong></h4>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div style="height: 2px; background: linear-gradient(to right, #e6b000, transparent); width: 45%;"></div>
+                        <div style="height: 6px; width: 6px; border-radius: 50%; background-color: #e6b000;"></div>
+                        <div style="height: 2px; background: linear-gradient(to left, #e6b000, transparent); width: 45%;"></div>
+                    </div>
+                </div>
+
+                <div style="display: flex; margin-bottom: 20px;">
+                    <div style="flex: 3; margin-right: 15px;">
+                        <label class="form-label fw-semibold text-dark">IF YOUR PROPERTY IS CURRENTLY ON THE MARKET, WHAT IS THE ASKING PRICE?</label>
+                        <input type="text" style="width: 100%; padding: 8px; border: 1px solid #c9d0e0; border-radius: 4px; box-sizing: border-box;" maxlength="12" onkeypress="return onlyNumberKey(event)" value="@CurrentAskingPrice" disabled>
+                    </div>
+                    <div style="flex: 1;">
+                        <label class="form-label fw-semibold text-dark">OFFER RECEIVED <span style="font-style: italic; color: #777; font-size: 12px;">(R)</span></label>
+                        <input type="text" style="width: 100%; padding: 8px; border: 1px solid #c9d0e0; border-radius: 4px; box-sizing: border-box;" maxlength="12" onkeypress="return onlyNumberKey(event)" value="@CurrentRecievedOffer" disabled>
+                    </div>
+                </div>
+
+                <div style="display: flex; margin-bottom: 20px;">
+                    <div style="flex: 3; margin-right: 15px;">
+                        <label style="display: block; font-weight: 600; margin-bottom: 8px; color: black; font-size: 14px;">IF YOUR PROPERTY HAS BEEN ON THE MARKET IN THE LAST 3 YEARS, WHAT WAS THE ASKING PRICE?</label>
+                        <input type="text" style="width: 100%; padding: 8px; border: 1px solid #c9d0e0; border-radius: 4px; box-sizing: border-box;" maxlength="12" onkeypress="return onlyNumberKey(event)" value="@PreviousAskingPrice" disabled>
+                    </div>
+                    <div style="flex: 1;">
+                        <label class="form-label fw-semibold text-dark">OFFER RECEIVED <span style="font-style: italic; color: #777; font-size: 12px;">(R)</span></label>
+                        <input type="text" style="width: 100%; padding: 8px; border: 1px solid #c9d0e0; border-radius: 4px; box-sizing: border-box;" maxlength="12" onkeypress="return onlyNumberKey(event)" value="@PreviousRecievedOffer" disabled>
+                    </div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col-sm-9">
+                        <label class="form-label fw-semibold text-dark">NAME OF AGENT</label>
+                        <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" value="@AgentName" disabled>
+
+                    </div>
+                    <div class="col-sm-3">
+                        <label class="form-label fw-semibold text-dark"> TEL NO.</label>
+                        <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" maxlength="13" onkeypress="return onlyNumberKey(event)" value="@AgentTelNo" disabled>
+
+                    </div>
+                </div>
+
+                <div class="col-sm-12">
+                    <label class="form-label fw-semibold text-dark">SALES TRANSACTIONS(OF OTHER PROPERTIES IN THE VICINITY) USED BY OBJECTOR IN DETERMINING THE MARKET VALUES OF THE PROPERTY OBJECTED TO</label>
+                    <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" maxlength="12" value="@OtherNearbySales" disabled>
+
+                </div>
+                <div class="row mb-2">
+                    <div class="col-sm-4">
+                        <label class="form-label fw-semibold text-dark"> ERF/UNIT</label>
+                        <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" maxlength="5" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" value="@UnitNo" disabled>
+
+                    </div>
+                    <div class="col-sm-8">
+                        <label class="form-label fw-semibold text-dark"> SUBURB/FARM/SCHEME NAME</label>
+                        <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" maxlength="80" value="@SuburbName" disabled>
+
+                    </div>
+                </div>
+
+                <div class="row mb-2">
+                    <div class="col-sm-6">
+                        <label class="form-label fw-semibold text-dark"> DATE OF SALE</label>
+                        <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" type="date" name="StartDate2" value="@SaleDate" disabled>
+
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label fw-semibold text-dark"> SELLING PRICE (R)</label>
+                        <input style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" maxlength="10" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" value="@SellingPrice" disabled>
+
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+            @*----------------------------------------Section 6  ---------------------------------------*@
+
+    <div id="section6" style="display: flex; justify-content: center; padding: 20px;">
+        <div class="div6" style="border-radius: 25px; border: 1px solid #e6b000; padding: 24px; width: 100%; max-width: 1050px; background-color: #fffbea; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+            <div style="width: 100%; margin: 20px 0; padding: 10px 0; position: relative;">
+                <h4 style="text-align: center;" id="s_head"><strong>SECTION 6: OBJECTION DETAILS</strong></h4>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="height: 2px; background: linear-gradient(to right, #e6b000, transparent); width: 45%;"></div>
+                    <div style="height: 6px; width: 6px; border-radius: 50%; background-color: #e6b000;"></div>
+                    <div style="height: 2px; background: linear-gradient(to left, #e6b000, transparent); width: 45%;"></div>
+                </div>
+            </div>
+
+            <div style="display: flex; flex-wrap: wrap; gap: 20px;">
+                <!-- Left Column: Particulars as Reflected in Valuation Roll -->
+                <div style="flex: 1; min-width: 300px;">
+                    <h6 style="margin-top: 15px;">PARTICULARS AS REFLECTED IN VALUATION ROLL</h6>
+
+                    @if (ViewBag.PropertyFrom == "SUP1" || ViewBag.PropertyFrom == "SUP2" || ViewBag.PropertyFrom == "SUP3")
+                    {
+                        <label>DESCRIPTION OF THE PROPERTY/UNIT</label>
+                        <input style="margin-top: -1px;" id="desc" class="form-control" type="text" onpaste="return false;" ondrop="return false;" disabled value="@OldPropertyDescription">
+                        <label>CATEGORY</label>
+                        <input style="margin-top: -1px;" id="cat" class="form-control" type="text" onpaste="return false;" ondrop="return false;" disabled value="@Old_Category">
+                        <label>PHYSICAL ADDRESS/DOOR NO./FLAT NO.</label>
+                        <input style="margin-top: -1px;" id="add" class="form-control" type="text" onpaste="return false;" ondrop="return false;" disabled value="@OldAddress">
+                        <label>EXTENT</label>
+                        <input style="margin-top: -1px;" id="extent" class="form-control" type="text" onpaste="return false;" ondrop="return false;" disabled value="@OldExtent">
+                        <label>MARKET VALUE</label>
+                        <input style="margin-top: -1px;" id="Market_Value" class="form-control" type="text" onpaste="return false;" ondrop="return false;" disabled value="@OldMarketValue">
+                        <label>NAME OF OWNER</label>
+                        <input style="margin-top: -1px;" id="owner" class="form-control" type="text" onpaste="return false;" ondrop="return false;" disabled value="">
+                        <label>CATEGORY</label>
+                        <input style="margin-top: -1px;" id="cat" class="form-control" type="text" onpaste="return false;" ondrop="return false;" disabled value="@Old2Category">
+                        <label>EXTENT</label>
+                        <input style="margin-top: -1px;" id="extent" class="form-control" type="text" onpaste="return false;" ondrop="return false;" disabled value="@Old2Extent">
+                        <label>MARKET VALUE</label>
+                        <input style="margin-top: -1px;" id="Market_Value" class="form-control" type="text" onpaste="return false;" ondrop="return false;" disabled value="@Old2MarketValue">
+                        <label>CATEGORY</label>
+                        <input style="margin-top: -1px;" id="cat" class="form-control" type="text" onpaste="return false;" ondrop="return false;" disabled value="@Old3Category">
+                        <label>EXTENT</label>
+                        <input style="margin-top: -1px;" id="extent" class="form-control" type="text" onpaste="return false;" ondrop="return false;" disabled value="@Old3Extent">
+                        <label>MARKET VALUE</label>
+                        <input style="margin-top: -1px;" id="Market_Value" class="form-control" type="text" onpaste="return false;" ondrop="return false;" disabled value="@Old3MarketValue">
+                        <label>CATEGORY</label>
+                        <input style="margin-top: -1px;" id="cat" class="form-control" type="text" onpaste="return false;" ondrop="return false;" disabled value="">
+                        <label>EXTENT</label>
+                        <input style="margin-top: -1px;" id="extent" class="form-control" type="text" onpaste="return false;" ondrop="return false;" disabled value="">
+                        <label>MARKET VALUE</label>
+                        <input style="margin-top: -1px;" id="Market_Value" class="form-control" type="text" onpaste="return false;" ondrop="return false;" disabled value="">
+                    }
+                    else if (ViewBag.PropertyFrom == "LIS")
+                    {
+                        <label>DESCRIPTION OF THE PROPERTY/UNIT</label>
+                        <input style="margin-top: -1px;" id="desc" class="form-control" type="text" onpaste="return false;" ondrop="return false;" disabled value="@OldPropertyDescription">
+                        <label>CATEGORY</label>
+                        <input style="margin-top: -1px;" id="cat" class="form-control" type="text" onpaste="return false;" ondrop="return false;" disabled value="">
+                        <label>PHYSICAL ADDRESS/DOOR NO./FLAT NO.</label>
+                        <input style="margin-top: -1px;" id="add" class="form-control" type="text" onpaste="return false;" ondrop="return false;" disabled value="@OldAddress">
+                        <label>EXTENT</label>
+                        <input style="margin-top: -1px;" id="extent" class="form-control" type="text" onpaste="return false;" ondrop="return false;" disabled value="">
+                        <label>MARKET VALUE</label>
+                        <input style="margin-top: -1px;" id="Market_Value" class="form-control" type="text" onpaste="return false;" ondrop="return false;" disabled value="">
+                        <label>NAME OF OWNER</label>
+                        <input style="margin-top: -1px;" id="owner" class="form-control" type="text" onpaste="return false;" ondrop="return false;" disabled value="">
+                        <label>CATEGORY</label>
+                        <input style="margin-top: -1px;" id="cat" class="form-control" type="text" onpaste="return false;" ondrop="return false;" disabled value="">
+                        <label>EXTENT</label>
+                        <input style="margin-top: -1px;" id="extent" class="form-control" type="text" onpaste="return false;" ondrop="return false;" disabled value="">
+                        <label>MARKET VALUE</label>
+                        <input style="margin-top: -1px;" id="Market_Value" class="form-control" type="text" onpaste="return false;" ondrop="return false;" disabled value="">
+                        <label>CATEGORY</label>
+                        <input style="margin-top: -1px;" id="cat" class="form-control" type="text" onpaste="return false;" ondrop="return false;" disabled value="">
+                        <label>EXTENT</label>
+                        <input style="margin-top: -1px;" id="extent" class="form-control" type="text" onpaste="return false;" ondrop="return false;" disabled value="">
+                        <label>MARKET VALUE</label>
+                        <input style="margin-top: -1px;" id="Market_Value" class="form-control" type="text" onpaste="return false;" ondrop="return false;" disabled value="">
+                        <label>CATEGORY</label>
+                        <input style="margin-top: -1px;" id="cat" class="form-control" type="text" onpaste="return false;" ondrop="return false;" disabled value="">
+                        <label>EXTENT</label>
+                        <input style="margin-top: -1px;" id="extent" class="form-control" type="text" onpaste="return false;" ondrop="return false;" disabled value="">
+                        <label>MARKET VALUE</label>
+                        <input style="margin-top: -1px;" id="Market_Value" class="form-control" type="text" onpaste="return false;" ondrop="return false;" disabled value="">
+                    }
+                    else
+                    {
+                        <label>DESCRIPTION OF THE PROPERTY/UNIT</label>
+                        <input style="margin-top: -1px;" id="desc" class="form-control" type="text" onpaste="return false;" ondrop="return false;" disabled value="@OldPropertyDescription">
+                        <label>CATEGORY</label>
+                        <input style="margin-top: -1px;" id="cat" class="form-control" type="text" onpaste="return false;" ondrop="return false;" disabled value="@Old_Category">
+                        <label>PHYSICAL ADDRESS/DOOR NO./FLAT NO.</label>
+                        <input style="margin-top: -1px;" id="add" class="form-control" type="text" onpaste="return false;" ondrop="return false;" disabled value="@OldAddress">
+                        <label>EXTENT</label>
+                        <input style="margin-top: -1px;" id="extent" class="form-control" type="text" onpaste="return false;" ondrop="return false;" disabled value="@OldExtent">
+                        <label>MARKET VALUE</label>
+                        <input style="margin-top: -1px;" id="Market_Value" class="form-control" type="text" onpaste="return false;" ondrop="return false;" disabled value="@OldMarketValue">
+                        <label>NAME OF OWNER</label>
+                        <input style="margin-top: -1px;" id="owner" class="form-control" type="text" onpaste="return false;" ondrop="return false;" disabled value="">
+                        <label>CATEGORY</label>
+                        <input style="margin-top: -1px;" id="cat" class="form-control" type="text" onpaste="return false;" ondrop="return false;" disabled value="@Old2Category">
+                        <label>EXTENT</label>
+                        <input style="margin-top: -1px;" id="extent" class="form-control" type="text" onpaste="return false;" ondrop="return false;" disabled value="@Old2Extent">
+                        <label>MARKET VALUE</label>
+                        <input style="margin-top: -1px;" id="Market_Value" class="form-control" type="text" onpaste="return false;" ondrop="return false;" disabled value="@Old2MarketValue">
+                        <label>CATEGORY</label>
+                        <input style="margin-top: -1px;" id="cat" class="form-control" type="text" onpaste="return false;" ondrop="return false;" disabled value="@Old3Category">
+                        <label>EXTENT</label>
+                        <input style="margin-top: -1px;" id="extent" class="form-control" type="text" onpaste="return false;" ondrop="return false;" disabled value="@Old3Extent">
+                        <label>MARKET VALUE</label>
+                        <input style="margin-top: -1px;" id="Market_Value" class="form-control" type="text" onpaste="return false;" ondrop="return false;" disabled value="@Old3MarketValue">
+                        <label>CATEGORY</label>
+                        <input style="margin-top: -1px;" id="cat" class="form-control" type="text" onpaste="return false;" ondrop="return false;" disabled value="">
+                        <label>EXTENT</label>
+                        <input style="margin-top: -1px;" id="extent" class="form-control" type="text" onpaste="return false;" ondrop="return false;" disabled value="">
+                        <label>MARKET VALUE</label>
+                        <input style="margin-top: -1px;" id="Market_Value" class="form-control" type="text" onpaste="return false;" ondrop="return false;" disabled value="">
+                    }
+                </div>
+
+                <!-- Right Column: Changes Requested by Objector -->
+                <div style="flex: 1; min-width: 300px;">
+                    <h6 style="margin-top: 15px;">CHANGES REQUESTED BY OBJECTOR</h6>
+                    <label>DESCRIPTION OF THE PROPERTY/UNIT</label>
+                    <input style="margin-top: -1px;" id="desc_in" class="form-control" maxlength="100" type="text" onpaste="return false;" ondrop="return false;" disabled value="@NewPropertyDescription">
+                    <label>CATEGORY</label>
+                    <input class="form-control" value="@NewCategory" disabled>
+                    <label>PHYSICAL ADDRESS/DOOR NO./FLAT NO.</label>
+                    <input style="margin-top: -1px;" class="form-control" maxlength="100" type="text" onpaste="return false;" ondrop="return false;" disabled value="@NewAddress">
+                    <label>EXTENT</label>
+                    <input style="margin-top: -1px;" class="form-control" min="0" type="text" onpaste="return false;" ondrop="return false;" maxlength="10" onkeypress="return onlyNumberKey(event)" disabled value="@NewExtent">
+                    <label>MARKET VALUE</label>
+                    <input style="margin-top: -1px;" class="form-control" min="0" type="text" onpaste="return false;" ondrop="return false;" maxlength="12" onkeypress="return onlyNumberKey(event)" disabled value="@NewMarketValue">
+                    <label>NAME OF OWNER</label>
+                    <input style="margin-top: -1px;" class="form-control" maxlength="100" type="text" onpaste="return false;" ondrop="return false;" disabled value="@NewOwner">
+                    <label>CATEGORY</label>
+                    <input class="form-control" value="@New2Category" disabled>
+                    <label>EXTENT</label>
+                    <input style="margin-top: -1px;" class="form-control" min="0" type="text" onpaste="return false;" ondrop="return false;" maxlength="10" onkeypress="return onlyNumberKey(event)" disabled value="@New2Extent">
+                    <label>MARKET VALUE</label>
+                    <input style="margin-top: -1px;" class="form-control" min="0" type="text" onpaste="return false;" ondrop="return false;" maxlength="12" onkeypress="return onlyNumberKey(event)" disabled value="@New2MarketValue">
+                    <label>CATEGORY</label>
+                    <input class="form-control" value="@New3Category" disabled>
+                    <label>EXTENT</label>
+                    <input style="margin-top: -1px;" class="form-control" min="0" type="text" onpaste="return false;" ondrop="return false;" maxlength="10" onkeypress="return onlyNumberKey(event)" disabled value="@New3Extent">
+                    <label>MARKET VALUE</label>
+                    <input style="margin-top: -1px;" class="form-control" min="0" type="text" onpaste="return false;" ondrop="return false;" maxlength="12" onkeypress="return onlyNumberKey(event)" disabled value="@New3MarketValue">
+                    <label>CATEGORY</label>
+                    <input class="form-control" value="" disabled>
+                    <label>EXTENT</label>
+                    <input style="margin-top: -1px;" class="form-control" min="0" type="text" onpaste="return false;" ondrop="return false;" maxlength="10" onkeypress="return onlyNumberKey(event)" disabled value="">
+                    <label>MARKET VALUE</label>
+                    <input style="margin-top: -1px;" class="form-control" min="0" type="text" onpaste="return false;" ondrop="return false;" maxlength="12" onkeypress="return onlyNumberKey(event)" disabled value="">
+                </div>
+            </div>
+
+            <div style="margin-top: 20px;">
+                <label>ADVERSE FEATURES AND/OR FURTHER REASONS IN SUPPORT OF THIS OBJECTION (ANNEXURE CAN BE PROVIDED)</label>
+                <textarea class="form-control" style="margin-top: -1px;" maxlength="500" rows="4" cols="150" disabled>@ObjectionReasons</textarea>
+            </div>
+        </div>
+    </div>
+  
+    @*</div>*@
+
+  @* </div>@* End of section 6*@
+ 
+   @*----------------------------------------Section 7  ---------------------------------------*@
+
+    <div id="section7" style="display:flex;justify-content: left; margin-bottom: 2%" disabled>
+
+
+        <div class="div7 " style="margin-top: 20px;border-radius: 25px;border: 1px solid #e6b000;padding: 24px;width: 100%;max-width: 1050px;background-color: #fffbea;
+             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+             font-family: 'Segoe UI' , Tahoma, Geneva, Verdana, sans-serif;">
+            @* <h5 style="text-align:center">SECTION 7: DECLARATION</h5> *@
+
+
+            <div style="width: 100%; margin: 20px 0; padding: 10px 0; position: relative;">
+                <h4 style="text-align: center;" id="s_head"><strong>SECTION 7: DECLARATION</strong></h4>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="height: 2px; background: linear-gradient(to right, #e6b000, transparent); width: 45%;"></div>
+                    <div style="height: 6px; width: 6px; border-radius: 50%; background-color: #e6b000;"></div>
+                    <div style="height: 2px; background: linear-gradient(to left, #e6b000, transparent); width: 45%;"></div>
+                </div>
+            </div>
+            <div style="border-left: 5px solid #2c3e50; background-color: #f8f9fa; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                @* <span style="font-weight: bold; color: #2c3e50; margin-right: 8px;">4.1</span> *@
+                <span style="font-weight: bold; font-size: 16px; text-transform: uppercase; letter-spacing: 0.5px;">SECTION 7: OBJECTION DETAILS</span>
+            </div>
+            <div class="form-control  border-2 rounded shadow-sm px-4 py-2" style="overflow:hidden; margin-top: 15px; border:none;">
+
+
+
+                <h6 style="margin-top: 15px;margin-bottom:2%;font-family: 'Poppins' , sans-serif;">
+                    ATTENTION IS HEREBY DRAWN TO SECTION 42(2) OF THE ACT WHICH STATES THAT WHERE ANY DOCUMENT, INFORMATION OR
+                    PARTICULARS WERE NOT PROVIDED WHEN REQUIRED IN TERMS OF SUBSECTION 42(1) OF THE ACT AND THE OWNER CONCERNED
+                    RELIES ON SUCH DOCUMENT, INFORMATION OR PARTICULARS IN AN APPEAL TO AN APPEAL BOARD, THE APPEAL BOARD MAY MAKE
+                    AN ORDER AS TO COSTS IN TERMS OF SECTION 70 OF THE ACT IF THE APPEAL BOARD IS OF THE VIEW THAT THE FAILURE TO SO
+                    HAVE PROVIDED ANY SUCH DOCUMENT, INFORMATION OR PARTICULARS HAS PLACED AN UNNECESSARY BURDEN ON THE FUNCTIONS OF
+                    THE MUNICIPAL VALUER OR THE APPEAL BOARD.
+                </h6>
+
+                I/WE <input style="margin-top: -1px;" id="signobj" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" value="@SignatureName" disabled> HEREBY DECLARE THAT THE INFORMATION AND PARTICULARS SUPPLIED ARE TRUE AND CORRECT.
+                <br />
+                <label hidden style="margin-top:1%" disabled><span></span>DATE</label>
+                <input hidden style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" id="signDate" type="datetime-local" disabled>
+                <br>
+
+
+                <script>
+                    var date = new Date();
+                    var currentDate = date.toISOString().slice(0,16);
+
+                    document.getElementById('signDate').value = currentDate;
+                </script>
+
+
+                <h5 style="margin-left:2%;font-family: 'Poppins' , sans-serif;"><span style="color: red;">*</span>SIGNATURE(<span style="color: red;">required</span>)</h5>
+
+
+                <p>
+                    <canvas width="500" height="200" id="signature" hidden="hidden"
+                            style="border:2px solid black; background-color:white;" disabled></canvas>
+                    <img width="500" height="200" id="savetarget"
+                         style="border:2px solid black; background-color:white;" src="@SignaturePicture" disabled><br>
+                    <span style="width: 1%" disabled></span>
+
+                    <input type="text" onpaste="return false;" ondrop="return false;" id="SignatureDataUrl" hidden="hidden">
+                </p>
+                <p style="margin-left:80%font-family: 'Poppins' sans-serif;" disabled>Date: @Declaration_Date</p>
+
+            </div>
+
+        </div>
+
+    </div>@* End of section 7*@
+
+</div>
+    <script>
+        var canvas = document.getElementById("signature");
+        var ctx = canvas.getContext("2d");
+        ctx.font = "30px Arial";
+        ctx.fillText("",10,50);
+    </script>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+
+    @section Scripts{
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/signature_pad/1.5.3/signature_pad.min.js"></script>
+        <script src="https://code.jquery.com/jquery-latest.min.js" type="text/javascript"></script>
+        <script asp-append-version="true" src="~/js/objectionmulti.js" type="text/javascript"></script>
+        <script type="text/javascript">load();</script>
+
+    }
+

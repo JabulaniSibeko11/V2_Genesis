@@ -112,9 +112,9 @@
 
 @section Styles {
    
-    <link href="~/css/views/clientdashboardcss.css" rel="stylesheet" asp-append-version="true" />
+  @*   <link href="~/css/views/clientdashboardcss.css" rel="stylesheet" asp-append-version="true" /> *@
     <link href="~/css/site.css" rel="stylesheet" asp-append-version="true" />
-  @*   <link href="~/css/views/client-dashboard.css" rel="stylesheet" asp-append-version="true"/> *@
+    <link href="~/css/views/client-dashboard.css" rel="stylesheet" asp-append-version="true"/>
 }
 
 <!-- ── Welcome strip ──────────────────────────────────────────────────── -->
@@ -156,124 +156,130 @@
     </div>
 </div>
 
-<div class="cd-welcome-inner">
-    <div>
-        <h1 class="cd-welcome-name">
-            Welcome back, <span>@Model.DisplayName</span>
-            <span class="cd-welcome-wave">👋</span>
-        </h1>
-        <p class="cd-welcome-sub">
-            @(Model.IsCompany ? "Company Account" : "Individual Account") &nbsp;·&nbsp;
-            Property Dashboard
-        </p>
-    </div>
 
-    <div class="cd-notification-wrap">
-        <button type="button"
-                class="cd-notification-btn"
-                id="notificationBellBtn">
-            <i class="fa-solid fa-bell"></i>
+<div class="cd-hero">
+    <div class="cd-welcome-inner">
+        <div class="cd-welcome-left">
 
-            @if (unreadNotificationCount > 0)
-            {
-                <span class="cd-notification-count">@unreadNotificationCount</span>
-            }
-        </button>
-
-        <div class="cd-notification-panel" id="notificationPanel">
-            <div class="cd-notification-head">
-                <strong>Notifications</strong>
-                <span>@unreadNotificationCount unread</span>
+            <!-- Avatar initial box -->
+            <div class="cd-hero-avatar">
+                @(Model.DisplayName?.Substring(0, 1).ToUpper() ?? "U")
             </div>
 
-            @if (!latestNotifications.Any())
-            {
-                <div class="cd-notification-empty">
-                    <i class="fa-solid fa-circle-info"></i>
-                    No notifications yet.
+            <div>
+                <div class="cd-welcome-eyebrow">
+                    <span></span>
+                    @(Model.IsCompany ? "Company Account" : "Individual Account") &nbsp;·&nbsp; Property Dashboard
                 </div>
-            }
-            else
-            {
-                <div class="cd-notification-list">
-                    @foreach (var note in latestNotifications)
+                <h1 class="cd-welcome-name">
+                    Welcome back,&nbsp;<em>@Model.DisplayName</em>
+                    <span class="cd-welcome-wave">👋</span>
+                </h1>
+                <p class="cd-welcome-sub">
+                    City of Johannesburg
+                    <span class="cd-welcome-dot"></span>
+                    Valuation Portal
+                </p>
+            </div>
+        </div>
+
+        <!-- Notification bell -->
+        <div class="cd-notification-wrap">
+            <button type="button" class="cd-notification-btn" id="notificationBellBtn">
+                <i class="fa-solid fa-bell"></i>
+                @if (unreadNotificationCount > 0)
+                {
+                    <span class="cd-notification-count">@unreadNotificationCount</span>
+                }
+            </button>
+
+            <div class="cd-notification-panel" id="notificationPanel">
+                <div class="cd-notification-head">
+                    <strong>Notifications</strong>
+                    <span>@unreadNotificationCount unread</span>
+                </div>
+                @if (!latestNotifications.Any())
+                {
+                    <div class="cd-notification-empty">
+                        <i class="fa-solid fa-bell-slash" style="font-size:24px;color:#ddd;display:block;margin-bottom:8px;"></i>
+                        No notifications yet.
+                    </div>
+                }
+                else
+                {
+                    <div class="cd-notification-list">
+                        @foreach (var note in latestNotifications)
+                        {
+                            var noteType = string.IsNullOrWhiteSpace(note.NotificationType) ? "Info" : note.NotificationType;
+                            <a class="cd-notification-item @(note.IsRead ? "" : "unread")"
+                                   href="@(string.IsNullOrWhiteSpace(note.Url) ? "#" : note.Url)">
+                                <div class="cd-note-icon cd-note-@noteType.ToLower()">
+                                    <i class="fa-solid @(noteType == "Success" ? "fa-circle-check" : noteType == "Warning" ? "fa-triangle-exclamation" : noteType == "Error" ? "fa-circle-xmark" : "fa-circle-info")"></i>
+                                </div>
+                                <div class="cd-note-body">
+                                    <strong>@(note.Title ?? "Notification")</strong>
+                                    <p>@note.Message</p>
+                                    @if (!string.IsNullOrWhiteSpace(note.ReferenceNumber))
+                                    {
+                                        <span class="cd-note-ref">@note.ReferenceNumber</span>
+                                    }
+                                    <small>@note.CreatedDate.ToString("dd MMM yyyy HH:mm")</small>
+                                </div>
+                            </a>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+<!-- ── Quick stats row ────────────────────────────────────────────────── -->
+<div class="cd-stats-strip">
+        @foreach (var roll in Model.Rolls.Where(r => !r.IsQuery))
+        {
+            var rd = Model.RollData.GetValueOrDefault(roll.Source) ?? new();
+            <div class="cd-stat-card">
+                <div class="cd-stat-label">@roll.Short</div>
+                <div class="cd-stat-nums">
+                    <span title="Linked">
+                        <i class="fa-solid fa-link"></i> @rd.LinkedCount
+                    </span>
+                    @if (roll.HasObjection)
                     {
-                        var noteType = string.IsNullOrWhiteSpace(note.NotificationType)
-                            ? "Info"
-                            : note.NotificationType;
-
-                        <a class="cd-notification-item @(note.IsRead ? "" : "unread")"
-                               href="@(string.IsNullOrWhiteSpace(note.Url) ? "#" : note.Url)">
-                            <div class="cd-note-icon cd-note-@noteType.ToLower()">
-                                <i class="fa-solid @(noteType == "Success" ? "fa-circle-check" : noteType == "Warning" ? "fa-triangle-exclamation" : noteType == "Error" ? "fa-circle-xmark" : "fa-circle-info")"></i>
-                            </div>
-
-                            <div class="cd-note-body">
-                                <strong>@(note.Title ?? "Notification")</strong>
-                                <p>@note.Message</p>
-
-                                @if (!string.IsNullOrWhiteSpace(note.ReferenceNumber))
-                                {
-                                    <span class="cd-note-ref">@note.ReferenceNumber</span>
-                                }
-
-                                <small>@note.CreatedDate.ToString("dd MMM yyyy HH:mm")</small>
-                            </div>
-                        </a>
+                        <span title="Objections">
+                            <i class="fa-solid fa-file-pen"></i> @rd.ObjectedCount
+                        </span>
+                    }
+                    @if (roll.HasAppeal)
+                    {
+                        <span title="Appeals">
+                            <i class="fa-solid fa-gavel"></i> @rd.AppealsCount
+                        </span>
                     }
                 </div>
-            }
-        </div>
-    </div>
-</div>
+            </div>
+        }
 
-<!-- ── Quick stats row ────────────────────────────────────────────────── -->
-<div class="cd-stats-row">
-    @foreach (var roll in Model.Rolls.Where(r => !r.IsQuery))
-    {
-        var rd = Model.RollData.GetValueOrDefault(roll.Source) ?? new();
-        <div class="cd-stat-card">
-            <div class="cd-stat-label">@roll.Short</div>
-            <div class="cd-stat-nums">
-                <span title="Linked"><i class="fa-solid fa-link"></i> @rd.LinkedCount</span>
-                @if (roll.HasObjection)
-                {
-                    <span title="Objections">
-                        <i class="fa-solid fa-file-pen"></i> @rd.ObjectedCount
+        @foreach (var roll in Model.Rolls.Where(r => r.IsQuery))
+        {
+            var rd = Model.RollData.GetValueOrDefault(roll.Source) ?? new();
+            <div class="cd-stat-card">
+                <div class="cd-stat-label">
+                    <i class="fa-solid fa-magnifying-glass-chart" style="margin-right:4px;color:var(--p-gold);"></i>
+                    @roll.Short
+                </div>
+                <div class="cd-stat-nums">
+                    <span title="Linked Properties">
+                        <i class="fa-solid fa-link"></i> @rd.LinkedCount
                     </span>
-                }
-                @if (roll.HasAppeal)
-                {
-                    <span title="Appeals">
-                        <i class="fa-solid fa-gavel"></i> @rd.AppealsCount
+                    <span title="Queries">
+                        <i class="fa-solid fa-file-magnifying-glass"></i> @rd.ObjectedCount
                     </span>
-                }
+                </div>
             </div>
-        </div>
-    }
+        }
 
-    @* ── Section 78 Query stat card ── *@
-    @foreach (var roll in Model.Rolls.Where(r => r.IsQuery))
-    {
-        var rd = Model.RollData.GetValueOrDefault(roll.Source) ?? new();
-        <div class="cd-stat-card cd-stat-card-query">
-            <div class="cd-stat-label">
-                <i class="fa-solid fa-magnifying-glass-chart"
-                   style="color:#0ea5e9; margin-right:4px;"></i>
-                @roll.Short
-            </div>
-            <div class="cd-stat-nums">
-                <span title="Linked Properties">
-                    <i class="fa-solid fa-link"></i> @rd.LinkedCount
-                </span>
-                <span title="Queries Submitted">
-                    <i class="fa-solid fa-file-magnifying-glass"></i> @rd.ObjectedCount
-                </span>
-            </div>
-        </div>
-    }
 </div>
-
+</div>
 @if (TempData["LinkSuccess"] != null)
 {
     <div class="dash-link-alert dash-link-success">
@@ -509,10 +515,29 @@ else if (roll.IsQuery)
                                                 data-bs-toggle="dropdown">Actions</button>
                                         <ul class="dropdown-menu">
                                             <li>
-                                                <a class="dropdown-item"
+                                                                @{
+                                                                    var queryRefNo = !string.IsNullOrWhiteSpace(item.Query_No)
+                                                                        ? item.Query_No
+                                                                        : item.Query_No ?? item.Objection_No;
+
+                                                                    var viewQueryFormUrl =
+                                                                        "/admin/enquiry/form-view"
+                                                                        + "?referenceNo=" + Uri.EscapeDataString(queryRefNo ?? "")
+                                                                        + "&rollSource=Objection_Query"
+                                                                        + "&propertyType=" + Uri.EscapeDataString(item.Property_Type ?? "")
+                                                                        + "&appealStatus=False"
+                                                                        + "&isQuery=true";
+                                                                }
+
+                                                                <a class="dropdown-item"
+                                                                       href="@viewQueryFormUrl"
+                                                                       target="_blank">
+                                                                    <i class="fa-solid fa-eye"></i> View Query Form
+                                                                </a>
+                                                @* <a class="dropdown-item"
                                                    href="/Home/FormData@(roll.ControllerName)?propertyID=@item.Property_Type&objectionNo=@item.Objection_No&AppealStatus=False">
                                                     <i class="fa-solid fa-eye"></i> View Form
-                                                </a>
+                                                </a> *@
                                             </li>
                                             <li>
                                                 <a class="dropdown-item"
@@ -687,7 +712,7 @@ else if (roll.IsQuery)
                                 <th>Category</th>
                                 <th>Town</th>
                                 <th>Market Value</th>
-                                            <th>With Effective Date</th>
+                                <th>With Effective Date</th>
                                 <th>Options</th>
                             </tr>
                         </thead>
@@ -796,10 +821,20 @@ else if (roll.IsQuery)
                                                             </button>
                                                             <ul class="dropdown-menu">
                                                                 <li>
+                                                                    @{
+                                                                        var viewFormUrl =
+                                                                            "/admin/enquiry/form-view"
+                                                                            + "?referenceNo=" + Uri.EscapeDataString(item.Objection_No ?? "")
+                                                                            + "&rollSource=" + Uri.EscapeDataString(roll.Source ?? "")
+                                                                            + "&propertyType=" + Uri.EscapeDataString(item.Property_Type ?? "")
+                                                                            + "&appealStatus=False"
+                                                                            + "&isQuery=false";
+                                                                    }
+
                                                                     <a class="dropdown-item"
-                                                                           href="/Home/FormData@(roll.ControllerName)?propertyID=@item.Property_Type&objectionNo=@item.Objection_No&AppealStatus=False"
-                                                                           onclick="logAction('ViewForm', '@roll.Source', '@item.Objection_No')">
-                                                                        View Form
+                                                                           href="@viewFormUrl"
+                                                                           target="_blank">
+                                                                        <i class="fa-solid fa-eye"></i> View Form
                                                                     </a>
                                                                 </li>
                                                                 <li>
@@ -914,10 +949,24 @@ else if (roll.IsQuery)
                                                             </button>
                                                             <ul class="dropdown-menu">
                                                                 <li>
+                                                                    @{
+                                                                        var refNo = !string.IsNullOrWhiteSpace(item.Appeal_No)
+                                                                            ? item.Appeal_No
+                                                                            : item.Objection_No;
+
+                                                                        var viewAppealFormUrl =
+                                                                            "/admin/enquiry/form-view"
+                                                                            + "?referenceNo=" + Uri.EscapeDataString(refNo ?? "")
+                                                                            + "&rollSource=" + Uri.EscapeDataString(roll.Source ?? "")
+                                                                            + "&propertyType=" + Uri.EscapeDataString(item.Property_Type ?? "")
+                                                                            + "&appealStatus=True"
+                                                                            + "&isQuery=false";
+                                                                    }
+
                                                                     <a class="dropdown-item"
-                                                                           href="/Home/FormData@(roll.ControllerName)?propertyID=@item.Property_Type&objectionNo=@item.Objection_No&AppealStatus=True"
-                                                                           onclick="logAction('ViewForm', '@roll.Source', '@item.Objection_No')">
-                                                                        View Form
+                                                                           href="@viewAppealFormUrl"
+                                                                           target="_blank">
+                                                                        <i class="fa-solid fa-eye"></i> View Appeal Form
                                                                     </a>
                                                                 </li>
 

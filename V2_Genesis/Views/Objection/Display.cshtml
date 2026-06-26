@@ -1,4 +1,5 @@
-﻿@{
+﻿@using V2_Genesis.Models.ViewModels
+@{
     Layout = "~/Views/Shared/_ClientLayout.cshtml";
 
     var queryRef   = TempData.Peek("objection_ref")?.ToString()
@@ -15,6 +16,7 @@
     var oldAddress  = TempData.Peek("Old_Address")?.ToString();
     var oldExtent   = TempData.Peek("Old_Extent")?.ToString();
     var oldMV       = TempData.Peek("Old_Market_Value")?.ToString();
+    var oldMVDisplay = FormatDisplayMoney(oldMV);
     var oldOwner    = TempData.Peek("Old_Owner")?.ToString();
 
     var newPropDesc = TempData.Peek("new_Property_Description")?.ToString();
@@ -22,28 +24,34 @@
     var newAddress  = TempData.Peek("new_Address")?.ToString();
     var newExtent   = TempData.Peek("new_Extent")?.ToString();
     var newMV       = TempData.Peek("new_Market_Value")?.ToString();
+    var newMVDisplay = FormatDisplayMoney(newMV);
     var newOwner    = TempData.Peek("new_Owner")?.ToString();
 
     
+    
+  
+
 
     var old2Cat = TempData.Peek("Old2_Category")?.ToString();
     var old2Extent = TempData.Peek("Old2_Extent")?.ToString();
     var old2MV = TempData.Peek("Old2_Market_Value")?.ToString();
+    var old2MVDisplay = FormatDisplayMoney(old2MV);
 
     var old3Cat = TempData.Peek("Old3_Category")?.ToString();
     var old3Extent = TempData.Peek("Old3_Extent")?.ToString();
     var old3MV = TempData.Peek("Old3_Market_Value")?.ToString();
-
+    var old3MVDisplay = FormatDisplayMoney(old3MV);
    
 
     var new2Cat = TempData.Peek("new2_Category")?.ToString();
     var new2Extent = TempData.Peek("new2_Extent")?.ToString();
     var new2MV = TempData.Peek("new2_Market_Value")?.ToString();
-
+    var new2MVDisplay = FormatDisplayMoney(new2MV);
+  
     var new3Cat = TempData.Peek("new3_Category")?.ToString();
     var new3Extent = TempData.Peek("new3_Extent")?.ToString();
     var new3MV = TempData.Peek("new3_Market_Value")?.ToString();
-
+    var new3MVDisplay = FormatDisplayMoney(new3MV);
     var reason      = TempData.Peek("objection_reason")?.ToString();
 
     TempData.Keep();
@@ -70,13 +78,22 @@
         if (string.IsNullOrWhiteSpace(value))
             return "";
 
-        var digits = new string(value.Where(char.IsDigit).ToArray());
+        var text = value.Trim();
 
-        if (string.IsNullOrWhiteSpace(digits))
-            return value;
+        // Remove existing R, spaces, commas
+        var cleaned = text
+            .Replace("R", "", StringComparison.OrdinalIgnoreCase)
+            .Replace(",", "")
+            .Replace(" ", "")
+            .Trim();
 
-        if (!decimal.TryParse(digits, out var amount))
-            return value;
+        if (!decimal.TryParse(cleaned, System.Globalization.NumberStyles.Any,
+                System.Globalization.CultureInfo.InvariantCulture, out var amount))
+        {
+            return text.StartsWith("R", StringComparison.OrdinalIgnoreCase)
+                ? text
+                : "R " + text;
+        }
 
         return "R " + amount.ToString("#,0", System.Globalization.CultureInfo.InvariantCulture)
                            .Replace(",", " ");
@@ -104,7 +121,17 @@
     TempData.Keep("RollDisplayName");
     TempData.Keep("RollSource");
     TempData.Keep("SourceTable");
+
+    var supportingDocs =
+        ViewBag.SupportingDocuments as List<SupportingDocumentViewModel>
+        ?? new List<SupportingDocumentViewModel>();
+
+    var supportingDocCount = supportingDocs.Count;
+    var canAddMoreDocuments = supportingDocCount < 10;
+
+    var rollSourceForDocs = TempData.Peek("RollSource")?.ToString() ?? "";
 }
+
 @section Styles{
     <link href="~/css/views/objection-display.css" rel="stylesheet" asp-append-version="true" />
 
@@ -128,8 +155,8 @@
                         <span>@typeWord</span> Successfully Submitted
                     </h1>
                     <p class="dp-hero-sub">
-                        Your @typeWord.ToLower() has been received and logged.
-                        An acknowledgement has been sent to your registered email address.
+                        Your @typeWord.ToLower() has been successfully received and logged.
+                        An acknowledgement has been sent to the registered email address.
                     </p>
                 </div>
                 <div class="dp-type-badge">
@@ -158,7 +185,7 @@
                     </div>
                 }
                 <div class="dp-hero-meta-item">
-                    <div class="dp-hero-meta-label">Documents</div>
+                    <div class="dp-hero-meta-label">Supporting Documents</div>
                     <div class="dp-hero-meta-value">@count uploaded</div>
                 </div>
             </div>
@@ -206,7 +233,7 @@
                                             <td>Purpose 1</td>
                                             <td>@oldCat</td>
                                             <td>@oldExtent</td>
-                                            <td>@oldMV</td>
+                                            <td>@oldMVDisplay</td>
                                         </tr>
 
                                         @if (!string.IsNullOrWhiteSpace(old2Cat) ||
@@ -217,7 +244,7 @@
                                                 <td>Purpose 2</td>
                                                 <td>@old2Cat</td>
                                                 <td>@old2Extent</td>
-                                                <td>@old2MV</td>
+                                                <td>@old2MVDisplay</td>
                                             </tr>
                                         }
 
@@ -229,7 +256,7 @@
                                                 <td>Purpose 3</td>
                                                 <td>@old3Cat</td>
                                                 <td>@old3Extent</td>
-                                                <td>@old3MV</td>
+                                                <td>@old3MVDisplay</td>
                                             </tr>
                                         }
                                     </tbody>
@@ -240,7 +267,7 @@
                                 <table class="dp-compare-table">
                                     <tr><td>Category</td><td>@oldCat</td></tr>
                                     <tr><td>Extent</td><td>@oldExtent</td></tr>
-                                    <tr><td>Market Value</td><td>@oldMV</td></tr>
+                                    <tr><td>Market Value</td><td>@oldMVDisplay</td></tr>
                                 </table>
                             }
                         </div>
@@ -298,7 +325,7 @@
                                     NewVal(newExtent);
                                 }
                                 @{
-                                    NewVal(newMV);
+                                    NewVal(newMVDisplay);
                                 }
                             </tr>
 
@@ -311,7 +338,7 @@
                                     NewVal(new2Extent);
                                 }
                                 @{
-                                    NewVal(new2MV);
+                                    NewVal(new2MVDisplay);
                                 }
                             </tr>
 
@@ -324,7 +351,7 @@
                                     NewVal(new3Extent);
                                 }
                                 @{
-                                    NewVal(new3MV);
+                                    NewVal(new3MVDisplay);
                                 }
                             </tr>
                         </tbody>
@@ -342,7 +369,7 @@
                     }
                 </tr>
                 <tr><td>Market Value</td>@{
-                    NewVal(newMV);
+                    NewVal(newMVDisplay);
                 }
             </tr>
         </table>
@@ -355,9 +382,9 @@
                     {
                         <div style="margin-top:20px;">
                             <div class="dp-reason">
-                                <div class="dp-reason-label">
+                              <div class="dp-reason-label">
                                     <i class="fa-solid fa-quote-left" style="margin-right:5px;"></i>
-                                    @typeWord Objection Reason 
+                                    @typeWord Reason
                                 </div>
                                 @reason
                             </div>
@@ -365,7 +392,115 @@
                     }
                 </div>
             </div>
+<div class="dp-section">
+    <div class="dp-section-header">
+        <i class="fa-solid fa-paperclip"></i>
+        Supporting Documents / Evidence
+    </div>
 
+    <div class="dp-section-body">
+
+        @if (TempData.Peek("DocumentSuccess") != null)
+        {
+            <div class="alert alert-success">
+                @TempData.Peek("DocumentSuccess")
+            </div>
+        }
+
+        @if (TempData.Peek("DocumentError") != null)
+        {
+            <div class="alert alert-danger">
+                @TempData.Peek("DocumentError")
+            </div>
+        }
+
+        <p style="margin-bottom:14px;color:#555;">
+            You uploaded <strong>@supportingDocCount</strong> of <strong>10</strong> allowed supporting documents/evidence files.
+            Click a file name below to download it again.
+        </p>
+
+        @if (supportingDocs.Any())
+        {
+            <div class="dp-doc-list">
+                @foreach (var doc in supportingDocs)
+                {
+                    <div class="dp-doc-item">
+                        <div class="dp-doc-icon">
+                            <i class="fa-solid fa-file-arrow-down"></i>
+                        </div>
+
+                        <div class="dp-doc-main">
+                            <a href="@doc.DownloadUrl" class="dp-doc-name">
+                                @doc.FileName
+                            </a>
+
+                            <div class="dp-doc-meta">
+                                @if (!string.IsNullOrWhiteSpace(doc.SizeDisplay))
+                                {
+                                    <span>@doc.SizeDisplay</span>
+                                }
+
+                                <span>
+                                    Uploaded @doc.UploadedDate.ToString("yyyy/MM/dd HH:mm")
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="dp-doc-empty">
+                No supporting documents/evidence files were uploaded.
+            </div>
+        }
+
+        @if (canAddMoreDocuments)
+        {
+            <div class="dp-add-doc-box">
+                <div class="dp-add-doc-message">
+                    You can still upload <strong>@(10 - supportingDocCount)</strong> more evidence file(s).
+                </div>
+
+                <form asp-controller="Objection"
+                      asp-action="AddEvidence"
+                      method="post"
+                      enctype="multipart/form-data">
+
+                    @Html.AntiForgeryToken()
+
+                    <input type="hidden" name="referenceNo" value="@queryRef" />
+                    <input type="hidden" name="rollSource" value="@rollSourceForDocs" />
+                    <input type="hidden" name="isMulti" value="@isMulti.ToString().ToLower()" />
+
+                    <input class="form-control"
+                           type="file"
+                           name="files"
+                           multiple
+                           accept=".pdf,.jpg,.jpeg,.png,.heic,.heif" />
+
+                    <small class="text-muted">
+                        Only PDF, JPG, JPEG, PNG, HEIC. Maximum 10MB per file.
+                    </small>
+
+                    <br />
+
+                    <button type="submit" class="dp-btn-secondary" style="margin-top:12px;">
+                        <i class="fa-solid fa-upload"></i>
+                        Add More Evidence
+                    </button>
+                </form>
+            </div>
+        }
+        else
+        {
+            <div class="dp-doc-limit">
+                Maximum number of supporting documents/evidence files uploaded.
+            </div>
+        }
+    </div>
+</div>
      
             <div class="dp-actions">
                 <a class="dp-btn-primary"

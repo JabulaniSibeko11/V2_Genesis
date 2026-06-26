@@ -12,6 +12,7 @@ using V2_Genesis.Models;
 using V2_Genesis.Models.Emails;
 using V2_Genesis.Models.Objections;
 using V2_Genesis.Models.Results.Section78;
+using V2_Genesis.Models.ViewModels;
 using V2_Genesis.Models.ViewModels.Objections;
 using V2_Genesis.Services.Implementations;
 using V2_Genesis.Services.Interfaces;
@@ -29,8 +30,8 @@ public class ObjectionController : Controller
     private readonly ISubmittedFormPdfService _submittedFormPdfService;
     private readonly INotificationService _notificationService;
     private readonly IEmailService _emailService;
+    private readonly ISupportingDocumentService _supportingDocumentService;
 
-  
     private readonly IConfiguration _config;
     private readonly INoticeService _noticeService;
     private readonly ILogger<ObjectionController> _logger;
@@ -39,7 +40,8 @@ public class ObjectionController : Controller
         IObjectionService objectionService,
         ApplicationDbContext db,
         IObjectionFormService objectionFormService,ISection78Service section78Service, INoticeService noticeService
-        ,IEmailService emailService, IConfiguration config,ISubmittedFormPdfService submittedFormPdfService
+        ,IEmailService emailService, IConfiguration config,ISubmittedFormPdfService submittedFormPdfService, 
+        ISupportingDocumentService supportingDocumentService
         ,INotificationService notificationService, ILogger<ObjectionController> logger)
     {
         _objectionService = objectionService;
@@ -51,7 +53,9 @@ public class ObjectionController : Controller
         _config = config;
         _noticeService = noticeService;
      _section78Service= section78Service;
-      _logger = logger; 
+
+        _supportingDocumentService = supportingDocumentService;
+        _logger = logger; 
     }
 
     private static readonly System.Text.RegularExpressions.Regex AdminEmailRx =
@@ -1120,6 +1124,11 @@ public class ObjectionController : Controller
     {
         ViewBag.GvList = await _db.GvList.OrderBy(r => r.ID).ToListAsync();
         ViewBag.IsMulti = false;
+
+        await LoadSupportingDocumentsForDisplayAsync();
+
+        TempData.Keep();
+
         return View("Display");
     }
 
@@ -1129,7 +1138,56 @@ public class ObjectionController : Controller
     {
         ViewBag.GvList = await _db.GvList.OrderBy(r => r.ID).ToListAsync();
         ViewBag.IsMulti = true;
+
+        await LoadSupportingDocumentsForDisplayAsync();
+
+        TempData.Keep();
+
         return View("Display");
+    }
+
+    private async Task LoadSupportingDocumentsForDisplayAsync()
+    {
+        var referenceNo =
+            TempData.Peek("objection_ref")?.ToString()
+            ?? TempData.Peek("Id")?.ToString()
+            ?? "";
+
+        var rollSource =
+            TempData.Peek("RollSource")?.ToString()
+            ?? HttpContext.Session.GetString("RollSource")
+            ?? "";
+
+        if (string.IsNullOrWhiteSpace(referenceNo))
+        {
+            ViewBag.SupportingDocuments = new List<SupportingDocumentViewModel>();
+            ViewBag.SupportingDocumentCount = 0;
+            ViewBag.CanAddMoreDocuments = true;
+            ViewBag.RemainingSupportingDocuments = 10;
+            return;
+        }
+
+        var docs = await _supportingDocumentService.GetDocumentsAsync(referenceNo, rollSource);
+
+        ViewBag.SupportingDocuments = docs;
+        ViewBag.SupportingDocumentCount = docs.Count;
+        ViewBag.CanAddMoreDocuments = docs.Count < 10;
+        ViewBag.RemainingSupportingDocuments = Math.Max(0, 10 - docs.Count);
+
+        TempData["Count"] = docs.Count.ToString();
+
+        for (int i = 1; i <= 10; i++)
+        {
+            TempData[$"File{i}"] = i <= docs.Count
+                ? docs[i - 1].FileName
+                : null;
+        }
+
+        TempData.Keep("objection_ref");
+        TempData.Keep("Id");
+        TempData.Keep("RollSource");
+        TempData.Keep("SourceTable");
+        TempData.Keep("Count");
     }
     private string GetControllerForSession()
     {

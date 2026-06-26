@@ -1,0 +1,63 @@
+﻿@model V2_Genesis.Models.Results.AdminFormViewResult
+
+@{
+    ViewData["Title"] = "Submitted Form View";
+    Layout = "~/Views/Shared/_ClientLayout.cshtml";
+}
+
+@section Styles {
+    <link asp-append-version="true" href="~/css/CardDesign.css" rel="stylesheet" />
+    <link asp-append-version="true" href="~/css/Tabs.css" rel="stylesheet" />
+    <link href="~/css/views/admin-search-result.css" rel="stylesheet" asp-append-version="true" />
+}
+
+<div class="res-page">
+    <div class="res-hero">
+        <div class="res-hero-inner">
+            <div>
+                <h1>Submitted Form View</h1>
+                <p>
+                    @Model.ReferenceNo · @Model.SourceTable
+                    @if (Model.IsAppeal)
+                    {
+                        <span> · Appeal</span>
+                    }
+                    else if (Model.IsQuery)
+                    {
+                        <span> · Section 78</span>
+                    }
+                    else
+                    {
+                        <span> · Objection</span>
+                    }
+                </p>
+            </div>
+
+            <a href="javascript:history.back()" class="res-back">
+                <i class="fa-solid fa-arrow-left"></i> Back
+            </a>
+        </div>
+    </div>
+
+    <div class="res-body">
+        @if (Model.IsQuery && Model.Section78 != null)
+        {
+            @await Html.PartialAsync("_Section78ReasonView", Model.Section78)
+        }
+
+        @await Html.PartialAsync(Model.PartialViewName, Model.Items)
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        document.querySelectorAll("input, textarea, select").forEach(function (el) {
+            el.setAttribute("disabled", "disabled");
+            el.setAttribute("readonly", "readonly");
+        });
+
+        document.querySelectorAll("button[type='submit'], .btn-submit, #submitForm").forEach(function (btn) {
+            btn.style.display = "none";
+        });
+    });
+</script>

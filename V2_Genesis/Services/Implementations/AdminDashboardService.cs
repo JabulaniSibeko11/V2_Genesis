@@ -203,7 +203,8 @@ public class AdminDashboardService : IAdminDashboardService
 
     // ── Unified search by reference number ───────────────────────────
     public async Task<AdminSearchResult> SearchByReferenceAsync(
-        string refNo, string? rollSource)
+        string refNo,
+        string? rollSource)
     {
         var result = new AdminSearchResult
         {
@@ -212,113 +213,163 @@ public class AdminDashboardService : IAdminDashboardService
             RollFilter = rollSource
         };
 
-        var refUpper = refNo.Trim().ToUpper();
-        bool isAppeal = refUpper.Contains("-APP-") || refUpper.StartsWith("APP");
-        bool isQuery = refUpper.Contains("QUE-") || refUpper.StartsWith("QUE");
+        if (string.IsNullOrWhiteSpace(refNo))
+            return result;
+
+        refNo = refNo.Trim();
+
+        var isAppeal = LooksLikeAppeal(refNo);
+        var isQuery = LooksLikeQuery(refNo);
+        var isReview = LooksLikeReview(refNo);
+
+        // Query / Review lives in QueryConnection
+        if (isQuery || isReview)
+        {
+            await SearchQueryOrReviewReferenceAsync(result, refNo, isReview);
+            return result;
+        }
 
         var rolls = AdminRollRegistry.Configs
-            .Where(kv => string.IsNullOrEmpty(rollSource) || kv.Key == rollSource)
+            .Where(kv => string.IsNullOrWhiteSpace(rollSource) || kv.Key == rollSource)
             .ToList();
 
         foreach (var (roll, cfg) in rolls)
         {
             try
             {
-                var connStr = _config.GetConnectionString(cfg.ConnectionKey)!;
+                var connStr = _config.GetConnectionString(cfg.ConnectionKey);
+
+                if (string.IsNullOrWhiteSpace(connStr))
+                    continue;
+
                 await using var conn = new SqlConnection(connStr);
 
-                string rollName = roll switch
-                {
-                    "Objection" => "General Valuation Roll 2023",
-                    "Objection_Supp1" => "Supplementary Roll 1",
-                    "Objection_Supp2" => "Supplementary Roll 2",
-                    "Objection_Supp3" => "Supplementary Roll 3",
-                    "Objection_Supp4" => "Supplementary Roll 4",
-                    "Objection_Supp5" => "Supplementary Roll 5",
-                    _ => roll
-                };
-
-                if (isQuery)
-                {
-                    var connStrQ = _config.GetConnectionString("QueryConnection")!;
-                    await using var connQ = new SqlConnection(connStrQ);
-                    var qRow = await connQ.QueryFirstOrDefaultAsync(
-                        @"SELECT TOP 1 Query_No, Property_Desc, Town_Name,
-                                 Old_Category, Old_Market_Value,
-                                 Query_Status, Unit_key, Valuation_Key
-                          FROM dbo.Que_Property_Info
-                          WHERE Query_No = @Ref",
-                        new { Ref = refNo });
-
-                    if (qRow is not null)
-                        result.RefMatches.Add(new AdminRefMatch
-                        {
-                            RollSource = "Objection_Query",
-                            RollName = "Section 78 Query",
-                            RefType = "Query",
-                            Query_No = qRow.Query_No?.ToString(),
-                            Property_Desc = qRow.Property_Desc?.ToString(),
-                            Town_Name = qRow.Town_Name?.ToString(),
-                            Old_Category = qRow.Old_Category?.ToString(),
-                            Old_Market_Value = qRow.Old_Market_Value?.ToString(),
-                            Query_Status = qRow.Query_Status?.ToString(),
-                            Unit_key = qRow.Unit_key?.ToString(),
-                            Valuation_Key = qRow.Valuation_Key?.ToString(),
-                        });
-                    break;
-                }
-                else if (isAppeal)
+                if (isAppeal)
                 {
                     var aRow = await conn.QueryFirstOrDefaultAsync(
-                        @"SELECT TOP 1 * FROM dbo.Obj_Property_Info_Appeal
-                          WHERE Appeal_No = @Ref",
+                        """
+                    SELECT TOP 1
+                        Appeal_No,
+                        Objection_No,
+                        A_Property_Desc,
+                        A_Property_Type,
+                        Town_Name,
+                        Old_Market_Value,
+                        Old_Category,
+                        Appeal_Status,
+                        A_Unit_key,
+                        A_Valuation_Key,
+                        PremiseID,
+                        Objector_Type
+                    FROM dbo.Obj_Property_Info_Appeal
+                    WHERE Appeal_No = @Ref
+                    """,
                         new { Ref = refNo });
 
-                    if (aRow is not null)
-                        result.RefMatches.Add(new AdminRefMatch
-                        {
-                            RollSource = roll,
-                            RollName = rollName,
-                            RefType = "Appeal",
-                            Appeal_No = aRow.Appeal_No?.ToString(),
-                            Property_Desc = aRow.A_Property_Desc?.ToString(),
-                            Town_Name = aRow.Town_Name?.ToString(),
-                            Old_Category = aRow.Old_Category?.ToString(),
-                            Old_Market_Value = aRow.Old_Market_Value?.ToString(),
-                            Appeal_Status = aRow.Appeal_Status?.ToString(),
-                            Unit_key = aRow.A_Unit_key?.ToString(),
-                            Valuation_Key = aRow.A_Valuation_Key?.ToString(),
-                        });
+                    if (aRow is null)
+                        continue;
+
+                    var match = new AdminRefMatch
+                    {
+                        RollSource = roll,
+                        RollName = RollName(roll),
+                        SourceTable = RollSourceToSourceTable(roll),
+
+                        RefType = "Appeal",
+                        ReferenceNo = aRow.Appeal_No?.ToString(),
+                        Appeal_No = aRow.Appeal_No?.ToString(),
+                        Objection_No = aRow.Objection_No?.ToString(),
+
+                        CurrentStatus = aRow.Appeal_Status?.ToString(),
+
+                        Property_Desc = aRow.A_Property_Desc?.ToString(),
+                        Property_Type = aRow.A_Property_Type?.ToString(),
+                        Town_Name = aRow.Town_Name?.ToString(),
+                        Old_Category = aRow.Old_Category?.ToString(),
+                        Old_Market_Value = aRow.Old_Market_Value?.ToString(),
+
+                        Unit_key = aRow.A_Unit_key?.ToString(),
+                        Valuation_Key = aRow.A_Valuation_Key?.ToString(),
+                        PremiseId = aRow.PremiseID?.ToString(),
+
+                        IsThirdParty = aRow.Objector_Type?.ToString()
+                            ?.Contains("Third", StringComparison.OrdinalIgnoreCase) == true,
+
+                        IsRepresentative = aRow.Objector_Type?.ToString()
+                            ?.Contains("Representative", StringComparison.OrdinalIgnoreCase) == true
+                    };
+
+                    match.Notices = BuildNoticeOptions(match);
+
+                    result.RefMatches.Add(match);
                 }
                 else
                 {
                     var oRow = await conn.QueryFirstOrDefaultAsync(
-                        @"SELECT TOP 1 * FROM dbo.Obj_Property_Info
-                          WHERE Objection_No = @Ref",
+                        """
+                    SELECT TOP 1
+                        Objection_No,
+                        Property_Desc,
+                        Property_Type,
+                        Town_Name,
+                        Old_Category,
+                        Old_Market_Value,
+                        objection_Status,
+                        Unit_key,
+                        Valuation_Key,
+                        Premise_id,
+                        PropertyFrom,
+                        Objector_Type
+                    FROM dbo.Obj_Property_Info
+                    WHERE Objection_No = @Ref
+                    """,
                         new { Ref = refNo });
 
-                    if (oRow is not null)
-                        result.RefMatches.Add(new AdminRefMatch
-                        {
-                            RollSource = roll,
-                            RollName = rollName,
-                            RefType = "Objection",
-                            Objection_No = oRow.Objection_No?.ToString(),
-                            Property_Desc = oRow.Property_Desc?.ToString(),
-                            Town_Name = oRow.Town_Name?.ToString(),
-                            Old_Category = oRow.Old_Category?.ToString(),
-                            Old_Market_Value = oRow.Old_Market_Value?.ToString(),
-                            objection_Status = oRow.objection_Status?.ToString(),
-                            Unit_key = oRow.Unit_key?.ToString(),
-                            Valuation_Key = oRow.Valuation_Key?.ToString(),
-                            PropertyFrom = oRow.PropertyFrom?.ToString(),
-                        });
+                    if (oRow is null)
+                        continue;
+
+                    var match = new AdminRefMatch
+                    {
+                        RollSource = roll,
+                        RollName = RollName(roll),
+                        SourceTable = RollSourceToSourceTable(roll),
+
+                        RefType = "Objection",
+                        ReferenceNo = oRow.Objection_No?.ToString(),
+                        Objection_No = oRow.Objection_No?.ToString(),
+
+                        CurrentStatus = oRow.objection_Status?.ToString(),
+
+                        Property_Desc = oRow.Property_Desc?.ToString(),
+                        Property_Type = oRow.Property_Type?.ToString(),
+                        Town_Name = oRow.Town_Name?.ToString(),
+                        Old_Category = oRow.Old_Category?.ToString(),
+                        Old_Market_Value = oRow.Old_Market_Value?.ToString(),
+
+                        Unit_key = oRow.Unit_key?.ToString(),
+                        Valuation_Key = oRow.Valuation_Key?.ToString(),
+                        PremiseId = oRow.Premise_id?.ToString(),
+                        PropertyFrom = oRow.PropertyFrom?.ToString(),
+
+                        IsThirdParty = oRow.Objector_Type?.ToString()
+                            ?.Contains("Third", StringComparison.OrdinalIgnoreCase) == true,
+
+                        IsRepresentative = oRow.Objector_Type?.ToString()
+                            ?.Contains("Representative", StringComparison.OrdinalIgnoreCase) == true
+                    };
+
+                    match.Notices = BuildNoticeOptions(match);
+
+                    result.RefMatches.Add(match);
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex,
-                    "[AdminSearch] RefSearch failed for {Roll}", roll);
+                _logger.LogError(
+                    ex,
+                    "[AdminSearch] Reference search failed. Roll={Roll}, Ref={Ref}",
+                    roll,
+                    refNo);
             }
         }
 
@@ -429,5 +480,246 @@ public class AdminDashboardService : IAdminDashboardService
         }
 
         return result;
+    }
+
+    private static string RollSourceToSourceTable(string rollSource)
+    {
+        return rollSource switch
+        {
+            "Objection" => "GV23",
+            "Objection_Supp1" => "GV23-SUP1",
+            "Objection_Supp2" => "GV23-SUP2",
+            "Objection_Supp3" => "GV23-SUP3",
+            "Objection_Supp4" => "GV23-SUP4",
+            "Objection_Supp5" => "GV23-SUP5",
+            "Objection_Query" => "Query",
+            _ => rollSource
+        };
+    }
+
+    private static string RollName(string rollSource)
+    {
+        return rollSource switch
+        {
+            "Objection" => "General Valuation Roll 2023",
+            "Objection_Supp1" => "Supplementary Roll 1",
+            "Objection_Supp2" => "Supplementary Roll 2",
+            "Objection_Supp3" => "Supplementary Roll 3",
+            "Objection_Supp4" => "Supplementary Roll 4",
+            "Objection_Supp5" => "Supplementary Roll 5",
+            "Objection_Query" => "Section 78 Query / Review",
+            _ => rollSource
+        };
+    }
+
+    private static bool LooksLikeAppeal(string refNo)
+    {
+        var value = refNo.Trim().ToUpperInvariant();
+        return value.StartsWith("APP") || value.Contains("APP-");
+    }
+
+    private static bool LooksLikeQuery(string refNo)
+    {
+        var value = refNo.Trim().ToUpperInvariant();
+        return value.StartsWith("QUE") ||
+               value.StartsWith("QUERY") ||
+               value.Contains("QUERY");
+    }
+
+    private static bool LooksLikeReview(string refNo)
+    {
+        var value = refNo.Trim().ToUpperInvariant();
+        return value.StartsWith("REV") ||
+               value.StartsWith("REVIEW") ||
+               value.Contains("REVIEW");
+    }
+    private static List<AdminNoticeOption> BuildNoticeOptions(AdminRefMatch match)
+    {
+        var notices = new List<AdminNoticeOption>();
+
+        var refNo = match.ReferenceNo
+            ?? match.Objection_No
+            ?? match.Appeal_No
+            ?? match.Query_No
+            ?? match.Review_No
+            ?? "";
+
+        var status = match.CurrentStatus ?? "";
+
+        // View submitted form
+        notices.Add(new AdminNoticeOption
+        {
+            NoticeName = "View Submitted Form",
+            Url = match.Property_Type?.Equals("Multi", StringComparison.OrdinalIgnoreCase) == true
+                ? $"/objection/multipurpose-details?referenceNo={refNo}&rollSource={match.RollSource}"
+                : $"/objection/form-details?referenceNo={refNo}&rollSource={match.RollSource}",
+            IsAvailable = true,
+            Icon = "fa-eye"
+        });
+
+        // Acknowledgement from saved folder
+        notices.Add(new AdminNoticeOption
+        {
+            NoticeName = "Acknowledgement",
+            Url = $"/notice/acknowledgement/download?objectionNo={refNo}&rollSource={match.RollSource}",
+            IsAvailable = true,
+            Icon = "fa-file-pdf"
+        });
+
+        // Section 49
+        notices.Add(new AdminNoticeOption
+        {
+            NoticeName = "Section 49 Notice",
+            Url = $"/notice/section49/download?rollSource={match.RollSource}&unitKey={match.Unit_key}&valuationKey={match.Valuation_Key}",
+            IsAvailable = !string.IsNullOrWhiteSpace(match.Unit_key) ||
+                          !string.IsNullOrWhiteSpace(match.Valuation_Key),
+            ReasonUnavailable = "Section 49 can only be downloaded when the property is found on the roll.",
+            Icon = "fa-file-pdf"
+        });
+
+        // Section 51
+        notices.Add(new AdminNoticeOption
+        {
+            NoticeName = "Section 51 Notice",
+            Url = $"/section51/download?referenceNo={refNo}&rollSource={match.RollSource}",
+            IsAvailable = match.IsThirdParty || match.IsRepresentative,
+            ReasonUnavailable = "Section 51 is only applicable where the case requires third-party or representative handling.",
+            Icon = "fa-file-pdf"
+        });
+
+        // Section 53
+        notices.Add(new AdminNoticeOption
+        {
+            NoticeName = "Section 53 Notice",
+            Url = $"/{RollSourceToController(match.RollSource)}/DownloadSection53?ObjectionNum={refNo}",
+            IsAvailable = status.Equals("Notice-Sent", StringComparison.OrdinalIgnoreCase) ||
+                          status.Equals("Appeal-Closed", StringComparison.OrdinalIgnoreCase),
+            ReasonUnavailable = "Section 53 is only available after Notice-Sent.",
+            Icon = "fa-file-pdf"
+        });
+
+        // Appeal decision
+        notices.Add(new AdminNoticeOption
+        {
+            NoticeName = "Appeal Decision / Section 52",
+            Url = $"/{RollSourceToController(match.RollSource)}/DownloadAppeal?ObjectionNum={refNo}",
+            IsAvailable = status.Equals("App-Finalized", StringComparison.OrdinalIgnoreCase),
+            ReasonUnavailable = "Appeal decision is only available after App-Finalized.",
+            Icon = "fa-gavel"
+        });
+
+        return notices;
+    }
+
+    private static string RollSourceToController(string rollSource)
+    {
+        return rollSource switch
+        {
+            "Objection" => "Objection",
+            "Objection_Supp1" => "Sup1",
+            "Objection_Supp2" => "Sup2",
+            "Objection_Supp3" => "Sup3",
+            "Objection_Supp4" => "Sup4",
+            "Objection_Supp5" => "Sup5",
+            "Objection_Query" => "Query",
+            _ => "Objection"
+        };
+    }
+    private async Task SearchQueryOrReviewReferenceAsync(
+    AdminSearchResult result,
+    string refNo,
+    bool isReview)
+    {
+        try
+        {
+            var connStr = _config.GetConnectionString("QueryConnection");
+
+            if (string.IsNullOrWhiteSpace(connStr))
+                return;
+
+            await using var conn = new SqlConnection(connStr);
+
+            /*
+             This assumes Que_Property_Info has Query_No and Review_No.
+             If your actual review column is different, send me the table script
+             and we adjust it.
+            */
+            var sql = isReview
+                ? """
+              SELECT TOP 1
+                  Query_No,
+                  Review_No,
+                  Property_Desc,
+                  Property_Type,
+                  Town_Name,
+                  Old_Category,
+                  Old_Market_Value,
+                  Query_Status,
+                  Unit_key,
+                  Valuation_Key,
+                  Premise_id
+              FROM dbo.Que_Property_Info
+              WHERE Review_No = @Ref
+              """
+                : """
+              SELECT TOP 1
+                  Query_No,
+                  Review_No,
+                  Property_Desc,
+                  Property_Type,
+                  Town_Name,
+                  Old_Category,
+                  Old_Market_Value,
+                  Query_Status,
+                  Unit_key,
+                  Valuation_Key,
+                  Premise_id
+              FROM dbo.Que_Property_Info
+              WHERE Query_No = @Ref
+              """;
+
+            var qRow = await conn.QueryFirstOrDefaultAsync(sql, new { Ref = refNo });
+
+            if (qRow is null)
+                return;
+
+            var match = new AdminRefMatch
+            {
+                RollSource = "Objection_Query",
+                RollName = "Section 78 Query / Review",
+                SourceTable = "Query",
+
+                RefType = isReview ? "Review" : "Query",
+                ReferenceNo = isReview
+                    ? qRow.Review_No?.ToString()
+                    : qRow.Query_No?.ToString(),
+
+                Query_No = qRow.Query_No?.ToString(),
+                Review_No = qRow.Review_No?.ToString(),
+
+                CurrentStatus = qRow.Query_Status?.ToString(),
+
+                Property_Desc = qRow.Property_Desc?.ToString(),
+                Property_Type = qRow.Property_Type?.ToString(),
+                Town_Name = qRow.Town_Name?.ToString(),
+                Old_Category = qRow.Old_Category?.ToString(),
+                Old_Market_Value = qRow.Old_Market_Value?.ToString(),
+
+                Unit_key = qRow.Unit_key?.ToString(),
+                Valuation_Key = qRow.Valuation_Key?.ToString(),
+                PremiseId = qRow.Premise_id?.ToString()
+            };
+
+            match.Notices = BuildNoticeOptions(match);
+
+            result.RefMatches.Add(match);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "[AdminSearch] Query/Review reference search failed. Ref={Ref}",
+                refNo);
+        }
     }
 }
