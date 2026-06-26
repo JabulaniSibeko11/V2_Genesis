@@ -66,14 +66,14 @@ public class ObjectionController : Controller
     [HttpGet]
     [Route("objection/check")]
     public async Task<IActionResult> CheckProperty(
-    string rollSource,
-    string sourceTable,
-    string? unitKey = null,
-    string? valuationKey = null,
-    string? objectionNo = null,
-    string appealStatus = "False",
-    string? PropertyFrom = null,
-    bool omission = false)
+       string rollSource,
+       string sourceTable,
+       string? unitKey = null,
+       string? valuationKey = null,
+       string? objectionNo = null,
+       string appealStatus = "False",
+       string? PropertyFrom = null,
+       bool omission = false)
     {
         unitKey = FloatKeyHelper.Normalize(unitKey);
         valuationKey = FloatKeyHelper.Normalize(valuationKey);
@@ -82,10 +82,18 @@ public class ObjectionController : Controller
         if (string.IsNullOrEmpty(userId))
             return RedirectToAction("Login", "Account");
 
+        rollSource = string.IsNullOrWhiteSpace(rollSource)
+            ? TempData.Peek("RollSource")?.ToString() ?? HttpContext.Session.GetString("RollSource") ?? ""
+            : rollSource.Trim();
+
+        sourceTable = string.IsNullOrWhiteSpace(sourceTable)
+            ? TempData.Peek("SourceTable")?.ToString() ?? ResolveSourceTable(rollSource)
+            : sourceTable.Trim();
+
         // Always set these early so the next view/form has them
         TempData["AppealStatus"] = appealStatus ?? "False";
-        TempData["RollSource"] = rollSource ?? "";
-        TempData["SourceTable"] = sourceTable ?? "";
+        TempData["RollSource"] = rollSource;
+        TempData["SourceTable"] = sourceTable;
         TempData["PropertyFrom"] = PropertyFrom ?? sourceTable ?? rollSource ?? "";
 
         TempData.Keep("AppealStatus");
@@ -97,7 +105,7 @@ public class ObjectionController : Controller
         ViewBag.GvList = await _db.GvList.OrderBy(r => r.ID).ToListAsync();
 
         var rollRecord = await _db.GvList
-    .FirstOrDefaultAsync(r => r.Source == rollSource);
+            .FirstOrDefaultAsync(r => r.Source == rollSource);
 
         var rollDisplayName = rollRecord == null
             ? "Valuation Roll"
@@ -109,19 +117,18 @@ public class ObjectionController : Controller
         bool isOmission = omission ||
             TempData.Peek("OmissionStatus")?.ToString() == "True";
 
+        bool isAppeal = appealStatus == "True";
+
         if (isOmission)
         {
             TempData["AppealStatus"] = "False";
-
             TempData["PropertyFrom"] = "Omission";
             TempData["OmissionStatus"] = "True";
 
-            // Keep omission details separately
             TempData["Omission_PropertyDesc"] = TempData.Peek("OmittedPropertyDesc")?.ToString();
             TempData["Omission_TownName"] = TempData.Peek("OmittedTownName")?.ToString();
             TempData["Omission_Address"] = TempData.Peek("Omission_Address")?.ToString();
 
-            // Section 6 old roll side must be blank because property is not on the roll
             TempData["CurrentFilter_PD"] = "";
             TempData["CurrentFilter_Prop"] = "";
             TempData["CurrentFilter_CD"] = "";
@@ -135,6 +142,7 @@ public class ObjectionController : Controller
             TempData["CurrentFilter_UK"] = "";
             TempData["CurrentFilter_VK"] = "";
             TempData["CurrentFilter_S"] = "";
+
             KeepObjectionFormTempData();
 
             var omitVm = new CheckPropertyViewModel
@@ -144,12 +152,10 @@ public class ObjectionController : Controller
                 RollSource = rollSource,
                 AppealStatus = "False",
                 IsAppeal = false,
-                PropertyFrom = PropertyFrom ?? rollSource,
+                PropertyFrom = "Omission",
                 ControllerName = !string.IsNullOrEmpty(sourceTable)
-                    ? ObjectionService.SourceToController
-                        .GetValueOrDefault(sourceTable, "Omission")
-                    : ObjectionService.RollSourceToController
-                        .GetValueOrDefault(rollSource, "Omission"),
+                    ? ObjectionService.SourceToController.GetValueOrDefault(sourceTable, "Omission")
+                    : ObjectionService.RollSourceToController.GetValueOrDefault(rollSource, "Omission"),
 
                 IsOmission = true,
                 OmittedTownName = TempData.Peek("OmittedTownName")?.ToString(),
@@ -159,6 +165,7 @@ public class ObjectionController : Controller
                 OmittedScheme = TempData.Peek("Omission_Scheme")?.ToString(),
                 OmittedUnit = TempData.Peek("Omission_Unit")?.ToString(),
             };
+
             TempData.Keep("PropertyFrom");
             TempData.Keep("OmissionStatus");
             TempData.Keep("Omission_PropertyDesc");
@@ -172,10 +179,32 @@ public class ObjectionController : Controller
         List<Section78PropertyDetail> Queitems = new();
 
         var propertyFromValue = PropertyFrom ?? sourceTable ?? rollSource ?? "";
-
         bool isLis = propertyFromValue.Equals("LIS", StringComparison.OrdinalIgnoreCase);
+        bool isQuery = rollSource.Contains("Query", StringComparison.OrdinalIgnoreCase);
 
-        if (rollSource.Contains("Query", StringComparison.OrdinalIgnoreCase))
+        // ============================================================
+        // OBJECTION PERIOD CHECK
+        // Only objection lodging uses RollDates OpenDate / VisibleUntil.
+        // Appeal is checked later after property/MVD data is loaded.
+        // ============================================================
+        if (!isQuery && !isLis && !isAppeal)
+        {
+            var objectionWindow = await _objectionService.CheckObjectionWindowAsync(
+                rollSource,
+                sourceTable);
+
+            if (!objectionWindow.IsOpen)
+            {
+                TempData["LodgementWindowError"] = objectionWindow.Message;
+
+                return RedirectToAction("Index", "Dashboard", new
+                {
+                    openRoll = rollSource
+                });
+            }
+        }
+
+        if (isQuery)
         {
             var queItem = await _section78Service
                 .GetPropertyDetailAsync(unitKey, valuationKey);
@@ -218,7 +247,7 @@ public class ObjectionController : Controller
         }
         else
         {
-            if (appealStatus == "True" && !string.IsNullOrEmpty(objectionNo))
+            if (isAppeal && !string.IsNullOrEmpty(objectionNo))
             {
                 items = await _objectionService
                     .GetPropertyForAppealAsync(rollSource, objectionNo);
@@ -236,6 +265,62 @@ public class ObjectionController : Controller
         if (items.Any())
         {
             var d = items.First();
+
+            // ============================================================
+            // APPEAL PERIOD CHECK
+            // Appeal dates come from dbo.Objection_MVD:
+            // Appeal_Start_Date / Appeal_Close_Date
+            // or Appeal_Start_Date_ReviseMVD / Appeal_Close_Date_ReviseMVD
+            // ============================================================
+            if (isAppeal)
+            {
+                var appealWindow = await _objectionService.CheckAppealWindowAsync(
+                    rollSource: rollSource,
+                    objectionNo: objectionNo,
+                    unitKey: d.UnitKey,
+                    valuationKey: d.ValuationKey,
+                    propertyDesc: d.PropertyDesc);
+
+                if (!appealWindow.IsOpen)
+                {
+                    TempData["LodgementWindowError"] = appealWindow.Message;
+
+                    return RedirectToAction("Index", "Dashboard", new
+                    {
+                        openRoll = rollSource
+                    });
+                }
+            }
+
+            // ============================================================
+            // DUPLICATE LODGEMENT CHECK
+            // Blocks duplicate objection/appeal before form opens.
+            // ============================================================
+            var duplicate = await _objectionService.CheckDuplicateLodgementAsync(
+                rollSource: rollSource,
+                sourceTable: sourceTable,
+                unitKey: d.UnitKey,
+                valuationKey: d.ValuationKey,
+                propertyDesc: d.PropertyDesc,
+                isAppeal: isAppeal);
+
+            if (duplicate.Exists)
+            {
+                var typeWord = isAppeal ? "appeal" : "objection";
+
+                TempData["DuplicateLodgementError"] =
+                    $"This property already has an {typeWord} lodged or in progress. " +
+                    "You cannot lodge it again. Please contact the Valuation team.";
+
+                TempData["DuplicateReferenceNo"] = duplicate.ReferenceNo;
+                TempData["DuplicateStatus"] = duplicate.Status;
+                TempData["DuplicatePropertyDescription"] = duplicate.PropertyDescription;
+
+                return RedirectToAction("Index", "Dashboard", new
+                {
+                    openRoll = rollSource
+                });
+            }
 
             TempData["CurrentFilter_PD"] = d.PropertyDesc;
             TempData["CurrentFilter_Prop"] = d.PropertyDesc;
@@ -285,7 +370,6 @@ public class ObjectionController : Controller
             KeepObjectionFormTempData();
         }
 
-        // Important: keep even when no items are found
         KeepObjectionFormTempData();
 
         var vm = new CheckPropertyViewModel
@@ -295,9 +379,9 @@ public class ObjectionController : Controller
             SourceTable = sourceTable,
             RollSource = rollSource,
             AppealStatus = appealStatus ?? "False",
-            IsAppeal = appealStatus == "True",
+            IsAppeal = isAppeal,
             PropertyFrom = isLis ? "LIS" : PropertyFrom ?? sourceTable ?? rollSource,
-            ControllerName = rollSource.Contains("Query", StringComparison.OrdinalIgnoreCase)
+            ControllerName = isQuery
                 ? "Query"
                 : ObjectionService.SourceToController
                     .GetValueOrDefault(sourceTable ?? string.Empty, "Sup3"),

@@ -5,6 +5,7 @@
 @using V2_Genesis.Services.Implementations
 @using V2_Genesis.Services.PropertySearch
 @inject INotificationService NotificationService
+@inject IObjectionService ObjectionRules
 @model V2_Genesis.Models.ViewModels.Dashboard.ClientDashboardViewModel
 @{
     ViewData["Title"] = "My Dashboard";
@@ -37,6 +38,38 @@
         dashboardUserEmail,
         isDashboardAdmin,
         10);
+}
+@if (TempData["LodgementWindowError"] != null)
+{
+    <div class="alert alert-warning" style="border-left:5px solid #e6b000;">
+        <strong>Lodgement Period Closed</strong><br />
+        @TempData["LodgementWindowError"]
+    </div>
+}
+@if (TempData["DuplicateLodgementError"] != null)
+{
+    <div class="alert alert-warning" style="border-left:5px solid #e6b000;">
+        <strong>Duplicate Lodgement Blocked</strong><br />
+
+        @TempData["DuplicateLodgementError"]
+
+        @if (TempData["DuplicateReferenceNo"] != null)
+        {
+            <br />
+            <strong>Existing Reference:</strong> 
+            @TempData["DuplicateReferenceNo"]
+        }
+
+        @if (TempData["DuplicateStatus"] != null)
+        {
+            <br />
+            <strong>Status:</strong> 
+            @TempData["DuplicateStatus"]
+        }
+
+        <br />
+        Please contact the Valuation team for assistance.
+    </div>
 }
 @functions {
 
@@ -317,6 +350,10 @@
         var rollKey = roll.Source.Replace("_", "");
         var isActive = roll == Model.Rolls.First();
 
+        var dates = GetDates(roll.Source);
+        var periodStatus = PeriodStatus(dates);
+        var canLodgeObjectionForRoll = !roll.IsQuery && periodStatus == "active";
+
         <div class="cd-roll-section"
              id="roll-@rollKey"
              data-roll-source="@roll.Source">
@@ -357,10 +394,6 @@
                             <i class="fa-solid fa-magnifying-glass"></i> Search Property
                         </a>
                     }
-                    @{
-                        var dates = GetDates(roll.Source);   // ← was Model.DatesFor(roll.Source)
-                        var status = PeriodStatus(dates);
-                    }
                     @if (!roll.IsQuery && dates is not null)
                     {
                         <div class="cd-period-wrap">
@@ -370,10 +403,10 @@
                                 –
                                 @dates.VisibleUntil.ToString("dd MMM yyyy")
                             </span>
-                            <span class="cd-roll-badge cd-badge-@status">
-                                @(status == "active"   ? "Objection Open"   :
-                                  status == "upcoming" ? "Opening Soon"      :
-                                                         "Objection Closed")
+                            <span class="cd-roll-badge cd-badge-@periodStatus">
+                                @(periodStatus == "active" ? "Objection Open" :
+                                  periodStatus == "upcoming" ? "Opening Soon" :
+                                  "Objection Closed")
                             </span>
                         </div>
                     }
@@ -734,9 +767,9 @@ else if (roll.IsQuery)
                                             <button class="cd-action-btn dropdown-toggle"
                                                     data-bs-toggle="dropdown">Actions</button>
                                             <ul class="dropdown-menu">
-                                                @if (roll.HasObjection)
-                                                {
-                                                    <li>
+                                                            @if (roll.HasObjection && canLodgeObjectionForRoll)
+                                                            {
+                                                                <li>
                                                                     @{
                                                                         var propertyFrom = item.PropertyFrom?.Trim();
 
@@ -753,12 +786,9 @@ else if (roll.IsQuery)
                                                                            href="/objection/check?rollSource=@roll.Source&sourceTable=@checkSourceTable&unitKey=@item.UnitKey&valuationKey=@item.ValuationKey&appealStatus=False&PropertyFrom=@checkPropertyFrom">
                                                                         <i class="fa-solid fa-file-pen"></i> Lodge Objection
                                                                     </a>
-                                                    @*     <a class="dropdown-item"
-                                                           href="/objection/check?rollSource=@roll.Source&sourceTable=@item.PropertyFrom&unitKey=@item.UnitKey&valuationKey=@item.ValuationKey&appealStatus=False">
-                                                            <i class="fa-solid fa-file-pen"></i> Lodge Objection
-                                                        </a> *@
-                                                    </li>
-                                                }
+                                                                </li>
+                                                            }
+                                                
                                                 <li>
                                                     <a class="dropdown-item"
                                                                        href="/property/unlink?linkedId=@item.Id&rollSource=@roll.Source&returnUrl=/Dashboard?openRoll=@roll.Source">
@@ -870,9 +900,19 @@ else if (roll.IsQuery)
                                                                     </li>
                      
                                                                 }
-                                                                @if (item.objection_Status == "Notice-Sent")
+                                                                @{
+                                                                    var appealWindow = await ObjectionRules.CheckAppealWindowAsync(
+                                                                        rollSource: roll.Source,
+                                                                        objectionNo: item.Objection_No,
+                                                                        unitKey: item.Unit_key,
+                                                                        valuationKey: item.Valuation_Key,
+                                                                        propertyDesc: item.Property_Desc);
+
+                                                                    var canLodgeAppealForItem = item.objection_Status == "Notice-Sent" && appealWindow.IsOpen;
+                                                                }
+
+                                                                @if (canLodgeAppealForItem)
                                                                 {
-              
                                                                     <li>
                                                                         <a class="dropdown-item"
                                                                                href="/objection/check?rollSource=@roll.Source&sourceTable=@item.PropertyFrom&unitKey=@item.Unit_key&valuationKey=@item.Valuation_Key&appealStatus=True&ObjectionNo=@item.Objection_No"
@@ -880,8 +920,6 @@ else if (roll.IsQuery)
                                                                             Lodge Appeal
                                                                         </a>
                                                                     </li>
-
-               
                                                                 }
                                                                 @if (item.objection_Status == "Obj-Lodging" || item.objection_Status == "Obj-Unallocated")
                                                                 {

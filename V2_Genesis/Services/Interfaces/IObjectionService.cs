@@ -1,4 +1,5 @@
 ﻿using V2_Genesis.Models.Objections;
+using V2_Genesis.Models.Results;
 
 namespace V2_Genesis.Services.Interfaces
 {
@@ -25,5 +26,24 @@ namespace V2_Genesis.Services.Interfaces
     string rollSource,
     string? unitKey,
     string? valuationKey);
+
+        Task<DuplicateLodgementResult> CheckDuplicateLodgementAsync(
+    string rollSource,
+    string sourceTable,
+    string? unitKey,
+    string? valuationKey,
+    string? propertyDesc,
+    bool isAppeal);
+
+        Task<LodgementWindowResult> CheckObjectionWindowAsync(
+      string rollSource,
+      string sourceTable);
+
+        Task<LodgementWindowResult> CheckAppealWindowAsync(
+            string rollSource,
+            string? objectionNo,
+            string? unitKey,
+            string? valuationKey,
+            string? propertyDesc);
     }
 }

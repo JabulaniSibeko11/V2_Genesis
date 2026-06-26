@@ -6,6 +6,7 @@ using System.Globalization;
 using System.Text.RegularExpressions;
 using V2_Genesis.Helpers;
 using V2_Genesis.Models.Objections;
+using V2_Genesis.Models.Results;
 using V2_Genesis.Services.Interfaces;
 using V2_Genesis.Services.Lis;
 using V2_Genesis.Services.PropertySearch;
@@ -388,5 +389,354 @@ public class ObjectionService : IObjectionService
         return parts.Any()
             ? string.Join(", ", parts)
             : null;
+    }
+    private string GetConnectionStringForDuplicateCheck(
+    string? rollSource,
+    string? sourceTable)
+    {
+        rollSource = NormalizeRollSource(rollSource);
+        sourceTable = NormalizeSourceTable(sourceTable);
+
+        var connectionKey = GetConnectionKeyFromRollSource(rollSource);
+
+        if (!string.IsNullOrWhiteSpace(sourceTable) &&
+            _sourceMap.TryGetValue(sourceTable, out var cfg))
+        {
+            connectionKey = cfg.ConnKey;
+        }
+
+        var connectionString =
+            _config.GetConnectionString(connectionKey)
+            ?? _config.GetConnectionString("DefaultConnection");
+
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            throw new InvalidOperationException(
+                $"Connection string '{connectionKey}' was not found.");
+        }
+
+        return connectionString;
+    }
+    public async Task<DuplicateLodgementResult> CheckDuplicateLodgementAsync(
+    string rollSource,
+    string sourceTable,
+    string? unitKey,
+    string? valuationKey,
+    string? propertyDesc,
+    bool isAppeal)
+    {
+        unitKey = FloatKeyHelper.Normalize(unitKey);
+        valuationKey = FloatKeyHelper.Normalize(valuationKey);
+
+        propertyDesc = propertyDesc?.Trim();
+
+        if (string.IsNullOrWhiteSpace(unitKey) &&
+            string.IsNullOrWhiteSpace(valuationKey) &&
+            string.IsNullOrWhiteSpace(propertyDesc))
+        {
+            return new DuplicateLodgementResult
+            {
+                Exists = false,
+                IsAppeal = isAppeal
+            };
+        }
+
+        var connectionString = GetConnectionStringForDuplicateCheck(
+     rollSource,
+     sourceTable);
+
+        await using var conn = new SqlConnection(connectionString);
+
+        if (isAppeal)
+        {
+            const string appealSql = @"
+SELECT TOP 1
+    Appeal_No,
+    Appeal_Status,
+    A_Property_Desc
+FROM dbo.Obj_Property_Info_Appeal
+WHERE
+    (
+        NULLIF(@ValuationKey, '') IS NOT NULL
+        AND CAST(A_Valuation_Key AS NVARCHAR(100)) = @ValuationKey
+    )
+    OR
+    (
+        NULLIF(@UnitKey, '') IS NOT NULL
+        AND CAST(A_Unit_Key AS NVARCHAR(100)) = @UnitKey
+    )
+    OR
+    (
+        NULLIF(@PropertyDesc, '') IS NOT NULL
+        AND LTRIM(RTRIM(A_Property_Desc)) = LTRIM(RTRIM(@PropertyDesc))
+    )
+ORDER BY ID DESC;
+";
+
+            var row = await conn.QueryFirstOrDefaultAsync(appealSql, new
+            {
+                UnitKey = unitKey ?? "",
+                ValuationKey = valuationKey ?? "",
+                PropertyDesc = propertyDesc ?? ""
+            });
+
+            if (row == null)
+            {
+                return new DuplicateLodgementResult
+                {
+                    Exists = false,
+                    IsAppeal = true
+                };
+            }
+
+            return new DuplicateLodgementResult
+            {
+                Exists = true,
+                IsAppeal = true,
+                ReferenceNo = row.Appeal_No,
+                Status = row.Appeal_Status,
+                PropertyDescription = row.A_Property_Desc
+            };
+        }
+
+        const string objectionSql = @"
+SELECT TOP 1
+    Objection_No,
+    objection_Status,
+    Property_Desc
+FROM dbo.Obj_Property_Info
+WHERE
+    (
+        NULLIF(@ValuationKey, '') IS NOT NULL
+        AND CAST(Valuation_Key AS NVARCHAR(100)) = @ValuationKey
+    )
+    OR
+    (
+        NULLIF(@UnitKey, '') IS NOT NULL
+        AND CAST(Unit_key AS NVARCHAR(100)) = @UnitKey
+    )
+    OR
+    (
+        NULLIF(@PropertyDesc, '') IS NOT NULL
+        AND LTRIM(RTRIM(Property_Desc)) = LTRIM(RTRIM(@PropertyDesc))
+    )
+ORDER BY ID DESC;
+";
+
+        var objRow = await conn.QueryFirstOrDefaultAsync(objectionSql, new
+        {
+            UnitKey = unitKey ?? "",
+            ValuationKey = valuationKey ?? "",
+            PropertyDesc = propertyDesc ?? ""
+        });
+
+        if (objRow == null)
+        {
+            return new DuplicateLodgementResult
+            {
+                Exists = false,
+                IsAppeal = false
+            };
+        }
+
+        return new DuplicateLodgementResult
+        {
+            Exists = true,
+            IsAppeal = false,
+            ReferenceNo = objRow.Objection_No,
+            Status = objRow.objection_Status,
+            PropertyDescription = objRow.Property_Desc
+        };
+    }
+    private static DateTime TodaySa()
+    {
+        try
+        {
+            var tz = TimeZoneInfo.FindSystemTimeZoneById("South Africa Standard Time");
+            return TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz).Date;
+        }
+        catch
+        {
+            return DateTime.Today;
+        }
+    }
+
+    private static DateTime? TryDate(object? value)
+    {
+        if (value == null)
+            return null;
+
+        var text = value.ToString();
+
+        if (string.IsNullOrWhiteSpace(text))
+            return null;
+
+        return DateTime.TryParse(text, out var date)
+            ? date
+            : null;
+    }
+    public Task<LodgementWindowResult> CheckObjectionWindowAsync(
+    string rollSource,
+    string sourceTable)
+    {
+        rollSource = NormalizeRollSource(rollSource);
+        sourceTable = NormalizeSourceTable(sourceTable);
+
+        var today = TodaySa();
+
+        var openDateText =
+            _config[$"RollDates:{rollSource}:OpenDate"]
+            ?? _config[$"RollDates:{sourceTable}:OpenDate"];
+
+        var closeDateText =
+            _config[$"RollDates:{rollSource}:VisibleUntil"]
+            ?? _config[$"RollDates:{sourceTable}:VisibleUntil"];
+
+        if (string.IsNullOrWhiteSpace(openDateText) ||
+            string.IsNullOrWhiteSpace(closeDateText) ||
+            !DateTime.TryParse(openDateText, out var openDate) ||
+            !DateTime.TryParse(closeDateText, out var closeDate))
+        {
+            return Task.FromResult(new LodgementWindowResult
+            {
+                Exists = false,
+                IsOpen = false,
+                Type = "Objection"
+            });
+        }
+
+        var isOpen =
+            today >= openDate.Date &&
+            today <= closeDate.Date;
+
+        return Task.FromResult(new LodgementWindowResult
+        {
+            Exists = true,
+            IsOpen = isOpen,
+            Type = "Objection",
+            StartDate = openDate,
+            CloseDate = closeDate
+        });
+    }
+    public async Task<LodgementWindowResult> CheckAppealWindowAsync(
+    string rollSource,
+    string? objectionNo,
+    string? unitKey,
+    string? valuationKey,
+    string? propertyDesc)
+    {
+        rollSource = NormalizeRollSource(rollSource);
+
+        unitKey = FloatKeyHelper.Normalize(unitKey);
+        valuationKey = FloatKeyHelper.Normalize(valuationKey);
+        propertyDesc = propertyDesc?.Trim();
+
+        var connectionKey = GetConnectionKeyFromRollSource(rollSource);
+
+        var connString =
+            _config.GetConnectionString(connectionKey)
+            ?? _config.GetConnectionString("DefaultConnection");
+
+        if (string.IsNullOrWhiteSpace(connString))
+        {
+            throw new InvalidOperationException(
+                $"Connection string '{connectionKey}' was not found.");
+        }
+
+        await using var conn = new SqlConnection(connString);
+
+        var sql = @"
+SELECT TOP 1
+    Objection_No,
+    Appeal_Start_Date,
+    Appeal_Close_Date,
+    Appeal_Start_Date_ReviseMVD,
+    Appeal_Close_Date_ReviseMVD,
+    Revise_MVD,
+    Unit_Key,
+    valuation_Key,
+    Property_desc
+FROM dbo.Objection_MVD
+WHERE
+    (
+        NULLIF(@ObjectionNo, '') IS NOT NULL
+        AND Objection_No = @ObjectionNo
+    )
+    OR
+    (
+        NULLIF(@ValuationKey, '') IS NOT NULL
+        AND CAST(valuation_Key AS NVARCHAR(100)) = @ValuationKey
+    )
+    OR
+    (
+        NULLIF(@UnitKey, '') IS NOT NULL
+        AND CAST(Unit_Key AS NVARCHAR(100)) = @UnitKey
+    )
+    OR
+    (
+        NULLIF(@PropertyDesc, '') IS NOT NULL
+        AND LTRIM(RTRIM(Property_desc)) = LTRIM(RTRIM(@PropertyDesc))
+    )
+ORDER BY Batch_Date DESC;
+";
+
+        var row = await conn.QueryFirstOrDefaultAsync(sql, new
+        {
+            ObjectionNo = objectionNo ?? "",
+            UnitKey = unitKey ?? "",
+            ValuationKey = valuationKey ?? "",
+            PropertyDesc = propertyDesc ?? ""
+        });
+
+        if (row == null)
+        {
+            return new LodgementWindowResult
+            {
+                Exists = false,
+                IsOpen = false,
+                Type = "Appeal"
+            };
+        }
+
+        var reviseText = row.Revise_MVD?.ToString() ?? "";
+
+        var isRevised =
+            reviseText.Equals("True", StringComparison.OrdinalIgnoreCase)
+            || reviseText.Equals("Yes", StringComparison.OrdinalIgnoreCase)
+            || reviseText.Equals("1", StringComparison.OrdinalIgnoreCase)
+            || !string.IsNullOrWhiteSpace(row.Appeal_Close_Date_ReviseMVD?.ToString());
+
+        DateTime? startDate = null;
+        DateTime? closeDate = null;
+
+        if (isRevised)
+        {
+            startDate = TryDate(row.Appeal_Start_Date_ReviseMVD);
+            closeDate = TryDate(row.Appeal_Close_Date_ReviseMVD);
+        }
+
+        if (!startDate.HasValue)
+            startDate = TryDate(row.Appeal_Start_Date);
+
+        if (!closeDate.HasValue)
+            closeDate = TryDate(row.Appeal_Close_Date);
+
+        var today = TodaySa();
+
+        var isOpen =
+            startDate.HasValue &&
+            closeDate.HasValue &&
+            today >= startDate.Value.Date &&
+            today <= closeDate.Value.Date;
+
+        return new LodgementWindowResult
+        {
+            Exists = true,
+            IsOpen = isOpen,
+            Type = "Appeal",
+            StartDate = startDate,
+            CloseDate = closeDate,
+            ReferenceNo = row.Objection_No
+        };
     }
 }

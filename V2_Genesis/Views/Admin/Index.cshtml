@@ -88,7 +88,29 @@
  <link href="~/css/views/admin-dashboard-premium.css" rel="stylesheet" asp-append-version="true" />
 
 }
+@if (TempData["DuplicateLodgementError"] != null)
+{
+    <div class="alert alert-warning" style="border-left:5px solid #e6b000;">
+        <strong>Duplicate Lodgement Blocked</strong><br />
 
+        @TempData["DuplicateLodgementError"]
+
+        @if (TempData["DuplicateReferenceNo"] != null)
+        {
+            <br />
+            <strong>Existing Reference:</strong> @TempData["DuplicateReferenceNo"]
+        }
+
+        @if (TempData["DuplicateStatus"] != null)
+        {
+            <br />
+            <strong>Status:</strong> @TempData["DuplicateStatus"]
+        }
+
+        <br />
+        Please contact the Valuation team for assistance.
+    </div>
+}
 <!-- ── Admin top bar ──────────────────────────────────────────────── -->
 <div class="adm-topbar">
     <div class="adm-topbar-inner">
