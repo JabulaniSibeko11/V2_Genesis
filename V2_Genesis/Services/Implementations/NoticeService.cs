@@ -1602,47 +1602,74 @@ public class NoticeService : INoticeService
         };
     }
     public async Task<(bool Success, byte[]? FileBytes, string? FileName, string? Error)>
-    GetSavedAcknowledgementAsync(string referenceNo, string rollSource)
+GetSavedAcknowledgementAsync(string referenceNo, string rollSource)
     {
         if (string.IsNullOrWhiteSpace(referenceNo))
             return (false, null, null, "Reference number is required.");
 
+        if (string.IsNullOrWhiteSpace(rollSource))
+            return (false, null, null, "Roll source is required.");
+
         referenceNo = referenceNo.Trim();
+        rollSource = rollSource.Trim();
 
         try
         {
-            /*
-             IMPORTANT:
-             Change this base folder to the same root folder where your acknowledgement
-             and evidence files are saved.
+            var fileRootPath = _config[$"ObjectionRolls:{rollSource}:FileRootPath"];
+            var appealRootPath = _config[$"ObjectionRolls:{rollSource}:AppealRootPath"];
 
-             Example:
-             C:\ObjectionEvidence
-             C:\V2_Genesis\Evidence
-             \\server\ObjectionEvidence
-            */
-            var rootFolder =
-                _config["FileStorage:EvidenceRoot"]
-                ?? _config["EvidenceRoot"]
-                ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "Evidence");
+            var isAppeal =
+                referenceNo.StartsWith("APP-", StringComparison.OrdinalIgnoreCase)
+                || referenceNo.Contains("APP-GV", StringComparison.OrdinalIgnoreCase);
+
+            var rootFolder = isAppeal
+                ? appealRootPath
+                : fileRootPath;
+
+            if (string.IsNullOrWhiteSpace(rootFolder))
+            {
+                return (false, null, null,
+                    $"Acknowledgement root folder is not configured for {rollSource}.");
+            }
 
             if (!Directory.Exists(rootFolder))
             {
-                return (false, null, null, $"Evidence folder does not exist: {rootFolder}");
+                return (false, null, null,
+                    $"Acknowledgement root folder does not exist: {rootFolder}");
             }
 
-            // Search recursively because each reference usually has its own folder
-            var matchingFiles = Directory
-                .EnumerateFiles(rootFolder, "*.pdf", SearchOption.AllDirectories)
-                .Where(path =>
-                {
-                    var fileName = Path.GetFileName(path);
+            var referenceFolder = Path.Combine(rootFolder, referenceNo);
 
-                    return fileName.Contains(referenceNo, StringComparison.OrdinalIgnoreCase)
-                           && fileName.Contains("Acknowledgement", StringComparison.OrdinalIgnoreCase);
-                })
-                .OrderByDescending(File.GetCreationTime)
-                .ToList();
+            List<string> matchingFiles;
+
+            if (Directory.Exists(referenceFolder))
+            {
+                matchingFiles = Directory
+                    .EnumerateFiles(referenceFolder, "*.pdf", SearchOption.TopDirectoryOnly)
+                    .Where(path =>
+                    {
+                        var fileName = Path.GetFileName(path);
+
+                        return fileName.Contains(referenceNo, StringComparison.OrdinalIgnoreCase)
+                               && fileName.Contains("Acknowledgement", StringComparison.OrdinalIgnoreCase);
+                    })
+                    .OrderByDescending(File.GetLastWriteTime)
+                    .ToList();
+            }
+            else
+            {
+                matchingFiles = Directory
+                    .EnumerateFiles(rootFolder, "*.pdf", SearchOption.AllDirectories)
+                    .Where(path =>
+                    {
+                        var fileName = Path.GetFileName(path);
+
+                        return fileName.Contains(referenceNo, StringComparison.OrdinalIgnoreCase)
+                               && fileName.Contains("Acknowledgement", StringComparison.OrdinalIgnoreCase);
+                    })
+                    .OrderByDescending(File.GetLastWriteTime)
+                    .ToList();
+            }
 
             var ackPath = matchingFiles.FirstOrDefault();
 

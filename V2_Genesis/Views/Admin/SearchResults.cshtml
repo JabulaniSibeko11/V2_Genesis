@@ -71,21 +71,38 @@
 
 @section Styles {
     <link href="~/css/views/clientdashboardcss.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/views/admin-dashboard-premium.css" rel="stylesheet" asp-append-version="true" />
     <link href="~/css/views/admin-search-result.css" rel="stylesheet" asp-append-version="true" />
 }
 
 <div class="res-page">
     <div class="res-hero">
         <div class="res-hero-inner">
-            <div>
-                <h1>Admin Enquiry Search Results</h1>
-                <p>
-                    @Model.SearchType search
-                    @if (!string.IsNullOrWhiteSpace(Model.RollFilter))
-                    {
-                        <span>· @Model.RollFilter</span>
-                    }
-                </p>
+            <div class="res-hero-left">
+                <div class="res-hero-icon">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </div>
+                <div>
+                    <div class="res-hero-eyebrow">
+                        <span></span>
+                        Administration · Valuation Services
+                    </div>
+                    <h1>Admin Enquiry Search Results</h1>
+                    <p>
+                        <span>@Model.SearchType</span>
+                        search
+                        @if (!string.IsNullOrWhiteSpace(Model.RollFilter))
+                        {
+                            <span style="margin-left:4px;">· @Model.RollFilter</span>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(Model.SearchInput))
+                        {
+                            <span style="margin-left:4px;color:rgba(255,255,255,.75);">
+                                "@Model.SearchInput"
+                            </span>
+                        }
+                    </p>
+                </div>
             </div>
 
             <a href="/admin/search" class="res-back">

@@ -28,8 +28,16 @@ namespace V2_Genesis.Services.Implementations
         string rollSource,
         LisSearchParams p)
         {
+            rollSource = ObjectionService.NormalizeRollSource(rollSource);
+
             if (!_registry.TryGetValue(rollSource, out var cfg))
+            {
+                _logger.LogWarning(
+                    "[LIS] No LIS registry config found for rollSource {RollSource}.",
+                    rollSource);
+
                 return new();
+            }
 
             var connStr = _config.GetConnectionString(cfg.ConnectionKey);
 
@@ -57,6 +65,12 @@ namespace V2_Genesis.Services.Implementations
 
             foreach (var plan in plans)
             {
+                _logger.LogInformation(
+                    "[LIS] Roll={RollSource}, SP={SpName}, Params={Params}",
+                    rollSource,
+                    plan.SpName,
+                    System.Text.Json.JsonSerializer.Serialize(plan.Params));
+
                 var rows = await ExecuteLisSpAsync(
                     conn,
                     plan.SpName,

@@ -522,9 +522,10 @@
 .cd-hero {
     background: linear-gradient(135deg, #1e3a40 0%, #122830 60%, #0d2228 100%);
     position: relative;
-    overflow: hidden;
+    overflow: visible;
     padding: 36px 28px 0;
     border-bottom: 3px solid var(--p-gold);
+    z-index: 5;
 }
     /* Diagonal texture */
     .cd-hero::before {
@@ -1452,6 +1453,7 @@
 ════════════════════════════════════════════════ */
 .cd-notification-wrap {
     position: relative;
+    z-index: 99999;
 }
 
 .cd-notification-btn {
@@ -1494,28 +1496,35 @@
     position: absolute;
     top: 58px;
     right: 0;
-    width: min(400px, 94vw);
-    background: #fff;
+    width: min(420px, 94vw);
+    max-height: 520px;
+    background: #ffffff !important;
     border-radius: 18px;
-    box-shadow: 0 24px 64px rgba(0,0,0,.22), 0 4px 16px rgba(0,0,0,.1);
+    box-shadow: 0 24px 64px rgba(0,0,0,.32), 0 4px 16px rgba(0,0,0,.16);
     border: 1px solid #ece7df;
     overflow: hidden;
     display: none;
-    z-index: 20000;
+    opacity: 1 !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    z-index: 99999 !important;
 }
 
     .cd-notification-panel.open {
         display: block;
+        background: #ffffff !important;
     }
+
 
 .cd-notification-head {
     padding: 18px 20px;
     background: var(--p-dark);
-    color: #fff;
+    color: #ffffff !important;
     display: flex;
     align-items: center;
     justify-content: space-between;
     border-bottom: 2px solid rgba(230,176,0,.2);
+    
 }
 
     .cd-notification-head strong {
@@ -1541,6 +1550,8 @@
 .cd-notification-list {
     max-height: 400px;
     overflow-y: auto;
+    background: #ffffff !important;
+    opacity: 1 !important;
 }
 
     .cd-notification-list::-webkit-scrollbar {
@@ -1564,14 +1575,37 @@
     color: var(--p-dark);
     border-bottom: 1px solid #f5f0ea;
     transition: background .12s;
+    background: #ffffff !important;
+    opacity: 1 !important;
 }
 
     .cd-notification-item:hover {
-        background: #fdfaf6;
+        background: #fdfaf6 !important;
     }
 
     .cd-notification-item.unread {
-        background: #fffdf5;
+        background: #fff7df !important;
+        opacity: 1 !important;
+    }
+
+.cd-notification-empty {
+    padding: 28px 18px;
+    text-align: center;
+    background: #ffffff !important;
+    color: #777;
+    opacity: 1 !important;
+}
+
+.cd-note-body {
+    background: transparent !important;
+    opacity: 1 !important;
+}
+
+    .cd-note-body strong,
+    .cd-note-body p,
+    .cd-note-body small,
+    .cd-note-ref {
+        opacity: 1 !important;
     }
 
 .cd-note-icon {
@@ -1623,6 +1657,9 @@
     display: block;
     font-size: 11px;
     color: #aaa;
+}
+.cd-note-body {
+    background: transparent !important;
 }
 
 .cd-note-ref {

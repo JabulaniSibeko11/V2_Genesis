@@ -520,7 +520,7 @@ WHERE
         NULLIF(@PropertyDesc, '') IS NOT NULL
         AND LTRIM(RTRIM(Property_Desc)) = LTRIM(RTRIM(@PropertyDesc))
     )
-ORDER BY ID DESC;
+;
 ";
 
         var objRow = await conn.QueryFirstOrDefaultAsync(objectionSql, new

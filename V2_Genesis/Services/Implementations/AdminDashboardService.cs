@@ -311,16 +311,18 @@ public class AdminDashboardService : IAdminDashboardService
                         Objection_No,
                         Property_Desc,
                         Property_Type,
-                        Town_Name,
-                        Old_Category,
-                        Old_Market_Value,
+                       
+                        Obj_Section6.Old_Category,
+                        Obj_Section6.Old_Market_Value,
                         objection_Status,
                         Unit_key,
                         Valuation_Key,
                         Premise_id,
                         PropertyFrom,
                         Objector_Type
-                    FROM dbo.Obj_Property_Info
+                    FROM dbo.Obj_Property_Info a
+                    inner join Obj_Section6 on a.Objection_No = Obj_Section6.[Objection_Ref_S6]
+
                     WHERE Objection_No = @Ref
                     """,
                         new { Ref = refNo });
@@ -379,8 +381,12 @@ public class AdminDashboardService : IAdminDashboardService
     // ── Unified search by property attributes ────────────────────────
     // FIX 3: Town_Name (was TownName — wrong column name)
     public async Task<AdminSearchResult> SearchByPropertyAsync(
-        string? town, string? stand, string? address,
-        string? scheme, string? unit, string? rollSource)
+      string? town,
+      string? stand,
+      string? address,
+      string? scheme,
+      string? unit,
+      string? rollSource)
     {
         var result = new AdminSearchResult
         {
@@ -390,8 +396,6 @@ public class AdminDashboardService : IAdminDashboardService
                     .Where(v => !string.IsNullOrWhiteSpace(v))),
             RollFilter = rollSource
         };
-
-        string Like(string? v) => string.IsNullOrWhiteSpace(v) ? "%%" : $"%{v.Trim()}%";
 
         string RollName(string src) => src switch
         {
@@ -405,64 +409,73 @@ public class AdminDashboardService : IAdminDashboardService
         };
 
         var rolls = AdminRollRegistry.Configs
-            .Where(kv => string.IsNullOrEmpty(rollSource) || kv.Key == rollSource)
+            .Where(kv => string.IsNullOrWhiteSpace(rollSource) || kv.Key == rollSource)
             .ToList();
 
         foreach (var (roll, cfg) in rolls)
         {
             try
             {
-                var connStr = _config.GetConnectionString(cfg.ConnectionKey)!;
+                var connStr = _config.GetConnectionString(cfg.ConnectionKey);
+
+                if (string.IsNullOrWhiteSpace(connStr))
+                {
+                    _logger.LogWarning(
+                        "[AdminSearch] Connection string missing for {Roll}. ConnKey={ConnKey}",
+                        roll,
+                        cfg.ConnectionKey);
+
+                    continue;
+                }
+
                 await using var conn = new SqlConnection(connStr);
 
                 var conditions = new List<string> { "1=1" };
                 var parms = new DynamicParameters();
 
-                if (!string.IsNullOrWhiteSpace(town))
+                var searchPatterns = BuildPropertyDescriptionSearchPatterns(
+                    town,
+                    stand,
+                    address,
+                    scheme,
+                    unit);
+
+                if (searchPatterns.Any())
                 {
-                    conditions.Add("Town_Name LIKE @Town");   // FIX: was TownName
-                    parms.Add("Town", Like(town));
-                }
-                if (!string.IsNullOrWhiteSpace(stand))
-                {
-                    conditions.Add("Property_Desc LIKE @Stand");
-                    parms.Add("Stand", Like(stand));
-                }
-                if (!string.IsNullOrWhiteSpace(address))
-                {
-                    conditions.Add("Property_Desc LIKE @Addr");
-                    parms.Add("Addr", Like(address));
-                }
-                if (!string.IsNullOrWhiteSpace(scheme))
-                {
-                    conditions.Add("Property_Desc LIKE @Scheme");
-                    parms.Add("Scheme", Like(scheme));
-                }
-                if (!string.IsNullOrWhiteSpace(unit))
-                {
-                    conditions.Add("Property_Desc LIKE @Unit");
-                    parms.Add("Unit", Like(unit));
+                    var descConditions = new List<string>();
+
+                    for (var i = 0; i < searchPatterns.Count; i++)
+                    {
+                        var paramName = $"PropDesc{i}";
+                        descConditions.Add($"a.Property_Desc LIKE @{paramName}");
+                        parms.Add(paramName, $"%{searchPatterns[i]}%");
+                    }
+
+                    conditions.Add("(" + string.Join(" OR ", descConditions) + ")");
                 }
 
-                var sql = $@"SELECT TOP 100
-                                Objection_No, Property_Desc, Town_Name,
-                                Old_Category, Old_Market_Value,
-                                objection_Status, Sub_typ,
-                                Unit_key, Valuation_Key, PropertyFrom
-                             FROM dbo.Obj_Property_Info
-                             WHERE {string.Join(" AND ", conditions)}
-                             ORDER BY Objection_No DESC";
+                var sql = $@"
+                select TOP 100 * 
+                         
+                  FROM dbo.Obj_Property_Info a
+                 inner join Obj_Section6 b on a.Objection_No=b.Objection_Ref_S6
+                WHERE {string.Join(" AND ", conditions)}
+                ORDER BY a.Objection_No DESC;";
 
                 var rows = await conn.QueryAsync(sql, parms);
 
                 foreach (var r in rows)
+                {
                     result.PropMatches.Add(new AdminPropMatch
                     {
                         RollSource = roll,
                         RollName = RollName(roll),
                         Objection_No = r.Objection_No?.ToString(),
                         Property_Desc = r.Property_Desc?.ToString(),
-                        Town_Name = r.Town_Name?.ToString(),
+
+                        // We do not have Town_Name column. Pull town from Property_Desc.
+                        Town_Name = ExtractTownFromPropertyDesc(r.Property_Desc?.ToString()),
+
                         Old_Category = r.Old_Category?.ToString(),
                         Old_Market_Value = r.Old_Market_Value?.ToString(),
                         objection_Status = r.objection_Status?.ToString(),
@@ -471,6 +484,7 @@ public class AdminDashboardService : IAdminDashboardService
                         Valuation_Key = r.Valuation_Key?.ToString(),
                         PropertyFrom = r.PropertyFrom?.ToString(),
                     });
+                }
             }
             catch (Exception ex)
             {
@@ -480,6 +494,169 @@ public class AdminDashboardService : IAdminDashboardService
         }
 
         return result;
+    }
+
+    private static List<string> BuildPropertyDescriptionSearchPatterns(
+       string? town,
+       string? stand,
+       string? address,
+       string? scheme,
+       string? unit)
+    {
+        var patterns = new List<string>();
+
+        town = CleanSearchText(town);
+        stand = CleanSearchText(stand);
+        address = CleanSearchText(address);
+        scheme = CleanSearchText(scheme);
+        unit = CleanSearchText(unit);
+
+        /*
+            Pattern 1:
+            Full Title ERF 334 LINBRO PARK EXT.181
+        */
+        if (!string.IsNullOrWhiteSpace(stand) &&
+            !string.IsNullOrWhiteSpace(town))
+        {
+            patterns.Add($"FULL TITLE ERF {stand} {town}");
+            patterns.Add($"ERF {stand} {town}");
+            patterns.Add($"{stand} {town}");
+        }
+
+        /*
+            Pattern 2:
+            PORTION 42 RUIMSIG 265-IQ
+        */
+        if (!string.IsNullOrWhiteSpace(stand) &&
+            !string.IsNullOrWhiteSpace(town))
+        {
+            patterns.Add($"PORTION {stand} {town}");
+            patterns.Add($"PTN {stand} {town}");
+        }
+
+        /*
+            Pattern 3:
+            RE PORTION 3 LANGLAAGTE 224-IQ
+        */
+        if (!string.IsNullOrWhiteSpace(stand) &&
+            !string.IsNullOrWhiteSpace(town))
+        {
+            patterns.Add($"RE PORTION {stand} {town}");
+            patterns.Add($"RE OF PORTION {stand} {town}");
+            patterns.Add($"REMAINDER PORTION {stand} {town}");
+            patterns.Add($"REMAINDER OF PORTION {stand} {town}");
+        }
+
+        /*
+            Pattern 4:
+            Scheme UNIT 28, MULBARTON GARDENS, (556/2024), BEVERLEY EXT.100
+        */
+        if (!string.IsNullOrWhiteSpace(unit) &&
+            !string.IsNullOrWhiteSpace(scheme) &&
+            !string.IsNullOrWhiteSpace(town))
+        {
+            patterns.Add($"SCHEME UNIT {unit} {scheme} {town}");
+            patterns.Add($"UNIT {unit} {scheme} {town}");
+            patterns.Add($"{unit} {scheme} {town}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(unit) &&
+            !string.IsNullOrWhiteSpace(scheme))
+        {
+            patterns.Add($"SCHEME UNIT {unit} {scheme}");
+            patterns.Add($"UNIT {unit} {scheme}");
+            patterns.Add($"{unit} {scheme}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(scheme) &&
+            !string.IsNullOrWhiteSpace(town))
+        {
+            patterns.Add($"{scheme} {town}");
+        }
+
+        /*
+            Address fallback
+        */
+        if (!string.IsNullOrWhiteSpace(address))
+        {
+            patterns.Add(address);
+
+            if (!string.IsNullOrWhiteSpace(town))
+                patterns.Add($"{address} {town}");
+        }
+
+        /*
+            Town-only fallback
+        */
+        if (!string.IsNullOrWhiteSpace(town))
+        {
+            patterns.Add(town);
+        }
+
+        /*
+            Stand-only fallback
+        */
+        if (!string.IsNullOrWhiteSpace(stand))
+        {
+            patterns.Add($"ERF {stand}");
+            patterns.Add($"PORTION {stand}");
+            patterns.Add($"PTN {stand}");
+            patterns.Add($"RE PORTION {stand}");
+            patterns.Add(stand);
+        }
+
+        return patterns
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Select(x => x.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    private static string CleanSearchText(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return "";
+
+        return value
+            .Trim()
+            .Replace(",", " ")
+            .Replace("  ", " ");
+    }
+
+    private static string ExtractTownFromPropertyDesc(string? propertyDesc)
+    {
+        if (string.IsNullOrWhiteSpace(propertyDesc))
+            return "";
+
+        var text = propertyDesc.Trim();
+
+        // Example:
+        // Scheme UNIT 28, MULBARTON GARDENS, (556/2024), BEVERLEY EXT.100
+        if (text.Contains(','))
+        {
+            var parts = text.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(x => x.Trim())
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .ToList();
+
+            if (parts.Any())
+                return parts.Last();
+        }
+
+        // Example:
+        // Full Title ERF 334 LINBRO PARK EXT.181
+        var erfIndex = text.IndexOf("ERF ", StringComparison.OrdinalIgnoreCase);
+
+        if (erfIndex >= 0)
+        {
+            var afterErf = text[(erfIndex + 4)..].Trim();
+            var pieces = afterErf.Split(' ', StringSplitOptions.RemoveEmptyEntries).ToList();
+
+            if (pieces.Count > 1)
+                return string.Join(" ", pieces.Skip(1));
+        }
+
+        return "";
     }
 
     private static string RollSourceToSourceTable(string rollSource)

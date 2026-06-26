@@ -1,21 +1,17 @@
-﻿
-using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.Blazor;
-
-namespace V2_Genesis.Services.Lis;
-
+﻿namespace V2_Genesis.Services.Lis;
 
 public record LisRollConfig(
     string ConnectionKey,
-    string TownOnly,               // SearchTownLIS
-    string TownStand,              // SearchTownStandNumberLIS
-    string TownStandAddress,       // StandTownStandNumberAddressLIS
-    string TownScheme,             // SearchTownSchemeLIS
-    string TownAddress,            // SearchTownAddressLIS
-    string TownUnit,               // SearchTownUnitLIS
-    string SchemeUnit,             // SearchTownSchemeUnitLIS
-    string TownErfScheme,          // SearchTownERFSchemeLIS
-    string TownAddressScheme,      // SearchTownAddressSchemeLIS
-    string TownAndScheme  ,         // GetDistinctTownAndScheme (dropdown)
+    string TownOnly,
+    string TownStand,
+    string TownStandAddress,
+    string TownScheme,
+    string TownAddress,
+    string TownUnit,
+    string SchemeUnit,
+    string TownErfScheme,
+    string TownAddressScheme,
+    string TownAndScheme,
     string DetailSp
 );
 
@@ -23,30 +19,32 @@ public static class LisRollRegistry
 {
     public static IReadOnlyDictionary<string, LisRollConfig> Build()
     {
-        static LisRollConfig Make(string connKey, string suffix) => new(
+        static LisRollConfig Make(string connKey) => new(
             ConnectionKey: connKey,
-            TownOnly: $"SearchTownLIS{suffix}",
-            TownStand: $"SearchTownStandNumberLIS{suffix}",
-            TownStandAddress: $"StandTownStandNumberAddressLIS{suffix}",
-            TownScheme: $"SearchTownSchemeLIS{suffix}",
-            TownAddress: $"SearchTownAddressLIS{suffix}",
-            TownUnit: $"SearchTownUnitLIS{suffix}",
-            SchemeUnit: $"SearchTownSchemeUnitLIS{suffix}",
-            TownErfScheme: $"SearchTownERFSchemeLIS{suffix}",
-            TownAddressScheme: $"SearchTownAddressSchemeLIS{suffix}",
-            TownAndScheme: $"GetDistinctTownAndScheme{suffix}",
-            DetailSp: "IndexObjectionLIS"        
-            );
 
-        return new Dictionary<string, LisRollConfig>
+            // IMPORTANT:
+            // Stored procedure names do NOT use Sup suffixes.
+            TownOnly: "SearchTownLIS",
+            TownStand: "SearchTownStandNumberLIS",
+            TownStandAddress: "StandTownStandNumberAddressLIS",
+            TownScheme: "SearchTownSchemeLIS",
+            TownAddress: "SearchTownAddressLIS",
+            TownUnit: "SearchTownUnitLIS",
+            SchemeUnit: "SearchTownSchemeUnitLIS",
+            TownErfScheme: "SearchTownERFSchemeLIS",
+            TownAddressScheme: "SearchTownAddressSchemeLIS",
+            TownAndScheme: "GetDistinctTownAndScheme",
+            DetailSp: "IndexObjectionLIS"
+        );
+
+        return new Dictionary<string, LisRollConfig>(StringComparer.OrdinalIgnoreCase)
         {
-            ["Objection"] = Make("DefaultConnection", ""),
-            ["Objection_Supp1"] = Make("Sup1Connection", "_Sup1"),
-            ["Objection_Supp2"] = Make("Sup2Connection", "_Sup2"),
-            ["Objection_Supp3"] = Make("Sup3Connection", "_Sup3"),
-            ["Objection_Supp4"] = Make("Sup4Connection", "_Sup4"),
-            ["Objection_Supp5"] = Make("Sup5Connection", "_Sup5"),
-
+            ["Objection"] = Make("DefaultConnection"),
+            ["Objection_Supp1"] = Make("Sup1Connection"),
+            ["Objection_Supp2"] = Make("Sup2Connection"),
+            ["Objection_Supp3"] = Make("Sup3Connection"),
+            ["Objection_Supp4"] = Make("Sup4Connection"),
+            ["Objection_Supp5"] = Make("Sup5Connection"),
         };
     }
 }

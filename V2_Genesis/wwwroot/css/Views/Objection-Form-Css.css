@@ -1200,3 +1200,217 @@
         opacity: 1 !important;
         transform: none !important;
     }
+
+/* ══════════════════════════════════════════════════════════════
+   FIX: form-floating label/value overlap
+   Used by ID Number, Passport Number, Company Reg fields
+══════════════════════════════════════════════════════════════ */
+
+#myForm .form-floating {
+    position: relative;
+    margin-bottom: 12px;
+}
+
+    #myForm .form-floating > .form-control,
+    #myForm .form-floating > input.form-control {
+        height: 64px !important;
+        min-height: 64px !important;
+        padding: 26px 14px 8px 14px !important;
+        line-height: 1.4 !important;
+        font-size: 14px !important;
+    }
+
+    #myForm .form-floating > label {
+        position: absolute !important;
+        top: 10px !important;
+        left: 14px !important;
+        height: auto !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        font-size: 10px !important;
+        font-weight: 700 !important;
+        color: var(--of-teal) !important;
+        text-transform: uppercase;
+        letter-spacing: .7px;
+        line-height: 1 !important;
+        opacity: 1 !important;
+        transform: none !important;
+        pointer-events: none;
+        background: transparent !important;
+    }
+
+    #myForm .form-floating > .form-control::placeholder {
+        color: #8a8f94;
+        opacity: 1;
+    }
+
+/* ══════════════════════════════════════════════════════════════
+   UNIFIED RADIO BUTTON STYLE
+   Makes every radio look like ID Number / Passport Number
+══════════════════════════════════════════════════════════════ */
+
+#myForm input[type="radio"] {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    width: 18px !important;
+    height: 18px !important;
+    min-width: 18px !important;
+    min-height: 18px !important;
+    border: 2px solid #b9c2c6 !important;
+    border-radius: 50% !important;
+    background: #fff !important;
+    margin: 0 6px 0 0 !important;
+    vertical-align: middle !important;
+    cursor: pointer;
+    position: relative;
+    flex-shrink: 0;
+}
+
+    #myForm input[type="radio"]:hover {
+        border-color: var(--of-gold) !important;
+    }
+
+    #myForm input[type="radio"]:checked {
+        border-color: var(--of-teal) !important;
+        background: var(--of-teal) !important;
+    }
+
+        #myForm input[type="radio"]:checked::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--of-gold);
+            transform: translate(-50%, -50%);
+        }
+
+/* Radio labels sit next to the circle */
+#myForm label.btn,
+#myForm label.btn.px-0,
+#myForm label.btn.fw-semibold,
+#myForm .form-group label.form-label {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 5px;
+    width: auto !important;
+    margin: 0 14px 0 0 !important;
+    padding: 4px 8px 4px 0 !important;
+    border-radius: 100px;
+    color: var(--of-teal) !important;
+    font-size: 12px !important;
+    font-weight: 800 !important;
+    letter-spacing: .4px;
+    text-transform: uppercase;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+    #myForm label.btn:hover,
+    #myForm label.btn.px-0:hover,
+    #myForm label.btn.fw-semibold:hover {
+        background: var(--of-gold-light);
+    }
+
+/* Radio group layout */
+#myForm .form-group,
+#myForm fieldset {
+    display: flex !important;
+    align-items: center !important;
+    flex-wrap: wrap !important;
+    gap: 8px 14px !important;
+    margin-bottom: 12px;
+}
+
+    /* Fieldset main question label stays on its own line */
+    #myForm fieldset > label.form-label,
+    #myForm fieldset > .form-label {
+        width: 100% !important;
+        display: block !important;
+        margin-bottom: 4px !important;
+        color: var(--of-teal) !important;
+        font-size: 12px !important;
+        font-weight: 800 !important;
+        text-transform: uppercase;
+    }
+
+    /* But radio option labels must remain inline */
+    #myForm fieldset label.btn,
+    #myForm fieldset label.btn.px-0,
+    #myForm fieldset label.btn.fw-semibold {
+        width: auto !important;
+        display: inline-flex !important;
+    }
+
+/* ══════════════════════════════════════════════════════════════
+   FINAL FIX: Make Yes/No radio groups horizontal
+   Example: Kitchen  ○ Yes  ○ No
+══════════════════════════════════════════════════════════════ */
+
+#myForm fieldset {
+    display: grid !important;
+    grid-template-columns: 140px auto auto !important;
+    align-items: center !important;
+    column-gap: 14px !important;
+    row-gap: 6px !important;
+    margin-bottom: 14px !important;
+}
+
+    /* The question label: Kitchen, Lounge, Dining Room, etc. */
+    #myForm fieldset > label.form-label,
+    #myForm fieldset > .form-label {
+        width: auto !important;
+        margin: 0 !important;
+        display: block !important;
+        color: var(--of-teal) !important;
+        font-size: 12px !important;
+        font-weight: 800 !important;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    /* Radio option labels: Yes / No */
+    #myForm fieldset label.btn,
+    #myForm fieldset label.btn.px-0,
+    #myForm fieldset label.btn.fw-semibold {
+        width: auto !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+        margin: 0 !important;
+        padding: 4px 8px !important;
+        color: var(--of-teal) !important;
+        font-size: 12px !important;
+        font-weight: 800 !important;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    /* Keep radio circle aligned */
+    #myForm fieldset input[type="radio"] {
+        margin: 0 5px 0 0 !important;
+    }
+
+/* If Bootstrap columns contain fieldsets, keep them tidy */
+#myForm .col-md-3 fieldset,
+#myForm .col-md-4 fieldset,
+#myForm .col-md-5 fieldset,
+#myForm .col-md-6 fieldset,
+#myForm .col-sm-3 fieldset,
+#myForm .col-sm-4 fieldset,
+#myForm .col-sm-5 fieldset,
+#myForm .col-sm-6 fieldset {
+    width: 100%;
+}
+
+/* Section bar question should stay readable */
+#myForm .obj-section-bar fieldset {
+    grid-template-columns: 1fr auto auto !important;
+}
+
+    #myForm .obj-section-bar fieldset > label.form-label,
+    #myForm .obj-section-bar fieldset > .form-label {
+        color: #ffffff !important;
+    }

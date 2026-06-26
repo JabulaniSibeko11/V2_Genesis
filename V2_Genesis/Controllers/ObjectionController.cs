@@ -1570,15 +1570,18 @@ public class ObjectionController : Controller
         return $"/Admin/Search?reference={Uri.EscapeDataString(referenceNumber)}";
     }
     [HttpGet]
-    [Authorize]
     [Route("notice/acknowledgement/download")]
-    public async Task<IActionResult> DownloadAcknowledgement(
-    string objectionNo,
-    string rollSource)
+    public async Task<IActionResult> DownloadAcknowledgement(string objectionNo,string rollSource)
     {
         if (string.IsNullOrWhiteSpace(objectionNo))
         {
             TempData["DownloadError"] = "Reference number is missing.";
+            return RedirectToAction("Index", "Dashboard");
+        }
+
+        if (string.IsNullOrWhiteSpace(rollSource))
+        {
+            TempData["DownloadError"] = "Roll source is missing.";
             return RedirectToAction("Index", "Dashboard");
         }
 
@@ -1602,4 +1605,5 @@ public class ObjectionController : Controller
             "application/pdf",
             result.FileName ?? $"{objectionNo}_Acknowledgement.pdf");
     }
+
 }
