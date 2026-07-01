@@ -194,74 +194,7 @@ namespace V2_Genesis.Services.Implementations
                 .Select(g => g.First())
                 .ToList();
         }
-        private static List<LisSpPlan> BuildKeyLookupPlans(LisRollConfig cfg)
-        {
-            var plans = new List<LisSpPlan>
-    {
-        new(cfg.SchemeUnit, new
-        {
-            SearchTownName = "%%",
-            SearchScheme = "%%",
-            SearchUnit = "%%"
-        }),
-
-        new(cfg.TownStandAddress, new
-        {
-            SearchTownName = "%%",
-            SearchStand = "%%",
-            SearchAddress = "%%"
-        }),
-
-        new(cfg.TownErfScheme, new
-        {
-            SearchTownName = "%%",
-            SearchStand = "%%",
-            SearchScheme = "%%"
-        }),
-
-        new(cfg.TownAddressScheme, new
-        {
-            SearchTownName = "%%",
-            SearchAddress = "%%",
-            SearchScheme = "%%"
-        }),
-
-        new(cfg.TownStand, new
-        {
-            SearchTownName = "%%",
-            SearchStand = "%%"
-        }),
-
-        new(cfg.TownAddress, new
-        {
-            SearchTownName = "%%",
-            SearchAddress = "%%"
-        }),
-
-        new(cfg.TownScheme, new
-        {
-            SearchTownName = "%%",
-            SearchScheme = "%%"
-        }),
-
-        new(cfg.TownUnit, new
-        {
-            SearchTownName = "%%",
-            SearchUnit = "%%"
-        }),
-
-        new(cfg.TownOnly, new
-        {
-            SearchTownName = "%%"
-        })
-    };
-
-            return plans
-                .Where(x => !string.IsNullOrWhiteSpace(x.SpName))
-                .GroupBy(x => x.SpName.Trim(), StringComparer.OrdinalIgnoreCase)
-                .Select(g => g.First())
-                .ToList();
-        }
+       
         private async Task<List<LisProperty>> ExecuteLisSpAsync(
     SqlConnection conn,
     string spName,
@@ -342,84 +275,7 @@ namespace V2_Genesis.Services.Implementations
             }
         }
 
-        // ── SP selection logic ────────────────────────────────────────────
-        // Mirrors the V1 if/else chain exactly, using named parameters
-        private static (string SpName, object Params) PickSp(
-            LisRollConfig cfg,
-            string? town, string? stand,
-            string? address, string? scheme, string? unit)
-        {
-            // Scheme + Unit
-            if (scheme != null && unit != null)
-                return (cfg.SchemeUnit, new
-                {
-                    SearchTownName = Like(town),
-                    SearchScheme = Like(scheme),
-                    SearchUnit = Like(unit)
-                });
-
-            // Stand + Address + no Scheme
-            if (stand != null && address != null && scheme == null)
-                return (cfg.TownStandAddress, new
-                {
-                    SearchTownName = Like(town),
-                    SearchStand = Like(stand),
-                    SearchAddress = Like(address)
-                });
-
-            // Stand + Scheme + no Address
-            if (stand != null && scheme != null && address == null)
-                return (cfg.TownErfScheme, new
-                {
-                    SearchTownName = Like(town),
-                    SearchStand = Like(stand),
-                    SearchScheme = Like(scheme)
-                });
-
-            // Address + Scheme + no Stand
-            if (address != null && scheme != null && stand == null)
-                return (cfg.TownAddressScheme, new
-                {
-                    SearchTownName = Like(town),
-                    SearchAddress = Like(address),
-                    SearchScheme = Like(scheme)
-                });
-
-            // Stand only
-            if (stand != null && address == null && scheme == null)
-                return (cfg.TownStand, new
-                {
-                    SearchTownName = Like(town),
-                    SearchStand = Like(stand)
-                });
-
-            // Scheme only
-            if (scheme != null && stand == null && address == null)
-                return (cfg.TownScheme, new
-                {
-                    SearchTownName = Like(town),
-                    SearchScheme = Like(scheme)
-                });
-
-            // Address only
-            if (address != null && stand == null && scheme == null)
-                return (cfg.TownAddress, new
-                {
-                    SearchTownName = Like(town),
-                    SearchAddress = Like(address)
-                });
-
-            // Unit only
-            if (unit != null && stand == null && address == null && scheme == null)
-                return (cfg.TownUnit, new
-                {
-                    SearchTownName = Like(town),
-                    SearchUnit = Like(unit)
-                });
-
-            // Town only / fallback
-            return (cfg.TownOnly, new { SearchTownName = Like(town) });
-        }
+   
 
         // ── Helpers ───────────────────────────────────────────────────────
         private static string? Normalise(string? val)
@@ -621,35 +477,7 @@ namespace V2_Genesis.Services.Implementations
                 ? string.Join(", ", parts)
                 : null;
         }
-        //private static LisProperty MapRow(dynamic dr)
-        //{
-        //    var d = (IDictionary<string, object>)dr;
-        //    T Get<T>(string key) =>
-        //        d.TryGetValue(key, out var v) && v is not DBNull ? (T)Convert.ChangeType(v, typeof(T)) : default!;
-
-        //    return new LisProperty
-        //    {
-        //        TownNameDescription = Get<string>("TownNameDescription"),
-        //        Erf = Get<int>("Erf"),
-        //        Ptn = Get<int>("Ptn"),
-        //        LisStreetAddress = Get<string>("LisStreetAddress"),
-        //        Reason = Get<string>("Reason"),
-        //        SchemeName = Get<string>("Schemename"),
-        //        SchemeNumber = Get<string>("Scheme_Number"),
-        //        UnitNo = Get<string>("UnitNo"),
-        //        SchemeYear = Get<string>("SchemeYear"),
-        //        UnitKey = Get<string>("UnitKey"),
-        //        ValuationKey = Get<string>("ValuationKey"),
-        //        MarketValue = Get<string>("MarketValue"),
-        //        CATDescription = Get<string>("CATDescription"),
-        //        RateableArea = Get<string>("RateableArea"),
-        //        ValuationEffectiveDateWefDate = Get<string>("ValuationEffectiveDateWefDate"),
-        //        AdditionalNotes = Get<string>("AdditionalNotes"),
-        //        Re = Get<string>("Re"),
-        //        ValuationEndDate = Get<string>("ValuationEndDate"),
-        //        Lease = Get<string>("LeaseStatus"),
-        //    };
-        //}
+       
         public async Task<LisProperty?> GetPropertyByKeysAsync(
       string rollSource,
       string unitKey,

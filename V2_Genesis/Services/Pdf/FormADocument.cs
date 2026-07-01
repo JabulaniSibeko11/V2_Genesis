@@ -20,6 +20,91 @@ namespace GV_Forms.Pdf
             _env=env;
         }
         public DocumentMetadata GetMetadata() => DocumentMetadata.Default;
+        private string GetFormHeaderColor()
+        {
+            return string.Equals(_wording.InquiryLabel, "APPEAL", StringComparison.OrdinalIgnoreCase)
+                ? "#FF0000"
+                : "#FFFF00";
+        }
+
+        private void BuildFullBannerHeader(
+    IContainer container,
+    byte[] banner1Bytes,
+    byte[] banner2Bytes)
+        {
+            container.Row(row =>
+            {
+                // Left side: Joburg logo + GV banner
+                row.RelativeItem(4).Row(bannerRow =>
+                {
+                    bannerRow.ConstantItem(95)
+                        .Height(75)
+                        .AlignMiddle()
+                        .Image(banner1Bytes, ImageScaling.FitArea);
+
+                    bannerRow.ConstantItem(15);
+
+                    bannerRow.RelativeItem()
+                        .Height(75)
+                        .AlignMiddle()
+                        .Image(banner2Bytes, ImageScaling.FitArea);
+                });
+
+                // Right side: use the remaining page width properly
+                row.RelativeItem(6)
+                    .PaddingLeft(20)
+                    .PaddingTop(5)
+                    .Column(contactCol =>
+                    {
+                        contactCol.Item()
+                            .Text("City of Johannesburg")
+                            .Bold()
+                            .FontSize(12);
+
+                        contactCol.Item()
+                            .Text("Group Finance: Valuation Services")
+                            .FontSize(10);
+
+                        contactCol.Item()
+                            .PaddingTop(5)
+                            .LineHorizontal(1);
+
+                        contactCol.Item()
+                            .PaddingTop(8)
+                            .Row(contactRow =>
+                            {
+                                contactRow.RelativeItem(4).Column(phoneCol =>
+                                {
+                                    phoneCol.Item()
+                                        .Text("Phone 011 407-6622 or")
+                                        .FontSize(8);
+
+                                    phoneCol.Item()
+                                        .PaddingTop(2)
+                                        .Text("011 407-6597")
+                                        .FontSize(8);
+                                });
+
+                                contactRow.RelativeItem(5).Column(webCol =>
+                                {
+                                    webCol.Item()
+                                        .Hyperlink("https://www.joburg.org.za")
+                                        .Text("www.joburg.org.za")
+                                        .FontSize(8)
+                                        .FontColor("#0000FF");
+
+                                    webCol.Item()
+                                        .PaddingTop(2)
+                                        .Hyperlink("mailto:valuationenquiries@joburg.org.za")
+                                        .Text("valuationenquiries@joburg.org.za")
+                                        .FontSize(8)
+                                        .FontColor("#0000FF");
+                                });
+                            });
+                    });
+            });
+        }
+
         public void Compose(IDocumentContainer container)
         {
             //byte[] banner1Bytes = File.ReadAllBytes(Path.Combine("wwwroot", "img", "banner1.webp"));
@@ -111,7 +196,7 @@ namespace GV_Forms.Pdf
                         });
                         // topRow.AutoItem().Text("Form A Objection").BackgroundColor("#FF0000").Bold().FontSize(9);
 
-                        topRow.AutoItem().Text($"Form A {_wording.InquiryLabel}").BackgroundColor("#FFFF00").Bold().FontSize(9);
+                        topRow.AutoItem().Text($"Form A {_wording.InquiryLabel}").BackgroundColor(GetFormHeaderColor()).Bold().FontSize(9);
                     });
 
                     // Page Number
@@ -124,36 +209,10 @@ namespace GV_Forms.Pdf
                     });
 
                     // Banners and Contact Information Row
-                    header.Item().PaddingTop(5).Row(row =>
-                    {
-                        // Left side - Banners (closer together)
-                        row.AutoItem().Row(bannerRow =>
+                    header.Item().PaddingTop(5).Element(c =>
                         {
-                            bannerRow.AutoItem().Height(70).AlignMiddle().AlignCenter().Image(banner1Bytes, ImageScaling.FitArea);
-                            bannerRow.AutoItem().PaddingLeft(10).Height(70).AlignMiddle().AlignCenter().Image(banner2Bytes, ImageScaling.FitArea);
+                            BuildFullBannerHeader(c, banner1Bytes, banner2Bytes);
                         });
-
-                        // Right side - Contact Information (closer to banners)
-                        row.AutoItem().PaddingLeft(20).Column(contactCol =>
-                        {
-                            contactCol.Item().Text("City of Johannesburg").Bold().FontSize(10);
-                            contactCol.Item().Text("Group Finance: Valuation Services").FontSize(9);
-                            contactCol.Item().PaddingTop(5).LineHorizontal(1);
-                            contactCol.Item().PaddingTop(8).Row(phoneRow =>
-                            {
-                                phoneRow.AutoItem().Column(phoneCol =>
-                                {
-                                    phoneCol.Item().Text("Phone 011 407-6622 or").FontSize(8);
-                                    phoneCol.Item().PaddingTop(2).Text("       011 407-6597").FontSize(8);
-                                });
-                                phoneRow.AutoItem().PaddingLeft(10).Column(webCol =>
-                                {
-                                    webCol.Item().Hyperlink("https://www.joburg.org.za").Text("www.joburg.org.za").FontSize(8).FontColor("#0000FF");
-                                    webCol.Item().PaddingTop(2).Hyperlink("mailto:valuationenquiries@joburg.org.za").Text("valuationenquiries@joburg.org.za").FontSize(8).FontColor("#0000FF");
-                                });
-                            });
-                        });
-                    });
 
                     header.Item().PaddingTop(10).Text("FORM A: RESIDENTIAL (FULL TITLE AND SECTIONAL TITLE USED FOR RESIDENTIAL PURPOSES)")
                         .Bold().FontSize(9).AlignLeft();
@@ -235,7 +294,7 @@ namespace GV_Forms.Pdf
                             leftRow.RelativeColumn().BorderBottom(1).PaddingBottom(2).Text(areaScheme).FontSize(8).AlignCenter();
                         });
                         // topRow.AutoItem().Text("Form A Objection").BackgroundColor("#FF0000").Bold().FontSize(9);
-                        topRow.AutoItem().Text($"Form A {_wording.InquiryLabel}").BackgroundColor("#FF0000").Bold().FontSize(9);
+                        topRow.AutoItem().Text($"Form A {_wording.InquiryLabel}").BackgroundColor(GetFormHeaderColor()).Bold().FontSize(9);
 
                     });
 
@@ -297,7 +356,7 @@ namespace GV_Forms.Pdf
                             leftRow.RelativeColumn().BorderBottom(1).PaddingBottom(2).Text(areaScheme).FontSize(8).AlignCenter();
                         });
 
-                        topRow.AutoItem().Text($"Form A {_wording.InquiryLabel}").BackgroundColor("#FF0000").Bold().FontSize(9);
+                        topRow.AutoItem().Text($"Form A {_wording.InquiryLabel}").BackgroundColor(GetFormHeaderColor()).Bold().FontSize(9);
 
                         //topRow.AutoItem().Text("Form A Objection").BackgroundColor("#FF0000").Bold().FontSize(9);
                     });
