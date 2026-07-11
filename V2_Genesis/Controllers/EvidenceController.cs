@@ -34,7 +34,7 @@ public class EvidenceController : Controller
     // Replaces the old parameterless Verify() — DELETE the old one
     [HttpGet]
     [AllowAnonymous]
-    [Route("evidence/verify")]
+    [Route("evidence/VerifyObj")]
     public async Task<IActionResult> VerifyObj( 
         string? objectionNo = null,
         string? rollSource = null)
@@ -52,7 +52,7 @@ public class EvidenceController : Controller
         ViewBag.IsAuthenticated = User.Identity?.IsAuthenticated == true;
         ViewBag.IsAppeal = objectionNo?.Trim().ToUpper().StartsWith("APP") == true;
 
-        return View();
+        return View("VerifyObj");
     }
 
     // ── POST /evidence/verify ─────────────────────────────────────────
