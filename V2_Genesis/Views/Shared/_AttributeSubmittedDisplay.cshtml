@@ -1,0 +1,548 @@
+﻿@model V2_Genesis.Models.ViewModels.Attributes.AttributeSubmissionViewModel
+
+@{
+    bool isRes = Model.FormType == "Residential";
+    bool isSt = Model.FormType == "ResidentialST";
+    bool isBus = Model.FormType == "BusinessCommercial";
+    bool isDrc = Model.FormType == "DRCMethod";
+
+    string DisplayValue(object? value)
+    {
+        if (value == null) return "–";
+
+        var text = value.ToString();
+
+        return string.IsNullOrWhiteSpace(text) ? "–" : text;
+    }
+
+    string BoolValue(bool? value)
+    {
+        if (value == true) return "Yes";
+        if (value == false) return "No";
+        return "–";
+    }
+
+    bool HasBusinessBuildingData()
+    {
+        return Model.BusinessBuildings != null &&
+               Model.BusinessBuildings.Any(x =>
+                   !string.IsNullOrWhiteSpace(x.BuildingNr) ||
+                   !string.IsNullOrWhiteSpace(x.Quality) ||
+                   !string.IsNullOrWhiteSpace(x.Condition) ||
+                   x.YearBuilt != null ||
+                   x.Storeys != null ||
+                   x.GBA != null);
+    }
+
+    bool HasBusinessSectionData()
+    {
+        return Model.BusinessSections != null &&
+               Model.BusinessSections.Any(x =>
+                   !string.IsNullOrWhiteSpace(x.BuildingNr) ||
+                   !string.IsNullOrWhiteSpace(x.Usage) ||
+                   x.GBA != null ||
+                   x.NLA != null ||
+                   x.Rental != null);
+    }
+
+    bool HasDrcBuildingData()
+    {
+        return Model.DrcBuildings != null &&
+               Model.DrcBuildings.Any(x =>
+                   !string.IsNullOrWhiteSpace(x.BuildingDescription) ||
+                   !string.IsNullOrWhiteSpace(x.Quality) ||
+                   !string.IsNullOrWhiteSpace(x.Condition) ||
+                   x.GrossBuildingArea != null);
+    }
+
+    bool HasDrcImprovementData()
+    {
+        return Model.DrcImprovements != null &&
+               Model.DrcImprovements.Any(x =>
+                   !string.IsNullOrWhiteSpace(x.ImprovementDescription) ||
+                   !string.IsNullOrWhiteSpace(x.Quality) ||
+                   !string.IsNullOrWhiteSpace(x.Condition) ||
+                   x.AreaUnit != null);
+    }
+
+    bool HasDrcVacantLandData()
+    {
+        return Model.DrcVacantLands != null &&
+               Model.DrcVacantLands.Any(x =>
+                   !string.IsNullOrWhiteSpace(x.Region) ||
+                   x.Area != null);
+    }
+}
+
+<div class="ack-submitted-wrap">
+
+    <div class="ack-submitted-title">
+        <i class="fa-solid fa-file-lines"></i>
+        Submitted Attribute Information
+    </div>
+
+    <!-- Property Details -->
+    <div class="ack-sub-card">
+        <div class="ack-sub-card-title">
+            <i class="fa-solid fa-location-dot"></i>
+            Property Details
+        </div>
+
+        <div class="ack-sub-grid">
+            <div><span>Property Description</span><strong>@DisplayValue(Model.PropertyDetails?.PropertyDesc)</strong></div>
+            <div><span>H Area</span><strong>@DisplayValue(Model.PropertyDetails?.HArea)</strong></div>
+            <div><span>Data Controller</span><strong>@DisplayValue(Model.PropertyDetails?.DataController)</strong></div>
+            <div><span>Collection Block</span><strong>@DisplayValue(Model.PropertyDetails?.CollectionBlock)</strong></div>
+            <div><span>Data Collector</span><strong>@DisplayValue(Model.PropertyDetails?.DataCollector)</strong></div>
+            <div><span>SG Number</span><strong>@DisplayValue(Model.PropertyDetails?.SGNumber)</strong></div>
+            <div><span>Centroid</span><strong>@DisplayValue(Model.PropertyDetails?.Centroid)</strong></div>
+            <div><span>Erf</span><strong>@DisplayValue(Model.PropertyDetails?.Erf)</strong></div>
+            <div><span>Extent</span><strong>@DisplayValue(Model.PropertyDetails?.Extent)</strong></div>
+            <div><span>Sectional Title</span><strong>@DisplayValue(Model.PropertyDetails?.SectionalTitle)</strong></div>
+            <div><span>Land Use Financials</span><strong>@DisplayValue(Model.PropertyDetails?.LandUseFinancials)</strong></div>
+            <div><span>Municipality</span><strong>@DisplayValue(Model.PropertyDetails?.Municipality)</strong></div>
+            <div><span>Ward</span><strong>@DisplayValue(Model.PropertyDetails?.Ward)</strong></div>
+            <div><span>Township</span><strong>@DisplayValue(Model.PropertyDetails?.Township)</strong></div>
+            <div><span>Zoning</span><strong>@DisplayValue(Model.PropertyDetails?.Zoning)</strong></div>
+            <div><span>Sources</span><strong>@DisplayValue(Model.PropertyDetails?.Sources)</strong></div>
+            <div class="ack-sub-full"><span>Address</span><strong>@DisplayValue(Model.PropertyDetails?.Address)</strong></div>
+        </div>
+    </div>
+
+    <!-- Valuation Details -->
+    <div class="ack-sub-card">
+        <div class="ack-sub-card-title">
+            <i class="fa-solid fa-tags"></i>
+            Valuation Details
+        </div>
+
+        <div class="ack-sub-grid">
+            <div>
+                <span>Valuation Category on Roll</span>
+                <strong>@DisplayValue(Model.ValuationDetails?.ValuationCategoryOnRoll)</strong>
+            </div>
+
+            <div>
+                <span>Actual Use</span>
+                <strong>@DisplayValue(Model.ValuationDetails?.ActualUse)</strong>
+            </div>
+
+            @if (Model.ValuationDetails?.IsMixedUse == true ||
+                 !string.IsNullOrWhiteSpace(Model.ValuationDetails?.AlternateUsages))
+            {
+                <div class="ack-sub-full">
+                    <span>Mixed Use</span>
+                    <strong>@DisplayValue(Model.ValuationDetails?.AlternateUsages)</strong>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Contact Details -->
+    <div class="ack-sub-card">
+        <div class="ack-sub-card-title">
+            <i class="fa-solid fa-address-book"></i>
+            Contact Information
+        </div>
+
+        @if (Model.ContactInfos == null || !Model.ContactInfos.Any())
+        {
+            <div class="ack-empty">No contact information was submitted.</div>
+        }
+        else
+        {
+            @for (int i = 0; i < Model.ContactInfos.Count; i++)
+            {
+                var contact = Model.ContactInfos[i];
+
+                <div class="ack-contact-block">
+                    <div class="ack-contact-heading">
+                        Contact @(i + 1): @(contact.IsCompany ? "Company" : "Owner")
+                    </div>
+
+                    <div class="ack-sub-grid">
+                        @if (contact.IsCompany)
+                        {
+                            <div>
+                                <span>Company Name</span>
+                                <strong>@DisplayValue(contact.CompanyName)</strong>
+                            </div>
+
+                            <div>
+                                <span>Registration No.</span>
+                                <strong>@DisplayValue(contact.CompanyRegistrationNumber)</strong>
+                            </div>
+                        }
+                        else
+                        {
+                            <div>
+                                <span>First Names</span>
+                                <strong>@DisplayValue(contact.FirstNames)</strong>
+                            </div>
+
+                            <div>
+                                <span>Last Name</span>
+                                <strong>@DisplayValue(contact.LastName)</strong>
+                            </div>
+                        }
+
+                        <div class="ack-sub-full">
+                            <span>Physical Address</span>
+                            <strong>@DisplayValue(contact.PhysicalAddress)</strong>
+                        </div>
+
+                        <div class="ack-sub-full">
+                            <span>Postal Address</span>
+                            <strong>@DisplayValue(contact.PostalAddress)</strong>
+                        </div>
+
+                        <div>
+                            <span>Email</span>
+                            <strong>@DisplayValue(contact.Email)</strong>
+                        </div>
+
+                        <div>
+                            <span>Cell No</span>
+                            <strong>@DisplayValue(contact.CellNo)</strong>
+                        </div>
+
+                        <div>
+                            <span>Home Phone</span>
+                            <strong>@DisplayValue(contact.HomePhoneNo)</strong>
+                        </div>
+
+                        <div>
+                            <span>Work Phone</span>
+                            <strong>@DisplayValue(contact.WorkPhoneNo)</strong>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+
+    <!-- Residential -->
+    @if (isRes)
+    {
+        <div class="ack-sub-card">
+            <div class="ack-sub-card-title">
+                <i class="fa-solid fa-house"></i>
+                Residential Attributes
+            </div>
+
+            <div class="ack-sub-section-label">Primary Attributes</div>
+
+            <div class="ack-sub-grid">
+                <div><span>TLA 1</span><strong>@DisplayValue(Model.PrimaryAttributes?.Tla1)</strong></div>
+                <div><span>TLA 2</span><strong>@DisplayValue(Model.PrimaryAttributes?.Tla2)</strong></div>
+                <div><span>TLA 3</span><strong>@DisplayValue(Model.PrimaryAttributes?.Tla3)</strong></div>
+                <div><span>Garage</span><strong>@DisplayValue(Model.PrimaryAttributes?.Garage)</strong></div>
+                <div><span>Carport CP</span><strong>@DisplayValue(Model.PrimaryAttributes?.CarportCp)</strong></div>
+                <div><span>Granny Flat GF</span><strong>@DisplayValue(Model.PrimaryAttributes?.GrannyFlatGf)</strong></div>
+                <div><span>Staff Quarters SQ</span><strong>@DisplayValue(Model.PrimaryAttributes?.StaffQuartersSq)</strong></div>
+                <div><span>Storage</span><strong>@DisplayValue(Model.PrimaryAttributes?.Storage)</strong></div>
+            </div>
+
+            <div class="ack-sub-section-label">Secondary Attributes</div>
+
+            <div class="ack-sub-grid">
+                <div><span>Storeys</span><strong>@DisplayValue(Model.SecondaryAttributes?.Storeys)</strong></div>
+                <div><span>Security</span><strong>@DisplayValue(Model.SecondaryAttributes?.Security)</strong></div>
+                <div><span>Noise</span><strong>@DisplayValue(Model.SecondaryAttributes?.Noise)</strong></div>
+                <div><span>Topography</span><strong>@DisplayValue(Model.SecondaryAttributes?.Topography)</strong></div>
+                <div><span>Quality</span><strong>@DisplayValue(Model.SecondaryAttributes?.Quality)</strong></div>
+                <div><span>Condition</span><strong>@DisplayValue(Model.SecondaryAttributes?.Condition)</strong></div>
+                <div><span>Swimming Pool</span><strong>@BoolValue(Model.SecondaryAttributes?.SwimmingPool)</strong></div>
+                <div><span>Tennis Court</span><strong>@BoolValue(Model.SecondaryAttributes?.TennisCourt)</strong></div>
+            </div>
+        </div>
+    }
+
+    <!-- Residential ST -->
+    @if (isSt)
+    {
+        <div class="ack-sub-card">
+            <div class="ack-sub-card-title">
+                <i class="fa-solid fa-building"></i>
+                Residential Sectional Title Attributes
+            </div>
+
+            <div class="ack-sub-section-label">Primary Attributes</div>
+
+            <div class="ack-sub-grid">
+                <div><span>ST Main</span><strong>@DisplayValue(Model.PrimaryAttributes?.STMain)</strong></div>
+                <div><span>Garage</span><strong>@DisplayValue(Model.PrimaryAttributes?.Garage)</strong></div>
+                <div><span>Carport CP</span><strong>@DisplayValue(Model.PrimaryAttributes?.CarportCp)</strong></div>
+                <div><span>Storage</span><strong>@DisplayValue(Model.PrimaryAttributes?.Storage)</strong></div>
+            </div>
+
+            <div class="ack-sub-section-label">Secondary Attributes</div>
+
+            <div class="ack-sub-grid">
+                <div><span>ST Condition</span><strong>@DisplayValue(Model.SecondaryAttributes?.STCondition)</strong></div>
+                <div><span>ST Floor</span><strong>@DisplayValue(Model.SecondaryAttributes?.STFloor)</strong></div>
+                <div><span>Quality</span><strong>@DisplayValue(Model.SecondaryAttributes?.Quality)</strong></div>
+            </div>
+        </div>
+    }
+
+    <!-- Business / Non-Residential -->
+    @if (isBus)
+    {
+        <div class="ack-sub-card">
+            <div class="ack-sub-card-title">
+                <i class="fa-solid fa-store"></i>
+                Non-Residential / Business and Commercial
+            </div>
+
+            <div class="ack-sub-section-label">Buildings</div>
+
+            @if (!HasBusinessBuildingData())
+            {
+                <div class="ack-empty">No building information was submitted.</div>
+            }
+            else
+            {
+                <div class="ack-table-wrap">
+                    <table class="ack-table">
+                        <thead>
+                            <tr>
+                                <th>Building Nr</th>
+                                <th>Quality</th>
+                                <th>Condition</th>
+                                <th>Year Built</th>
+                                <th>Storeys</th>
+                                <th>GBA</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var b in Model.BusinessBuildings.Where(x =>
+                               !string.IsNullOrWhiteSpace(x.BuildingNr) ||
+                               !string.IsNullOrWhiteSpace(x.Quality) ||
+                               !string.IsNullOrWhiteSpace(x.Condition) ||
+                               x.YearBuilt != null ||
+                               x.Storeys != null ||
+                               x.GBA != null))
+                            {
+                                <tr>
+                                    <td>@DisplayValue(b.BuildingNr)</td>
+                                    <td>@DisplayValue(b.Quality)</td>
+                                    <td>@DisplayValue(b.Condition)</td>
+                                    <td>@DisplayValue(b.YearBuilt)</td>
+                                    <td>@DisplayValue(b.Storeys)</td>
+                                    <td>@DisplayValue(b.GBA)</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+
+            <div class="ack-sub-section-label">Sections / Lease Details</div>
+
+            @if (!HasBusinessSectionData())
+            {
+                <div class="ack-empty">No section information was submitted.</div>
+            }
+            else
+            {
+                <div class="ack-table-wrap">
+                    <table class="ack-table">
+                        <thead>
+                            <tr>
+                                <th>Building Nr</th>
+                                <th>Usage</th>
+                                <th>GBA</th>
+                                <th>NLA</th>
+                                <th>Rental R/m²</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var s in Model.BusinessSections.Where(x =>
+                               !string.IsNullOrWhiteSpace(x.BuildingNr) ||
+                               !string.IsNullOrWhiteSpace(x.Usage) ||
+                               x.GBA != null ||
+                               x.NLA != null ||
+                               x.Rental != null))
+                            {
+                                <tr>
+                                    <td>@DisplayValue(s.BuildingNr)</td>
+                                    <td>@DisplayValue(s.Usage)</td>
+                                    <td>@DisplayValue(s.GBA)</td>
+                                    <td>@DisplayValue(s.NLA)</td>
+                                    <td>@DisplayValue(s.Rental)</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+
+            <div class="ack-sub-section-label">General</div>
+
+            <div class="ack-sub-grid">
+                <div>
+                    <span>Unutilised Land Extent</span>
+                    <strong>@DisplayValue(Model.BusinessGeneral?.UnutilisedLandExtent)</strong>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- DRC -->
+    @if (isDrc)
+    {
+        <div class="ack-sub-card">
+            <div class="ack-sub-card-title">
+                <i class="fa-solid fa-calculator"></i>
+                DRC Method
+            </div>
+
+            <div class="ack-sub-section-label">Buildings</div>
+
+            @if (!HasDrcBuildingData())
+            {
+                <div class="ack-empty">No DRC building information was submitted.</div>
+            }
+            else
+            {
+                <div class="ack-table-wrap">
+                    <table class="ack-table">
+                        <thead>
+                            <tr>
+                                <th>Building Description</th>
+                                <th>Quality</th>
+                                <th>GBA</th>
+                                <th>Condition</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var b in Model.DrcBuildings.Where(x =>
+                               !string.IsNullOrWhiteSpace(x.BuildingDescription) ||
+                               !string.IsNullOrWhiteSpace(x.Quality) ||
+                               !string.IsNullOrWhiteSpace(x.Condition) ||
+                               x.GrossBuildingArea != null))
+                            {
+                                <tr>
+                                    <td>@DisplayValue(b.BuildingDescription)</td>
+                                    <td>@DisplayValue(b.Quality)</td>
+                                    <td>@DisplayValue(b.GrossBuildingArea)</td>
+                                    <td>@DisplayValue(b.Condition)</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+
+            <div class="ack-sub-section-label">Improvements</div>
+
+            @if (!HasDrcImprovementData())
+            {
+                <div class="ack-empty">No DRC improvement information was submitted.</div>
+            }
+            else
+            {
+                <div class="ack-table-wrap">
+                    <table class="ack-table">
+                        <thead>
+                            <tr>
+                                <th>Improvement Description</th>
+                                <th>Quality</th>
+                                <th>Area / Unit</th>
+                                <th>Condition</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var i in Model.DrcImprovements.Where(x =>
+                               !string.IsNullOrWhiteSpace(x.ImprovementDescription) ||
+                               !string.IsNullOrWhiteSpace(x.Quality) ||
+                               !string.IsNullOrWhiteSpace(x.Condition) ||
+                               x.AreaUnit != null))
+                            {
+                                <tr>
+                                    <td>@DisplayValue(i.ImprovementDescription)</td>
+                                    <td>@DisplayValue(i.Quality)</td>
+                                    <td>@DisplayValue(i.AreaUnit)</td>
+                                    <td>@DisplayValue(i.Condition)</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+
+            <div class="ack-sub-section-label">Vacant Land</div>
+
+            @if (!HasDrcVacantLandData())
+            {
+                <div class="ack-empty">No vacant land information was submitted.</div>
+            }
+            else
+            {
+                <div class="ack-table-wrap">
+                    <table class="ack-table">
+                        <thead>
+                            <tr>
+                                <th>Region</th>
+                                <th>Area</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var v in Model.DrcVacantLands.Where(x =>
+                               !string.IsNullOrWhiteSpace(x.Region) ||
+                               x.Area != null))
+                            {
+                                <tr>
+                                    <td>@DisplayValue(v.Region)</td>
+                                    <td>@DisplayValue(v.Area)</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    }
+
+    <!-- Comments -->
+    <div class="ack-sub-card">
+        <div class="ack-sub-card-title">
+            <i class="fa-solid fa-comment"></i>
+            Additional Comments
+        </div>
+
+        <div class="ack-comment-box">
+            @DisplayValue(Model.ClientComment)
+        </div>
+    </div>
+
+    <!-- Declaration -->
+    <div class="ack-sub-card">
+        <div class="ack-sub-card-title">
+            <i class="fa-solid fa-signature"></i>
+            Declaration
+        </div>
+
+        <div class="ack-sub-grid">
+            <div>
+                <span>Declaration Accepted</span>
+                <strong>@(Model.Declaration?.DeclarationAccepted == true ? "Yes" : "No")</strong>
+            </div>
+
+            <div>
+                <span>Signature Name</span>
+                <strong>@DisplayValue(Model.Declaration?.SignatureName)</strong>
+            </div>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(Model.Declaration?.SignaturePicture))
+        {
+            <div class="ack-signature-box">
+                <span>Electronic Signature</span>
+                <img src="@Model.Declaration.SignaturePicture" alt="Signature" />
+            </div>
+        }
+    </div>
+
+</div>

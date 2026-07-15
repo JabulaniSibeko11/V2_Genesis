@@ -1333,13 +1333,17 @@ else if (roll.IsQuery)
 
 
                                                                     <li>
-                                                                       <a class="dropdown-item"
+                                                                       @* <a class="dropdown-item"
                                                                            asp-controller="Attributes"
                                                                    asp-action="Check"
                                                                    asp-route-idProperty="@item.IDProperty"
                                                                            asp-route-formType="@item.FormType">
                                                                             Submit Attributes
-                                                                        </a>
+                                                                        </a> *@
+                                                                        <a class="dropdown-item"
+   href="/attributes/select-form?unitKey=@item.IDProperty">
+    <i class="fa-solid fa-file-pen"></i> Submit Attributes
+</a>
                                                                     </li>
                                                     }
                                                     else

@@ -1,0 +1,373 @@
+﻿@model V2_Genesis.Models.ViewModels.Attributes.AttributeFormSelectionViewModel
+
+@{
+    ViewData["Title"] = "Select Attribute Form";
+    Layout = "~/Views/Shared/_ClientLayout.cshtml";
+
+    string SuggestedLabel(string? value) => value switch
+    {
+        "Residential" => "Residential",
+        "ResidentialST" => "Residential — Sectional Title",
+        "BusinessCommercial" => "Business and Commercial",
+        "DRCMethod" => "DRC Method",
+        _ => value ?? ""
+    };
+}
+
+@section Styles {
+    <link href="~/css/views/attributes-search.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/views/attributes-check.css" rel="stylesheet" asp-append-version="true" />
+
+    <style>
+        .ca-form-option {
+            display: flex;
+            gap: 14px;
+            align-items: flex-start;
+            padding: 18px 20px;
+            border: 2px solid #e5e7eb;
+            border-radius: 14px;
+            background: #fff;
+            cursor: pointer;
+            transition: .15s ease;
+            margin-bottom: 14px;
+        }
+
+            .ca-form-option:hover {
+                border-color: #e6b000;
+                background: #fffdf5;
+                transform: translateY(-1px);
+                box-shadow: 0 8px 20px rgba(0,0,0,.06);
+            }
+
+            .ca-form-option input[type="radio"] {
+                margin-top: 5px;
+                width: 19px;
+                height: 19px;
+                accent-color: #006570;
+                flex-shrink: 0;
+            }
+
+        .ca-form-option-text h4 {
+            margin: 0 0 5px;
+            font-size: 15px;
+            font-weight: 800;
+            color: #006570;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .ca-form-option-text p {
+            margin: 0;
+            color: #667085;
+            font-size: 13px;
+            line-height: 1.45;
+        }
+
+        .ca-suggested {
+            margin-top: 12px;
+            padding: 12px 15px;
+            border-left: 5px solid #e6b000;
+            background: #fff9e6;
+            border-radius: 10px;
+            color: #5f4b00;
+            font-weight: 700;
+            font-size: 13px;
+        }
+
+            .ca-suggested strong {
+                color: #006570;
+            }
+
+        .ca-form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(250px, 1fr));
+            gap: 14px;
+        }
+
+        @@media (max-width: 768px) {
+            .ca-form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+}
+
+<div class="ca-page">
+    <div class="ca-inner">
+
+        <a href="/dashboard?openRoll=attributes" class="ca-back">
+            <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
+        </a>
+
+        <div class="ca-heading">
+            <div class="ca-heading-icon">
+                <i class="fa-solid fa-list-check"></i>
+            </div>
+            <div>
+                <h1 class="ca-title">Select Attribute Form</h1>
+                <p class="ca-subtitle">
+                    Please select the form you want to complete for this property.
+                    The system will not select the form for you.
+                </p>
+            </div>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(Model.SuggestedFormType))
+        {
+            <div class="ca-form-badge">
+                <i class="fa-solid fa-lightbulb"></i>
+                Suggested Form:
+                <span>@SuggestedLabel(Model.SuggestedFormType)</span>
+            </div>
+        }
+
+        @if (TempData["AttrFormError"] is not null)
+        {
+            <div class="ca-error">
+                <i class="fa-solid fa-circle-xmark"></i>
+                @TempData["AttrFormError"]
+            </div>
+        }
+
+        <!-- Property Details -->
+        <div class="ca-card">
+            <div class="ca-card-header">
+                <i class="fa-solid fa-building"></i>
+                Property Details
+            </div>
+
+            <div class="ca-card-body">
+
+                <div class="ca-field ca-field-full">
+                    <span class="ca-label">
+                        <i class="fa-solid fa-file-alt"></i> Property Description
+                    </span>
+                    <div class="ca-value">@(Model.PropertyDescription ?? "–")</div>
+                </div>
+
+                <div class="ca-field">
+                    <span class="ca-label">
+                        <i class="fa-solid fa-tag"></i> Category
+                    </span>
+                    <div class="ca-value">@(Model.Category ?? "–")</div>
+                </div>
+
+                <div class="ca-field">
+                    <span class="ca-label">
+                        <i class="fa-solid fa-city"></i> Township
+                    </span>
+                    <div class="ca-value">@(Model.Town ?? "–")</div>
+                </div>
+
+                <div class="ca-field">
+                    <span class="ca-label">
+                        <i class="fa-solid fa-money-bill-wave"></i> Market Value
+                    </span>
+                    <div class="ca-value ca-market-val">@(Model.MarketValue ?? "–")</div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Form Selection -->
+        <form method="post" action="/attributes/select-form" id="selectForm">
+            @Html.AntiForgeryToken()
+
+            <input type="hidden" asp-for="UnitKey" />
+
+            <div class="ca-decl-card">
+                <div class="ca-decl-header">
+                    <i class="fa-solid fa-file-pen"></i>
+                    Select the Form You Want to Complete
+                </div>
+
+                <div class="ca-decl-body">
+
+                    <div class="ca-form-grid">
+
+                        <label class="ca-form-option">
+                            <input type="radio"
+                                   asp-for="SelectedFormType"
+                                   value="Residential"
+                                   onchange="updateContinueBtn()" />
+                            <div class="ca-form-option-text">
+                                <h4>
+                                    <i class="fa-solid fa-house" style="color:#e6b000;"></i>
+                                    Residential
+                                </h4>
+                                <p>
+                                    Select this for normal full-title residential properties.
+                                </p>
+                            </div>
+                        </label>
+
+                        <label class="ca-form-option">
+                            <input type="radio"
+                                   asp-for="SelectedFormType"
+                                   value="ResidentialST"
+                                   onchange="updateContinueBtn()" />
+                            <div class="ca-form-option-text">
+                                <h4>
+                                    <i class="fa-solid fa-building-user" style="color:#e6b000;"></i>
+                                    Residential — Sectional Title
+                                </h4>
+                                <p>
+                                    Select this for units, flats, schemes and sectional title residential properties.
+                                </p>
+                            </div>
+                        </label>
+
+                        <label class="ca-form-option">
+                            <input type="radio"
+                                   asp-for="SelectedFormType"
+                                   value="BusinessCommercial"
+                                   onchange="updateContinueBtn()" />
+                            <div class="ca-form-option-text">
+                                <h4>
+                                    <i class="fa-solid fa-store" style="color:#e6b000;"></i>
+                                    Business and Commercial
+                                </h4>
+                                <p>
+                                    Select this for business, commercial, industrial, office or retail properties.
+                                </p>
+                            </div>
+                        </label>
+
+                        <label class="ca-form-option">
+                            <input type="radio"
+                                   asp-for="SelectedFormType"
+                                   value="DRCMethod"
+                                   onchange="updateContinueBtn()" />
+                            <div class="ca-form-option-text">
+                                <h4>
+                                    <i class="fa-solid fa-scale-balanced" style="color:#e6b000;"></i>
+                                    DRC Method
+                                </h4>
+                                <p>
+                                    Select this for specialised properties such as municipal, public service,
+                                    religious, mining, agricultural, vacant land or DRC-method properties.
+                                </p>
+                            </div>
+                        </label>
+
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(Model.SuggestedFormType))
+                    {
+                        <div class="ca-suggested">
+                            <i class="fa-solid fa-circle-info"></i>
+                            Based on the property data, the suggested form is
+                            <strong>@SuggestedLabel(Model.SuggestedFormType)</strong>.
+                            You may still choose the correct form yourself.
+                        </div>
+                    }
+
+                </div>
+            </div>
+
+            <!-- Disclaimer -->
+            <div class="ca-disclaimer">
+                <div class="ca-disclaimer-title">
+                    <i class="fa-solid fa-circle-info"></i>
+                    Important Notice
+                </div>
+
+                Please make sure you select the correct form type before continuing.
+                The City of Johannesburg will review the submitted property attribute
+                information before any changes are accepted.
+                <br /><br />
+
+                By continuing, you confirm that:
+                <ul style="margin:8px 0 0 16px; padding:0;">
+                    <li>You have reviewed the property details above.</li>
+                    <li>You selected the form type that best matches the property.</li>
+                    <li>You understand that submission does not guarantee approval.</li>
+                </ul>
+            </div>
+
+            <!-- Actions -->
+            <div class="ca-actions" style="margin-top:4px;">
+                <button type="submit" class="ca-btn-primary" id="continueBtn">
+                    <i class="fa-solid fa-arrow-right" id="continueBtnIcon"></i>
+                    <span id="continueBtnText">Continue to Confirmation</span>
+                </button>
+
+                <a href="/dashboard?openRoll=attributes" class="ca-btn-outline">
+                    <i class="fa-solid fa-xmark"></i> Cancel
+                </a>
+            </div>
+
+        </form>
+
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+
+            document.querySelectorAll('.ca-market-val').forEach(function (el) {
+                var raw = parseFloat(el.textContent.replace(/[^0-9.-]+/g, ''));
+                if (!isNaN(raw) && raw > 0) {
+                    el.textContent = raw.toLocaleString('en-ZA', {
+                        style: 'currency',
+                        currency: 'ZAR',
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0
+                    });
+                }
+            });
+
+            document.getElementById('selectForm')
+                .addEventListener('submit', function (e) {
+                    var selected = document.querySelector(
+                        'input[name="SelectedFormType"]:checked');
+
+                    if (!selected) {
+                        e.preventDefault();
+                        alert('Please select the attribute form you want to complete.');
+                    }
+                });
+        });
+
+        function updateContinueBtn() {
+            var selected = document.querySelector('input[name="SelectedFormType"]:checked');
+            var text = document.getElementById('continueBtnText');
+            var icon = document.getElementById('continueBtnIcon');
+
+            if (!selected) {
+                text.textContent = 'Continue to Confirmation';
+                icon.className = 'fa-solid fa-arrow-right';
+                return;
+            }
+
+            switch (selected.value) {
+                case 'Residential':
+                    text.textContent = 'Continue with Residential';
+                    icon.className = 'fa-solid fa-house';
+                    break;
+
+                case 'ResidentialST':
+                    text.textContent = 'Continue with Sectional Title';
+                    icon.className = 'fa-solid fa-building-user';
+                    break;
+
+                case 'BusinessCommercial':
+                    text.textContent = 'Continue with Business and Commercial';
+                    icon.className = 'fa-solid fa-store';
+                    break;
+
+                case 'DRCMethod':
+                    text.textContent = 'Continue with DRC Method';
+                    icon.className = 'fa-solid fa-scale-balanced';
+                    break;
+
+                default:
+                    text.textContent = 'Continue to Confirmation';
+                    icon.className = 'fa-solid fa-arrow-right';
+                    break;
+            }
+        }
+    </script>
+}

@@ -225,9 +225,13 @@
                                                 {
                                                     <form method="post" action="/attributes/link" style="display:inline;">
                                                         @Html.AntiForgeryToken()
-                                                        <input type="hidden" name="idProperty" value="@item.Id" />
+
+                                                        <input type="hidden" name="idProperty" value="@item.UnitKey" />
                                                         <input type="hidden" name="propertyFrom" value="Attributes" />
-                                                        <button type="submit" class="as-btn as-btn-link">
+
+                                                        <button type="submit"
+                                                                class="as-btn as-btn-link"
+                                                            @(string.IsNullOrWhiteSpace(item.UnitKey) ? "disabled" : "")>
                                                             <i class="fa-solid fa-link"></i> Link
                                                         </button>
                                                     </form>

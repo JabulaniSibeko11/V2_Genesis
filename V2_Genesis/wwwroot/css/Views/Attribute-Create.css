@@ -1034,3 +1034,52 @@
         gap: 6px 10px;
     }
 }
+.attr-glossary {
+    margin: 14px 0 18px;
+    padding: 16px;
+    border: 1px solid #d7e7e7;
+    border-left: 5px solid var(--at-gold);
+    border-radius: 14px;
+    background: #fbfdfd;
+}
+
+.attr-glossary-title {
+    font-weight: 800;
+    color: var(--at-teal);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.attr-glossary-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(220px, 1fr));
+    gap: 10px;
+}
+
+    .attr-glossary-grid div {
+        padding: 10px 12px;
+        border-radius: 10px;
+        background: #fff;
+        border: 1px solid #edf2f2;
+    }
+
+    .attr-glossary-grid strong {
+        display: block;
+        color: var(--at-teal);
+        font-size: 13px;
+    }
+
+    .attr-glossary-grid span {
+        display: block;
+        color: #667085;
+        font-size: 12px;
+        margin-top: 3px;
+    }
+
+@media (max-width: 768px) {
+    .attr-glossary-grid {
+        grid-template-columns: 1fr;
+    }
+}

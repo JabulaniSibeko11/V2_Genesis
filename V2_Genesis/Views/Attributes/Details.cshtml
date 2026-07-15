@@ -1,233 +1,593 @@
 ﻿@model V2_Genesis.Models.ViewModels.Attributes.AttributeAcknowledgementVm
 
 @{
-    ViewData["Title"] = "Attribute Acknowledgement";
+    ViewData["Title"] = "Attribute Submission Acknowledgement";
+    Layout = "~/Views/Shared/_ClientLayout.cshtml";
+
+    var submitted = Model.SubmissionDate.ToString("dd MMMM yyyy HH:mm");
+
+    var deadline = Model.EvidenceDeadline.HasValue
+        ? Model.EvidenceDeadline.Value.ToString("dd MMMM yyyy HH:mm")
+        : "";
+
+    var isExpired = Model.EvidenceDeadline.HasValue &&
+                    DateTime.Now > Model.EvidenceDeadline.Value;
+
+    var formType = Model.Submission?.FormType;
+
+    string FormLabel(string? value) => value switch
+    {
+        "Residential" => "Residential",
+        "ResidentialST" => "Residential — Sectional Title",
+        "BusinessCommercial" => "Non-Residential / Business and Commercial",
+        "DRCMethod" => "DRC Method",
+        _ => value ?? "Property Attribute Submission"
+    };
 }
 
-<style>
-    .ack-page {
-        max-width: 980px;
-        margin: 25px auto;
-        font-family: Arial, sans-serif;
-        color: #111;
-    }
+@section Styles {
+    <style>
+        .attr-ack-page {
+            max-width: 1120px;
+            margin: 34px auto;
+            padding: 0 18px;
+            font-family: 'Poppins', sans-serif;
+        }
 
-    .ack-card {
-        background: #fff;
-        border: 1px solid #b7cccc;
-        box-shadow: 0 2px 8px rgba(0,0,0,.06);
-        padding: 20px;
-    }
+        .attr-ack-card {
+            background: #fff;
+            border: 2px solid #e6b000;
+            border-radius: 20px;
+            box-shadow: 0 22px 60px rgba(0,0,0,.14);
+            overflow: hidden;
+        }
 
-    .ack-header {
-        display: flex;
-        justify-content: space-between;
-        border-bottom: 2px solid #333;
-        padding-bottom: 10px;
-        margin-bottom: 18px;
-    }
+        .attr-ack-header {
+            background: linear-gradient(135deg, #003f46, #006570);
+            color: #fff;
+            padding: 28px 32px;
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
 
-    .ack-logo {
-        font-size: 32px;
-        font-weight: 800;
-    }
+        .attr-ack-icon {
+            width: 62px;
+            height: 62px;
+            border-radius: 18px;
+            background: #e6b000;
+            color: #003f46;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            flex-shrink: 0;
+        }
 
-    .ack-title {
-        background: #1f6f78;
-        color: #fff;
-        text-align: center;
-        padding: 12px;
-        font-size: 22px;
-        font-weight: 800;
-        margin-bottom: 20px;
-        text-transform: uppercase;
-    }
+        .attr-ack-header h1 {
+            margin: 0;
+            font-size: 25px;
+            font-weight: 900;
+            letter-spacing: -.4px;
+        }
 
-    .ack-message {
-        font-size: 15px;
-        margin-bottom: 18px;
-        line-height: 1.5;
-    }
+        .attr-ack-header p {
+            margin: 5px 0 0;
+            color: #d9eeee;
+            font-size: 14px;
+        }
 
-    .ack-message em {
-        color: #c20000;
-        font-weight: 600;
-    }
+        .attr-ack-body {
+            padding: 30px;
+        }
 
-    .ack-table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-bottom: 20px;
-    }
+        .attr-ack-success {
+            border-left: 6px solid #16a34a;
+            background: #ecfdf3;
+            color: #065f36;
+            padding: 16px 18px;
+            border-radius: 14px;
+            margin-bottom: 18px;
+            font-weight: 800;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
 
-    .ack-table td,
-    .ack-table th {
-        border: 1px solid #b7cccc;
-        padding: 10px;
-        vertical-align: top;
-    }
+        .attr-ack-warning {
+            border-left: 6px solid #e6b000;
+            background: #fff8df;
+            color: #6b5100;
+            padding: 16px 18px;
+            border-radius: 14px;
+            margin-bottom: 24px;
+            font-weight: 700;
+            line-height: 1.55;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
 
-    .ack-table .label {
-        background: #eaf5f6;
-        font-weight: 700;
-        width: 32%;
-    }
+            .attr-ack-warning.expired {
+                border-left-color: #dc2626;
+                background: #fff1f1;
+                color: #8a1111;
+            }
 
-    .section-title {
-        background: #1f6f78;
-        color: #fff;
-        padding: 10px;
-        font-weight: 800;
-        text-align: center;
-        margin-top: 25px;
-        text-transform: uppercase;
-    }
+        .attr-ack-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(260px, 1fr));
+            gap: 16px;
+            margin-bottom: 22px;
+        }
 
-    .docs-list {
-        margin-top: 10px;
-        padding-left: 20px;
-    }
+        .attr-ack-field {
+            border: 1px solid #d8e7e7;
+            border-radius: 14px;
+            padding: 15px 17px;
+            background: #fbfdfd;
+        }
 
-    .ack-actions {
-        margin-top: 22px;
-        display: flex;
-        gap: 10px;
-        justify-content: flex-end;
-    }
+            .attr-ack-field span {
+                display: block;
+                font-size: 11px;
+                text-transform: uppercase;
+                letter-spacing: .7px;
+                color: #006570;
+                font-weight: 900;
+                margin-bottom: 6px;
+            }
 
-    .btn-download {
-        background: #1f6f78;
-        color: white;
-        padding: 10px 18px;
-        border-radius: 4px;
-        text-decoration: none;
-        font-weight: 700;
-    }
+            .attr-ack-field strong {
+                display: block;
+                font-size: 15px;
+                color: #111827;
+                word-break: break-word;
+            }
 
-    .btn-dashboard {
-        background: #eef6f6;
-        color: #111;
-        padding: 10px 18px;
-        border-radius: 4px;
-        border: 1px solid #b7cccc;
-        text-decoration: none;
-        font-weight: 700;
-    }
-</style>
+        .attr-ack-reference {
+            background: #003f46;
+            border-radius: 18px;
+            padding: 22px;
+            margin: 22px 0;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(240px, 1fr));
+            gap: 16px;
+        }
 
-<div class="ack-page">
-    <div class="ack-card">
+        .attr-ack-ref-box {
+            background: rgba(255,255,255,.08);
+            border: 1px solid rgba(255,255,255,.15);
+            border-radius: 14px;
+            padding: 16px;
+        }
 
-        <div class="ack-header">
+            .attr-ack-ref-box span {
+                display: block;
+                color: #d9eeee;
+                font-size: 12px;
+                font-weight: 800;
+                text-transform: uppercase;
+                letter-spacing: .7px;
+                margin-bottom: 6px;
+            }
+
+            .attr-ack-ref-box strong {
+                color: #e6b000;
+                font-size: 24px;
+                font-weight: 900;
+                letter-spacing: 2px;
+                word-break: break-word;
+            }
+
+            .attr-ack-ref-box.pin strong {
+                font-size: 34px;
+                letter-spacing: 6px;
+            }
+
+        .attr-ack-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 26px;
+        }
+
+        .attr-ack-btn {
+            border: none;
+            border-radius: 11px;
+            padding: 12px 18px;
+            font-weight: 900;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: .15s ease;
+        }
+
+            .attr-ack-btn:hover {
+                transform: translateY(-1px);
+                text-decoration: none;
+            }
+
+        .attr-ack-btn-primary {
+            background: #006570;
+            color: #fff;
+        }
+
+            .attr-ack-btn-primary:hover {
+                background: #004d56;
+                color: #fff;
+            }
+
+        .attr-ack-btn-gold {
+            background: #e6b000;
+            color: #111827;
+        }
+
+            .attr-ack-btn-gold:hover {
+                background: #c99800;
+                color: #111827;
+            }
+
+        .attr-ack-btn-light {
+            background: #f3f4f6;
+            color: #111827;
+        }
+
+        .attr-ack-note {
+            margin-top: 24px;
+            padding: 16px 18px;
+            background: #f8fafc;
+            border: 1px solid #e5e7eb;
+            border-radius: 14px;
+            color: #667085;
+            font-size: 13px;
+            line-height: 1.65;
+        }
+
+            .attr-ack-note strong {
+                color: #003f46;
+            }
+
+        /* Submitted form display */
+        .ack-submitted-wrap {
+            margin-top: 30px;
+        }
+
+        .ack-submitted-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 0 0 16px;
+            color: #003f46;
+            font-size: 20px;
+            font-weight: 900;
+        }
+
+        .ack-sub-card {
+            border: 1px solid #d8e7e7;
+            border-radius: 16px;
+            background: #fff;
+            padding: 18px;
+            margin-bottom: 18px;
+            box-shadow: 0 10px 28px rgba(0,0,0,.05);
+        }
+
+        .ack-sub-card-title {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            color: #006570;
+            font-weight: 900;
+            font-size: 15px;
+            margin-bottom: 14px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e5eeee;
+        }
+
+            .ack-sub-card-title i {
+                color: #e6b000;
+            }
+
+        .ack-sub-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(240px, 1fr));
+            gap: 12px;
+        }
+
+            .ack-sub-grid div {
+                background: #fbfdfd;
+                border: 1px solid #edf2f2;
+                border-radius: 12px;
+                padding: 12px 14px;
+            }
+
+            .ack-sub-grid .ack-sub-full {
+                grid-column: 1 / -1;
+            }
+
+            .ack-sub-grid span {
+                display: block;
+                font-size: 11px;
+                color: #006570;
+                text-transform: uppercase;
+                letter-spacing: .5px;
+                font-weight: 900;
+                margin-bottom: 5px;
+            }
+
+            .ack-sub-grid strong {
+                display: block;
+                color: #111827;
+                font-size: 14px;
+                font-weight: 700;
+                white-space: pre-wrap;
+                word-break: break-word;
+            }
+
+        .ack-contact-block {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px dashed #d8e7e7;
+        }
+
+        .ack-contact-heading {
+            color: #003f46;
+            font-weight: 900;
+            margin-bottom: 10px;
+        }
+
+        .ack-sub-section-label {
+            margin: 16px 0 10px;
+            color: #003f46;
+            font-weight: 900;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+        }
+
+        .ack-empty {
+            background: #f8fafc;
+            border: 1px dashed #d1d5db;
+            color: #667085;
+            border-radius: 12px;
+            padding: 14px;
+            font-size: 13px;
+        }
+
+        .ack-table-wrap {
+            overflow-x: auto;
+        }
+
+        .ack-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+            .ack-table th {
+                background: #d7ecea;
+                color: #003f46;
+                text-align: left;
+                padding: 10px;
+                border: 1px solid #bfd8d6;
+                font-weight: 900;
+            }
+
+            .ack-table td {
+                padding: 10px;
+                border: 1px solid #e5eeee;
+                color: #111827;
+            }
+
+        .ack-comment-box {
+            background: #fbfdfd;
+            border: 1px solid #edf2f2;
+            border-radius: 12px;
+            padding: 14px;
+            color: #111827;
+            white-space: pre-wrap;
+        }
+
+        .ack-signature-box {
+            margin-top: 14px;
+            border: 1px solid #d8e7e7;
+            border-radius: 12px;
+            padding: 14px;
+            background: #fbfdfd;
+        }
+
+            .ack-signature-box span {
+                display: block;
+                color: #006570;
+                font-size: 11px;
+                font-weight: 900;
+                text-transform: uppercase;
+                letter-spacing: .5px;
+                margin-bottom: 8px;
+            }
+
+            .ack-signature-box img {
+                max-width: 360px;
+                max-height: 120px;
+                display: block;
+            }
+
+        @@media (max-width: 768px) {
+            .attr-ack-header {
+                align-items: flex-start;
+                padding: 22px;
+            }
+
+            .attr-ack-body {
+                padding: 22px;
+            }
+
+            .attr-ack-grid,
+            .attr-ack-reference,
+            .ack-sub-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .attr-ack-ref-box.pin strong {
+                font-size: 28px;
+            }
+        }
+    </style>
+}
+
+<div class="attr-ack-page">
+    <div class="attr-ack-card">
+
+        <div class="attr-ack-header">
+            <div class="attr-ack-icon">
+                <i class="fa-solid fa-circle-check"></i>
+            </div>
             <div>
-                <div class="ack-logo">Joburg</div>
-                <div style="font-size:12px;">a world class African city</div>
-            </div>
-
-            <div>
-                <strong>City of Johannesburg</strong><br />
-                Property Branch: Valuation Services<br />
-                Valuation Administrations<br />
-                66 Jorissen Street<br />
-                Braamfontein
-            </div>
-
-            <div style="text-align:right;">
-                <strong>Email:</strong> propertydata@joburg.org.za<br />
-                www.joburg.org.za
+                <h1>Attribute Submission Acknowledgement</h1>
+                <p>Your property attribute information was submitted successfully.</p>
             </div>
         </div>
 
-        <div class="ack-title">
-            Attribute Submission Acknowledgement
-        </div>
+        <div class="attr-ack-body">
 
-        <div class="ack-message">
-            <strong>Your attribute submission has been successfully lodged.</strong>
-            Thank you for submitting your property information.
-            <em>Please note you have 48 hours to upload any outstanding evidence.</em>
-        </div>
+            <div class="attr-ack-success">
+                <i class="fa-solid fa-check-circle"></i>
+                <div>
+                    Submission received. Please keep your reference number and evidence upload PIN safely.
+                </div>
+            </div>
 
-        <table class="ack-table">
-            <tr>
-                <td class="label">Property Description:</td>
-                <td>@Model.PropertyDescription</td>
-            </tr>
-            <tr>
-                <td class="label">ATTRIBUTE NUMBER:</td>
-                <td><strong style="color:#1f6f78;">@Model.AttrNo</strong></td>
-            </tr>
-            <tr>
-                <td class="label">PIN:</td>
-                <td>@Model.Pin</td>
-            </tr>
-            <tr>
-                <td class="label">Date:</td>
-                <td>@Model.SubmissionDate.ToString("yyyy-MM-dd HH:mm")</td>
-            </tr>
-            <tr>
-                <td class="label">Evidence Deadline:</td>
-                <td>@Model.EvidenceDeadline?.ToString("yyyy-MM-dd HH:mm")</td>
-            </tr>
-        </table>
+            <div class="@(isExpired ? "attr-ack-warning expired" : "attr-ack-warning")">
+                <i class="fa-solid fa-clock"></i>
+                <div>
+                    @if (isExpired)
+                    {
+                        <span>
+                            The 48-hour evidence upload period has expired.
+                            Please contact the Valuation team if you still need to submit supporting documents.
+                        </span>
+                    }
+                    else
+                    {
+                        <span>
+                            You have <strong>48 hours</strong> from the time of submission to upload supporting evidence.
+                            Evidence upload deadline:
+                            <strong>@deadline</strong>.
+                        </span>
+                    }
+                </div>
+            </div>
 
-        <div class="section-title">
-            Property Details as Submitted
-        </div>
+            <div class="attr-ack-reference">
+                <div class="attr-ack-ref-box">
+                    <span>Reference Number</span>
+                    <strong>@Model.AttrNo</strong>
+                </div>
 
-        <table class="ack-table">
-            <thead>
-                <tr>
-                    <th>Property Description</th>
-                    <th>Property Category</th>
-                    <th>Physical Address</th>
-                    <th>Market Value</th>
-                    <th>Extent</th>
-                    <th>Name of Owner</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>@Model.PropertyDescription</td>
-                    <td>@Model.PropertyCategory</td>
-                    <td>@Model.PhysicalAddress</td>
-                    <td>@Model.MarketValue</td>
-                    <td>@Model.Extent</td>
-                    <td>@Model.OwnerName</td>
-                </tr>
-            </tbody>
-        </table>
+                <div class="attr-ack-ref-box pin">
+                    <span>Evidence Upload PIN</span>
+                    <strong>@Model.Pin</strong>
+                </div>
+            </div>
 
-        <h3>Uploaded Documents</h3>
-        <p>You have uploaded @Model.EvidenceCount document(s)</p>
+            <div class="attr-ack-grid">
+                <div class="attr-ack-field">
+                    <span>Status</span>
+                    <strong>Submitted</strong>
+                </div>
 
-        @if (Model.UploadedDocuments.Any())
-        {
-            <ul class="docs-list">
-                @foreach (var doc in Model.UploadedDocuments)
+                <div class="attr-ack-field">
+                    <span>Form Type</span>
+                    <strong>@FormLabel(formType)</strong>
+                </div>
+
+                <div class="attr-ack-field">
+                    <span>Property Description</span>
+                    <strong>@(Model.PropertyDescription ?? "–")</strong>
+                </div>
+
+                <div class="attr-ack-field">
+                    <span>Physical Address</span>
+                    <strong>@(Model.PhysicalAddress ?? "–")</strong>
+                </div>
+
+                <div class="attr-ack-field">
+                    <span>Property Category</span>
+                    <strong>@(Model.PropertyCategory ?? "–")</strong>
+                </div>
+
+                <div class="attr-ack-field">
+                    <span>Extent</span>
+                    <strong>@(Model.Extent ?? "–")</strong>
+                </div>
+
+                <div class="attr-ack-field">
+                    <span>Submitted Date</span>
+                    <strong>@submitted</strong>
+                </div>
+
+                <div class="attr-ack-field">
+                    <span>Evidence Deadline</span>
+                    <strong>@deadline</strong>
+                </div>
+
+                <div class="attr-ack-field">
+                    <span>Evidence Files Uploaded</span>
+                    <strong>@Model.EvidenceCount</strong>
+                </div>
+
+                <div class="attr-ack-field">
+                    <span>Acknowledgement File</span>
+                    <strong>@(Model.AcknowledgementFileName ?? "Generated")</strong>
+                </div>
+            </div>
+
+            @if (Model.Submission != null)
+            {
+                @await Html.PartialAsync("_AttributeSubmittedDisplay", Model.Submission)
+            }
+            else
+            {
+                <div class="attr-ack-warning expired">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <div>
+                        Submitted form details could not be loaded. The acknowledgement PDF can still be downloaded.
+                    </div>
+                </div>
+            }
+
+            <div class="attr-ack-actions">
+                <a class="attr-ack-btn attr-ack-btn-primary"
+                       href="/attributes/acknowledgement/download?attrNo=@Model.AttrNo">
+                    <i class="fa-solid fa-download"></i>
+                    Download Acknowledgement
+                </a>
+
+                @if (!isExpired)
                 {
-                    <li>@doc</li>
+                    <a class="attr-ack-btn attr-ack-btn-gold"
+                           href="/attributes/evidence?attrNo=@Model.AttrNo">
+                        <i class="fa-solid fa-upload"></i>
+                        Upload Evidence
+                    </a>
                 }
-            </ul>
-        }
-        else
-        {
-            <p>No evidence documents uploaded.</p>
-        }
 
-        <div class="ack-actions">
-            <a asp-controller="Dashboard"
-                   asp-action="Index"
-                   class="btn-dashboard">
-                Back to Dashboard
-            </a>
+                <a class="attr-ack-btn attr-ack-btn-light"
+                       href="/dashboard?openRoll=attributes">
+                    <i class="fa-solid fa-arrow-left"></i>
+                    Back to Dashboard
+                </a>
+            </div>
 
-            <a asp-controller="Attributes"
-                   asp-action="DownloadAcknowledgement"
-                   asp-route-id="@Model.AttrId"
-                   class="btn-download">
-                Download Acknowledgement
-            </a>
+            <div class="attr-ack-note">
+                <strong>Important:</strong>
+                This acknowledgement confirms that your information was submitted.
+                It does not mean that the submitted information has been accepted or approved.
+                The City of Johannesburg Valuation team will review the submission.
+            </div>
+
         </div>
     </div>
 </div>

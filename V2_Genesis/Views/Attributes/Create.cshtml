@@ -10,10 +10,10 @@
 
     string formLabel = Model.FormType switch
     {
-        "Residential"       => "Form A — Residential",
-        "ResidentialST"     => "Form B — Residential Sectional Title",
-        "BusinessCommercial"=> "Form C — Business &amp; Commercial",
-        "DRCMethod"         => "Form D — DRC Method",
+        "Residential" => "Residential",
+        "ResidentialST" => "Residential — Sectional Title",
+        "BusinessCommercial" => "Non-Residential / Business and Commercial",
+        "DRCMethod" => "DRC Method",
         _                   => "Attribute Submission"
     };
     string formIcon = Model.FormType switch
@@ -92,13 +92,13 @@
     <input asp-for="PropertyDetails.Sector"          type="hidden" />
     <input asp-for="PropertyDetails.RollType"        type="hidden" />
     <input asp-for="PropertyDetails.RollDescription" type="hidden" />
-    <input asp-for="PropertyDetails.HArea"           type="hidden" />
+    @* <input asp-for="PropertyDetails.HArea"           type="hidden" />
     <input asp-for="PropertyDetails.CollectionBlock" type="hidden" />
     <input asp-for="PropertyDetails.DataController"  type="hidden" />
     <input asp-for="PropertyDetails.DataCollector"   type="hidden" />
     <input asp-for="PropertyDetails.Centroid"        type="hidden" />
     <input asp-for="PropertyDetails.LandUseFinancials" type="hidden" />
-    <input asp-for="PropertyDetails.Sources"         type="hidden" />
+    <input asp-for="PropertyDetails.Sources"         type="hidden" /> *@
     <input asp-for="ValuationDetails.OwnersTitleDeeds"  type="hidden" />
     <input asp-for="ValuationDetails.OwnersFinancials"  type="hidden" />
     <input asp-for="PrimaryAttributes.AdjustmentFactor" type="hidden" />
@@ -114,6 +114,10 @@
     <input asp-for="DrcMarketValueDemolition.DemolitionRate"            type="hidden" />
     <input asp-for="DrcMarketValueDemolition.MarketValue"               type="hidden" />
     <input asp-for="DrcMarketValueDemolition.MarketValueAfterDemolition" type="hidden" />
+        @* ACCESS is hidden on the online client form.Backend/PDF can still keep the structure. *@
+        <input asp-for="Access.AccessType" type="hidden" />
+        <input asp-for="Access.PermissionStatus" type="hidden" />
+        <input asp-for="Access.Comments" type="hidden" />
 
     <div asp-validation-summary="All" style="max-width:1100px;margin:12px auto;color:#dc2626;font-family:'Poppins',sans-serif;font-size:13px;"></div>
 
@@ -138,213 +142,346 @@
             </div>
         }
 
-        <div class="attr-section-title"><span class="num">1.1</span> Property Identification</div>
-        <table class="attr-table">
-            <tr>
-                <td class="attr-label">Municipality</td>
-                <td class="attr-input-cell">
-                    <input asp-for="PropertyDetails.Municipality" class="attr-input"
-                           value="City of Johannesburg" readonly />
-                </td>
-                <td class="attr-label">Township</td>
-                <td class="attr-input-cell">
-                    <input asp-for="PropertyDetails.Township" class="attr-input" />
-                </td>
-            </tr>
-            <tr>
-                <td class="attr-label">Erf</td>
-                <td><input asp-for="PropertyDetails.Erf" class="attr-input" /></td>
-                <td class="attr-label">SG Number</td>
-                <td><input asp-for="PropertyDetails.SGNumber" class="attr-input" /></td>
-            </tr>
-            <tr>
-                <td class="attr-label">Sectional Title</td>
-                <td><input asp-for="PropertyDetails.SectionalTitle" class="attr-input" /></td>
-                <td class="attr-label">Extent</td>
-                <td><input asp-for="PropertyDetails.Extent" class="attr-input" /></td>
-            </tr>
-            <tr>
-                <td class="attr-label">Ward</td>
-                <td><input asp-for="PropertyDetails.Ward" class="attr-input" /></td>
-                <td class="attr-label">Zoning</td>
-                <td><input asp-for="PropertyDetails.Zoning" class="attr-input" /></td>
-            </tr>
-            <tr>
-                <td class="attr-label">Address</td>
-                <td colspan="3"><input asp-for="PropertyDetails.Address" class="attr-input" /></td>
-            </tr>
-        </table>
-
-        <div class="attr-section-title"><span class="num">1.2</span> Property Details</div>
-        <table class="attr-table">
-            <tr>
-                <td class="attr-label">Valuation Category on Roll</td>
-                <td colspan="3">
-                    <select asp-for="ValuationDetails.ValuationCategoryOnRoll" class="attr-select">
-                        <option value="">-- Select --</option>
-                        <option>Residential</option>
-                        <option>Residential with Consent Use</option>
-                        <option>Business and Commercial</option>
-                        <option>Multiple Purposes</option>
-                        <option>Public Service Purposes</option>
-                        <option>Public Service Infrastructure</option>
-                        <option>Agricultural</option>
-                        <option>Mining</option>
-                        <option>Municipal</option>
-                        <option>Private Open Space</option>
-                        <option>Public Open Space</option>
-                        <option>Religious</option>
-                    </select>
-                </td>
-            </tr>
-            <tr>
-                <td class="attr-label">Actual Use</td>
-                <td colspan="3"><input asp-for="ValuationDetails.ActualUse" class="attr-input" /></td>
-            </tr>
-            <tr>
-                <td class="attr-label">Mixed Use?</td>
-                <td>
-                    <div class="attr-radio-row">
-                        <label><input type="radio" asp-for="ValuationDetails.IsMixedUse" value="true" /> Yes</label>
-                        <label><input type="radio" asp-for="ValuationDetails.IsMixedUse" value="false" /> No</label>
-                    </div>
-                </td>
-                <td class="attr-label">If mixed use, specify</td>
-                <td><input asp-for="ValuationDetails.AlternateUsages" class="attr-input" placeholder="e.g. Residential + Commercial" /></td>
-            </tr>
-        </table>
-    </div>
-
-    @* ════════════════════════════════════════════════
-       SECTION 2 — ACCESS (same on all forms, Comments hidden)
-    ════════════════════════════════════════════════ *@
-    <div class="attr-card">
-        <div class="attr-title">
-            <i class="fa-solid fa-door-open" style="color:var(--at-gold);margin-right:8px;"></i>
-            Section 2: Access
-        </div>
-        <div class="attr-divider"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
-
-        <table class="attr-table">
-            <tr>
-                <td class="attr-label">Access Type</td>
-                <td colspan="3">
-                    <div class="attr-radio-row">
-                        <label><input type="radio" asp-for="Access.AccessType" value="None" /> None</label>
-                        <label><input type="radio" asp-for="Access.AccessType" value="Garden Only" /> Garden Only</label>
-                        <label><input type="radio" asp-for="Access.AccessType" value="House Only" /> House Only</label>
-                        <label><input type="radio" asp-for="Access.AccessType" value="Partial" /> Partial</label>
-                        <label><input type="radio" asp-for="Access.AccessType" value="Full" /> Full</label>
-                    </div>
-                </td>
-            </tr>
-            <tr>
-                <td class="attr-label">Permission</td>
-                <td colspan="3">
-                    <div class="attr-radio-row">
-                        <label><input type="radio" asp-for="Access.PermissionStatus" value="Granted" /> Granted</label>
-                        <label><input type="radio" asp-for="Access.PermissionStatus" value="Refused" /> Refused</label>
-                        <label><input type="radio" asp-for="Access.PermissionStatus" value="No-one home" /> No-one home</label>
-                        <label><input type="radio" asp-for="Access.PermissionStatus" value="Unoccupied" /> Unoccupied</label>
-                    </div>
-                </td>
-            </tr>
-        </table>
-        @* Access.Comments — stored as hidden, not shown *@
-        <input asp-for="Access.Comments" type="hidden" />
-    </div>
-
-    @* ════════════════════════════════════════════════
-       SECTION 3 — CONTACT INFO (same on all forms)
-       Hidden: Maiden Name, ID Number, Date of Birth, Marital Status, Citizenship, Fax
-    ════════════════════════════════════════════════ *@
-    <div class="attr-card">
-        <div class="attr-title">
-            <i class="fa-solid fa-address-book" style="color:var(--at-gold);margin-right:8px;"></i>
-            Section 3: Contact Information
-        </div>
-        <div class="attr-divider"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
-
-        @for (int i = 0; i < Model.ContactInfos.Count; i++)
-        {
-            <div class="attr-section-title">
-                <span class="num">@(i + 1)</span> @(i == 0 ? "Primary Contact" : $"Contact {i + 1}")
-            </div>
-
-            @* Hidden fields *@
-            <input asp-for="ContactInfos[i].MaidenName"      type="hidden" />
-            <input asp-for="ContactInfos[i].IDNumber"        type="hidden" />
-            <input asp-for="ContactInfos[i].DateOfBirth"     type="hidden" />
-            <input asp-for="ContactInfos[i].MaritalStatus"   type="hidden" />
-            <input asp-for="ContactInfos[i].Citizenship"     type="hidden" />
-            <input asp-for="ContactInfos[i].FaxNo"           type="hidden" />
-            <input asp-for="ContactInfos[i].Interviewed"     type="hidden" />
-            <input asp-for="ContactInfos[i].Comments"        type="hidden" />
+            <div class="attr-section-title"><span class="num">1.1</span> Property Identification</div>
 
             <table class="attr-table">
                 <tr>
-                    <td class="attr-label">Contact Type</td>
+                    <td class="attr-label">H Area</td>
                     <td>
-                        <select asp-for="ContactInfos[i].ContactType" class="attr-select">
-                            <option>Owner</option>
-                            <option>Representative</option>
-                            <option>Company</option>
-                            <option>Tenant</option>
-                            <option>Other</option>
-                        </select>
+                        <input asp-for="PropertyDetails.HArea"
+                               class="attr-input"
+                               readonly />
                     </td>
-                    <td class="attr-label">Is Company?</td>
+
+                    <td class="attr-label">Data Controller</td>
                     <td>
-                        <div class="attr-radio-row">
-                            <label><input type="radio" asp-for="ContactInfos[i].IsCompany" value="true" /> Yes</label>
-                            <label><input type="radio" asp-for="ContactInfos[i].IsCompany" value="false" /> No</label>
-                        </div>
+                        <input asp-for="PropertyDetails.DataController"
+                               class="attr-input"
+                               readonly />
                     </td>
                 </tr>
+
                 <tr>
-                    <td class="attr-label">Company Name</td>
-                    <td><input asp-for="ContactInfos[i].CompanyName" class="attr-input" /></td>
-                    <td class="attr-label">Registration No.</td>
-                    <td><input asp-for="ContactInfos[i].CompanyRegistrationNumber" class="attr-input" /></td>
-                </tr>
-                <tr>
-                    <td class="attr-label">First Names</td>
-                    <td><input asp-for="ContactInfos[i].FirstNames" class="attr-input" /></td>
-                    <td class="attr-label">Last Name</td>
-                    <td><input asp-for="ContactInfos[i].LastName" class="attr-input" /></td>
-                </tr>
-                <tr>
-                    <td class="attr-label">Gender</td>
+                    <td class="attr-label">Collection Block</td>
                     <td>
-                        <div class="attr-radio-row">
-                            <label><input type="radio" asp-for="ContactInfos[i].Gender" value="Male" /> Male</label>
-                            <label><input type="radio" asp-for="ContactInfos[i].Gender" value="Female" /> Female</label>
-                        </div>
+                        <input asp-for="PropertyDetails.CollectionBlock"
+                               class="attr-input"
+                               readonly />
                     </td>
-                    <td class="attr-label">Email</td>
-                    <td><input asp-for="ContactInfos[i].Email" type="email" class="attr-input" /></td>
+
+                    <td class="attr-label">Data Collector</td>
+                    <td>
+                        <input asp-for="PropertyDetails.DataCollector"
+                               class="attr-input"
+                               readonly />
+                    </td>
                 </tr>
+
                 <tr>
-                    <td class="attr-label">Physical Address</td>
-                    <td colspan="3"><textarea asp-for="ContactInfos[i].PhysicalAddress" class="attr-textarea"></textarea></td>
+                    <td class="attr-label">SG Number</td>
+                    <td>
+                        <input asp-for="PropertyDetails.SGNumber"
+                               class="attr-input"
+                               readonly />
+                    </td>
+
+                    <td class="attr-label">Centroid</td>
+                    <td>
+                        <input asp-for="PropertyDetails.Centroid"
+                               class="attr-input"
+                               readonly />
+                    </td>
                 </tr>
+
                 <tr>
-                    <td class="attr-label">Postal Address</td>
-                    <td colspan="3"><textarea asp-for="ContactInfos[i].PostalAddress" class="attr-textarea"></textarea></td>
+                    <td class="attr-label">Erf</td>
+                    <td>
+                        <input asp-for="PropertyDetails.Erf"
+                               class="attr-input"
+                               readonly />
+                    </td>
+
+                    <td class="attr-label">Extent</td>
+                    <td>
+                        <input asp-for="PropertyDetails.Extent"
+                               class="attr-input"
+                               readonly />
+                    </td>
                 </tr>
+
                 <tr>
-                    <td class="attr-label">Home Phone</td>
-                    <td><input asp-for="ContactInfos[i].HomePhoneNo" class="attr-input" placeholder="0112345678" /></td>
-                    <td class="attr-label">Work Phone</td>
-                    <td><input asp-for="ContactInfos[i].WorkPhoneNo" class="attr-input" placeholder="0112345678" /></td>
+                    <td class="attr-label">Sectional Title</td>
+                    <td>
+                        <input asp-for="PropertyDetails.SectionalTitle"
+                               class="attr-input"
+                               readonly />
+                    </td>
+
+                    <td class="attr-label">Land Use Financials</td>
+                    <td>
+                        <input asp-for="PropertyDetails.LandUseFinancials"
+                               class="attr-input"
+                               readonly />
+                    </td>
                 </tr>
+
                 <tr>
-                    <td class="attr-label">Cell No</td>
-                    <td colspan="3"><input asp-for="ContactInfos[i].CellNo" class="attr-input" placeholder="0712345678" /></td>
+                    <td class="attr-label">Municipality</td>
+                    <td>
+                        <input asp-for="PropertyDetails.Municipality"
+                               class="attr-input"
+                               value="City of Johannesburg"
+                               readonly />
+                    </td>
+
+                    <td class="attr-label">Ward</td>
+                    <td>
+                        <input asp-for="PropertyDetails.Ward"
+                               class="attr-input"
+                               readonly />
+                    </td>
+                </tr>
+
+                <tr>
+                    <td class="attr-label">Township</td>
+                    <td>
+                        <input asp-for="PropertyDetails.Township"
+                               class="attr-input"
+                               readonly />
+                    </td>
+
+                    <td class="attr-label">Zoning</td>
+                    <td>
+                        <input asp-for="PropertyDetails.Zoning"
+                               class="attr-input"
+                               readonly />
+                    </td>
+                </tr>
+
+                <tr>
+                    <td class="attr-label">Sources</td>
+                    <td>
+                        <input asp-for="PropertyDetails.Sources"
+                               class="attr-input"
+                               readonly />
+                    </td>
+
+                    <td class="attr-label">Address</td>
+                    <td>
+                        <input asp-for="PropertyDetails.Address"
+                               class="attr-input"
+                               readonly />
+                    </td>
                 </tr>
             </table>
-        }
+
+            <div class="attr-section-title"><span class="num">1.2</span> Property Details</div>
+
+            <table class="attr-table">
+                <tr>
+                    <td class="attr-label">Valuation Category on Roll</td>
+                    <td>
+                        <select asp-for="ValuationDetails.ValuationCategoryOnRoll"
+                                class="attr-select"
+                                id="valuationCategory">
+                            <option value="">-- Select Category --</option>
+                            <option>Residential</option>
+                            <option>Residential with Consent Use</option>
+                            <option>Business and Commercial</option>
+                            <option>Industrial</option>
+                            <option>Agricultural</option>
+                            <option>Municipal</option>
+                            <option>Mining</option>
+                            <option>Private Open Space</option>
+                            <option>Public Open Space</option>
+                            <option>Public Service Infrastructure</option>
+                            <option>Public Service Purposes</option>
+                            <option>Religious</option>
+                            <option>Vacant Land</option>
+                            <option>Multipurpose</option>
+                        </select>
+                    </td>
+
+                    <td class="attr-label">Actual Use</td>
+                    <td>
+                        <input asp-for="ValuationDetails.ActualUse"
+                               class="attr-input"
+                               placeholder="e.g. Residential, Business, Church" />
+                    </td>
+                </tr>
+
+                <tr id="mixedUseRow" style="display:none;">
+                    <td class="attr-label">Mixed Use</td>
+                    <td colspan="3">
+                        <input asp-for="ValuationDetails.IsMixedUse"
+                               type="hidden"
+                               id="isMixedUseValue" />
+
+                        <select asp-for="ValuationDetails.AlternateUsages"
+                                class="attr-select"
+                                id="mixedUseSelect">
+                            <option value="">-- Select Mixed Use --</option>
+                            <option>Resi-Business</option>
+                            <option>Resi-Agri</option>
+                            <option>Business-Industrial</option>
+                            <option>Residential-Public Service</option>
+                            <option>Other Mixed Use</option>
+                        </select>
+                    </td>
+                </tr>
+            </table>
     </div>
+
+   
+        @* ════════════════════════════════════════════════
+   SECTION 2 — CONTACT INFO (same on all forms)
+   Hidden on online form:
+   ID Number, Date of Birth, Gender, Marital Status,
+   Citizenship, Fax Number, Interviewed, Maiden Name
+════════════════════════════════════════════════ *@
+        <div class="attr-card">
+            <div class="attr-title">
+                <i class="fa-solid fa-address-book" style="color:var(--at-gold);margin-right:8px;"></i>
+                Section 2: Contact Information
+            </div>
+
+            <div class="attr-divider">
+                <div class="line"></div>
+                <div class="dot"></div>
+                <div class="line"></div>
+            </div>
+
+            @for (int i = 0; i < Model.ContactInfos.Count; i++)
+            {
+                <div class="attr-section-title">
+                    <span class="num">@(i + 1)</span> Contact Details
+                </div>
+
+                @* Hidden fields kept for backend/PDF structure *@
+                <input asp-for="ContactInfos[i].ContactType" type="hidden" class="contact-type-hidden" />
+                <input asp-for="ContactInfos[i].MaidenName" type="hidden" />
+                <input asp-for="ContactInfos[i].IDNumber" type="hidden" />
+                <input asp-for="ContactInfos[i].DateOfBirth" type="hidden" />
+                <input asp-for="ContactInfos[i].Gender" type="hidden" />
+                <input asp-for="ContactInfos[i].MaritalStatus" type="hidden" />
+                <input asp-for="ContactInfos[i].Citizenship" type="hidden" />
+                <input asp-for="ContactInfos[i].FaxNo" type="hidden" />
+                <input asp-for="ContactInfos[i].Interviewed" type="hidden" />
+                <input asp-for="ContactInfos[i].Comments" type="hidden" />
+
+                <table class="attr-table contact-table" data-contact-index="@i">
+                    <tr>
+                        <td class="attr-label">Contact Type</td>
+                        <td colspan="3">
+                            <div class="attr-radio-row">
+                                <label>
+                                    <input type="radio"
+                                           name="ContactInfos[@i].IsCompany"
+                                           value="false"
+                                           class="contact-type-radio"
+                                           data-index="@i"
+                                    @(Model.ContactInfos[i].IsCompany ? "" : "checked") />
+                                    Owner
+                                </label>
+
+                                <label>
+                                    <input type="radio"
+                                           name="ContactInfos[@i].IsCompany"
+                                           value="true"
+                                           class="contact-type-radio"
+                                           data-index="@i"
+                                    @(Model.ContactInfos[i].IsCompany ? "checked" : "") />
+                                    Company
+                                </label>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <tr class="owner-fields owner-fields-@i">
+                        <td class="attr-label">First Names</td>
+                        <td>
+                            <input asp-for="ContactInfos[i].FirstNames"
+                                   class="attr-input"
+                                   placeholder="Owner first names" />
+                        </td>
+
+                        <td class="attr-label">Last Name</td>
+                        <td>
+                            <input asp-for="ContactInfos[i].LastName"
+                                   class="attr-input"
+                                   placeholder="Owner surname" />
+                        </td>
+                    </tr>
+
+                    <tr class="company-fields company-fields-@i" style="display:none;">
+                        <td class="attr-label">Company Name</td>
+                        <td>
+                            <input asp-for="ContactInfos[i].CompanyName"
+                                   class="attr-input"
+                                   placeholder="Registered company name" />
+                        </td>
+
+                        <td class="attr-label">Registration No.</td>
+                        <td>
+                            <input asp-for="ContactInfos[i].CompanyRegistrationNumber"
+                                   class="attr-input"
+                                   placeholder="Company registration number" />
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td class="attr-label">Physical Address</td>
+                        <td colspan="3">
+                            <textarea asp-for="ContactInfos[i].PhysicalAddress"
+                                      class="attr-textarea"
+                                      placeholder="Physical address"></textarea>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td class="attr-label">Postal Address</td>
+                        <td colspan="3">
+                            <textarea asp-for="ContactInfos[i].PostalAddress"
+                                      class="attr-textarea"
+                                      placeholder="Postal address"></textarea>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td class="attr-label">Email</td>
+                        <td>
+                            <input asp-for="ContactInfos[i].Email"
+                                   type="email"
+                                   class="attr-input"
+                                   placeholder="email@example.co.za" />
+                        </td>
+
+                        <td class="attr-label">Cell No</td>
+                        <td>
+                            <input asp-for="ContactInfos[i].CellNo"
+                                   class="attr-input"
+                                   placeholder="0712345678" />
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td class="attr-label">Home Phone</td>
+                        <td>
+                            <input asp-for="ContactInfos[i].HomePhoneNo"
+                                   class="attr-input"
+                                   placeholder="0112345678" />
+                        </td>
+
+                        <td class="attr-label">Work Phone</td>
+                        <td>
+                            <input asp-for="ContactInfos[i].WorkPhoneNo"
+                                   class="attr-input"
+                                   placeholder="0112345678" />
+                        </td>
+                    </tr>
+                </table>
+            }
+        </div>
 
     @* ════════════════════════════════════════════════
        SECTION 4 — FORM-SPECIFIC ATTRIBUTES
@@ -354,11 +491,27 @@
         <div class="attr-card">
             <div class="attr-title">
                 <i class="fa-solid fa-house-chimney-window" style="color:var(--at-gold);margin-right:8px;"></i>
-                Section 4: @(isSt ? "Sectional Title" : "Residential") Attributes
+                    Section 3: @(isSt ? "Sectional Title Residential" : "Residential") Attributes
             </div>
             <div class="attr-divider"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
+                <div class="attr-glossary">
+                    <div class="attr-glossary-title">
+                        <i class="fa-solid fa-circle-info"></i>
+                        Attribute Glossary
+                    </div>
 
-            <div class="attr-section-title"><span class="num">4.1</span> Primary Attributes</div>
+                    <div class="attr-glossary-grid">
+                        <div><strong>TLA 1</strong><span>Main dwelling / primary total living area</span></div>
+                        <div><strong>TLA 2</strong><span>Additional living area or second structure</span></div>
+                        <div><strong>TLA 3</strong><span>Further living area where applicable</span></div>
+                        <div><strong>Garage</strong><span>Garage area or number of garages</span></div>
+                        <div><strong>Carport CP</strong><span>Carport area or number of carports</span></div>
+                        <div><strong>GF</strong><span>Granny flat</span></div>
+                        <div><strong>SQ</strong><span>Staff quarters</span></div>
+                        <div><strong>ST Main</strong><span>Sectional title main unit area</span></div>
+                    </div>
+                </div>
+            <div class="attr-section-title"><span class="num">3.1</span> Primary Attributes</div>
             <table class="attr-table">
                 @if (isRes)
                 {
@@ -404,7 +557,7 @@
                 }
             </table>
 
-            <div class="attr-section-title"><span class="num">4.2</span> Secondary Attributes</div>
+            <div class="attr-section-title"><span class="num">3.2</span> Secondary Attributes</div>
             <table class="attr-table">
                 @if (isRes)
                 {
@@ -516,11 +669,11 @@
         <div class="attr-card">
             <div class="attr-title">
                 <i class="fa-solid fa-store" style="color:var(--at-gold);margin-right:8px;"></i>
-                Section 4: Buildings &amp; Sections
+                    Section 3: Non-Residential Buildings &amp; Sections
             </div>
             <div class="attr-divider"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
 
-            <div class="attr-section-title"><span class="num">4.1</span> Buildings</div>
+            <div class="attr-section-title"><span class="num">3.1</span> Buildings</div>
             <div class="table-responsive">
                 <table class="attr-dyn-table" id="tbl-bus-buildings">
                     <thead>
@@ -572,7 +725,7 @@
                 </button>
             </div>
 
-            <div class="attr-section-title"><span class="num">4.2</span> Sections <small>— provide details of registered leases</small></div>
+            <div class="attr-section-title"><span class="num">3.2</span> Sections <small>— provide details of registered leases</small></div>
             <div class="table-responsive">
                 <table class="attr-dyn-table" id="tbl-bus-sections">
                     <thead>
@@ -618,7 +771,7 @@
                 </button>
             </div>
 
-            <div class="attr-section-title"><span class="num">4.3</span> General</div>
+            <div class="attr-section-title"><span class="num">3.3</span> General</div>
             <table class="attr-table">
                 <tr>
                     <td class="attr-label">Unutilised Land Extent (m²)</td>
@@ -633,11 +786,11 @@
         <div class="attr-card">
             <div class="attr-title">
                 <i class="fa-solid fa-calculator" style="color:var(--at-gold);margin-right:8px;"></i>
-                Section 4: DRC Method — Buildings &amp; Land
+                Section 3: DRC Method — Buildings &amp; Land
             </div>
             <div class="attr-divider"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
 
-            <div class="attr-section-title"><span class="num">4.1</span> Buildings</div>
+            <div class="attr-section-title"><span class="num">3.1</span> Buildings</div>
             <div class="table-responsive">
                 <table class="attr-dyn-table" id="tbl-drc-buildings">
                     <thead>
@@ -686,7 +839,7 @@
                 </button>
             </div>
 
-            <div class="attr-section-title"><span class="num">4.2</span> Improvements</div>
+            <div class="attr-section-title"><span class="num">3.2</span> Improvements</div>
             <div class="table-responsive">
                 <table class="attr-dyn-table" id="tbl-drc-improvements">
                     <thead>
@@ -734,7 +887,7 @@
                 </button>
             </div>
 
-            <div class="attr-section-title"><span class="num">4.3</span> Vacant Land</div>
+            <div class="attr-section-title"><span class="num">3.3</span> Vacant Land</div>
             <div class="table-responsive">
                 <table class="attr-dyn-table" id="tbl-drc-vacant">
                     <thead>
@@ -775,7 +928,7 @@
     <div class="attr-card">
         <div class="attr-title">
             <i class="fa-solid fa-comment" style="color:var(--at-gold);margin-right:8px;"></i>
-            Section 5: Additional Comments
+            Section 4: Additional Comments
         </div>
         <div class="attr-divider"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
         <textarea asp-for="ClientComment" class="attr-textarea" rows="4"
@@ -788,7 +941,7 @@
     <div class="attr-card ev-card">
         <div class="attr-title">
             <i class="fa-solid fa-paperclip" style="color:var(--at-gold);margin-right:8px;"></i>
-            Section 6: Supporting Documents
+            Section 5: Supporting Documents
             <span style="font-size:11px;font-weight:400;text-transform:none;margin-left:8px;">Maximum 10 files · 20 MB each</span>
         </div>
         <div class="attr-divider"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
@@ -853,7 +1006,7 @@
     <div class="attr-card">
         <div class="attr-title">
             <i class="fa-solid fa-signature" style="color:var(--at-gold);margin-right:8px;"></i>
-            Section 7: Declaration &amp; Signature
+            Section 6: Declaration &amp; Signature
         </div>
         <div class="attr-divider"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
 
@@ -935,22 +1088,160 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-    <script src="~/js/attribute-create.js"></script>
+    <script src="~/js/attribute-create.js" asp-append-version="true"></script>
 
     <script>
-        // ── Auto-populate date ───────────────────────────────────────
-        document.getElementById('declDate').value =
-            new Date().toLocaleDateString('en-ZA', { day:'2-digit', month:'long', year:'numeric' });
+        document.addEventListener('DOMContentLoaded', function () {
+            initialiseDeclarationDate();
+            initialiseMixedUse();
+            initialiseContactTypeToggle();
+            initialiseEvidenceUpload();
+            initialiseSubmitValidation();
+        });
 
-        // ── Dynamic row templates ────────────────────────────────────
-        function delRow(btn) { btn.closest('tr').remove(); reIndex(); }
+        // ─────────────────────────────────────────────
+        // Declaration date
+        // ─────────────────────────────────────────────
+        function initialiseDeclarationDate() {
+            const declDate = document.getElementById('declDate');
+
+            if (!declDate) return;
+
+            declDate.value = new Date().toLocaleDateString('en-ZA', {
+                day: '2-digit',
+                month: 'long',
+                year: 'numeric'
+            });
+        }
+
+        // ─────────────────────────────────────────────
+        // Multipurpose / Mixed-use dropdown
+        // ─────────────────────────────────────────────
+        function initialiseMixedUse() {
+            const category = document.getElementById('valuationCategory');
+            const mixedRow = document.getElementById('mixedUseRow');
+            const mixedValue = document.getElementById('isMixedUseValue');
+            const mixedSelect = document.getElementById('mixedUseSelect');
+
+            if (!category || !mixedRow || !mixedValue) return;
+
+            function updateMixedUse() {
+                const selectedValue = (category.value || '').trim().toLowerCase();
+
+                const isMulti =
+                    selectedValue === 'multipurpose' ||
+                    selectedValue === 'multiple purposes' ||
+                    selectedValue === 'multi purpose' ||
+                    selectedValue === 'multi-purpose';
+
+                mixedRow.style.display = isMulti ? '' : 'none';
+                mixedValue.value = isMulti ? 'true' : 'false';
+
+                if (!isMulti && mixedSelect) {
+                    mixedSelect.value = '';
+                }
+            }
+
+            category.addEventListener('change', updateMixedUse);
+            updateMixedUse();
+        }
+
+        // ─────────────────────────────────────────────
+        // Owner / Company contact toggle
+        // ─────────────────────────────────────────────
+        function initialiseContactTypeToggle() {
+            const radios = document.querySelectorAll('.contact-type-radio');
+            const tables = document.querySelectorAll('.contact-table');
+
+            radios.forEach(function (radio) {
+                radio.addEventListener('change', function () {
+                    updateContactType(this.dataset.index);
+                });
+            });
+
+            tables.forEach(function (table) {
+                updateContactType(table.dataset.contactIndex);
+            });
+        }
+
+        function updateContactType(index) {
+            if (index === undefined || index === null || index === '') return;
+
+            const selected = document.querySelector(
+                'input[name="ContactInfos[' + index + '].IsCompany"]:checked'
+            );
+
+            const isCompany = selected && selected.value === 'true';
+
+            const ownerRows = document.querySelectorAll('.owner-fields-' + index);
+            const companyRows = document.querySelectorAll('.company-fields-' + index);
+
+            const hiddenContactType = document.querySelector(
+                'input[name="ContactInfos[' + index + '].ContactType"]'
+            );
+
+            ownerRows.forEach(function (row) {
+                row.style.display = isCompany ? 'none' : '';
+            });
+
+            companyRows.forEach(function (row) {
+                row.style.display = isCompany ? '' : 'none';
+            });
+
+            if (hiddenContactType) {
+                hiddenContactType.value = isCompany ? 'Company' : 'Owner';
+            }
+
+            // Optional cleanup so hidden fields do not post wrong values
+            const firstNames = document.querySelector('[name="ContactInfos[' + index + '].FirstNames"]');
+            const lastName = document.querySelector('[name="ContactInfos[' + index + '].LastName"]');
+            const companyName = document.querySelector('[name="ContactInfos[' + index + '].CompanyName"]');
+            const companyReg = document.querySelector('[name="ContactInfos[' + index + '].CompanyRegistrationNumber"]');
+
+            if (isCompany) {
+                if (firstNames) firstNames.value = '';
+                if (lastName) lastName.value = '';
+            } else {
+                if (companyName) companyName.value = '';
+                if (companyReg) companyReg.value = '';
+            }
+        }
+
+        // ─────────────────────────────────────────────
+        // Dynamic rows
+        // ─────────────────────────────────────────────
+        function delRow(btn) {
+            const row = btn.closest('tr');
+
+            if (!row) return;
+
+            const tbody = row.closest('tbody');
+
+            row.remove();
+
+            if (tbody && tbody.rows.length === 0) {
+                // Leave empty; user can add again using button.
+            }
+
+            reIndex();
+        }
 
         function reIndex() {
-            ['bus-buildings','bus-sections','drc-buildings','drc-improvements','drc-vacant'].forEach(function(id) {
-                var tbody = document.getElementById('body-' + id);
+            const bodyIds = [
+                'body-bus-buildings',
+                'body-bus-sections',
+                'body-drc-buildings',
+                'body-drc-improvements',
+                'body-drc-vacant'
+            ];
+
+            bodyIds.forEach(function (bodyId) {
+                const tbody = document.getElementById(bodyId);
+
                 if (!tbody) return;
-                Array.from(tbody.rows).forEach(function(row, i) {
-                    row.querySelectorAll('[name]').forEach(function(el) {
+
+                Array.from(tbody.rows).forEach(function (row, i) {
+                    row.querySelectorAll('[name]').forEach(function (el) {
                         el.name = el.name.replace(/\[\d+\]/, '[' + i + ']');
                     });
                 });
@@ -958,82 +1249,240 @@
         }
 
         function addRow(bodyId, templateFn) {
-            var tbody = document.getElementById(bodyId);
-            var idx   = tbody ? tbody.rows.length : 0;
-            var tr    = document.createElement('tr');
+            const tbody = document.getElementById(bodyId);
+
+            if (!tbody || typeof templateFn !== 'function') return;
+
+            const idx = tbody.rows.length;
+            const tr = document.createElement('tr');
+
             tr.innerHTML = templateFn(idx);
-            if (tbody) tbody.appendChild(tr);
+            tbody.appendChild(tr);
+
+            reIndex();
         }
 
-        // ── Row templates ────────────────────────────────────────────
         function qualitySelect(name) {
             return '<select name="' + name + '" class="attr-input attr-select">' +
-                '<option value="">--</option><option>Excellent</option><option>Good</option>' +
-                '<option>Average</option><option>Fair</option><option>Poor</option></select>';
-        }
-        function condSelect(name) { return qualitySelect(name); }
-        function delBtn() {
-            return '<td><button type="button" class="dyn-del-btn" onclick="delRow(this)" title="Remove">' +
-                '<i class="fa-solid fa-xmark"></i></button></td>';
+                '<option value="">-- Select --</option>' +
+                '<option>Excellent</option>' +
+                '<option>Good</option>' +
+                '<option>Average</option>' +
+                '<option>Fair</option>' +
+                '<option>Poor</option>' +
+                '</select>';
         }
 
-        var busBuildingTemplate = function(i) {
-            return '<td><input name="BusinessBuildings['+i+'].BuildingNr" class="attr-input"/></td>' +
-                '<td>' + qualitySelect('BusinessBuildings['+i+'].Quality') + '</td>' +
-                '<td>' + condSelect('BusinessBuildings['+i+'].Condition') + '</td>' +
-                '<td><input name="BusinessBuildings['+i+'].YearBuilt" class="attr-input" type="number"/></td>' +
-                '<td><input name="BusinessBuildings['+i+'].Storeys" class="attr-input" type="number"/></td>' +
-                '<td><input name="BusinessBuildings['+i+'].GBA" class="attr-input" type="number" step="0.01"/></td>' +
-                '<input type="hidden" name="BusinessBuildings['+i+'].Depreciation"/>' +
-                '<input type="hidden" name="BusinessBuildings['+i+'].Cost"/>' +
-                '<input type="hidden" name="BusinessBuildings['+i+'].DRC"/>' + delBtn();
+        function condSelect(name) {
+            return qualitySelect(name);
+        }
+
+        function delBtn() {
+            return '<td>' +
+                '<button type="button" class="dyn-del-btn" onclick="delRow(this)" title="Remove">' +
+                '<i class="fa-solid fa-xmark"></i>' +
+                '</button>' +
+                '</td>';
+        }
+
+        const busBuildingTemplate = function (i) {
+            return '' +
+                '<td><input name="BusinessBuildings[' + i + '].BuildingNr" class="attr-input" /></td>' +
+                '<td>' + qualitySelect('BusinessBuildings[' + i + '].Quality') + '</td>' +
+                '<td>' + condSelect('BusinessBuildings[' + i + '].Condition') + '</td>' +
+                '<td><input name="BusinessBuildings[' + i + '].YearBuilt" class="attr-input" type="number" /></td>' +
+                '<td><input name="BusinessBuildings[' + i + '].Storeys" class="attr-input" type="number" /></td>' +
+                '<td><input name="BusinessBuildings[' + i + '].GBA" class="attr-input" type="number" step="0.01" /></td>' +
+                '<input type="hidden" name="BusinessBuildings[' + i + '].Depreciation" />' +
+                '<input type="hidden" name="BusinessBuildings[' + i + '].Cost" />' +
+                '<input type="hidden" name="BusinessBuildings[' + i + '].DRC" />' +
+                delBtn();
         };
-        var busSectionTemplate = function(i) {
-            return '<td><input name="BusinessSections['+i+'].BuildingNr" class="attr-input"/></td>' +
-                '<td><input name="BusinessSections['+i+'].Usage" class="attr-input"/></td>' +
-                '<td><input name="BusinessSections['+i+'].GBA" class="attr-input" type="number" step="0.01"/></td>' +
-                '<td><input name="BusinessSections['+i+'].NLA" class="attr-input" type="number" step="0.01"/></td>' +
-                '<td><input name="BusinessSections['+i+'].Rental" class="attr-input" type="number" step="0.01"/></td>' +
-                '<input type="hidden" name="BusinessSections['+i+'].MarketGroup"/>' +
-                '<input type="hidden" name="BusinessSections['+i+'].Quality"/>' +
-                '<input type="hidden" name="BusinessSections['+i+'].CostRate"/>' +
-                '<input type="hidden" name="BusinessSections['+i+'].Cost"/>' +
-                '<input type="hidden" name="BusinessSections['+i+'].Vac"/>' +
-                '<input type="hidden" name="BusinessSections['+i+'].Exp"/>' +
-                '<input type="hidden" name="BusinessSections['+i+'].Cap"/>' +
-                '<input type="hidden" name="BusinessSections['+i+'].Gross"/>' +
-                '<input type="hidden" name="BusinessSections['+i+'].Normalised"/>' +
-                '<input type="hidden" name="BusinessSections['+i+'].Nett"/>' +
-                '<input type="hidden" name="BusinessSections['+i+'].Value"/>' + delBtn();
+
+        const busSectionTemplate = function (i) {
+            return '' +
+                '<td><input name="BusinessSections[' + i + '].BuildingNr" class="attr-input" /></td>' +
+                '<td><input name="BusinessSections[' + i + '].Usage" class="attr-input" /></td>' +
+                '<td><input name="BusinessSections[' + i + '].GBA" class="attr-input" type="number" step="0.01" /></td>' +
+                '<td><input name="BusinessSections[' + i + '].NLA" class="attr-input" type="number" step="0.01" /></td>' +
+                '<td><input name="BusinessSections[' + i + '].Rental" class="attr-input" type="number" step="0.01" /></td>' +
+                '<input type="hidden" name="BusinessSections[' + i + '].MarketGroup" />' +
+                '<input type="hidden" name="BusinessSections[' + i + '].Quality" />' +
+                '<input type="hidden" name="BusinessSections[' + i + '].CostRate" />' +
+                '<input type="hidden" name="BusinessSections[' + i + '].Cost" />' +
+                '<input type="hidden" name="BusinessSections[' + i + '].Vac" />' +
+                '<input type="hidden" name="BusinessSections[' + i + '].Exp" />' +
+                '<input type="hidden" name="BusinessSections[' + i + '].Cap" />' +
+                '<input type="hidden" name="BusinessSections[' + i + '].Gross" />' +
+                '<input type="hidden" name="BusinessSections[' + i + '].Normalised" />' +
+                '<input type="hidden" name="BusinessSections[' + i + '].Nett" />' +
+                '<input type="hidden" name="BusinessSections[' + i + '].Value" />' +
+                delBtn();
         };
-        var drcBuildingTemplate = function(i) {
-            return '<td><input name="DrcBuildings['+i+'].BuildingDescription" class="attr-input"/></td>' +
-                '<td>' + qualitySelect('DrcBuildings['+i+'].Quality') + '</td>' +
-                '<td><input name="DrcBuildings['+i+'].GrossBuildingArea" class="attr-input" type="number" step="0.01"/></td>' +
-                '<td>' + condSelect('DrcBuildings['+i+'].Condition') + '</td>' +
-                '<input type="hidden" name="DrcBuildings['+i+'].DepreciationPercentage"/>' +
-                '<input type="hidden" name="DrcBuildings['+i+'].RatePerSQM"/>' +
-                '<input type="hidden" name="DrcBuildings['+i+'].DepreciatedRate"/>' +
-                '<input type="hidden" name="DrcBuildings['+i+'].ReplacementCost"/>' + delBtn();
+
+        const drcBuildingTemplate = function (i) {
+            return '' +
+                '<td><input name="DrcBuildings[' + i + '].BuildingDescription" class="attr-input" /></td>' +
+                '<td>' + qualitySelect('DrcBuildings[' + i + '].Quality') + '</td>' +
+                '<td><input name="DrcBuildings[' + i + '].GrossBuildingArea" class="attr-input" type="number" step="0.01" /></td>' +
+                '<td>' + condSelect('DrcBuildings[' + i + '].Condition') + '</td>' +
+                '<input type="hidden" name="DrcBuildings[' + i + '].DepreciationPercentage" />' +
+                '<input type="hidden" name="DrcBuildings[' + i + '].RatePerSQM" />' +
+                '<input type="hidden" name="DrcBuildings[' + i + '].DepreciatedRate" />' +
+                '<input type="hidden" name="DrcBuildings[' + i + '].ReplacementCost" />' +
+                delBtn();
         };
-        var drcImprovementTemplate = function(i) {
-            return '<td><input name="DrcImprovements['+i+'].ImprovementDescription" class="attr-input"/></td>' +
-                '<td>' + qualitySelect('DrcImprovements['+i+'].Quality') + '</td>' +
-                '<td><input name="DrcImprovements['+i+'].AreaUnit" class="attr-input" type="number" step="0.01"/></td>' +
-                '<td>' + condSelect('DrcImprovements['+i+'].Condition') + '</td>' +
-                '<input type="hidden" name="DrcImprovements['+i+'].DepreciationPercentage"/>' +
-                '<input type="hidden" name="DrcImprovements['+i+'].RatePerSQM"/>' +
-                '<input type="hidden" name="DrcImprovements['+i+'].DepreciatedRate"/>' +
-                '<input type="hidden" name="DrcImprovements['+i+'].ReplacementCost"/>' + delBtn();
+
+        const drcImprovementTemplate = function (i) {
+            return '' +
+                '<td><input name="DrcImprovements[' + i + '].ImprovementDescription" class="attr-input" /></td>' +
+                '<td>' + qualitySelect('DrcImprovements[' + i + '].Quality') + '</td>' +
+                '<td><input name="DrcImprovements[' + i + '].AreaUnit" class="attr-input" type="number" step="0.01" /></td>' +
+                '<td>' + condSelect('DrcImprovements[' + i + '].Condition') + '</td>' +
+                '<input type="hidden" name="DrcImprovements[' + i + '].DepreciationPercentage" />' +
+                '<input type="hidden" name="DrcImprovements[' + i + '].RatePerSQM" />' +
+                '<input type="hidden" name="DrcImprovements[' + i + '].DepreciatedRate" />' +
+                '<input type="hidden" name="DrcImprovements[' + i + '].ReplacementCost" />' +
+                delBtn();
         };
-        var drcVacantTemplate = function(i) {
-            return '<td><input name="DrcVacantLands['+i+'].Region" class="attr-input"/></td>' +
-                '<td><input name="DrcVacantLands['+i+'].Area" class="attr-input" type="number" step="0.01"/></td>' +
-                '<input type="hidden" name="DrcVacantLands['+i+'].MinRatePerSQM"/>' +
-                '<input type="hidden" name="DrcVacantLands['+i+'].MidRatePerSQM"/>' +
-                '<input type="hidden" name="DrcVacantLands['+i+'].MaxRatePerSQM"/>' +
-                '<input type="hidden" name="DrcVacantLands['+i+'].Rate"/>' +
-                '<input type="hidden" name="DrcVacantLands['+i+'].VacantLandCost"/>' + delBtn();
+
+        const drcVacantTemplate = function (i) {
+            return '' +
+                '<td><input name="DrcVacantLands[' + i + '].Region" class="attr-input" /></td>' +
+                '<td><input name="DrcVacantLands[' + i + '].Area" class="attr-input" type="number" step="0.01" /></td>' +
+                '<input type="hidden" name="DrcVacantLands[' + i + '].MinRatePerSQM" />' +
+                '<input type="hidden" name="DrcVacantLands[' + i + '].MidRatePerSQM" />' +
+                '<input type="hidden" name="DrcVacantLands[' + i + '].MaxRatePerSQM" />' +
+                '<input type="hidden" name="DrcVacantLands[' + i + '].Rate" />' +
+                '<input type="hidden" name="DrcVacantLands[' + i + '].VacantLandCost" />' +
+                delBtn();
         };
+
+        // ─────────────────────────────────────────────
+        // Evidence upload counter/list
+        // ─────────────────────────────────────────────
+        function initialiseEvidenceUpload() {
+            const input = document.getElementById('evFileInput');
+            const list = document.getElementById('evFileList');
+            const countText = document.getElementById('evCountText');
+            const countFill = document.getElementById('evCountFill');
+            const dropzone = document.getElementById('evDropzone');
+
+            if (!input) return;
+
+            input.addEventListener('change', function () {
+                updateEvidenceList(input.files, list, countText, countFill);
+            });
+
+            if (dropzone) {
+                dropzone.addEventListener('dragover', function (e) {
+                    e.preventDefault();
+                    dropzone.classList.add('drag-over');
+                });
+
+                dropzone.addEventListener('dragleave', function () {
+                    dropzone.classList.remove('drag-over');
+                });
+
+                dropzone.addEventListener('drop', function (e) {
+                    e.preventDefault();
+                    dropzone.classList.remove('drag-over');
+
+                    if (e.dataTransfer && e.dataTransfer.files) {
+                        input.files = e.dataTransfer.files;
+                        updateEvidenceList(input.files, list, countText, countFill);
+                    }
+                });
+            }
+        }
+
+        function updateEvidenceList(files, list, countText, countFill) {
+            const maxFiles = 10;
+            const fileCount = files ? files.length : 0;
+
+            if (countText) {
+                countText.textContent = fileCount + ' / ' + maxFiles + ' files selected';
+            }
+
+            if (countFill) {
+                const percent = Math.min((fileCount / maxFiles) * 100, 100);
+                countFill.style.width = percent + '%';
+            }
+
+            if (!list) return;
+
+            list.innerHTML = '';
+
+            if (!files || fileCount === 0) return;
+
+            Array.from(files).forEach(function (file) {
+                const item = document.createElement('div');
+                item.className = 'ev-file-item';
+
+                const sizeMb = file.size / 1024 / 1024;
+
+                item.innerHTML =
+                    '<i class="fa-solid fa-file"></i>' +
+                    '<span>' + escapeHtml(file.name) + '</span>' +
+                    '<small>' + sizeMb.toFixed(2) + ' MB</small>';
+
+                list.appendChild(item);
+            });
+        }
+
+        function escapeHtml(value) {
+            return String(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        // ─────────────────────────────────────────────
+        // Final submit validation
+        // ─────────────────────────────────────────────
+        function initialiseSubmitValidation() {
+            const form = document.querySelector('form[asp-action="Create"], form[action*="/Attributes/Create"], form');
+
+            if (!form) return;
+
+            form.addEventListener('submit', function (e) {
+                const category = document.getElementById('valuationCategory');
+                const mixedSelect = document.getElementById('mixedUseSelect');
+                const signatureData = document.getElementById('signatureData');
+                const declarationAccepted = document.getElementById('declAccepted');
+
+                const selectedCategory = category ? (category.value || '').trim().toLowerCase() : '';
+
+                const isMulti =
+                    selectedCategory === 'multipurpose' ||
+                    selectedCategory === 'multiple purposes' ||
+                    selectedCategory === 'multi purpose' ||
+                    selectedCategory === 'multi-purpose';
+
+                if (isMulti && mixedSelect && !mixedSelect.value) {
+                    e.preventDefault();
+                    alert('Please select the mixed-use type.');
+                    mixedSelect.focus();
+                    return;
+                }
+
+                if (declarationAccepted && !declarationAccepted.checked) {
+                    e.preventDefault();
+                    alert('Please accept the declaration before submitting.');
+                    declarationAccepted.focus();
+                    return;
+                }
+
+                if (signatureData && !signatureData.value) {
+                    // If your external signature JS sets this value, this will pass.
+                    // If not, it warns the client.
+                    e.preventDefault();
+                    alert('Please draw your signature before submitting.');
+                    return;
+                }
+            });
+        }
     </script>
 }

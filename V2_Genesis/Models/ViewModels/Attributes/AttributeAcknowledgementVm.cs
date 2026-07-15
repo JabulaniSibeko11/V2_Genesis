@@ -31,5 +31,6 @@
         public string? AcknowledgementPath { get; set; }
 
         public List<string> UploadedDocuments { get; set; } = new();
+        public AttributeSubmissionViewModel? Submission { get; set; }
     }
 }

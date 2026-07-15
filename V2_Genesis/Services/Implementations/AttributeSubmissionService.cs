@@ -22,9 +22,29 @@ namespace V2_Genesis.Services.Implementations
 
         public AttributeSubmissionViewModel CreateNew(string formType)
         {
+            formType = NormalizeFormType(formType);
+
             var model = new AttributeSubmissionViewModel
             {
-                FormType = formType
+                FormType = formType,
+                ContactInfos = new List<AttributeContactInfoVm>
+        {
+            new AttributeContactInfoVm
+            {
+                ContactType = "Owner",
+                IsCompany = false
+            }
+        },
+                Access = new AttributeAccessVm
+                {
+                    AccessType = null,
+                    PermissionStatus = null,
+                    Comments = null
+                },
+                ValuationDetails = new AttributeValuationDetailsVm
+                {
+                    IsMixedUse = false
+                }
             };
 
             if (formType == "BusinessCommercial")
@@ -47,6 +67,21 @@ namespace V2_Genesis.Services.Implementations
             }
 
             return model;
+        }
+
+        private static string NormalizeFormType(string? formType)
+        {
+            return formType?.Trim() switch
+            {
+                "Residential" => "Residential",
+                "ResidentialST" => "ResidentialST",
+                "BusinessCommercial" => "BusinessCommercial",
+                "DRCMethod" => "DRCMethod",
+                "Business" => "BusinessCommercial",
+                "DRC" => "DRCMethod",
+                "Residential-ST" => "ResidentialST",
+                _ => "Residential"
+            };
         }
 
         public async Task<long> SubmitAsync(AttributeSubmissionViewModel model, string userId, string userName)
@@ -820,9 +855,9 @@ namespace V2_Genesis.Services.Implementations
                    && x.Rate == null
                    && x.VacantLandCost == null;
         }
-    
 
-    public async Task<AttributeAcknowledgementVm?> GetAcknowledgementAsync(long attrId)
+
+        public async Task<AttributeAcknowledgementVm?> GetAcknowledgementAsync(long attrId)
         {
             var info = await _context.AttrPropertyInfo
                 .Include(x => x.PropertyDetails)
@@ -853,26 +888,279 @@ namespace V2_Genesis.Services.Implementations
             if (!string.IsNullOrWhiteSpace(files?.Files9)) uploadedDocs.Add(files.Files9);
             if (!string.IsNullOrWhiteSpace(files?.Files10)) uploadedDocs.Add(files.Files10);
 
+            var submission = await BuildSubmittedAttributeViewModelAsync(attrId);
+
             return new AttributeAcknowledgementVm
             {
                 AttrId = info.Attr_ID,
                 AttrNo = info.Attr_No,
+
                 PropertyDescription = info.Property_Desc,
                 PropertyCategory = info.PropertyDetails?.ValuationDetails?.ValuationCategoryOnRoll,
                 PhysicalAddress = info.PropertyDetails?.Address,
+
                 MarketValue = info.PropertyDetails?.Calculations?.Tla?.ToString(),
                 Extent = info.PropertyDetails?.Extent,
-                OwnerName = info.PropertyDetails?.ValuationDetails?.OwnersFinancials ?? info.PropertyDetails?.ValuationDetails?.OwnersTitleDeeds,
+
+                OwnerName = info.PropertyDetails?.ValuationDetails?.OwnersFinancials
+                            ?? info.PropertyDetails?.ValuationDetails?.OwnersTitleDeeds,
+
                 Pin = declaration?.EvidencePin ?? declaration?.RandomPin,
+
                 SubmissionDate = info.SubmissionDateTime,
-                EvidenceDeadline = declaration?.AdditionalEvidenceDeadline,
+
+                EvidenceDeadline = declaration?.AdditionalEvidenceDeadline
+                                   ?? info.SubmissionDateTime.AddHours(48),
+
                 EvidenceCount = files?.Evidence_Count ?? 0,
+
                 AcknowledgementFileName = files?.Acknowledgement_FileName,
+
                 AcknowledgementPath = files == null || string.IsNullOrWhiteSpace(files.Acknowledgement_FileName)
                     ? null
                     : Path.Combine(files.RootFolder ?? "", files.Acknowledgement_FileName),
-                UploadedDocuments = uploadedDocs
+
+                UploadedDocuments = uploadedDocs,
+
+                // New: full submitted form data for the HTML acknowledgement display
+                Submission = submission
             };
+
+        }
+        private async Task<AttributeSubmissionViewModel?> BuildSubmittedAttributeViewModelAsync(long attrId)
+        {
+            var info = await _context.AttrPropertyInfo
+                .Include(x => x.PropertyDetails)
+                    .ThenInclude(x => x!.ValuationDetails)
+                .Include(x => x.PropertyDetails)
+                    .ThenInclude(x => x!.Calculations)
+                .FirstOrDefaultAsync(x => x.Attr_ID == attrId);
+
+            if (info?.PropertyDetails == null)
+                return null;
+
+            var property = info.PropertyDetails;
+            var propertyDetailsId = property.Id;
+
+            var valuation = property.ValuationDetails;
+            var calculations = property.Calculations;
+
+            var declaration = await _context.AttrDeclarations
+                .FirstOrDefaultAsync(x => x.Attr_ID == attrId);
+
+            var contacts = await _context.AttrContactInfo
+                .Where(x => x.PropertyDetailsId == propertyDetailsId)
+                .ToListAsync();
+
+            var primary = await _context.AttrPrimaryAttributes
+                .FirstOrDefaultAsync(x => x.PropertyDetailsId == propertyDetailsId);
+
+            var secondary = await _context.AttrSecondaryAttributes
+                .FirstOrDefaultAsync(x => x.PropertyDetailsId == propertyDetailsId);
+
+            var businessBuildings = await _context.AttrBusinessBuildings
+                .Where(x => x.PropertyDetailsId == propertyDetailsId)
+                .ToListAsync();
+
+            var businessSections = await _context.AttrBusinessSections
+                .Where(x => x.PropertyDetailsId == propertyDetailsId)
+                .ToListAsync();
+
+            var businessGeneral = await _context.AttrBusinessGeneral
+                .FirstOrDefaultAsync(x => x.PropertyDetailsId == propertyDetailsId);
+
+            var drcBuildings = await _context.AttrDrcBuildings
+                .Where(x => x.PropertyDetailsId == propertyDetailsId)
+                .ToListAsync();
+
+            var drcImprovements = await _context.AttrDrcImprovements
+                .Where(x => x.PropertyDetailsId == propertyDetailsId)
+                .ToListAsync();
+
+            var drcVacantLands = await _context.AttrDrcVacantLand
+                .Where(x => x.PropertyDetailsId == propertyDetailsId)
+                .ToListAsync();
+
+            var drcMarketValue = await _context.AttrDrcMarketValueDemolition
+                .FirstOrDefaultAsync(x => x.PropertyDetailsId == propertyDetailsId);
+
+            var model = new AttributeSubmissionViewModel
+            {
+                AttrId = info.Attr_ID,
+                AttrNo = info.Attr_No,
+
+                // In your SubmitAsync, FormType is saved on AttrPropertyDetails.FormType
+                // and also Property_Type on AttrPropertyInfo.
+                FormType = property.FormType ?? info.Property_Type,
+
+                ClientComment = info.ClientComment,
+
+                PropertyDetails = new AttributePropertyDetailsVm
+                {
+                    PropertyId = info.Property_id,
+                    PremiseId = info.Premise_id,
+                    UnitKey = info.Unit_key,
+                    ValuationKey = info.Valuation_Key,
+                    Sector = info.Sector,
+                    RollType = info.RollType,
+                    RollDescription = info.RollDescription,
+
+                    HArea = property.HArea,
+                    CollectionBlock = property.CollectionBlock,
+                    DataController = property.DataController,
+                    DataCollector = property.DataCollector,
+                    SGNumber = property.SGNumber,
+                    Centroid = property.Centroid,
+                    Erf = property.Erf,
+                    Extent = property.Extent,
+                    SectionalTitle = property.SectionalTitle,
+                    LandUseFinancials = property.LandUseFinancials,
+                    Municipality = property.Municipality,
+                    Ward = property.Ward,
+                    Township = property.Township,
+                    Zoning = property.Zoning,
+                    Sources = property.Sources,
+                    Address = property.Address,
+                    PropertyDesc = info.Property_Desc
+                },
+
+                ValuationDetails = new AttributeValuationDetailsVm
+                {
+                    ValuationCategoryOnRoll = valuation?.ValuationCategoryOnRoll,
+                    ActualUse = valuation?.ActualUse,
+                    IsMixedUse = valuation?.IsMixedUse ?? false,
+                    AlternateUsages = valuation?.AlternateUsages,
+                    OwnersTitleDeeds = valuation?.OwnersTitleDeeds,
+                    OwnersFinancials = valuation?.OwnersFinancials
+                },
+
+                Access = new AttributeAccessVm
+                {
+                    AccessType = null,
+                    PermissionStatus = null,
+                    Comments = null
+                },
+
+                PrimaryAttributes = new AttributePrimaryAttributesVm
+                {
+                    Tla1 = primary?.Tla1,
+                    Tla2 = primary?.Tla2,
+                    Tla3 = primary?.Tla3,
+                    Garage = primary?.Garage,
+                    CarportCp = primary?.CarportCp,
+                    GrannyFlatGf = primary?.GrannyFlatGf,
+                    StaffQuartersSq = primary?.StaffQuartersSq,
+                    Storage = primary?.Storage,
+                    AdjustmentFactor = primary?.AdjustmentFactor,
+                    STMain = primary?.STMain
+                },
+
+                SecondaryAttributes = new AttributeSecondaryAttributesVm
+                {
+                    Storeys = secondary?.Storeys,
+                    Security = secondary?.Security,
+                    Noise = secondary?.Noise,
+                    Topography = secondary?.Topography,
+                    Quality = secondary?.Quality,
+                    Condition = secondary?.Condition,
+                    SwimmingPool = secondary?.SwimmingPool,
+                    TennisCourt = secondary?.TennisCourt,
+                    STCondition = secondary?.STCondition,
+                    STFloor = secondary?.STFloor
+                },
+
+                Calculations = new AttributeCalculationsVm
+                {
+                    CalcUpdateTla = calculations?.CalcUpdateTla,
+                    Tla = calculations?.Tla,
+                    CalcUpdateWgba = calculations?.CalcUpdateWgba,
+                    AdjustedWgba = calculations?.AdjustedWgba,
+                    TotalValueNonRes = calculations?.TotalValueNonRes,
+                    TotalValueUnutilisedLand = calculations?.TotalValueUnutilisedLand,
+                    DRCFinalValue = calculations?.DRCFinalValue,
+                    CalculationStatus = calculations?.CalculationStatus
+                },
+
+                BusinessGeneral = new AttributeBusinessGeneralVm
+                {
+                    UnutilisedLandExtent = businessGeneral?.UnutilisedLandExtent,
+                    UnutilisedLandRate = businessGeneral?.UnutilisedLandRate
+                },
+
+                DrcMarketValueDemolition = new AttributeDrcMarketValueDemolitionVm
+                {
+                    DemolitionRate = drcMarketValue?.DemolitionRate,
+                    MarketValue = drcMarketValue?.MarketValue,
+                    MarketValueAfterDemolition = drcMarketValue?.MarketValueAfterDemolition
+                },
+
+                Declaration = new AttributeDeclarationVm
+                {
+                    DeclarationAccepted = declaration?.Declaration_Accepted ?? false,
+                    SignatureName = declaration?.Signature_Name,
+                    SignaturePicture = declaration?.Signature_Picture,
+                    DeclarationText = declaration?.Declaration_Text
+                },
+
+                ContactInfos = contacts.Select(c => new AttributeContactInfoVm
+                {
+                    ContactType = c.ContactType,
+                    IsCompany = c.IsCompany,
+                    CompanyName = c.CompanyName,
+                    CompanyRegistrationNumber = c.CompanyRegistrationNumber,
+                    FirstNames = c.FirstNames,
+                    LastName = c.LastName,
+                    PhysicalAddress = c.PhysicalAddress,
+                    PostalAddress = c.PostalAddress,
+                    Email = c.Email,
+                    HomePhoneNo = c.HomePhoneNo,
+                    WorkPhoneNo = c.WorkPhoneNo,
+                    CellNo = c.CellNo
+                }).ToList(),
+
+                BusinessBuildings = businessBuildings.Select(b => new AttributeBusinessBuildingVm
+                {
+                    BuildingNr = b.BuildingNr,
+                    Quality = b.Quality,
+                    Condition = b.Condition,
+                    YearBuilt = b.YearBuilt,
+                    Storeys = b.Storeys,
+                    GBA = b.GBA
+                }).ToList(),
+
+                BusinessSections = businessSections.Select(s => new AttributeBusinessSectionVm
+                {
+                    BuildingNr = s.BuildingNr,
+                    Usage = s.Usage,
+                    GBA = s.GBA,
+                    NLA = s.NLA,
+                    Rental = s.Rental
+                }).ToList(),
+
+                DrcBuildings = drcBuildings.Select(b => new AttributeDrcBuildingVm
+                {
+                    BuildingDescription = b.BuildingDescription,
+                    Quality = b.Quality,
+                    GrossBuildingArea = b.GrossBuildingArea,
+                    Condition = b.Condition
+                }).ToList(),
+
+                DrcImprovements = drcImprovements.Select(i => new AttributeDrcImprovementVm
+                {
+                    ImprovementDescription = i.ImprovementDescription,
+                    Quality = i.Quality,
+                    AreaUnit = i.AreaUnit,
+                    Condition = i.Condition
+                }).ToList(),
+
+                DrcVacantLands = drcVacantLands.Select(v => new AttributeDrcVacantLandVm
+                {
+                    Region = v.Region,
+                    Area = v.Area
+                }).ToList()
+            };
+
+            return model;
         }
     }
 }

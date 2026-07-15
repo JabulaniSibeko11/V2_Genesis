@@ -13,10 +13,16 @@ namespace V2_Genesis.Services.Attributes
     public class AttributeDocumentService : IAttributeDocumentService
     {
         private readonly AttributeStorageOptions _options;
+        private readonly IWebHostEnvironment _env;
 
-        public AttributeDocumentService(IOptions<AttributeStorageOptions> options)
+        private const string HEADER_IMAGE = "Images/Obj_Header.PNG";
+
+        public AttributeDocumentService(
+            IOptions<AttributeStorageOptions> options,
+            IWebHostEnvironment env)
         {
             _options = options.Value;
+            _env = env;
         }
 
         public async Task<AttributeDocumentSaveResult> CreateSubmissionPackageAsync(
@@ -50,11 +56,7 @@ namespace V2_Genesis.Services.Attributes
             var acknowledgementFileName = $"{safeAttrNo}_{safePropertyDesc}_{timestamp}_Acknowledgement.pdf";
             var acknowledgementPath = Path.Combine(attrFolder, acknowledgementFileName);
 
-            GenerateAcknowledgementPdf(
-                model,
-                propertyInfo,
-                acknowledgementPath,
-                acknowledgementFileName);
+            GenerateAcknowledgementReplicaPdf(model,propertyInfo,acknowledgementPath);
 
             var result = new AttributeDocumentSaveResult
             {
@@ -135,11 +137,11 @@ namespace V2_Genesis.Services.Attributes
             return storedFileName;
         }
 
-        private static void GeneratePdf(
-            AttributeSubmissionViewModel model,
-            AttrPropertyInfo propertyInfo,
-            string pdfPath,
-            string formName)
+        private void GeneratePdf(
+    AttributeSubmissionViewModel model,
+    AttrPropertyInfo propertyInfo,
+    string pdfPath,
+    string formName)
         {
             Document.Create(container =>
             {
@@ -149,20 +151,20 @@ namespace V2_Genesis.Services.Attributes
                     page.Margin(25);
                     page.DefaultTextStyle(x => x.FontSize(9));
 
+                    var headerPath = Path.Combine(_env.WebRootPath, HEADER_IMAGE);
+
                     page.Header().Column(header =>
                     {
-                        header.Item().Text("City of Johannesburg")
+                        AddCojHeaderImage(header, headerPath);
+
+                        header.Item()
+                            .PaddingTop(4)
+                            .AlignCenter()
+                            .Text(formName)
                             .Bold()
-                            .FontSize(15);
+                            .FontSize(13);
 
-                        header.Item().Text("Property Information Submission")
-                            .Bold()
-                            .FontSize(12);
-
-                        header.Item().Text($"{formName} Form")
-                            .FontSize(11);
-
-                        header.Item().PaddingTop(5).LineHorizontal(1);
+                        header.Item().PaddingTop(4).LineHorizontal(0.5f);
                     });
 
                     page.Content().PaddingTop(10).Column(col =>
@@ -224,7 +226,26 @@ namespace V2_Genesis.Services.Attributes
 
             }).GeneratePdf(pdfPath);
         }
+        private static void AddCojHeaderImage(ColumnDescriptor col, string headerPath)
+        {
+            if (File.Exists(headerPath))
+            {
+                col.Item()
+                    .AlignCenter()
+                    .Width(500)
+                    .Height(90)
+                    .Image(headerPath, ImageScaling.FitArea);
 
+                return;
+            }
+
+            // Fallback only if image is missing.
+            col.Item()
+                .AlignCenter()
+                .Text("City of Johannesburg")
+                .Bold()
+                .FontSize(15);
+        }
         private static void AddReferenceSection(ColumnDescriptor col, AttributeSubmissionViewModel model, AttrPropertyInfo info)
         {
             AddSectionTitle(col, "Submission Reference");
@@ -559,15 +580,13 @@ namespace V2_Genesis.Services.Attributes
         private static void AddSectionTitle(ColumnDescriptor col, string title)
         {
             col.Item()
-                .PaddingTop(8)
-                .PaddingBottom(3)
-                .Background(Colors.Grey.Lighten3)
+                .PaddingTop(10)
+                .Background("#D7ECEA")
                 .Padding(5)
                 .Text(title)
                 .Bold()
-                .FontSize(10);
+                .FontSize(9);
         }
-
         private static void AddTwoColumnTable(ColumnDescriptor col, List<(string Label, string? Value)> rows)
         {
             col.Item().Table(table =>
@@ -685,6 +704,478 @@ namespace V2_Genesis.Services.Attributes
             };
         }
 
+        private static void AddAcknowledgementIntro(
+    ColumnDescriptor col,
+    AttributeSubmissionViewModel model,
+    AttrPropertyInfo propertyInfo)
+        {
+            col.Item()
+                .Background("#FFF8E1")
+                .Border(0.5f)
+                .BorderColor("#E6B000")
+                .Padding(8)
+                .Column(box =>
+                {
+                    box.Item().Text("Submission Received").Bold().FontSize(11);
+                    box.Item().PaddingTop(3).Text(
+                        "This document is a copy of the property attribute information submitted through the City of Johannesburg Valuation Portal.");
+                    box.Item().PaddingTop(3).Text(
+                        "This acknowledgement does not imply acceptance or approval. The submitted information remains subject to review by the valuation team.");
+                    box.Item().PaddingTop(5).Text($"Attribute Reference: {propertyInfo.Attr_No ?? model.AttrNo ?? ""}").Bold();
+                });
+        }
+
+        private static void AddSubmittedPropertyDetails(
+    ColumnDescriptor col,
+    AttributeSubmissionViewModel model)
+        {
+            var p = model.PropertyDetails;
+
+            AddSectionTitle(col, "1. Property Details");
+
+            col.Item().Table(table =>
+            {
+                table.ColumnsDefinition(columns =>
+                {
+                    columns.RelativeColumn(1.1f);
+                    columns.RelativeColumn(2f);
+                    columns.RelativeColumn(1.1f);
+                    columns.RelativeColumn(2f);
+                });
+
+                AddFullRow(table, "Property Description", p?.PropertyDesc);
+
+                AddTwoColumnRow(table, "H Area", p?.HArea, "Data Controller", p?.DataController);
+                AddTwoColumnRow(table, "Collection Block", p?.CollectionBlock, "Data Collector", p?.DataCollector);
+                AddTwoColumnRow(table, "SG Number", p?.SGNumber, "Centroid", p?.Centroid);
+                AddTwoColumnRow(table, "Erf", p?.Erf, "Extent", p?.Extent);
+                AddTwoColumnRow(table, "Sectional Title", p?.SectionalTitle, "Land Use Financials", p?.LandUseFinancials);
+                AddTwoColumnRow(table, "Municipality", p?.Municipality, "Ward", p?.Ward);
+                AddTwoColumnRow(table, "Township", p?.Township, "Zoning", p?.Zoning);
+                AddTwoColumnRow(table, "Sources", p?.Sources, "Address", p?.Address);
+            });
+        }
+
+        private static void AddSubmittedValuationDetails(
+    ColumnDescriptor col,
+    AttributeSubmissionViewModel model)
+        {
+            var v = model.ValuationDetails;
+
+            AddSectionTitle(col, "2. Valuation Details");
+
+            col.Item().Table(table =>
+            {
+                table.ColumnsDefinition(columns =>
+                {
+                    columns.RelativeColumn(1.3f);
+                    columns.RelativeColumn(2f);
+                    columns.RelativeColumn(1.3f);
+                    columns.RelativeColumn(2f);
+                });
+
+                AddTwoColumnRow(
+                    table,
+                    "Valuation Category on Roll",
+                    v?.ValuationCategoryOnRoll,
+                    "Actual Use",
+                    v?.ActualUse);
+
+                if (v?.IsMixedUse == true || !string.IsNullOrWhiteSpace(v?.AlternateUsages))
+                {
+                    AddFullRow(table, "Mixed Use", v?.AlternateUsages);
+                }
+            });
+        }
+        private static void AddSubmittedContactDetails(
+    ColumnDescriptor col,
+    AttributeSubmissionViewModel model)
+        {
+            AddSectionTitle(col, "3. Contact Information");
+
+            if (model.ContactInfos == null || !model.ContactInfos.Any())
+            {
+                col.Item().Padding(5).Text("No contact information supplied.");
+                return;
+            }
+
+            for (var i = 0; i < model.ContactInfos.Count; i++)
+            {
+                var c = model.ContactInfos[i];
+
+                col.Item().PaddingTop(6).Text($"Contact {i + 1}: {(c.IsCompany ? "Company" : "Owner")}").Bold();
+
+                col.Item().Table(table =>
+                {
+                    table.ColumnsDefinition(columns =>
+                    {
+                        columns.RelativeColumn(1.2f);
+                        columns.RelativeColumn(2f);
+                        columns.RelativeColumn(1.2f);
+                        columns.RelativeColumn(2f);
+                    });
+
+                    if (c.IsCompany)
+                    {
+                        AddTwoColumnRow(table, "Company Name", c.CompanyName, "Registration No.", c.CompanyRegistrationNumber);
+                    }
+                    else
+                    {
+                        AddTwoColumnRow(table, "First Names", c.FirstNames, "Last Name", c.LastName);
+                    }
+
+                    AddFullRow(table, "Physical Address", c.PhysicalAddress);
+                    AddFullRow(table, "Postal Address", c.PostalAddress);
+                    AddTwoColumnRow(table, "Email", c.Email, "Cell No", c.CellNo);
+                    AddTwoColumnRow(table, "Home Phone", c.HomePhoneNo, "Work Phone", c.WorkPhoneNo);
+                });
+            }
+        }
+        private static void AddSubmittedFormSpecificDetails(
+    ColumnDescriptor col,
+    AttributeSubmissionViewModel model)
+        {
+            switch (model.FormType)
+            {
+                case "Residential":
+                    AddResidentialSubmission(col, model);
+                    break;
+
+                case "ResidentialST":
+                    AddResidentialStSubmission(col, model);
+                    break;
+
+                case "BusinessCommercial":
+                    AddBusinessSubmission(col, model);
+                    break;
+
+                case "DRCMethod":
+                    AddDrcSubmission(col, model);
+                    break;
+            }
+        }
+        private static void AddResidentialSubmission(ColumnDescriptor col, AttributeSubmissionViewModel model)
+        {
+            AddSectionTitle(col, "4. Residential Attributes");
+
+            var p = model.PrimaryAttributes;
+            var s = model.SecondaryAttributes;
+
+            col.Item().Table(table =>
+            {
+                table.ColumnsDefinition(columns =>
+                {
+                    columns.RelativeColumn(1.2f);
+                    columns.RelativeColumn(2f);
+                    columns.RelativeColumn(1.2f);
+                    columns.RelativeColumn(2f);
+                });
+
+                AddTwoColumnRow(table,"TLA 1",p?.Tla1?.ToString(),"TLA 2",p?.Tla2?.ToString());
+                AddTwoColumnRow(table, "TLA 3", p?.Tla3?.ToString(), "Garage", p?.Garage?.ToString());
+                AddTwoColumnRow(table, "Carport CP", p?.CarportCp?.ToString(), "Granny Flat GF", p?.GrannyFlatGf?.ToString());
+                AddTwoColumnRow(table, "Staff Quarters SQ", p?.StaffQuartersSq?.ToString(), "Storage", p?.Storage?.ToString());
+
+                AddTwoColumnRow(table, "Storeys", s?.Storeys?.ToString(), "Security", s?.Security?.ToString());
+                AddTwoColumnRow(table, "Noise", s?.Noise?.ToString(), "Topography", s?.Topography?.ToString());
+                AddTwoColumnRow(table, "Quality", s?.Quality?.ToString(), "Condition", s?.Condition?.ToString());
+                AddTwoColumnRow(table, "Swimming Pool", BoolText(s?.SwimmingPool), "Tennis Court", BoolText(s?.TennisCourt));
+            });
+        }
+        private static void AddResidentialStSubmission(ColumnDescriptor col, AttributeSubmissionViewModel model)
+        {
+            AddSectionTitle(col, "4. Residential Sectional Title Attributes");
+
+            var p = model.PrimaryAttributes;
+            var s = model.SecondaryAttributes;
+
+            col.Item().Table(table =>
+            {
+                table.ColumnsDefinition(columns =>
+                {
+                    columns.RelativeColumn(1.2f);
+                    columns.RelativeColumn(2f);
+                    columns.RelativeColumn(1.2f);
+                    columns.RelativeColumn(2f);
+                });
+
+                AddTwoColumnRow(table, "ST Main", p?.STMain?.ToString(), "Garage", p?.Garage?.ToString());
+                AddTwoColumnRow(table, "Carport CP", p?.CarportCp?.ToString(), "Storage", p?.Storage?.ToString());
+                AddTwoColumnRow(table, "ST Condition", s?.STCondition?.ToString(), "ST Floor", s?.STFloor?.ToString());
+                AddTwoColumnRow(table, "Quality", s?.Quality?.ToString(), "", "");
+            });
+        }
+        private static void AddBusinessSubmission(ColumnDescriptor col, AttributeSubmissionViewModel model)
+        {
+            AddSectionTitle(col, "4. Non-Residential / Business and Commercial");
+
+            if (model.BusinessBuildings?.Any() == true)
+            {
+                col.Item().PaddingTop(5).Text("Buildings").Bold();
+
+                col.Item().Table(table =>
+                {
+                    table.ColumnsDefinition(columns =>
+                    {
+                        columns.RelativeColumn();
+                        columns.RelativeColumn();
+                        columns.RelativeColumn();
+                        columns.RelativeColumn();
+                        columns.RelativeColumn();
+                        columns.RelativeColumn();
+                    });
+
+                    AddHeader(table, "Building Nr", "Quality", "Condition", "Year Built", "Storeys", "GBA");
+
+                    foreach (var b in model.BusinessBuildings.Where(x => HasAnyValue(x)))
+                    {
+                        table.Cell().Element(CellValue).Text(b.BuildingNr ?? "");
+                        table.Cell().Element(CellValue).Text(b.Quality ?? "");
+                        table.Cell().Element(CellValue).Text(b.Condition ?? "");
+                        table.Cell().Element(CellValue).Text(b.YearBuilt?.ToString() ?? "");
+                        table.Cell().Element(CellValue).Text(b.Storeys?.ToString() ?? "");
+                        table.Cell().Element(CellValue).Text(b.GBA?.ToString() ?? "");
+                    }
+                });
+            }
+
+            if (model.BusinessSections?.Any() == true)
+            {
+                col.Item().PaddingTop(8).Text("Sections / Lease Details").Bold();
+
+                col.Item().Table(table =>
+                {
+                    table.ColumnsDefinition(columns =>
+                    {
+                        columns.RelativeColumn();
+                        columns.RelativeColumn();
+                        columns.RelativeColumn();
+                        columns.RelativeColumn();
+                        columns.RelativeColumn();
+                    });
+
+                    AddHeader(table, "Building Nr", "Usage", "GBA", "NLA", "Rental R/m²");
+
+                    foreach (var s in model.BusinessSections.Where(x => HasAnyValue(x)))
+                    {
+                        table.Cell().Element(CellValue).Text(s.BuildingNr ?? "");
+                        table.Cell().Element(CellValue).Text(s.Usage ?? "");
+                        table.Cell().Element(CellValue).Text(s.GBA?.ToString() ?? "");
+                        table.Cell().Element(CellValue).Text(s.NLA?.ToString() ?? "");
+                        table.Cell().Element(CellValue).Text(s.Rental?.ToString() ?? "");
+                    }
+                });
+            }
+
+            col.Item().PaddingTop(6).Table(table =>
+            {
+                table.ColumnsDefinition(columns =>
+                {
+                    columns.RelativeColumn();
+                    columns.RelativeColumn(3);
+                });
+
+                table.Cell().Element(CellLabel).Text("Unutilised Land Extent");
+                table.Cell().Element(CellValue).Text(model.BusinessGeneral?.UnutilisedLandExtent?.ToString() ?? "");
+            });
+        }
+        private static void AddDrcSubmission(ColumnDescriptor col, AttributeSubmissionViewModel model)
+        {
+            AddSectionTitle(col, "4. DRC Method");
+
+            if (model.DrcBuildings?.Any() == true)
+            {
+                col.Item().PaddingTop(5).Text("Buildings").Bold();
+
+                col.Item().Table(table =>
+                {
+                    table.ColumnsDefinition(columns =>
+                    {
+                        columns.RelativeColumn(2);
+                        columns.RelativeColumn();
+                        columns.RelativeColumn();
+                        columns.RelativeColumn();
+                    });
+
+                    AddHeader(table, "Building Description", "Quality", "GBA", "Condition");
+
+                    foreach (var b in model.DrcBuildings.Where(x => HasAnyValue(x)))
+                    {
+                        table.Cell().Element(CellValue).Text(b.BuildingDescription ?? "");
+                        table.Cell().Element(CellValue).Text(b.Quality ?? "");
+                        table.Cell().Element(CellValue).Text(b.GrossBuildingArea?.ToString() ?? "");
+                        table.Cell().Element(CellValue).Text(b.Condition ?? "");
+                    }
+                });
+            }
+
+            if (model.DrcImprovements?.Any() == true)
+            {
+                col.Item().PaddingTop(8).Text("Improvements").Bold();
+
+                col.Item().Table(table =>
+                {
+                    table.ColumnsDefinition(columns =>
+                    {
+                        columns.RelativeColumn(2);
+                        columns.RelativeColumn();
+                        columns.RelativeColumn();
+                        columns.RelativeColumn();
+                    });
+
+                    AddHeader(table, "Improvement Description", "Quality", "Area / Unit", "Condition");
+
+                    foreach (var i in model.DrcImprovements.Where(x => HasAnyValue(x)))
+                    {
+                        table.Cell().Element(CellValue).Text(i.ImprovementDescription ?? "");
+                        table.Cell().Element(CellValue).Text(i.Quality ?? "");
+                        table.Cell().Element(CellValue).Text(i.AreaUnit?.ToString() ?? "");
+                        table.Cell().Element(CellValue).Text(i.Condition ?? "");
+                    }
+                });
+            }
+
+            if (model.DrcVacantLands?.Any() == true)
+            {
+                col.Item().PaddingTop(8).Text("Vacant Land").Bold();
+
+                col.Item().Table(table =>
+                {
+                    table.ColumnsDefinition(columns =>
+                    {
+                        columns.RelativeColumn();
+                        columns.RelativeColumn();
+                    });
+
+                    AddHeader(table, "Region", "Area");
+
+                    foreach (var v in model.DrcVacantLands.Where(x => HasAnyValue(x)))
+                    {
+                        table.Cell().Element(CellValue).Text(v.Region ?? "");
+                        table.Cell().Element(CellValue).Text(v.Area?.ToString() ?? "");
+                    }
+                });
+            }
+        }
+        private static void AddSubmittedComments(ColumnDescriptor col, AttributeSubmissionViewModel model)
+        {
+            if (string.IsNullOrWhiteSpace(model.ClientComment))
+                return;
+
+            AddSectionTitle(col, "5. Additional Comments");
+
+            col.Item()
+                .Border(0.5f)
+                .BorderColor("#BFD8D6")
+                .Padding(6)
+                .Text(model.ClientComment);
+        }
+
+        private static void AddSubmittedEvidenceSummary(ColumnDescriptor col, AttributeSubmissionViewModel model)
+        {
+            AddSectionTitle(col, "6. Supporting Documents");
+
+            var fileNames = new List<string>();
+
+            if (model.Files?.RepLetter != null)
+                fileNames.Add(model.Files.RepLetter.FileName);
+
+            if (model.Files?.EvidenceFiles != null)
+                fileNames.AddRange(model.Files.EvidenceFiles.Select(f => f.FileName));
+
+            if (!fileNames.Any())
+            {
+                col.Item().Padding(5).Text("No supporting documents uploaded.");
+                return;
+            }
+
+            col.Item().Column(list =>
+            {
+                foreach (var file in fileNames)
+                {
+                    list.Item().Text($"• {file}");
+                }
+            });
+        }
+
+        private static void AddSubmittedDeclaration(ColumnDescriptor col, AttributeSubmissionViewModel model)
+        {
+            AddSectionTitle(col, "7. Declaration");
+
+            col.Item().Table(table =>
+            {
+                table.ColumnsDefinition(columns =>
+                {
+                    columns.RelativeColumn();
+                    columns.RelativeColumn(3);
+                });
+
+                table.Cell().Element(CellLabel).Text("Declaration Accepted");
+                table.Cell().Element(CellValue).Text(model.Declaration?.DeclarationAccepted == true ? "Yes" : "No");
+
+                table.Cell().Element(CellLabel).Text("Signature Name");
+                table.Cell().Element(CellValue).Text(model.Declaration?.SignatureName ?? "");
+
+                table.Cell().Element(CellLabel).Text("Submitted Date");
+                table.Cell().Element(CellValue).Text(DateTime.Now.ToString("dd MMMM yyyy"));
+            });
+
+            if (!string.IsNullOrWhiteSpace(model.Declaration?.SignaturePicture))
+            {
+                try
+                {
+                    var base64 = model.Declaration.SignaturePicture;
+
+                    if (base64.Contains(","))
+                        base64 = base64.Split(',')[1];
+
+                    var bytes = Convert.FromBase64String(base64);
+
+                    col.Item()
+                        .PaddingTop(8)
+                        .Text("Signature")
+                        .Bold();
+
+                    col.Item()
+                        .Border(0.5f)
+                        .BorderColor("#BFD8D6")
+                        .Padding(5)
+                        .Height(80)
+                        .Image(bytes, ImageScaling.FitArea);
+                }
+                catch
+                {
+                    col.Item().PaddingTop(5).Text("Signature image could not be rendered.");
+                }
+            }
+        }
+        private static void AddHeader(TableDescriptor table, params string[] headers)
+        {
+            foreach (var header in headers)
+            {
+                table.Cell()
+                    .Background("#D7ECEA")
+                    .Border(0.5f)
+                    .BorderColor("#BFD8D6")
+                    .Padding(4)
+                    .Text(header)
+                    .Bold();
+            }
+        }
+
+       
+        private static bool HasAnyValue(object? row)
+        {
+            if (row == null) return false;
+
+            return row.GetType()
+                .GetProperties()
+                .Any(p =>
+                {
+                    var value = p.GetValue(row);
+                    return value != null && !string.IsNullOrWhiteSpace(value.ToString());
+                });
+        }
         private static string MakeSafeFileName(string value)
         {
             if (string.IsNullOrWhiteSpace(value))
@@ -739,175 +1230,116 @@ namespace V2_Genesis.Services.Attributes
                     .FontSize(8);
             }
         }
-    
-    private static void GenerateAcknowledgementPdf(
-    AttributeSubmissionViewModel model,
-    AttrPropertyInfo propertyInfo,
-    string pdfPath,
-    string acknowledgementFileName)
+
+        private void GenerateAcknowledgementReplicaPdf(
+         AttributeSubmissionViewModel model,
+         AttrPropertyInfo propertyInfo,
+         string pdfPath)
         {
-            var formBlue = "#1f6f78";
-            var lightBlue = "#eaf5f6";
-
-            var uploadedFiles = model.Files.EvidenceFiles
-     .Where(f => f is { Length: > 0 })
-     .Select(f => f.FileName)
-     .Take(10)
-     .ToList();
-
-            var evidencePin = model.GeneratedEvidencePin ?? "";
-            var evidenceDeadline = model.GeneratedEvidenceDeadline;
+            var headerPath = Path.Combine(_env.WebRootPath, "Images/Obj_Header.PNG");
 
             Document.Create(container =>
             {
                 container.Page(page =>
                 {
                     page.Size(PageSizes.A4);
-                    page.Margin(25);
-                    page.DefaultTextStyle(x => x.FontSize(9).FontFamily("Arial"));
+                    page.Margin(22);
+                    page.DefaultTextStyle(x => x.FontSize(8));
 
                     page.Header().Column(header =>
                     {
-                        header.Item().Row(row =>
-                        {
-                            row.RelativeItem(1).Column(left =>
-                            {
-                                left.Item().Text("Joburg").Bold().FontSize(26);
-                                left.Item().Text("a world class African city").FontSize(7);
-                            });
+                        AddCojHeaderImage(header, headerPath);
 
-                            row.RelativeItem(3).Column(mid =>
-                            {
-                                mid.Item().Text("City of Johannesburg").Bold().FontSize(11);
-                                mid.Item().Text("Property Branch: Valuation Services").FontSize(9);
-                                mid.Item().PaddingTop(8).Text("Valuation Administrations").FontSize(8);
-                                mid.Item().Text("1st Floor, East Wing").FontSize(8);
-                                mid.Item().Text("66 Jorissen Street").FontSize(8);
-                                mid.Item().Text("Braamfontein").FontSize(8);
-                            });
+                        header.Item()
+                            .PaddingTop(6)
+                            .AlignCenter()
+                            .Text("Property Attribute Submission Acknowledgement")
+                            .Bold()
+                            .FontSize(13);
 
-                            row.RelativeItem(2).Column(right =>
-                            {
-                                right.Item().AlignRight().Text("Email: propertydata@joburg.org.za").Bold().FontSize(8);
-                                right.Item().AlignRight().Text("www.joburg.org.za").FontSize(8);
-                            });
-                        });
+                        header.Item()
+                            .AlignCenter()
+                            .Text(GetFormLabel(model.FormType))
+                            .FontSize(10)
+                            .FontColor(Colors.Grey.Darken2);
 
-                        header.Item().PaddingTop(8).LineHorizontal(1);
+                        header.Item().PaddingTop(6).LineHorizontal(0.5f);
                     });
 
-                    page.Content().PaddingTop(12).Column(col =>
+                    page.Content().PaddingTop(10).Column(col =>
                     {
-                        col.Item()
-                            .Background(formBlue)
-                            .Border(1)
-                            .Padding(8)
-                            .AlignCenter()
-                            .Text("ATTRIBUTE SUBMISSION ACKNOWLEDGEMENT")
-                            .FontColor(Colors.White)
-                            .Bold()
-                            .FontSize(16);
+                        AddAcknowledgementIntro(col, model, propertyInfo);
 
-                        col.Item().PaddingTop(15).Text(text =>
-                        {
-                            text.Span("Your attribute submission has been successfully lodged. ").Bold();
-                            text.Span("Thank you for submitting your property information. ");
-                            text.Span("Please note you have 48 hours to upload any outstanding evidence.")
-                                .FontColor(Colors.Red.Medium)
-                                .Italic();
-                        });
+                        AddSubmittedPropertyDetails(col, model);
 
-                        col.Item().PaddingTop(15).Table(table =>
-                        {
-                            table.ColumnsDefinition(columns =>
-                            {
-                                columns.RelativeColumn(1);
-                                columns.RelativeColumn(2);
-                            });
+                        AddSubmittedValuationDetails(col, model);
 
-                            AddAckRow(table, "Property Description:", propertyInfo.Property_Desc ?? model.PropertyDetails.PropertyDesc, lightBlue);
-                            AddAckRow(table, "ATTRIBUTE NUMBER:", propertyInfo.Attr_No, lightBlue);
-                            AddAckRow(table, "PIN:", evidencePin, lightBlue);
-                            AddAckRow(table, "Date:", DateTime.Now.ToString("yyyy-MM-dd HH:mm"), lightBlue);
-                            AddAckRow(table, "Evidence Deadline:", evidenceDeadline?.ToString("yyyy-MM-dd HH:mm"), lightBlue);
-                        });
+                        AddSubmittedContactDetails(col, model);
 
-                        AddAckSectionTitle(col, "PROPERTY DETAILS AS SUBMITTED", formBlue);
+                        AddSubmittedFormSpecificDetails(col, model);
 
-                        col.Item().Table(table =>
-                        {
-                            table.ColumnsDefinition(columns =>
-                            {
-                                columns.RelativeColumn(1.4f);
-                                columns.RelativeColumn(1.2f);
-                                columns.RelativeColumn(1.6f);
-                                columns.RelativeColumn(1);
-                                columns.RelativeColumn(1);
-                                columns.RelativeColumn(1.4f);
-                            });
+                        AddSubmittedComments(col, model);
 
-                            AddHeaderCell(table, "Property Description");
-                            AddHeaderCell(table, "Property Category");
-                            AddHeaderCell(table, "Physical Address");
-                            AddHeaderCell(table, "Market Value");
-                            AddHeaderCell(table, "Extent");
-                            AddHeaderCell(table, "Name of Owner");
+                        AddSubmittedEvidenceSummary(col, model);
 
-                            AddBodyCell(table, propertyInfo.Property_Desc ?? model.PropertyDetails.PropertyDesc);
-                            AddBodyCell(table, model.ValuationDetails.ValuationCategoryOnRoll);
-                            AddBodyCell(table, model.PropertyDetails.Address);
-                            AddBodyCell(table, model.Calculations.Tla?.ToString());
-                            AddBodyCell(table, model.PropertyDetails.Extent);
-                            AddBodyCell(table, model.ValuationDetails.OwnersFinancials ?? model.ValuationDetails.OwnersTitleDeeds);
-                        });
-
-                        AddAckSectionTitle(col, "DECLARATION", formBlue);
-
-                        col.Item().Border(1).Padding(8).Column(dec =>
-                        {
-                            dec.Item().Text(model.Declaration.DeclarationText ??
-                                "I declare that the information submitted is true and correct to the best of my knowledge. I understand that this information is subject to review.")
-                                .FontSize(9);
-
-                            dec.Item().PaddingTop(6).Text($"Signature Name: {model.Declaration.SignatureName}").Bold();
-                            dec.Item().Text($"Declaration Accepted: {(model.Declaration.DeclarationAccepted ? "Yes" : "No")}");
-                        });
-
-                        col.Item().PaddingTop(18).Text("UPLOADED DOCUMENTS").Bold().FontSize(12);
-                        col.Item().Text($"You have uploaded {uploadedFiles.Count} document(s)");
-
-                        if (uploadedFiles.Any())
-                        {
-                            col.Item().PaddingTop(8).Column(docs =>
-                            {
-                                foreach (var file in uploadedFiles)
-                                {
-                                    docs.Item().PaddingLeft(8).Text($"- {file}");
-                                }
-                            });
-                        }
-                        else
-                        {
-                            col.Item().PaddingTop(8).Text("No evidence documents uploaded.");
-                        }
-
-                        col.Item().PaddingTop(20).Text("For any inquiries regarding your attribute submission, please contact:").FontSize(9);
-                        col.Item().Text("Email: propertydata@joburg.org.za").FontSize(9);
-                        col.Item().Text("Tel: 011 084 9823").FontSize(9);
-                        col.Item().Text("Website: www.joburg.org.za").FontSize(9);
+                        AddSubmittedDeclaration(col, model);
                     });
 
                     page.Footer().AlignCenter().Text(text =>
                     {
-                        text.Span("Generated acknowledgement: ");
-                        text.Span(acknowledgementFileName).SemiBold();
-                        text.Span(" | Page ");
-                        text.CurrentPageNumber();
-                        text.Span(" of ");
-                        text.TotalPages();
+                        text.Span("Generated on ");
+                        text.Span(DateTime.Now.ToString("dd MMMM yyyy HH:mm")).SemiBold();
+                        text.Span(" | Attribute Ref: ");
+                        text.Span(propertyInfo.Attr_No ?? model.AttrNo ?? "").SemiBold();
                     });
                 });
             }).GeneratePdf(pdfPath);
+        }
+
+        private static string GetFormLabel(string? formType)
+        {
+            return formType switch
+            {
+                "Residential" => "Residential",
+                "ResidentialST" => "Residential — Sectional Title",
+                "BusinessCommercial" => "Non-Residential / Business and Commercial",
+                "DRCMethod" => "DRC Method",
+                _ => "Property Attribute Submission"
+            };
+        }
+
+        
+
+        private static void AddTwoColumnRow(TableDescriptor table, string label1, string? value1, string label2, string? value2)
+        {
+            table.Cell().Element(CellLabel).Text(label1);
+            table.Cell().Element(CellValue).Text(value1 ?? "");
+            table.Cell().Element(CellLabel).Text(label2);
+            table.Cell().Element(CellValue).Text(value2 ?? "");
+        }
+
+        private static void AddFullRow(TableDescriptor table, string label, string? value)
+        {
+            table.Cell().Element(CellLabel).Text(label);
+            table.Cell().ColumnSpan(3).Element(CellValue).Text(value ?? "");
+        }
+
+        private static IContainer CellLabel(IContainer container)
+        {
+            return container
+                .Border(0.5f)
+                .BorderColor("#BFD8D6")
+                .Background("#F3FAF9")
+                .Padding(4)
+                .DefaultTextStyle(x => x.Bold());
+        }
+
+        private static IContainer CellValue(IContainer container)
+        {
+            return container
+                .Border(0.5f)
+                .BorderColor("#BFD8D6")
+                .Padding(4);
         }
 
         private static void AddAckRow(TableDescriptor table, string label, string? value, string background)
