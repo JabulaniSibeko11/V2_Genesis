@@ -212,7 +212,6 @@ public class AttributesController : Controller
 
         return View(vm);
     }
-    
     [HttpGet]
     [Authorize(Roles = "Client")]
     [Route("attributes/select-form")]
@@ -222,7 +221,7 @@ public class AttributesController : Controller
 
         if (string.IsNullOrWhiteSpace(unitKey))
         {
-            TempData["AttrLinkError"] = "Property reference is missing.";
+            TempData["AttrLinkError"] = "Property reference was not supplied.";
             return RedirectToAction("Index", "Dashboard", new { openRoll = "attributes" });
         }
 
@@ -236,54 +235,130 @@ public class AttributesController : Controller
             return RedirectToAction("Index", "Dashboard", new { openRoll = "attributes" });
         }
 
-        var vm = new AttributeFormSelectionViewModel
+        var suggestedFormType = ResolveSuggestedAttributeFormType(
+            property.CatDesc,
+            property.SchemeName,
+            property.UnitNo.ToString());
+
+        var model = new AttributeSelectViewModel
         {
             UnitKey = unitKey,
-            PropertyDescription = BuildDisplayPropertyDescription(property),
-            Category = property.CatDesc,
-            Town = property.TownNameDesc,
-            MarketValue = property.MarketValue?.ToString(),
-            SuggestedFormType = ResolveSuggestedAttributeFormType(
-                property.CatDesc,
-                property.SchemeName,
-                property.UnitNo.ToString() ?? "0")
+
+            PropertyDesc = BuildDisplayPropertyDescription(property),
+            CatDesc = property.CatDesc,
+            TownNameDesc = property.TownNameDesc,
+            LisStreetAddress = property.LisStreetAddress,
+            MarketValue = property.MarketValue,
+            RateableArea = property.RateableAreaVal ?? property.RateableArea,
+            Erf = property.Erf,
+            Ptn = property.Ptn,
+            Re = property.Re,
+            SchemeName = property.SchemeName,
+            SchemeNumber = property.SchemeNumber,
+            SchemeYear = property.SchemeYear,
+            UnitNo = property.UnitNo,
+            OwnerName = property.OwnerName,
+            ValuationDate = property.ValuationDate,
+            Zoning = property.Zoning,
+            Reason = property.Reason,
+
+            SuggestedFormType = suggestedFormType
         };
 
-        return View("SelectForm", vm);
+        return View(model);
     }
 
     [HttpPost]
     [Authorize(Roles = "Client")]
-    [ValidateAntiForgeryToken]
     [Route("attributes/select-form")]
-    public IActionResult SelectForm(AttributeFormSelectionViewModel vm)
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SelectForm(AttributeSelectViewModel model)
     {
-        if (string.IsNullOrWhiteSpace(vm.UnitKey))
+        ViewBag.GvList = await _db.GvList.OrderBy(r => r.ID).ToListAsync();
+
+        if (string.IsNullOrWhiteSpace(model.UnitKey))
         {
-            TempData["AttrLinkError"] = "Property reference is missing.";
+            TempData["AttrLinkError"] = "Property reference was not supplied.";
             return RedirectToAction("Index", "Dashboard", new { openRoll = "attributes" });
         }
 
-        if (string.IsNullOrWhiteSpace(vm.SelectedFormType))
+        model.UnitKey = model.UnitKey.Trim();
+
+        model.SelectedFormType = NormalizeAttributeFormType(model.SelectedFormType);
+
+        if (!IsValidAttributeFormType(model.SelectedFormType))
         {
-            TempData["AttrFormError"] = "Please select the form you want to complete.";
-            return RedirectToAction("SelectForm", new { unitKey = vm.UnitKey });
+            ModelState.AddModelError(nameof(model.SelectedFormType), "Please select a valid attribute form.");
         }
 
-        var selectedFormType = NormalizeAttributeFormType(vm.SelectedFormType);
-
-        if (!IsValidAttributeFormType(selectedFormType))
+        if (string.IsNullOrWhiteSpace(model.DeclarationType))
         {
-            TempData["AttrFormError"] = "Please select a valid attribute form.";
-            return RedirectToAction("SelectForm", new { unitKey = vm.UnitKey });
+            ModelState.AddModelError(nameof(model.DeclarationType), "Please select whether you are the Owner or Representative.");
         }
 
-        return RedirectToAction("Check", "Attributes", new
+        var detail = await _attrSearch.GetPropertyDetailAsync(model.UnitKey);
+
+        if (detail == null)
         {
-            idProperty = vm.UnitKey.Trim(),
-            formType = selectedFormType
+            TempData["AttrLinkError"] = "Could not load the linked property. Please search and link it again.";
+            return RedirectToAction("Index", "Dashboard", new { openRoll = "attributes" });
+        }
+
+        // Refill page details if validation fails.
+        model.PropertyDesc = BuildDisplayPropertyDescription(detail);
+        model.CatDesc = detail.CatDesc;
+        model.TownNameDesc = detail.TownNameDesc;
+        model.LisStreetAddress = detail.LisStreetAddress;
+        model.MarketValue = detail.MarketValue;
+        model.RateableArea = detail.RateableAreaVal ?? detail.RateableArea;
+        model.Erf = detail.Erf;
+        model.Ptn = detail.Ptn;
+        model.Re = detail.Re;
+        model.SchemeName = detail.SchemeName;
+        model.SchemeNumber = detail.SchemeNumber;
+        model.SchemeYear = detail.SchemeYear;
+        model.UnitNo = detail.UnitNo;
+        model.OwnerName = detail.OwnerName;
+        model.ValuationDate = detail.ValuationDate;
+        model.Zoning = detail.Zoning;
+        model.Reason = detail.Reason;
+        model.SuggestedFormType = ResolveSuggestedAttributeFormType(
+            detail.CatDesc,
+            detail.SchemeName,
+            detail.UnitNo.ToString());
+
+        if (!ModelState.IsValid)
+        {
+            return View(model);
+        }
+
+        // This replaces the old Check action TempData.
+        TempData["Attr_Detail_Json"] =
+            System.Text.Json.JsonSerializer.Serialize(detail);
+
+        TempData["AttrDeclaration"] = model.DeclarationType;
+        TempData["AttrRepRequired"] =
+            model.DeclarationType == "Representative" ? "true" : "false";
+
+        TempData.Keep("Attr_Detail_Json");
+
+        if (model.DeclarationType == "Representative")
+        {
+            return RedirectToAction("Representative", new
+            {
+                idProperty = model.UnitKey,
+                formType = model.SelectedFormType
+            });
+        }
+
+        return RedirectToAction("Form", new
+        {
+            idProperty = model.UnitKey,
+            formType = model.SelectedFormType
         });
     }
+
+
     [HttpPost]
     [Authorize(Roles = "Client")]
     [Route("attributes/check")]
@@ -416,7 +491,7 @@ public class AttributesController : Controller
         var re = property.Re ?? "";
 
         if (!string.IsNullOrWhiteSpace(scheme) ||
-            ( unitNo != 0))
+            (unitNo != 0))
         {
             var parts = new List<string>();
 
@@ -465,10 +540,11 @@ public class AttributesController : Controller
             return RedirectToAction("Index", "Dashboard");
         }
 
-        var declaration = TempData["AttrDeclaration"]?.ToString();
+        var declaration = TempData.Peek("AttrDeclaration")?.ToString();
         if (string.IsNullOrWhiteSpace(declaration))
-            return RedirectToAction("Check", new { idProperty, formType });
-
+        {
+            return RedirectToAction("SelectForm", new { unitKey = idProperty });
+        }
         formType = formType switch
         {
             "Business" => "BusinessCommercial",
@@ -553,6 +629,10 @@ public class AttributesController : Controller
             }
             catch { /* rep section stays empty */ }
         }
+        TempData.Keep("Attr_Detail_Json");
+        TempData.Keep("AttrDeclaration");
+        TempData.Keep("AttrRepRequired");
+        TempData.Keep("AttrRepDetails");
 
         ViewBag.Declaration = declaration;
         ViewBag.RepRequired = declaration == "Representative";
@@ -736,7 +816,7 @@ public class AttributesController : Controller
         if (string.IsNullOrWhiteSpace(declaration) || declaration != "Representative")
         {
             TempData["AttrCheckError"] = "Please complete the check step first.";
-            return RedirectToAction("Check", new { idProperty, formType });
+            return RedirectToAction("SelectForm", new { unitKey = idProperty });
         }
 
         var vm = new RepresentativeViewModel
@@ -1079,5 +1159,18 @@ public class AttributesController : Controller
 
         var bytes = await System.IO.File.ReadAllBytesAsync(filePath);
         return File(bytes, "application/pdf", fileName);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> RouteExpiredEvidence()
+    {
+        var performedBy = User.Identity?.Name ?? "System";
+
+        await _attributeService.RouteExpiredEvidenceSubmissionsAsync(performedBy);
+
+        TempData["Success"] = "Expired evidence submissions routed to sector inbox.";
+
+        return RedirectToAction("SectorInbox");
     }
 }

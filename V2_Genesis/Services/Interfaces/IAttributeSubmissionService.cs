@@ -17,5 +17,8 @@ namespace V2_Genesis.Services.Interfaces
         Task WithdrawAsync(long attrId, string userId, string userName, string reason);
 
         Task<AttributeAcknowledgementVm?> GetAcknowledgementAsync(long attrId);
+        Task RouteExpiredEvidenceSubmissionsAsync(string performedBy = "System");
+
+        Task<List<AttributeSectorInboxItemVm>> GetSectorInboxAsync(string sector);
     }
 }

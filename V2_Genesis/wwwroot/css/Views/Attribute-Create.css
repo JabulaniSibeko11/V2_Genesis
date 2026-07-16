@@ -1083,3 +1083,542 @@
         grid-template-columns: 1fr;
     }
 }
+
+
+/* ══════════════════════════════════════════════════
+   COMBINED SELECT FORM PAGE
+   Property Header → Form Type → Submitter → Submit
+══════════════════════════════════════════════════ */
+.sf-page {
+    background: #f7f5f2;
+    min-height: 100vh;
+    padding-bottom: 60px;
+    font-family: 'Poppins', sans-serif;
+}
+
+/* ── Hero ─────────────────────────────────────── */
+.sf-hero {
+    background: linear-gradient(135deg, #1e3a40 0%, #0f2a30 100%);
+    border-bottom: 4px solid #e6b000;
+    padding: 30px 28px 26px;
+    position: relative;
+    overflow: hidden;
+}
+
+    .sf-hero::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        opacity: .04;
+        background: repeating-linear-gradient(45deg,#fff 0,#fff 1px,transparent 0,transparent 50%);
+        background-size: 24px 24px;
+        pointer-events: none;
+    }
+
+    .sf-hero::after {
+        content: '';
+        position: absolute;
+        top: -80px;
+        right: -80px;
+        width: 360px;
+        height: 360px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(230,176,0,.07) 0%, transparent 70%);
+        pointer-events: none;
+    }
+
+.sf-hero-inner {
+    max-width: 860px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    position: relative;
+    z-index: 1;
+}
+
+.sf-hero-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    flex-shrink: 0;
+    background: rgba(230,176,0,.14);
+    border: 1.5px solid rgba(230,176,0,.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    color: #e6b000;
+}
+
+.sf-hero-eyebrow {
+    font-size: 9.5px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #e6b000;
+    opacity: .8;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 5px;
+}
+
+    .sf-hero-eyebrow span {
+        display: inline-block;
+        width: 14px;
+        height: 1.5px;
+        background: #e6b000;
+        border-radius: 1px;
+    }
+
+.sf-hero-title {
+    font-size: 22px;
+    font-weight: 800;
+    color: #fff;
+    margin: 0 0 4px;
+}
+
+    .sf-hero-title em {
+        font-style: normal;
+        color: #e6b000;
+    }
+
+.sf-hero-sub {
+    font-size: 12px;
+    color: rgba(255,255,255,.45);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.sf-hero-sub-dot {
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.25);
+}
+
+/* ── Body ─────────────────────────────────────── */
+.sf-body {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 24px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+/* ── Shared card ──────────────────────────────── */
+.sf-card {
+    background: #fff;
+    border-radius: 14px;
+    border: 2px solid #e6b000;
+    box-shadow: 0 4px 20px rgba(0,101,112,.09);
+    overflow: hidden;
+}
+
+/* Card section bar */
+.sf-card-bar {
+    background: linear-gradient(135deg, #1e3a40 0%, #0f2a30 100%);
+    padding: 14px 22px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    position: relative;
+    overflow: hidden;
+}
+
+    .sf-card-bar::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        opacity: .04;
+        background: repeating-linear-gradient(45deg,#fff 0,#fff 1px,transparent 0,transparent 50%);
+        background-size: 20px 20px;
+        pointer-events: none;
+    }
+
+    .sf-card-bar i {
+        color: #e6b000;
+        font-size: 15px;
+        position: relative;
+        z-index: 1;
+    }
+
+    .sf-card-bar h3 {
+        font-size: 13.5px;
+        font-weight: 800;
+        color: #fff;
+        margin: 0;
+        text-transform: uppercase;
+        letter-spacing: .5px;
+        position: relative;
+        z-index: 1;
+    }
+
+    .sf-card-bar span {
+        font-size: 11px;
+        color: rgba(255,255,255,.45);
+        font-weight: 400;
+        text-transform: none;
+        letter-spacing: normal;
+        margin-left: 4px;
+    }
+
+.sf-card-body {
+    padding: 22px;
+}
+
+/* ── Property details grid ────────────────────── */
+.sf-prop-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+}
+
+.sf-prop-field {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+    .sf-prop-field.wide {
+        grid-column: span 2;
+    }
+
+    .sf-prop-field.full {
+        grid-column: 1 / -1;
+    }
+
+.sf-prop-label {
+    font-size: 9.5px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #36626d;
+}
+
+.sf-prop-value {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #1a1a1a;
+    background: #e8f3f4;
+    border: 1.5px solid rgba(0,101,112,.15);
+    border-radius: 7px;
+    padding: 8px 12px;
+    font-family: 'Poppins', sans-serif;
+}
+
+    .sf-prop-value.address {
+        font-size: 12.5px;
+        font-weight: 600;
+    }
+
+/* ── Form type tiles ──────────────────────────── */
+.sf-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.sf-form-tile {
+    border: 2px solid #e0dbd5;
+    border-radius: 12px;
+    padding: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    transition: border-color .15s, background .15s, box-shadow .15s;
+    background: #fff;
+    position: relative;
+}
+
+    .sf-form-tile:hover {
+        border-color: #e6b000;
+        background: #fffdf5;
+        box-shadow: 0 2px 10px rgba(230,176,0,.12);
+    }
+
+    .sf-form-tile.selected {
+        border-color: #006570;
+        background: #f0f8f8;
+        box-shadow: 0 2px 10px rgba(0,101,112,.12);
+    }
+
+    .sf-form-tile input[type="radio"] {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+.sf-tile-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    flex-shrink: 0;
+    background: #e8f3f4;
+    color: #006570;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    transition: background .15s, color .15s;
+}
+
+.sf-form-tile.selected .sf-tile-icon {
+    background: #006570;
+    color: #e6b000;
+}
+
+.sf-tile-check {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid #d0ccc7;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    color: transparent;
+    transition: all .15s;
+    flex-shrink: 0;
+}
+
+.sf-form-tile.selected .sf-tile-check {
+    background: #006570;
+    border-color: #006570;
+    color: #fff;
+}
+
+.sf-tile-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #1a1a1a;
+    margin-bottom: 3px;
+}
+
+.sf-tile-desc {
+    font-size: 11.5px;
+    color: #6b6b6b;
+    line-height: 1.5;
+}
+
+/* ── Submitter tiles ──────────────────────────── */
+.sf-sub-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.sf-sub-tile {
+    border: 2px solid #e0dbd5;
+    border-radius: 12px;
+    padding: 18px 16px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 10px;
+    transition: border-color .15s, background .15s, box-shadow .15s;
+    background: #fff;
+    position: relative;
+}
+
+    .sf-sub-tile:hover {
+        border-color: #e6b000;
+        background: #fffdf5;
+        box-shadow: 0 2px 10px rgba(230,176,0,.12);
+    }
+
+    .sf-sub-tile.selected {
+        border-color: #006570;
+        background: #f0f8f8;
+        box-shadow: 0 2px 10px rgba(0,101,112,.12);
+    }
+
+    .sf-sub-tile input[type="radio"] {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+.sf-sub-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 13px;
+    background: #e8f3f4;
+    color: #006570;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    transition: background .15s, color .15s;
+}
+
+.sf-sub-tile.selected .sf-sub-icon {
+    background: #006570;
+    color: #e6b000;
+}
+
+.sf-sub-title {
+    font-size: 14px;
+    font-weight: 800;
+    color: #1a1a1a;
+}
+
+.sf-sub-desc {
+    font-size: 12px;
+    color: #6b6b6b;
+    line-height: 1.55;
+}
+
+.sf-sub-tile .sf-tile-check {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+}
+
+/* Rep notice */
+.sf-rep-notice {
+    display: none;
+    margin-top: 12px;
+    padding: 12px 16px;
+    background: #fff4d6;
+    border: 1.5px solid #e6b000;
+    border-radius: 9px;
+    font-size: 12.5px;
+    color: #7a5800;
+    align-items: flex-start;
+    gap: 10px;
+    font-family: 'Poppins', sans-serif;
+}
+
+    .sf-rep-notice.show {
+        display: flex;
+    }
+
+    .sf-rep-notice i {
+        flex-shrink: 0;
+        margin-top: 2px;
+    }
+
+/* ── Validation nudge ─────────────────────────── */
+.sf-nudge {
+    display: none;
+    padding: 11px 16px;
+    background: #fef2f2;
+    border: 1px solid #fca5a5;
+    border-radius: 8px;
+    font-size: 13px;
+    color: #b91c1c;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Poppins', sans-serif;
+    margin-top: 14px;
+}
+
+    .sf-nudge.show {
+        display: flex;
+    }
+
+/* ── Submit row ───────────────────────────────── */
+.sf-submit-row {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 20px 22px;
+    border-top: 1px solid #f0ece6;
+    background: #fafaf8;
+}
+
+.sf-btn-submit {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, #006570, #004d56);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 13px 32px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 3px 14px rgba(0,101,112,.3);
+    transition: opacity .15s, transform .15s;
+}
+
+    .sf-btn-submit:hover {
+        opacity: .9;
+        transform: translateY(-1px);
+    }
+
+    .sf-btn-submit:disabled {
+        background: #b0b8ba;
+        box-shadow: none;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+.sf-submit-hint {
+    font-size: 12px;
+    color: #9aa3af;
+    font-family: 'Poppins', sans-serif;
+}
+
+/* ── Responsive ───────────────────────────────── */
+@media (max-width: 680px) {
+    .sf-prop-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .sf-form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .sf-sub-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .sf-sub-tile {
+        flex-direction: row;
+        text-align: left;
+    }
+
+    .sf-hero {
+        padding: 22px 16px 20px;
+    }
+
+    .sf-body {
+        padding: 16px 12px;
+    }
+
+    .sf-card-body {
+        padding: 16px;
+    }
+
+    .sf-hero-title {
+        font-size: 18px;
+    }
+}
+
+@media (max-width: 420px) {
+    .sf-prop-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .sf-prop-field.wide {
+        grid-column: span 1;
+    }
+}
+

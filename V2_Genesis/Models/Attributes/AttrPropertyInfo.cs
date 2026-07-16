@@ -216,6 +216,13 @@ namespace V2_Genesis.Models.Attributes
         public string? UpdatedBy { get; set; }
 
         public DateTime? UpdatedDate { get; set; }
+        public string? RoutedSector { get; set; }
+
+        public DateTime? EvidenceLockedDateTime { get; set; }
+        public DateTime? RoutedToSectorDateTime { get; set; }
+        public string? RoutingError { get; set; }
+
+ 
 
         [Timestamp]
         public byte[] RowVersion { get; set; } = Array.Empty<byte>();

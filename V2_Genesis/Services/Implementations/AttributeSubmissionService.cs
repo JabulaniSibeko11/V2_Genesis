@@ -137,7 +137,7 @@ namespace V2_Genesis.Services.Implementations
                 SubmissionDateTime = DateTime.Now,
                 ClientComment = model.ClientComment,
 
-                Attr_Status = "Submitted",
+                Attr_Status = "EvidenceOpen",
                 IsActive = true,
 
                 CreatedBy = userId,
@@ -153,19 +153,15 @@ namespace V2_Genesis.Services.Implementations
             await SaveCommonSectionsAsync(model, propertyDetails.Id, userId);
             await SaveFormSpecificSectionsAsync(model, propertyDetails.Id, userId);
 
-            // Creates:
-            // C:\Attributes\ATTR-GV23-1
-            // C:\Attributes\ATTR-GV23-1\Representative Documentations
-            // C:\Attributes\ATTR-GV23-1\Attribute Lodged Evidence
-            // and generates the PDF form.
-            var documentResult = await _documentService.CreateSubmissionPackageAsync(model, propertyInfo);
-
             var evidencePin = GenerateEvidencePin();
             var evidenceDeadline = DateTime.Now.AddHours(48);
 
             model.GeneratedEvidencePin = evidencePin;
             model.GeneratedEvidenceDeadline = evidenceDeadline;
 
+            // Generate documents after PIN/deadline is available,
+            // so the acknowledgement PDF can display them.
+            var documentResult = await _documentService.CreateSubmissionPackageAsync(model, propertyInfo);
 
 
             _context.AttrDeclarations.Add(new AttrDeclaration
@@ -271,37 +267,37 @@ namespace V2_Genesis.Services.Implementations
             }
 
             await AddAuditAsync(
-                propertyInfo.Attr_ID,
-                propertyInfo.Attr_No,
-                "Submitted",
-                null,
-                "Submitted",
-                userId,
-                userName,
-                "Client",
-                "Client submitted attribute property information.");
+     propertyInfo.Attr_ID,
+     propertyInfo.Attr_No,
+     "Submitted",
+     null,
+     "EvidenceOpen",
+     userId,
+     userName,
+     "Client",
+     "Client submitted attribute property information. Evidence upload window is open for 48 hours.");
 
             await AddAuditAsync(
-                propertyInfo.Attr_ID,
-                propertyInfo.Attr_No,
-                "PDF and Evidence Saved",
-                "Submitted",
-                "Submitted",
-                userId,
-                userName,
-                "Client",
-                $"PDF saved as {documentResult.PdfFileName}. Evidence files uploaded: {documentResult.EvidenceCount}.");
+     propertyInfo.Attr_ID,
+     propertyInfo.Attr_No,
+     "PDF and Evidence Saved",
+     "EvidenceOpen",
+     "EvidenceOpen",
+     userId,
+     userName,
+     "Client",
+     $"Acknowledgement saved as {documentResult.AcknowledgementFileName}. Evidence files uploaded: {documentResult.EvidenceCount}.");
 
             await AddAuditAsync(
-    propertyInfo.Attr_ID,
-    propertyInfo.Attr_No,
-    "Declaration Submitted",
-    "Submitted",
-    "Submitted",
-    userId,
-    userName,
-    "Client",
-    "Client accepted declaration and signature was captured. Evidence PIN generated for 48 hours.");
+            propertyInfo.Attr_ID,
+            propertyInfo.Attr_No,
+            "Declaration Submitted",
+            "EvidenceOpen",
+            "EvidenceOpen",
+            userId,
+            userName,
+            "Client",
+            "Client accepted declaration and signature was captured. Evidence PIN generated for 48 hours.");
 
             var unitKey = model.PropertyDetails.UnitKey
               ?? model.PropertyDetails.PropertyId
@@ -333,6 +329,89 @@ namespace V2_Genesis.Services.Implementations
                 .Repeat(chars, 10)
                 .Select(s => s[random.Next(s.Length)])
                 .ToArray());
+        }
+        private async Task<string?> ResolveSectorByTownshipAsync(string? township)
+        {
+            if (string.IsNullOrWhiteSpace(township))
+                return null;
+
+            var cleanedTownship = township.Trim().ToUpper();
+
+            var sector = await _context.Sectors
+                .Where(x => x.TOWN_NAME_DESC != null &&
+                            x.TOWN_NAME_DESC.Trim().ToUpper() == cleanedTownship)
+                .Select(x => x.SECTOR)
+                .FirstOrDefaultAsync();
+
+            return string.IsNullOrWhiteSpace(sector)
+                ? null
+                : sector.Trim();
+        }
+
+
+        public async Task RouteExpiredEvidenceSubmissionsAsync(string performedBy = "System")
+        {
+            var now = DateTime.Now;
+            var cutoff = now.AddHours(-48);
+
+            var expiredItems = await _context.AttrPropertyInfo
+                .Include(x => x.PropertyDetails)
+                .Where(x =>
+                    x.IsActive == true &&
+                    x.Attr_Status == "EvidenceOpen" &&
+                    x.SubmissionDateTime <= cutoff)
+                .ToListAsync();
+
+            foreach (var item in expiredItems)
+            {
+                var oldStatus = item.Attr_Status;
+                var township = item.PropertyDetails?.Township;
+
+                item.EvidenceLockedDateTime = now;
+
+                var sector = await ResolveSectorByTownshipAsync(township);
+
+                if (string.IsNullOrWhiteSpace(sector))
+                {
+                    item.Attr_Status = "SectorRoutingException";
+                    item.RoutingError = $"No sector mapping found for township: {township ?? "NULL"}";
+                    item.UpdatedBy = performedBy;
+                    item.UpdatedDate = now;
+
+                    await AddAuditAsync(
+                        item.Attr_ID,
+                        item.Attr_No,
+                        "Sector Routing Failed",
+                        oldStatus,
+                        "SectorRoutingException",
+                        performedBy,
+                        performedBy,
+                        "System",
+                        item.RoutingError);
+
+                    continue;
+                }
+
+                item.RoutedSector = sector;
+                item.RoutedToSectorDateTime = now;
+                item.Attr_Status = "SectorInbox";
+                item.RoutingError = null;
+                item.UpdatedBy = performedBy;
+                item.UpdatedDate = now;
+
+                await AddAuditAsync(
+                    item.Attr_ID,
+                    item.Attr_No,
+                    "Routed To Sector Inbox",
+                    oldStatus,
+                    "SectorInbox",
+                    performedBy,
+                    performedBy,
+                    "System",
+                    $"Evidence window locked after 48 hours. Township '{township}' routed to sector '{sector}'.");
+            }
+
+            await _context.SaveChangesAsync();
         }
         private async Task SaveCommonSectionsAsync(AttributeSubmissionViewModel model, int propertyDetailsId, string userId)
         {
@@ -1161,6 +1240,33 @@ namespace V2_Genesis.Services.Implementations
             };
 
             return model;
+        }
+        public async Task<List<AttributeSectorInboxItemVm>> GetSectorInboxAsync(string sector)
+        {
+            if (string.IsNullOrWhiteSpace(sector))
+                return new List<AttributeSectorInboxItemVm>();
+
+            sector = sector.Trim();
+
+            return await _context.AttrPropertyInfo
+                .Include(x => x.PropertyDetails)
+                .Where(x =>
+                    x.IsActive == true &&
+                    x.Attr_Status == "SectorInbox" &&
+                    x.RoutedSector == sector)
+                .OrderBy(x => x.RoutedToSectorDateTime)
+                .Select(x => new AttributeSectorInboxItemVm
+                {
+                    AttrId = x.Attr_ID,
+                    AttrNo = x.Attr_No,
+                    PropertyDescription = x.Property_Desc,
+                    Township = x.PropertyDetails != null ? x.PropertyDetails.Township : null,
+                    RoutedSector = x.RoutedSector,
+                    SubmittedDate = x.SubmissionDateTime,
+                    RoutedDate = x.RoutedToSectorDateTime,
+                    EvidenceCount = x.Evidence_Count 
+                })
+                .ToListAsync();
         }
     }
 }
