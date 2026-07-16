@@ -10,6 +10,7 @@ using System.Security.Claims;
 using V2_Genesis.Data;
 using V2_Genesis.Models;
 using V2_Genesis.Models.Entities;
+using V2_Genesis.Models.ViewModels.Attributes;
 using V2_Genesis.Models.ViewModels.Dashboard;
 using V2_Genesis.Services;
 using V2_Genesis.Services.Interfaces;
@@ -118,5 +119,47 @@ public class DashboardController : Controller
         //     ...
 
         return Task.FromResult(new RollData());   // empty stub
+    }
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Route("dashboard/inspection/respond")]
+    public async Task<IActionResult> RespondToInspectionAppointment(
+    InspectionAppointmentResponseVm vm)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
+
+        var userEmail =
+            User.FindFirstValue(ClaimTypes.Email)
+            ?? User.FindFirstValue(ClaimTypes.Name)
+            ?? User.Identity?.Name
+            ?? string.Empty;
+
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            TempData["AttrAppointmentError"] = "Your login session could not be verified.";
+            return RedirectToAction(nameof(Index), new { openRoll = "attributes" });
+        }
+
+        try
+        {
+            await _attributesService.RespondToInspectionAppointmentAsync(
+                vm,
+                userId,
+                userEmail);
+
+            TempData["AttrAppointmentSuccess"] =
+                "Inspection appointment confirmed successfully.";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "[Dashboard] Failed to respond to inspection appointment {RequestId}",
+                vm.InspectionRequestId);
+
+            TempData["AttrAppointmentError"] = ex.Message;
+        }
+
+        return RedirectToAction(nameof(Index), new { openRoll = "attributes" });
     }
 }

@@ -1481,6 +1481,7 @@ else if (roll.IsQuery)
             </div>
 
             <!-- ── 3. My Appointments with Valuer ─────────────────── -->
+            <!-- ── 3. My Appointments with Valuer ─────────────────── -->
             <div class="cd-widget">
                 <div class="cd-widget-toggle"
                      onclick="toggleWidget('attr-appointments')">
@@ -1494,52 +1495,168 @@ else if (roll.IsQuery)
                     <i class="fa-solid fa-chevron-down cd-widget-chevron"
                        id="wchev-attr-appointments"></i>
                 </div>
+
                 <div class="cd-widget-body" id="widget-attr-appointments">
                     <div class="table-responsive">
                         <table class="cd-table table table-bordered"
                                id="tbl-attr-appointments">
                             <thead>
                                 <tr>
-                                    <th>🆔 Reference</th>
+                                    <th>Reference</th>
                                     <th>Property</th>
-                                    <th>👤 Valuer</th>
-                                    <th>📅 Date</th>
-                                    <th>🕐 Time</th>
-                                    <th>📊 Status</th>
-                                    <th>⚙️ Options</th>
+                                    <th>Valuer</th>
+                                    <th>Date Options</th>
+                                    <th>Status</th>
+                                    <th>Options</th>
                                 </tr>
                             </thead>
+
                             <tbody>
-                                @foreach (var item in attrData.Appointments)
+                                @if (!attrData.Appointments.Any())
                                 {
                                     <tr>
-                                        <td><strong>@item.AppointmentRef</strong></td>
-                                        <td>@item.PropertyDesc</td>
-                                        <td>@item.ValuerName</td>
-                                        <td>@item.AppointmentDate.ToString("dd MMM yyyy")</td>
-                                        <td>@item.TimeSlot</td>
-                                        <td>@Html.Raw(GetApptStatusPill(item.Status))</td>
-                                        <td>
-                                            <div class="dropdown">
-                                                <button class="cd-action-btn dropdown-toggle"
-                                                        data-bs-toggle="dropdown">
-                                                    Actions
-                                                </button>
-                                                <ul class="dropdown-menu">
-                                                    <li>
-                                                        <a class="dropdown-item"
-                                                               href="/attributes/appointment/@item.Id">
-                                                            👁️ View Details
-                                                        </a>
-                                                    </li>
-                                                </ul>
-                                            </div>
+                                        <td colspan="6" style="text-align:center;font-weight:700;color:#777;">
+                                            No inspection appointment requests found.
                                         </td>
                                     </tr>
+                                }
+                                else
+                                {
+                                    @foreach (var item in attrData.Appointments)
+                                    {
+                                        <tr>
+                                            <td><strong>@item.AppointmentRef</strong></td>
+                                            <td>@item.PropertyDesc</td>
+                                            <td>@item.ValuerName</td>
+                                            <td>
+                                                @if (item.Status == "Confirmed" && item.ConfirmedDateTime != null)
+                                                {
+                                                    <strong>
+                                                        Confirmed:
+                                                        @item.ConfirmedDateTime.Value.ToString("dd MMM yyyy HH:mm")
+                                                    </strong>
+                                                }
+                                                else if (item.Slots.Any())
+                                                {
+                                                    <ul style="margin:0;padding-left:18px;">
+                                                        @foreach (var slot in item.Slots)
+                                                        {
+                                                            <li>
+                                                                Option @slot.SlotNo:
+                                                                @slot.ProposedDateTime.ToString("dd MMM yyyy HH:mm")
+                                                            </li>
+                                                        }
+                                                    </ul>
+                                                }
+                                                else
+                                                {
+                                                    <span>–</span>
+                                                }
+                                            </td>
+                                            <td>@Html.Raw(GetApptStatusPill(item.Status))</td>
+                                            <td>
+                                                @if (item.Status == "PendingClientResponse")
+                                                {
+                                                    <button type="button"
+                                                            class="cd-action-btn"
+                                                            onclick="openInspectionResponseModal('@item.Id')">
+                                                        Respond
+                                                    </button>
+                                                }
+                                                else
+                                                {
+                                                    <span class="cd-pill cd-pill-completed">
+                                                        Confirmed
+                                                    </span>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
                                 }
                             </tbody>
                         </table>
                     </div>
+
+                    @foreach (var appointment in attrData.Appointments
+                        .Where(x => x.Status == "PendingClientResponse"))
+                    {
+                        <div id="inspectionModal_@appointment.Id"
+                             class="attr-insp-modal-backdrop"
+                             style="display:none;">
+
+                            <div class="attr-insp-modal">
+                                <div class="attr-insp-modal-head">
+                                    <div>
+                                        Choose Inspection Date - @appointment.AppointmentRef
+                                    </div>
+
+                                    <button type="button"
+                                            onclick="closeInspectionResponseModal('@appointment.Id')">
+                                        ×
+                                    </button>
+                                </div>
+
+                                <form asp-controller="Dashboard"
+                                      asp-action="RespondToInspectionAppointment"
+                                      method="post">
+
+                                    @Html.AntiForgeryToken()
+
+                                    <input type="hidden"
+                                           name="InspectionRequestId"
+                                           value="@appointment.Id" />
+
+                                    <div class="attr-insp-modal-body">
+                                        <p>
+                                            The valuer has requested a physical inspection.
+                                            Please choose one of the proposed dates below.
+                                        </p>
+
+                                        @if (!string.IsNullOrWhiteSpace(appointment.RequestComment))
+                                        {
+                                            <div class="alert alert-info">
+                                                @appointment.RequestComment
+                                            </div>
+                                        }
+
+                                        @foreach (var slot in appointment.Slots)
+                                        {
+                                            <label class="attr-insp-option">
+                                                <input type="radio"
+                                                       name="SelectedSlotId"
+                                                       value="@slot.Id"
+                                                       required />
+
+                                                <span>
+                                                    Option @slot.SlotNo:
+                                                    <strong>@slot.ProposedDateTime.ToString("dd MMM yyyy HH:mm")</strong>
+                                                </span>
+                                            </label>
+                                        }
+
+                                        <label class="fw-bold">Comment</label>
+
+                                        <textarea name="ClientResponseComment"
+                                                  class="form-control"
+                                                  placeholder="Optional comment..."></textarea>
+                                    </div>
+
+                                    <div class="attr-insp-modal-footer">
+                                        <button type="button"
+                                                class="btn btn-light"
+                                                onclick="closeInspectionResponseModal('@appointment.Id')">
+                                            Cancel
+                                        </button>
+
+                                        <button type="submit"
+                                                class="btn btn-warning fw-bold">
+                                            Confirm Selected Date
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    }
                 </div>
             </div>
 
@@ -1848,6 +1965,23 @@ else if (roll.IsQuery)
                 }
             });
         });
+    </script>
+    <script>
+        function openInspectionResponseModal(id) {
+            var modal = document.getElementById('inspectionModal_' + id);
+
+            if (modal) {
+                modal.style.display = 'flex';
+            }
+        }
+
+        function closeInspectionResponseModal(id) {
+            var modal = document.getElementById('inspectionModal_' + id);
+
+            if (modal) {
+                modal.style.display = 'none';
+            }
+        }
     </script>
 }
 }

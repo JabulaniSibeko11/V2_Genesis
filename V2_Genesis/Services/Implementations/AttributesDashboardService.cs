@@ -1,7 +1,7 @@
 ﻿using Dapper;
 using Microsoft.Data.SqlClient;
 using System.Data;
-
+using V2_Genesis.Models.ViewModels.Attributes;
 using V2_Genesis.Services.Attributes;
 using V2_Genesis.Services.Interfaces;
 
@@ -28,13 +28,13 @@ public class AttributesDashboardService : IAttributesDashboardService
         {
             await using var conn = new SqlConnection(_connString);
 
-            // ── Linked properties ─────────────────────────────────────
             try
             {
                 var linked = await conn.QueryAsync<AttributeLinkedProperty>(
                     "Attr_DashboardLinked",
                     new { UserId = userId },
                     commandType: CommandType.StoredProcedure);
+
                 data.LinkedProperties = linked.ToList();
             }
             catch (Exception ex)
@@ -43,13 +43,13 @@ public class AttributesDashboardService : IAttributesDashboardService
                     "[Attributes] Attr_DashboardLinked failed for {User}", userId);
             }
 
-            // ── Submissions ───────────────────────────────────────────
             try
             {
                 var subs = await conn.QueryAsync<AttributeSubmission>(
                     "Attr_DashboardSubmissions",
                     new { UserName = userId },
                     commandType: CommandType.StoredProcedure);
+
                 data.Submissions = subs.ToList();
             }
             catch (Exception ex)
@@ -58,19 +58,34 @@ public class AttributesDashboardService : IAttributesDashboardService
                     "[Attributes] Attr_DashboardSubmissions failed for {User}", userId);
             }
 
-            // ── Appointments ──────────────────────────────────────────
             try
             {
-                var appts = await conn.QueryAsync<AttributeAppointment>(
+                var appointmentRows = await conn.QueryAsync<AttributeAppointment>(
                     "Attr_DashboardAppointments",
                     new { UserId = userId },
                     commandType: CommandType.StoredProcedure);
-                data.Appointments = appts.ToList();
+
+                data.Appointments = appointmentRows.ToList();
+
+                var slotRows = await conn.QueryAsync<AttributeAppointmentSlot>(
+                    "Attr_DashboardAppointmentSlots",
+                    new { UserId = userId },
+                    commandType: CommandType.StoredProcedure);
+
+                var slots = slotRows.ToList();
+
+                foreach (var appointment in data.Appointments)
+                {
+                    appointment.Slots = slots
+                        .Where(x => x.InspectionRequestId == appointment.Id)
+                        .OrderBy(x => x.SlotNo)
+                        .ToList();
+                }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex,
-                    "[Attributes] Attr_DashboardAppointments failed for {User}", userId);
+                    "[Attributes] Appointment loading failed for {User}", userId);
             }
         }
         catch (Exception ex)
@@ -80,5 +95,31 @@ public class AttributesDashboardService : IAttributesDashboardService
         }
 
         return data;
+    }
+
+    public async Task RespondToInspectionAppointmentAsync(
+        InspectionAppointmentResponseVm vm,
+        string userId,
+        string userEmail)
+    {
+        if (vm.InspectionRequestId <= 0)
+            throw new InvalidOperationException("Invalid inspection request.");
+
+        if (vm.SelectedSlotId <= 0)
+            throw new InvalidOperationException("Please select one inspection date.");
+
+        await using var conn = new SqlConnection(_connString);
+
+        await conn.ExecuteAsync(
+            "Attr_RespondToInspectionAppointment",
+            new
+            {
+                InspectionRequestId = vm.InspectionRequestId,
+                SelectedSlotId = vm.SelectedSlotId,
+                UserId = userId,
+                UserEmail = userEmail,
+                ClientResponseComment = vm.ClientResponseComment
+            },
+            commandType: CommandType.StoredProcedure);
     }
 }

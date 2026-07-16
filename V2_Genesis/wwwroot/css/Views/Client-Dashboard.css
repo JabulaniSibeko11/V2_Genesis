@@ -1897,3 +1897,74 @@
         font-size: 17px;
     }
 }
+.attr-insp-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.45);
+    z-index: 3000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.attr-insp-modal {
+    width: min(620px, 94vw);
+    background: #ffffff;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 20px 45px rgba(0,0,0,.25);
+}
+
+.attr-insp-modal-head {
+    background: #111111;
+    color: #ffffff;
+    padding: 14px 18px;
+    font-weight: 900;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+    .attr-insp-modal-head button {
+        background: transparent;
+        border: 0;
+        color: #ffffff;
+        font-size: 24px;
+        font-weight: 900;
+        cursor: pointer;
+    }
+
+.attr-insp-modal-body {
+    padding: 18px;
+}
+
+.attr-insp-option {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    border: 1px solid #e4e4e4;
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 10px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+    .attr-insp-option:hover {
+        border-color: #e6b000;
+        background: #fffdf4;
+    }
+
+    .attr-insp-option input {
+        width: 18px;
+        height: 18px;
+        accent-color: #e6b000;
+    }
+
+.attr-insp-modal-footer {
+    border-top: 1px solid #eeeeee;
+    padding: 14px 18px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
