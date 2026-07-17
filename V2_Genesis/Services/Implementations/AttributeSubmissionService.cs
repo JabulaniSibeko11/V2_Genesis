@@ -84,9 +84,36 @@ namespace V2_Genesis.Services.Implementations
             };
         }
 
-        public async Task<long> SubmitAsync(AttributeSubmissionViewModel model, string userId, string userName)
+        public async Task<long> SubmitAsync(
+     AttributeSubmissionViewModel model,
+     string userId,
+     string userName,
+     string? userEmail,
+     string? userPhone)
         {
-            using var transaction = await _context.Database.BeginTransactionAsync();
+            await using var transaction = await _context.Database.BeginTransactionAsync();
+
+            var now = DateTime.Now;
+
+            var firstContact = model.ContactInfos?
+                .FirstOrDefault(x =>
+                    !string.IsNullOrWhiteSpace(x.Email) ||
+                    !string.IsNullOrWhiteSpace(x.CellNo) ||
+                    !string.IsNullOrWhiteSpace(x.HomePhoneNo) ||
+                    !string.IsNullOrWhiteSpace(x.WorkPhoneNo));
+
+            var submittedByEmail = !string.IsNullOrWhiteSpace(firstContact?.Email)
+                ? firstContact.Email.Trim()
+                : userEmail?.Trim();
+
+            var submittedByPhone =
+                !string.IsNullOrWhiteSpace(firstContact?.CellNo)
+                    ? firstContact.CellNo.Trim()
+                    : !string.IsNullOrWhiteSpace(firstContact?.HomePhoneNo)
+                        ? firstContact.HomePhoneNo.Trim()
+                        : !string.IsNullOrWhiteSpace(firstContact?.WorkPhoneNo)
+                            ? firstContact.WorkPhoneNo.Trim()
+                            : userPhone?.Trim();
 
             var propertyDetails = new AttrPropertyDetails
             {
@@ -110,7 +137,7 @@ namespace V2_Genesis.Services.Implementations
                 Address = model.PropertyDetails.Address,
 
                 CreatedBy = userId,
-                CreatedDate = DateTime.Now
+                CreatedDate = now
             };
 
             _context.AttrPropertyDetails.Add(propertyDetails);
@@ -120,7 +147,10 @@ namespace V2_Genesis.Services.Implementations
             {
                 Attr_PropertyDetailsId = propertyDetails.Id,
 
-                Objector_Type = model.ContactInfos.Count > 0 ? model.ContactInfos[0].ContactType : null,
+                Objector_Type = model.ContactInfos != null && model.ContactInfos.Count > 0
+                    ? model.ContactInfos[0].ContactType
+                    : null,
+
                 Property_Type = model.FormType,
                 Property_Desc = model.PropertyDetails.PropertyDesc,
                 Premise_id = model.PropertyDetails.PremiseId,
@@ -133,36 +163,85 @@ namespace V2_Genesis.Services.Implementations
 
                 SubmittedByUserId = userId,
                 SubmittedByName = userName,
+                SubmittedByEmail = submittedByEmail,
+                SubmittedByPhone = submittedByPhone,
                 SubmissionSource = "Genesis",
-                SubmissionDateTime = DateTime.Now,
+                SubmissionDateTime = now,
                 ClientComment = model.ClientComment,
 
                 Attr_Status = "EvidenceOpen",
                 IsActive = true,
 
+                Physical_Inspection_Required = false,
+                Physical_Inspection_Status = null,
+                Physical_Inspection_Comment = null,
+                Inspection_Scheduled_Date = null,
+                Inspection_Scheduled_Time = null,
+                Inspection_Address = null,
+                Inspection_Valuer = null,
+                Inspection_ValuerUserId = null,
+                Digital_Valuer_ID = null,
+                Digital_Valuer_ID_GeneratedDateTime = null,
+                Inspection_Outcome = null,
+                Inspection_Outcome_Comment = null,
+                Inspection_EvidencePath = null,
+
+                RevisionRequired = false,
+                RevisionRequestedBy = null,
+                RevisionRequestedDateTime = null,
+                RevisionReason = null,
+                RevisedBy = null,
+                RevisedDateTime = null,
+                RevisionComment = null,
+
+                ReadyForOvvioExtract = false,
+                OvvioExtractStatus = null,
+                OvvioExtractBatchNo = null,
+                OvvioExtractDateTime = null,
+                OvvioExtractedBy = null,
+                OvvioExtractError = null,
+
+                Evidence_Count = 0,
+                Has_Client_Evidence = false,
+                Last_Evidence_Uploaded_DateTime = null,
+
+                IsWithdrawn = false,
+                WithdrawnByUserId = null,
+                WithdrawnByName = null,
+                WithdrawnDateTime = null,
+                WithdrawalReason = null,
+
+                RoutedSector = null,
+                RoutedToSectorDateTime = null,
+                EvidenceLockedDateTime = null,
+                RoutingError = null,
+
                 CreatedBy = userId,
-                CreatedDate = DateTime.Now
+                CreatedDate = now,
+                UpdatedBy = userId,
+                UpdatedDate = now
             };
 
             _context.AttrPropertyInfo.Add(propertyInfo);
             await _context.SaveChangesAsync();
 
-            // Required so computed Attr_No is available immediately
+            // Required so computed Attr_No is available immediately.
             await _context.Entry(propertyInfo).ReloadAsync();
 
             await SaveCommonSectionsAsync(model, propertyDetails.Id, userId);
             await SaveFormSpecificSectionsAsync(model, propertyDetails.Id, userId);
 
             var evidencePin = GenerateEvidencePin();
-            var evidenceDeadline = DateTime.Now.AddHours(48);
+            var evidenceDeadline = now.AddHours(48);
 
             model.GeneratedEvidencePin = evidencePin;
             model.GeneratedEvidenceDeadline = evidenceDeadline;
 
             // Generate documents after PIN/deadline is available,
             // so the acknowledgement PDF can display them.
-            var documentResult = await _documentService.CreateSubmissionPackageAsync(model, propertyInfo);
-
+            var documentResult = await _documentService.CreateSubmissionPackageAsync(
+                model,
+                propertyInfo);
 
             _context.AttrDeclarations.Add(new AttrDeclaration
             {
@@ -172,7 +251,7 @@ namespace V2_Genesis.Services.Implementations
 
                 Declaration_Text = model.Declaration.DeclarationText,
                 Declaration_Accepted = model.Declaration.DeclarationAccepted,
-                Declaration_Date = DateTime.Now,
+                Declaration_Date = now,
 
                 Signature_Picture = model.Declaration.SignaturePicture,
                 Signature_Name = model.Declaration.SignatureName,
@@ -180,7 +259,7 @@ namespace V2_Genesis.Services.Implementations
                 RandomPin = evidencePin,
                 EvidencePin = evidencePin,
 
-                PinGeneratedDateTime = DateTime.Now,
+                PinGeneratedDateTime = now,
                 PinExpiryDateTime = evidenceDeadline,
                 PinIsActive = true,
 
@@ -189,11 +268,14 @@ namespace V2_Genesis.Services.Implementations
 
                 DeclaredByUserId = userId,
                 DeclaredByName = userName,
-                DeclaredByRole = model.RepresentativeDetails?.IsRepresentative == true ? "Representative" : "Client",
+                DeclaredByRole = model.RepresentativeDetails?.IsRepresentative == true
+                    ? "Representative"
+                    : "Client",
 
                 CreatedBy = userId,
-                CreatedDate = DateTime.Now
+                CreatedDate = now
             });
+
             _context.AttrFiles.Add(new AttrFiles
             {
                 Attr_ID = propertyInfo.Attr_ID,
@@ -212,10 +294,7 @@ namespace V2_Genesis.Services.Implementations
                 Files10 = documentResult.Files10,
 
                 Rep_Letter = documentResult.RepLetterFileName,
-
                 Bulk_File_Name = documentResult.PdfFileName,
-
-                // Add this if your AttrFiles model/table has this column
                 Acknowledgement_FileName = documentResult.AcknowledgementFileName,
 
                 Evidence_Count = documentResult.EvidenceCount,
@@ -224,17 +303,25 @@ namespace V2_Genesis.Services.Implementations
                 UploadedByUserId = userId,
                 UploadedByName = userName,
                 UploadedByRole = "Client",
+                UploadedDateTime = now,
+
+                IsActive = true,
+                IsDeleted = false,
 
                 CreatedBy = userId,
-                CreatedDate = DateTime.Now
+                CreatedDate = now,
+                UpdatedBy = userId,
+                UpdatedDate = now
             });
 
             propertyInfo.Evidence_Count = documentResult.EvidenceCount;
             propertyInfo.Has_Client_Evidence = documentResult.EvidenceCount > 0;
             propertyInfo.Last_Evidence_Uploaded_DateTime =
-                documentResult.EvidenceCount > 0 ? DateTime.Now : null;
+                documentResult.EvidenceCount > 0 ? now : null;
 
             propertyInfo.ClientEvidencePath = documentResult.AttrFolderPath;
+            propertyInfo.UpdatedBy = userId;
+            propertyInfo.UpdatedDate = now;
 
             if (model.RepresentativeDetails?.IsRepresentative == true &&
                 !string.IsNullOrWhiteSpace(model.RepresentativeDetails.Representative_Name))
@@ -243,7 +330,10 @@ namespace V2_Genesis.Services.Implementations
                 {
                     Attr_ID = propertyInfo.Attr_ID,
                     Attr_No = propertyInfo.Attr_No,
-                    IDProperty = model.PropertyDetails.UnitKey ?? model.PropertyDetails.PropertyId ?? model.PropertyDetails.PremiseId,
+                    IDProperty = model.PropertyDetails.UnitKey
+                        ?? model.PropertyDetails.PropertyId
+                        ?? model.PropertyDetails.PremiseId,
+
                     UserID = userId,
 
                     Representative_Name = model.RepresentativeDetails.Representative_Name,
@@ -262,59 +352,59 @@ namespace V2_Genesis.Services.Implementations
                     Auth_Letter_FileName = documentResult.RepLetterFileName,
 
                     CreatedBy = userId,
-                    CreatedDate = DateTime.Now
+                    CreatedDate = now
                 });
             }
 
             await AddAuditAsync(
-     propertyInfo.Attr_ID,
-     propertyInfo.Attr_No,
-     "Submitted",
-     null,
-     "EvidenceOpen",
-     userId,
-     userName,
-     "Client",
-     "Client submitted attribute property information. Evidence upload window is open for 48 hours.");
+                propertyInfo.Attr_ID,
+                propertyInfo.Attr_No,
+                "Submitted",
+                null,
+                "EvidenceOpen",
+                userId,
+                userName,
+                "Client",
+                "Client submitted attribute property information. Evidence upload window is open for 48 hours.");
 
             await AddAuditAsync(
-     propertyInfo.Attr_ID,
-     propertyInfo.Attr_No,
-     "PDF and Evidence Saved",
-     "EvidenceOpen",
-     "EvidenceOpen",
-     userId,
-     userName,
-     "Client",
-     $"Acknowledgement saved as {documentResult.AcknowledgementFileName}. Evidence files uploaded: {documentResult.EvidenceCount}.");
+                propertyInfo.Attr_ID,
+                propertyInfo.Attr_No,
+                "PDF and Evidence Saved",
+                "EvidenceOpen",
+                "EvidenceOpen",
+                userId,
+                userName,
+                "Client",
+                $"Acknowledgement saved as {documentResult.AcknowledgementFileName}. Evidence files uploaded: {documentResult.EvidenceCount}.");
 
             await AddAuditAsync(
-            propertyInfo.Attr_ID,
-            propertyInfo.Attr_No,
-            "Declaration Submitted",
-            "EvidenceOpen",
-            "EvidenceOpen",
-            userId,
-            userName,
-            "Client",
-            "Client accepted declaration and signature was captured. Evidence PIN generated for 48 hours.");
+                propertyInfo.Attr_ID,
+                propertyInfo.Attr_No,
+                "Declaration Submitted",
+                "EvidenceOpen",
+                "EvidenceOpen",
+                userId,
+                userName,
+                "Client",
+                "Client accepted declaration and signature was captured. Evidence PIN generated for 48 hours.");
 
             var unitKey = model.PropertyDetails.UnitKey
-              ?? model.PropertyDetails.PropertyId
-              ?? model.PropertyDetails.PremiseId;
+                ?? model.PropertyDetails.PropertyId
+                ?? model.PropertyDetails.PremiseId;
 
             if (!string.IsNullOrWhiteSpace(unitKey))
             {
                 var linkedRecord = await _context.LinkedProperties
-                    .FirstOrDefaultAsync(lp => lp.IDProperty == unitKey
-                                             && lp.UserID == userId);
+                    .FirstOrDefaultAsync(lp =>
+                        lp.IDProperty == unitKey &&
+                        lp.UserID == userId);
 
                 if (linkedRecord != null)
                     _context.LinkedProperties.Remove(linkedRecord);
             }
+
             await _context.SaveChangesAsync();
-
-
             await transaction.CommitAsync();
 
             return propertyInfo.Attr_ID;

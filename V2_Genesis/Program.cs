@@ -96,9 +96,8 @@ builder.Services.Configure<DisclaimerSettings>(cfg.GetSection("Disclaimer"));
 builder.Services.Configure<RollDatesSettings>(opts =>builder.Configuration.GetSection("RollDates").Bind(opts.Dates));
 builder.Services.Configure<ObjectionRollSettings>(cfg => builder.Configuration.Bind(cfg));
 builder.Services.Configure<NoticeRollSettings>(opts =>builder.Configuration.GetSection("NoticeRolls").Bind(opts.NoticeRolls));
-builder.Services.Configure<AttributeStorageOptions>(
-    builder.Configuration.GetSection("AttributeStorage"));
-
+builder.Services.Configure<AttributeStorageOptions>(builder.Configuration.GetSection("AttributeStorage"));
+builder.Services.Configure<ValuerPhotoStorageSettings>(builder.Configuration.GetSection("ValuerPhotoStorage"));
 
 // ── Custom Services ───────────────────────────────────────────────────────────
 builder.Services.AddScoped<IEmailService, EmailService>();

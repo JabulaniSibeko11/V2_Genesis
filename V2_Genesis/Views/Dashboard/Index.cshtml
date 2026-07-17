@@ -7,6 +7,7 @@
 @inject INotificationService NotificationService
 @inject IObjectionService ObjectionRules
 @model V2_Genesis.Models.ViewModels.Dashboard.ClientDashboardViewModel
+
 @{
     ViewData["Title"] = "My Dashboard";
     Layout = "~/Views/Shared/_ClientLayout.cshtml";
@@ -78,6 +79,21 @@
         @TempData["DownloadError"]
     </div>
 }
+@if (TempData["PinError"] != null)
+{
+    <div class="alert alert-danger" style="border-left:5px solid #b91c1c;">
+        <strong>PIN Verification Failed</strong><br />
+        @TempData["PinError"]
+    </div>
+}
+
+@if (TempData["PinSuccess"] != null)
+{
+    <div class="alert alert-success" style="border-left:5px solid #047857;">
+        <strong>PIN Verified</strong><br />
+        @TempData["PinSuccess"]
+    </div>
+}
 @functions {
 
     string FormatZAR(string? val)
@@ -120,22 +136,27 @@
         return "closed";
     }
 
-    string GetAttrStatusPill(string? status) => status switch
+    string GetAttrStatusPill(string? status)
     {
-        "Pending" => "<span class='cd-pill cd-pill-pending'>Pending</span>",
-        "Under Review" => "<span class='cd-pill cd-pill-inprogress'>Under Review</span>",
-        "Approved" => "<span class='cd-pill cd-pill-completed'>Approved</span>",
-        "Rejected" => "<span class='cd-pill cd-pill-lodging'>Rejected</span>",
-        _ => $"<span class='cd-pill cd-pill-pending'>{status}</span>"
-    };
+        var displayText = AttributeStatusDisplayHelper.GetDisplayStatus(status);
+        var cssClass = AttributeStatusDisplayHelper.GetStatusCssClass(status);
 
-    string GetApptStatusPill(string? status) => status switch
+        return $@"
+<span class='cd-status-pill {Enc(cssClass)}'>
+    {Enc(displayText)}
+</span>";
+    }
+
+    string GetApptStatusPill(string? status)
     {
-        "Scheduled" => "<span class='cd-pill cd-pill-inprogress'>Scheduled</span>",
-        "Completed" => "<span class='cd-pill cd-pill-completed'>Completed</span>",
-        "Cancelled" => "<span class='cd-pill cd-pill-lodging'>Cancelled</span>",
-        _ => $"<span class='cd-pill cd-pill-pending'>{status}</span>"
-    };
+        var displayText = AttributeStatusDisplayHelper.GetDisplayStatus(status);
+        var cssClass = AttributeStatusDisplayHelper.GetStatusCssClass(status);
+
+        return $@"
+<span class='cd-status-pill {Enc(cssClass)}'>
+    {Enc(displayText)}
+</span>";
+    }
 
     string GetRebateStatusPill(string? status) => status switch
     {
@@ -1480,8 +1501,8 @@ else if (roll.IsQuery)
                 </div>
             </div>
 
-            <!-- ── 3. My Appointments with Valuer ─────────────────── -->
-            <!-- ── 3. My Appointments with Valuer ─────────────────── -->
+          
+            @* ── 3. My Appointments with Valuer ─────────────────── *@
             <div class="cd-widget">
                 <div class="cd-widget-toggle"
                      onclick="toggleWidget('attr-appointments')">
@@ -1492,6 +1513,7 @@ else if (roll.IsQuery)
                             @attrData.AppointmentCount
                         </span>
                     </div>
+
                     <i class="fa-solid fa-chevron-down cd-widget-chevron"
                        id="wchev-attr-appointments"></i>
                 </div>
@@ -1504,7 +1526,6 @@ else if (roll.IsQuery)
                                 <tr>
                                     <th>Reference</th>
                                     <th>Property</th>
-                                    <th>Valuer</th>
                                     <th>Date Options</th>
                                     <th>Status</th>
                                     <th>Options</th>
@@ -1512,10 +1533,11 @@ else if (roll.IsQuery)
                             </thead>
 
                             <tbody>
-                                @if (!attrData.Appointments.Any())
+                                @if (attrData.Appointments == null || !attrData.Appointments.Any())
                                 {
                                     <tr>
-                                        <td colspan="6" style="text-align:center;font-weight:700;color:#777;">
+                                        <td colspan="5"
+                                            style="text-align:center;font-weight:700;color:#777;">
                                             No inspection appointment requests found.
                                         </td>
                                     </tr>
@@ -1525,18 +1547,30 @@ else if (roll.IsQuery)
                                     @foreach (var item in attrData.Appointments)
                                     {
                                         <tr>
-                                            <td><strong>@item.AppointmentRef</strong></td>
-                                            <td>@item.PropertyDesc</td>
-                                            <td>@item.ValuerName</td>
                                             <td>
-                                                @if (item.Status == "Confirmed" && item.ConfirmedDateTime != null)
+                                                <strong>@item.AppointmentRef</strong>
+                                            </td>
+
+                                            <td>
+                                                @item.PropertyDesc
+                                            </td>
+
+                                            <td>
+                                                @if ((item.Status == "Confirmed" || item.Status == "InspectionDetailsSent")
+                                                     && item.ConfirmedDateTime != null)
                                                 {
                                                     <strong>
                                                         Confirmed:
                                                         @item.ConfirmedDateTime.Value.ToString("dd MMM yyyy HH:mm")
                                                     </strong>
                                                 }
-                                                else if (item.Slots.Any())
+                                                else if (item.Status == "Expired")
+                                                {
+                                                    <span style="font-weight:700;color:#b91c1c;">
+                                                        Date options expired
+                                                    </span>
+                                                }
+                                                else if (item.Slots != null && item.Slots.Any())
                                                 {
                                                     <ul style="margin:0;padding-left:18px;">
                                                         @foreach (var slot in item.Slots)
@@ -1553,20 +1587,44 @@ else if (roll.IsQuery)
                                                     <span>–</span>
                                                 }
                                             </td>
-                                            <td>@Html.Raw(GetApptStatusPill(item.Status))</td>
+
+                                            <td>
+                                                @Html.Raw(GetApptStatusPill(item.Status))
+                                            </td>
+
                                             <td>
                                                 @if (item.Status == "PendingClientResponse")
                                                 {
                                                     <button type="button"
                                                             class="cd-action-btn"
                                                             onclick="openInspectionResponseModal('@item.Id')">
-                                                        Respond
+                                                        Select Date
                                                     </button>
+                                                }
+                                                else if (item.Status == "InspectionDetailsSent")
+                                                {
+                                                    <button type="button"
+                                                            class="cd-action-btn"
+                                                            onclick="openPinModal('@item.Id')">
+                                                        Enter PIN
+                                                    </button>
+                                                }
+                                                else if (item.Status == "Confirmed")
+                                                {
+                                                    <span style="font-weight:700;color:#64748b;">
+                                                        Waiting for PIN
+                                                    </span>
+                                                }
+                                                else if (item.Status == "Expired")
+                                                {
+                                                    <span style="font-weight:700;color:#b91c1c;">
+                                                        No action
+                                                    </span>
                                                 }
                                                 else
                                                 {
-                                                    <span class="cd-pill cd-pill-completed">
-                                                        Confirmed
+                                                    <span style="font-weight:700;color:#64748b;">
+                                                        No action
                                                     </span>
                                                 }
                                             </td>
@@ -1577,8 +1635,8 @@ else if (roll.IsQuery)
                         </table>
                     </div>
 
-                    @foreach (var appointment in attrData.Appointments
-                        .Where(x => x.Status == "PendingClientResponse"))
+                    @* Date selection modals *@
+                    @foreach (var appointment in attrData.Appointments.Where(x => x.Status == "PendingClientResponse"))
                     {
                         <div id="inspectionModal_@appointment.Id"
                              class="attr-insp-modal-backdrop"
@@ -1619,19 +1677,28 @@ else if (roll.IsQuery)
                                             </div>
                                         }
 
-                                        @foreach (var slot in appointment.Slots)
+                                        @if (appointment.Slots != null && appointment.Slots.Any())
                                         {
-                                            <label class="attr-insp-option">
-                                                <input type="radio"
-                                                       name="SelectedSlotId"
-                                                       value="@slot.Id"
-                                                       required />
+                                            @foreach (var slot in appointment.Slots)
+                                            {
+                                                <label class="attr-insp-option">
+                                                    <input type="radio"
+                                                           name="SelectedSlotId"
+                                                           value="@slot.Id"
+                                                           required />
 
-                                                <span>
-                                                    Option @slot.SlotNo:
-                                                    <strong>@slot.ProposedDateTime.ToString("dd MMM yyyy HH:mm")</strong>
-                                                </span>
-                                            </label>
+                                                    <span>
+                                                        Option @slot.SlotNo:
+                                                        <strong>@slot.ProposedDateTime.ToString("dd MMM yyyy HH:mm")</strong>
+                                                    </span>
+                                                </label>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <div class="alert alert-warning">
+                                                No proposed inspection date options were found.
+                                            </div>
                                         }
 
                                         <label class="fw-bold">Comment</label>
@@ -1651,6 +1718,78 @@ else if (roll.IsQuery)
                                         <button type="submit"
                                                 class="btn btn-warning fw-bold">
                                             Confirm Selected Date
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    }
+
+                    @* PIN verification modals - full backend verification comes next *@
+                    @foreach (var appointment in attrData.Appointments
+                        .Where(x => x.Status == "InspectionDetailsSent"))
+                    {
+                        <div id="pinModal_@appointment.Id"
+                             class="attr-insp-modal-backdrop"
+                             style="display:none;">
+
+                            <div class="attr-insp-modal">
+                                <div class="attr-insp-modal-head">
+                                    <div>
+                                        Enter Inspection PIN - @appointment.AppointmentRef
+                                    </div>
+
+                                    <button type="button"
+                                            onclick="closePinModal('@appointment.Id')">
+                                        ×
+                                    </button>
+                                </div>
+
+                                <form asp-controller="Dashboard"
+                                      asp-action="VerifyInspectionPin"
+                                      method="post">
+
+                                    @Html.AntiForgeryToken()
+
+                                    <input type="hidden"
+                                           name="InspectionRequestId"
+                                           value="@appointment.Id" />
+
+                                    <div class="attr-insp-modal-body">
+                                        <p>
+                                            For your safety, valuer details are only shown after you enter
+                                            the inspection PIN sent to you by email.
+                                        </p>
+
+                                        @if (appointment.ConfirmedDateTime != null)
+                                        {
+                                            <div class="alert alert-info">
+                                                <strong>Confirmed inspection date:</strong>
+                                                @appointment.ConfirmedDateTime.Value.ToString("dd MMM yyyy HH:mm")
+                                            </div>
+                                        }
+
+                                        <label class="fw-bold">Inspection PIN</label>
+
+                                        <input type="text"
+                                               name="Pin"
+                                               class="form-control"
+                                               maxlength="12"
+                                               autocomplete="off"
+                                               placeholder="Enter PIN"
+                                               required />
+                                    </div>
+
+                                    <div class="attr-insp-modal-footer">
+                                        <button type="button"
+                                                class="btn btn-light"
+                                                onclick="closePinModal('@appointment.Id')">
+                                            Cancel
+                                        </button>
+
+                                        <button type="submit"
+                                                class="btn btn-warning fw-bold">
+                                            Verify PIN
                                         </button>
                                     </div>
                                 </form>
@@ -1966,22 +2105,37 @@ else if (roll.IsQuery)
             });
         });
     </script>
-    <script>
-        function openInspectionResponseModal(id) {
-            var modal = document.getElementById('inspectionModal_' + id);
+  <script>
+    function openInspectionResponseModal(id) {
+        var modal = document.getElementById('inspectionModal_' + id);
 
-            if (modal) {
-                modal.style.display = 'flex';
-            }
+        if (modal) {
+            modal.style.display = 'flex';
         }
+    }
 
-        function closeInspectionResponseModal(id) {
-            var modal = document.getElementById('inspectionModal_' + id);
+    function closeInspectionResponseModal(id) {
+        var modal = document.getElementById('inspectionModal_' + id);
 
-            if (modal) {
-                modal.style.display = 'none';
-            }
+        if (modal) {
+            modal.style.display = 'none';
         }
-    </script>
-}
+    }
+
+    function openPinModal(id) {
+        var modal = document.getElementById('pinModal_' + id);
+
+        if (modal) {
+            modal.style.display = 'flex';
+        }
+    }
+
+    function closePinModal(id) {
+        var modal = document.getElementById('pinModal_' + id);
+
+        if (modal) {
+            modal.style.display = 'none';
+        }
+    }
+</script>
 }

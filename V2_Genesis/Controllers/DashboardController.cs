@@ -13,6 +13,7 @@ using V2_Genesis.Models.Entities;
 using V2_Genesis.Models.ViewModels.Attributes;
 using V2_Genesis.Models.ViewModels.Dashboard;
 using V2_Genesis.Services;
+using V2_Genesis.Services.Implementations;
 using V2_Genesis.Services.Interfaces;
 using V2_Genesis.Services.PropertySearch;
 
@@ -161,5 +162,63 @@ public class DashboardController : Controller
         }
 
         return RedirectToAction(nameof(Index), new { openRoll = "attributes" });
+    }
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> VerifyInspectionPin(VerifyInspectionPinVm vm)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        var userEmail =
+            User.FindFirstValue(ClaimTypes.Email)
+            ?? User.FindFirstValue(ClaimTypes.Name)
+            ?? User.Identity?.Name
+            ?? "";
+
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            TempData["AttributeError"] = "Your session could not be verified. Please log in again.";
+            return RedirectToAction("Index");
+        }
+
+        var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+        var userAgent = Request.Headers["User-Agent"].ToString();
+
+        var result = await _attributesService.VerifyInspectionPinAsync(
+            vm,
+            userId,
+            userEmail,
+            ipAddress,
+            userAgent);
+
+        if (!result.Success)
+        {
+            TempData["PinError"] = result.ErrorMessage ?? "Invalid inspection PIN.";
+            TempData["OpenAttributes"] = "true";
+            TempData["OpenAppointments"] = "true";
+
+            return RedirectToAction("Index", new { openRoll = "attributes" });
+        }
+
+        TempData["PinSuccess"] = "Inspection PIN verified successfully.";
+
+        return View("ValuerDetails", result);
+    }
+    [HttpGet]
+    public async Task<IActionResult> ValuerPhoto(long inspectionRequestId)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (string.IsNullOrWhiteSpace(userId))
+            return Forbid();
+
+        var photo = await _attributesService.GetVerifiedValuerPhotoAsync(
+            inspectionRequestId,
+            userId);
+
+        if (photo == null || photo.Bytes.Length == 0)
+            return NotFound();
+
+        return File(photo.Bytes, photo.ContentType);
     }
 }

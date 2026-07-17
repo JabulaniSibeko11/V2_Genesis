@@ -1,7 +1,10 @@
 ﻿using Dapper;
 using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Options;
 using System.Data;
+using V2_Genesis.Models.Configuration;
 using V2_Genesis.Models.ViewModels.Attributes;
+using V2_Genesis.Models.ViewModels.Dashboard;
 using V2_Genesis.Services.Attributes;
 using V2_Genesis.Services.Interfaces;
 
@@ -11,13 +14,14 @@ public class AttributesDashboardService : IAttributesDashboardService
 {
     private readonly string _connString;
     private readonly ILogger<AttributesDashboardService> _logger;
-
+    private readonly ValuerPhotoStorageSettings _valuerPhotoStorageSettings;
     public AttributesDashboardService(
         IConfiguration config,
-        ILogger<AttributesDashboardService> logger)
+        ILogger<AttributesDashboardService> logger, IOptions<ValuerPhotoStorageSettings> valuerPhotoStorageOptions)
     {
         _connString = config.GetConnectionString("AttributesConnection")!;
         _logger = logger;
+        _valuerPhotoStorageSettings = valuerPhotoStorageOptions.Value;
     }
 
     public async Task<AttributesDashboardData> GetDashboardDataAsync(string userId)
@@ -121,5 +125,169 @@ public class AttributesDashboardService : IAttributesDashboardService
                 ClientResponseComment = vm.ClientResponseComment
             },
             commandType: CommandType.StoredProcedure);
+    }
+    public async Task<AppointmentValuerDetailsVm> VerifyInspectionPinAsync(
+        VerifyInspectionPinVm vm,
+        string userId,
+        string userEmail,
+        string? ipAddress,
+        string? userAgent)
+    {
+        if (vm.InspectionRequestId <= 0)
+        {
+            return new AppointmentValuerDetailsVm
+            {
+                Success = false,
+                ErrorMessage = "Invalid inspection appointment."
+            };
+        }
+
+        if (string.IsNullOrWhiteSpace(vm.Pin))
+        {
+            return new AppointmentValuerDetailsVm
+            {
+                Success = false,
+                ErrorMessage = "Please enter the inspection PIN."
+            };
+        }
+
+        await using var connection = new Microsoft.Data.SqlClient.SqlConnection(_connString);
+
+        var result = await connection.QueryFirstOrDefaultAsync<AppointmentValuerDetailsVm>(
+            "dbo.Attr_VerifyInspectionPin",
+            new
+            {
+                InspectionRequestId = vm.InspectionRequestId,
+                UserId = userId,
+                UserEmail = userEmail,
+                Pin = vm.Pin.Trim(),
+                IpAddress = ipAddress,
+                UserAgent = userAgent
+            },
+            commandType: CommandType.StoredProcedure);
+
+        return result ?? new AppointmentValuerDetailsVm
+        {
+            Success = false,
+            ErrorMessage = "Unable to verify inspection PIN."
+        };
+    }
+    public async Task<VerifiedValuerPhotoVm?> GetVerifiedValuerPhotoAsync(
+    long inspectionRequestId,
+    string userId)
+    {
+        if (inspectionRequestId <= 0)
+            return null;
+
+        if (string.IsNullOrWhiteSpace(userId))
+            return null;
+
+        await using var connection = new Microsoft.Data.SqlClient.SqlConnection(_connString);
+
+        var photoResult = await connection.QueryFirstOrDefaultAsync<VerifiedValuerPhotoPathResult>(
+            "dbo.Attr_GetVerifiedValuerPhoto",
+            new
+            {
+                InspectionRequestId = inspectionRequestId,
+                UserId = userId
+            },
+            commandType: CommandType.StoredProcedure);
+
+        if (photoResult == null)
+            return null;
+
+        var finalPhotoPath = ResolveValuerPhotoPath(
+            photoResult.PhotoPath,
+            photoResult.PhotoFileName);
+
+        if (string.IsNullOrWhiteSpace(finalPhotoPath))
+            return null;
+
+        if (!File.Exists(finalPhotoPath))
+            return null;
+
+        var ext = Path.GetExtension(finalPhotoPath).ToLowerInvariant();
+
+        if (!_valuerPhotoStorageSettings.AllowedExtensions
+                .Select(x => x.ToLowerInvariant())
+                .Contains(ext))
+        {
+            return null;
+        }
+
+        var contentType = ext switch
+        {
+            ".jpg" => "image/jpeg",
+            ".jpeg" => "image/jpeg",
+            ".png" => "image/png",
+            _ => "application/octet-stream"
+        };
+
+        return new VerifiedValuerPhotoVm
+        {
+            Bytes = await File.ReadAllBytesAsync(finalPhotoPath),
+            ContentType = contentType
+        };
+    }
+    private string? ResolveValuerPhotoPath(
+    string? photoPath,
+    string? photoFileName)
+    {
+        if (!string.IsNullOrWhiteSpace(photoPath))
+        {
+            var cleanedPath = photoPath.Trim();
+
+            if (File.Exists(cleanedPath))
+                return cleanedPath;
+
+            var pathExt = Path.GetExtension(cleanedPath);
+
+            if (string.IsNullOrWhiteSpace(pathExt))
+            {
+                foreach (var ext in _valuerPhotoStorageSettings.AllowedExtensions)
+                {
+                    var candidate = cleanedPath + ext;
+
+                    if (File.Exists(candidate))
+                        return candidate;
+                }
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(photoFileName))
+            return null;
+
+        var safeFileName = Path.GetFileName(photoFileName.Trim());
+
+        if (string.IsNullOrWhiteSpace(safeFileName))
+            return null;
+
+        var directPath = Path.Combine(
+            _valuerPhotoStorageSettings.RootFolder,
+            safeFileName);
+
+        if (File.Exists(directPath))
+            return directPath;
+
+        var directExt = Path.GetExtension(directPath);
+
+        if (string.IsNullOrWhiteSpace(directExt))
+        {
+            foreach (var ext in _valuerPhotoStorageSettings.AllowedExtensions)
+            {
+                var candidate = directPath + ext;
+
+                if (File.Exists(candidate))
+                    return candidate;
+            }
+        }
+
+        return null;
+    }
+    private sealed class VerifiedValuerPhotoPathResult
+    {
+        public string? PhotoPath { get; set; }
+
+        public string? PhotoFileName { get; set; }
     }
 }

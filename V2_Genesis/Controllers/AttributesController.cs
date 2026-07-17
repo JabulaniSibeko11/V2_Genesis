@@ -681,18 +681,27 @@ public class AttributesController : Controller
     {
         PrepareAttributeCreateSubmission(model);
 
-        if (!model.Declaration.DeclarationAccepted)
+        if (model.Declaration == null)
         {
             ModelState.AddModelError(
-                "Declaration.DeclarationAccepted",
-                "You must accept the declaration before submitting.");
+                "Declaration",
+                "Declaration details are required.");
         }
-
-        if (string.IsNullOrWhiteSpace(model.Declaration.SignatureName))
+        else
         {
-            ModelState.AddModelError(
-                "Declaration.SignatureName",
-                "Signature name is required.");
+            if (!model.Declaration.DeclarationAccepted)
+            {
+                ModelState.AddModelError(
+                    "Declaration.DeclarationAccepted",
+                    "You must accept the declaration before submitting.");
+            }
+
+            if (string.IsNullOrWhiteSpace(model.Declaration.SignatureName))
+            {
+                ModelState.AddModelError(
+                    "Declaration.SignatureName",
+                    "Signature name is required.");
+            }
         }
 
         if (!ModelState.IsValid)
@@ -700,12 +709,48 @@ public class AttributesController : Controller
             return View("Create", model);
         }
 
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)
-                       ?? throw new InvalidOperationException("User not authenticated.");
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        var userName = User.Identity?.Name ?? "Client";
+        if (string.IsNullOrWhiteSpace(userId))
+            throw new InvalidOperationException("User not authenticated.");
 
-        var attrId = await _attributeService.SubmitAsync(model, userId, userName);
+        var userName =
+            User.FindFirstValue(ClaimTypes.GivenName)
+            ?? User.FindFirstValue(ClaimTypes.Name)
+            ?? User.Identity?.Name
+            ?? "Client";
+
+        var userEmail =
+            User.FindFirstValue(ClaimTypes.Email)
+            ?? User.FindFirstValue(ClaimTypes.Name)
+            ?? User.Identity?.Name;
+
+        var firstContact = model.ContactInfos?
+            .FirstOrDefault(x =>
+                !string.IsNullOrWhiteSpace(x.Email) ||
+                !string.IsNullOrWhiteSpace(x.CellNo) ||
+                !string.IsNullOrWhiteSpace(x.HomePhoneNo) ||
+                !string.IsNullOrWhiteSpace(x.WorkPhoneNo));
+
+        var submittedByEmail = !string.IsNullOrWhiteSpace(firstContact?.Email)
+            ? firstContact.Email.Trim()
+            : userEmail?.Trim();
+
+        var submittedByPhone =
+            !string.IsNullOrWhiteSpace(firstContact?.CellNo)
+                ? firstContact.CellNo.Trim()
+                : !string.IsNullOrWhiteSpace(firstContact?.HomePhoneNo)
+                    ? firstContact.HomePhoneNo.Trim()
+                    : !string.IsNullOrWhiteSpace(firstContact?.WorkPhoneNo)
+                        ? firstContact.WorkPhoneNo.Trim()
+                        : null;
+
+        var attrId = await _attributeService.SubmitAsync(
+            model,
+            userId.Trim(),
+            userName.Trim(),
+            submittedByEmail,
+            submittedByPhone);
 
         TempData["Success"] = "Attribute submission saved successfully.";
 
