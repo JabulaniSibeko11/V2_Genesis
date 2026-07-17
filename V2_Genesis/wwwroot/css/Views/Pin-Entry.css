@@ -1,0 +1,479 @@
+﻿/* Backdrop */
+.pin-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    background: rgba(13, 34, 40, 0.72);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    align-items: flex-end;
+    justify-content: center;
+    padding: 0;
+}
+
+    .pin-backdrop.open {
+        display: flex;
+    }
+
+@media (min-width: 560px) {
+    .pin-backdrop {
+        align-items: center;
+        padding: 20px;
+    }
+}
+
+/* Modal shell */
+.pin-modal {
+    background: #fff;
+    width: 100%;
+    max-width: 420px;
+    border-radius: 24px 24px 0 0;
+    overflow: hidden;
+    box-shadow: 0 -8px 48px rgba(0,0,0,.3);
+    display: flex;
+    flex-direction: column;
+    animation: pinSlideUp .28s cubic-bezier(.32,.72,0,1);
+    max-height: 95vh;
+}
+
+@media (min-width: 560px) {
+    .pin-modal {
+        border-radius: 20px;
+        box-shadow: 0 28px 72px rgba(0,0,0,.35);
+        animation: pinFadeScale .25s ease;
+    }
+}
+
+/* Drag handle */
+.pin-handle {
+    width: 36px;
+    height: 4px;
+    background: #d0ccc7;
+    border-radius: 2px;
+    margin: 12px auto 0;
+    flex-shrink: 0;
+}
+
+@media (min-width: 560px) {
+    .pin-handle {
+        display: none;
+    }
+}
+
+/* Header */
+.pin-head {
+    background: linear-gradient(135deg, #1e3a40 0%, #0f2a30 100%);
+    border-bottom: 3px solid #e6b000;
+    padding: 20px 22px 18px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+}
+
+    .pin-head::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        opacity: .04;
+        background: repeating-linear-gradient(45deg,#fff 0,#fff 1px,transparent 0,transparent 50%);
+        background-size: 20px 20px;
+        pointer-events: none;
+    }
+
+.pin-head-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    flex-shrink: 0;
+    background: rgba(230,176,0,.15);
+    border: 1.5px solid rgba(230,176,0,.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    color: #e6b000;
+    position: relative;
+    z-index: 1;
+}
+
+.pin-head-text {
+    flex: 1;
+    position: relative;
+    z-index: 1;
+}
+
+.pin-head-title {
+    font-size: 16px;
+    font-weight: 800;
+    color: #fff;
+    margin: 0 0 2px;
+    font-family: 'Poppins', sans-serif;
+}
+
+.pin-head-sub {
+    font-size: 11.5px;
+    color: rgba(255,255,255,.45);
+    margin: 0;
+    font-family: 'Poppins', sans-serif;
+}
+
+.pin-head-close {
+    background: rgba(255,255,255,.1);
+    border: none;
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    color: rgba(255,255,255,.65);
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background .15s;
+    position: relative;
+    z-index: 1;
+    flex-shrink: 0;
+    -webkit-tap-highlight-color: transparent;
+}
+
+    .pin-head-close:hover {
+        background: rgba(255,255,255,.2);
+        color: #fff;
+    }
+
+/* Body */
+.pin-body {
+    padding: 24px 22px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 22px;
+    flex: 1;
+}
+
+/* Lock icon ring */
+.pin-lock-ring {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #1e3a40, #0f2a30);
+    border: 3px solid #e6b000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    color: #e6b000;
+    box-shadow: 0 4px 18px rgba(230,176,0,.22);
+    flex-shrink: 0;
+}
+
+/* Context label */
+.pin-context {
+    text-align: center;
+    font-family: 'Poppins', sans-serif;
+}
+
+.pin-context-title {
+    font-size: 15px;
+    font-weight: 800;
+    color: #1e3a40;
+    margin-bottom: 4px;
+}
+
+.pin-context-sub {
+    font-size: 12.5px;
+    color: #888;
+    line-height: 1.5;
+}
+
+/* PIN dot display */
+.pin-dots {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    justify-content: center;
+}
+
+.pin-dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2.5px solid #d0ccc7;
+    background: transparent;
+    transition: background .15s, border-color .15s, transform .15s;
+}
+
+    .pin-dot.filled {
+        background: #1e3a40;
+        border-color: #1e3a40;
+        transform: scale(1.1);
+    }
+
+        .pin-dot.filled.gold {
+            background: #e6b000;
+            border-color: #e6b000;
+        }
+
+    .pin-dot.error {
+        background: #dc2626;
+        border-color: #dc2626;
+        animation: pinShake .4s ease;
+    }
+
+/* Hidden real input */
+.pin-input-hidden {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+    width: 1px;
+    height: 1px;
+    top: -999px;
+    left: -999px;
+}
+
+/* Numeric keypad */
+.pin-keypad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    width: 100%;
+    max-width: 280px;
+}
+
+.pin-key {
+    aspect-ratio: 1;
+    border: 1.5px solid #e0dbd5;
+    border-radius: 12px;
+    background: #fff;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Poppins', sans-serif;
+    transition: background .1s, border-color .1s, transform .1s;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    user-select: none;
+    box-shadow: 0 1px 4px rgba(0,0,0,.06);
+}
+
+    .pin-key:hover {
+        background: #f7f5f2;
+        border-color: #c5bfb8;
+    }
+
+    .pin-key:active {
+        background: #e8f3f4;
+        border-color: #36626d;
+        transform: scale(.93);
+    }
+
+.pin-key-num {
+    font-size: 22px;
+    font-weight: 700;
+    color: #1e3a40;
+    line-height: 1;
+}
+
+.pin-key-alpha {
+    font-size: 9px;
+    font-weight: 600;
+    color: #aaa;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-top: 2px;
+}
+
+.pin-key-icon {
+    font-size: 18px;
+    color: #1e3a40;
+}
+
+/* Biometric (zero) and delete keys */
+.pin-key-zero {
+    grid-column: 2;
+}
+
+.pin-key-del {
+    border-color: transparent;
+    background: transparent;
+    box-shadow: none;
+}
+
+    .pin-key-del:hover {
+        background: #fef2f2;
+        border-color: #fca5a5;
+    }
+
+    .pin-key-del:active {
+        background: #fee2e2;
+    }
+
+    .pin-key-del .pin-key-icon {
+        color: #dc2626;
+    }
+
+/* Error message */
+.pin-error {
+    display: none;
+    width: 100%;
+    padding: 10px 14px;
+    background: #fef2f2;
+    border: 1px solid #fca5a5;
+    border-radius: 8px;
+    font-size: 12.5px;
+    color: #b91c1c;
+    align-items: center;
+    gap: 7px;
+    font-family: 'Poppins', sans-serif;
+    text-align: center;
+    justify-content: center;
+}
+
+    .pin-error.show {
+        display: flex;
+    }
+
+/* Footer */
+.pin-foot {
+    padding: 14px 22px;
+    border-top: 1px solid #f0ece6;
+    background: #fafaf8;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.pin-submit-btn {
+    width: 100%;
+    padding: 14px;
+    background: #e6b000;
+    color: #1a1a1a;
+    border: none;
+    border-radius: 12px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 15px;
+    font-weight: 800;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-shadow: 0 3px 12px rgba(230,176,0,.3);
+    transition: background .15s, transform .15s;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+}
+
+    .pin-submit-btn:hover {
+        background: #f5c800;
+    }
+
+    .pin-submit-btn:active {
+        transform: scale(.97);
+    }
+
+    .pin-submit-btn:disabled {
+        background: #d0ccc7;
+        color: #888;
+        box-shadow: none;
+        cursor: not-allowed;
+    }
+
+.pin-forgot {
+    text-align: center;
+    font-size: 12.5px;
+    color: #888;
+    font-family: 'Poppins', sans-serif;
+}
+
+    .pin-forgot a {
+        color: #36626d;
+        font-weight: 700;
+        text-decoration: none;
+    }
+
+        .pin-forgot a:hover {
+            text-decoration: underline;
+        }
+
+/* Animations */
+@keyframes pinSlideUp {
+    from {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes pinFadeScale {
+    from {
+        transform: scale(.94);
+        opacity: 0;
+    }
+
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes pinShake {
+    0%, 100% {
+        transform: translateX(0);
+    }
+
+    20% {
+        transform: translateX(-6px);
+    }
+
+    40% {
+        transform: translateX(6px);
+    }
+
+    60% {
+        transform: translateX(-4px);
+    }
+
+    80% {
+        transform: translateX(4px);
+    }
+}
+
+@media (max-width: 380px) {
+    .pin-keypad {
+        max-width: 260px;
+        gap: 8px;
+    }
+
+    .pin-key-num {
+        font-size: 20px;
+    }
+
+    .pin-body {
+        padding: 18px 16px 14px;
+        gap: 16px;
+    }
+
+    .pin-foot {
+        padding: 12px 16px;
+    }
+
+    .pin-lock-ring {
+        width: 54px;
+        height: 54px;
+        font-size: 22px;
+    }
+}
+
+

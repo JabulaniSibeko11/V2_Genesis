@@ -24,5 +24,10 @@ namespace V2_Genesis.Services.Interfaces
     string userEmail,
     string? ipAddress,
     string? userAgent);
+
+        Task ResubmitReturnedAttributeAsync(
+    ResubmitReturnedAttributeVm vm,
+    string userId,
+    string userEmail);
     }
 }

@@ -98,6 +98,7 @@ builder.Services.Configure<ObjectionRollSettings>(cfg => builder.Configuration.B
 builder.Services.Configure<NoticeRollSettings>(opts =>builder.Configuration.GetSection("NoticeRolls").Bind(opts.NoticeRolls));
 builder.Services.Configure<AttributeStorageOptions>(builder.Configuration.GetSection("AttributeStorage"));
 builder.Services.Configure<ValuerPhotoStorageSettings>(builder.Configuration.GetSection("ValuerPhotoStorage"));
+builder.Services.Configure<AttributeStorageSettings>(builder.Configuration.GetSection("AttributeStorage"));
 
 // ── Custom Services ───────────────────────────────────────────────────────────
 builder.Services.AddScoped<IEmailService, EmailService>();
@@ -127,6 +128,7 @@ builder.Services.AddScoped<ISubmittedFormPdfService, SubmittedFormPdfService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IAdminFormViewService, AdminFormViewService>();
 builder.Services.AddScoped<ISupportingDocumentService, SupportingDocumentService>();
+builder.Services.AddScoped<IValuerInspectionEvidenceService, ValuerInspectionEvidenceService>();
 builder.Services.AddDataProtection();
 
 // ── App Pipeline ──────────────────────────────────────────────────────────────

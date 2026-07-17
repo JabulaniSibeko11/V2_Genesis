@@ -221,4 +221,38 @@ public class DashboardController : Controller
 
         return File(photo.Bytes, photo.ContentType);
     }
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ResubmitReturnedAttribute(ResubmitReturnedAttributeVm vm)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        var userEmail =
+            User.FindFirstValue(ClaimTypes.Email)
+            ?? User.FindFirstValue(ClaimTypes.Name)
+            ?? User.Identity?.Name
+            ?? "";
+
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            TempData["AttributeError"] = "Your session could not be verified. Please log in again.";
+            return RedirectToAction("Index");
+        }
+
+        try
+        {
+            await _attributesService.ResubmitReturnedAttributeAsync(
+                vm,
+                userId,
+                userEmail);
+
+            TempData["AttributeSuccess"] = "Your corrected attribute submission was resubmitted successfully.";
+        }
+        catch (Exception ex)
+        {
+            TempData["AttributeError"] = ex.Message;
+        }
+
+        return RedirectToAction("Index", new { openRoll = "attributes" });
+    }
 }

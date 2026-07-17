@@ -28,6 +28,9 @@ public class AttributesDashboardService : IAttributesDashboardService
     {
         var data = new AttributesDashboardData();
 
+        if (string.IsNullOrWhiteSpace(userId))
+            return data;
+
         try
         {
             await using var conn = new SqlConnection(_connString);
@@ -45,6 +48,8 @@ public class AttributesDashboardService : IAttributesDashboardService
             {
                 _logger.LogError(ex,
                     "[Attributes] Attr_DashboardLinked failed for {User}", userId);
+
+                data.LinkedProperties = new List<AttributeLinkedProperty>();
             }
 
             try
@@ -54,12 +59,16 @@ public class AttributesDashboardService : IAttributesDashboardService
                     new { UserName = userId },
                     commandType: CommandType.StoredProcedure);
 
-                data.Submissions = subs.ToList();
+                data.Submissions = subs
+                    .OrderByDescending(x => x.SubmittedAt)
+                    .ToList();
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex,
                     "[Attributes] Attr_DashboardSubmissions failed for {User}", userId);
+
+                data.Submissions = new List<AttributeSubmission>();
             }
 
             try
@@ -90,6 +99,8 @@ public class AttributesDashboardService : IAttributesDashboardService
             {
                 _logger.LogError(ex,
                     "[Attributes] Appointment loading failed for {User}", userId);
+
+                data.Appointments = new List<AttributeAppointment>();
             }
         }
         catch (Exception ex)
@@ -283,6 +294,33 @@ public class AttributesDashboardService : IAttributesDashboardService
         }
 
         return null;
+    }
+    public async Task ResubmitReturnedAttributeAsync(
+    ResubmitReturnedAttributeVm vm,
+    string userId,
+    string userEmail)
+    {
+        if (vm.AttrId <= 0)
+            throw new InvalidOperationException("Invalid attribute submission.");
+
+        if (string.IsNullOrWhiteSpace(userId))
+            throw new InvalidOperationException("Your session could not be verified.");
+
+        if (string.IsNullOrWhiteSpace(vm.RevisionComment))
+            throw new InvalidOperationException("Please enter what you corrected before resubmitting.");
+
+        await using var connection = new Microsoft.Data.SqlClient.SqlConnection(_connString);
+
+        await connection.ExecuteAsync(
+            "dbo.Attr_ResubmitReturnedSubmission",
+            new
+            {
+                AttrId = vm.AttrId,
+                UserId = userId,
+                UserEmail = userEmail,
+                RevisionComment = vm.RevisionComment.Trim()
+            },
+            commandType: System.Data.CommandType.StoredProcedure);
     }
     private sealed class VerifiedValuerPhotoPathResult
     {

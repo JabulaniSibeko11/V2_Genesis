@@ -100,6 +100,12 @@
                             </a>
                         </li>
                         <li>
+                            <a href="/valuer-inspection" class="pub-nav-drop-item">
+                                <i class="fa-solid fa-camera"></i>
+                                Valuer Physical Inspection Evidence
+                            </a>
+                        </li>
+                        <li>
                             <a href="/section78/verify" class="pub-nav-drop-item">
                                 <i class="fa-solid fa-file-alt"></i>
                                 Section 78 Evidence
@@ -228,6 +234,9 @@
         <a href="/attributes/evidence" class="pub-drawer-link pub-drawer-evidence">
             <i class="fa-solid fa-paperclip"></i> Attribute Evidence
         </a>
+        <a href="/valuer-inspection" class="pub-drawer-link pub-drawer-evidence">
+            <i class="fa-solid fa-camera"></i> Valuer Physical Inspection Evidence
+        </a>
         <a href="/section78/verify" class="pub-drawer-link pub-drawer-evidence">
             <i class="fa-solid fa-file-alt"></i> Section 78 Evidence
         </a>
@@ -355,7 +364,7 @@
                 if (!e.target.closest('.pub-nav-dropdown')) {
                     document.querySelectorAll('.pub-nav-dropdown').forEach(function (item) {
                         item.classList.remove('open');
-                    });
+                    }); 
                 }
 
                 if (!e.target.closest('#pubUserWrap')) {

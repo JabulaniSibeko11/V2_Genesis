@@ -1,0 +1,90 @@
+﻿@model V2_Genesis.Models.ViewModels.ValuerInspectionEvidence.ValuerInspectionVerifyVm
+@{
+    ViewData["Title"] = "Valuer Inspection Evidence";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<link href="~/css/views/valuer-evidence.css" rel="stylesheet" asp-append-version="true"/>
+
+<div class="vie-wrap">
+
+    @* Logo *@
+    <div class="vie-logo-strip">
+        <img src="~/images/joburg_logo.png" alt="City of Johannesburg" />
+        <span class="vie-logo-org">City of Johannesburg</span>
+    </div>
+
+    @* Card *@
+    <div class="vie-card">
+
+        @* Header *@
+        <div class="vie-card-head">
+            <div class="vie-head-badge">
+                <i class="fa-solid fa-shield-halved"></i> Valuation Services
+            </div>
+            <h1>Valuer Inspection<br>Evidence</h1>
+            <p>Enter your SAP number to view your scheduled inspections for today.</p>
+        </div>
+
+        @* Body *@
+        <div class="vie-card-body">
+
+            @* Error *@
+            @if (TempData["Error"] != null)
+            {
+                <div class="vie-error">
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                    <span>@TempData["Error"]</span>
+                </div>
+            }
+
+            @* Form — same action/controller as before, no change *@
+            <form asp-controller="ValuerInspectionEvidence"
+                  asp-action="Today"
+                  method="post">
+
+                @Html.AntiForgeryToken()
+
+                <div class="vie-field">
+                    <label class="vie-label" for="SapNumber">SAP Number</label>
+                    <div class="vie-input-wrap">
+                        <i class="fa-solid fa-id-badge vie-input-icon"></i>
+                        <input asp-for="SapNumber"
+                               id="SapNumber"
+                               class="vie-input"
+                               type="text"
+                               inputmode="numeric"
+                               placeholder="e.g. 12345678"
+                               autocomplete="off"
+                               autocorrect="off"
+                               autocapitalize="off"
+                               spellcheck="false"
+                               required />
+                    </div>
+                    <span class="vie-hint">
+                        <i class="fa-solid fa-circle-info"></i>
+                        Your SAP number is on your staff card or appointment letter
+                    </span>
+                </div>
+
+                <button type="submit" class="vie-btn">
+                    <i class="fa-solid fa-calendar-day"></i>
+                    View Today's Inspections
+                </button>
+
+            </form>
+        </div>
+
+        @* Footer *@
+        <div class="vie-card-foot">
+            <i class="fa-solid fa-lock"></i>
+            Secure · City of Johannesburg Valuation Portal
+        </div>
+
+    </div>
+
+    <p class="vie-bottom-note">
+        GV23 / Supplementary Valuation Roll &nbsp;·&nbsp; 1 July 2023 – 30 June 2027
+    </p>
+
+</div>

@@ -1,0 +1,361 @@
+﻿
+/* ══════════════════════════════════════════════════
+   VALUER INSPECTION EVIDENCE — VERIFY PAGE
+   Mobile-first · COJ brand · #1e3a40 + #e6b000
+══════════════════════════════════════════════════ */
+.vie-wrap {
+    min-height: 100vh;
+    background: linear-gradient(160deg, #1e3a40 0%, #0f2a30 55%, #0d2228 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 16px 48px;
+    font-family: 'Poppins', sans-serif;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Background texture */
+.vie-wrap::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: .04;
+    background: repeating-linear-gradient( 45deg, #fff 0, #fff 1px, transparent 0, transparent 50% );
+    background-size: 22px 22px;
+    pointer-events: none;
+}
+
+/* Gold radial glow */
+.vie-wrap::after {
+    content: '';
+    position: absolute;
+    top: -120px;
+    right: -120px;
+    width: 480px;
+    height: 480px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(230,176,0,.1) 0%, transparent 65%);
+    pointer-events: none;
+}
+
+/* ── Logo strip ─────────────────────────────────── */
+.vie-logo-strip {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 28px;
+    position: relative;
+    z-index: 1;
+}
+
+    .vie-logo-strip img {
+        width: 56px;
+        height: 56px;
+        object-fit: contain;
+        filter: brightness(0) invert(1);
+        opacity: .9;
+    }
+
+.vie-logo-org {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,.4);
+}
+
+/* ── Card ───────────────────────────────────────── */
+.vie-card {
+    background: #fff;
+    border-radius: 20px;
+    width: 100%;
+    max-width: 440px;
+    overflow: hidden;
+    box-shadow: 0 24px 64px rgba(0,0,0,.35), 0 4px 16px rgba(0,0,0,.2);
+    position: relative;
+    z-index: 1;
+}
+
+/* Card header */
+.vie-card-head {
+    background: linear-gradient(135deg, #1e3a40 0%, #0f2a30 100%);
+    padding: 26px 26px 22px;
+    border-bottom: 3px solid #e6b000;
+    position: relative;
+    overflow: hidden;
+}
+
+    .vie-card-head::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        opacity: .04;
+        background: repeating-linear-gradient( 45deg, #fff 0, #fff 1px, transparent 0, transparent 50% );
+        background-size: 20px 20px;
+        pointer-events: none;
+    }
+
+.vie-head-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(230,176,0,.15);
+    border: 1px solid rgba(230,176,0,.3);
+    color: #e6b000;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 4px 12px;
+    border-radius: 100px;
+    margin-bottom: 12px;
+    position: relative;
+    z-index: 1;
+}
+
+    .vie-head-badge i {
+        font-size: 10px;
+    }
+
+.vie-card-head h1 {
+    font-size: 22px;
+    font-weight: 800;
+    color: #fff;
+    margin: 0 0 6px;
+    line-height: 1.2;
+    position: relative;
+    z-index: 1;
+}
+
+.vie-card-head p {
+    font-size: 13px;
+    color: rgba(255,255,255,.5);
+    margin: 0;
+    line-height: 1.6;
+    position: relative;
+    z-index: 1;
+}
+
+/* Card body */
+.vie-card-body {
+    padding: 26px;
+}
+
+/* ── Error alert ────────────────────────────────── */
+.vie-error {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    background: #fef2f2;
+    border: 1.5px solid #fca5a5;
+    border-radius: 10px;
+    padding: 13px 16px;
+    margin-bottom: 20px;
+    font-size: 13px;
+    color: #b91c1c;
+    line-height: 1.5;
+}
+
+    .vie-error i {
+        flex-shrink: 0;
+        margin-top: 2px;
+        font-size: 15px;
+    }
+
+/* ── Field ──────────────────────────────────────── */
+.vie-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.vie-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #1e3a40;
+}
+
+.vie-input-wrap {
+    position: relative;
+}
+
+.vie-input-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #36626d;
+    font-size: 15px;
+    pointer-events: none;
+}
+
+.vie-input {
+    width: 100%;
+    padding: 14px 16px 14px 42px;
+    border: 1.5px solid #d8dde0;
+    border-radius: 10px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    color: #1a1a1a;
+    letter-spacing: 1px;
+    background: #f9fafb;
+    outline: none;
+    transition: border-color .15s, box-shadow .15s, background .15s;
+    box-sizing: border-box;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+    .vie-input:focus {
+        border-color: #e6b000;
+        box-shadow: 0 0 0 3px rgba(230,176,0,.18);
+        background: #fff;
+    }
+
+    .vie-input::placeholder {
+        color: #b0b8ba;
+        font-weight: 400;
+        letter-spacing: normal;
+    }
+
+/* ── Hint ───────────────────────────────────────── */
+.vie-hint {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11.5px;
+    color: #888;
+    margin-top: 2px;
+}
+
+    .vie-hint i {
+        color: #36626d;
+        font-size: 11px;
+    }
+
+/* ── Submit button ──────────────────────────────── */
+.vie-btn {
+    width: 100%;
+    margin-top: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    background: #e6b000;
+    color: #1a1a1a;
+    border: none;
+    border-radius: 12px;
+    padding: 15px 24px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 15px;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(230,176,0,.35);
+    transition: background .15s, transform .15s, box-shadow .15s;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+}
+
+    .vie-btn:hover {
+        background: #f5c800;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(230,176,0,.4);
+    }
+
+    .vie-btn:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 8px rgba(230,176,0,.3);
+    }
+
+    .vie-btn i {
+        font-size: 16px;
+    }
+
+/* ── Card footer ────────────────────────────────── */
+.vie-card-foot {
+    padding: 16px 26px;
+    border-top: 1px solid #f0ece6;
+    background: #fafaf8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 11.5px;
+    color: #aaa;
+    font-family: 'Poppins', sans-serif;
+}
+
+    .vie-card-foot i {
+        color: #36626d;
+        font-size: 12px;
+    }
+
+/* ── Bottom note ────────────────────────────────── */
+.vie-bottom-note {
+    margin-top: 20px;
+    font-size: 11px;
+    color: rgba(255,255,255,.3);
+    text-align: center;
+    letter-spacing: .3px;
+    position: relative;
+    z-index: 1;
+}
+
+/* ── Touch-optimised on mobile ──────────────────── */
+@media (max-width: 480px) {
+    .vie-wrap {
+        padding: 20px 12px 40px;
+        justify-content: flex-start;
+        padding-top: 40px;
+    }
+
+    .vie-card {
+        border-radius: 16px;
+    }
+
+    .vie-card-head {
+        padding: 22px 20px 18px;
+    }
+
+    .vie-card-body {
+        padding: 22px 20px;
+    }
+
+    .vie-card-head h1 {
+        font-size: 19px;
+    }
+
+    .vie-input {
+        font-size: 16px;
+        padding: 15px 16px 15px 42px;
+    }
+    /* 16px prevents iOS zoom */
+    .vie-btn {
+        padding: 16px 24px;
+        font-size: 16px;
+        border-radius: 12px;
+    }
+
+    .vie-card-foot {
+        padding: 14px 20px;
+    }
+
+    .vie-logo-strip {
+        margin-bottom: 22px;
+    }
+}
+
+@media (min-height: 800px) and (max-width: 480px) {
+    .vie-wrap {
+        justify-content: center;
+        padding-top: 24px;
+    }
+}
+
+
