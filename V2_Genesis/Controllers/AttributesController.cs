@@ -832,21 +832,16 @@ public class AttributesController : Controller
     [HttpGet]
     public async Task<IActionResult> DownloadAcknowledgement(long id)
     {
-        var model = await _attributeService.GetAcknowledgementAsync(id);
+        var result = await _attributeService.GenerateAcknowledgementPdfAsync(id);
 
-        if (model == null || string.IsNullOrWhiteSpace(model.AcknowledgementPath))
-            return NotFound();
+        if (result == null || result.Value.Pdf.Length == 0)
+            return NotFound("Acknowledgement could not be generated from the database.");
 
-        if (!System.IO.File.Exists(model.AcknowledgementPath))
-            return NotFound();
-
-        var fileName = model.AcknowledgementFileName ?? $"{model.AttrNo}_Acknowledgement.pdf";
-
-        var bytes = await System.IO.File.ReadAllBytesAsync(model.AcknowledgementPath);
-
-        return File(bytes, "application/pdf", fileName);
+        return File(
+            result.Value.Pdf,
+            "application/pdf",
+            result.Value.FileName);
     }
-
 
     [HttpGet]
     [Authorize(Roles = "Client")]
@@ -1186,24 +1181,15 @@ public class AttributesController : Controller
         if (string.IsNullOrWhiteSpace(attrNo))
             return BadRequest("Attribute number is required.");
 
-        var files = await _attrDb.AttrFiles
-            .FirstOrDefaultAsync(f => f.Attr_No == attrNo.Trim());
+        var result = await _attributeService.GenerateAcknowledgementPdfAsync(attrNo);
 
-        if (files is null || string.IsNullOrWhiteSpace(files.RootFolder))
-            return NotFound("Acknowledgement record not found.");
+        if (result == null || result.Value.Pdf.Length == 0)
+            return NotFound("Acknowledgement could not be generated from the database.");
 
-        // Acknowledgement_FileName is a DB computed column:
-        // Attr_Ref_Files + '_Acknowledgement.pdf'
-        var fileName = files.Acknowledgement_FileName
-                       ?? $"{attrNo.Trim()}_Acknowledgement.pdf";
-
-        var filePath = Path.Combine(files.RootFolder, fileName);
-
-        if (!System.IO.File.Exists(filePath))
-            return NotFound("Acknowledgement PDF not found on server.");
-
-        var bytes = await System.IO.File.ReadAllBytesAsync(filePath);
-        return File(bytes, "application/pdf", fileName);
+        return File(
+            result.Value.Pdf,
+            "application/pdf",
+            result.Value.FileName);
     }
 
     [HttpPost]

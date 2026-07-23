@@ -153,12 +153,14 @@ public class AttributesDashboardService : IAttributesDashboardService
             };
         }
 
-        if (string.IsNullOrWhiteSpace(vm.Pin))
+        var cleanPin = vm.Pin.Trim();
+
+        if (cleanPin.Length != 4 || !cleanPin.All(char.IsDigit))
         {
             return new AppointmentValuerDetailsVm
             {
                 Success = false,
-                ErrorMessage = "Please enter the inspection PIN."
+                ErrorMessage = "Please enter the 4-digit inspection PIN."
             };
         }
 

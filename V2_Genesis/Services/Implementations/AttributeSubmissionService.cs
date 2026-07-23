@@ -1401,6 +1401,62 @@ namespace V2_Genesis.Services.Implementations
 
             return model;
         }
+        public async Task<(byte[] Pdf, string FileName)?> GenerateAcknowledgementPdfAsync(long attrId)
+        {
+            var info = await _context.AttrPropertyInfo
+                .Include(x => x.PropertyDetails)
+                    .ThenInclude(x => x!.ValuationDetails)
+                .Include(x => x.PropertyDetails)
+                    .ThenInclude(x => x!.Calculations)
+                .FirstOrDefaultAsync(x =>
+                    x.Attr_ID == attrId &&
+                    x.IsActive == true);
+
+            if (info == null)
+                return null;
+
+            var model = await BuildSubmittedAttributeViewModelAsync(attrId);
+
+            if (model == null)
+                return null;
+
+            var declaration = await _context.AttrDeclarations
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Attr_ID == attrId);
+
+            model.GeneratedEvidencePin = declaration?.EvidencePin ?? declaration?.RandomPin;
+
+            model.GeneratedEvidenceDeadline =
+                declaration?.AdditionalEvidenceDeadline
+                ?? declaration?.PinExpiryDateTime
+                ?? info.SubmissionDateTime.AddHours(48);
+
+            model.AttrId = info.Attr_ID;
+            model.AttrNo = info.Attr_No;
+
+            return await _documentService.GenerateAcknowledgementPdfAsync(
+                model,
+                info);
+        }
+
+        public async Task<(byte[] Pdf, string FileName)?> GenerateAcknowledgementPdfAsync(string attrNo)
+        {
+            if (string.IsNullOrWhiteSpace(attrNo))
+                return null;
+
+            var cleanAttrNo = attrNo.Trim();
+
+            var info = await _context.AttrPropertyInfo
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x =>
+                    x.Attr_No == cleanAttrNo &&
+                    x.IsActive == true);
+
+            if (info == null)
+                return null;
+
+            return await GenerateAcknowledgementPdfAsync(info.Attr_ID);
+        }
         public async Task<List<AttributeSectorInboxItemVm>> GetSectorInboxAsync(string sector)
         {
             if (string.IsNullOrWhiteSpace(sector))

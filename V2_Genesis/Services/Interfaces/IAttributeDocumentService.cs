@@ -9,5 +9,9 @@ namespace V2_Genesis.Services.Interfaces
         Task<AttributeDocumentSaveResult> CreateSubmissionPackageAsync(
            AttributeSubmissionViewModel model,
            AttrPropertyInfo propertyInfo);
+
+        Task<(byte[] Pdf, string FileName)> GenerateAcknowledgementPdfAsync(
+            AttributeSubmissionViewModel model,
+            AttrPropertyInfo propertyInfo);
     }
 }

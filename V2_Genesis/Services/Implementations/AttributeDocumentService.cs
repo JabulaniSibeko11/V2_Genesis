@@ -1230,7 +1230,57 @@ namespace V2_Genesis.Services.Attributes
                     .FontSize(8);
             }
         }
+        public async Task<(byte[] Pdf, string FileName)> GenerateAcknowledgementPdfAsync(
+    AttributeSubmissionViewModel model,
+    AttrPropertyInfo propertyInfo)
+        {
+            if (model == null)
+                throw new ArgumentNullException(nameof(model));
 
+            if (propertyInfo == null)
+                throw new ArgumentNullException(nameof(propertyInfo));
+
+            var attrNo = propertyInfo.Attr_No ?? model.AttrNo ?? $"ATTR-GV23-{propertyInfo.Attr_ID}";
+            var propertyDesc = model.PropertyDetails?.PropertyDesc ?? propertyInfo.Property_Desc ?? "Property";
+            var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+
+            var safeAttrNo = MakeSafeFileName(attrNo);
+            var safePropertyDesc = MakeSafeFileName(propertyDesc);
+
+            var fileName = $"{safeAttrNo}_{safePropertyDesc}_{timestamp}_Acknowledgement.pdf";
+
+            var tempFolder = Path.Combine(Path.GetTempPath(), "AIVS_Attribute_Acknowledgements");
+
+            Directory.CreateDirectory(tempFolder);
+
+            var tempPath = Path.Combine(
+                tempFolder,
+                $"{Guid.NewGuid():N}_{fileName}");
+
+            try
+            {
+                GenerateAcknowledgementReplicaPdf(
+                    model,
+                    propertyInfo,
+                    tempPath);
+
+                var bytes = await File.ReadAllBytesAsync(tempPath);
+
+                return (bytes, fileName);
+            }
+            finally
+            {
+                try
+                {
+                    if (File.Exists(tempPath))
+                        File.Delete(tempPath);
+                }
+                catch
+                {
+                    // Do not fail the download because temp cleanup failed.
+                }
+            }
+        }
         private void GenerateAcknowledgementReplicaPdf(
          AttributeSubmissionViewModel model,
          AttrPropertyInfo propertyInfo,
