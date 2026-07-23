@@ -62,12 +62,18 @@
                     <td>@(item.UnitNo > 0 ? item.UnitNo.ToString() : "–")</td>
                     <td>@(item.Reason            ?? "–")</td>
                     <td>
-                       
-                            @{
-                                var url = string.Format(
-                                      "/property/view?rollSource={0}&unitKey={1}&valuationKey={2}&propertyFrom={0}",
-                                      item.RollSource, item.UnitKey, item.ValuationKey);
-                            }
+                       @{
+    var url = Url.Action(
+        "ViewProperty",
+        "PropertySearch",
+        new
+        {
+            rollSource = item.RollSource,
+            unitKey = item.UnitKey,
+            valuationKey = item.ValuationKey,
+            propertyFrom = "UniversalSearch"
+        });
+}
                               
                             
                             <a href="@url" class="hs-view-btn">

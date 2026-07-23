@@ -2,7 +2,7 @@
 @{
     bool isAuth = ViewBag.IsAuthenticated as bool? ?? false;
 }
-
+<link href="~/css/views/nohomeresults.css" rel="stylesheet" asp-append-version="true"/>
 @if (!isAuth)
 {
     <div class="hs-login-notice">
@@ -68,28 +68,18 @@
 </table>
         </div>
 <script>
-$(document).ready(function () {
-    if (!$.fn.DataTable.isDataTable('#homeResultsTable')) {
+    $(document).ready(function () {
+        if ($.fn.DataTable.isDataTable('#homeResultsTable')) {
+            $('#homeResultsTable').DataTable().destroy();
+        }
+
         $('#homeResultsTable').DataTable({
-            responsive : false,
-            scrollX    : true,
-            autoWidth  : false,
-            destroy    : true,
-            dom        : '<"hs-dt-top"lBf>rt<"hs-dt-bottom"ip>',
-            lengthMenu : [[10, 25, 50, -1], [10, 25, 50, 'All']],
-            pageLength : 10,
-            buttons: [
-                {
-                    extend   : 'excel',
-                    text     : '<i class="fa-solid fa-file-excel"></i> Excel',
-                    className: 'hs-dt-btn'
-                },
-                {
-                    extend   : 'pdf',
-                    text     : '<i class="fa-solid fa-file-pdf"></i> PDF',
-                    className: 'hs-dt-btn'
-                }
-            ],
+            responsive  : false,
+            scrollX     : true,
+            autoWidth   : false,
+            dom         : '<"hs-dt-top"lf>rt<"hs-dt-bottom"ip>',
+            lengthMenu  : [[10, 25, 50, -1], [10, 25, 50, 'All']],
+            pageLength  : 10,
             language: {
                 search           : '_INPUT_',
                 searchPlaceholder: 'Filter results…',
@@ -98,35 +88,22 @@ $(document).ready(function () {
                 infoEmpty        : 'No properties found',
                 infoFiltered     : '(filtered from _MAX_ total)'
             },
-            columnDefs: [
-                { width: '140px', targets: 0 },
-                { width: '150px', targets: 1 },
-                { width: '180px', targets: 2 },
-                { width: '60px',  targets: [3,4] },
-                { width: '120px', targets: 5 },
-                { orderable: false, targets: 10 }
-            ],
-            drawCallback: function() { formatMv(); },
-            initComplete: function() {
-                formatMv();
-                var count = this.api().rows().count();
-                var badge = document.getElementById('hsResultCount');
-                if (badge) badge.textContent =
-                    count + ' propert' + (count === 1 ? 'y' : 'ies') + ' found';
+            drawCallback : function () { formatMv(); },
+            initComplete : function () { formatMv(); }
+        });
+    });
+
+    function formatMv() {
+        document.querySelectorAll('.hs-value').forEach(function (el) {
+            var raw = parseFloat(el.textContent.replace(/[^0-9.-]+/g, ''));
+            if (!isNaN(raw) && raw > 0) {
+                el.textContent = raw.toLocaleString('en-ZA', {
+                    style: 'currency',
+                    currency: 'ZAR',
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0
+                });
             }
         });
     }
-});
-
-function formatMv() {
-    document.querySelectorAll('.hs-value').forEach(function(el) {
-        var raw = parseFloat(el.textContent.replace(/[^0-9.-]+/g,''));
-        if (!isNaN(raw) && raw > 0) {
-            el.textContent = raw.toLocaleString('en-ZA',{
-                style:'currency', currency:'ZAR',
-                minimumFractionDigits:0, maximumFractionDigits:0
-            });
-        }
-    });
-}
 </script>

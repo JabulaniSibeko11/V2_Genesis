@@ -212,3 +212,50 @@ a.hs-contact-value:hover {
     }
 }
 
+/* ── DataTables pagination — gold active page ─────────── */
+.hs-dt-bottom .dataTables_paginate {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+    .hs-dt-bottom .dataTables_paginate .paginate_button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 36px;
+        height: 36px;
+        padding: 0 10px;
+        border-radius: 8px;
+        border: 1.5px solid #e0dbd5;
+        background: #fff;
+        color: #1e3a40;
+        font-family: 'Poppins', sans-serif;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: background .15s, border-color .15s, color .15s;
+    }
+
+        .hs-dt-bottom .dataTables_paginate .paginate_button:hover {
+            background: #fff9e6;
+            border-color: #e6b000;
+            color: #7a5800;
+        }
+
+        .hs-dt-bottom .dataTables_paginate .paginate_button.current {
+            background: #1e3a40;
+            border-color: #1e3a40;
+            color: #e6b000;
+        }
+
+            .hs-dt-bottom .dataTables_paginate .paginate_button.current:hover {
+                background: #2d4f58;
+                color: #e6b000;
+            }
+
+        .hs-dt-bottom .dataTables_paginate .paginate_button.disabled {
+            opacity: .4;
+            cursor: not-allowed;
+            background: #f7f5f2;
+        }

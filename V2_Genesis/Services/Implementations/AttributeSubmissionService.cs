@@ -1,4 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using System.Net.Mail;
+using System.Text.RegularExpressions;
 using V2_Genesis.Data;
 using V2_Genesis.Models.Attributes;
 using V2_Genesis.Models.ViewModels.Attributes;
@@ -97,6 +99,8 @@ namespace V2_Genesis.Services.Implementations
      string? userEmail,
      string? userPhone)
         {
+
+            ValidateAndCleanSubmission(model);
             await using var transaction = await _context.Database.BeginTransactionAsync();
 
             var now = DateTime.Now;
@@ -1483,6 +1487,622 @@ namespace V2_Genesis.Services.Implementations
                     EvidenceCount = x.Evidence_Count 
                 })
                 .ToListAsync();
+        }
+        private static void ValidateAndCleanSubmission(AttributeSubmissionViewModel model)
+        {
+            if (model == null)
+                throw new InvalidOperationException("Attribute submission data could not be found.");
+
+            CleanSubmission(model);
+
+            var errors = new List<string>();
+
+            ValidateBaseSubmission(model, errors);
+            ValidateContacts(model, errors);
+            ValidateDeclaration(model, errors);
+            ValidateFormSpecificData(model, errors);
+
+            if (errors.Any())
+            {
+                throw new InvalidOperationException(
+                    "Please correct the following before submitting:\n- " +
+                    string.Join("\n- ", errors.Distinct()));
+            }
+        }
+
+        private static void CleanSubmission(AttributeSubmissionViewModel model)
+        {
+            model.FormType = NormalizeFormType(model.FormType);
+            model.ClientComment = CleanText(model.ClientComment, 1000);
+
+            model.PropertyDetails ??= new AttributePropertyDetailsVm();
+            model.ValuationDetails ??= new AttributeValuationDetailsVm();
+            model.PrimaryAttributes ??= new AttributePrimaryAttributesVm();
+            model.SecondaryAttributes ??= new AttributeSecondaryAttributesVm();
+            model.Calculations ??= new AttributeCalculationsVm();
+            model.Access ??= new AttributeAccessVm();
+            model.Declaration ??= new AttributeDeclarationVm();
+
+            model.BusinessGeneral ??= new AttributeBusinessGeneralVm();
+            model.DrcMarketValueDemolition ??= new AttributeDrcMarketValueDemolitionVm();
+
+            model.ContactInfos ??= new List<AttributeContactInfoVm>();
+            model.BusinessBuildings ??= new List<AttributeBusinessBuildingVm>();
+            model.BusinessSections ??= new List<AttributeBusinessSectionVm>();
+            model.DrcBuildings ??= new List<AttributeDrcBuildingVm>();
+            model.DrcImprovements ??= new List<AttributeDrcImprovementVm>();
+            model.DrcVacantLands ??= new List<AttributeDrcVacantLandVm>();
+
+            CleanPropertyDetails(model.PropertyDetails);
+            CleanValuationDetails(model.ValuationDetails);
+            CleanContactDetails(model.ContactInfos);
+            CleanResidentialDetails(model.PrimaryAttributes, model.SecondaryAttributes);
+            CleanBusinessDetails(model);
+            CleanDrcDetails(model);
+            CleanDeclaration(model.Declaration);
+
+            if (!model.ValuationDetails.IsMixedUse)
+                model.ValuationDetails.AlternateUsages = null;
+        }
+
+        private static void ValidateBaseSubmission(
+            AttributeSubmissionViewModel model,
+            List<string> errors)
+        {
+            var allowedFormTypes = new[]
+            {
+        "Residential",
+        "ResidentialST",
+        "BusinessCommercial",
+        "DRCMethod"
+    };
+
+            if (!allowedFormTypes.Contains(model.FormType))
+                errors.Add("Please select a valid attribute form type.");
+
+            if (model.PropertyDetails == null)
+            {
+                errors.Add("Property details could not be found.");
+                return;
+            }
+
+            if (IsBlank(model.PropertyDetails.PropertyDesc))
+                errors.Add("Property description is required.");
+
+            if (IsBlank(model.PropertyDetails.UnitKey) &&
+                IsBlank(model.PropertyDetails.PropertyId) &&
+                IsBlank(model.PropertyDetails.PremiseId) &&
+                IsBlank(model.PropertyDetails.ValuationKey))
+            {
+                errors.Add("Property reference could not be verified. Please go back and select the property again.");
+            }
+
+            if (IsBlank(model.PropertyDetails.Township))
+                errors.Add("Township is required for sector routing.");
+
+            if (IsBlank(model.PropertyDetails.Municipality))
+                model.PropertyDetails.Municipality = "City of Johannesburg";
+        }
+
+        private static void ValidateContacts(
+            AttributeSubmissionViewModel model,
+            List<string> errors)
+        {
+            var contacts = model.ContactInfos?
+                .Where(x => !IsEmptyContact(x))
+                .ToList() ?? new List<AttributeContactInfoVm>();
+
+            if (!contacts.Any())
+            {
+                errors.Add("At least one contact person is required.");
+                return;
+            }
+
+            for (var i = 0; i < contacts.Count; i++)
+            {
+                var contact = contacts[i];
+                var label = $"Contact {i + 1}";
+
+                if (contact.IsCompany)
+                {
+                    if (IsBlank(contact.CompanyName))
+                        errors.Add($"{label}: Company name is required.");
+
+                    contact.FirstNames = null;
+                    contact.LastName = null;
+                    contact.ContactType = "Company";
+                }
+                else
+                {
+                    if (IsBlank(contact.FirstNames))
+                        errors.Add($"{label}: First name is required.");
+
+                    if (IsBlank(contact.LastName))
+                        errors.Add($"{label}: Last name is required.");
+
+                    contact.CompanyName = null;
+                    contact.CompanyRegistrationNumber = null;
+
+                    if (IsBlank(contact.ContactType))
+                        contact.ContactType = "Owner";
+                }
+
+                if (IsBlank(contact.Email))
+                {
+                    errors.Add($"{label}: Email address is required.");
+                }
+                else if (!IsValidEmail(contact.Email))
+                {
+                    errors.Add($"{label}: Email address is invalid.");
+                }
+
+                if (IsBlank(contact.CellNo))
+                {
+                    errors.Add($"{label}: Cell number is required.");
+                }
+                else if (!IsValidPhone(contact.CellNo))
+                {
+                    errors.Add($"{label}: Cell number is invalid.");
+                }
+
+                if (!IsBlank(contact.HomePhoneNo) && !IsValidPhone(contact.HomePhoneNo))
+                    errors.Add($"{label}: Home phone number is invalid.");
+
+                if (!IsBlank(contact.WorkPhoneNo) && !IsValidPhone(contact.WorkPhoneNo))
+                    errors.Add($"{label}: Work phone number is invalid.");
+            }
+
+            model.ContactInfos = contacts;
+        }
+
+        private static void ValidateDeclaration(
+            AttributeSubmissionViewModel model,
+            List<string> errors)
+        {
+            if (model.Declaration == null)
+            {
+                errors.Add("Declaration is required.");
+                return;
+            }
+
+            if (!model.Declaration.DeclarationAccepted)
+                errors.Add("You must accept the declaration before submitting.");
+
+            if (IsBlank(model.Declaration.SignatureName))
+                errors.Add("Signature name is required.");
+
+            if (IsBlank(model.Declaration.DeclarationText))
+            {
+                model.Declaration.DeclarationText =
+                    "I declare that the information submitted is true and correct to the best of my knowledge.";
+            }
+
+            if (model.RepresentativeDetails?.IsRepresentative == true)
+            {
+                if (IsBlank(model.RepresentativeDetails.Representative_Name))
+                    errors.Add("Representative name is required.");
+
+                if (IsBlank(model.RepresentativeDetails.Rep_Email))
+                {
+                    errors.Add("Representative email is required.");
+                }
+                else if (!IsValidEmail(model.RepresentativeDetails.Rep_Email))
+                {
+                    errors.Add("Representative email is invalid.");
+                }
+
+                if (IsBlank(model.RepresentativeDetails.Rep_Cell_Phone))
+                {
+                    errors.Add("Representative cell number is required.");
+                }
+                else if (!IsValidPhone(model.RepresentativeDetails.Rep_Cell_Phone))
+                {
+                    errors.Add("Representative cell number is invalid.");
+                }
+            }
+        }
+
+        private static void ValidateFormSpecificData(
+            AttributeSubmissionViewModel model,
+            List<string> errors)
+        {
+            switch (model.FormType)
+            {
+                case "Residential":
+                    ValidateResidential(model, errors);
+                    break;
+
+                case "ResidentialST":
+                    ValidateResidentialST(model, errors);
+                    break;
+
+                case "BusinessCommercial":
+                    ValidateBusinessCommercial(model, errors);
+                    break;
+
+                case "DRCMethod":
+                    ValidateDrcMethod(model, errors);
+                    break;
+            }
+        }
+
+        private static void ValidateResidential(
+            AttributeSubmissionViewModel model,
+            List<string> errors)
+        {
+            if (model.SecondaryAttributes == null)
+            {
+                errors.Add("Residential secondary attributes are required.");
+                return;
+            }
+
+            if (IsBlank(model.SecondaryAttributes.Quality))
+                errors.Add("Residential quality is required.");
+
+            if (IsBlank(model.SecondaryAttributes.Condition))
+                errors.Add("Residential condition is required.");
+
+            var hasAnyArea =
+                model.PrimaryAttributes?.Tla1 > 0 ||
+                model.PrimaryAttributes?.Tla2 > 0 ||
+                model.PrimaryAttributes?.Tla3 > 0 ||
+                model.PrimaryAttributes?.Garage > 0 ||
+                model.PrimaryAttributes?.CarportCp > 0 ||
+                model.PrimaryAttributes?.GrannyFlatGf > 0 ||
+                model.PrimaryAttributes?.StaffQuartersSq > 0 ||
+                model.PrimaryAttributes?.Storage > 0;
+
+            if (!hasAnyArea)
+                errors.Add("At least one residential area or attribute value must be captured.");
+        }
+
+        private static void ValidateResidentialST(
+            AttributeSubmissionViewModel model,
+            List<string> errors)
+        {
+            if (model.PrimaryAttributes?.STMain == null || model.PrimaryAttributes.STMain <= 0)
+                errors.Add("Sectional Title main area is required.");
+
+            if (IsBlank(model.SecondaryAttributes?.STCondition.ToString()))
+                errors.Add("Sectional Title condition is required.");
+
+            if (model.SecondaryAttributes?.STFloor == null)
+                errors.Add("Sectional Title floor is required.");
+
+            if (IsBlank(model.SecondaryAttributes?.Quality))
+                errors.Add("Sectional Title quality is required.");
+        }
+
+        private static void ValidateBusinessCommercial(
+            AttributeSubmissionViewModel model,
+            List<string> errors)
+        {
+            var buildings = model.BusinessBuildings?
+                .Where(x => !IsEmptyBusinessBuilding(x))
+                .ToList() ?? new List<AttributeBusinessBuildingVm>();
+
+            var sections = model.BusinessSections?
+                .Where(x => !IsEmptyBusinessSection(x))
+                .ToList() ?? new List<AttributeBusinessSectionVm>();
+
+            if (!buildings.Any() && !sections.Any())
+            {
+                errors.Add("Business and Commercial form requires at least one building or business section.");
+                return;
+            }
+
+            for (var i = 0; i < buildings.Count; i++)
+            {
+                var b = buildings[i];
+                var label = $"Business building {i + 1}";
+
+                if (IsBlank(b.BuildingNr))
+                    errors.Add($"{label}: Building number is required.");
+
+                if (IsBlank(b.Quality))
+                    errors.Add($"{label}: Quality is required.");
+
+                if (IsBlank(b.Condition))
+                    errors.Add($"{label}: Condition is required.");
+
+                if (b.GBA == null || b.GBA <= 0)
+                    errors.Add($"{label}: GBA must be greater than zero.");
+            }
+
+            for (var i = 0; i < sections.Count; i++)
+            {
+                var s = sections[i];
+                var label = $"Business section {i + 1}";
+
+                if (IsBlank(s.BuildingNr))
+                    errors.Add($"{label}: Building number is required.");
+
+                if (IsBlank(s.Usage))
+                    errors.Add($"{label}: Usage is required.");
+
+                if (s.GBA == null || s.GBA <= 0)
+                    errors.Add($"{label}: GBA must be greater than zero.");
+            }
+
+            model.BusinessBuildings = buildings;
+            model.BusinessSections = sections;
+        }
+
+        private static void ValidateDrcMethod(
+            AttributeSubmissionViewModel model,
+            List<string> errors)
+        {
+            var buildings = model.DrcBuildings?
+                .Where(x => !IsEmptyDrcBuilding(x))
+                .ToList() ?? new List<AttributeDrcBuildingVm>();
+
+            var improvements = model.DrcImprovements?
+                .Where(x => !IsEmptyDrcImprovement(x))
+                .ToList() ?? new List<AttributeDrcImprovementVm>();
+
+            var vacantLand = model.DrcVacantLands?
+                .Where(x => !IsEmptyDrcVacantLand(x))
+                .ToList() ?? new List<AttributeDrcVacantLandVm>();
+
+            if (!buildings.Any() && !improvements.Any() && !vacantLand.Any())
+            {
+                errors.Add("DRC form requires at least one building, improvement, or vacant land item.");
+                return;
+            }
+
+            for (var i = 0; i < buildings.Count; i++)
+            {
+                var b = buildings[i];
+                var label = $"DRC building {i + 1}";
+
+                if (IsBlank(b.BuildingDescription))
+                    errors.Add($"{label}: Building description is required.");
+
+                if (IsBlank(b.Quality))
+                    errors.Add($"{label}: Quality is required.");
+
+                if (IsBlank(b.Condition))
+                    errors.Add($"{label}: Condition is required.");
+
+                if (b.GrossBuildingArea == null || b.GrossBuildingArea <= 0)
+                    errors.Add($"{label}: Gross building area must be greater than zero.");
+            }
+
+            for (var i = 0; i < improvements.Count; i++)
+            {
+                var imp = improvements[i];
+                var label = $"DRC improvement {i + 1}";
+
+                if (IsBlank(imp.ImprovementDescription))
+                    errors.Add($"{label}: Improvement description is required.");
+
+                if (IsBlank(imp.Quality))
+                    errors.Add($"{label}: Quality is required.");
+
+                if (IsBlank(imp.Condition))
+                    errors.Add($"{label}: Condition is required.");
+
+                if (imp.AreaUnit == null || imp.AreaUnit <= 0)
+                    errors.Add($"{label}: Area must be greater than zero.");
+            }
+
+            for (var i = 0; i < vacantLand.Count; i++)
+            {
+                var land = vacantLand[i];
+                var label = $"DRC vacant land {i + 1}";
+
+                if (IsBlank(land.Region))
+                    errors.Add($"{label}: Region is required.");
+
+                if (land.Area == null || land.Area <= 0)
+                    errors.Add($"{label}: Area must be greater than zero.");
+            }
+
+            model.DrcBuildings = buildings;
+            model.DrcImprovements = improvements;
+            model.DrcVacantLands = vacantLand;
+        }
+        private static void CleanPropertyDetails(AttributePropertyDetailsVm p)
+        {
+            p.HArea = CleanText(p.HArea, 100);
+            p.DataController = CleanText(p.DataController, 100);
+            p.CollectionBlock = CleanText(p.CollectionBlock, 100);
+            p.DataCollector = CleanText(p.DataCollector, 100);
+            p.SGNumber = CleanText(p.SGNumber, 100);
+            p.Centroid = CleanText(p.Centroid, 100);
+            p.Erf = CleanText(p.Erf, 100);
+            p.Extent = CleanText(p.Extent, 100);
+            p.SectionalTitle = CleanText(p.SectionalTitle, 100);
+            p.LandUseFinancials = CleanText(p.LandUseFinancials, 255);
+            p.Municipality = CleanText(p.Municipality, 255) ?? "City of Johannesburg";
+            p.Ward = CleanText(p.Ward, 100);
+            p.Township = CleanText(p.Township, 255);
+            p.Zoning = CleanText(p.Zoning, 255);
+            p.Sources = CleanText(p.Sources, 255);
+            p.Address = CleanText(p.Address, 500);
+            p.PropertyDesc = CleanText(p.PropertyDesc, 500);
+            p.PremiseId = CleanText(p.PremiseId, 100);
+            p.UnitKey = CleanText(p.UnitKey, 100);
+            p.PropertyId = CleanText(p.PropertyId, 100);
+            p.ValuationKey = CleanText(p.ValuationKey, 100);
+            p.Sector = CleanText(p.Sector, 100);
+            p.RollType = CleanText(p.RollType, 100);
+            p.RollDescription = CleanText(p.RollDescription, 255);
+        }
+
+        private static void CleanValuationDetails(AttributeValuationDetailsVm v)
+        {
+            v.ValuationCategoryOnRoll = CleanText(v.ValuationCategoryOnRoll, 255);
+            v.ActualUse = CleanText(v.ActualUse, 255);
+            v.AlternateUsages = CleanText(v.AlternateUsages, 500);
+            v.OwnersTitleDeeds = CleanText(v.OwnersTitleDeeds, 500);
+            v.OwnersFinancials = CleanText(v.OwnersFinancials, 500);
+        }
+
+        private static void CleanContactDetails(List<AttributeContactInfoVm> contacts)
+        {
+            foreach (var c in contacts)
+            {
+                c.ContactType = CleanText(c.ContactType, 50);
+                c.CompanyName = CleanText(c.CompanyName, 255);
+                c.CompanyRegistrationNumber = CleanText(c.CompanyRegistrationNumber, 100);
+                c.FirstNames = CleanText(c.FirstNames, 255);
+                c.LastName = CleanText(c.LastName, 255);
+                c.MaidenName = CleanText(c.MaidenName, 255);
+                c.IDNumber = CleanDigits(c.IDNumber, 20);
+                c.Gender = CleanText(c.Gender, 50);
+                c.MaritalStatus = CleanText(c.MaritalStatus, 50);
+                c.Citizenship = CleanText(c.Citizenship, 100);
+                c.PhysicalAddress = CleanText(c.PhysicalAddress, 500);
+                c.PostalAddress = CleanText(c.PostalAddress, 500);
+                c.Email = CleanEmail(c.Email);
+                c.HomePhoneNo = CleanPhone(c.HomePhoneNo);
+                c.WorkPhoneNo = CleanPhone(c.WorkPhoneNo);
+                c.CellNo = CleanPhone(c.CellNo);
+                c.FaxNo = CleanPhone(c.FaxNo);
+                c.Comments = CleanText(c.Comments, 1000);
+            }
+        }
+
+        private static void CleanResidentialDetails(
+            AttributePrimaryAttributesVm p,
+            AttributeSecondaryAttributesVm s)
+        {
+            s.Security = CleanText(s.Security, 100);
+            s.Noise = CleanText(s.Noise, 100);
+            s.Topography = CleanText(s.Topography, 100);
+            s.Quality = CleanText(s.Quality, 100);
+            s.Condition = CleanText(s.Condition, 100);
+            s.STCondition = int.TryParse(
+    CleanText(s.STCondition?.ToString(), 100),
+    out var value)
+        ? value
+        : null;
+        }
+
+        private static void CleanBusinessDetails(AttributeSubmissionViewModel model)
+        {
+            foreach (var b in model.BusinessBuildings)
+            {
+                b.BuildingNr = CleanText(b.BuildingNr, 50);
+                b.Quality = CleanText(b.Quality, 100);
+                b.Condition = CleanText(b.Condition, 100);
+            }
+
+            foreach (var s in model.BusinessSections)
+            {
+                s.BuildingNr = CleanText(s.BuildingNr, 50);
+                s.Usage = CleanText(s.Usage, 255);
+                s.MarketGroup = CleanText(s.MarketGroup, 255);
+                s.Quality = CleanText(s.Quality, 100);
+            }
+        }
+
+        private static void CleanDrcDetails(AttributeSubmissionViewModel model)
+        {
+            foreach (var b in model.DrcBuildings)
+            {
+                b.BuildingDescription = CleanText(b.BuildingDescription, 255);
+                b.Quality = CleanText(b.Quality, 100);
+                b.Condition = CleanText(b.Condition, 100);
+            }
+
+            foreach (var i in model.DrcImprovements)
+            {
+                i.ImprovementDescription = CleanText(i.ImprovementDescription, 255);
+                i.Quality = CleanText(i.Quality, 100);
+                i.Condition = CleanText(i.Condition, 100);
+            }
+
+            foreach (var v in model.DrcVacantLands)
+            {
+                v.Region = CleanText(v.Region, 255);
+            }
+        }
+
+        private static void CleanDeclaration(AttributeDeclarationVm d)
+        {
+            d.SignatureName = CleanText(d.SignatureName, 255);
+            d.SignaturePicture = CleanText(d.SignaturePicture, 1000);
+            d.DeclarationText = CleanText(d.DeclarationText, 2000);
+        }
+        private static bool IsBlank(string? value)
+        {
+            return string.IsNullOrWhiteSpace(value);
+        }
+
+        private static string? CleanText(string? value, int maxLength)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return null;
+
+            var cleaned = Regex.Replace(value.Trim(), @"\s+", " ");
+
+            return cleaned.Length <= maxLength
+                ? cleaned
+                : cleaned[..maxLength];
+        }
+
+        private static string? CleanEmail(string? value)
+        {
+            var cleaned = CleanText(value, 255);
+
+            return cleaned?.ToLowerInvariant();
+        }
+
+        private static string? CleanPhone(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return null;
+
+            var cleaned = Regex.Replace(value.Trim(), @"[^\d+]", "");
+
+            return cleaned.Length <= 20
+                ? cleaned
+                : cleaned[..20];
+        }
+
+        private static string? CleanDigits(string? value, int maxLength)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return null;
+
+            var cleaned = Regex.Replace(value.Trim(), @"\D", "");
+
+            return cleaned.Length <= maxLength
+                ? cleaned
+                : cleaned[..maxLength];
+        }
+
+        private static bool IsValidEmail(string? email)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                return false;
+
+            try
+            {
+                var address = new MailAddress(email);
+                return string.Equals(address.Address, email.Trim(), StringComparison.OrdinalIgnoreCase);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private static bool IsValidPhone(string? phone)
+        {
+            if (string.IsNullOrWhiteSpace(phone))
+                return false;
+
+            var cleaned = CleanPhone(phone);
+
+            if (string.IsNullOrWhiteSpace(cleaned))
+                return false;
+
+            var digitsOnly = Regex.Replace(cleaned, @"\D", "");
+
+            return digitsOnly.Length >= 10 && digitsOnly.Length <= 15;
         }
     }
 }

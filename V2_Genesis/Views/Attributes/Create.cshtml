@@ -119,7 +119,17 @@
         <input asp-for="Access.PermissionStatus" type="hidden" />
         <input asp-for="Access.Comments" type="hidden" />
 
-    <div asp-validation-summary="All" style="max-width:1100px;margin:12px auto;color:#dc2626;font-family:'Poppins',sans-serif;font-size:13px;"></div>
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div class="attr-validation-panel">
+                <div class="attr-validation-title">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    Please correct the following before submitting
+                </div>
+
+                <div asp-validation-summary="All" class="attr-validation-list"></div>
+            </div>
+        }
 
     @* ════════════════════════════════════════════════
        SECTION 1 — PROPERTY DETAILS (same on all forms)
@@ -279,34 +289,31 @@
 
             <table class="attr-table">
                 <tr>
-                    <td class="attr-label">Valuation Category on Roll</td>
+                    <td class="attr-label">Valuation Category on Roll <span class="req">*</span></td>
                     <td>
-                        <select asp-for="ValuationDetails.ValuationCategoryOnRoll"
-                                class="attr-select"
-                                id="valuationCategory">
+                        <select asp-for="ValuationDetails.ValuationCategoryOnRoll"class="attr-select"id="valuationCategory"required>
                             <option value="">-- Select Category --</option>
-                            <option>Residential</option>
-                            <option>Residential with Consent Use</option>
+                            <option>Agricultural</option>
                             <option>Business and Commercial</option>
                             <option>Industrial</option>
-                            <option>Agricultural</option>
-                            <option>Municipal</option>
                             <option>Mining</option>
+                            <option>Municipal</option>
+                            <option>Multipurpose</option>
                             <option>Private Open Space</option>
                             <option>Public Open Space</option>
                             <option>Public Service Infrastructure</option>
                             <option>Public Service Purposes</option>
                             <option>Religious</option>
+                            <option>Residential</option>
+                            <option>Residential with Consent Use</option>
                             <option>Vacant Land</option>
-                            <option>Multipurpose</option>
                         </select>
                     </td>
 
-                    <td class="attr-label">Actual Use</td>
+                    <td class="attr-label">Actual Use <span class="req">*</span></td>
                     <td>
-                        <input asp-for="ValuationDetails.ActualUse"
-                               class="attr-input"
-                               placeholder="e.g. Residential, Business, Church" />
+                        <input asp-for="ValuationDetails.ActualUse"class="attr-input"maxlength="255"requiredplaceholder="e.g. Residential, Business, Church" />
+                        <span asp-validation-for="ValuationDetails.ActualUse" class="attr-field-error"></span>
                     </td>
                 </tr>
 
@@ -402,14 +409,20 @@
                         <td>
                             <input asp-for="ContactInfos[i].FirstNames"
                                    class="attr-input"
+                                   maxlength="255"
+                                   data-owner-required="@i"
                                    placeholder="Owner first names" />
+                            <span asp-validation-for="ContactInfos[i].FirstNames" class="attr-field-error"></span>
                         </td>
 
                         <td class="attr-label">Last Name</td>
                         <td>
                             <input asp-for="ContactInfos[i].LastName"
                                    class="attr-input"
+                                   maxlength="255"
+                                   data-owner-required="@i"
                                    placeholder="Owner surname" />
+                            <span asp-validation-for="ContactInfos[i].LastName" class="attr-field-error"></span>
                         </td>
                     </tr>
 
@@ -418,7 +431,10 @@
                         <td>
                             <input asp-for="ContactInfos[i].CompanyName"
                                    class="attr-input"
+                                   maxlength="255"
+                                   data-company-required="@i"
                                    placeholder="Registered company name" />
+                            <span asp-validation-for="ContactInfos[i].CompanyName" class="attr-field-error"></span>
                         </td>
 
                         <td class="attr-label">Registration No.</td>
@@ -448,19 +464,27 @@
                     </tr>
 
                     <tr>
-                        <td class="attr-label">Email</td>
+                        <td class="attr-label">Email <span class="req">*</span></td>
                         <td>
                             <input asp-for="ContactInfos[i].Email"
                                    type="email"
                                    class="attr-input"
+                                   maxlength="255"
+                                   required
                                    placeholder="email@example.co.za" />
+                            <span asp-validation-for="ContactInfos[i].Email" class="attr-field-error"></span>
                         </td>
 
-                        <td class="attr-label">Cell No</td>
+                        <td class="attr-label">Cell No <span class="req">*</span></td>
                         <td>
                             <input asp-for="ContactInfos[i].CellNo"
                                    class="attr-input"
+                                   maxlength="15"
+                                   inputmode="tel"
+                                   pattern="[0-9+ ]{10,15}"
+                                   required
                                    placeholder="0712345678" />
+                            <span asp-validation-for="ContactInfos[i].CellNo" class="attr-field-error"></span>
                         </td>
                     </tr>
 
@@ -469,14 +493,22 @@
                         <td>
                             <input asp-for="ContactInfos[i].HomePhoneNo"
                                    class="attr-input"
+                                   maxlength="15"
+                                   inputmode="tel"
+                                   pattern="[0-9+ ]{10,15}"
                                    placeholder="0112345678" />
+                            <span asp-validation-for="ContactInfos[i].HomePhoneNo" class="attr-field-error"></span>
                         </td>
 
                         <td class="attr-label">Work Phone</td>
                         <td>
                             <input asp-for="ContactInfos[i].WorkPhoneNo"
                                    class="attr-input"
+                                   maxlength="15"
+                                   inputmode="tel"
+                                   pattern="[0-9+ ]{10,15}"
                                    placeholder="0112345678" />
+                            <span asp-validation-for="ContactInfos[i].WorkPhoneNo" class="attr-field-error"></span>
                         </td>
                     </tr>
                 </table>
@@ -516,14 +548,28 @@
                 @if (isRes)
                 {
                     <tr>
-                        <td class="attr-label">TLA 1</td>
-                        <td><input asp-for="PrimaryAttributes.Tla1" class="attr-input" /></td>
+                            <td class="attr-label">TLA 1</td>
+                            <td>
+                                <input asp-for="PrimaryAttributes.Tla1"
+                                       class="attr-input"
+                                       type="number"
+                                       min="0"
+                                       step="0.01" />
+                                <span asp-validation-for="PrimaryAttributes.Tla1" class="attr-field-error"></span>
+                            </td>
                         <td class="attr-label">TLA 2</td>
                         <td><input asp-for="PrimaryAttributes.Tla2" class="attr-input" /></td>
                     </tr>
                     <tr>
                         <td class="attr-label">TLA 3</td>
-                        <td><input asp-for="PrimaryAttributes.Tla3" class="attr-input" /></td>
+                        <td>
+                            <input asp-for="PrimaryAttributes.Tla3"
+                                   class="attr-input"
+                                   type="number"
+                                   min="0"
+                                   step="0.01" />
+                            <span asp-validation-for="PrimaryAttributes.Tla3" class="attr-field-error"></span>
+                        </td>
                         <td class="attr-label">Garage</td>
                         <td><input asp-for="PrimaryAttributes.Garage" class="attr-input" /></td>
                     </tr>
@@ -543,8 +589,16 @@
                 @if (isSt)
                 {
                     <tr>
-                        <td class="attr-label">ST Main</td>
-                        <td><input asp-for="PrimaryAttributes.STMain" class="attr-input" /></td>
+                            <td class="attr-label">ST Main <span class="req">*</span></td>
+                            <td>
+                                <input asp-for="PrimaryAttributes.STMain"
+                                       class="attr-input"
+                                       type="number"
+                                       min="1"
+                                       step="0.01"
+                                       required />
+                                <span asp-validation-for="PrimaryAttributes.STMain" class="attr-field-error"></span>
+                            </td>
                         <td class="attr-label">Garage</td>
                         <td><input asp-for="PrimaryAttributes.Garage" class="attr-input" /></td>
                     </tr>
@@ -599,21 +653,24 @@
                         </td>
                     </tr>
                     <tr>
-                        <td class="attr-label">Quality</td>
-                        <td>
-                            <select asp-for="SecondaryAttributes.Quality" class="attr-select">
+                            <td class="attr-label">Quality <span class="req">*</span></td>
+                            <td>
+                                <select asp-for="SecondaryAttributes.Quality"
+                                        class="attr-select"
+                                        required>
                                 <option value="">-- Select --</option>
                                 <option>Excellent</option><option>Good</option>
                                 <option>Average</option><option>Poor</option>
                             </select>
                         </td>
-                        <td class="attr-label">Condition</td>
-                        <td>
-                            <select asp-for="SecondaryAttributes.Condition" class="attr-select">
+                            <td class="attr-label">Condition <span class="req">*</span></td>
+                            <td>
+                                <select asp-for="SecondaryAttributes.Condition" class="attr-select" required>
                                 <option value="">-- Select --</option>
                                 <option>Excellent</option><option>Good</option>
                                 <option>Average</option><option>Poor</option>
                             </select>
+                                <span asp-validation-for="SecondaryAttributes.Condition" class="attr-field-error"></span>
                         </td>
                     </tr>
                     <tr>
@@ -644,9 +701,18 @@
                                 <option value="3">Average</option><option value="4">Fair</option>
                                 <option value="5">Poor</option>
                             </select>
+                                <span asp-validation-for="SecondaryAttributes.STCondition" class="attr-field-error"></span>
                         </td>
-                        <td class="attr-label">ST Floor</td>
-                        <td><input asp-for="SecondaryAttributes.STFloor" class="attr-input" /></td>
+                            <td class="attr-label">ST Floor <span class="req">*</span></td>
+                            <td>
+                                <input asp-for="SecondaryAttributes.STFloor"
+                                       class="attr-input"
+                                       type="number"
+                                       min="0"
+                                       step="1"
+                                       required />
+                                <span asp-validation-for="SecondaryAttributes.STFloor" class="attr-field-error"></span>
+                            </td>
                     </tr>
                     <tr>
                         <td class="attr-label">Quality</td>
@@ -706,9 +772,9 @@
                                         <option>Average</option><option>Fair</option><option>Poor</option>
                                     </select>
                                 </td>
-                                <td><input name="BusinessBuildings[@i].YearBuilt" class="attr-input" type="number" placeholder="e.g. 2005" /></td>
-                                <td><input name="BusinessBuildings[@i].Storeys" class="attr-input" type="number" /></td>
-                                <td><input name="BusinessBuildings[@i].GBA" class="attr-input" type="number" step="0.01" /></td>
+                               <td><input name="BusinessBuildings[@i].YearBuilt" class="attr-input" type="number" min="1800" max="2100" placeholder="e.g. 2005" /></td>
+                                <td><input name="BusinessBuildings[@i].Storeys" class="attr-input" type="number" min="0" step="1" /></td>
+                                <td><input name="BusinessBuildings[@i].GBA" class="attr-input" type="number" min="0" step="0.01" /></td>
                                 @* Hidden: Depreciation, Cost, DRC *@
                                 <input type="hidden" name="BusinessBuildings[@i].Depreciation" />
                                 <input type="hidden" name="BusinessBuildings[@i].Cost" />
@@ -744,9 +810,9 @@
                             <tr>
                                 <td><input name="BusinessSections[@i].BuildingNr" class="attr-input" /></td>
                                 <td><input name="BusinessSections[@i].Usage" class="attr-input" /></td>
-                                <td><input name="BusinessSections[@i].GBA" class="attr-input" type="number" step="0.01" /></td>
-                                <td><input name="BusinessSections[@i].NLA" class="attr-input" type="number" step="0.01" /></td>
-                                <td><input name="BusinessSections[@i].Rental" class="attr-input" type="number" step="0.01" /></td>
+                                    <td><input name="BusinessSections[@i].GBA" class="attr-input" type="number" min="0" step="0.01" /></td>
+                                    <td><input name="BusinessSections[@i].NLA" class="attr-input" type="number" min="0" step="0.01" /></td>
+                                    <td><input name="BusinessSections[@i].Rental" class="attr-input" type="number" min="0" step="0.01" /></td>
                                 @* Hidden: MarketGroup, Quality, CostRate, Cost, Vac, Exp, Cap, Gross, Normalised, Nett, Value *@
                                 <input type="hidden" name="BusinessSections[@i].MarketGroup" />
                                 <input type="hidden" name="BusinessSections[@i].Quality" />
@@ -814,7 +880,7 @@
                                         <option>Average</option><option>Fair</option><option>Poor</option>
                                     </select>
                                 </td>
-                                <td><input name="DrcBuildings[@i].GrossBuildingArea" class="attr-input" type="number" step="0.01" /></td>
+                                    <td><input name="DrcBuildings[@i].GrossBuildingArea" class="attr-input" type="number" min="0" step="0.01" /></td>
                                 <td>
                                     <select name="DrcBuildings[@i].Condition" class="attr-input attr-select">
                                         <option value="">--</option>
@@ -863,7 +929,7 @@
                                         <option>Average</option><option>Fair</option><option>Poor</option>
                                     </select>
                                 </td>
-                                <td><input name="DrcImprovements[@i].AreaUnit" class="attr-input" type="number" step="0.01" /></td>
+                                    <td><input name="DrcImprovements[@i].AreaUnit" class="attr-input" type="number" min="0" step="0.01" /></td>
                                 <td>
                                     <select name="DrcImprovements[@i].Condition" class="attr-input attr-select">
                                         <option value="">--</option>
@@ -902,7 +968,7 @@
                         {
                             <tr>
                                 <td><input name="DrcVacantLands[@i].Region" class="attr-input" /></td>
-                                <td><input name="DrcVacantLands[@i].Area" class="attr-input" type="number" step="0.01" /></td>
+                                    <td><input name="DrcVacantLands[@i].Area" class="attr-input" type="number" min="0" step="0.01" /></td>
                                 <input type="hidden" name="DrcVacantLands[@i].MinRatePerSQM" />
                                 <input type="hidden" name="DrcVacantLands[@i].MidRatePerSQM" />
                                 <input type="hidden" name="DrcVacantLands[@i].MaxRatePerSQM" />
@@ -1396,9 +1462,34 @@
             }
         }
 
-        function updateEvidenceList(files, list, countText, countFill) {
+               function updateEvidenceList(files, list, countText, countFill) {
             const maxFiles = 10;
+            const maxFileSizeMb = 20;
+            const allowedExtensions = ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png', 'xls', 'xlsx'];
             const fileCount = files ? files.length : 0;
+
+            let hasError = false;
+            let errorMessages = [];
+
+            if (fileCount > maxFiles) {
+                hasError = true;
+                errorMessages.push('You can upload a maximum of 10 files.');
+            }
+
+            Array.from(files || []).forEach(function (file) {
+                const sizeMb = file.size / 1024 / 1024;
+                const ext = (file.name.split('.').pop() || '').toLowerCase();
+
+                if (!allowedExtensions.includes(ext)) {
+                    hasError = true;
+                    errorMessages.push(file.name + ' is not a supported file type.');
+                }
+
+                if (sizeMb > maxFileSizeMb) {
+                    hasError = true;
+                    errorMessages.push(file.name + ' is larger than 20 MB.');
+                }
+            });
 
             if (countText) {
                 countText.textContent = fileCount + ' / ' + maxFiles + ' files selected';
@@ -1407,19 +1498,34 @@
             if (countFill) {
                 const percent = Math.min((fileCount / maxFiles) * 100, 100);
                 countFill.style.width = percent + '%';
+                countFill.classList.toggle('danger', hasError);
             }
 
             if (!list) return;
 
             list.innerHTML = '';
 
+            if (hasError) {
+                const errorBox = document.createElement('div');
+                errorBox.className = 'ev-file-error';
+                errorBox.innerHTML =
+                    '<strong>File validation failed:</strong><br>' +
+                    errorMessages.map(escapeHtml).join('<br>');
+                list.appendChild(errorBox);
+            }
+
             if (!files || fileCount === 0) return;
 
             Array.from(files).forEach(function (file) {
                 const item = document.createElement('div');
-                item.className = 'ev-file-item';
-
                 const sizeMb = file.size / 1024 / 1024;
+                const ext = (file.name.split('.').pop() || '').toLowerCase();
+                const invalid =
+                    sizeMb > maxFileSizeMb ||
+                    !allowedExtensions.includes(ext) ||
+                    fileCount > maxFiles;
+
+                item.className = invalid ? 'ev-file-item ev-file-item-invalid' : 'ev-file-item';
 
                 item.innerHTML =
                     '<i class="fa-solid fa-file"></i>' +
@@ -1483,6 +1589,39 @@
                     return;
                 }
             });
+                    const evidenceInput = document.getElementById('evFileInput');
+
+        if (evidenceInput && evidenceInput.files) {
+            const maxFiles = 10;
+            const maxFileSizeMb = 20;
+            const allowedExtensions = ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png', 'xls', 'xlsx'];
+
+            if (evidenceInput.files.length > maxFiles) {
+                e.preventDefault();
+                alert('You can upload a maximum of 10 supporting documents.');
+                evidenceInput.focus();
+                return;
+            }
+
+            for (const file of evidenceInput.files) {
+                const sizeMb = file.size / 1024 / 1024;
+                const ext = (file.name.split('.').pop() || '').toLowerCase();
+
+                if (!allowedExtensions.includes(ext)) {
+                    e.preventDefault();
+                    alert(file.name + ' is not a supported file type.');
+                    evidenceInput.focus();
+                    return;
+                }
+
+                if (sizeMb > maxFileSizeMb) {
+                    e.preventDefault();
+                    alert(file.name + ' is larger than 20 MB.');
+                    evidenceInput.focus();
+                    return;
+                }
+            }
         }
+    }
     </script>
 }

@@ -19,5 +19,14 @@ namespace V2_Genesis.Models.Results
 
         public bool IsAttributes { get; set; }
         public bool IsLis { get; set; }
+
+
+        public bool IsUniversalSearch { get; set; }
+
+        
+        public bool CanViewOwnerDetails { get; set; }
+
+     
+        public bool IsLinkedToCurrentUser { get; set; }
     }
 }

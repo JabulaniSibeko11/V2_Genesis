@@ -679,40 +679,25 @@ public class AttributesController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(AttributeSubmissionViewModel model)
     {
+        ViewBag.GvList = await _db.GvList.OrderBy(r => r.ID).ToListAsync();
+
         PrepareAttributeCreateSubmission(model);
-
-        if (model.Declaration == null)
-        {
-            ModelState.AddModelError(
-                "Declaration",
-                "Declaration details are required.");
-        }
-        else
-        {
-            if (!model.Declaration.DeclarationAccepted)
-            {
-                ModelState.AddModelError(
-                    "Declaration.DeclarationAccepted",
-                    "You must accept the declaration before submitting.");
-            }
-
-            if (string.IsNullOrWhiteSpace(model.Declaration.SignatureName))
-            {
-                ModelState.AddModelError(
-                    "Declaration.SignatureName",
-                    "Signature name is required.");
-            }
-        }
+        ValidateAttributeCreateModel(model);
 
         if (!ModelState.IsValid)
         {
+            TempData["AttributeError"] = "Please correct the highlighted validation errors before submitting.";
+            RestoreAttributeCreateViewBags(model);
             return View("Create", model);
         }
 
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
         if (string.IsNullOrWhiteSpace(userId))
-            throw new InvalidOperationException("User not authenticated.");
+        {
+            TempData["AttributeError"] = "Your session could not be verified. Please log in again.";
+            return RedirectToAction("Index", "Dashboard", new { openRoll = "attributes" });
+        }
 
         var userName =
             User.FindFirstValue(ClaimTypes.GivenName)
@@ -745,16 +730,563 @@ public class AttributesController : Controller
                         ? firstContact.WorkPhoneNo.Trim()
                         : null;
 
-        var attrId = await _attributeService.SubmitAsync(
-            model,
-            userId.Trim(),
-            userName.Trim(),
-            submittedByEmail,
-            submittedByPhone);
+        try
+        {
+            var attrId = await _attributeService.SubmitAsync(
+                model,
+                userId.Trim(),
+                userName.Trim(),
+                submittedByEmail,
+                submittedByPhone);
 
-        TempData["Success"] = "Attribute submission saved successfully.";
+            TempData["Success"] = "Attribute submission saved successfully.";
 
-        return RedirectToAction("Details", new { id = attrId });
+            return RedirectToAction("Details", new { id = attrId });
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(
+                ex,
+                "[Attributes] Validation failed during submit. UserId={UserId}, FormType={FormType}",
+                userId,
+                model.FormType);
+
+            AddServiceValidationErrorsToModelState(ex.Message);
+
+            TempData["AttributeError"] = "Please correct the validation errors before submitting.";
+            RestoreAttributeCreateViewBags(model);
+
+            return View("Create", model);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "[Attributes] Attribute submission failed. UserId={UserId}, FormType={FormType}",
+                userId,
+                model.FormType);
+
+            ModelState.AddModelError(
+                string.Empty,
+                "The attribute submission could not be saved. Please try again.");
+
+            TempData["AttributeError"] = "The attribute submission could not be saved. Please try again.";
+            RestoreAttributeCreateViewBags(model);
+
+            return View("Create", model);
+        }
+    }
+
+    private void ValidateAttributeCreateModel(AttributeSubmissionViewModel model)
+    {
+        if (model == null)
+        {
+            ModelState.AddModelError(string.Empty, "Attribute submission data could not be found.");
+            return;
+        }
+
+        model.FormType = NormalizeAttributeFormType(model.FormType);
+
+        if (!IsValidAttributeFormType(model.FormType))
+        {
+            ModelState.AddModelError(
+                nameof(model.FormType),
+                "Please select a valid attribute form type.");
+        }
+
+        if (model.PropertyDetails == null)
+        {
+            ModelState.AddModelError(
+                nameof(model.PropertyDetails),
+                "Property details could not be found. Please go back and select the property again.");
+        }
+        else
+        {
+            if (string.IsNullOrWhiteSpace(model.PropertyDetails.PropertyDesc))
+            {
+                ModelState.AddModelError(
+                    "PropertyDetails.PropertyDesc",
+                    "Property description is required.");
+            }
+
+            if (string.IsNullOrWhiteSpace(model.PropertyDetails.UnitKey) &&
+                string.IsNullOrWhiteSpace(model.PropertyDetails.PropertyId) &&
+                string.IsNullOrWhiteSpace(model.PropertyDetails.PremiseId) &&
+                string.IsNullOrWhiteSpace(model.PropertyDetails.ValuationKey))
+            {
+                ModelState.AddModelError(
+                    "PropertyDetails.UnitKey",
+                    "Property reference could not be verified. Please go back and select the property again.");
+            }
+        }
+
+        ValidateAttributeContacts(model);
+        ValidateAttributeDeclaration(model);
+        ValidateAttributeFormSpecificData(model);
+    }
+    private void ValidateAttributeContacts(AttributeSubmissionViewModel model)
+    {
+        model.ContactInfos ??= new List<AttributeContactInfoVm>();
+
+        var contacts = model.ContactInfos
+            .Where(x =>
+                !string.IsNullOrWhiteSpace(x.FirstNames) ||
+                !string.IsNullOrWhiteSpace(x.LastName) ||
+                !string.IsNullOrWhiteSpace(x.CompanyName) ||
+                !string.IsNullOrWhiteSpace(x.Email) ||
+                !string.IsNullOrWhiteSpace(x.CellNo) ||
+                !string.IsNullOrWhiteSpace(x.HomePhoneNo) ||
+                !string.IsNullOrWhiteSpace(x.WorkPhoneNo))
+            .ToList();
+
+        if (!contacts.Any())
+        {
+            ModelState.AddModelError(
+                "ContactInfos",
+                "At least one contact person is required.");
+            return;
+        }
+
+        for (var i = 0; i < contacts.Count; i++)
+        {
+            var contact = contacts[i];
+
+            if (contact.IsCompany)
+            {
+                if (string.IsNullOrWhiteSpace(contact.CompanyName))
+                {
+                    ModelState.AddModelError(
+                        $"ContactInfos[{i}].CompanyName",
+                        "Company name is required.");
+                }
+            }
+            else
+            {
+                if (string.IsNullOrWhiteSpace(contact.FirstNames))
+                {
+                    ModelState.AddModelError(
+                        $"ContactInfos[{i}].FirstNames",
+                        "First name is required.");
+                }
+
+                if (string.IsNullOrWhiteSpace(contact.LastName))
+                {
+                    ModelState.AddModelError(
+                        $"ContactInfos[{i}].LastName",
+                        "Last name is required.");
+                }
+            }
+
+            if (string.IsNullOrWhiteSpace(contact.Email))
+            {
+                ModelState.AddModelError(
+                    $"ContactInfos[{i}].Email",
+                    "Email address is required.");
+            }
+            else if (!IsValidEmail(contact.Email))
+            {
+                ModelState.AddModelError(
+                    $"ContactInfos[{i}].Email",
+                    "Please enter a valid email address.");
+            }
+
+            if (string.IsNullOrWhiteSpace(contact.CellNo))
+            {
+                ModelState.AddModelError(
+                    $"ContactInfos[{i}].CellNo",
+                    "Cell number is required.");
+            }
+            else if (!IsValidPhone(contact.CellNo))
+            {
+                ModelState.AddModelError(
+                    $"ContactInfos[{i}].CellNo",
+                    "Please enter a valid cell number.");
+            }
+
+            if (!string.IsNullOrWhiteSpace(contact.HomePhoneNo) &&
+                !IsValidPhone(contact.HomePhoneNo))
+            {
+                ModelState.AddModelError(
+                    $"ContactInfos[{i}].HomePhoneNo",
+                    "Please enter a valid home phone number.");
+            }
+
+            if (!string.IsNullOrWhiteSpace(contact.WorkPhoneNo) &&
+                !IsValidPhone(contact.WorkPhoneNo))
+            {
+                ModelState.AddModelError(
+                    $"ContactInfos[{i}].WorkPhoneNo",
+                    "Please enter a valid work phone number.");
+            }
+        }
+    }
+
+    private void ValidateAttributeDeclaration(AttributeSubmissionViewModel model)
+    {
+        if (model.Declaration == null)
+        {
+            ModelState.AddModelError(
+                "Declaration",
+                "Declaration details are required.");
+            return;
+        }
+
+        if (!model.Declaration.DeclarationAccepted)
+        {
+            ModelState.AddModelError(
+                "Declaration.DeclarationAccepted",
+                "You must accept the declaration before submitting.");
+        }
+
+        if (string.IsNullOrWhiteSpace(model.Declaration.SignatureName))
+        {
+            ModelState.AddModelError(
+                "Declaration.SignatureName",
+                "Signature name is required.");
+        }
+
+        var isRepresentative =
+            TempData.Peek("AttrRepRequired")?.ToString() == "true" ||
+            model.RepresentativeDetails?.IsRepresentative == true;
+
+        if (!isRepresentative)
+            return;
+
+        model.RepresentativeDetails ??= new RepresentativeDetailsVm
+        {
+            IsRepresentative = true
+        };
+
+        if (string.IsNullOrWhiteSpace(model.RepresentativeDetails.Representative_Name))
+        {
+            ModelState.AddModelError(
+                "RepresentativeDetails.Representative_Name",
+                "Representative name is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(model.RepresentativeDetails.Rep_Email))
+        {
+            ModelState.AddModelError(
+                "RepresentativeDetails.Rep_Email",
+                "Representative email is required.");
+        }
+        else if (!IsValidEmail(model.RepresentativeDetails.Rep_Email))
+        {
+            ModelState.AddModelError(
+                "RepresentativeDetails.Rep_Email",
+                "Please enter a valid representative email address.");
+        }
+
+        if (string.IsNullOrWhiteSpace(model.RepresentativeDetails.Rep_Cell_Phone))
+        {
+            ModelState.AddModelError(
+                "RepresentativeDetails.Rep_Cell_Phone",
+                "Representative cell number is required.");
+        }
+        else if (!IsValidPhone(model.RepresentativeDetails.Rep_Cell_Phone))
+        {
+            ModelState.AddModelError(
+                "RepresentativeDetails.Rep_Cell_Phone",
+                "Please enter a valid representative cell number.");
+        }
+    }
+    private void ValidateAttributeFormSpecificData(AttributeSubmissionViewModel model)
+    {
+        switch (model.FormType)
+        {
+            case "Residential":
+                ValidateResidentialAttributes(model);
+                break;
+
+            case "ResidentialST":
+                ValidateResidentialStAttributes(model);
+                break;
+
+            case "BusinessCommercial":
+                ValidateBusinessCommercialAttributes(model);
+                break;
+
+            case "DRCMethod":
+                ValidateDrcAttributes(model);
+                break;
+        }
+    }
+
+    private void ValidateResidentialAttributes(AttributeSubmissionViewModel model)
+    {
+        if (model.SecondaryAttributes == null)
+        {
+            ModelState.AddModelError("SecondaryAttributes", "Residential secondary attributes are required.");
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(model.SecondaryAttributes.Quality))
+        {
+            ModelState.AddModelError(
+                "SecondaryAttributes.Quality",
+                "Residential quality is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(model.SecondaryAttributes.Condition))
+        {
+            ModelState.AddModelError(
+                "SecondaryAttributes.Condition",
+                "Residential condition is required.");
+        }
+
+        var hasAnyArea =
+            model.PrimaryAttributes?.Tla1 > 0 ||
+            model.PrimaryAttributes?.Tla2 > 0 ||
+            model.PrimaryAttributes?.Tla3 > 0 ||
+            model.PrimaryAttributes?.Garage > 0 ||
+            model.PrimaryAttributes?.CarportCp > 0 ||
+            model.PrimaryAttributes?.GrannyFlatGf > 0 ||
+            model.PrimaryAttributes?.StaffQuartersSq > 0 ||
+            model.PrimaryAttributes?.Storage > 0;
+
+        if (!hasAnyArea)
+        {
+            ModelState.AddModelError(
+                "PrimaryAttributes",
+                "At least one residential area or attribute value must be captured.");
+        }
+    }
+
+    private void ValidateResidentialStAttributes(AttributeSubmissionViewModel model)
+    {
+        if (model.PrimaryAttributes?.STMain == null || model.PrimaryAttributes.STMain <= 0)
+        {
+            ModelState.AddModelError(
+                "PrimaryAttributes.STMain",
+                "Sectional Title main area is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(model.SecondaryAttributes?.STCondition.ToString()))
+        {
+            ModelState.AddModelError(
+                "SecondaryAttributes.STCondition",
+                "Sectional Title condition is required.");
+        }
+
+        if (model.SecondaryAttributes?.STFloor == null)
+        {
+            ModelState.AddModelError(
+                "SecondaryAttributes.STFloor",
+                "Sectional Title floor is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(model.SecondaryAttributes?.Quality))
+        {
+            ModelState.AddModelError(
+                "SecondaryAttributes.Quality",
+                "Sectional Title quality is required.");
+        }
+    }
+
+    private void ValidateBusinessCommercialAttributes(AttributeSubmissionViewModel model)
+    {
+        var buildings = model.BusinessBuildings?
+            .Where(x =>
+                !string.IsNullOrWhiteSpace(x.BuildingNr) ||
+                !string.IsNullOrWhiteSpace(x.Quality) ||
+                !string.IsNullOrWhiteSpace(x.Condition) ||
+                x.GBA > 0)
+            .ToList() ?? new List<AttributeBusinessBuildingVm>();
+
+        var sections = model.BusinessSections?
+            .Where(x =>
+                !string.IsNullOrWhiteSpace(x.BuildingNr) ||
+                !string.IsNullOrWhiteSpace(x.Usage) ||
+                x.GBA > 0 ||
+                x.NLA > 0)
+            .ToList() ?? new List<AttributeBusinessSectionVm>();
+
+        if (!buildings.Any() && !sections.Any())
+        {
+            ModelState.AddModelError(
+                "BusinessBuildings",
+                "Business and Commercial form requires at least one building or business section.");
+            return;
+        }
+
+        for (var i = 0; i < buildings.Count; i++)
+        {
+            var b = buildings[i];
+
+            if (string.IsNullOrWhiteSpace(b.BuildingNr))
+                ModelState.AddModelError($"BusinessBuildings[{i}].BuildingNr", "Building number is required.");
+
+            if (string.IsNullOrWhiteSpace(b.Quality))
+                ModelState.AddModelError($"BusinessBuildings[{i}].Quality", "Quality is required.");
+
+            if (string.IsNullOrWhiteSpace(b.Condition))
+                ModelState.AddModelError($"BusinessBuildings[{i}].Condition", "Condition is required.");
+
+            if (b.GBA == null || b.GBA <= 0)
+                ModelState.AddModelError($"BusinessBuildings[{i}].GBA", "GBA must be greater than zero.");
+        }
+
+        for (var i = 0; i < sections.Count; i++)
+        {
+            var s = sections[i];
+
+            if (string.IsNullOrWhiteSpace(s.BuildingNr))
+                ModelState.AddModelError($"BusinessSections[{i}].BuildingNr", "Building number is required.");
+
+            if (string.IsNullOrWhiteSpace(s.Usage))
+                ModelState.AddModelError($"BusinessSections[{i}].Usage", "Usage is required.");
+
+            if (s.GBA == null || s.GBA <= 0)
+                ModelState.AddModelError($"BusinessSections[{i}].GBA", "GBA must be greater than zero.");
+        }
+    }
+
+    private void ValidateDrcAttributes(AttributeSubmissionViewModel model)
+    {
+        var buildings = model.DrcBuildings?
+            .Where(x =>
+                !string.IsNullOrWhiteSpace(x.BuildingDescription) ||
+                !string.IsNullOrWhiteSpace(x.Quality) ||
+                !string.IsNullOrWhiteSpace(x.Condition) ||
+                x.GrossBuildingArea > 0)
+            .ToList() ?? new List<AttributeDrcBuildingVm>();
+
+        var improvements = model.DrcImprovements?
+            .Where(x =>
+                !string.IsNullOrWhiteSpace(x.ImprovementDescription) ||
+                !string.IsNullOrWhiteSpace(x.Quality) ||
+                !string.IsNullOrWhiteSpace(x.Condition) ||
+                x.AreaUnit > 0)
+            .ToList() ?? new List<AttributeDrcImprovementVm>();
+
+        var vacantLand = model.DrcVacantLands?
+            .Where(x =>
+                !string.IsNullOrWhiteSpace(x.Region) ||
+                x.Area > 0)
+            .ToList() ?? new List<AttributeDrcVacantLandVm>();
+
+        if (!buildings.Any() && !improvements.Any() && !vacantLand.Any())
+        {
+            ModelState.AddModelError(
+                "DrcBuildings",
+                "DRC form requires at least one building, improvement, or vacant land item.");
+            return;
+        }
+
+        for (var i = 0; i < buildings.Count; i++)
+        {
+            var b = buildings[i];
+
+            if (string.IsNullOrWhiteSpace(b.BuildingDescription))
+                ModelState.AddModelError($"DrcBuildings[{i}].BuildingDescription", "Building description is required.");
+
+            if (string.IsNullOrWhiteSpace(b.Quality))
+                ModelState.AddModelError($"DrcBuildings[{i}].Quality", "Quality is required.");
+
+            if (string.IsNullOrWhiteSpace(b.Condition))
+                ModelState.AddModelError($"DrcBuildings[{i}].Condition", "Condition is required.");
+
+            if (b.GrossBuildingArea == null || b.GrossBuildingArea <= 0)
+                ModelState.AddModelError($"DrcBuildings[{i}].GrossBuildingArea", "Gross building area must be greater than zero.");
+        }
+
+        for (var i = 0; i < improvements.Count; i++)
+        {
+            var imp = improvements[i];
+
+            if (string.IsNullOrWhiteSpace(imp.ImprovementDescription))
+                ModelState.AddModelError($"DrcImprovements[{i}].ImprovementDescription", "Improvement description is required.");
+
+            if (string.IsNullOrWhiteSpace(imp.Quality))
+                ModelState.AddModelError($"DrcImprovements[{i}].Quality", "Quality is required.");
+
+            if (string.IsNullOrWhiteSpace(imp.Condition))
+                ModelState.AddModelError($"DrcImprovements[{i}].Condition", "Condition is required.");
+
+            if (imp.AreaUnit == null || imp.AreaUnit <= 0)
+                ModelState.AddModelError($"DrcImprovements[{i}].AreaUnit", "Area must be greater than zero.");
+        }
+
+        for (var i = 0; i < vacantLand.Count; i++)
+        {
+            var land = vacantLand[i];
+
+            if (string.IsNullOrWhiteSpace(land.Region))
+                ModelState.AddModelError($"DrcVacantLands[{i}].Region", "Region is required.");
+
+            if (land.Area == null || land.Area <= 0)
+                ModelState.AddModelError($"DrcVacantLands[{i}].Area", "Area must be greater than zero.");
+        }
+    }
+    private void AddServiceValidationErrorsToModelState(string message)
+    {
+        if (string.IsNullOrWhiteSpace(message))
+        {
+            ModelState.AddModelError(string.Empty, "Please correct the validation errors before submitting.");
+            return;
+        }
+
+        var lines = message
+            .Replace("Please correct the following before submitting:", "")
+            .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(x => x.Trim().TrimStart('-').Trim())
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .ToList();
+
+        if (!lines.Any())
+        {
+            ModelState.AddModelError(string.Empty, message);
+            return;
+        }
+
+        foreach (var line in lines)
+        {
+            ModelState.AddModelError(string.Empty, line);
+        }
+    }
+
+    private void RestoreAttributeCreateViewBags(AttributeSubmissionViewModel model)
+    {
+        var declaration = TempData.Peek("AttrDeclaration")?.ToString();
+
+        ViewBag.Declaration = declaration;
+        ViewBag.RepRequired =
+            declaration == "Representative" ||
+            TempData.Peek("AttrRepRequired")?.ToString() == "true" ||
+            model.RepresentativeDetails?.IsRepresentative == true;
+
+        TempData.Keep("Attr_Detail_Json");
+        TempData.Keep("AttrDeclaration");
+        TempData.Keep("AttrRepRequired");
+        TempData.Keep("AttrRepDetails");
+    }
+    private static bool IsValidEmail(string? email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+            return false;
+
+        try
+        {
+            var address = new System.Net.Mail.MailAddress(email.Trim());
+            return string.Equals(
+                address.Address,
+                email.Trim(),
+                StringComparison.OrdinalIgnoreCase);
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static bool IsValidPhone(string? phone)
+    {
+        if (string.IsNullOrWhiteSpace(phone))
+            return false;
+
+        var digitsOnly = new string(phone.Where(char.IsDigit).ToArray());
+
+        return digitsOnly.Length >= 10 && digitsOnly.Length <= 15;
     }
     private static void PrepareAttributeCreateSubmission(AttributeSubmissionViewModel model)
     {
@@ -896,15 +1428,48 @@ public class AttributesController : Controller
     [ValidateAntiForgeryToken]
     public IActionResult RepresentativeSubmit(RepresentativeViewModel vm)
     {
-        // Re-validate required fields manually
         if (string.IsNullOrWhiteSpace(vm.Representative_Name))
         {
-            ModelState.AddModelError("Representative_Name",
+            ModelState.AddModelError(
+                nameof(vm.Representative_Name),
                 "Representative name is required.");
-            ViewBag.GvList = _db.GvList.OrderBy(r => r.ID).ToList();
-            return View("Representative", vm);
         }
 
+        if (string.IsNullOrWhiteSpace(vm.Rep_Email))
+        {
+            ModelState.AddModelError(
+                nameof(vm.Rep_Email),
+                "Representative email is required.");
+        }
+        else if (!IsValidEmail(vm.Rep_Email))
+        {
+            ModelState.AddModelError(
+                nameof(vm.Rep_Email),
+                "Please enter a valid representative email address.");
+        }
+
+        if (string.IsNullOrWhiteSpace(vm.Rep_Cell_Phone))
+        {
+            ModelState.AddModelError(
+                nameof(vm.Rep_Cell_Phone),
+                "Representative cell number is required.");
+        }
+        else if (!IsValidPhone(vm.Rep_Cell_Phone))
+        {
+            ModelState.AddModelError(
+                nameof(vm.Rep_Cell_Phone),
+                "Please enter a valid representative cell number.");
+        }
+
+        if (!ModelState.IsValid)
+        {
+            ViewBag.GvList = _db.GvList.OrderBy(r => r.ID).ToList();
+
+            TempData.Keep("AttrDeclaration");
+            TempData.Keep("Attr_Detail_Json");
+
+            return View("Representative", vm);
+        }
         // Store rep details as JSON in TempData
         // They travel through to Form, then into SubmitAsync
         var repData = new

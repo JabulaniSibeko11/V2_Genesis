@@ -8,15 +8,31 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/jquery.dataTables.min.css" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.dataTables.min.css" />
+
     <link rel="icon" type="image/png" sizes="32x32" href="~/images/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="~/images/favicon-16x16.png">
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link href="~/css/views/homeindex1.css" rel="stylesheet" asp-append-version="true" />
     <link href="~/css/views/layout.css" rel="stylesheet" />
 
+
     @await RenderSectionAsync("Styles", required: false)
+
+    <style>
+        i[class*="fa-"], i[class^="fa-"] {
+            font-family: "Font Awesome 6 Free", "Font Awesome 6 Brands" !important;
+            font-weight: 900 !important;
+        }
+        i.fa-regular { font-weight: 400 !important; }
+        i.fa-brands  { font-family: "Font Awesome 6 Brands" !important; font-weight: 400 !important; }
+    </style>
+
 </head>
+
 <body class="@(User.IsInRole("Admin") ? "role-admin" : "role-client")">
 
     @{
@@ -37,10 +53,10 @@
                     <img src="~/images/joburg_logo.png"
                          class="brand-logo" alt="Joburg" />
                 </div>
-                <div class="pub-brand-text">
+               @*  <div class="pub-brand-text">
                     <span class="pub-brand-name" style="font-family:'Poppins', sans-serif">City of Johannesburg</span>
                     <span class="pub-brand-sub" style="font-family:'Poppins', sans-serif">Valuation Portal</span>
-                </div>
+                </div> *@
             </a>
 
             <!-- Desktop links -->
@@ -287,26 +303,101 @@
         @RenderBody()
     </main>
 
-    <!-- ═══════════ FOOTER ═══════════ -->
+   <!-- ═══════════ FOOTER ═══════════ -->
     <footer class="site-footer">
-        <div class="footer-inner">
-            <div class="footer-brand">
-                <span class="footer-brand-name">City of Johannesburg Valuation</span>
-                <span class="footer-brand-sub">Portal</span>
+        <div class="footer-top">
+            <div class="footer-inner">
+
+                <!-- Brand + about -->
+                <div class="footer-col footer-col-brand">
+                    <div class="footer-brand-row">
+                        <div class="nav-brand-mark footer-brand-mark">
+                            <img src="~/images/joburg_logo.png" alt="Joburg" class="brand-logo" />
+                        </div>
+                        <div>
+                            <span class="footer-brand-name">City of Johannesburg</span>
+                            <span class="footer-brand-sub">Valuation Services Portal</span>
+                        </div>
+                    </div>
+                    <p class="footer-about">
+                        The official portal for property valuation rolls, objections,
+                        appeals, and attribute submissions for the City of Johannesburg.
+                    </p>
+                </div>
+
+                <!-- Quick Links -->
+                <div class="footer-col">
+                    <h4 class="footer-col-title">Quick Links</h4>
+                    <ul class="footer-col-links">
+                        <li><a href="/">Home</a></li>
+                        <li><a href="/dashboard">My Dashboard</a></li>
+                        <li><a href="/Rebates/Index">Rebates</a></li>
+                        <li><a href="/attributes/about">Property Attributes</a></li>
+                    </ul>
+                </div>
+
+                <!-- Evidence & Support -->
+                <div class="footer-col">
+                    <h4 class="footer-col-title">Evidence &amp; Support</h4>
+                    <ul class="footer-col-links">
+                        <li><a href="/evidence/VerifyObj">Objection Evidence</a></li>
+                        <li><a href="/section51/verify">Section 51</a></li>
+                        <li><a href="/section78/verify">Section 78 Evidence</a></li>
+                        <li><a href="/Home/FAQ">FAQ</a></li>
+                        <li><a href="/Sup1/ViewGuide">User Guidelines</a></li>
+                    </ul>
+                </div>
+
+                <!-- Contact -->
+                <div class="footer-col">
+                    <h4 class="footer-col-title">Contact Us</h4>
+                    <ul class="footer-contact-list">
+                        <li>
+                            <i class="fa-solid fa-location-dot"></i>
+                            <span>1st Floor, East Wing, 66 Jorissen Street,<br />Braamfontein, Johannesburg</span>
+                        </li>
+                        <li>
+                            <i class="fa-solid fa-phone"></i>
+                            <span>011 407-6622 / 011 407-6597</span>
+                        </li>
+                        <li>
+                            <i class="fa-solid fa-envelope"></i>
+                            <a href="mailto:valuationenquiries@joburg.org.za">valuationenquiries@joburg.org.za</a>
+                        </li>
+                        <li>
+                            <i class="fa-solid fa-clock"></i>
+                            <span>Mon – Fri, 07:30 – 16:00</span>
+                        </li>
+                    </ul>
+                </div>
+
             </div>
-            <div class="footer-links">
-                <a href="/Home/Privacy">Privacy Policy</a>
-                <a href="/Home/FAQ">FAQ</a>
-                <a href="/Home/Contact">Contact Us</a>
-            </div>
-            <div class="footer-copy">
-                © @DateTime.Now.Year City of Johannesburg. All rights reserved.
+        </div>
+
+        <div class="footer-bottom">
+            <div class="footer-bottom-inner">
+                <div class="footer-copy">
+                    © @DateTime.Now.Year City of Johannesburg. All rights reserved.
+                </div>
+                <div class="footer-legal">
+                    <a href="/Home/Privacy">Privacy Policy</a>
+                    <span class="footer-dot">&middot;</span>
+                    <a href="/Home/FAQ">FAQ</a>
+                    <span class="footer-dot">&middot;</span>
+                    <a href="/Home/Contact">Contact Us</a>
+                </div>
             </div>
         </div>
     </footer>
 
     <!-- Core JS libraries: jQuery must load before validation scripts in child views -->
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
 
     <script src="~/js/site.js" asp-append-version="true"></script>
 
