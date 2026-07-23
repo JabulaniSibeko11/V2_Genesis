@@ -5,281 +5,311 @@
 
     var formLabel = Model.FormType switch
     {
-        "Residential" => "Residential",
-        "ResidentialST" => "Residential — Sectional Title",
-        "BusinessCommercial" => "Business and Commercial",
-        "DRCMethod" => "DRC Method",
+        "Residential" => "Form A — Residential",
+        "ResidentialST" => "Form B — Residential Sectional Title",
+        "BusinessCommercial" => "Form C — Business and Commercial",
+        "DRCMethod" => "Form D — DRC Method",
         _ => Model.FormType
+    };
+
+    var formIcon = Model.FormType switch
+    {
+        "Residential" => "fa-house",
+        "ResidentialST" => "fa-building",
+        "BusinessCommercial" => "fa-store",
+        "DRCMethod" => "fa-calculator",
+        _ => "fa-file-alt"
     };
 }
 
-@section Styles {
-    <link href="~/css/views/attributes-search.css" rel="stylesheet" asp-append-version="true" />
-    <link href="~/css/views/attributes-check.css" rel="stylesheet" asp-append-version="true" />
-}
+<link href="~/css/views/attributes-check.css" rel="stylesheet" asp-append-version="true"/>
 
-<div class="ca-page">
-    <div class="ca-inner">
+<div class="cc-page">
 
-        <a href="/dashboard" class="ca-back">
-            <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
-        </a>
-
-        <div class="ca-heading">
-            <div class="ca-heading-icon">
-                <i class="fa-solid fa-clipboard-check"></i>
-            </div>
-            <div>
-                <h1 class="ca-title">Confirm Property</h1>
-                <p class="ca-subtitle">
-                    Review the property details and confirm your role before
-                    completing the attribute submission form
-                </p>
-            </div>
-        </div>
-
-        <div class="ca-form-badge">
-            <i class="fa-solid fa-file-alt"></i>
-            Form Type Detected: <span>@formLabel</span>
-        </div>
-
-        @if (TempData["AttrCheckError"] is not null)
-        {
-            <div class="ca-error">
-                <i class="fa-solid fa-circle-xmark"></i>
-                @TempData["AttrCheckError"]
-            </div>
-        }
-
-        <!-- Property Details -->
-        <div class="ca-card">
-            <div class="ca-card-header">
-                <i class="fa-solid fa-building"></i>
-                Property Details
-            </div>
-            <div class="ca-card-body">
-
-                <div class="ca-field ca-field-full">
-                    <span class="ca-label">
-                        <i class="fa-solid fa-file-alt"></i> Property Description
-                    </span>
-                    <div class="ca-value">@(Model.PropertyDesc ?? "–")</div>
-                </div>
-
-                <div class="ca-field">
-                    <span class="ca-label">
-                        <i class="fa-solid fa-tag"></i> Category
-                    </span>
-                    <div class="ca-value">@(Model.CatDesc ?? "–")</div>
-                </div>
-
-                <div class="ca-field">
-                    <span class="ca-label">
-                        <i class="fa-solid fa-city"></i> Township
-                    </span>
-                    <div class="ca-value">@(Model.TownNameDesc ?? "–")</div>
-                </div>
-
-                <div class="ca-field ca-field-full">
-                    <span class="ca-label">
-                        <i class="fa-solid fa-map-pin"></i> Address
-                    </span>
-                    <div class="ca-value">@(Model.LisStreetAddress ?? "–")</div>
-                </div>
-
-                <div class="ca-field">
-                    <span class="ca-label">
-                        <i class="fa-solid fa-hashtag"></i> ERF / Stand
-                    </span>
-                    <div class="ca-value">@Model.Erf</div>
-                </div>
-
-                <div class="ca-field">
-                    <span class="ca-label">
-                        <i class="fa-solid fa-hashtag"></i> Portion
-                    </span>
-                    <div class="ca-value">@Model.Ptn</div>
-                </div>
-
-                @if (Model.UnitNo > 0)
-                {
-                    <div class="ca-field">
-                        <span class="ca-label">
-                            <i class="fa-solid fa-door-open"></i> Unit No.
-                        </span>
-                        <div class="ca-value">@Model.UnitNo</div>
-                    </div>
-                }
-
-                @if (!string.IsNullOrWhiteSpace(Model.SchemeName))
-                {
-                    <div class="ca-field">
-                        <span class="ca-label">
-                            <i class="fa-solid fa-building"></i> Scheme
-                        </span>
-                        <div class="ca-value">@Model.SchemeName</div>
-                    </div>
-                }
-
-                <div class="ca-field">
-                    <span class="ca-label">
-                        <i class="fa-solid fa-money-bill-wave"></i> Market Value
-                    </span>
-                    <div class="ca-value ca-market-val">@(Model.MarketValue ?? "–")</div>
-                </div>
-
-                <div class="ca-field">
-                    <span class="ca-label">
-                        <i class="fa-solid fa-ruler-combined"></i> Extent
-                    </span>
-                    <div class="ca-value">@(Model.RateableArea ?? "–")</div>
-                </div>
-
-            </div>
-        </div>
-
-        <!-- Declaration -->
-        <form method="post" action="/attributes/check" id="checkForm">
-            @Html.AntiForgeryToken()
-            <input type="hidden" name="idProperty" value="@Model.IDProperty" />
-            <input type="hidden" name="formType" value="@Model.FormType" />
-
-            <div class="ca-decl-card">
-                <div class="ca-decl-header">
-                    <i class="fa-solid fa-user-check"></i>
-                    Declaration — Select Your Role
-                </div>
-                <div class="ca-decl-body">
-
-                    <!-- Owner — no ID entry needed, goes straight to form -->
-                    <label class="ca-decl-option">
-                        <input type="radio"
-                               name="declarationType"
-                               value="Owner"
-                               id="declOwner"
-                               required
-                               onchange="updateContinueBtn()" />
-                        <div class="ca-decl-text">
-                            <h4>
-                                <i class="fa-solid fa-house-user"
-                                   style="color:#e6b000;"></i>
-                                I am the Owner
-                            </h4>
-                            <p>
-                                I am the registered owner of this property and I am
-                                submitting this information on my own behalf.
-                            </p>
-                        </div>
-                    </label>
-
-                    <!-- Representative -->
-                    <label class="ca-decl-option">
-                        <input type="radio"
-                               name="declarationType"
-                               value="Representative"
-                               id="declRep"
-                               required
-                               onchange="updateContinueBtn()" />
-                        <div class="ca-decl-text">
-                            <h4>
-                                <i class="fa-solid fa-user-tie"
-                                   style="color:#e6b000;"></i>
-                                I am an Authorised Representative
-                            </h4>
-                            <p>
-                                I am authorised to act on behalf of the property owner.
-                                You will be asked to provide your contact details and
-                                upload an authorisation letter on the next page.
-                            </p>
-                        </div>
-                    </label>
-
-                </div>
-            </div>
-
-            <!-- Disclaimer -->
-            <div class="ca-disclaimer">
-                <div class="ca-disclaimer-title">
-                    <i class="fa-solid fa-circle-info"></i>
-                    Important Notice
-                </div>
-                <strong>Submission does not imply acceptance.</strong>
-                All submitted property information is subject to professional review
-                and validation by a City of Johannesburg Valuer. Existing system data
-                remains unchanged until submissions are explicitly reviewed and approved.
-                <br /><br />
-                By continuing, you confirm that:
-                <ul style="margin:8px 0 0 16px; padding:0;">
-                    <li>
-                        The information you are about to submit is true and correct
-                        to the best of your knowledge
-                    </li>
-                    <li>
-                        You are either the registered owner or an authorised
-                        representative of the above property
-                    </li>
-                    <li>
-                        You understand that submission does not guarantee any changes
-                        to the valuation roll
-                    </li>
-                </ul>
-            </div>
-
-            <!-- Actions -->
-            <div class="ca-actions" style="margin-top:4px;">
-                <button type="submit" class="ca-btn-primary" id="continueBtn">
-                    <i class="fa-solid fa-arrow-right" id="continueBtnIcon"></i>
-                    <span id="continueBtnText">Continue to Form</span>
-                </button>
-                <a href="/dashboard" class="ca-btn-outline">
-                    <i class="fa-solid fa-xmark"></i> Cancel
+    @* ── Hero ─────────────────────────────────────────── *@
+    <div class="cc-hero">
+        <div class="cc-hero-inner">
+            <div class="cc-nav">
+                <a href="/dashboard" class="cc-back">
+                    <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
                 </a>
             </div>
+            <div class="cc-hero-head">
+                <div class="cc-hero-icon">
+                    <i class="fa-solid fa-clipboard-check"></i>
+                </div>
+                <div>
+                    <div class="cc-eyebrow">City of Johannesburg · Attribute Submission</div>
+                    <h1 class="cc-hero-title">Confirm Property</h1>
+                    <p class="cc-hero-sub">
+                        Review the property details and confirm your role before completing the attribute submission form
+                    </p>
+                </div>
+                <span class="cc-form-badge">
+                    <i class="fa-solid @formIcon"></i>
+                    @formLabel
+                </span>
+            </div>
+        </div>
+    </div>
 
-        </form>
+    @* ── Body ─────────────────────────────────────────── *@
+    <div class="cc-body">
+
+        @* ── Main column ────────────────────────────────── *@
+        <div class="cc-main">
+
+            @if (TempData["AttrCheckError"] is not null)
+            {
+                <div class="cc-error">
+                    <i class="fa-solid fa-circle-xmark"></i>
+                    <span>@TempData["AttrCheckError"]</span>
+                </div>
+            }
+
+            @* Property details *@
+            <div class="cc-card">
+                <div class="cc-card-bar">
+                    <i class="fa-solid fa-building"></i>
+                    <h3>Property Details</h3>
+                </div>
+                <div class="cc-card-body">
+                    <div class="cc-field-grid">
+
+                        <div class="cc-field full">
+                            <span class="cc-field-label"><i class="fa-solid fa-file-alt"></i> Property Description</span>
+                            <div class="cc-field-value">@(Model.PropertyDesc ?? "–")</div>
+                        </div>
+
+                        <div class="cc-field">
+                            <span class="cc-field-label"><i class="fa-solid fa-tag"></i> Category</span>
+                            <div class="cc-field-value">@(Model.CatDesc ?? "–")</div>
+                        </div>
+
+                        <div class="cc-field">
+                            <span class="cc-field-label"><i class="fa-solid fa-city"></i> Township</span>
+                            <div class="cc-field-value">@(Model.TownNameDesc ?? "–")</div>
+                        </div>
+
+                        <div class="cc-field">
+                            <span class="cc-field-label"><i class="fa-solid fa-hashtag"></i> ERF / Stand</span>
+                            <div class="cc-field-value">@Model.Erf</div>
+                        </div>
+
+                        <div class="cc-field full">
+                            <span class="cc-field-label"><i class="fa-solid fa-map-pin"></i> Address</span>
+                            <div class="cc-field-value">@(Model.LisStreetAddress ?? "–")</div>
+                        </div>
+
+                        <div class="cc-field">
+                            <span class="cc-field-label"><i class="fa-solid fa-hashtag"></i> Portion</span>
+                            <div class="cc-field-value">@Model.Ptn</div>
+                        </div>
+
+                        @if (Model.UnitNo > 0)
+                        {
+                            <div class="cc-field">
+                                <span class="cc-field-label"><i class="fa-solid fa-door-open"></i> Unit No.</span>
+                                <div class="cc-field-value">@Model.UnitNo</div>
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(Model.SchemeName))
+                        {
+                            <div class="cc-field">
+                                <span class="cc-field-label"><i class="fa-solid fa-building"></i> Scheme</span>
+                                <div class="cc-field-value">@Model.SchemeName</div>
+                            </div>
+                        }
+
+                        <div class="cc-field">
+                            <span class="cc-field-label"><i class="fa-solid fa-money-bill-wave"></i> Market Value</span>
+                            <div class="cc-field-value gold-val ca-market-val">@(Model.MarketValue ?? "–")</div>
+                        </div>
+
+                        <div class="cc-field">
+                            <span class="cc-field-label"><i class="fa-solid fa-ruler-combined"></i> Extent</span>
+                            <div class="cc-field-value">@(Model.RateableArea ?? "–")</div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            @* Form + Declaration form *@
+            <form method="post" action="/attributes/check" id="checkForm">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="idProperty" value="@Model.IDProperty" />
+                <input type="hidden" name="formType" value="@Model.FormType" />
+
+                <div class="cc-card">
+                    <div class="cc-card-bar">
+                        <i class="fa-solid fa-user-check"></i>
+                        <h3>Declaration — Select Your Role</h3>
+                    </div>
+                    <div class="cc-card-body">
+                        <div class="cc-decl-grid">
+
+                            <label class="cc-decl-tile" id="tileOwner" onclick="pickDecl(this,'Owner')">
+                                <input type="radio" name="declarationType" value="Owner" id="declOwner" required />
+                                <div class="cc-decl-icon"><i class="fa-solid fa-house-user"></i></div>
+                                <div>
+                                    <div class="cc-decl-title">I am the Owner</div>
+                                    <div class="cc-decl-desc">
+                                        I am the registered owner of this property and I am submitting this information on my own behalf.
+                                    </div>
+                                </div>
+                                <div class="cc-decl-check"><i class="fa-solid fa-check"></i></div>
+                            </label>
+
+                            <label class="cc-decl-tile" id="tileRep" onclick="pickDecl(this,'Representative')">
+                                <input type="radio" name="declarationType" value="Representative" id="declRep" required />
+                                <div class="cc-decl-icon"><i class="fa-solid fa-user-tie"></i></div>
+                                <div>
+                                    <div class="cc-decl-title">I am an Authorised Representative</div>
+                                    <div class="cc-decl-desc">
+                                        I am authorised to act on behalf of the property owner. You will provide your contact details and upload an authorisation letter next.
+                                    </div>
+                                </div>
+                                <div class="cc-decl-check"><i class="fa-solid fa-check"></i></div>
+                            </label>
+
+                        </div>
+                    </div>
+                </div>
+
+                <div class="cc-disclaimer" style="margin-top:18px;">
+                    <div class="cc-disclaimer-title">
+                        <i class="fa-solid fa-circle-info"></i> Important Notice
+                    </div>
+                    <strong>Submission does not imply acceptance.</strong>
+                    All submitted property information is subject to professional review and validation by a City of Johannesburg Valuer. Existing system data remains unchanged until submissions are explicitly reviewed and approved.
+                    <ul>
+                        <li>The information you are about to submit is true and correct to the best of your knowledge</li>
+                        <li>You are either the registered owner or an authorised representative of the above property</li>
+                        <li>You understand that submission does not guarantee any changes to the valuation roll</li>
+                    </ul>
+                </div>
+
+            </form>
+        </div>
+
+        @* ── Sidebar summary (sticky on desktop) ─────────── *@
+        <div class="cc-side">
+            <div class="cc-summary">
+                <div class="cc-summary-head">
+                    <h4><i class="fa-solid fa-list-check"></i> Your Selections</h4>
+                </div>
+                <div class="cc-summary-body">
+
+                    <div class="cc-summary-row">
+                        <div class="cc-summary-icon"><i class="fa-solid fa-location-dot"></i></div>
+                        <div class="cc-summary-text">
+                            <div class="cc-summary-label">Property</div>
+                            <div class="cc-summary-value">@(Model.PropertyDesc ?? "–")</div>
+                        </div>
+                    </div>
+
+                    <div class="cc-summary-row">
+                        <div class="cc-summary-icon"><i class="fa-solid @formIcon"></i></div>
+                        <div class="cc-summary-text">
+                            <div class="cc-summary-label">Form Type</div>
+                            <div class="cc-summary-value gold">@formLabel</div>
+                        </div>
+                    </div>
+
+                    <div class="cc-summary-row">
+                        <div class="cc-summary-icon"><i class="fa-solid fa-user" id="summaryRoleIcon"></i></div>
+                        <div class="cc-summary-text">
+                            <div class="cc-summary-label">Submitting As</div>
+                            <div class="cc-summary-value placeholder" id="summaryRoleValue">
+                                Please select your role
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="cc-summary-cta">
+                        <button type="submit" form="checkForm" class="cc-btn-primary" id="continueBtn" disabled>
+                            <i class="fa-solid fa-arrow-right" id="continueBtnIcon"></i>
+                            <span id="continueBtnText">Select a role to continue</span>
+                        </button>
+                        <a href="/dashboard" class="cc-btn-outline">
+                            <i class="fa-solid fa-xmark"></i> Cancel
+                        </a>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
     </div>
 </div>
 
 @section Scripts {
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-
-            // Format market value
-            document.querySelectorAll('.ca-market-val').forEach(function (el) {
-                var raw = parseFloat(el.textContent.replace(/[^0-9.-]+/g, ''));
-                if (!isNaN(raw) && raw > 0) {
-                    el.textContent = raw.toLocaleString('en-ZA', {
-                        style: 'currency', currency: 'ZAR',
-                        minimumFractionDigits: 0, maximumFractionDigits: 0
-                    });
-                }
-            });
-
-            // Validate before submit
-            document.getElementById('checkForm')
-                .addEventListener('submit', function (e) {
-                    var selected = document.querySelector(
-                        'input[name="declarationType"]:checked');
-                    if (!selected) {
-                        e.preventDefault();
-                        alert('Please select whether you are the Owner or Representative.');
-                    }
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Format market value as currency
+        document.querySelectorAll('.ca-market-val').forEach(function (el) {
+            var raw = parseFloat(el.textContent.replace(/[^0-9.-]+/g, ''));
+            if (!isNaN(raw) && raw > 0) {
+                el.textContent = raw.toLocaleString('en-ZA', {
+                    style: 'currency', currency: 'ZAR',
+                    minimumFractionDigits: 0, maximumFractionDigits: 0
                 });
+            }
         });
 
-        // Update button text based on selection
-        function updateContinueBtn() {
-            var isRep  = document.getElementById('declRep').checked;
-            var text   = document.getElementById('continueBtnText');
-            var icon   = document.getElementById('continueBtnIcon');
-
-            if (isRep) {
-                text.textContent   = 'Fill Representative Details';
-                icon.className     = 'fa-solid fa-user-tie';
-            } else {
-                text.textContent   = 'Continue to Form';
-                icon.className     = 'fa-solid fa-arrow-right';
+        // Validate before submit
+        document.getElementById('checkForm').addEventListener('submit', function (e) {
+            var selected = document.querySelector('input[name="declarationType"]:checked');
+            if (!selected) {
+                e.preventDefault();
+                alert('Please select whether you are the Owner or Representative.');
             }
+        });
+    });
+
+    // Tile selection + live summary update
+    function pickDecl(el, value) {
+        document.querySelectorAll('.cc-decl-tile').forEach(function (t) {
+            t.classList.remove('selected');
+        });
+        el.classList.add('selected');
+        el.querySelector('input[type="radio"]').checked = true;
+
+        updateSummary(value);
+        updateContinueBtn(value);
+    }
+
+    function updateSummary(role) {
+        var roleValue = document.getElementById('summaryRoleValue');
+        var roleIcon  = document.getElementById('summaryRoleIcon');
+
+        roleValue.classList.remove('placeholder');
+
+        if (role === 'Representative') {
+            roleValue.textContent = 'Authorised Representative';
+            roleIcon.className = 'fa-solid fa-user-tie';
+        } else {
+            roleValue.textContent = 'Property Owner';
+            roleIcon.className = 'fa-solid fa-house-user';
         }
-    </script>
+    }
+
+    function updateContinueBtn(role) {
+        var btn  = document.getElementById('continueBtn');
+        var text = document.getElementById('continueBtnText');
+        var icon = document.getElementById('continueBtnIcon');
+
+        btn.disabled = false;
+
+        if (role === 'Representative') {
+            text.textContent = 'Fill Representative Details';
+            icon.className   = 'fa-solid fa-user-tie';
+        } else {
+            text.textContent = 'Continue to Form';
+            icon.className   = 'fa-solid fa-arrow-right';
+        }
+    }
+</script>
 }

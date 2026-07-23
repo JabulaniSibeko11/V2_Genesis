@@ -53,16 +53,29 @@ namespace V2_Genesis.Services.Implementations
         {
             try
             {
+                var effectiveTo = GetEffectiveToEmail(toEmail);
+                var effectiveSubject = ApplyTestSubjectPrefix(subject, toEmail);
+                var effectiveBody = ApplyTestModeBanner(htmlBody, toEmail);
+
                 using var smtp = BuildClient();
+
                 using var msg = new MailMessage
                 {
-                    From = new MailAddress(_cfg.Username, _cfg.FromName),
-                    Subject = subject,
-                    Body = htmlBody,
+                    From = new MailAddress(SenderAddress, _cfg.FromName),
+                    Subject = effectiveSubject,
+                    Body = effectiveBody,
                     IsBodyHtml = true
                 };
-                msg.To.Add(toEmail);
+
+                msg.To.Add(effectiveTo);
+
                 await smtp.SendMailAsync(msg);
+
+                _logger.LogInformation(
+                    "[Email] Sent email. OriginalTo={OriginalTo}, EffectiveTo={EffectiveTo}, TestMode={TestMode}",
+                    toEmail,
+                    effectiveTo,
+                    _cfg.TestMode);
             }
             catch (Exception ex)
             {
@@ -70,7 +83,6 @@ namespace V2_Genesis.Services.Implementations
                 throw;
             }
         }
-
         public Task SendConfirmationEmailAsync(string toEmail, string displayName, string confirmationLink)
         {
             var subject = $"{_app.PortalSubtitle} – Please confirm your email address";
@@ -1255,25 +1267,31 @@ namespace V2_Genesis.Services.Implementations
                 : cleaned.Trim('_');
         }
         public async Task SendEmailWithAttachmentsAsync(
-        string toEmail,
-        string subject,
-        string body,
-        List<EmailAttachment> attachments,
-        bool isHtml = true)
+      string toEmail,
+      string subject,
+      string body,
+      List<EmailAttachment> attachments,
+      bool isHtml = true)
         {
             try
             {
+                var effectiveTo = GetEffectiveToEmail(toEmail);
+                var effectiveSubject = ApplyTestSubjectPrefix(subject, toEmail);
+                var effectiveBody = isHtml
+                    ? ApplyTestModeBanner(body, toEmail)
+                    : body;
+
                 using var smtp = BuildClient();
 
                 using var msg = new MailMessage
                 {
-                    From = new MailAddress(_cfg.Username, _cfg.FromName),
-                    Subject = subject,
-                    Body = body,
+                    From = new MailAddress(SenderAddress, _cfg.FromName),
+                    Subject = effectiveSubject,
+                    Body = effectiveBody,
                     IsBodyHtml = isHtml
                 };
 
-                msg.To.Add(toEmail);
+                msg.To.Add(effectiveTo);
 
                 if (attachments != null && attachments.Any())
                 {
@@ -1302,6 +1320,11 @@ namespace V2_Genesis.Services.Implementations
                 }
 
                 await smtp.SendMailAsync(msg);
+                _logger.LogInformation(
+    "[Email] Sent email with attachments. OriginalTo={OriginalTo}, EffectiveTo={EffectiveTo}, TestMode={TestMode}",
+    toEmail,
+    effectiveTo,
+    _cfg.TestMode);
             }
             catch (Exception ex)
             {
@@ -1332,6 +1355,182 @@ namespace V2_Genesis.Services.Implementations
                 toEmail,
                 subject,
                 htmlBody,
+                attachments,
+                true);
+        }
+
+        private string GetEffectiveToEmail(string originalEmail)
+        {
+            if (_cfg.TestMode)
+            {
+                if (string.IsNullOrWhiteSpace(_cfg.TestRecipient))
+                    throw new InvalidOperationException("Email TestMode is enabled, but Email:TestRecipient is missing.");
+
+                return _cfg.TestRecipient.Trim();
+            }
+
+            return originalEmail.Trim();
+        }
+
+        private string ApplyTestSubjectPrefix(string subject, string originalEmail)
+        {
+            if (!_cfg.TestMode)
+                return subject;
+
+            return $"[TEST MODE - Original To: {originalEmail}] {subject}";
+        }
+
+        private string ApplyTestModeBanner(string htmlBody, string originalEmail)
+        {
+            if (!_cfg.TestMode)
+                return htmlBody;
+
+            var banner = $@"
+<div style='background:#fff3cd;border:1px solid #ffec99;color:#664d03;
+            padding:14px 18px;margin-bottom:18px;border-radius:8px;
+            font-family:Arial,sans-serif;font-size:14px;'>
+    <strong>TEST MODE:</strong> This email was redirected to the test mailbox.<br />
+    <strong>Original recipient:</strong> {System.Net.WebUtility.HtmlEncode(originalEmail)}
+</div>";
+
+            return banner + htmlBody;
+        }
+
+        private string SenderAddress =>
+            !string.IsNullOrWhiteSpace(_cfg.FromAddress)
+                ? _cfg.FromAddress
+                : _cfg.Username;
+
+        public async Task SendAttributeAcknowledgementAsync(
+    string toEmail,
+    string clientName,
+    string attrNo,
+    string propertyDescription,
+    string evidencePin,
+    DateTime evidenceDeadline,
+    byte[] acknowledgementPdf,
+    byte[] submittedFormPdf,
+    string acknowledgementFileName,
+    string submittedFormFileName)
+        {
+            var cleanClientName = string.IsNullOrWhiteSpace(clientName)
+                ? "Client"
+                : clientName.Trim();
+
+            var cleanAttrNo = string.IsNullOrWhiteSpace(attrNo)
+                ? "-"
+                : attrNo.Trim();
+
+            var cleanPropertyDescription = string.IsNullOrWhiteSpace(propertyDescription)
+                ? "Property"
+                : propertyDescription.Trim();
+
+            var subject =
+                $"City of Johannesburg — Attribute Submission Acknowledgement: {cleanAttrNo}";
+
+            var body = $@"
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8' />
+</head>
+<body style='margin:0;padding:0;background:#f5f5f5;font-family:Arial,sans-serif;'>
+    <div style='max-width:680px;margin:30px auto;background:#ffffff;border-radius:10px;overflow:hidden;
+                box-shadow:0 2px 10px rgba(0,0,0,.08);'>
+
+        <div style='background:#e6b000;padding:24px 30px;text-align:center;color:#111827;'>
+            <h1 style='margin:0;font-size:22px;'>City of Johannesburg</h1>
+            <p style='margin:6px 0 0;font-weight:700;'>Property Attribute Submission Acknowledgement</p>
+        </div>
+
+        <div style='padding:28px 32px;color:#111827;font-size:14px;line-height:1.6;'>
+            <p>Dear <strong>{System.Net.WebUtility.HtmlEncode(cleanClientName)}</strong>,</p>
+
+            <p>
+                Your property attribute submission has been successfully received by
+                the City of Johannesburg Valuation Services Department.
+            </p>
+
+            <div style='background:#f8fafc;border-left:5px solid #e6b000;
+                        padding:16px 18px;border-radius:8px;margin:20px 0;'>
+                <div style='font-size:12px;color:#64748b;text-transform:uppercase;font-weight:700;'>
+                    Attribute Reference Number
+                </div>
+                <div style='font-size:24px;font-weight:900;color:#111827;margin-top:4px;'>
+                    {System.Net.WebUtility.HtmlEncode(cleanAttrNo)}
+                </div>
+            </div>
+
+            <table style='width:100%;border-collapse:collapse;margin:18px 0;font-size:13px;'>
+                <tr>
+                    <td style='padding:8px;border-bottom:1px solid #e5e7eb;color:#64748b;width:40%;'>
+                        Property Description
+                    </td>
+                    <td style='padding:8px;border-bottom:1px solid #e5e7eb;font-weight:700;'>
+                        {System.Net.WebUtility.HtmlEncode(cleanPropertyDescription)}
+                    </td>
+                </tr>
+                <tr>
+                    <td style='padding:8px;border-bottom:1px solid #e5e7eb;color:#64748b;'>
+                        Evidence PIN
+                    </td>
+                    <td style='padding:8px;border-bottom:1px solid #e5e7eb;font-weight:900;letter-spacing:1px;'>
+                        {System.Net.WebUtility.HtmlEncode(evidencePin)}
+                    </td>
+                </tr>
+                <tr>
+                    <td style='padding:8px;border-bottom:1px solid #e5e7eb;color:#64748b;'>
+                        Evidence Upload Deadline
+                    </td>
+                    <td style='padding:8px;border-bottom:1px solid #e5e7eb;font-weight:700;'>
+                        {evidenceDeadline:dd MMMM yyyy HH:mm}
+                    </td>
+                </tr>
+            </table>
+
+            <div style='background:#fff8db;border:1px solid #f3d36b;border-radius:8px;
+                        padding:14px 16px;color:#4b3b00;margin:18px 0;'>
+                Please keep this acknowledgement and reference number for all future correspondence.
+                Your acknowledgement PDF and submitted attribute form are attached to this email.
+            </div>
+
+            <p>
+                If you need to upload additional evidence, use your attribute reference number and evidence PIN.
+            </p>
+        </div>
+
+        <div style='background:#111827;color:#d1d5db;text-align:center;padding:18px;font-size:12px;'>
+            City of Johannesburg — Valuation Services Department<br />
+            This is an automated acknowledgement email. Please do not reply directly.
+        </div>
+    </div>
+</body>
+</html>";
+
+            var attachments = new List<EmailAttachment>
+    {
+        new EmailAttachment
+        {
+            FileName = string.IsNullOrWhiteSpace(acknowledgementFileName)
+                ? $"{cleanAttrNo}_Acknowledgement.pdf"
+                : acknowledgementFileName,
+            FileBytes = acknowledgementPdf,
+            ContentType = "application/pdf"
+        },
+        new EmailAttachment
+        {
+            FileName = string.IsNullOrWhiteSpace(submittedFormFileName)
+                ? $"{cleanAttrNo}_Submitted_Form.pdf"
+                : submittedFormFileName,
+            FileBytes = submittedFormPdf,
+            ContentType = "application/pdf"
+        }
+    };
+
+            await SendEmailWithAttachmentsAsync(
+                toEmail,
+                subject,
+                body,
                 attachments,
                 true);
         }

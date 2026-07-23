@@ -49,5 +49,16 @@ namespace V2_Genesis.Services.Interfaces
             string body,
             List<EmailAttachment> attachments,
             bool isHtml = true);
+        Task SendAttributeAcknowledgementAsync(
+    string toEmail,
+    string clientName,
+    string attrNo,
+    string propertyDescription,
+    string evidencePin,
+    DateTime evidenceDeadline,
+    byte[] acknowledgementPdf,
+    byte[] submittedFormPdf,
+    string acknowledgementFileName,
+    string submittedFormFileName);
     }
 }

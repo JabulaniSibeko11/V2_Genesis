@@ -11,13 +11,19 @@ namespace V2_Genesis.Services.Implementations
         private readonly AttributesDbContext _context;
 
         private readonly IAttributeDocumentService _documentService;
+        private readonly IEmailService _emailService;
+        private readonly ILogger<AttributeSubmissionService> _logger;
         public AttributeSubmissionService(
             AttributesDbContext context,
-           IAttributeDocumentService documentService)
+           IAttributeDocumentService documentService,
+           IEmailService emailService,
+           ILogger<AttributeSubmissionService> logger)
         {
             _context = context;
 
             _documentService = documentService;
+            _emailService = emailService;
+            _logger = logger;
         }
 
         public AttributeSubmissionViewModel CreateNew(string formType)
@@ -407,9 +413,73 @@ namespace V2_Genesis.Services.Implementations
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
 
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(submittedByEmail))
+                {
+                    var acknowledgementPdf = await File.ReadAllBytesAsync(
+                        documentResult.AcknowledgementFullPath);
+
+                    var submittedFormPdf = await File.ReadAllBytesAsync(
+                        documentResult.PdfFullPath);
+
+                    var clientName = ResolveClientName(model, userName);
+
+                    await _emailService.SendAttributeAcknowledgementAsync(
+                        submittedByEmail,
+                        clientName,
+                        propertyInfo.Attr_No ?? $"ATTR-GV23-{propertyInfo.Attr_ID}",
+                        propertyInfo.Property_Desc ?? model.PropertyDetails.PropertyDesc ?? "Property",
+                        evidencePin,
+                        evidenceDeadline,
+                        acknowledgementPdf,
+                        submittedFormPdf,
+                        documentResult.AcknowledgementFileName,
+                        documentResult.PdfFileName);
+                }
+                else
+                {
+                    _logger.LogWarning(
+                        "[Attributes] No client email found for {AttrNo}. Acknowledgement email was not sent.",
+                        propertyInfo.Attr_No);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "[Attributes] Attribute submission saved, but acknowledgement email failed for {AttrNo}",
+                    propertyInfo.Attr_No);
+            }
+
             return propertyInfo.Attr_ID;
         }
+        private static string ResolveClientName(
+    AttributeSubmissionViewModel model,
+    string fallbackName)
+        {
+            var firstContact = model.ContactInfos?.FirstOrDefault();
 
+            if (firstContact == null)
+                return fallbackName;
+
+            if (firstContact.IsCompany &&
+                !string.IsNullOrWhiteSpace(firstContact.CompanyName))
+            {
+                return firstContact.CompanyName.Trim();
+            }
+
+            var fullName = string.Join(" ",
+                new[]
+                {
+            firstContact.FirstNames?.Trim(),
+            firstContact.LastName?.Trim()
+                }.Where(x => !string.IsNullOrWhiteSpace(x)));
+
+            return string.IsNullOrWhiteSpace(fullName)
+                ? fallbackName
+                : fullName;
+        }
         private static string GenerateEvidencePin()
         {
             const string chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";

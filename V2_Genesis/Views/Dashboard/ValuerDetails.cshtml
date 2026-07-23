@@ -7,173 +7,163 @@
     var watermarkText =
         $"CONFIDENTIAL • {Model.AttrNo} • {Model.ValuerName} • {DateTime.Now:yyyy-MM-dd HH:mm}";
 }
-<style>
-    <style>
-    .secure-page {
-        position: relative;
-    }
+<link href="~/css/views/valuer-details.css" rel="stylesheet" asp-append-version="true"/>
 
-    .secure-watermark {
-        position: fixed;
-        inset: 0;
-        pointer-events: none;
-        z-index: 9999;
-        opacity: 0.075;
-        background-repeat: repeat;
-        background-size: 460px 220px;
-    }
-
-    .secure-hidden {
-        filter: blur(12px);
-        pointer-events: none;
-        user-select: none;
-    }
-
-    .secure-timeout-overlay {
-        display: none;
-        position: fixed;
-        inset: 0;
-        z-index: 10000;
-        background: rgba(0,0,0,.82);
-        color: white;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
-        padding: 30px;
-    }
-
-    .secure-timeout-box {
-        max-width: 620px;
-        background: #111827;
-        border: 1px solid #374151;
-        border-radius: 18px;
-        padding: 26px;
-    }
-
-    .secure-warning {
-        background: #fff8db;
-        border: 1px solid #f3d36b;
-        border-left: 5px solid #e6b000;
-        color: #4b3b00;
-        border-radius: 14px;
-        padding: 14px 16px;
-        margin-bottom: 18px;
-        font-size: 14px;
-    }
-</style>
-
+@* ── Watermark (unchanged) ────────────────────────── *@
 <div class="secure-watermark"
      style="background-image:url('data:image/svg+xml;utf8,<svg xmlns=&quot;http://www.w3.org/2000/svg&quot; width=&quot;460&quot; height=&quot;220&quot;><text x=&quot;20&quot; y=&quot;110&quot; transform=&quot;rotate(-25 230 110)&quot; font-size=&quot;20&quot; font-family=&quot;Arial&quot; font-weight=&quot;700&quot; fill=&quot;%23000000&quot;>@Uri.EscapeDataString(watermarkText)</text></svg>');">
 </div>
 
+@* ── Timeout overlay (unchanged behaviour, redesigned) ── *@
 <div class="secure-timeout-overlay" id="secureTimeoutOverlay">
     <div class="secure-timeout-box">
-        <h2 style="font-weight:900;">Valuer details hidden</h2>
+        <div class="secure-timeout-icon">
+            <i class="fa-solid fa-lock"></i>
+        </div>
+        <h2>Valuer details hidden</h2>
         <p>
             For security, valuer details are only displayed for a short time.
             Please contact Valuation Services if you need assistance.
         </p>
-        <a href="/dashboard?openRoll=attributes" class="btn btn-warning fw-bold">
-            Back to Dashboard
+        <a href="/dashboard?openRoll=attributes" class="vv-back-btn" style="align-self:center;">
+            <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
         </a>
     </div>
 </div>
 
-<div class="container secure-page" id="secureValuerDetails" style="max-width:980px;margin:30px auto;">
-    <div style="background:#0b2f33;color:#fff;border-radius:18px;padding:24px;margin-bottom:20px;">
-        <h2 style="font-weight:900;margin:0;">Verified Valuer Details</h2>
-        <p style="margin:8px 0 0;color:#d1d5db;">
-            Only allow the inspection to continue if the person and vehicle match the details below.
-        </p>
-    </div>
+<div class="vv-page secure-page" id="secureValuerDetails">
 
-    <div style="background:#fff;border:1px solid #e5e7eb;border-radius:18px;padding:22px;box-shadow:0 10px 24px rgba(0,0,0,.08);">
-
-    <div class="secure-warning">
-        <strong>Security notice:</strong>
-        These valuer details are shown for safety verification only.
-        Do not share, save, distribute, or screenshot this information.
-    </div>
-
-    <h4 style="font-weight:900;margin-bottom:16px;">Appointment</h4>
-
-        <table class="table table-bordered">
-            <tr>
-                <th style="width:240px;">Reference</th>
-                <td>@Model.AttrNo</td>
-            </tr>
-            <tr>
-                <th>Property</th>
-                <td>@Model.PropertyDescription</td>
-            </tr>
-            <tr>
-                <th>Confirmed Date</th>
-                <td>@Model.ConfirmedDateTime?.ToString("dd MMM yyyy HH:mm")</td>
-            </tr>
-        </table>
-
-        <h4 style="font-weight:900;margin:24px 0 16px;">Valuer Identity</h4>
-
-        <div style="display:grid;grid-template-columns:220px 1fr;gap:20px;align-items:start;">
-            <div>
-                @if (Model.HasPhoto)
-                {
-                    <img src="@Url.Action("ValuerPhoto", "Dashboard", new { inspectionRequestId = Model.InspectionRequestId })"
-                         alt="Valuer photo"
-                         onerror="this.style.display='none'; document.getElementById('noValuerPhoto').style.display='flex';"
-                         style="width:200px;height:200px;object-fit:cover;border-radius:16px;border:1px solid #ddd;" />
-
-                    <div id="noValuerPhoto"
-                         style="display:none;width:200px;height:200px;border-radius:16px;border:1px solid #ddd;align-items:center;justify-content:center;color:#777;font-weight:800;">
-                        Photo Not Found
-                    </div>
-                }
-                else
-                {
-                    <div style="width:200px;height:200px;border-radius:16px;border:1px solid #ddd;display:flex;align-items:center;justify-content:center;color:#777;font-weight:800;">
-                        No Photo
-                    </div>
-                }
+    @* ── Hero ─────────────────────────────────────── *@
+    <div class="vv-hero">
+        <div class="vv-hero-inner">
+            <div class="vv-hero-icon">
+                <i class="fa-solid fa-shield-halved"></i>
             </div>
+            <div>
+                <div class="vv-hero-eyebrow">City of Johannesburg · Valuation Services</div>
+                <h1 class="vv-hero-title">Verified Valuer Details</h1>
+                <p class="vv-hero-sub">
+                    Only allow the inspection to continue if the person and vehicle match the details below.
+                </p>
+            </div>
+        </div>
+    </div>
 
-            <table class="table table-bordered">
-                <tr>
-                    <th style="width:220px;">Valuer Name</th>
-                    <td>@Model.ValuerName</td>
-                </tr>
-                <tr>
-                    <th>Email</th>
-                    <td>@Model.EmailAddress</td>
-                </tr>
-                <tr>
-                    <th>Cell Number</th>
-                    <td>@Model.CellNumber</td>
-                </tr>
-                <tr>
-                    <th>Vehicle Registration</th>
-                    <td><strong>@Model.VehicleRegistration</strong></td>
-                </tr>
-                <tr>
-                    <th>Vehicle Make</th>
-                    <td>@Model.VehicleMake</td>
-                </tr>
-                <tr>
-                    <th>Vehicle Colour</th>
-                    <td>@Model.VehicleColour</td>
-                </tr>
-            </table>
+    <div class="vv-body">
+
+        @* ── Security notice ─────────────────────────── *@
+        <div class="vv-notice">
+            <i class="fa-solid fa-circle-info"></i>
+            <div>
+                <strong>Security notice:</strong>
+                These valuer details are shown for safety verification only.
+                Do not share, save, distribute, or screenshot this information.
+            </div>
         </div>
 
-        <div class="alert alert-warning" style="margin-top:20px;">
-            <strong>Safety check:</strong>
-            Do not allow the inspection to proceed if the person, vehicle registration, or photo does not match.
+        @* ── Appointment card ────────────────────────── *@
+        <div class="vv-card">
+            <div class="vv-card-bar">
+                <i class="fa-solid fa-calendar-check"></i>
+                <h3>Appointment</h3>
+            </div>
+            <div class="vv-card-body">
+                <div class="vv-field-grid">
+                    <div class="vv-field">
+                        <span class="vv-field-label">Reference</span>
+                        <div class="vv-field-value">@Model.AttrNo</div>
+                    </div>
+                    <div class="vv-field full">
+                        <span class="vv-field-label">Property</span>
+                        <div class="vv-field-value">@Model.PropertyDescription</div>
+                    </div>
+                    <div class="vv-field">
+                        <span class="vv-field-label">Confirmed Date</span>
+                        <div class="vv-field-value">@Model.ConfirmedDateTime?.ToString("dd MMM yyyy HH:mm")</div>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <a href="/dashboard?openRoll=attributes" class="btn btn-dark">
-            Back to Dashboard
+        @* ── Valuer identity card ────────────────────── *@
+        <div class="vv-card">
+            <div class="vv-card-bar">
+                <i class="fa-solid fa-user-shield"></i>
+                <h3>Valuer Identity</h3>
+            </div>
+            <div class="vv-card-body">
+                <div class="vv-identity">
+
+                    <div class="vv-photo-col">
+                        @if (Model.HasPhoto)
+                        {
+                            <img src="@Url.Action("ValuerPhoto", "Dashboard", new { inspectionRequestId = Model.InspectionRequestId })"
+                                 alt="Valuer photo"
+                                 class="vv-photo"
+                                 onerror="this.style.display='none'; document.getElementById('noValuerPhoto').style.display='flex';" />
+
+                            <div id="noValuerPhoto" class="vv-photo-placeholder" style="display:none;">
+                                <i class="fa-solid fa-image-slash"></i>
+                                <span>Photo Not Found</span>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="vv-photo-placeholder">
+                                <i class="fa-solid fa-user"></i>
+                                <span>No Photo</span>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="vv-identity-fields">
+                        <div class="vv-identity-field">
+                            <span class="vv-identity-label">Valuer Name</span>
+                            <div class="vv-identity-value">@Model.ValuerName</div>
+                        </div>
+                        <div class="vv-identity-field">
+                            <span class="vv-identity-label">Email</span>
+                            <div class="vv-identity-value">@Model.EmailAddress</div>
+                        </div>
+                        <div class="vv-identity-field">
+                            <span class="vv-identity-label">Cell Number</span>
+                            <div class="vv-identity-value">@Model.CellNumber</div>
+                        </div>
+                        <div class="vv-identity-field">
+                            <span class="vv-identity-label">Vehicle Registration</span>
+                            <div class="vv-identity-value accent">@Model.VehicleRegistration</div>
+                        </div>
+                        <div class="vv-identity-field">
+                            <span class="vv-identity-label">Vehicle Make</span>
+                            <div class="vv-identity-value">@Model.VehicleMake</div>
+                        </div>
+                        <div class="vv-identity-field">
+                            <span class="vv-identity-label">Vehicle Colour</span>
+                            <div class="vv-identity-value">@Model.VehicleColour</div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        @* ── Safety check alert ───────────────────────── *@
+        <div class="vv-safety">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            <div>
+                <strong>Safety check:</strong>
+                Do not allow the inspection to proceed if the person, vehicle registration, or photo does not match.
+            </div>
+        </div>
+
+        @* ── Back button ──────────────────────────────── *@
+        <a href="/dashboard?openRoll=attributes" class="vv-back-btn">
+            <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
         </a>
+
     </div>
 </div>
+
 <script>
     function hideSecureDetails() {
         const details = document.getElementById("secureValuerDetails");

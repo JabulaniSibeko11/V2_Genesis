@@ -12,7 +12,10 @@
 
         public string SmtpUser { get; set; } = string.Empty;
         public string FromAddress { get; set; } = string.Empty;
-      
+        public bool TestMode { get; set; } = true;
+
+        public string TestRecipient { get; set; } = string.Empty;
+
     }
 
 }

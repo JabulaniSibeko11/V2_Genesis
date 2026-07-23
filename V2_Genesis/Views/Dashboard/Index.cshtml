@@ -1852,193 +1852,154 @@ else if (roll.IsQuery)
 
                     @* PIN verification modals - full backend verification comes next *@
                   @* PIN verification modals *@
-@foreach (var appointment in attrData.Appointments
-    .Where(x => x.Status == "InspectionDetailsSent"))
-{
-    var modalId = $"pinModal_{appointment.Id}";
-    var inputId = $"pinHiddenInput_{appointment.Id}";
-    var formId = $"pinForm_{appointment.Id}";
-    var submitId = $"pinSubmitBtn_{appointment.Id}";
-    var errorId = $"pinError_{appointment.Id}";
-    var errorMsgId = $"pinErrorMsg_{appointment.Id}";
-    var contextTitleId = $"pinContextTitle_{appointment.Id}";
-
-    <div class="pin-backdrop"
-         id="@modalId"
-         style="display:none;">
-
-        <div class="pin-modal"
-             role="dialog"
-             aria-modal="true"
-             aria-labelledby="@contextTitleId">
-
-            <div class="pin-handle"></div>
-
-            <div class="pin-head">
-                <div class="pin-head-icon">
-                    <i class="fa-solid fa-lock"></i>
-                </div>
-
-                <div class="pin-head-text">
-                    <div class="pin-head-title">
-                        Enter Inspection PIN
-                    </div>
-                    <div class="pin-head-sub">
-                        @appointment.AppointmentRef
-                    </div>
-                </div>
-
-                <button type="button"
-                        class="pin-head-close"
-                        onclick="closePinModal('@appointment.Id')"
-                        aria-label="Close">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-            </div>
-
-            <form asp-controller="Dashboard"
-                  asp-action="VerifyInspectionPin"
-                  method="post"
-                  id="@formId"
-                  autocomplete="off">
-
-                @Html.AntiForgeryToken()
-
-                <input type="hidden"
-                       name="InspectionRequestId"
-                       value="@appointment.Id" />
-
-                <div class="pin-body">
-                    <div class="pin-lock-ring">
-                        <i class="fa-solid fa-shield-halved"></i>
-                    </div>
-
-                    <div class="pin-context">
-                        <div class="pin-context-title" id="@contextTitleId">
-                            Verify your inspection appointment
-                        </div>
-
-                        <div class="pin-context-sub">
-                            Enter the PIN sent to you by email.
-                        </div>
-                    </div>
-
-                    @if (appointment.ConfirmedDateTime != null)
+                    @foreach (var appointment in attrData.Appointments
+                        .Where(x => x.Status == "InspectionDetailsSent"))
                     {
-                        <div class="alert alert-info" style="margin-top:12px;">
-                            <strong>Confirmed inspection date:</strong><br />
-                            @appointment.ConfirmedDateTime.Value.ToString("dd MMM yyyy HH:mm")
+                        var modalId = $"pinModal_{appointment.Id}";
+                        var inputId = $"pinHiddenInput_{appointment.Id}";
+                        var formId = $"pinForm_{appointment.Id}";
+                        var submitId = $"pinSubmitBtn_{appointment.Id}";
+                        var errorId = $"pinError_{appointment.Id}";
+                        var errorMsgId = $"pinErrorMsg_{appointment.Id}";
+                        var contextTitleId = $"pinContextTitle_{appointment.Id}";
+
+                        <div class="pin-backdrop" id="@modalId" style="display:none;">
+                            <div class="pin-modal" role="dialog" aria-modal="true" aria-labelledby="@contextTitleId">
+
+                                <div class="pin-handle"></div>
+
+                                <div class="pin-head">
+                                    <div class="pin-head-icon">
+                                        <i class="fa-solid fa-lock"></i>
+                                    </div>
+                                    <div class="pin-head-text">
+                                        <div class="pin-head-title">Enter Inspection PIN</div>
+                                        <div class="pin-head-sub">@appointment.AppointmentRef</div>
+                                    </div>
+                                    <button type="button" class="pin-head-close"
+                                            onclick="closePinModal('@appointment.Id')" aria-label="Close">
+                                        <i class="fa-solid fa-xmark"></i>
+                                    </button>
+                                </div>
+
+                                <form asp-controller="Dashboard"
+                                      asp-action="VerifyInspectionPin"
+                                      method="post"
+                                      id="@formId"
+                                      autocomplete="off">
+
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="InspectionRequestId" value="@appointment.Id" />
+
+                                    <div class="pin-body">
+                                        <div class="pin-lock-ring">
+                                            <i class="fa-solid fa-shield-halved"></i>
+                                        </div>
+
+                                        <div class="pin-context">
+                                            <div class="pin-context-title" id="@contextTitleId">
+                                                Verify your inspection appointment
+                                            </div>
+                                            <div class="pin-context-sub">
+                                                Enter the PIN sent to you by email.
+                                            </div>
+                                        </div>
+
+                                        @if (appointment.ConfirmedDateTime != null)
+                                        {
+                                            <div class="pin-confirmed-date">
+                                                <i class="fa-solid fa-calendar-check"></i>
+                                                <div>
+                                                    <span class="pin-confirmed-label">Confirmed inspection date</span>
+                                                    <span class="pin-confirmed-value">
+                                                        @appointment.ConfirmedDateTime.Value.ToString("dd MMM yyyy HH:mm")
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        }
+
+                                        @* ── Dot display — BUG FIXED: @(appointment.Id) wrapped in parens ── *@
+                                        <div class="pin-dots">
+                                            <div class="pin-dot" id="dot_@(appointment.Id)_0"></div>
+                                            <div class="pin-dot" id="dot_@(appointment.Id)_1"></div>
+                                            <div class="pin-dot" id="dot_@(appointment.Id)_2"></div>
+                                            <div class="pin-dot" id="dot_@(appointment.Id)_3"></div>
+                                        </div>
+
+                                        <input type="password"
+                                               id="@inputId"
+                                               name="Pin"
+                                               class="pin-input-hidden"
+                                               maxlength="4"
+                                               inputmode="numeric"
+                                               pattern="[0-9]{4}"
+                                               autocomplete="off"
+                                               required />
+
+                                        <div class="pin-error" id="@errorId">
+                                            <i class="fa-solid fa-circle-exclamation"></i>
+                                            <span id="@errorMsgId">Incorrect PIN. Please try again.</span>
+                                        </div>
+
+                                        <div class="pin-keypad">
+                                            <button type="button" class="pin-key" onclick="pinKey('@appointment.Id', '1')">
+                                                <span class="pin-key-num">1</span>
+                                            </button>
+                                            <button type="button" class="pin-key" onclick="pinKey('@appointment.Id', '2')">
+                                                <span class="pin-key-num">2</span>
+                                                <span class="pin-key-alpha">ABC</span>
+                                            </button>
+                                            <button type="button" class="pin-key" onclick="pinKey('@appointment.Id', '3')">
+                                                <span class="pin-key-num">3</span>
+                                                <span class="pin-key-alpha">DEF</span>
+                                            </button>
+                                            <button type="button" class="pin-key" onclick="pinKey('@appointment.Id', '4')">
+                                                <span class="pin-key-num">4</span>
+                                                <span class="pin-key-alpha">GHI</span>
+                                            </button>
+                                            <button type="button" class="pin-key" onclick="pinKey('@appointment.Id', '5')">
+                                                <span class="pin-key-num">5</span>
+                                                <span class="pin-key-alpha">JKL</span>
+                                            </button>
+                                            <button type="button" class="pin-key" onclick="pinKey('@appointment.Id', '6')">
+                                                <span class="pin-key-num">6</span>
+                                                <span class="pin-key-alpha">MNO</span>
+                                            </button>
+                                            <button type="button" class="pin-key" onclick="pinKey('@appointment.Id', '7')">
+                                                <span class="pin-key-num">7</span>
+                                                <span class="pin-key-alpha">PQRS</span>
+                                            </button>
+                                            <button type="button" class="pin-key" onclick="pinKey('@appointment.Id', '8')">
+                                                <span class="pin-key-num">8</span>
+                                                <span class="pin-key-alpha">TUV</span>
+                                            </button>
+                                            <button type="button" class="pin-key" onclick="pinKey('@appointment.Id', '9')">
+                                                <span class="pin-key-num">9</span>
+                                                <span class="pin-key-alpha">WXYZ</span>
+                                            </button>
+                                            <button type="button" class="pin-key" style="border:none;background:none;box-shadow:none;cursor:default;" disabled></button>
+                                            <button type="button" class="pin-key pin-key-zero" onclick="pinKey('@appointment.Id', '0')">
+                                                <span class="pin-key-num">0</span>
+                                            </button>
+                                            <button type="button" class="pin-key pin-key-del" onclick="pinDelete('@appointment.Id')" aria-label="Delete">
+                                                <i class="fa-solid fa-delete-left pin-key-icon"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div class="pin-foot">
+                                        <button type="submit" class="pin-submit-btn" id="@submitId" disabled>
+                                            <i class="fa-solid fa-unlock"></i> Confirm
+                                        </button>
+                                        <div class="pin-forgot">
+                                            PIN only works during the inspection security window.
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
                         </div>
                     }
 
-                    <div class="pin-dots">
-                        <div class="pin-dot" id="dot_@appointment.Id _0"></div>
-                        <div class="pin-dot" id="dot_@appointment.Id _1"></div>
-                        <div class="pin-dot" id="dot_@appointment.Id _2"></div>
-                        <div class="pin-dot" id="dot_@appointment.Id _3"></div>
-                    </div>
-
-                    <input type="password"
-                           id="@inputId"
-                           name="Pin"
-                           class="pin-input-hidden"
-                           maxlength="4"
-                           inputmode="numeric"
-                           pattern="[0-9]{4}"
-                           autocomplete="off"
-                           required />
-
-                    <div class="pin-error" id="@errorId">
-                        <i class="fa-solid fa-circle-exclamation"></i>
-                        <span id="@errorMsgId">
-                            Incorrect PIN. Please try again.
-                        </span>
-                    </div>
-
-                    <div class="pin-keypad">
-                        <button type="button" class="pin-key" onclick="pinKey('@appointment.Id', '1')">
-                            <span class="pin-key-num">1</span>
-                        </button>
-
-                        <button type="button" class="pin-key" onclick="pinKey('@appointment.Id', '2')">
-                            <span class="pin-key-num">2</span>
-                            <span class="pin-key-alpha">ABC</span>
-                        </button>
-
-                        <button type="button" class="pin-key" onclick="pinKey('@appointment.Id', '3')">
-                            <span class="pin-key-num">3</span>
-                            <span class="pin-key-alpha">DEF</span>
-                        </button>
-
-                        <button type="button" class="pin-key" onclick="pinKey('@appointment.Id', '4')">
-                            <span class="pin-key-num">4</span>
-                            <span class="pin-key-alpha">GHI</span>
-                        </button>
-
-                        <button type="button" class="pin-key" onclick="pinKey('@appointment.Id', '5')">
-                            <span class="pin-key-num">5</span>
-                            <span class="pin-key-alpha">JKL</span>
-                        </button>
-
-                        <button type="button" class="pin-key" onclick="pinKey('@appointment.Id', '6')">
-                            <span class="pin-key-num">6</span>
-                            <span class="pin-key-alpha">MNO</span>
-                        </button>
-
-                        <button type="button" class="pin-key" onclick="pinKey('@appointment.Id', '7')">
-                            <span class="pin-key-num">7</span>
-                            <span class="pin-key-alpha">PQRS</span>
-                        </button>
-
-                        <button type="button" class="pin-key" onclick="pinKey('@appointment.Id', '8')">
-                            <span class="pin-key-num">8</span>
-                            <span class="pin-key-alpha">TUV</span>
-                        </button>
-
-                        <button type="button" class="pin-key" onclick="pinKey('@appointment.Id', '9')">
-                            <span class="pin-key-num">9</span>
-                            <span class="pin-key-alpha">WXYZ</span>
-                        </button>
-
-                        <button type="button"
-                                class="pin-key"
-                                style="border:none;background:none;box-shadow:none;cursor:default;"
-                                disabled>
-                        </button>
-
-                        <button type="button"
-                                class="pin-key pin-key-zero"
-                                onclick="pinKey('@appointment.Id', '0')">
-                            <span class="pin-key-num">0</span>
-                        </button>
-
-                        <button type="button"
-                                class="pin-key pin-key-del"
-                                onclick="pinDelete('@appointment.Id')"
-                                aria-label="Delete">
-                            <i class="fa-solid fa-delete-left pin-key-icon"></i>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="pin-foot">
-                    <button type="submit"
-                            class="pin-submit-btn"
-                            id="@submitId"
-                            disabled>
-                        <i class="fa-solid fa-unlock"></i>
-                        Confirm
-                    </button>
-
-                    <div class="pin-forgot">
-                        PIN only works during the inspection security window.
-                    </div>
-                </div>
-            </form>
-        </div>
-    </div>
-}      
-                
                 
                 </div>
             </div>
@@ -2638,4 +2599,4 @@ else if (roll.IsQuery)
         });
     </script>
 }
-}
+
