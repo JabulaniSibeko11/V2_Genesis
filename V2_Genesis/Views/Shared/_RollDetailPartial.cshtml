@@ -1,0 +1,653 @@
+﻿@using V2_Genesis.Helpers
+@using V2_Genesis.Services.Implementations
+@using V2_Genesis.Services.Interfaces
+@inject IObjectionService ObjectionRules
+@model V2_Genesis.Models.ViewModels.Dashboard.RollDetailViewModel
+@{
+    // Loaded on demand — see DashboardController.RollDetail(...).
+    // Used both for the Tiles slide-over panel and the List view
+    // accordion's first-expand fetch.
+    var rollKey = Model.Roll.Source.Replace("_", "");
+}
+
+@if (Model.Roll.IsQuery)
+{
+    @* Split Queries (Sub_typ=0) from Reviews (Sub_typ=1) *@
+    var queries = Model.Data.ObjectedProperties.Where(x => x.Sub_typ == 0).ToList();
+    var reviews = Model.Data.ObjectedProperties.Where(x => x.Sub_typ == 1).ToList();
+
+    <!-- ── 1. Linked Properties ──────────────────────────────── -->
+    <div class="cd-widget">
+        <div class="cd-widget-toggle" onclick="toggleWidget('@rollKey-linked')">
+            <div class="cd-widget-toggle-left">
+                <i class="fa-solid fa-link"></i>
+                <h3>Linked Properties</h3>
+                <span class="cd-count-badge">@Model.Data.LinkedCount</span>
+            </div>
+            <i class="fa-solid fa-chevron-down cd-widget-chevron"
+               id="wchev-@rollKey-linked"></i>
+        </div>
+        <div class="cd-widget-body" id="widget-@rollKey-linked">
+            @*  <div class="cd-widget-toolbar">
+                <a href="/search/@Model.Roll.Source" class="cd-add-btn">
+                    <i class="fa-solid fa-plus"></i> Link New Property
+                </a>
+            </div> *@
+            <div class="table-responsive">
+                <table class="cd-table table table-bordered"
+                       id="tbl-@rollKey-linked">
+                    <thead>
+                        <tr>
+                            <th>Property Description</th>
+                            <th>Category</th>
+                            <th>Town</th>
+                            <th>Market Value</th>
+                            <th>With Effective Date</th>
+                            <th>Options</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.Data.LinkedProperties)
+                        {
+                            <tr>
+                                <td>@item.PropertyDesc</td>
+                                <td>@item.CatDesc</td>
+                                <td>@item.TownNameDesc</td>
+                                <td>@DashboardDisplayHelpers.FormatZAR(item.MarketValue)</td>
+                                <td>
+                                    @(DateTime.TryParse(item.WefDate, out var wefDate)
+                                        ? wefDate.ToString("dd MMMM yyyy")
+                                        : item.WefDate)
+                                </td>
+                                <td>
+                                    <div class="dropdown">
+                                        <button class="cd-action-btn dropdown-toggle"
+                                                data-bs-toggle="dropdown">
+                                            Actions
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            <li>
+                                                <a class="dropdown-item"
+                                                       href="/objection/check?rollSource=@Model.Roll.Source&sourceTable=@item.PropertyFrom&unitKey=@item.UnitKey&valuationKey=@item.ValuationKey&appealStatus=False">
+                                                    <i class="fa-solid fa-file-pen"></i> Lodge Query
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item"
+                                                       href="/property/unlink?linkedId=@item.Id&rollSource=@Model.Roll.Source&returnUrl=/Dashboard?openRoll=@Model.Roll.Source">
+                                                    <i class="fa-solid fa-link-slash"></i> Unlink Property
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── 2. My Queries ─────────────────────────────────────── -->
+    <div class="cd-widget">
+        <div class="cd-widget-toggle" onclick="toggleWidget('@rollKey-queries')">
+            <div class="cd-widget-toggle-left">
+                <i class="fa-solid fa-magnifying-glass-chart"></i>
+                <h3>My Queries</h3>
+                <span class="cd-count-badge cd-count-orange">@queries.Count</span>
+            </div>
+            <i class="fa-solid fa-chevron-down cd-widget-chevron"
+               id="wchev-@rollKey-queries"></i>
+        </div>
+        <div class="cd-widget-body" id="widget-@rollKey-queries">
+            <div class="table-responsive">
+                <table class="cd-table table table-bordered table-hover"
+                       id="tbl-@rollKey-queries">
+                    <thead>
+                        <tr>
+                            <th>Query No.</th>
+                            <th>Property Description</th>
+                            <th>Category</th>
+                            <th>Town</th>
+                            <th>Market Value</th>
+                            <th>Status</th>
+                            <th>Options</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in queries)
+                        {
+                            <tr>
+                                <td><strong>@item.Objection_No</strong></td>
+                                <td>@item.Property_Desc</td>
+                                <td>@item.Old_Category</td>
+                                <td>@item.Town_Name</td>
+                                <td>@DashboardDisplayHelpers.FormatZAR(item.Old_Market_Value)</td>
+                                <td>@Html.Raw(DashboardDisplayHelpers.GetStatusPill(item.objection_Status))</td>
+                                <td>
+                                    <div class="dropdown">
+                                        <button class="cd-action-btn dropdown-toggle"
+                                                data-bs-toggle="dropdown">
+                                            Actions
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            <li>
+                                                @{
+                                                    var queryRefNo = !string.IsNullOrWhiteSpace(item.Query_No)
+                                                        ? item.Query_No
+                                                        : item.Query_No ?? item.Objection_No;
+
+                                                    var viewQueryFormUrl =
+                                                        "/admin/enquiry/form-view"
+                                                        + "?referenceNo=" + Uri.EscapeDataString(queryRefNo ?? "")
+                                                        + "&rollSource=Objection_Query"
+                                                        + "&propertyType=" + Uri.EscapeDataString(item.Property_Type ?? "")
+                                                        + "&appealStatus=False"
+                                                        + "&isQuery=true";
+                                                }
+
+                                                <a class="dropdown-item"
+                                                       href="@viewQueryFormUrl"
+                                                       target="_blank">
+                                                    <i class="fa-solid fa-eye"></i> View Query Form
+                                                </a>
+                                                @* <a class="dropdown-item"
+                                                   href="/Home/FormData@(Model.Roll.ControllerName)?propertyID=@item.Property_Type&objectionNo=@item.Objection_No&AppealStatus=False">
+                                                    <i class="fa-solid fa-eye"></i> View Form
+                                                </a> *@
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item"
+                                                       href="/notice/acknowledgement/download?objectionNo=@item.Objection_No&rollSource=@Model.Roll.Source">
+                                                    <i class="fa-solid fa-download"></i> Download Acknowledgement
+                                                </a>
+                                            </li>
+                                            @if (item.objection_Status == "Query-Lodging")
+                                            {
+                                                <li>
+                                                    <a class="dropdown-item"
+                                                           href="/section78/verify?queryNo=@item.Objection_No">
+                                                        <i class="fa-solid fa-paperclip"></i> Add Evidence
+                                                    </a>
+                                                </li>
+                                            }
+                                            @if (item.objection_Status is "Query-Lodging" or "Query-Unallocated")
+                                            {
+                                                <li>
+                                                    <a class="dropdown-item"
+                                                           href="/objection/withdraw?objectionNo=@item.Query_No&withdrawType=Query&rollSource=Query&returnUrl=/dashboard">
+                                                        <i class="fa-solid fa-ban"></i> Withdraw Query
+                                                    </a>
+                                                </li>
+                                            }
+                                            @* ── Review button — only when Query-Finalized ── *@
+                                            @if (item.objection_Status == "Query-Finalized")
+                                            {
+                                                <li><hr class="dropdown-divider" /></li>
+                                                <li>
+                                                    <a class="dropdown-item"
+                                                           href="/Section78/Section78Query?qtype=Review&UKey=@item.Unit_key&VKey=@item.Valuation_Key&PropDesc=@item.Property_Desc&addr=&cat=@item.Old_Category">
+                                                        <i class="fa-solid fa-magnifying-glass"
+                                                           style="color:#e6b000;"></i>
+                                                        <strong>Lodge Review</strong>
+                                                    </a>
+                                                </li>
+                                            }
+                                        </ul>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── 3. My Reviews ─────────────────────────────────────── -->
+    <div class="cd-widget">
+        <div class="cd-widget-toggle" onclick="toggleWidget('@rollKey-reviews')">
+            <div class="cd-widget-toggle-left">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <h3>My Reviews</h3>
+                <span class="cd-count-badge" style="background:#e6b000;color:#1a1a1a;">
+                    @reviews.Count
+                </span>
+            </div>
+            <i class="fa-solid fa-chevron-down cd-widget-chevron"
+               id="wchev-@rollKey-reviews"></i>
+        </div>
+        <div class="cd-widget-body" id="widget-@rollKey-reviews">
+            @if (!reviews.Any())
+            {
+                <div style="padding:20px 24px; font-size:13.5px; color:#888;">
+                    <i class="fa-solid fa-circle-info" style="color:#89b7b2; margin-right:6px;"></i>
+                    No reviews lodged yet. A <strong>Lodge Review</strong> button will appear
+                    on your Query once its status is <strong>Query-Finalized</strong>.
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="cd-table table table-bordered table-hover"
+                           id="tbl-@rollKey-reviews">
+                        <thead>
+                            <tr>
+                                <th>Review No.</th>
+                                <th>Property Description</th>
+                                <th>Category</th>
+                                <th>Town</th>
+                                <th>Market Value</th>
+                                <th>Status</th>
+                                <th>Options</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in reviews)
+                            {
+                                <tr>
+                                    <td>
+                                        <strong>@item.Objection_No</strong>
+                                        <span class="cd-pill cd-pill-lodging"
+                                              style="font-size:10px; margin-left:4px;">
+                                            Review
+                                        </span>
+                                    </td>
+                                    <td>@item.Property_Desc</td>
+                                    <td>@item.Old_Category</td>
+                                    <td>@item.Town_Name</td>
+                                    <td>@DashboardDisplayHelpers.FormatZAR(item.Old_Market_Value)</td>
+                                    <td>@Html.Raw(DashboardDisplayHelpers.GetStatusPill(item.objection_Status))</td>
+                                    <td>
+                                        <div class="dropdown">
+                                            <button class="cd-action-btn dropdown-toggle"
+                                                    data-bs-toggle="dropdown">
+                                                Actions
+                                            </button>
+                                            <ul class="dropdown-menu">
+                                                <li>
+                                                    <a class="dropdown-item"
+                                                           href="/Home/FormData@(Model.Roll.ControllerName)?propertyID=@item.Property_Type&objectionNo=@item.Objection_No&AppealStatus=False">
+                                                        <i class="fa-solid fa-eye"></i> View Form
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a class="dropdown-item"
+                                                           href="/notice/acknowledgement/download?objectionNo=@item.Objection_No&rollSource=@Model.Roll.Source">
+                                                        <i class="fa-solid fa-download"></i>Download Acknowledgement
+                                                    </a>
+                                                </li>
+                                                @if (item.objection_Status is "Query-Lodging" or "Query-Unallocated")
+                                                {
+                                                    <li>
+                                                        <a class="dropdown-item"
+                                                               href="/section78/verify?queryNo=@item.Objection_No">
+                                                            <i class="fa-solid fa-paperclip"></i> Add Evidence
+                                                        </a>
+                                                    </li>
+                                                    <li>
+                                                        <a class="dropdown-item"
+                                                               href="/@Model.Roll.ControllerName/Withdrawal?ObjectionNum=@item.Objection_No&Withdraw=O">
+                                                            <i class="fa-solid fa-ban"></i> Withdraw
+                                                        </a>
+                                                    </li>
+                                                }
+                                            </ul>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+}
+else
+{
+    @* ── Linked Properties ─────────────────────────── *@
+    <div class="cd-widget">
+        <div class="cd-widget-toggle" onclick="toggleWidget('@rollKey-linked')">
+            <div class="cd-widget-toggle-left">
+                <i class="fa-solid fa-link"></i>
+                <h3>Linked Properties</h3>
+                <span class="cd-count-badge">@Model.Data.LinkedCount</span>
+            </div>
+            <i class="fa-solid fa-chevron-down cd-widget-chevron"
+               id="wchev-@rollKey-linked"></i>
+        </div>
+        <div class="cd-widget-body" id="widget-@rollKey-linked">
+            @*  <div class="cd-widget-toolbar">
+                    <a href="/search/@Model.Roll.Source" class="cd-add-btn">
+                        <i class="fa-solid fa-plus"></i> Link New Property
+                    </a>
+                </div> *@
+            <div class="table-responsive">
+                <table class="cd-table table table-bordered"
+                       id="tbl-@rollKey-linked">
+                    <thead>
+                        <tr>
+                            <th>Property Description</th>
+                            <th>Category</th>
+                            <th>Town</th>
+                            <th>Market Value</th>
+                            <th>With Effective Date</th>
+                            <th>Options</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.Data.LinkedProperties)
+                        {
+                            <tr>
+                                <td>@item.PropertyDesc</td>
+                                <td>@item.CatDesc</td>
+                                <td>@item.TownNameDesc</td>
+                                <td>@DashboardDisplayHelpers.FormatZAR(item.MarketValue)</td>
+                                <td>
+                                    @(DateTime.TryParse(item.WefDate, out var wefDate)
+                                        ? wefDate.ToString("dd MMMM yyyy")
+                                        : item.WefDate)
+                                </td>
+                                <td>
+                                    <div class="dropdown">
+                                        <button class="cd-action-btn dropdown-toggle"
+                                                data-bs-toggle="dropdown">
+                                            Actions
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            @if (Model.Roll.HasObjection && Model.CanLodgeObjectionForRoll)
+                                            {
+                                                <li>
+                                                    @{
+                                                        var propertyFrom = item.PropertyFrom?.Trim();
+
+                                                        var checkSourceTable = propertyFrom?.Equals("LIS", StringComparison.OrdinalIgnoreCase) == true
+                                                            ? ObjectionService.RollSourceToSourceTable.GetValueOrDefault(Model.Roll.Source, Model.Roll.Source)
+                                                            : propertyFrom;
+
+                                                        var checkPropertyFrom = propertyFrom?.Equals("LIS", StringComparison.OrdinalIgnoreCase) == true
+                                                            ? "LIS"
+                                                            : checkSourceTable;
+                                                    }
+
+                                                    <a class="dropdown-item"
+                                                           href="/objection/check?rollSource=@Model.Roll.Source&sourceTable=@checkSourceTable&unitKey=@item.UnitKey&valuationKey=@item.ValuationKey&appealStatus=False&PropertyFrom=@checkPropertyFrom">
+                                                        <i class="fa-solid fa-file-pen"></i> Lodge Objection
+                                                    </a>
+                                                </li>
+                                            }
+                                                
+                                            <li>
+                                                <a class="dropdown-item"
+                                                       href="/property/unlink?linkedId=@item.Id&rollSource=@Model.Roll.Source&returnUrl=/Dashboard?openRoll=@Model.Roll.Source">
+                                                    <i class="fa-solid fa-link-slash"></i> Unlink
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    @* ── My Objections ──────────────────────────────── *@
+    @if (Model.Roll.HasObjection)
+    {
+        var objections = Model.Data.ObjectedProperties.Where(x => x.Sub_typ == 0).ToList();
+        <div class="cd-widget">
+            <div class="cd-widget-toggle" onclick="toggleWidget('@rollKey-objections')">
+                <div class="cd-widget-toggle-left">
+                    <i class="fa-solid fa-file-pen"></i>
+                    <h3>My Objections</h3>
+                    <span class="cd-count-badge cd-count-orange">@objections.Count</span>
+                </div>
+                <i class="fa-solid fa-chevron-down cd-widget-chevron"
+                   id="wchev-@rollKey-objections"></i>
+            </div>
+            <div class="cd-widget-body" id="widget-@rollKey-objections">
+                <div class="table-responsive">
+                    <table class="cd-table table table-bordered table-hover"
+                           id="tbl-@rollKey-objections">
+                        <thead>
+                            <tr>
+                                <th>Objection No.</th>
+                                <th>Property Description</th>
+                                <th>Category</th>
+                                <th>Market Value</th>
+                                <th>Status</th>
+                                <th>Options</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in objections)
+                            {
+                                <tr>
+                                    <td><strong>@item.Objection_No</strong></td>
+                                    <td>@item.Property_Desc</td>
+                                    <td>@item.Old_Category</td>
+                                    <td>@DashboardDisplayHelpers.FormatZAR(item.Old_Market_Value)</td>
+                                    <td>@Html.Raw(DashboardDisplayHelpers.GetStatusPill(item.objection_Status))</td>
+                                    <td>
+                                        <div class="dropdown">
+                                            <button class="cd-action-btn dropdown-toggle"
+                                                    data-bs-toggle="dropdown">
+                                                Actions
+                                            </button>
+                                            <ul class="dropdown-menu">
+                                                <li>
+                                                    @{
+                                                        var viewFormUrl =
+                                                            "/admin/enquiry/form-view"
+                                                            + "?referenceNo=" + Uri.EscapeDataString(item.Objection_No ?? "")
+                                                            + "&rollSource=" + Uri.EscapeDataString(Model.Roll.Source ?? "")
+                                                            + "&propertyType=" + Uri.EscapeDataString(item.Property_Type ?? "")
+                                                            + "&appealStatus=False"
+                                                            + "&isQuery=false";
+                                                    }
+
+                                                    <a class="dropdown-item"
+                                                           href="@viewFormUrl"
+                                                           target="_blank">
+                                                        <i class="fa-solid fa-eye"></i> View Form
+                                                    </a>
+                                                </li>
+                                                <li>
+
+                                                    <a class="dropdown-item"
+                                                           href="/notice/acknowledgement/download?objectionNo=@item.Objection_No&rollSource=@Model.Roll.Source">
+                                                        <i class="fa-solid fa-download"></i> Download Acknowledgement
+                                                    </a>
+                                                </li>
+                                                @if (item.objection_Status == "Obj-Lodging")
+                                                {
+                                                    <li>
+                                                        @if (User.Identity?.IsAuthenticated == true)
+                                                        {
+                                                            <a class="dropdown-item"
+                                                                   href="/evidence/verify?objectionNo=@item.Objection_No&rollSource=@Model.Roll.Source">
+                                                                <i class="fa-solid fa-upload"></i> Add Evidence
+                                                            </a>
+                                                        }
+                                                    </li>
+                                                }
+                                                              
+                                                @if (item.objection_Status == "Notice-Sent" || item.objection_Status == "Appeal-Closed")
+                                                {
+                                                    <li>
+                                                        <a class="dropdown-item"
+                                                               href="/@Model.Roll.ControllerName/DownloadSection53?ObjectionNum=@item.Objection_No"
+                                                               onclick="logAction('DownloadDecision', '@Model.Roll.Source', '@item.Objection_No')">
+                                                            Download Section 53 Notice
+                                                        </a>
+                                                    </li>
+                     
+                                                }
+                                                @{
+                                                    var appealWindow = await ObjectionRules.CheckAppealWindowAsync(
+                                                        rollSource: Model.Roll.Source,
+                                                        objectionNo: item.Objection_No,
+                                                        unitKey: item.Unit_key,
+                                                        valuationKey: item.Valuation_Key,
+                                                        propertyDesc: item.Property_Desc);
+
+                                                    var canLodgeAppealForItem = item.objection_Status == "Notice-Sent" && appealWindow.IsOpen;
+                                                }
+
+                                                @if (canLodgeAppealForItem)
+                                                {
+                                                    <li>
+                                                        <a class="dropdown-item"
+                                                               href="/objection/check?rollSource=@Model.Roll.Source&sourceTable=@item.PropertyFrom&unitKey=@item.Unit_key&valuationKey=@item.Valuation_Key&appealStatus=True&ObjectionNo=@item.Objection_No"
+                                                               onclick="logAction('Appeal', '@Model.Roll.Source', '@item.Unit_key')">
+                                                            Lodge Appeal
+                                                        </a>
+                                                    </li>
+                                                }
+                                                @if (item.objection_Status == "Obj-Lodging" || item.objection_Status == "Obj-Unallocated")
+                                                {
+                                                    <li>
+                                                        <a class="dropdown-item"
+                                                               href="/objection/withdraw?objectionNo=@item.Objection_No&withdrawType=O&rollSource=@Model.Roll.Source&returnUrl=/dashboard">
+                                                            <i class="fa-solid fa-ban"></i> Withdraw Objection
+                                                        </a>
+                                                    </li>
+                                                }
+                                            </ul>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+
+    @* ── My Appeals ─────────────────────────────────── *@
+    @if (Model.Roll.HasAppeal)
+    {
+        var appeals = Model.Data.ObjectedProperties.Where(x => x.Sub_typ == 1).ToList();
+        <div class="cd-widget">
+            <div class="cd-widget-toggle" onclick="toggleWidget('@rollKey-appeals')">
+                <div class="cd-widget-toggle-left">
+                    <i class="fa-solid fa-gavel"></i>
+                    <h3>My Appeals</h3>
+                    <span class="cd-count-badge">@appeals.Count</span>
+                </div>
+                <i class="fa-solid fa-chevron-down cd-widget-chevron"
+                   id="wchev-@rollKey-appeals"></i>
+            </div>
+            <div class="cd-widget-body" id="widget-@rollKey-appeals">
+                <div class="table-responsive">
+                    <table class="cd-table table table-bordered table-hover"
+                           id="tbl-@rollKey-appeals">
+                        <thead>
+                            <tr>
+                                <th>Appeal No.</th>
+                                <th>Property Description</th>
+                                <th>Category</th>
+                                <th>Market Value</th>
+                                <th>Status</th>
+                                <th>Options</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in appeals)
+                            {
+                                <tr>
+                                    <td><strong>@item.Objection_No</strong></td>
+                                    <td>@item.Property_Desc</td>
+                                    <td>@item.Old_Category</td>
+                                    <td>@DashboardDisplayHelpers.FormatZAR(item.Old_Market_Value)</td>
+                                    <td>@Html.Raw(DashboardDisplayHelpers.GetStatusPill(item.objection_Status))</td>
+                                    <td>
+                                        <div class="dropdown">
+                                            <button class="cd-action-btn dropdown-toggle"
+                                                    data-bs-toggle="dropdown">
+                                                Actions
+                                            </button>
+                                            <ul class="dropdown-menu">
+                                                @{
+                                                    var appealAckRef = !string.IsNullOrWhiteSpace(item.Appeal_No)
+                                                        ? item.Appeal_No
+                                                        : item.Objection_No;
+                                                }
+
+                                                <li>
+                                                    <a class="dropdown-item"
+                                                           href="/notice/acknowledgement/download?objectionNo=@appealAckRef&rollSource=@Model.Roll.Source">
+                                                        <i class="fa-solid fa-download"></i> Download Acknowledgement
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    @{
+                                                        var refNo = !string.IsNullOrWhiteSpace(item.Appeal_No)
+                                                            ? item.Appeal_No
+                                                            : item.Objection_No;
+
+                                                        var viewAppealFormUrl =
+                                                            "/admin/enquiry/form-view"
+                                                            + "?referenceNo=" + Uri.EscapeDataString(refNo ?? "")
+                                                            + "&rollSource=" + Uri.EscapeDataString(Model.Roll.Source ?? "")
+                                                            + "&propertyType=" + Uri.EscapeDataString(item.Property_Type ?? "")
+                                                            + "&appealStatus=True"
+                                                            + "&isQuery=false";
+                                                    }
+
+                                                    <a class="dropdown-item"
+                                                           href="@viewAppealFormUrl"
+                                                           target="_blank">
+                                                        <i class="fa-solid fa-eye"></i> View Appeal Form
+                                                    </a>
+                                                </li>
+
+                                                @if (item.objection_Status == "App-Unallocated")
+                                                {
+                                                    @if (User.Identity?.IsAuthenticated == true)
+                                                    {
+                                                        <a class="btn btn-sm btn-primary"
+                                                               href="/evidence/verify?objectionNo=@item.Objection_No&rollSource=@Model.Roll.Source">
+                                                            <i class="fa-solid fa-upload"></i> Add Evidence
+                                                        </a>
+                                                    }
+                  
+                                                }
+                                                @if (item.objection_Status == "App-Finalized")
+                                                {
+                                                    <li>
+                                                        <a class="dropdown-item"
+                                                               href="/@Model.Roll.ControllerName/DownloadAppeal?ObjectionNum=@item.Objection_No"
+                                                               onclick="logAction('DownloadDecision', '@Model.Roll.Source', '@item.Objection_No')">
+                                                            Download Appeal Notice
+                                                        </a>
+                                                    </li>
+                     
+                                                }
+                                                @if (item.objection_Status == "App-Lodging" || item.objection_Status == "App-Unallocated")
+                                                {
+                                                    <li>
+                                                        <a class="dropdown-item"
+                                                               href="/objection/withdraw?objectionNo=@item.Appeal_No&withdrawType=Appeal&rollSource=@Model.Roll.Source&returnUrl=/dashboard">
+                                                            <i class="fa-solid fa-ban"></i> Withdraw Appeal
+                                                        </a>
+                                                    </li>
+                                                }
+                                            </ul>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+}

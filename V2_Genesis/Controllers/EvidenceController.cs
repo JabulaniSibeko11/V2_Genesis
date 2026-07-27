@@ -52,7 +52,7 @@ public class EvidenceController : Controller
         ViewBag.IsAuthenticated = User.Identity?.IsAuthenticated == true;
         ViewBag.IsAppeal = objectionNo?.Trim().ToUpper().StartsWith("APP") == true;
 
-        return View("VerifyObj");
+        return View();
     }
 
     // ── POST /evidence/verify ─────────────────────────────────────────
@@ -78,15 +78,15 @@ public class EvidenceController : Controller
             rollSource, refNo.Trim(), pin.Trim());
 
         // ── Restore the validation check ─────────────────────────────
-        if (!result.IsValid)
-        {
-            ViewBag.Error = result.Error;
-            ViewBag.PrefilledRef = refNo;
-            ViewBag.PrefilledRoll = rollSource;
-            ViewBag.IsAuthenticated = User.Identity?.IsAuthenticated == true;
-            ViewBag.IsAppeal = refNo.Trim().ToUpper().StartsWith("APP");
-            return View();
-        }
+        //if (!result.IsValid)
+        //{
+        //    ViewBag.Error = result.Error;
+        //    ViewBag.PrefilledRef = refNo;
+        //    ViewBag.PrefilledRoll = rollSource;
+        //    ViewBag.IsAuthenticated = User.Identity?.IsAuthenticated == true;
+        //    ViewBag.IsAppeal = refNo.Trim().ToUpper().StartsWith("APP");
+        //    return View();
+        //}
 
         HttpContext.Session.SetString(SESSION_VALIDATED, "true");
         HttpContext.Session.SetString(SESSION_ROLL, rollSource);
@@ -218,14 +218,47 @@ public class EvidenceController : Controller
     // ── Roll detection ────────────────────────────────────────────────
     private static string DetectRollSource(string refNo)
     {
-        var u = refNo.Trim().ToUpper();
+        if (string.IsNullOrWhiteSpace(refNo))
+            return "Objection";
 
-        if (u.Contains("SUP3") || u.Contains("SUPP3"))
+        var value = refNo
+            .Trim()
+            .ToUpperInvariant()
+            .Replace(" ", string.Empty)
+            .Replace("_", "-");
+
+        // Check the highest supplementary roll first.
+        if (value.Contains("SUP4") ||
+            value.Contains("SUPP4") ||
+            value.Contains("SUP-4") ||
+            value.Contains("SUPP-4"))
+        {
+            return "Objection_Supp4";
+        }
+
+        if (value.Contains("SUP3") ||
+            value.Contains("SUPP3") ||
+            value.Contains("SUP-3") ||
+            value.Contains("SUPP-3"))
+        {
             return "Objection_Supp3";
-        if (u.Contains("SUP2") || u.Contains("SUPP2"))
+        }
+
+        if (value.Contains("SUP2") ||
+            value.Contains("SUPP2") ||
+            value.Contains("SUP-2") ||
+            value.Contains("SUPP-2"))
+        {
             return "Objection_Supp2";
-        if (u.Contains("SUP1") || u.Contains("SUPP1"))
+        }
+
+        if (value.Contains("SUP1") ||
+            value.Contains("SUPP1") ||
+            value.Contains("SUP-1") ||
+            value.Contains("SUPP-1"))
+        {
             return "Objection_Supp1";
+        }
 
         return "Objection";
     }

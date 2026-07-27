@@ -67,9 +67,9 @@
                 ["Objection_Supp4"] = new(
                     ValidateSp: "userDocuments_Sup4",
                     EvidenceCountSp: "userDocumentsEvidence_Sup4",
-                    UpdateFileSp: "UpdateObjFiles_Sup4",
-                    UpdateCountSp: "UpdateEvidenceCount_Sup4",
-                    EvidenceSp: "Evidence_Sup4",
+                    UpdateFileSp: "UpdateObjFiles",
+                    UpdateCountSp: "UpdateEvidenceCount",
+                    EvidenceSp: "Evidence",
                     FileRootPath: ObjPath("Objection_Supp4"),
                     AppealRootPath: AppPath("Objection_Supp4"),
                     ConnectionKey: "Sup4Connection"),

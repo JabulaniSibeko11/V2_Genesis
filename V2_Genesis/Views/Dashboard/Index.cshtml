@@ -57,14 +57,14 @@
         @if (TempData["DuplicateReferenceNo"] != null)
         {
             <br />
-            <strong>Existing Reference:</strong> 
+            <strong>Existing Reference:</strong>
             @TempData["DuplicateReferenceNo"]
         }
 
         @if (TempData["DuplicateStatus"] != null)
         {
             <br />
-            <strong>Status:</strong> 
+            <strong>Status:</strong>
             @TempData["DuplicateStatus"]
         }
 
@@ -137,7 +137,7 @@
       
     }
 
-   RollDateEntry? GetDates(string rollSource)
+    RollDateEntry? GetDates(string rollSource)
     {
         Model.RollDates.TryGetValue(rollSource, out var d);
         return d;
@@ -189,9 +189,9 @@
 
 @section Styles {
    
-  @*   <link href="~/css/views/clientdashboardcss.css" rel="stylesheet" asp-append-version="true" /> *@
+    @*   <link href="~/css/views/clientdashboardcss.css" rel="stylesheet" asp-append-version="true" /> *@
     <link href="~/css/site.css" rel="stylesheet" asp-append-version="true" />
-    <link href="~/css/views/client-dashboard.css" rel="stylesheet" asp-append-version="true"/>
+    <link href="~/css/views/client-dashboard.css" rel="stylesheet" asp-append-version="true" />
 }
 
 <!-- ── Welcome strip ──────────────────────────────────────────────────── -->
@@ -309,8 +309,8 @@
             </div>
         </div>
     </div>
-<!-- ── Quick stats row ────────────────────────────────────────────────── -->
-<div class="cd-stats-strip">
+    <!-- ── Quick stats row ────────────────────────────────────────────────── -->
+    <div class="cd-stats-strip">
         @foreach (var roll in Model.Rolls.Where(r => !r.IsQuery))
         {
             var rd = Model.RollData.GetValueOrDefault(roll.Source) ?? new();
@@ -355,7 +355,7 @@
             </div>
         }
 
-</div>
+    </div>
 </div>
 @if (TempData["LinkSuccess"] != null)
 {
@@ -386,8 +386,130 @@
 }
 
 
+<!-- ── Tiles / List toggle (simple — no AJAX, everything below is already rendered) ── -->
+<div class="cd-body" style="padding-bottom:0;">
+    <div class="cd-view-toggle" role="tablist" aria-label="Dashboard view mode">
+        <button type="button" class="cd-view-btn active" data-view="tiles" id="viewBtnTiles">
+            <i class="fa-solid fa-grip"></i> Tiles
+        </button>
+        <button type="button" class="cd-view-btn" data-view="list" id="viewBtnList">
+            <i class="fa-solid fa-list"></i> List
+        </button>
+    </div>
+
+    <div class="cd-tile-grid" id="cdTileGrid">
+        @foreach (var roll in Model.Rolls)
+        {
+            var rd = Model.RollData.GetValueOrDefault(roll.Source) ?? new();
+            var rollKey = roll.Source.Replace("_", "");
+            var dates = GetDates(roll.Source);
+            var periodStatus = PeriodStatus(dates);
+
+            <div class="cd-tile @(roll.IsQuery ? "cd-tile-query" : "")"
+                 data-roll-key="@rollKey"
+                 data-roll-source="@roll.Source"
+                 data-roll-name="@roll.Name"
+                 onclick="openRollDrawer(this)">
+                <div class="cd-tile-icon">
+                    @if (roll.IsQuery)
+                    {
+                        <i class="fa-solid fa-magnifying-glass-chart"></i>
+                    }
+                    else if (roll.IsGv)
+                    {
+                        <i class="fa-solid fa-landmark"></i>
+                    }
+                    else
+                    {
+                        <i class="fa-solid fa-scroll"></i>
+                    }
+                </div>
+                <h3 class="cd-tile-name">@roll.Name</h3>
+                <span class="cd-tile-short">@roll.Short</span>
+
+                <div class="cd-tile-stats">
+                    <span title="Linked"><i class="fa-solid fa-link"></i> @rd.LinkedCount</span>
+                    @if (roll.IsQuery)
+                    {
+                        <span title="Queries"><i class="fa-solid fa-file-magnifying-glass"></i> @rd.ObjectedCount</span>
+                    }
+                    else
+                    {
+                        @if (roll.HasObjection)
+                        {
+                            <span title="Objections"><i class="fa-solid fa-file-pen"></i> @rd.ObjectedCount</span>
+                        }
+                        @if (roll.HasAppeal)
+                        {
+                            <span title="Appeals"><i class="fa-solid fa-gavel"></i> @rd.AppealsCount</span>
+                        }
+                    }
+                </div>
+
+                @if (!roll.IsQuery && dates is not null)
+                {
+                    <span class="cd-tile-badge cd-badge-@periodStatus">
+                        @(periodStatus == "active" ? "Objection Open" :
+                          periodStatus == "upcoming" ? "Opening Soon" :
+                          "Objection Closed")
+                    </span>
+                }
+                else
+                {
+                    <span class="cd-tile-badge cd-badge-open">OPEN</span>
+                }
+
+                <span class="cd-tile-open-hint">
+                    View Details <i class="fa-solid fa-arrow-right"></i>
+                </span>
+            </div>
+        }
+
+        <div class="cd-tile" data-drawer-url="/dashboard/rebates-detail" data-roll-name="Rebates" onclick="openRollDrawer(this)">
+            <div class="cd-tile-icon"><i class="fa-solid fa-percent"></i></div>
+            <h3 class="cd-tile-name">Rebates</h3>
+            <span class="cd-tile-short">Apply or track your property rate rebates</span>
+            <div class="cd-tile-stats">
+                <span title="Applications"><i class="fa-solid fa-file-pen"></i> @(Model.Rebates?.Count ?? 0)</span>
+            </div>
+            <span class="cd-tile-badge cd-badge-open">OPEN</span>
+            <span class="cd-tile-open-hint">View Details <i class="fa-solid fa-arrow-right"></i></span>
+        </div>
+
+        <div class="cd-tile" data-drawer-url="/dashboard/attributes-detail" data-roll-name="Property Attributes" onclick="openRollDrawer(this)">
+            <div class="cd-tile-icon"><i class="fa-solid fa-clipboard-list"></i></div>
+            <h3 class="cd-tile-name">Property Attributes</h3>
+            <span class="cd-tile-short">Submit updated property information</span>
+            <div class="cd-tile-stats">
+                <span title="Linked"><i class="fa-solid fa-link"></i> @Model.AttributesLinked.Count</span>
+                <span title="Submissions"><i class="fa-solid fa-file-pen"></i> @Model.AttributesData.SubmissionCount</span>
+            </div>
+            <span class="cd-tile-badge cd-badge-open">NEW</span>
+            <span class="cd-tile-open-hint">View Details <i class="fa-solid fa-arrow-right"></i></span>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════ Slide-over drawer (Tiles view detail) ══════════════ -->
+<div class="cd-drawer-backdrop" id="cdDrawerBackdrop" onclick="closeRollDrawer()"></div>
+<div class="cd-drawer" id="cdDrawer" role="dialog" aria-modal="true">
+    <div class="cd-drawer-header">
+        <h2 id="cdDrawerTitle">Roll Details</h2>
+        <button type="button" class="cd-drawer-close" onclick="closeRollDrawer()" aria-label="Close">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+    </div>
+    <div class="cd-drawer-body" id="cdDrawerBody">
+        <div class="cd-roll-loading">
+            <i class="fa-solid fa-circle-notch fa-spin"></i> Loading…
+        </div>
+    </div>
+</div>
+
+
 <!-- ── Per-roll collapsible sections ──────────────────────────────────── -->
 <div class="cd-body">
+
     @foreach (var roll in Model.Rolls)
     {
         var rd = Model.RollData.GetValueOrDefault(roll.Source) ?? new();
@@ -454,16 +576,16 @@
                             </span>
                         </div>
                     }
-else if (roll.IsQuery)
-{
+                    else if (roll.IsQuery)
+                    {
                         <a href="/search/@roll.Source"
                                class="cd-roll-search-btn"
                                onclick="event.stopPropagation()">
                             <i class="fa-solid fa-magnifying-glass"></i>
                             @(roll.IsQuery ? "Search Property" : "Search Property")
                         </a>
-    <span class="cd-roll-badge cd-badge-open">OPEN</span>
-}
+                        <span class="cd-roll-badge cd-badge-open">OPEN</span>
+                    }
 
 
                     <i class="fa-solid fa-chevron-down cd-roll-chevron" id="chevron-@rollKey"></i>
@@ -473,125 +595,129 @@ else if (roll.IsQuery)
             <!-- Roll body (collapsible) -->
             <div class="cd-roll-body @(isActive ? "open" : "")" id="rollbody-@rollKey">
 
-           @if (roll.IsQuery)
-{
-    @* Split Queries (Sub_typ=0) from Reviews (Sub_typ=1) *@
-    var queries = rd.ObjectedProperties.Where(x => x.Sub_typ == 0).ToList();
-    var reviews = rd.ObjectedProperties.Where(x => x.Sub_typ == 1).ToList();
+                @if (roll.IsQuery)
+                {
+                    @* Split Queries (Sub_typ=0) from Reviews (Sub_typ=1) *@
+                    var queries = rd.ObjectedProperties.Where(x => x.Sub_typ == 0).ToList();
+                    var reviews = rd.ObjectedProperties.Where(x => x.Sub_typ == 1).ToList();
 
-    <!-- ── 1. Linked Properties ──────────────────────────────── -->
-    <div class="cd-widget">
-        <div class="cd-widget-toggle" onclick="toggleWidget('@rollKey-linked')">
-            <div class="cd-widget-toggle-left">
-                <i class="fa-solid fa-link"></i>
-                <h3>Linked Properties</h3>
-                <span class="cd-count-badge">@rd.LinkedCount</span>
-            </div>
-            <i class="fa-solid fa-chevron-down cd-widget-chevron"
-               id="wchev-@rollKey-linked"></i>
-        </div>
-        <div class="cd-widget-body" id="widget-@rollKey-linked">
-           @*  <div class="cd-widget-toolbar">
+                    <!-- ── 1. Linked Properties ──────────────────────────────── -->
+                    <div class="cd-widget">
+                        <div class="cd-widget-toggle" onclick="toggleWidget('@rollKey-linked')">
+                            <div class="cd-widget-toggle-left">
+                                <i class="fa-solid fa-link"></i>
+                                <h3>Linked Properties</h3>
+                                <span class="cd-count-badge">@rd.LinkedCount</span>
+                            </div>
+                            <i class="fa-solid fa-chevron-down cd-widget-chevron"
+                               id="wchev-@rollKey-linked"></i>
+                        </div>
+                        <div class="cd-widget-body" id="widget-@rollKey-linked">
+                            @*  <div class="cd-widget-toolbar">
                 <a href="/search/@roll.Source" class="cd-add-btn">
                     <i class="fa-solid fa-plus"></i> Link New Property
                 </a>
             </div> *@
-            <div class="table-responsive">
-                <table class="cd-table table table-bordered"
-                       id="tbl-@rollKey-linked">
-                    <thead>
-                        <tr>
-                            <th>Property Description</th>
-                            <th>Category</th>
-                            <th>Town</th>
-                            <th>Market Value</th>
-                            <th>With Effective Date</th>
-                            <th>Options</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var item in rd.LinkedProperties)
-                        {
-                            <tr>
-                                <td>@item.PropertyDesc</td>
-                                <td>@item.CatDesc</td>
-                                <td>@item.TownNameDesc</td>
-                                <td>@FormatZAR(item.MarketValue)</td>
+                            <div class="table-responsive">
+                                <table class="cd-table table table-bordered"
+                                       id="tbl-@rollKey-linked">
+                                    <thead>
+                                        <tr>
+                                            <th>Property Description</th>
+                                            <th>Category</th>
+                                            <th>Town</th>
+                                            <th>Market Value</th>
+                                            <th>With Effective Date</th>
+                                            <th>Options</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var item in rd.LinkedProperties)
+                                        {
+                                            <tr>
+                                                <td>@item.PropertyDesc</td>
+                                                <td>@item.CatDesc</td>
+                                                <td>@item.TownNameDesc</td>
+                                                <td>@FormatZAR(item.MarketValue)</td>
                                                 <td>
                                                     @(DateTime.TryParse(item.WefDate, out var wefDate)
                                                         ? wefDate.ToString("dd MMMM yyyy")
                                                         : item.WefDate)
                                                 </td>
-                                <td>
-                                    <div class="dropdown">
-                                        <button class="cd-action-btn dropdown-toggle"
-                                                data-bs-toggle="dropdown">Actions</button>
-                                        <ul class="dropdown-menu">
-                                            <li>
-                                                <a class="dropdown-item"
-                                                   href="/objection/check?rollSource=@roll.Source&sourceTable=@item.PropertyFrom&unitKey=@item.UnitKey&valuationKey=@item.ValuationKey&appealStatus=False">
-                                                    <i class="fa-solid fa-file-pen"></i> Lodge Query
-                                                </a>
-                                            </li>
-                                            <li>
+                                                <td>
+                                                    <div class="dropdown">
+                                                        <button class="cd-action-btn dropdown-toggle"
+                                                                data-bs-toggle="dropdown">
+                                                            Actions
+                                                        </button>
+                                                        <ul class="dropdown-menu">
+                                                            <li>
+                                                                <a class="dropdown-item"
+                                                                       href="/objection/check?rollSource=@roll.Source&sourceTable=@item.PropertyFrom&unitKey=@item.UnitKey&valuationKey=@item.ValuationKey&appealStatus=False">
+                                                                    <i class="fa-solid fa-file-pen"></i> Lodge Query
+                                                                </a>
+                                                            </li>
+                                                            <li>
                                                                 <a class="dropdown-item"
                                                                        href="/property/unlink?linkedId=@item.Id&rollSource=@roll.Source&returnUrl=/Dashboard?openRoll=@roll.Source">
                                                                     <i class="fa-solid fa-link-slash"></i> Unlink Property
                                                                 </a>
-                                            </li>
-                                        </ul>
-                                    </div>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
+                                                            </li>
+                                                        </ul>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
 
-    <!-- ── 2. My Queries ─────────────────────────────────────── -->
-    <div class="cd-widget">
-        <div class="cd-widget-toggle" onclick="toggleWidget('@rollKey-queries')">
-            <div class="cd-widget-toggle-left">
-                <i class="fa-solid fa-magnifying-glass-chart"></i>
-                <h3>My Queries</h3>
-                <span class="cd-count-badge cd-count-orange">@queries.Count</span>
-            </div>
-            <i class="fa-solid fa-chevron-down cd-widget-chevron"
-               id="wchev-@rollKey-queries"></i>
-        </div>
-        <div class="cd-widget-body" id="widget-@rollKey-queries">
-            <div class="table-responsive">
-                <table class="cd-table table table-bordered table-hover"
-                       id="tbl-@rollKey-queries">
-                    <thead>
-                        <tr>
-                            <th>Query No.</th>
-                            <th>Property Description</th>
-                            <th>Category</th>
-                            <th>Town</th>
-                            <th>Market Value</th>
-                            <th>Status</th>
-                            <th>Options</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var item in queries)
-                        {
-                            <tr>
-                                <td><strong>@item.Objection_No</strong></td>
-                                <td>@item.Property_Desc</td>
-                                <td>@item.Old_Category</td>
-                                <td>@item.Town_Name</td>
-                                <td>@FormatZAR(item.Old_Market_Value)</td>
-                                <td>@Html.Raw(GetStatusPill(item.objection_Status))</td>
-                                <td>
-                                    <div class="dropdown">
-                                        <button class="cd-action-btn dropdown-toggle"
-                                                data-bs-toggle="dropdown">Actions</button>
-                                        <ul class="dropdown-menu">
-                                            <li>
+                    <!-- ── 2. My Queries ─────────────────────────────────────── -->
+                    <div class="cd-widget">
+                        <div class="cd-widget-toggle" onclick="toggleWidget('@rollKey-queries')">
+                            <div class="cd-widget-toggle-left">
+                                <i class="fa-solid fa-magnifying-glass-chart"></i>
+                                <h3>My Queries</h3>
+                                <span class="cd-count-badge cd-count-orange">@queries.Count</span>
+                            </div>
+                            <i class="fa-solid fa-chevron-down cd-widget-chevron"
+                               id="wchev-@rollKey-queries"></i>
+                        </div>
+                        <div class="cd-widget-body" id="widget-@rollKey-queries">
+                            <div class="table-responsive">
+                                <table class="cd-table table table-bordered table-hover"
+                                       id="tbl-@rollKey-queries">
+                                    <thead>
+                                        <tr>
+                                            <th>Query No.</th>
+                                            <th>Property Description</th>
+                                            <th>Category</th>
+                                            <th>Town</th>
+                                            <th>Market Value</th>
+                                            <th>Status</th>
+                                            <th>Options</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var item in queries)
+                                        {
+                                            <tr>
+                                                <td><strong>@item.Objection_No</strong></td>
+                                                <td>@item.Property_Desc</td>
+                                                <td>@item.Old_Category</td>
+                                                <td>@item.Town_Name</td>
+                                                <td>@FormatZAR(item.Old_Market_Value)</td>
+                                                <td>@Html.Raw(GetStatusPill(item.objection_Status))</td>
+                                                <td>
+                                                    <div class="dropdown">
+                                                        <button class="cd-action-btn dropdown-toggle"
+                                                                data-bs-toggle="dropdown">
+                                                            Actions
+                                                        </button>
+                                                        <ul class="dropdown-menu">
+                                                            <li>
                                                                 @{
                                                                     var queryRefNo = !string.IsNullOrWhiteSpace(item.Query_No)
                                                                         ? item.Query_No
@@ -611,206 +737,211 @@ else if (roll.IsQuery)
                                                                        target="_blank">
                                                                     <i class="fa-solid fa-eye"></i> View Query Form
                                                                 </a>
-                                                @* <a class="dropdown-item"
+                                                                @* <a class="dropdown-item"
                                                    href="/Home/FormData@(roll.ControllerName)?propertyID=@item.Property_Type&objectionNo=@item.Objection_No&AppealStatus=False">
                                                     <i class="fa-solid fa-eye"></i> View Form
                                                 </a> *@
-                                            </li>
-                                            <li>
-                                                <a class="dropdown-item"
+                                                            </li>
+                                                            <li>
+                                                                <a class="dropdown-item"
                                                                        href="/notice/acknowledgement/download?objectionNo=@item.Objection_No&rollSource=@roll.Source">
                                                                     <i class="fa-solid fa-download"></i> Download Acknowledgement
-                                                </a>
-                                            </li>
-                                            @if (item.objection_Status == "Query-Lodging")
-                                            {
-                                                <li>
-                                                    <a class="dropdown-item"
-                                                       href="/section78/verify?queryNo=@item.Objection_No">
-                                                        <i class="fa-solid fa-paperclip"></i> Add Evidence
-                                                    </a>
-                                                </li>
-                                            }
-                                            @if (item.objection_Status is "Query-Lodging" or "Query-Unallocated")
-                                            {
-                                                <li>
+                                                                </a>
+                                                            </li>
+                                                            @if (item.objection_Status == "Query-Lodging")
+                                                            {
+                                                                <li>
+                                                                    <a class="dropdown-item"
+                                                                           href="/section78/verify?queryNo=@item.Objection_No">
+                                                                        <i class="fa-solid fa-paperclip"></i> Add Evidence
+                                                                    </a>
+                                                                </li>
+                                                            }
+                                                            @if (item.objection_Status is "Query-Lodging" or "Query-Unallocated")
+                                                            {
+                                                                <li>
                                                                     <a class="dropdown-item"
                                                                            href="/objection/withdraw?objectionNo=@item.Query_No&withdrawType=Query&rollSource=Query&returnUrl=/dashboard">
                                                                         <i class="fa-solid fa-ban"></i> Withdraw Query
                                                                     </a>
-                                                </li>
-                                            }
-                                            @* ── Review button — only when Query-Finalized ── *@
-                                            @if (item.objection_Status == "Query-Finalized")
-                                            {
-                                                <li><hr class="dropdown-divider" /></li>
-                                                <li>
-                                                    <a class="dropdown-item"
-                                                       href="/Section78/Section78Query?qtype=Review&UKey=@item.Unit_key&VKey=@item.Valuation_Key&PropDesc=@item.Property_Desc&addr=&cat=@item.Old_Category">
-                                                        <i class="fa-solid fa-magnifying-glass"
-                                                           style="color:#e6b000;"></i>
-                                                        <strong>Lodge Review</strong>
-                                                    </a>
-                                                </li>
-                                            }
-                                        </ul>
-                                    </div>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
+                                                                </li>
+                                                            }
+                                                            @* ── Review button — only when Query-Finalized ── *@
+                                                            @if (item.objection_Status == "Query-Finalized")
+                                                            {
+                                                                <li><hr class="dropdown-divider" /></li>
+                                                                <li>
+                                                                    <a class="dropdown-item"
+                                                                           href="/Section78/Section78Query?qtype=Review&UKey=@item.Unit_key&VKey=@item.Valuation_Key&PropDesc=@item.Property_Desc&addr=&cat=@item.Old_Category">
+                                                                        <i class="fa-solid fa-magnifying-glass"
+                                                                           style="color:#e6b000;"></i>
+                                                                        <strong>Lodge Review</strong>
+                                                                    </a>
+                                                                </li>
+                                                            }
+                                                        </ul>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
 
-    <!-- ── 3. My Reviews ─────────────────────────────────────── -->
-    <div class="cd-widget">
-        <div class="cd-widget-toggle" onclick="toggleWidget('@rollKey-reviews')">
-            <div class="cd-widget-toggle-left">
-                <i class="fa-solid fa-magnifying-glass"></i>
-                <h3>My Reviews</h3>
-                <span class="cd-count-badge" style="background:#e6b000;color:#1a1a1a;">
-                    @reviews.Count
-                </span>
-            </div>
-            <i class="fa-solid fa-chevron-down cd-widget-chevron"
-               id="wchev-@rollKey-reviews"></i>
-        </div>
-        <div class="cd-widget-body" id="widget-@rollKey-reviews">
-            @if (!reviews.Any())
-            {
-                <div style="padding:20px 24px; font-size:13.5px; color:#888;">
-                    <i class="fa-solid fa-circle-info" style="color:#89b7b2; margin-right:6px;"></i>
-                    No reviews lodged yet. A <strong>Lodge Review</strong> button will appear
-                    on your Query once its status is <strong>Query-Finalized</strong>.
-                </div>
-            }
-            else
-            {
-                <div class="table-responsive">
-                    <table class="cd-table table table-bordered table-hover"
-                           id="tbl-@rollKey-reviews">
-                        <thead>
-                            <tr>
-                                <th>Review No.</th>
-                                <th>Property Description</th>
-                                <th>Category</th>
-                                <th>Town</th>
-                                <th>Market Value</th>
-                                <th>Status</th>
-                                <th>Options</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var item in reviews)
+                    <!-- ── 3. My Reviews ─────────────────────────────────────── -->
+                    <div class="cd-widget">
+                        <div class="cd-widget-toggle" onclick="toggleWidget('@rollKey-reviews')">
+                            <div class="cd-widget-toggle-left">
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                                <h3>My Reviews</h3>
+                                <span class="cd-count-badge" style="background:#e6b000;color:#1a1a1a;">
+                                    @reviews.Count
+                                </span>
+                            </div>
+                            <i class="fa-solid fa-chevron-down cd-widget-chevron"
+                               id="wchev-@rollKey-reviews"></i>
+                        </div>
+                        <div class="cd-widget-body" id="widget-@rollKey-reviews">
+                            @if (!reviews.Any())
                             {
-                                <tr>
-                                    <td>
-                                        <strong>@item.Objection_No</strong>
-                                        <span class="cd-pill cd-pill-lodging"
-                                              style="font-size:10px; margin-left:4px;">
-                                            Review
-                                        </span>
-                                    </td>
-                                    <td>@item.Property_Desc</td>
-                                    <td>@item.Old_Category</td>
-                                    <td>@item.Town_Name</td>
-                                    <td>@FormatZAR(item.Old_Market_Value)</td>
-                                    <td>@Html.Raw(GetStatusPill(item.objection_Status))</td>
-                                    <td>
-                                        <div class="dropdown">
-                                            <button class="cd-action-btn dropdown-toggle"
-                                                    data-bs-toggle="dropdown">Actions</button>
-                                            <ul class="dropdown-menu">
-                                                <li>
-                                                    <a class="dropdown-item"
-                                                       href="/Home/FormData@(roll.ControllerName)?propertyID=@item.Property_Type&objectionNo=@item.Objection_No&AppealStatus=False">
-                                                        <i class="fa-solid fa-eye"></i> View Form
-                                                    </a>
-                                                </li>
-                                                <li>
-                                                    <a class="dropdown-item"
-                                                                           href="/notice/acknowledgement/download?objectionNo=@item.Objection_No&rollSource=@roll.Source">
-                                                        <i class="fa-solid fa-download"></i>Download Acknowledgement
-                                                    </a>
-                                                </li>
-                                                @if (item.objection_Status is "Query-Lodging" or "Query-Unallocated")
-                                                {
-                                                    <li>
-                                                        <a class="dropdown-item"
-                                                           href="/section78/verify?queryNo=@item.Objection_No">
-                                                            <i class="fa-solid fa-paperclip"></i> Add Evidence
-                                                        </a>
-                                                    </li>
-                                                    <li>
-                                                        <a class="dropdown-item"
-                                                           href="/@roll.ControllerName/Withdrawal?ObjectionNum=@item.Objection_No&Withdraw=O">
-                                                            <i class="fa-solid fa-ban"></i> Withdraw
-                                                        </a>
-                                                    </li>
-                                                }
-                                            </ul>
-                                        </div>
-                                    </td>
-                                </tr>
+                                <div style="padding:20px 24px; font-size:13.5px; color:#888;">
+                                    <i class="fa-solid fa-circle-info" style="color:#89b7b2; margin-right:6px;"></i>
+                                    No reviews lodged yet. A <strong>Lodge Review</strong> button will appear
+                                    on your Query once its status is <strong>Query-Finalized</strong>.
+                                </div>
                             }
-                        </tbody>
-                    </table>
-                </div>
-            }
-        </div>
-    </div>
-} else
-    {
-        @* ── Linked Properties ─────────────────────────── *@
-        <div class="cd-widget">
-            <div class="cd-widget-toggle" onclick="toggleWidget('@rollKey-linked')">
-                <div class="cd-widget-toggle-left">
-                    <i class="fa-solid fa-link"></i>
-                    <h3>Linked Properties</h3>
-                    <span class="cd-count-badge">@rd.LinkedCount</span>
-                </div>
-                <i class="fa-solid fa-chevron-down cd-widget-chevron"
-                   id="wchev-@rollKey-linked"></i>
-            </div>
-            <div class="cd-widget-body" id="widget-@rollKey-linked">
-               @*  <div class="cd-widget-toolbar">
+                            else
+                            {
+                                <div class="table-responsive">
+                                    <table class="cd-table table table-bordered table-hover"
+                                           id="tbl-@rollKey-reviews">
+                                        <thead>
+                                            <tr>
+                                                <th>Review No.</th>
+                                                <th>Property Description</th>
+                                                <th>Category</th>
+                                                <th>Town</th>
+                                                <th>Market Value</th>
+                                                <th>Status</th>
+                                                <th>Options</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var item in reviews)
+                                            {
+                                                <tr>
+                                                    <td>
+                                                        <strong>@item.Objection_No</strong>
+                                                        <span class="cd-pill cd-pill-lodging"
+                                                              style="font-size:10px; margin-left:4px;">
+                                                            Review
+                                                        </span>
+                                                    </td>
+                                                    <td>@item.Property_Desc</td>
+                                                    <td>@item.Old_Category</td>
+                                                    <td>@item.Town_Name</td>
+                                                    <td>@FormatZAR(item.Old_Market_Value)</td>
+                                                    <td>@Html.Raw(GetStatusPill(item.objection_Status))</td>
+                                                    <td>
+                                                        <div class="dropdown">
+                                                            <button class="cd-action-btn dropdown-toggle"
+                                                                    data-bs-toggle="dropdown">
+                                                                Actions
+                                                            </button>
+                                                            <ul class="dropdown-menu">
+                                                                <li>
+                                                                    <a class="dropdown-item"
+                                                                           href="/Home/FormData@(roll.ControllerName)?propertyID=@item.Property_Type&objectionNo=@item.Objection_No&AppealStatus=False">
+                                                                        <i class="fa-solid fa-eye"></i> View Form
+                                                                    </a>
+                                                                </li>
+                                                                <li>
+                                                                    <a class="dropdown-item"
+                                                                           href="/notice/acknowledgement/download?objectionNo=@item.Objection_No&rollSource=@roll.Source">
+                                                                        <i class="fa-solid fa-download"></i>Download Acknowledgement
+                                                                    </a>
+                                                                </li>
+                                                                @if (item.objection_Status is "Query-Lodging" or "Query-Unallocated")
+                                                                {
+                                                                    <li>
+                                                                        <a class="dropdown-item"
+                                                                               href="/section78/verify?queryNo=@item.Objection_No">
+                                                                            <i class="fa-solid fa-paperclip"></i> Add Evidence
+                                                                        </a>
+                                                                    </li>
+                                                                    <li>
+                                                                        <a class="dropdown-item"
+                                                                               href="/@roll.ControllerName/Withdrawal?ObjectionNum=@item.Objection_No&Withdraw=O">
+                                                                            <i class="fa-solid fa-ban"></i> Withdraw
+                                                                        </a>
+                                                                    </li>
+                                                                }
+                                                            </ul>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    @* ── Linked Properties ─────────────────────────── *@
+                    <div class="cd-widget">
+                        <div class="cd-widget-toggle" onclick="toggleWidget('@rollKey-linked')">
+                            <div class="cd-widget-toggle-left">
+                                <i class="fa-solid fa-link"></i>
+                                <h3>Linked Properties</h3>
+                                <span class="cd-count-badge">@rd.LinkedCount</span>
+                            </div>
+                            <i class="fa-solid fa-chevron-down cd-widget-chevron"
+                               id="wchev-@rollKey-linked"></i>
+                        </div>
+                        <div class="cd-widget-body" id="widget-@rollKey-linked">
+                            @*  <div class="cd-widget-toolbar">
                     <a href="/search/@roll.Source" class="cd-add-btn">
                         <i class="fa-solid fa-plus"></i> Link New Property
                     </a>
                 </div> *@
-                <div class="table-responsive">
-                    <table class="cd-table table table-bordered"
-                           id="tbl-@rollKey-linked">
-                        <thead>
-                            <tr>
-                                <th>Property Description</th>
-                                <th>Category</th>
-                                <th>Town</th>
-                                <th>Market Value</th>
-                                <th>With Effective Date</th>
-                                <th>Options</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var item in rd.LinkedProperties)
-                            {
-                                <tr>
-                                    <td>@item.PropertyDesc</td>
-                                    <td>@item.CatDesc</td>
-                                    <td>@item.TownNameDesc</td>
-                                    <td>@FormatZAR(item.MarketValue)</td>
+                            <div class="table-responsive">
+                                <table class="cd-table table table-bordered"
+                                       id="tbl-@rollKey-linked">
+                                    <thead>
+                                        <tr>
+                                            <th>Property Description</th>
+                                            <th>Category</th>
+                                            <th>Town</th>
+                                            <th>Market Value</th>
+                                            <th>With Effective Date</th>
+                                            <th>Options</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var item in rd.LinkedProperties)
+                                        {
+                                            <tr>
+                                                <td>@item.PropertyDesc</td>
+                                                <td>@item.CatDesc</td>
+                                                <td>@item.TownNameDesc</td>
+                                                <td>@FormatZAR(item.MarketValue)</td>
                                                 <td>
                                                     @(DateTime.TryParse(item.WefDate, out var wefDate)
                                                         ? wefDate.ToString("dd MMMM yyyy")
                                                         : item.WefDate)
                                                 </td>
-                                    <td>
-                                        <div class="dropdown">
-                                            <button class="cd-action-btn dropdown-toggle"
-                                                    data-bs-toggle="dropdown">Actions</button>
-                                            <ul class="dropdown-menu">
+                                                <td>
+                                                    <div class="dropdown">
+                                                        <button class="cd-action-btn dropdown-toggle"
+                                                                data-bs-toggle="dropdown">
+                                                            Actions
+                                                        </button>
+                                                        <ul class="dropdown-menu">
                                                             @if (roll.HasObjection && canLodgeObjectionForRoll)
                                                             {
                                                                 <li>
@@ -833,60 +964,60 @@ else if (roll.IsQuery)
                                                                 </li>
                                                             }
                                                 
-                                                <li>
-                                                    <a class="dropdown-item"
+                                                            <li>
+                                                                <a class="dropdown-item"
                                                                        href="/property/unlink?linkedId=@item.Id&rollSource=@roll.Source&returnUrl=/Dashboard?openRoll=@roll.Source">
-                                                        <i class="fa-solid fa-link-slash"></i> Unlink
-                                                    </a>
-                                                </li>
-                                            </ul>
-                                        </div>
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        @* ── My Objections ──────────────────────────────── *@
-        @if (roll.HasObjection)
-        {
-            var objections = rd.ObjectedProperties.Where(x => x.Sub_typ == 0).ToList();
-            <div class="cd-widget">
-                <div class="cd-widget-toggle" onclick="toggleWidget('@rollKey-objections')">
-                    <div class="cd-widget-toggle-left">
-                        <i class="fa-solid fa-file-pen"></i>
-                        <h3>My Objections</h3>
-                        <span class="cd-count-badge cd-count-orange">@objections.Count</span>
+                                                                    <i class="fa-solid fa-link-slash"></i> Unlink
+                                                                </a>
+                                                            </li>
+                                                        </ul>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
-                    <i class="fa-solid fa-chevron-down cd-widget-chevron"
-                       id="wchev-@rollKey-objections"></i>
-                </div>
-                <div class="cd-widget-body" id="widget-@rollKey-objections">
-                    <div class="table-responsive">
-                        <table class="cd-table table table-bordered table-hover"
-                               id="tbl-@rollKey-objections">
-                            <thead>
-                                <tr>
-                                    <th>Objection No.</th>
-                                    <th>Property Description</th>
-                                    <th>Category</th>
-                                    <th>Market Value</th>
-                                    <th>Status</th>
-                                    <th>Options</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var item in objections)
-                                {
-                                    <tr>
-                                        <td><strong>@item.Objection_No</strong></td>
-                                        <td>@item.Property_Desc</td>
-                                        <td>@item.Old_Category</td>
-                                        <td>@FormatZAR(item.Old_Market_Value)</td>
-                                        <td>@Html.Raw(GetStatusPill(item.objection_Status))</td>
+
+                    @* ── My Objections ──────────────────────────────── *@
+                    @if (roll.HasObjection)
+                    {
+                        var objections = rd.ObjectedProperties.Where(x => x.Sub_typ == 0).ToList();
+                        <div class="cd-widget">
+                            <div class="cd-widget-toggle" onclick="toggleWidget('@rollKey-objections')">
+                                <div class="cd-widget-toggle-left">
+                                    <i class="fa-solid fa-file-pen"></i>
+                                    <h3>My Objections</h3>
+                                    <span class="cd-count-badge cd-count-orange">@objections.Count</span>
+                                </div>
+                                <i class="fa-solid fa-chevron-down cd-widget-chevron"
+                                   id="wchev-@rollKey-objections"></i>
+                            </div>
+                            <div class="cd-widget-body" id="widget-@rollKey-objections">
+                                <div class="table-responsive">
+                                    <table class="cd-table table table-bordered table-hover"
+                                           id="tbl-@rollKey-objections">
+                                        <thead>
+                                            <tr>
+                                                <th>Objection No.</th>
+                                                <th>Property Description</th>
+                                                <th>Category</th>
+                                                <th>Market Value</th>
+                                                <th>Status</th>
+                                                <th>Options</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var item in objections)
+                                            {
+                                                <tr>
+                                                    <td><strong>@item.Objection_No</strong></td>
+                                                    <td>@item.Property_Desc</td>
+                                                    <td>@item.Old_Category</td>
+                                                    <td>@FormatZAR(item.Old_Market_Value)</td>
+                                                    <td>@Html.Raw(GetStatusPill(item.objection_Status))</td>
                                                     <td>
                                                         <div class="dropdown">
                                                             <button class="cd-action-btn dropdown-toggle"
@@ -975,52 +1106,52 @@ else if (roll.IsQuery)
                                                             </ul>
                                                         </div>
                                                     </td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        }
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    }
 
-        @* ── My Appeals ─────────────────────────────────── *@
-        @if (roll.HasAppeal)
-        {
-            var appeals = rd.ObjectedProperties.Where(x => x.Sub_typ == 1).ToList();
-            <div class="cd-widget">
-                <div class="cd-widget-toggle" onclick="toggleWidget('@rollKey-appeals')">
-                    <div class="cd-widget-toggle-left">
-                        <i class="fa-solid fa-gavel"></i>
-                        <h3>My Appeals</h3>
-                        <span class="cd-count-badge">@appeals.Count</span>
-                    </div>
-                    <i class="fa-solid fa-chevron-down cd-widget-chevron"
-                       id="wchev-@rollKey-appeals"></i>
-                </div>
-                <div class="cd-widget-body" id="widget-@rollKey-appeals">
-                    <div class="table-responsive">
-                        <table class="cd-table table table-bordered table-hover"
-                               id="tbl-@rollKey-appeals">
-                            <thead>
-                                <tr>
-                                    <th>Appeal No.</th>
-                                    <th>Property Description</th>
-                                    <th>Category</th>
-                                    <th>Market Value</th>
-                                    <th>Status</th>
-                                    <th>Options</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var item in appeals)
-                                {
-                                    <tr>
-                                        <td><strong>@item.Objection_No</strong></td>
-                                        <td>@item.Property_Desc</td>
-                                        <td>@item.Old_Category</td>
-                                        <td>@FormatZAR(item.Old_Market_Value)</td>
-                                        <td>@Html.Raw(GetStatusPill(item.objection_Status))</td>
+                    @* ── My Appeals ─────────────────────────────────── *@
+                    @if (roll.HasAppeal)
+                    {
+                        var appeals = rd.ObjectedProperties.Where(x => x.Sub_typ == 1).ToList();
+                        <div class="cd-widget">
+                            <div class="cd-widget-toggle" onclick="toggleWidget('@rollKey-appeals')">
+                                <div class="cd-widget-toggle-left">
+                                    <i class="fa-solid fa-gavel"></i>
+                                    <h3>My Appeals</h3>
+                                    <span class="cd-count-badge">@appeals.Count</span>
+                                </div>
+                                <i class="fa-solid fa-chevron-down cd-widget-chevron"
+                                   id="wchev-@rollKey-appeals"></i>
+                            </div>
+                            <div class="cd-widget-body" id="widget-@rollKey-appeals">
+                                <div class="table-responsive">
+                                    <table class="cd-table table table-bordered table-hover"
+                                           id="tbl-@rollKey-appeals">
+                                        <thead>
+                                            <tr>
+                                                <th>Appeal No.</th>
+                                                <th>Property Description</th>
+                                                <th>Category</th>
+                                                <th>Market Value</th>
+                                                <th>Status</th>
+                                                <th>Options</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var item in appeals)
+                                            {
+                                                <tr>
+                                                    <td><strong>@item.Objection_No</strong></td>
+                                                    <td>@item.Property_Desc</td>
+                                                    <td>@item.Old_Category</td>
+                                                    <td>@FormatZAR(item.Old_Market_Value)</td>
+                                                    <td>@Html.Raw(GetStatusPill(item.objection_Status))</td>
                                                     <td>
                                                         <div class="dropdown">
                                                             <button class="cd-action-btn dropdown-toggle"
@@ -1096,22 +1227,22 @@ else if (roll.IsQuery)
                                                             </ul>
                                                         </div>
                                                     </td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        }
-    }
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
 
-</div>
+            </div>
+
       
-            
-            </div>
-        
+        </div>
 
+        
     }
     @* ── Rebates ──────────────────────────────────────────────────────────── *@
     @{
@@ -1205,7 +1336,6 @@ else if (roll.IsQuery)
                     <div class="cd-widget-body" id="widget-rebates-applications">
                         <div class="table-responsive">
                             <table class="cd-table table table-bordered table-hover"
-                                  
                                    id="tbl-rebates-applications">
                                 <thead>
                                     <tr>
@@ -1319,7 +1449,7 @@ else if (roll.IsQuery)
                        id="wchev-attr-linked"></i>
                 </div>
                 <div class="cd-widget-body" id="widget-attr-linked">
-                   @*  <div class="cd-widget-toolbar">
+                    @*  <div class="cd-widget-toolbar">
                         <a href="/attributes/search" class="cd-add-btn">
                             <i class="fa-solid fa-plus"></i> Link New Property
                         </a>
@@ -1348,7 +1478,7 @@ else if (roll.IsQuery)
                                         <td>@item.MarketValue</td>
                                         <td>
                                             <span class="attr-form-pill attr-pill-@(item.FormType.ToLower()
-                                                                                        .Replace(" ", "").Replace("&", "").Replace("/", ""))">
+                                                                                                                                                                                          .Replace(" ", "").Replace("&", "").Replace("/", ""))">
                                                 @item.FormType
                                             </span>
                                         </td>
@@ -1361,7 +1491,7 @@ else if (roll.IsQuery)
                                                 <ul class="dropdown-menu">
                                                     @if (!item.HasSubmission)
                                                     {
-                                                    @*     <li>
+                                                        @*     <li>
                                                             <a class="dropdown-item"
                                                                    href="/attributes/form?id=@item.IDProperty&formType=@item.FormType">
                                                                 Submit Attributes
@@ -1369,19 +1499,19 @@ else if (roll.IsQuery)
                                                         </li> *@
 
 
-                                                                    <li>
-                                                                      @*  <a class="dropdown-item"
+                                                        <li>
+                                                            @*  <a class="dropdown-item"
                                                                            asp-controller="Attributes"
                                                                    asp-action="Check"
                                                                    asp-route-idProperty="@item.IDProperty"
                                                                            asp-route-formType="@item.FormType">
                                                                             Submit Attributes
                                                                         </a> *@
-                                                                        <a class="dropdown-item"
-   href="/attributes/select-form?unitKey=@item.IDProperty">
-    <i class="fa-solid fa-file-pen"></i> Submit Attributes
-</a>
-                                                                    </li>
+                                                            <a class="dropdown-item"
+                                                                   href="/attributes/select-form?unitKey=@item.IDProperty">
+                                                                <i class="fa-solid fa-file-pen"></i> Submit Attributes
+                                                            </a>
+                                                        </li>
                                                     }
                                                     else
                                                     {
@@ -1493,7 +1623,7 @@ else if (roll.IsQuery)
                                                     </li>
                                                     @if (item.IsEditable)
                                                     {
-                                                       @*  <li>
+                                                        @*  <li>
                                                             <a class="dropdown-item"
                                                                    href="/attributes/edit/@item.Id">
                                                                 ✏️ Edit Submission
@@ -1851,7 +1981,7 @@ else if (roll.IsQuery)
                     }
 
                     @* PIN verification modals - full backend verification comes next *@
-                  @* PIN verification modals *@
+                    @* PIN verification modals *@
                     @foreach (var appointment in attrData.Appointments
                         .Where(x => x.Status == "InspectionDetailsSent"))
                     {
@@ -2100,6 +2230,158 @@ else if (roll.IsQuery)
             }
         }
 
+        // ── Tiles view: AJAX slide-over drawer (GV/Supp/Query rolls) ──
+        //    Rebates/Attributes tiles use data-drawer-url directly since
+        //    they don't map to a GvList roll source.
+        const rollDetailCache = {};
+
+        function openRollDrawer(tileEl) {
+            const rollSource = tileEl.dataset.rollSource;
+            const rollName = tileEl.dataset.rollName;
+            const url = tileEl.dataset.drawerUrl ||
+                (rollSource ? '/dashboard/roll-detail/' + encodeURIComponent(rollSource) : null);
+
+            const drawer = document.getElementById('cdDrawer');
+            const backdrop = document.getElementById('cdDrawerBackdrop');
+            const title = document.getElementById('cdDrawerTitle');
+            const body = document.getElementById('cdDrawerBody');
+
+            if (!drawer || !backdrop || !body || !url) return;
+
+            title.textContent = rollName || 'Details';
+            body.innerHTML =
+                '<div class="cd-roll-loading"><i class="fa-solid fa-circle-notch fa-spin"></i> Loading…</div>';
+
+            drawer.classList.add('open');
+            backdrop.classList.add('open');
+            document.body.style.overflow = 'hidden';
+
+            if (rollDetailCache[url]) {
+                body.innerHTML = rollDetailCache[url];
+                initTablesWithin(body);
+                reparentFixedModals(body);
+                return;
+            }
+
+            fetch(url)
+                .then(function (res) {
+                    if (!res.ok) throw new Error('Failed to load (' + res.status + ')');
+                    return res.text();
+                })
+                .then(function (html) {
+                    rollDetailCache[url] = html;
+                    body.innerHTML = html;
+                    initTablesWithin(body);
+                    reparentFixedModals(body);
+                })
+                .catch(function (err) {
+                    body.innerHTML =
+                        '<div class="cd-roll-error">' +
+                        '<i class="fa-solid fa-triangle-exclamation"></i> ' +
+                        'Could not load these details. Please try again.' +
+                        '</div>';
+                    console.error('[Dashboard] drawer fetch failed:', err);
+                });
+        }
+
+        function closeRollDrawer() {
+            const drawer = document.getElementById('cdDrawer');
+            const backdrop = document.getElementById('cdDrawerBackdrop');
+
+            drawer?.classList.remove('open');
+            backdrop?.classList.remove('open');
+            document.body.style.overflow = '';
+        }
+
+        function initTablesWithin(container) {
+            container.querySelectorAll('.cd-table').forEach(function (t) {
+                if (t.id) initDataTable('#' + t.id);
+            });
+        }
+
+        // ── Move full-screen modals out of the drawer ───────────────
+        //    .cd-drawer slides via CSS transform, which creates a new
+        //    containing block for position:fixed descendants — so any
+        //    fixed-position modal (PIN pad, inspection date picker,
+        //    correction form) loaded inside it would get squeezed into
+        //    the drawer's own box instead of covering the full screen.
+        //    Re-parenting to <body> keeps them truly full-screen.
+        function reparentFixedModals(container) {
+            container
+                .querySelectorAll('.pin-backdrop, .attr-insp-modal-backdrop')
+                .forEach(function (modal) {
+                    document.body.appendChild(modal);
+                });
+        }
+
+        // ── Tile click (used only where no drawer endpoint exists) ────
+        //    Switches to List view, opens the matching section, and
+        //    scrolls to it. Everything there is already rendered. ─────
+        function openTileRoll(key) {
+            setViewMode('list');
+
+            const section = document.getElementById('roll-' + key);
+            const body = document.getElementById('rollbody-' + key);
+            const chevron = document.getElementById('chevron-' + key);
+
+            if (!section || !body) return;
+
+            document.querySelectorAll('.cd-roll-body.open').forEach(b => {
+                if (b.id !== 'rollbody-' + key) b.classList.remove('open');
+            });
+            document.querySelectorAll('.cd-roll-chevron').forEach(icon => {
+                icon.style.transform = 'rotate(0deg)';
+            });
+
+            body.classList.add('open');
+            if (chevron) chevron.style.transform = 'rotate(180deg)';
+
+            setTimeout(() => {
+                section.querySelectorAll('.cd-widget-body.open .cd-table').forEach(t => {
+                    if (t.id) initDataTable('#' + t.id);
+                });
+                section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+        }
+
+        // ── View mode toggle (Tiles / List) — remembered via localStorage ──
+        const VIEW_MODE_KEY = 'cd_view_mode';
+
+        function setViewMode(mode) {
+            const tileGrid = document.getElementById('cdTileGrid');
+            const btnTiles = document.getElementById('viewBtnTiles');
+            const btnList = document.getElementById('viewBtnList');
+            const rollSections = document.querySelectorAll('.cd-roll-section');
+
+            if (!tileGrid) return;
+
+            if (mode === 'list') {
+                tileGrid.style.display = 'none';
+                rollSections.forEach(s => s.style.display = '');
+                btnList?.classList.add('active');
+                btnTiles?.classList.remove('active');
+            } else {
+                mode = 'tiles';
+                tileGrid.style.display = '';
+                rollSections.forEach(s => s.style.display = 'none');
+                btnTiles?.classList.add('active');
+                btnList?.classList.remove('active');
+            }
+
+            localStorage.setItem(VIEW_MODE_KEY, mode);
+        }
+
+        function initViewToggle() {
+            const saved = localStorage.getItem(VIEW_MODE_KEY) || 'tiles';
+            setViewMode(saved);
+
+            document.getElementById('viewBtnTiles')
+                ?.addEventListener('click', function () { setViewMode('tiles'); });
+
+            document.getElementById('viewBtnList')
+                ?.addEventListener('click', function () { setViewMode('list'); });
+        }
+
         // ── Widget sub-section toggle ───────────────────────────────
         function toggleWidget(key) {
             const body = document.getElementById('widget-' + key);
@@ -2166,6 +2448,8 @@ else if (roll.IsQuery)
                 console.warn('Roll section not found for:', openRoll);
                 return;
             }
+
+            setViewMode('list');
 
             const rollKey = rollSection.id.replace('roll-', '');
 
@@ -2492,6 +2776,11 @@ else if (roll.IsQuery)
                     document.body.style.overflow = '';
                 }
             });
+
+            const drawer = document.getElementById('cdDrawer');
+            if (drawer?.classList.contains('open')) {
+                closeRollDrawer();
+            }
         });
 
         // ── Physical keyboard / pasted PIN input ───────────────────
@@ -2544,6 +2833,7 @@ else if (roll.IsQuery)
                 });
             });
 
+            initViewToggle();
             openLinkedRollFromQueryString();
             initNotificationBell();
             initStatusExplanationModal();

@@ -7,128 +7,152 @@
         : "~/Views/Shared/_Layout.cshtml";
 
     var submissions = ViewBag.Submissions as IEnumerable<dynamic>;
-    var preAttrNo   = ViewBag.AttrNo as string;
+    var preAttrNo = ViewBag.AttrNo as string;
 }
-<link href="~/css/views/attribute-evidence.css" rel="stylesheet" asp-append-version="true"/>
-
+<link href="~/css/views/attribute-evidence.css" rel="stylesheet" asp-append-version="true" />
 
 <div class="ev-page">
     <div class="ev-inner">
 
-        <div class="ev-heading">
-            <div class="ev-heading-icon">
-                <i class="fa-solid fa-paperclip"></i>
-            </div>
-            <div>
-                <h1 class="ev-title">Add Evidence</h1>
-                <p class="ev-subtitle">
-                    Upload additional supporting documents for your attribute submission
-                </p>
-            </div>
-        </div>
+        <div class="ev-card ev-card-premium">
 
-        @* ── Error / expired notices ───────────────────────────── *@
-        @if (ViewBag.Expired == true)
-        {
-            <div class="ev-expired">
-                <i class="fa-solid fa-triangle-exclamation"></i>
-                <strong>Upload window closed.</strong>
-                The 48-hour window for adding evidence to this submission has passed.
-                Contact the City of Johannesburg if you need to submit additional information.
-            </div>
-        }
-        else if (ViewBag.Error is not null)
-        {
-            <div class="ev-error">
-                <i class="fa-solid fa-circle-xmark"></i>
-                @ViewBag.Error
-            </div>
-        }
-
-        @* ── Info ─────────────────────────────────────────────── *@
-        <div class="ev-info-box">
-            <i class="fa-solid fa-circle-info"></i>
-            <div>
-                You have <strong>48 hours</strong> from the time of submission to
-                upload supporting evidence. Enter your Attribute Number and the PIN
-                from your acknowledgement letter to continue.
-            </div>
-        </div>
-
-        @* ── Entry form ───────────────────────────────────────── *@
-        <div class="ev-card">
-            <div class="ev-card-header">
-                <i class="fa-solid fa-key"></i>
-                Verify Your Submission
-            </div>
-            <form method="post" action="/attributes/evidence" class="ev-form">
-                @Html.AntiForgeryToken()
-
-                @* Attribute Number — dropdown (logged in) or text field (anonymous) *@
-                <div class="ev-field">
-                    <label class="ev-label" for="attrNo">
-                        <i class="fa-solid fa-hashtag"></i>
-                        Attribute Number
-                    </label>
-
-                    @if (isAuth && submissions?.Any() == true)
-                    {
-                        <select id="attrNo" name="attrNo" class="ev-select" required>
-                            <option value="">— Select your submission —</option>
-                            @foreach (var s in submissions)
-                            {
-                                var selected = s.Attr_No == preAttrNo ? "selected" : null;
-                                <option value="@s.Attr_No" selected="@selected">
-                                    @s.Attr_No — @s.Property_Desc
-                                </option>
-                            }
-                        </select>
-                    }
-                    else
-                    {
-                        <input type="text"
-                               id="attrNo"
-                               name="attrNo"
-                               class="ev-input"
-                               placeholder="e.g. ATTR-GV23-1"
-                               value="@preAttrNo"
-                               required />
-                    }
+            <!-- Step indicator -->
+            <div style="padding:20px 22px 0;">
+                <div class="ev-steps">
+                    <div class="ev-step active">
+                        <span class="ev-step-num">1</span> Verify Submission
+                    </div>
+                    <div class="ev-step-line"></div>
+                    <div class="ev-step">
+                        <span class="ev-step-num">2</span> Upload Evidence
+                    </div>
                 </div>
+            </div>
 
-                <div class="ev-field">
-                    <label class="ev-label" for="pin">
-                        <i class="fa-solid fa-lock"></i>
-                        Evidence PIN
-                    </label>
-                    <input type="text"
-                           id="pin"
-                           name="pin"
-                           class="ev-input"
-                           placeholder="Enter the PIN from your acknowledgement"
-                           maxlength="20"
-                           autocomplete="off"
-                           required />
-                    <span style="font-size:11.5px; color:#6b6b6b;">
-                        The PIN was shown on your submission acknowledgement page and PDF.
-                    </span>
+            <!-- Header (same pattern as VerifyObj) -->
+            <div class="ev-card-header-row">
+                <div class="ev-card-icon">
+                    <i class="fa-solid fa-paperclip"></i>
                 </div>
-
                 <div>
-                    <button type="submit" class="ev-btn">
-                        <i class="fa-solid fa-arrow-right"></i>
-                        Verify &amp; Continue
-                    </button>
+                    <h1 class="ev-card-title">Add Evidence</h1>
+                    <p class="ev-card-sub">
+                        Upload additional supporting documents for your attribute submission
+                    </p>
                 </div>
-            </form>
-        </div>
+            </div>
 
-        @if (isAuth)
-        {
-            <a href="/dashboard" class="ev-btn-outline">
-                <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
-            </a>
-        }
+            <div class="ev-form">
+
+                @* ── Error / expired notices ───────────────────────────── *@
+                @if (ViewBag.Expired == true)
+                {
+                    <div class="ev-expired">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        <strong>Upload window closed.</strong>
+                        The 48-hour window for adding evidence to this submission has passed.
+                        Contact the City of Johannesburg if you need to submit additional information.
+                    </div>
+                }
+                else if (ViewBag.Error is not null)
+                {
+                    <div class="ev-error">
+                        <i class="fa-solid fa-circle-xmark"></i>
+                        @ViewBag.Error
+                    </div>
+                }
+
+                <div class="ev-notice-premium">
+                    <div class="ev-notice-icon">
+                        <i class="fa-solid fa-clock"></i>
+                    </div>
+                    <div>
+                        <p class="ev-notice-title">48-Hour Upload Window</p>
+                        <p class="ev-notice-text">
+                            You have 48 hours from the time of submission to upload
+                            supporting evidence. Enter your Attribute Number and the
+                            PIN from your acknowledgement letter to continue.
+                        </p>
+                    </div>
+                </div>
+
+                <form method="post" action="/attributes/evidence" style="display:flex; flex-direction:column; gap:16px;">
+                    @Html.AntiForgeryToken()
+
+                    @* Attribute Number — dropdown (logged in) or text field (anonymous) *@
+                    <div class="ev-field">
+                        <label class="ev-label" for="attrNo">
+                            <i class="fa-solid fa-hashtag"></i>
+                            Attribute Number
+                        </label>
+
+                        @if (isAuth && submissions?.Any() == true)
+                        {
+                            <div class="ev-input-group">
+                                <i class="fa-solid fa-hashtag ev-input-icon"></i>
+                                <select id="attrNo" name="attrNo" class="ev-select ev-input-with-icon" required>
+                                    <option value="">— Select your submission —</option>
+                                    @foreach (var s in submissions)
+                                    {
+                                        var selected = s.Attr_No == preAttrNo ? "selected" : null;
+                                        <option value="@s.Attr_No" selected="@selected">
+                                            @s.Attr_No — @s.Property_Desc
+                                        </option>
+                                    }
+                                </select>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="ev-input-group">
+                                <i class="fa-solid fa-hashtag ev-input-icon"></i>
+                                <input type="text"
+                                       id="attrNo"
+                                       name="attrNo"
+                                       class="ev-input ev-input-with-icon"
+                                       placeholder="e.g. ATTR-GV23-1"
+                                       value="@preAttrNo"
+                                       required />
+                            </div>
+                        }
+                    </div>
+
+                    <div class="ev-field">
+                        <label class="ev-label" for="pin">
+                            <i class="fa-solid fa-lock"></i>
+                            Evidence PIN
+                        </label>
+                        <div class="ev-input-group">
+                            <i class="fa-solid fa-lock ev-input-icon"></i>
+                            <input type="text"
+                                   id="pin"
+                                   name="pin"
+                                   class="ev-input ev-input-with-icon"
+                                   placeholder="Enter the PIN from your acknowledgement"
+                                   maxlength="20"
+                                   autocomplete="off"
+                                   required />
+                        </div>
+                        <span style="font-size:11.5px; color:#6b6b6b;">
+                            The PIN was shown on your submission acknowledgement page and PDF.
+                        </span>
+                    </div>
+
+                    <div class="ev-form-actions">
+                        <button type="submit" class="ev-btn-primary">
+                            <i class="fa-solid fa-shield-check"></i>
+                            Verify &amp; Continue
+                        </button>
+                        @if (isAuth)
+                        {
+                            <a href="/dashboard" class="ev-btn-ghost">
+                                <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
+                            </a>
+                        }
+                    </div>
+                </form>
+            </div>
+        </div>
 
     </div>
 </div>

@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using V2_Genesis.Models;
+using V2_Genesis.Services.Notice;
 
 namespace V2_Genesis.Services.Interfaces;
 
@@ -10,7 +11,7 @@ public interface IObjectionFormService
         string userId,
         string appealStat,
         string? objAppeal,
-        string?PropertyFrom,
+        string? PropertyFrom,
         Obj_Property_InfoModel obj,
         Obj_Section1Model obj1,
         Obj_Section2Model obj2,
@@ -26,6 +27,14 @@ public interface IObjectionFormService
         List<IFormFile> files,
         List<IFormFile> fileR,
         Obj_Property_Info_AppealModel appeal);
+
+    /// <summary>
+    /// Rebuilds an objection or appeal acknowledgement from the submitted
+    /// database records. No acknowledgement file is read from disk.
+    /// </summary>
+    Task<AcknowledgementData?> GetAcknowledgementDataAsync(
+        string rollSource,
+        string referenceNo);
 
     Task<(bool Success, string? Error)> WithdrawAsync(
     string objectionNo,

@@ -14,16 +14,19 @@ namespace V2_Genesis.Controllers;
 public class NoticeController : Controller
 {
     private readonly INoticeService _notice;
+    private readonly IObjectionFormService _objectionFormService;
     private readonly IPropertySearchService _search;
     private readonly ApplicationDbContext _db;
     private readonly RollDatesSettings _rollDates;
     private readonly ILogger<NoticeController> _logger;
     public NoticeController(
         INoticeService notice,
+        IObjectionFormService objectionFormService,
         IPropertySearchService search,
-        ApplicationDbContext db, IOptions<RollDatesSettings> rollDatesOpts,ILogger<NoticeController>logger)
+        ApplicationDbContext db, IOptions<RollDatesSettings> rollDatesOpts, ILogger<NoticeController> logger)
     {
         _notice = notice;
+        _objectionFormService = objectionFormService;
         _search = search;
         _db = db;
         _rollDates = rollDatesOpts.Value;
@@ -83,63 +86,58 @@ public class NoticeController : Controller
                 new { rollSource, unitKey, valuationKey });
         }
     }
-    // ── GET /notice/acknowledgement/download ──────────────────────────────
-    // Called from dashboard "Acknowledgement" button with objectionNo + rollSource
+    // ── GET /notice/acknowledgement/download ──────────────────────
+    // Rebuilds the PDF from the submitted objection/appeal records.
+    // No acknowledgement PDF is read from an evidence folder.
     [HttpGet]
     [Route("notice/acknowledgement/download")]
     public async Task<IActionResult> DownloadAcknowledgement(
         string objectionNo,
         string rollSource)
     {
-        // Build from TempData if available (post-submission flow)
-        AcknowledgementData data;
+        if (string.IsNullOrWhiteSpace(objectionNo))
+            return BadRequest("Objection or appeal number is required.");
 
-        if (TempData.ContainsKey("pin") || TempData.ContainsKey("objection_ref"))
-        {
-            data = AcknowledgementData.FromTempData(TempData, rollSource);
-
-            // Keep TempData alive for page refresh
-            foreach (var key in new[]
-            {
-            "Id","pin","Count","desc","time","section51pin",
-            "new_Property_Description","new_Category","new2_Category","new3_Category",
-            "new_Address","new_Extent","new2_Extent","new3_Extent",
-            "new_Market_Value","new2_Market_Value","new3_Market_Value",
-            "new_Owner","objection_ref","objection_reason",
-            "Old_Property_Description","Old_Category","Old2_Category","Old3_Category",
-            "Old_Address","Old_Extent","Old2_Extent","Old3_Extent",
-            "Old_Market_Value","Old2_Market_Value","Old3_Market_Value","Old_Owner"
-        })
-                TempData.Keep(key);
-        }
-        else
-        {
-            // No TempData — override with what we know
-            // (SP fetch can be added later per roll)
-            data = new AcknowledgementData
-            {
-                ObjectionNo = objectionNo,
-                ObjectionRef = objectionNo,
-                RollSource = rollSource,
-                SubmissionTime = DateTime.Now.ToString("dd MMMM yyyy HH:mm")
-            };
-        }
-
-        // Ensure objection number is set
-        if (string.IsNullOrWhiteSpace(data.ObjectionNo))
-            data.ObjectionNo = objectionNo;
+        if (string.IsNullOrWhiteSpace(rollSource))
+            return BadRequest("Roll source is required.");
 
         try
         {
-            var (pdf, fileName) = await _notice.GenerateAcknowledgementAsync(data);
+            var data = await _objectionFormService
+                .GetAcknowledgementDataAsync(rollSource, objectionNo);
+
+            if (data is null)
+                return NotFound("The objection or appeal submission was not found.");
+
+            var (pdf, fileName) = await _notice
+                .GenerateAcknowledgementAsync(data);
+
+            if (pdf is null || pdf.Length == 0)
+                throw new InvalidOperationException(
+                    "Acknowledgement generation returned an empty PDF.");
+
+            _logger.LogInformation(
+                "Generated acknowledgement on demand for {ReferenceNo} in {RollSource}",
+                objectionNo,
+                rollSource);
+
             return File(pdf, "application/pdf", fileName);
         }
         catch (Exception ex)
         {
-            TempData["NoticeError"] = $"Could not generate acknowledgement: {ex.Message}";
+            _logger.LogError(
+                ex,
+                "Could not generate acknowledgement for {ReferenceNo} in {RollSource}",
+                objectionNo,
+                rollSource);
+
+            TempData["NoticeError"] =
+                "The acknowledgement could not be generated. Please try again.";
+
             return RedirectToAction("Index", "Dashboard");
         }
     }
+
     // GET /notices
     [HttpGet]
     [Route("notices")]
@@ -227,4 +225,4 @@ public class NoticeController : Controller
         }
     }
 }
- 
+

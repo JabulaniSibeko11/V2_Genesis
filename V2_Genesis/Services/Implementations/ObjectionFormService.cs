@@ -7,6 +7,7 @@ using System.Data;
 using System.Net.Mime;
 using V2_Genesis.Data;
 using V2_Genesis.Models;
+using V2_Genesis.Helpers;
 using V2_Genesis.Models.Emails;
 using V2_Genesis.Models.Results;
 using V2_Genesis.Services.Interfaces;
@@ -25,13 +26,13 @@ public class ObjectionFormService : IObjectionFormService
     private readonly INoticeService _noticeService;
     private readonly IEmailService _emailService;
     private readonly ISubmittedFormPdfService _submittedFormPdfService;
-  
+
 
     public ObjectionFormService(
         ApplicationDbContext db,
         IOptions<ObjectionRollSettings> rollOpts,
         IConfiguration config,
-        ILogger<ObjectionFormService> logger,INoticeService noticeService,IEmailService emailService , ISubmittedFormPdfService submittedFormPdfService)
+        ILogger<ObjectionFormService> logger, INoticeService noticeService, IEmailService emailService, ISubmittedFormPdfService submittedFormPdfService)
     {
         _db = db;
         _rollSettings = rollOpts.Value;
@@ -112,7 +113,7 @@ public class ObjectionFormService : IObjectionFormService
                 userId,
 
                 obj,
-               
+
                 obj1,
                 obj2,
                 objR3,
@@ -322,9 +323,6 @@ public class ObjectionFormService : IObjectionFormService
         obj5.Objection_Ref_S5 = objRef;
         db.Obj_Section5.Add(obj5);
 
-
-        NormaliseSection6MoneyForDb(obj6);
-
         obj6.Ref = objId;
         obj6.Objection_Ref_S6 = objRef;
         db.Obj_Section6.Add(obj6);
@@ -355,6 +353,7 @@ public class ObjectionFormService : IObjectionFormService
         // ── 4. Generate acknowledgement + populated form + send email ─
         await GeneratePdfAndSendEmailAsync(
             rollSource: rollSource,
+            propertyFrom: propertyFrom,
             cfg: cfg,
             referenceNo: objRef,
             pin: obj7.RandomPin,
@@ -384,29 +383,6 @@ public class ObjectionFormService : IObjectionFormService
         };
     }
 
-    private static void NormaliseSection6MoneyForDb(Obj_Section6Model obj6)
-    {
-        obj6.Old_Market_Value = MoneyToPlainNumber(obj6.Old_Market_Value);
-        obj6.New_Market_Value = MoneyToPlainNumber(obj6.New_Market_Value);
-
-        obj6.Old2_Market_Value = MoneyToPlainNumber(obj6.Old2_Market_Value);
-        obj6.New2_Market_Value = MoneyToPlainNumber(obj6.New2_Market_Value);
-
-        obj6.Old3_Market_Value = MoneyToPlainNumber(obj6.Old3_Market_Value);
-        obj6.New3_Market_Value = MoneyToPlainNumber(obj6.New3_Market_Value);
-    }
-
-    private static string? MoneyToPlainNumber(string? value)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-            return value;
-
-        var digits = new string(value.Where(char.IsDigit).ToArray());
-
-        return string.IsNullOrWhiteSpace(digits)
-            ? null
-            : digits;
-    }
     // ── APPEAL ───────────────────────────────────────────────────────
     private async Task<ObjectionSubmitResult> SubmitAppealAsync(
         ApplicationDbContext db,
@@ -435,7 +411,7 @@ public class ObjectionFormService : IObjectionFormService
         // ── 1. Appeal Info ───────────────────────────────────────────
         var appealPropertyType = NormalizePropertyType(obj.Property_Type, isMulti);
 
-       
+
         appeal.A_UserID = userId;
         appeal.Appeal_Status = "App-Lodging";
         appeal.Obj_Ref = objAppeal;
@@ -547,6 +523,7 @@ public class ObjectionFormService : IObjectionFormService
         // ── 4. Generate acknowledgement + populated form + send email ─
         await GeneratePdfAndSendEmailAsync(
             rollSource: rollSource,
+            propertyFrom: propertyFrom,
             cfg: cfg,
             referenceNo: appNo,
             pin: obj7.RandomPin,
@@ -578,6 +555,7 @@ public class ObjectionFormService : IObjectionFormService
 
     private async Task GeneratePdfAndSendEmailAsync(
         string rollSource,
+        string propertyFrom,
         ObjectionRollEntry cfg,
         string referenceNo,
         string pin,
@@ -650,7 +628,7 @@ public class ObjectionFormService : IObjectionFormService
                     ? appeal?.A_Valuation_Key ?? obj.Valuation_Key
                     : obj.Valuation_Key,
 
-                    UploadedDocumentNames = GetUploadedDocumentNames(objFile),
+                UploadedDocumentNames = GetUploadedDocumentNames(objFile),
             };
 
             // 1. Generate acknowledgement PDF
@@ -662,17 +640,8 @@ public class ObjectionFormService : IObjectionFormService
                     $"Acknowledgement PDF is empty for {referenceNo}.");
             }
 
-            // 2. Save acknowledgement PDF in evidence folder
-            var ackPath = Path.Combine(folderPath, ackFileName);
-
-            await File.WriteAllBytesAsync(ackPath, ackPdfBytes);
-
-            await File.WriteAllBytesAsync(ackPath, ackPdfBytes);
-
-            _logger.LogInformation(
-                "[ObjectionFormService] Acknowledgement PDF saved for {ReferenceNo}. Path: {Path}",
-                referenceNo,
-                ackPath);
+            // 2. Do not save the acknowledgement to disk.
+            // Every download rebuilds the PDF from the submitted database records.
 
             // 3. Generate populated Form A/B/C/D PDF
             SubmittedFormPdfResult submittedFormPdf;
@@ -737,16 +706,69 @@ public class ObjectionFormService : IObjectionFormService
 
             // 4. Attach populated form PDF to email
             var extraAttachments = new List<EmailAttachment>
-        {
-            new EmailAttachment
             {
-                FileName = submittedFormPdf.FileName,
-                FileBytes = submittedFormPdf.PdfBytes,
-                ContentType = MediaTypeNames.Application.Pdf
-            }
-        };
+                new EmailAttachment
+                {
+                    FileName = submittedFormPdf.FileName,
+                    FileBytes = submittedFormPdf.PdfBytes,
+                    ContentType = MediaTypeNames.Application.Pdf
+                }
+            };
 
-            // 5. Send email once only.
+            // 5. Generate Section 49 only for an objection against a property
+            // that exists on the valuation roll. LIS and Omission submissions
+            // must never generate a Section 49 notice.
+            if (!isAppeal && ShouldGenerateSection49(rollSource, propertyFrom))
+            {
+                try
+                {
+                    var unitKey = FloatKeyHelper.Normalize(obj.Unit_key);
+                    var valuationKey = FloatKeyHelper.Normalize(obj.Valuation_Key);
+
+                    var (section49Bytes, section49FileName) = await _noticeService
+                        .GenerateSection49ForObjectionAsync(
+                            rollSource,
+                            unitKey,
+                            valuationKey,
+                            referenceNo,
+                            obj.Property_Desc ?? string.Empty);
+
+                    var section49Path = Path.Combine(folderPath, section49FileName);
+                    await File.WriteAllBytesAsync(section49Path, section49Bytes);
+
+                    extraAttachments.Add(new EmailAttachment
+                    {
+                        FileName = section49FileName,
+                        FileBytes = section49Bytes,
+                        ContentType = MediaTypeNames.Application.Pdf
+                    });
+
+                    _logger.LogInformation(
+                        "[ObjectionFormService] Section 49 saved and attached for {ReferenceNo}. Path: {Path}",
+                        referenceNo,
+                        section49Path);
+                }
+                catch (Exception section49Ex)
+                {
+                    _logger.LogError(
+                        section49Ex,
+                        "[ObjectionFormService] Section 49 generation failed for {ReferenceNo}. Roll={RollSource}, PropertyFrom={PropertyFrom}",
+                        referenceNo,
+                        rollSource,
+                        propertyFrom);
+                }
+            }
+            else
+            {
+                _logger.LogInformation(
+                    "[ObjectionFormService] Section 49 skipped for {ReferenceNo}. IsAppeal={IsAppeal}, Roll={RollSource}, PropertyFrom={PropertyFrom}",
+                    referenceNo,
+                    isAppeal,
+                    rollSource,
+                    propertyFrom);
+            }
+
+            // 6. Send email once only.
             // The acknowledgement PDF is passed separately.
             // The populated Form A/B/C/D is passed as extraAttachments.
             await _emailService.SendObjectionAcknowledgementAsync(
@@ -771,6 +793,34 @@ public class ObjectionFormService : IObjectionFormService
                 referenceNo);
         }
     }
+    private static bool ShouldGenerateSection49(
+        string? rollSource,
+        string? propertyFrom)
+    {
+        if (string.IsNullOrWhiteSpace(rollSource) ||
+            string.IsNullOrWhiteSpace(propertyFrom))
+        {
+            return false;
+        }
+
+        if (propertyFrom.Equals("LIS", StringComparison.OrdinalIgnoreCase) ||
+            propertyFrom.Equals("Omission", StringComparison.OrdinalIgnoreCase) ||
+            propertyFrom.Equals("Omitted", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        return NormalizeRollSource(rollSource) switch
+        {
+            "Objection" => true,
+            "Objection_Supp1" => true,
+            "Objection_Supp2" => true,
+            "Objection_Supp3" => true,
+            "Objection_Supp4" => true,
+            _ => false
+        };
+    }
+
     private static string NormalizePropertyType(string? propertyType, bool isMulti)
     {
         if (isMulti)
@@ -878,6 +928,155 @@ public class ObjectionFormService : IObjectionFormService
             case 10: f.Files10 = name; break;
         }
     }
+    public async Task<AcknowledgementData?> GetAcknowledgementDataAsync(
+        string rollSource,
+        string referenceNo)
+    {
+        if (string.IsNullOrWhiteSpace(referenceNo))
+            return null;
+
+        rollSource = NormalizeRollSource(rollSource);
+        referenceNo = referenceNo.Trim();
+
+        await using var db = CreateDbContextForRoll(rollSource);
+
+        // Appeal references are stored in Obj_Property_Info_Appeal and the
+        // shared section tables use the Appeal_Ref_* columns.
+        var appeal = await db.Obj_Property_Info_Appeal
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Appeal_No == referenceNo);
+
+        if (appeal is not null)
+        {
+            var section6 = await db.Obj_Section6
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x =>
+                    x.Appeal_Ref_S6 == appeal.Appeal_ID ||
+                    x.Objection_Ref_S6 == referenceNo);
+
+            var section7 = await db.Obj_Section7
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x =>
+                    x.Appeal_Ref_S7 == appeal.Appeal_ID ||
+                    x.Objection_Ref_S7 == referenceNo);
+
+            var files = await db.Obj_Files
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x =>
+                    x.Ref == appeal.Appeal_ID &&
+                    x.Objection_Ref_files == referenceNo);
+
+            return BuildAcknowledgementData(
+                rollSource,
+                referenceNo,
+                section7?.RandomPin,
+                appeal.A_Valuation_Key,
+                appeal.A_Property_Type,
+                isAppeal: true,
+                section6,
+                section7?.Declaration_Date,
+                files);
+        }
+
+        var objection = await db.Obj_Property_Info
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Objection_No == referenceNo);
+
+        if (objection is null)
+            return null;
+
+        var objectionSection6 = await db.Obj_Section6
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x =>
+                x.Ref == objection.Objection_ID ||
+                x.Objection_Ref_S6 == referenceNo);
+
+        var objectionSection7 = await db.Obj_Section7
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x =>
+                x.Ref == objection.Objection_ID ||
+                x.Objection_Ref_S7 == referenceNo);
+
+        var objectionFiles = await db.Obj_Files
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x =>
+                x.Ref == objection.Objection_ID &&
+                x.Objection_Ref_files == referenceNo);
+
+        return BuildAcknowledgementData(
+            rollSource,
+            referenceNo,
+            objectionSection7?.RandomPin,
+            objection.Valuation_Key,
+            objection.Property_Type,
+            isAppeal: false,
+            objectionSection6,
+            objection.Objection_Start_DateTime.ToString("dd MMMM yyyy HH:mm"),
+            objectionFiles);
+    }
+
+    private static AcknowledgementData BuildAcknowledgementData(
+        string rollSource,
+        string referenceNo,
+        string? pin,
+        string? valuationKey,
+        string? propertyType,
+        bool isAppeal,
+        Obj_Section6Model? section6,
+        string? submissionTime,
+        Obj_Files? files)
+    {
+        return new AcknowledgementData
+        {
+            ObjectionNo = pin ?? string.Empty,
+            ObjectionRef = referenceNo,
+            RollSource = rollSource,
+            SubmissionTime = string.IsNullOrWhiteSpace(submissionTime)
+                ? DateTime.Now.ToString("dd MMMM yyyy HH:mm")
+                : submissionTime,
+            IsAppeal = isAppeal,
+            IsMulti = propertyType?.Trim().Equals(
+                "Multi", StringComparison.OrdinalIgnoreCase) == true,
+            FileCount = files?.Evidence_count is null
+                ? 0
+                : Convert.ToInt32(files.Evidence_count.Value),
+            UploadedDocumentNames = files is null
+                ? new List<string>()
+                : GetUploadedDocumentNames(files),
+            ObjectionReason = section6?.Objection_Reasons,
+
+            Old_PropertyDescription = section6?.Old_Property_Description,
+            Old_Category = section6?.Old_Category,
+            Old_Address = section6?.Old_Address,
+            Old_Extent = section6?.Old_Extent,
+            Old_MarketValue = section6?.Old_Market_Value,
+            Old_Owner = section6?.Old_Owner,
+
+            New_PropertyDescription = section6?.New_Property_Description,
+            New_Category = section6?.New_Category,
+            New_Address = section6?.New_Address,
+            New_Extent = section6?.New_Extent,
+            New_MarketValue = section6?.New_Market_Value,
+            New_Owner = section6?.New_Owner,
+
+            Old2_Category = section6?.Old2_Category,
+            Old2_Extent = section6?.Old2_Extent,
+            Old2_MarketValue = section6?.Old2_Market_Value,
+            New2_Category = section6?.New2_Category,
+            New2_Extent = section6?.New2_Extent,
+            New2_MarketValue = section6?.New2_Market_Value,
+
+            Old3_Category = section6?.Old3_Category,
+            Old3_Extent = section6?.Old3_Extent,
+            Old3_MarketValue = section6?.Old3_Market_Value,
+            New3_Category = section6?.New3_Category,
+            New3_Extent = section6?.New3_Extent,
+            New3_MarketValue = section6?.New3_Market_Value,
+
+            ValuationKey = valuationKey
+        };
+    }
+
     public async Task<(bool Success, string? Error)> WithdrawAsync(
   string objectionNo,
   string withdrawType,

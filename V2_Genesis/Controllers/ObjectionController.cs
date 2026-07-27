@@ -1569,41 +1569,41 @@ public class ObjectionController : Controller
     {
         return $"/Admin/Search?reference={Uri.EscapeDataString(referenceNumber)}";
     }
-    [HttpGet]
-    [Route("notice/acknowledgement/download")]
-    public async Task<IActionResult> DownloadAcknowledgement(string objectionNo,string rollSource)
-    {
-        if (string.IsNullOrWhiteSpace(objectionNo))
-        {
-            TempData["DownloadError"] = "Reference number is missing.";
-            return RedirectToAction("Index", "Dashboard");
-        }
+    //[HttpGet]
+    //[Route("notice/acknowledgement/download")]
+    //public async Task<IActionResult> DownloadAcknowledgement(string objectionNo,string rollSource)
+    //{
+    //    if (string.IsNullOrWhiteSpace(objectionNo))
+    //    {
+    //        TempData["DownloadError"] = "Reference number is missing.";
+    //        return RedirectToAction("Index", "Dashboard");
+    //    }
 
-        if (string.IsNullOrWhiteSpace(rollSource))
-        {
-            TempData["DownloadError"] = "Roll source is missing.";
-            return RedirectToAction("Index", "Dashboard");
-        }
+    //    if (string.IsNullOrWhiteSpace(rollSource))
+    //    {
+    //        TempData["DownloadError"] = "Roll source is missing.";
+    //        return RedirectToAction("Index", "Dashboard");
+    //    }
 
-        var result = await _noticeService.GetSavedAcknowledgementAsync(
-            objectionNo,
-            rollSource);
+    //    //var result = await _noticeService.GetSavedAcknowledgementAsync(
+    //    //    objectionNo,
+    //    //    rollSource);
 
-        if (!result.Success || result.FileBytes == null)
-        {
-            TempData["DownloadError"] = result.Error
-                ?? "Acknowledgement PDF was not found.";
+    //    if (!result.Success || result.FileBytes == null)
+    //    {
+    //        TempData["DownloadError"] = result.Error
+    //            ?? "Acknowledgement PDF was not found.";
 
-            return RedirectToAction("Index", "Dashboard", new
-            {
-                openRoll = rollSource
-            });
-        }
+    //        return RedirectToAction("Index", "Dashboard", new
+    //        {
+    //            openRoll = rollSource
+    //        });
+    //    }
 
-        return File(
-            result.FileBytes,
-            "application/pdf",
-            result.FileName ?? $"{objectionNo}_Acknowledgement.pdf");
-    }
+    //    return File(
+    //        result.FileBytes,
+    //        "application/pdf",
+    //        result.FileName ?? $"{objectionNo}_Acknowledgement.pdf");
+    //}
 
 }

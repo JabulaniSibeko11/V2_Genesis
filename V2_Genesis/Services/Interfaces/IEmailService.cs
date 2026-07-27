@@ -49,16 +49,31 @@ namespace V2_Genesis.Services.Interfaces
             string body,
             List<EmailAttachment> attachments,
             bool isHtml = true);
+
+        Task SendEvidenceUploadConfirmationAsync(
+            string referenceNo,
+            string rollSource,
+            bool isAppeal,
+            IReadOnlyCollection<string> uploadedFileNames,
+            DateTime uploadedAt,
+            int remainingSlots);
+
+        Task SendAttributeEvidenceUploadConfirmationAsync(
+            string attributeNo,
+            IReadOnlyCollection<string> uploadedFileNames,
+            DateTime uploadedAt,
+            int remainingSlots);
+
         Task SendAttributeAcknowledgementAsync(
-    string toEmail,
-    string clientName,
-    string attrNo,
-    string propertyDescription,
-    string evidencePin,
-    DateTime evidenceDeadline,
-    byte[] acknowledgementPdf,
-    byte[] submittedFormPdf,
-    string acknowledgementFileName,
-    string submittedFormFileName);
+            string recipientEmail,
+            string clientName,
+            string attributeNumber,
+            string propertyDescription,
+            string evidencePin,
+            DateTime evidenceDeadline,
+            byte[] acknowledgementPdf,
+            byte[] submittedFormPdf,
+            string acknowledgementFileName,
+            string submittedFormFileName);
     }
 }

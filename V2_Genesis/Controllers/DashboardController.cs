@@ -1,6 +1,4 @@
-﻿
-
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.CodeAnalysis;
@@ -37,17 +35,89 @@ public class DashboardController : Controller
         IAnnouncementService announcement,
         IDashboardService dashboardService,
         IOptions<RollDatesSettings> rollDatesOpts,
-        IAttributesDashboardService attributesService,IRebatesService rebates,
-        ILogger<DashboardController> logger)     
+        IAttributesDashboardService attributesService, IRebatesService rebates,
+        ILogger<DashboardController> logger)
     {
         _db = db;
         _userManager = userManager;
         _announcement = announcement;
         _dashboardService = dashboardService;
-        _rollDates = rollDatesOpts.Value;           
+        _rollDates = rollDatesOpts.Value;
         _attributesService = attributesService;
         _rebates = rebates;
         _logger = logger;
+    }
+
+    // ── On-demand roll detail — used by both the Tiles slide-over panel
+    //    and the List view's lazy-loaded accordion body. Only the roll
+    //    the person actually opens gets its full data queried; the
+    //    initial dashboard load only needs the counts already present
+    //    on RollData for the tile stats.
+    [HttpGet]
+    [Route("dashboard/roll-detail/{rollSource}")]
+    public async Task<IActionResult> RollDetail(string rollSource)
+    {
+        if (string.IsNullOrWhiteSpace(rollSource))
+            return BadRequest();
+
+        var roll = await _db.GvList.FirstOrDefaultAsync(r => r.Source == rollSource);
+        if (roll is null) return NotFound();
+
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
+        var userEmail = User.FindFirstValue(ClaimTypes.Name) ?? string.Empty;
+
+        var data = await _dashboardService.GetRollDataAsync(rollSource, userId, userEmail);
+        var dates = _rollDates.Dates.GetValueOrDefault(rollSource);
+        var periodStatus = V2_Genesis.Helpers.RollPeriodHelper.GetPeriodStatus(dates);
+
+        var vm = new RollDetailViewModel
+        {
+            Roll = roll,
+            Data = data,
+            Dates = dates,
+            PeriodStatus = periodStatus,
+            CanLodgeObjectionForRoll = !roll.IsQuery && periodStatus == "active"
+        };
+
+        return PartialView("_RollDetailPartial", vm);
+    }
+
+    // ── On-demand Rebates detail — Tiles drawer for the Rebates tile ────
+    [HttpGet]
+    [Route("dashboard/rebates-detail")]
+    public async Task<IActionResult> RebatesDetail()
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
+
+        var vm = new RebatesDetailViewModel();
+
+        try
+        {
+            vm.Rebates = await _rebates.GetDashboardAsync(userId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "[Dashboard] Failed loading rebates for {UserId}", userId);
+            vm.Rebates = new();
+        }
+
+        return PartialView("_RebatesDetailPartial", vm);
+    }
+
+    // ── On-demand Property Attributes detail — Tiles drawer ─────────────
+    [HttpGet]
+    [Route("dashboard/attributes-detail")]
+    public async Task<IActionResult> AttributesDetail()
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
+
+        var vm = new AttributesDetailViewModel
+        {
+            AttrData = await _attributesService.GetDashboardDataAsync(userId),
+            AttributesLinked = await _dashboardService.GetAttributesLinkedAsync(userId)
+        };
+
+        return PartialView("_AttributesDetailPartial", vm);
     }
 
     [HttpGet]
@@ -60,7 +130,13 @@ public class DashboardController : Controller
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
         var userEmail = User.FindFirstValue(ClaimTypes.Name) ?? string.Empty;
 
-        var rolls = await _db.GvList.OrderBy(r => r.ID).ToListAsync();
+        // Valuation rolls (GV/Supp1-4) first in their existing ID order,
+        // Query/Review always last — the raw GvList.ID order currently
+        // places Query between Supp3 and Supp4, which is wrong for display.
+        var rolls = (await _db.GvList.OrderBy(r => r.ID).ToListAsync())
+            .OrderBy(r => r.IsQuery)
+            .ThenBy(r => r.ID)
+            .ToList();
         var attributesData = await _attributesService.GetDashboardDataAsync(userId);
         var attributesLinked = await _dashboardService.GetAttributesLinkedAsync(userId);
 

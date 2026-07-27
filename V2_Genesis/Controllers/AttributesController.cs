@@ -21,12 +21,13 @@ public class AttributesController : Controller
     private readonly ILogger<AttributesController> _logger;
     private readonly IAttributeSubmissionService _attributeService;
     private readonly IEvidenceService _evidenceService;
+    private readonly IEmailService _emailService;
     public AttributesController(
         IAttributesSearchService attrSearch,
         IPropertySearchService propSearch,
         ApplicationDbContext db, AttributesDbContext attributesDb,
         ILogger<AttributesController> logger, IAttributeSubmissionService attributeService,
-        IEvidenceService evidenceSe)
+        IEvidenceService evidenceSe, IEmailService emailService)
     {
         _attrSearch = attrSearch;
         _propSearch = propSearch;
@@ -35,6 +36,7 @@ public class AttributesController : Controller
         _logger = logger;
         _attributeService = attributeService;
         _evidenceService = evidenceSe;
+        _emailService = emailService;
     }
 
     [HttpGet]
@@ -103,31 +105,9 @@ public class AttributesController : Controller
     public async Task<IActionResult> LinkProperty(string idProperty, string propertyFrom)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-
-        if (string.IsNullOrWhiteSpace(idProperty))
-        {
-            TempData["AttrLinkError"] = "Property reference was not supplied. Please search and link the property again.";
-            return RedirectToAction("Search", "Attributes");
-        }
-
-        idProperty = idProperty.Trim();
-        propertyFrom = string.IsNullOrWhiteSpace(propertyFrom)
-            ? "Attributes"
-            : propertyFrom.Trim();
-
         try
         {
-            // Important: idProperty must be UnitKey because dashboard and check page use Attr_GetPropertyForCheck @UnitKey.
-            var detail = await _attrSearch.GetPropertyDetailAsync(idProperty);
-
-            if (detail == null)
-            {
-                TempData["AttrLinkError"] = "Could not load this property from the Attributes data source. Please search and link it again.";
-                return RedirectToAction("Search", "Attributes");
-            }
-
             var result = await _attrSearch.LinkPropertyAsync(idProperty, userId, propertyFrom);
-
             TempData[result.IsDuplicate ? "AttrLinkInfo" : "AttrLinkSuccess"] =
                 result.IsDuplicate
                     ? "This property is already linked to your profile."
@@ -135,398 +115,103 @@ public class AttributesController : Controller
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "[Attributes] Link failed — UnitKey={UnitKey} User={UserId}", idProperty, userId);
+            _logger.LogError(ex, "[Attributes] Link failed — {P} {U}", idProperty, userId);
             TempData["AttrLinkError"] = "Could not link this property. Please try again.";
         }
-
-        return RedirectToAction("Index", "Dashboard", new { openRoll = "attributes" });
+        return RedirectToAction("Index", "Dashboard");
     }
+
     // AttributesController.cs — updated Check + CheckConfirm + Form actions
 
     [HttpGet]
     [Authorize(Roles = "Client")]
     [Route("attributes/check")]
-    public async Task<IActionResult> Check(string idProperty, string formType)
+    public async Task<IActionResult> Check(string idProperty, string formType = "Residential")
     {
         ViewBag.GvList = await _db.GvList.OrderBy(r => r.ID).ToListAsync();
 
         if (string.IsNullOrWhiteSpace(idProperty))
         {
             TempData["AttrLinkError"] = "Property reference was not supplied.";
-            return RedirectToAction("Index", "Dashboard", new { openRoll = "attributes" });
+            return RedirectToAction("Index", "Dashboard");
         }
 
-        if (string.IsNullOrWhiteSpace(formType))
-        {
-            return RedirectToAction("SelectForm", new { unitKey = idProperty });
-        }
-
-        idProperty = idProperty.Trim();
-        formType = NormalizeAttributeFormType(formType);
-
-        if (!IsValidAttributeFormType(formType))
-        {
-            TempData["AttrFormError"] = "Please select a valid attribute form.";
-            return RedirectToAction("SelectForm", new { unitKey = idProperty });
-        }
-
+        // Load from LIS_20260116 + SAP_Contact0126
         var detail = await _attrSearch.GetPropertyDetailAsync(idProperty);
 
-        if (detail == null)
+        // Auto-detect form type from CatDesc
+        if (detail is not null)
+            formType = ResolveFormType(detail.CatDesc) ?? formType;
+
+        formType = formType switch
         {
-            TempData["AttrLinkError"] = "Could not load the linked property. Please search and link it again.";
-            return RedirectToAction("Index", "Dashboard", new { openRoll = "attributes" });
-        }
-
-        // Important:
-        // We no longer auto-select the form here.
-        // The client-selected formType is now the source of truth.
-        TempData["Attr_Detail_Json"] =
-            System.Text.Json.JsonSerializer.Serialize(detail);
-
-        TempData.Keep("Attr_Detail_Json");
-
-        var vm = new CheckAttributesViewModel
-        {
-            IDProperty = idProperty,
-            FormType = formType,
-
-            PropertyDesc = BuildDisplayPropertyDescription(detail),
-            CatDesc = detail.CatDesc,
-            TownNameDesc = detail.TownNameDesc,
-            LisStreetAddress = detail.LisStreetAddress,
-            MarketValue = detail.MarketValue,
-            RateableArea = detail.RateableAreaVal ?? detail.RateableArea,
-            Erf = detail.Erf,
-            Ptn = detail.Ptn,
-            Re = detail.Re,
-            SchemeName = detail.SchemeName,
-            SchemeNumber = detail.SchemeNumber,
-            SchemeYear = detail.SchemeYear,
-            UnitNo = detail.UnitNo,
-            OwnerName = detail.OwnerName,
-            ValuationDate = detail.ValuationDate,
-            Reason = detail.Reason,
-            Zoning = detail.Zoning,
+            "Business" => "BusinessCommercial",
+            "DRC" => "DRCMethod",
+            "Residential-ST" => "ResidentialST",
+            _ => formType
         };
+
+        // Stash full detail for Form pre-fill
+        if (detail is not null)
+            TempData["Attr_Detail_Json"] =
+                System.Text.Json.JsonSerializer.Serialize(detail);
+
+        var vm = detail is not null
+            ? new CheckAttributesViewModel
+            {
+                IDProperty = idProperty,
+                FormType = formType,
+                PropertyDesc = detail.PropertyDesc,
+                CatDesc = detail.CatDesc,
+                TownNameDesc = detail.TownNameDesc,
+                LisStreetAddress = detail.LisStreetAddress,
+                MarketValue = detail.MarketValue,
+                RateableArea = detail.RateableAreaVal ?? detail.RateableArea,
+                Erf = detail.Erf,
+                Ptn = detail.Ptn,
+                Re = detail.Re,
+                SchemeName = detail.SchemeName,
+                SchemeNumber = detail.SchemeNumber,
+                SchemeYear = detail.SchemeYear,
+                UnitNo = detail.UnitNo,
+                OwnerName = detail.OwnerName,
+                ValuationDate = detail.ValuationDate,
+                Reason = detail.Reason,
+                Zoning = detail.Zoning,
+            }
+            : new CheckAttributesViewModel { IDProperty = idProperty, FormType = formType };
 
         return View(vm);
     }
-    [HttpGet]
-    [Authorize(Roles = "Client")]
-    [Route("attributes/select-form")]
-    public async Task<IActionResult> SelectForm(string unitKey)
-    {
-        ViewBag.GvList = await _db.GvList.OrderBy(r => r.ID).ToListAsync();
-
-        if (string.IsNullOrWhiteSpace(unitKey))
-        {
-            TempData["AttrLinkError"] = "Property reference was not supplied.";
-            return RedirectToAction("Index", "Dashboard", new { openRoll = "attributes" });
-        }
-
-        unitKey = unitKey.Trim();
-
-        var property = await _attrSearch.GetPropertyDetailAsync(unitKey);
-
-        if (property == null)
-        {
-            TempData["AttrLinkError"] = "Could not load the linked property. Please search and link it again.";
-            return RedirectToAction("Index", "Dashboard", new { openRoll = "attributes" });
-        }
-
-        var suggestedFormType = ResolveSuggestedAttributeFormType(
-            property.CatDesc,
-            property.SchemeName,
-            property.UnitNo.ToString());
-
-        var model = new AttributeSelectViewModel
-        {
-            UnitKey = unitKey,
-
-            PropertyDesc = BuildDisplayPropertyDescription(property),
-            CatDesc = property.CatDesc,
-            TownNameDesc = property.TownNameDesc,
-            LisStreetAddress = property.LisStreetAddress,
-            MarketValue = property.MarketValue,
-            RateableArea = property.RateableAreaVal ?? property.RateableArea,
-            Erf = property.Erf,
-            Ptn = property.Ptn,
-            Re = property.Re,
-            SchemeName = property.SchemeName,
-            SchemeNumber = property.SchemeNumber,
-            SchemeYear = property.SchemeYear,
-            UnitNo = property.UnitNo,
-            OwnerName = property.OwnerName,
-            ValuationDate = property.ValuationDate,
-            Zoning = property.Zoning,
-            Reason = property.Reason,
-
-            SuggestedFormType = suggestedFormType
-        };
-
-        return View(model);
-    }
-
-    [HttpPost]
-    [Authorize(Roles = "Client")]
-    [Route("attributes/select-form")]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> SelectForm(AttributeSelectViewModel model)
-    {
-        ViewBag.GvList = await _db.GvList.OrderBy(r => r.ID).ToListAsync();
-
-        if (string.IsNullOrWhiteSpace(model.UnitKey))
-        {
-            TempData["AttrLinkError"] = "Property reference was not supplied.";
-            return RedirectToAction("Index", "Dashboard", new { openRoll = "attributes" });
-        }
-
-        model.UnitKey = model.UnitKey.Trim();
-
-        model.SelectedFormType = NormalizeAttributeFormType(model.SelectedFormType);
-
-        if (!IsValidAttributeFormType(model.SelectedFormType))
-        {
-            ModelState.AddModelError(nameof(model.SelectedFormType), "Please select a valid attribute form.");
-        }
-
-        if (string.IsNullOrWhiteSpace(model.DeclarationType))
-        {
-            ModelState.AddModelError(nameof(model.DeclarationType), "Please select whether you are the Owner or Representative.");
-        }
-
-        var detail = await _attrSearch.GetPropertyDetailAsync(model.UnitKey);
-
-        if (detail == null)
-        {
-            TempData["AttrLinkError"] = "Could not load the linked property. Please search and link it again.";
-            return RedirectToAction("Index", "Dashboard", new { openRoll = "attributes" });
-        }
-
-        // Refill page details if validation fails.
-        model.PropertyDesc = BuildDisplayPropertyDescription(detail);
-        model.CatDesc = detail.CatDesc;
-        model.TownNameDesc = detail.TownNameDesc;
-        model.LisStreetAddress = detail.LisStreetAddress;
-        model.MarketValue = detail.MarketValue;
-        model.RateableArea = detail.RateableAreaVal ?? detail.RateableArea;
-        model.Erf = detail.Erf;
-        model.Ptn = detail.Ptn;
-        model.Re = detail.Re;
-        model.SchemeName = detail.SchemeName;
-        model.SchemeNumber = detail.SchemeNumber;
-        model.SchemeYear = detail.SchemeYear;
-        model.UnitNo = detail.UnitNo;
-        model.OwnerName = detail.OwnerName;
-        model.ValuationDate = detail.ValuationDate;
-        model.Zoning = detail.Zoning;
-        model.Reason = detail.Reason;
-        model.SuggestedFormType = ResolveSuggestedAttributeFormType(
-            detail.CatDesc,
-            detail.SchemeName,
-            detail.UnitNo.ToString());
-
-        if (!ModelState.IsValid)
-        {
-            return View(model);
-        }
-
-        // This replaces the old Check action TempData.
-        TempData["Attr_Detail_Json"] =
-            System.Text.Json.JsonSerializer.Serialize(detail);
-
-        TempData["AttrDeclaration"] = model.DeclarationType;
-        TempData["AttrRepRequired"] =
-            model.DeclarationType == "Representative" ? "true" : "false";
-
-        TempData.Keep("Attr_Detail_Json");
-
-        if (model.DeclarationType == "Representative")
-        {
-            return RedirectToAction("Representative", new
-            {
-                idProperty = model.UnitKey,
-                formType = model.SelectedFormType
-            });
-        }
-
-        return RedirectToAction("Form", new
-        {
-            idProperty = model.UnitKey,
-            formType = model.SelectedFormType
-        });
-    }
-
 
     [HttpPost]
     [Authorize(Roles = "Client")]
     [Route("attributes/check")]
     [ValidateAntiForgeryToken]
     public IActionResult CheckConfirm(
-      string idProperty,
-      string formType,
-      string declarationType)
+     string idProperty,
+     string formType,
+     string declarationType)
     {
-        if (string.IsNullOrWhiteSpace(idProperty))
-        {
-            TempData["AttrLinkError"] = "Property reference was not supplied.";
-            return RedirectToAction("Index", "Dashboard", new { openRoll = "attributes" });
-        }
-
-        formType = NormalizeAttributeFormType(formType);
-
-        if (!IsValidAttributeFormType(formType))
-        {
-            TempData["AttrFormError"] = "Please select a valid attribute form.";
-            return RedirectToAction("SelectForm", new { unitKey = idProperty });
-        }
-
         if (string.IsNullOrWhiteSpace(declarationType))
         {
             TempData["AttrCheckError"] =
                 "Please select whether you are the Owner or Representative.";
-
             return RedirectToAction("Check", new { idProperty, formType });
         }
 
         TempData["AttrDeclaration"] = declarationType;
         TempData["AttrRepRequired"] =
             declarationType == "Representative" ? "true" : "false";
-
         TempData.Keep("Attr_Detail_Json");
         TempData.Keep("Attr_OwnerId");
 
+        // Representative → separate rep details page
         if (declarationType == "Representative")
             return RedirectToAction("Representative", new { idProperty, formType });
 
+        // Owner → straight to form (no ID validation)
         return RedirectToAction("Form", new { idProperty, formType });
-    }
-    private static string NormalizeAttributeFormType(string? formType)
-    {
-        if (string.IsNullOrWhiteSpace(formType))
-            return "";
-
-        return formType.Trim() switch
-        {
-            "Business" => "BusinessCommercial",
-            "BusinessCommercial" => "BusinessCommercial",
-            "NonResidential" => "BusinessCommercial",
-            "Non-Residential" => "BusinessCommercial",
-            "Non Res" => "BusinessCommercial",
-
-            "DRC" => "DRCMethod",
-            "DRCMethod" => "DRCMethod",
-            "DRC Method" => "DRCMethod",
-
-            "Residential-ST" => "ResidentialST",
-            "Residential ST" => "ResidentialST",
-            "ResidentialST" => "ResidentialST",
-
-            "Residential" => "Residential",
-
-            _ => formType.Trim()
-        };
-    }
-
-    private static bool IsValidAttributeFormType(string? formType)
-    {
-        formType = NormalizeAttributeFormType(formType);
-
-        return formType is
-            "Residential" or
-            "ResidentialST" or
-            "DRCMethod" or
-            "BusinessCommercial";
-    }
-
-    private static string ResolveSuggestedAttributeFormType(
-        string? catDesc,
-        string? schemeName,
-        string? unitNo)
-    {
-        var cat = (catDesc ?? "").Trim().ToLower();
-
-        if (!string.IsNullOrWhiteSpace(schemeName) ||
-            (!string.IsNullOrWhiteSpace(unitNo) && unitNo != "0"))
-        {
-            return "ResidentialST";
-        }
-
-        if (cat.Contains("business") ||
-            cat.Contains("commercial") ||
-            cat.Contains("industrial") ||
-            cat.Contains("retail") ||
-            cat.Contains("office"))
-        {
-            return "BusinessCommercial";
-        }
-
-        if (cat.Contains("drc") ||
-            cat.Contains("public service") ||
-            cat.Contains("municipal") ||
-            cat.Contains("religious") ||
-            cat.Contains("mining") ||
-            cat.Contains("agricultural") ||
-            cat.Contains("vacant") ||
-            cat.Contains("institutional"))
-        {
-            return "DRCMethod";
-        }
-
-        return "Residential";
-    }
-
-    private static string BuildDisplayPropertyDescription(
-        V2_Genesis.Models.Attributes.LisPropertyDetail property)
-    {
-        if (!string.IsNullOrWhiteSpace(property.PropertyDesc))
-            return property.PropertyDesc;
-
-        var town = property.TownNameDesc ?? "";
-        var scheme = property.SchemeName ?? "";
-        var unitNo = property.UnitNo;
-        var erf = property.Erf;
-        var ptn = property.Ptn?.ToString() ?? "";
-        var re = property.Re ?? "";
-
-        if (!string.IsNullOrWhiteSpace(scheme) ||
-            (unitNo != 0))
-        {
-            var parts = new List<string>();
-
-            if (unitNo != 0)
-                parts.Add($"UNIT {unitNo}");
-
-            if (!string.IsNullOrWhiteSpace(scheme))
-                parts.Add(scheme);
-
-            if (!string.IsNullOrWhiteSpace(town))
-                parts.Add(town);
-
-            return "Scheme " + string.Join(", ", parts);
-        }
-
-        if (!string.IsNullOrWhiteSpace(ptn) &&
-            ptn != "0" &&
-            !string.IsNullOrWhiteSpace(town))
-        {
-            if (!string.IsNullOrWhiteSpace(re) &&
-                re.Equals("RE", StringComparison.OrdinalIgnoreCase))
-            {
-                return $"RE PORTION {ptn} {town}";
-            }
-
-            return $"PORTION {ptn} {town}";
-        }
-
-        if (erf != 0 &&
-            !string.IsNullOrWhiteSpace(town))
-        {
-            return $"Full Title ERF {erf} {town}";
-        }
-
-        return town;
     }
 
     [HttpGet]
@@ -540,11 +225,10 @@ public class AttributesController : Controller
             return RedirectToAction("Index", "Dashboard");
         }
 
-        var declaration = TempData.Peek("AttrDeclaration")?.ToString();
+        var declaration = TempData["AttrDeclaration"]?.ToString();
         if (string.IsNullOrWhiteSpace(declaration))
-        {
-            return RedirectToAction("SelectForm", new { unitKey = idProperty });
-        }
+            return RedirectToAction("Check", new { idProperty, formType });
+
         formType = formType switch
         {
             "Business" => "BusinessCommercial",
@@ -629,10 +313,6 @@ public class AttributesController : Controller
             }
             catch { /* rep section stays empty */ }
         }
-        TempData.Keep("Attr_Detail_Json");
-        TempData.Keep("AttrDeclaration");
-        TempData.Keep("AttrRepRequired");
-        TempData.Keep("AttrRepDetails");
 
         ViewBag.Declaration = declaration;
         ViewBag.RepRequired = declaration == "Representative";
@@ -679,674 +359,119 @@ public class AttributesController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(AttributeSubmissionViewModel model)
     {
-        ViewBag.GvList = await _db.GvList.OrderBy(r => r.ID).ToListAsync();
+        if (model.Declaration is null)
+        {
+            ModelState.AddModelError(
+                "Declaration",
+                "Declaration details are required.");
+        }
+        else
+        {
+            if (!model.Declaration.DeclarationAccepted)
+            {
+                ModelState.AddModelError(
+                    "Declaration.DeclarationAccepted",
+                    "You must accept the declaration before submitting.");
+            }
 
-        PrepareAttributeCreateSubmission(model);
-        ValidateAttributeCreateModel(model);
+            if (string.IsNullOrWhiteSpace(model.Declaration.SignatureName))
+            {
+                ModelState.AddModelError(
+                    "Declaration.SignatureName",
+                    "Signature name is required.");
+            }
+            else
+            {
+                model.Declaration.SignatureName =
+                    model.Declaration.SignatureName.Trim();
+            }
+        }
 
         if (!ModelState.IsValid)
         {
-            TempData["AttributeError"] = "Please correct the highlighted validation errors before submitting.";
-            RestoreAttributeCreateViewBags(model);
-            return View("Create", model);
+            TempData["Error"] =
+                "Please correct the highlighted fields before submitting.";
+
+            return View(model);
         }
 
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
         if (string.IsNullOrWhiteSpace(userId))
-        {
-            TempData["AttributeError"] = "Your session could not be verified. Please log in again.";
-            return RedirectToAction("Index", "Dashboard", new { openRoll = "attributes" });
-        }
+            return Challenge();
 
         var userName =
-            User.FindFirstValue(ClaimTypes.GivenName)
-            ?? User.FindFirstValue(ClaimTypes.Name)
+            User.FindFirstValue(ClaimTypes.Name)
             ?? User.Identity?.Name
             ?? "Client";
 
         var userEmail =
             User.FindFirstValue(ClaimTypes.Email)
-            ?? User.FindFirstValue(ClaimTypes.Name)
-            ?? User.Identity?.Name;
+            ?? User.FindFirstValue("email");
 
-        var firstContact = model.ContactInfos?
-            .FirstOrDefault(x =>
-                !string.IsNullOrWhiteSpace(x.Email) ||
-                !string.IsNullOrWhiteSpace(x.CellNo) ||
-                !string.IsNullOrWhiteSpace(x.HomePhoneNo) ||
-                !string.IsNullOrWhiteSpace(x.WorkPhoneNo));
+        var userPhone =
+            User.FindFirstValue(ClaimTypes.MobilePhone)
+            ?? User.FindFirstValue(ClaimTypes.HomePhone)
+            ?? User.FindFirstValue("phone_number");
 
-        var submittedByEmail = !string.IsNullOrWhiteSpace(firstContact?.Email)
-            ? firstContact.Email.Trim()
-            : userEmail?.Trim();
-
-        var submittedByPhone =
-            !string.IsNullOrWhiteSpace(firstContact?.CellNo)
-                ? firstContact.CellNo.Trim()
-                : !string.IsNullOrWhiteSpace(firstContact?.HomePhoneNo)
-                    ? firstContact.HomePhoneNo.Trim()
-                    : !string.IsNullOrWhiteSpace(firstContact?.WorkPhoneNo)
-                        ? firstContact.WorkPhoneNo.Trim()
-                        : null;
+        // Some identity configurations store the email in User.Identity.Name.
+        if (string.IsNullOrWhiteSpace(userEmail) &&
+            !string.IsNullOrWhiteSpace(User.Identity?.Name) &&
+            User.Identity.Name.Contains('@'))
+        {
+            userEmail = User.Identity.Name.Trim();
+        }
 
         try
         {
             var attrId = await _attributeService.SubmitAsync(
                 model,
-                userId.Trim(),
-                userName.Trim(),
-                submittedByEmail,
-                submittedByPhone);
+                userId,
+                userName,
+                userEmail,
+                userPhone);
 
-            TempData["Success"] = "Attribute submission saved successfully.";
+            if (attrId <= 0)
+            {
+                ModelState.AddModelError(
+                    string.Empty,
+                    "The attribute submission could not be completed.");
 
-            return RedirectToAction("Details", new { id = attrId });
+                return View(model);
+            }
+
+            TempData["Success"] =
+                "Attribute submission saved successfully.";
+
+            return RedirectToAction(
+                nameof(Details),
+                new { id = attrId });
         }
         catch (InvalidOperationException ex)
         {
             _logger.LogWarning(
                 ex,
-                "[Attributes] Validation failed during submit. UserId={UserId}, FormType={FormType}",
-                userId,
-                model.FormType);
+                "Attribute submission validation failed for user {UserId}.",
+                userId);
 
-            AddServiceValidationErrorsToModelState(ex.Message);
+            ModelState.AddModelError(
+                string.Empty,
+                ex.Message);
 
-            TempData["AttributeError"] = "Please correct the validation errors before submitting.";
-            RestoreAttributeCreateViewBags(model);
-
-            return View("Create", model);
+            return View(model);
         }
         catch (Exception ex)
         {
             _logger.LogError(
                 ex,
-                "[Attributes] Attribute submission failed. UserId={UserId}, FormType={FormType}",
-                userId,
-                model.FormType);
+                "Unexpected error submitting attribute request for user {UserId}.",
+                userId);
 
             ModelState.AddModelError(
                 string.Empty,
-                "The attribute submission could not be saved. Please try again.");
+                "An unexpected error occurred while submitting the attribute request.");
 
-            TempData["AttributeError"] = "The attribute submission could not be saved. Please try again.";
-            RestoreAttributeCreateViewBags(model);
-
-            return View("Create", model);
-        }
-    }
-
-    private void ValidateAttributeCreateModel(AttributeSubmissionViewModel model)
-    {
-        if (model == null)
-        {
-            ModelState.AddModelError(string.Empty, "Attribute submission data could not be found.");
-            return;
-        }
-
-        model.FormType = NormalizeAttributeFormType(model.FormType);
-
-        if (!IsValidAttributeFormType(model.FormType))
-        {
-            ModelState.AddModelError(
-                nameof(model.FormType),
-                "Please select a valid attribute form type.");
-        }
-
-        if (model.PropertyDetails == null)
-        {
-            ModelState.AddModelError(
-                nameof(model.PropertyDetails),
-                "Property details could not be found. Please go back and select the property again.");
-        }
-        else
-        {
-            if (string.IsNullOrWhiteSpace(model.PropertyDetails.PropertyDesc))
-            {
-                ModelState.AddModelError(
-                    "PropertyDetails.PropertyDesc",
-                    "Property description is required.");
-            }
-
-            if (string.IsNullOrWhiteSpace(model.PropertyDetails.UnitKey) &&
-                string.IsNullOrWhiteSpace(model.PropertyDetails.PropertyId) &&
-                string.IsNullOrWhiteSpace(model.PropertyDetails.PremiseId) &&
-                string.IsNullOrWhiteSpace(model.PropertyDetails.ValuationKey))
-            {
-                ModelState.AddModelError(
-                    "PropertyDetails.UnitKey",
-                    "Property reference could not be verified. Please go back and select the property again.");
-            }
-        }
-
-        ValidateAttributeContacts(model);
-        ValidateAttributeDeclaration(model);
-        ValidateAttributeFormSpecificData(model);
-    }
-    private void ValidateAttributeContacts(AttributeSubmissionViewModel model)
-    {
-        model.ContactInfos ??= new List<AttributeContactInfoVm>();
-
-        var contacts = model.ContactInfos
-            .Where(x =>
-                !string.IsNullOrWhiteSpace(x.FirstNames) ||
-                !string.IsNullOrWhiteSpace(x.LastName) ||
-                !string.IsNullOrWhiteSpace(x.CompanyName) ||
-                !string.IsNullOrWhiteSpace(x.Email) ||
-                !string.IsNullOrWhiteSpace(x.CellNo) ||
-                !string.IsNullOrWhiteSpace(x.HomePhoneNo) ||
-                !string.IsNullOrWhiteSpace(x.WorkPhoneNo))
-            .ToList();
-
-        if (!contacts.Any())
-        {
-            ModelState.AddModelError(
-                "ContactInfos",
-                "At least one contact person is required.");
-            return;
-        }
-
-        for (var i = 0; i < contacts.Count; i++)
-        {
-            var contact = contacts[i];
-
-            if (contact.IsCompany)
-            {
-                if (string.IsNullOrWhiteSpace(contact.CompanyName))
-                {
-                    ModelState.AddModelError(
-                        $"ContactInfos[{i}].CompanyName",
-                        "Company name is required.");
-                }
-            }
-            else
-            {
-                if (string.IsNullOrWhiteSpace(contact.FirstNames))
-                {
-                    ModelState.AddModelError(
-                        $"ContactInfos[{i}].FirstNames",
-                        "First name is required.");
-                }
-
-                if (string.IsNullOrWhiteSpace(contact.LastName))
-                {
-                    ModelState.AddModelError(
-                        $"ContactInfos[{i}].LastName",
-                        "Last name is required.");
-                }
-            }
-
-            if (string.IsNullOrWhiteSpace(contact.Email))
-            {
-                ModelState.AddModelError(
-                    $"ContactInfos[{i}].Email",
-                    "Email address is required.");
-            }
-            else if (!IsValidEmail(contact.Email))
-            {
-                ModelState.AddModelError(
-                    $"ContactInfos[{i}].Email",
-                    "Please enter a valid email address.");
-            }
-
-            if (string.IsNullOrWhiteSpace(contact.CellNo))
-            {
-                ModelState.AddModelError(
-                    $"ContactInfos[{i}].CellNo",
-                    "Cell number is required.");
-            }
-            else if (!IsValidPhone(contact.CellNo))
-            {
-                ModelState.AddModelError(
-                    $"ContactInfos[{i}].CellNo",
-                    "Please enter a valid cell number.");
-            }
-
-            if (!string.IsNullOrWhiteSpace(contact.HomePhoneNo) &&
-                !IsValidPhone(contact.HomePhoneNo))
-            {
-                ModelState.AddModelError(
-                    $"ContactInfos[{i}].HomePhoneNo",
-                    "Please enter a valid home phone number.");
-            }
-
-            if (!string.IsNullOrWhiteSpace(contact.WorkPhoneNo) &&
-                !IsValidPhone(contact.WorkPhoneNo))
-            {
-                ModelState.AddModelError(
-                    $"ContactInfos[{i}].WorkPhoneNo",
-                    "Please enter a valid work phone number.");
-            }
-        }
-    }
-
-    private void ValidateAttributeDeclaration(AttributeSubmissionViewModel model)
-    {
-        if (model.Declaration == null)
-        {
-            ModelState.AddModelError(
-                "Declaration",
-                "Declaration details are required.");
-            return;
-        }
-
-        if (!model.Declaration.DeclarationAccepted)
-        {
-            ModelState.AddModelError(
-                "Declaration.DeclarationAccepted",
-                "You must accept the declaration before submitting.");
-        }
-
-        if (string.IsNullOrWhiteSpace(model.Declaration.SignatureName))
-        {
-            ModelState.AddModelError(
-                "Declaration.SignatureName",
-                "Signature name is required.");
-        }
-
-        var isRepresentative =
-            TempData.Peek("AttrRepRequired")?.ToString() == "true" ||
-            model.RepresentativeDetails?.IsRepresentative == true;
-
-        if (!isRepresentative)
-            return;
-
-        model.RepresentativeDetails ??= new RepresentativeDetailsVm
-        {
-            IsRepresentative = true
-        };
-
-        if (string.IsNullOrWhiteSpace(model.RepresentativeDetails.Representative_Name))
-        {
-            ModelState.AddModelError(
-                "RepresentativeDetails.Representative_Name",
-                "Representative name is required.");
-        }
-
-        if (string.IsNullOrWhiteSpace(model.RepresentativeDetails.Rep_Email))
-        {
-            ModelState.AddModelError(
-                "RepresentativeDetails.Rep_Email",
-                "Representative email is required.");
-        }
-        else if (!IsValidEmail(model.RepresentativeDetails.Rep_Email))
-        {
-            ModelState.AddModelError(
-                "RepresentativeDetails.Rep_Email",
-                "Please enter a valid representative email address.");
-        }
-
-        if (string.IsNullOrWhiteSpace(model.RepresentativeDetails.Rep_Cell_Phone))
-        {
-            ModelState.AddModelError(
-                "RepresentativeDetails.Rep_Cell_Phone",
-                "Representative cell number is required.");
-        }
-        else if (!IsValidPhone(model.RepresentativeDetails.Rep_Cell_Phone))
-        {
-            ModelState.AddModelError(
-                "RepresentativeDetails.Rep_Cell_Phone",
-                "Please enter a valid representative cell number.");
-        }
-    }
-    private void ValidateAttributeFormSpecificData(AttributeSubmissionViewModel model)
-    {
-        switch (model.FormType)
-        {
-            case "Residential":
-                ValidateResidentialAttributes(model);
-                break;
-
-            case "ResidentialST":
-                ValidateResidentialStAttributes(model);
-                break;
-
-            case "BusinessCommercial":
-                ValidateBusinessCommercialAttributes(model);
-                break;
-
-            case "DRCMethod":
-                ValidateDrcAttributes(model);
-                break;
-        }
-    }
-
-    private void ValidateResidentialAttributes(AttributeSubmissionViewModel model)
-    {
-        if (model.SecondaryAttributes == null)
-        {
-            ModelState.AddModelError("SecondaryAttributes", "Residential secondary attributes are required.");
-            return;
-        }
-
-        if (string.IsNullOrWhiteSpace(model.SecondaryAttributes.Quality))
-        {
-            ModelState.AddModelError(
-                "SecondaryAttributes.Quality",
-                "Residential quality is required.");
-        }
-
-        if (string.IsNullOrWhiteSpace(model.SecondaryAttributes.Condition))
-        {
-            ModelState.AddModelError(
-                "SecondaryAttributes.Condition",
-                "Residential condition is required.");
-        }
-
-        var hasAnyArea =
-            model.PrimaryAttributes?.Tla1 > 0 ||
-            model.PrimaryAttributes?.Tla2 > 0 ||
-            model.PrimaryAttributes?.Tla3 > 0 ||
-            model.PrimaryAttributes?.Garage > 0 ||
-            model.PrimaryAttributes?.CarportCp > 0 ||
-            model.PrimaryAttributes?.GrannyFlatGf > 0 ||
-            model.PrimaryAttributes?.StaffQuartersSq > 0 ||
-            model.PrimaryAttributes?.Storage > 0;
-
-        if (!hasAnyArea)
-        {
-            ModelState.AddModelError(
-                "PrimaryAttributes",
-                "At least one residential area or attribute value must be captured.");
-        }
-    }
-
-    private void ValidateResidentialStAttributes(AttributeSubmissionViewModel model)
-    {
-        if (model.PrimaryAttributes?.STMain == null || model.PrimaryAttributes.STMain <= 0)
-        {
-            ModelState.AddModelError(
-                "PrimaryAttributes.STMain",
-                "Sectional Title main area is required.");
-        }
-
-        if (string.IsNullOrWhiteSpace(model.SecondaryAttributes?.STCondition.ToString()))
-        {
-            ModelState.AddModelError(
-                "SecondaryAttributes.STCondition",
-                "Sectional Title condition is required.");
-        }
-
-        if (model.SecondaryAttributes?.STFloor == null)
-        {
-            ModelState.AddModelError(
-                "SecondaryAttributes.STFloor",
-                "Sectional Title floor is required.");
-        }
-
-        if (string.IsNullOrWhiteSpace(model.SecondaryAttributes?.Quality))
-        {
-            ModelState.AddModelError(
-                "SecondaryAttributes.Quality",
-                "Sectional Title quality is required.");
-        }
-    }
-
-    private void ValidateBusinessCommercialAttributes(AttributeSubmissionViewModel model)
-    {
-        var buildings = model.BusinessBuildings?
-            .Where(x =>
-                !string.IsNullOrWhiteSpace(x.BuildingNr) ||
-                !string.IsNullOrWhiteSpace(x.Quality) ||
-                !string.IsNullOrWhiteSpace(x.Condition) ||
-                x.GBA > 0)
-            .ToList() ?? new List<AttributeBusinessBuildingVm>();
-
-        var sections = model.BusinessSections?
-            .Where(x =>
-                !string.IsNullOrWhiteSpace(x.BuildingNr) ||
-                !string.IsNullOrWhiteSpace(x.Usage) ||
-                x.GBA > 0 ||
-                x.NLA > 0)
-            .ToList() ?? new List<AttributeBusinessSectionVm>();
-
-        if (!buildings.Any() && !sections.Any())
-        {
-            ModelState.AddModelError(
-                "BusinessBuildings",
-                "Business and Commercial form requires at least one building or business section.");
-            return;
-        }
-
-        for (var i = 0; i < buildings.Count; i++)
-        {
-            var b = buildings[i];
-
-            if (string.IsNullOrWhiteSpace(b.BuildingNr))
-                ModelState.AddModelError($"BusinessBuildings[{i}].BuildingNr", "Building number is required.");
-
-            if (string.IsNullOrWhiteSpace(b.Quality))
-                ModelState.AddModelError($"BusinessBuildings[{i}].Quality", "Quality is required.");
-
-            if (string.IsNullOrWhiteSpace(b.Condition))
-                ModelState.AddModelError($"BusinessBuildings[{i}].Condition", "Condition is required.");
-
-            if (b.GBA == null || b.GBA <= 0)
-                ModelState.AddModelError($"BusinessBuildings[{i}].GBA", "GBA must be greater than zero.");
-        }
-
-        for (var i = 0; i < sections.Count; i++)
-        {
-            var s = sections[i];
-
-            if (string.IsNullOrWhiteSpace(s.BuildingNr))
-                ModelState.AddModelError($"BusinessSections[{i}].BuildingNr", "Building number is required.");
-
-            if (string.IsNullOrWhiteSpace(s.Usage))
-                ModelState.AddModelError($"BusinessSections[{i}].Usage", "Usage is required.");
-
-            if (s.GBA == null || s.GBA <= 0)
-                ModelState.AddModelError($"BusinessSections[{i}].GBA", "GBA must be greater than zero.");
-        }
-    }
-
-    private void ValidateDrcAttributes(AttributeSubmissionViewModel model)
-    {
-        var buildings = model.DrcBuildings?
-            .Where(x =>
-                !string.IsNullOrWhiteSpace(x.BuildingDescription) ||
-                !string.IsNullOrWhiteSpace(x.Quality) ||
-                !string.IsNullOrWhiteSpace(x.Condition) ||
-                x.GrossBuildingArea > 0)
-            .ToList() ?? new List<AttributeDrcBuildingVm>();
-
-        var improvements = model.DrcImprovements?
-            .Where(x =>
-                !string.IsNullOrWhiteSpace(x.ImprovementDescription) ||
-                !string.IsNullOrWhiteSpace(x.Quality) ||
-                !string.IsNullOrWhiteSpace(x.Condition) ||
-                x.AreaUnit > 0)
-            .ToList() ?? new List<AttributeDrcImprovementVm>();
-
-        var vacantLand = model.DrcVacantLands?
-            .Where(x =>
-                !string.IsNullOrWhiteSpace(x.Region) ||
-                x.Area > 0)
-            .ToList() ?? new List<AttributeDrcVacantLandVm>();
-
-        if (!buildings.Any() && !improvements.Any() && !vacantLand.Any())
-        {
-            ModelState.AddModelError(
-                "DrcBuildings",
-                "DRC form requires at least one building, improvement, or vacant land item.");
-            return;
-        }
-
-        for (var i = 0; i < buildings.Count; i++)
-        {
-            var b = buildings[i];
-
-            if (string.IsNullOrWhiteSpace(b.BuildingDescription))
-                ModelState.AddModelError($"DrcBuildings[{i}].BuildingDescription", "Building description is required.");
-
-            if (string.IsNullOrWhiteSpace(b.Quality))
-                ModelState.AddModelError($"DrcBuildings[{i}].Quality", "Quality is required.");
-
-            if (string.IsNullOrWhiteSpace(b.Condition))
-                ModelState.AddModelError($"DrcBuildings[{i}].Condition", "Condition is required.");
-
-            if (b.GrossBuildingArea == null || b.GrossBuildingArea <= 0)
-                ModelState.AddModelError($"DrcBuildings[{i}].GrossBuildingArea", "Gross building area must be greater than zero.");
-        }
-
-        for (var i = 0; i < improvements.Count; i++)
-        {
-            var imp = improvements[i];
-
-            if (string.IsNullOrWhiteSpace(imp.ImprovementDescription))
-                ModelState.AddModelError($"DrcImprovements[{i}].ImprovementDescription", "Improvement description is required.");
-
-            if (string.IsNullOrWhiteSpace(imp.Quality))
-                ModelState.AddModelError($"DrcImprovements[{i}].Quality", "Quality is required.");
-
-            if (string.IsNullOrWhiteSpace(imp.Condition))
-                ModelState.AddModelError($"DrcImprovements[{i}].Condition", "Condition is required.");
-
-            if (imp.AreaUnit == null || imp.AreaUnit <= 0)
-                ModelState.AddModelError($"DrcImprovements[{i}].AreaUnit", "Area must be greater than zero.");
-        }
-
-        for (var i = 0; i < vacantLand.Count; i++)
-        {
-            var land = vacantLand[i];
-
-            if (string.IsNullOrWhiteSpace(land.Region))
-                ModelState.AddModelError($"DrcVacantLands[{i}].Region", "Region is required.");
-
-            if (land.Area == null || land.Area <= 0)
-                ModelState.AddModelError($"DrcVacantLands[{i}].Area", "Area must be greater than zero.");
-        }
-    }
-    private void AddServiceValidationErrorsToModelState(string message)
-    {
-        if (string.IsNullOrWhiteSpace(message))
-        {
-            ModelState.AddModelError(string.Empty, "Please correct the validation errors before submitting.");
-            return;
-        }
-
-        var lines = message
-            .Replace("Please correct the following before submitting:", "")
-            .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Select(x => x.Trim().TrimStart('-').Trim())
-            .Where(x => !string.IsNullOrWhiteSpace(x))
-            .ToList();
-
-        if (!lines.Any())
-        {
-            ModelState.AddModelError(string.Empty, message);
-            return;
-        }
-
-        foreach (var line in lines)
-        {
-            ModelState.AddModelError(string.Empty, line);
-        }
-    }
-
-    private void RestoreAttributeCreateViewBags(AttributeSubmissionViewModel model)
-    {
-        var declaration = TempData.Peek("AttrDeclaration")?.ToString();
-
-        ViewBag.Declaration = declaration;
-        ViewBag.RepRequired =
-            declaration == "Representative" ||
-            TempData.Peek("AttrRepRequired")?.ToString() == "true" ||
-            model.RepresentativeDetails?.IsRepresentative == true;
-
-        TempData.Keep("Attr_Detail_Json");
-        TempData.Keep("AttrDeclaration");
-        TempData.Keep("AttrRepRequired");
-        TempData.Keep("AttrRepDetails");
-    }
-    private static bool IsValidEmail(string? email)
-    {
-        if (string.IsNullOrWhiteSpace(email))
-            return false;
-
-        try
-        {
-            var address = new System.Net.Mail.MailAddress(email.Trim());
-            return string.Equals(
-                address.Address,
-                email.Trim(),
-                StringComparison.OrdinalIgnoreCase);
-        }
-        catch
-        {
-            return false;
-        }
-    }
-
-    private static bool IsValidPhone(string? phone)
-    {
-        if (string.IsNullOrWhiteSpace(phone))
-            return false;
-
-        var digitsOnly = new string(phone.Where(char.IsDigit).ToArray());
-
-        return digitsOnly.Length >= 10 && digitsOnly.Length <= 15;
-    }
-    private static void PrepareAttributeCreateSubmission(AttributeSubmissionViewModel model)
-    {
-        model.FormType = NormalizeAttributeFormType(model.FormType);
-
-        // Access is hidden on the online form.
-        // Keep backend fields available, but do not force client input.
-        model.Access ??= new AttributeAccessVm();
-        model.Access.AccessType = null;
-        model.Access.PermissionStatus = null;
-        model.Access.Comments = null;
-
-        model.ContactInfos ??= new List<AttributeContactInfoVm>();
-
-        if (!model.ContactInfos.Any())
-        {
-            model.ContactInfos.Add(new AttributeContactInfoVm
-            {
-                ContactType = "Owner",
-                IsCompany = false
-            });
-        }
-
-        foreach (var contact in model.ContactInfos)
-        {
-            // These fields must not be captured on the online client form.
-            contact.IDNumber = null;
-            contact.DateOfBirth = null;
-            contact.Gender = null;
-            contact.MaritalStatus = null;
-            contact.Citizenship = null;
-            contact.FaxNo = null;
-            contact.Interviewed = null;
-            contact.MaidenName = null;
-
-            if (contact.IsCompany)
-            {
-                contact.ContactType = "Company";
-
-                // Hide owner person fields when Company is selected.
-                contact.FirstNames = null;
-                contact.LastName = null;
-            }
-            else
-            {
-                contact.ContactType = string.IsNullOrWhiteSpace(contact.ContactType)
-                    ? "Owner"
-                    : contact.ContactType;
-
-                // Hide company fields when Owner is selected.
-                contact.CompanyName = null;
-                contact.CompanyRegistrationNumber = null;
-            }
-        }
-
-        model.ValuationDetails ??= new AttributeValuationDetailsVm();
-
-        if (!model.ValuationDetails.IsMixedUse)
-        {
-            model.ValuationDetails.AlternateUsages = null;
+            return View(model);
         }
     }
 
@@ -1364,16 +489,21 @@ public class AttributesController : Controller
     [HttpGet]
     public async Task<IActionResult> DownloadAcknowledgement(long id)
     {
-        var result = await _attributeService.GenerateAcknowledgementPdfAsync(id);
+        var model = await _attributeService.GetAcknowledgementAsync(id);
 
-        if (result == null || result.Value.Pdf.Length == 0)
-            return NotFound("Acknowledgement could not be generated from the database.");
+        if (model == null || string.IsNullOrWhiteSpace(model.AcknowledgementPath))
+            return NotFound();
 
-        return File(
-            result.Value.Pdf,
-            "application/pdf",
-            result.Value.FileName);
+        if (!System.IO.File.Exists(model.AcknowledgementPath))
+            return NotFound();
+
+        var fileName = model.AcknowledgementFileName ?? $"{model.AttrNo}_Acknowledgement.pdf";
+
+        var bytes = await System.IO.File.ReadAllBytesAsync(model.AcknowledgementPath);
+
+        return File(bytes, "application/pdf", fileName);
     }
+
 
     [HttpGet]
     [Authorize(Roles = "Client")]
@@ -1388,7 +518,7 @@ public class AttributesController : Controller
         if (string.IsNullOrWhiteSpace(declaration) || declaration != "Representative")
         {
             TempData["AttrCheckError"] = "Please complete the check step first.";
-            return RedirectToAction("SelectForm", new { unitKey = idProperty });
+            return RedirectToAction("Check", new { idProperty, formType });
         }
 
         var vm = new RepresentativeViewModel
@@ -1428,48 +558,15 @@ public class AttributesController : Controller
     [ValidateAntiForgeryToken]
     public IActionResult RepresentativeSubmit(RepresentativeViewModel vm)
     {
+        // Re-validate required fields manually
         if (string.IsNullOrWhiteSpace(vm.Representative_Name))
         {
-            ModelState.AddModelError(
-                nameof(vm.Representative_Name),
+            ModelState.AddModelError("Representative_Name",
                 "Representative name is required.");
-        }
-
-        if (string.IsNullOrWhiteSpace(vm.Rep_Email))
-        {
-            ModelState.AddModelError(
-                nameof(vm.Rep_Email),
-                "Representative email is required.");
-        }
-        else if (!IsValidEmail(vm.Rep_Email))
-        {
-            ModelState.AddModelError(
-                nameof(vm.Rep_Email),
-                "Please enter a valid representative email address.");
-        }
-
-        if (string.IsNullOrWhiteSpace(vm.Rep_Cell_Phone))
-        {
-            ModelState.AddModelError(
-                nameof(vm.Rep_Cell_Phone),
-                "Representative cell number is required.");
-        }
-        else if (!IsValidPhone(vm.Rep_Cell_Phone))
-        {
-            ModelState.AddModelError(
-                nameof(vm.Rep_Cell_Phone),
-                "Please enter a valid representative cell number.");
-        }
-
-        if (!ModelState.IsValid)
-        {
             ViewBag.GvList = _db.GvList.OrderBy(r => r.ID).ToList();
-
-            TempData.Keep("AttrDeclaration");
-            TempData.Keep("Attr_Detail_Json");
-
             return View("Representative", vm);
         }
+
         // Store rep details as JSON in TempData
         // They travel through to Form, then into SubmitAsync
         var repData = new
@@ -1705,6 +802,27 @@ public class AttributesController : Controller
             TempData.Keep();
             return View();
         }
+        var uploadedAt = DateTime.Now;
+        var remainingSlots = Math.Max(0, 10 - newCount);
+
+        try
+        {
+            await _emailService.SendAttributeEvidenceUploadConfirmationAsync(
+                attrNo,
+                savedNames,
+                uploadedAt,
+                remainingSlots);
+        }
+        catch (Exception ex)
+        {
+            // Evidence remains successfully uploaded even when SMTP is unavailable.
+            _logger.LogError(ex,
+                "[Attribute Evidence Email] Upload succeeded but confirmation email failed for {AttributeNo}",
+                attrNo);
+            TempData["AttrEv_EmailWarning"] =
+                "Your evidence was uploaded successfully, but the confirmation email could not be sent.";
+        }
+
         // Pass acknowledgement data
         TempData["AttrEv_NewCount"] = newCount;
         TempData["AttrEv_Uploaded"] = savedNames.Count;
@@ -1726,6 +844,7 @@ public class AttributesController : Controller
         ViewBag.PropDesc = TempData.Peek("AttrEv_PropDesc")?.ToString();
         ViewBag.NewCount = Convert.ToInt32(TempData.Peek("AttrEv_NewCount") ?? 0);
         ViewBag.Uploaded = Convert.ToInt32(TempData.Peek("AttrEv_Uploaded") ?? 0);
+        ViewBag.EmailWarning = TempData.Peek("AttrEv_EmailWarning")?.ToString();
 
         var json = TempData.Peek("AttrEv_FileNames")?.ToString();
         ViewBag.FileNames = string.IsNullOrWhiteSpace(json)
@@ -1746,27 +865,23 @@ public class AttributesController : Controller
         if (string.IsNullOrWhiteSpace(attrNo))
             return BadRequest("Attribute number is required.");
 
-        var result = await _attributeService.GenerateAcknowledgementPdfAsync(attrNo);
+        var files = await _attrDb.AttrFiles
+            .FirstOrDefaultAsync(f => f.Attr_No == attrNo.Trim());
 
-        if (result == null || result.Value.Pdf.Length == 0)
-            return NotFound("Acknowledgement could not be generated from the database.");
+        if (files is null || string.IsNullOrWhiteSpace(files.RootFolder))
+            return NotFound("Acknowledgement record not found.");
 
-        return File(
-            result.Value.Pdf,
-            "application/pdf",
-            result.Value.FileName);
-    }
+        // Acknowledgement_FileName is a DB computed column:
+        // Attr_Ref_Files + '_Acknowledgement.pdf'
+        var fileName = files.Acknowledgement_FileName
+                       ?? $"{attrNo.Trim()}_Acknowledgement.pdf";
 
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> RouteExpiredEvidence()
-    {
-        var performedBy = User.Identity?.Name ?? "System";
+        var filePath = Path.Combine(files.RootFolder, fileName);
 
-        await _attributeService.RouteExpiredEvidenceSubmissionsAsync(performedBy);
+        if (!System.IO.File.Exists(filePath))
+            return NotFound("Acknowledgement PDF not found on server.");
 
-        TempData["Success"] = "Expired evidence submissions routed to sector inbox.";
-
-        return RedirectToAction("SectorInbox");
+        var bytes = await System.IO.File.ReadAllBytesAsync(filePath);
+        return File(bytes, "application/pdf", fileName);
     }
 }

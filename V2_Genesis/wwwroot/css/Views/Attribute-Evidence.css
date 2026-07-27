@@ -1,5 +1,4 @@
-﻿
-.ev-page {
+﻿.ev-page {
     background: #f4f4f4;
     min-height: 100vh;
     padding: 36px 20px 60px;
@@ -23,8 +22,8 @@
 .ev-heading-icon {
     width: 52px;
     height: 52px;
-    border-radius: 13px;
-    background: #1a1a1a;
+    border-radius: 50%;
+    background: #1a2e35;
     color: #e6b000;
     font-size: 22px;
     display: flex;
@@ -54,6 +53,90 @@
     overflow: hidden;
 }
 
+/* ── VerifyObj-style header row (icon + title + sub, no dark bar) ─── */
+.ev-card-header-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 22px 22px 0;
+    margin-bottom: 4px;
+}
+
+.ev-card-icon {
+    width: 52px;
+    height: 52px;
+    background: #1a2e35;
+    color: #e6b000;
+    border-radius: 50%;
+    font-size: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.ev-card-title {
+    font-size: 18px;
+    font-weight: 800;
+    color: #1a1a1a;
+    margin: 0 0 4px;
+}
+
+.ev-card-sub {
+    font-size: 12.5px;
+    color: #6b6b6b;
+    margin: 0;
+}
+
+/* ── VerifyObj-style buttons (dark teal / gold) ────────────────────── */
+.ev-btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 13px 28px;
+    border-radius: 9px;
+    background: #1a2e35;
+    color: #e6b000;
+    border: none;
+    cursor: pointer;
+    font-family: 'Poppins',sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    transition: background .15s;
+}
+
+    .ev-btn-primary:hover {
+        background: #243e48;
+        color: #e6b000;
+    }
+
+    .ev-btn-primary:disabled {
+        opacity: .4;
+        cursor: not-allowed;
+    }
+
+.ev-btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 13px 22px;
+    border-radius: 9px;
+    background: #f5f5f5;
+    color: #6b6b6b;
+    border: none;
+    cursor: pointer;
+    font-family: 'Poppins',sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: background .15s, color .15s;
+}
+
+    .ev-btn-ghost:hover {
+        background: #ebebeb;
+        color: #1a1a1a;
+    }
+
 .ev-card-header {
     padding: 14px 20px;
     background: #1a1a1a;
@@ -71,6 +154,13 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
+}
+
+.ev-form-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 4px;
 }
 
 .ev-field {
@@ -113,23 +203,119 @@
         background: #fff;
     }
 
-.ev-info-box {
-    padding: 13px 16px;
-    border-radius: 9px;
-    background: #eff6ff;
-    border: 1px solid #bfdbfe;
-    font-size: 13px;
-    color: #1e3a5f;
-    line-height: 1.6;
+/* ── Premium notice card (icon circle + title + text) ─────────────── */
+.ev-notice-premium {
     display: flex;
-    gap: 10px;
+    align-items: flex-start;
+    gap: 14px;
+    background: var(--coj-green-pale);
+    border: 1px solid rgba(54, 98, 109, .18);
+    border-radius: 12px;
+    padding: 16px 18px;
 }
 
-    .ev-info-box i {
-        color: #3b82f6;
+.ev-notice-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: #fff;
+    color: var(--coj-green);
+    font-size: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 2px 6px rgba(54, 98, 109, .15);
+}
+
+.ev-notice-title {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #1a2e35;
+    margin: 0 0 3px;
+}
+
+.ev-notice-text {
+    font-size: 12.5px;
+    color: #4a5a5e;
+    margin: 0;
+    line-height: 1.6;
+}
+
+/* ── Step indicator ───────────────────── */
+.ev-steps {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ev-step {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #b6b6b6;
+}
+
+    .ev-step .ev-step-num {
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: #eee;
+        color: #999;
+        font-size: 11px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         flex-shrink: 0;
-        margin-top: 2px;
     }
+
+    .ev-step.active {
+        color: #1a2e35;
+    }
+
+        .ev-step.active .ev-step-num {
+            background: #e6b000;
+            color: #1a2e35;
+        }
+
+    .ev-step.done .ev-step-num {
+        background: var(--coj-green);
+        color: #fff;
+    }
+
+.ev-step-line {
+    flex: 1;
+    height: 2px;
+    background: #ececec;
+    max-width: 40px;
+}
+
+/* ── Premium card chrome ───────────────── */
+.ev-card-premium {
+    border-radius: 18px;
+    box-shadow: 0 8px 32px rgba(26, 46, 53, .10);
+    border: 1px solid #eef0f0;
+}
+
+.ev-input-group {
+    position: relative;
+}
+
+.ev-input-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #b6bcbe;
+    font-size: 13px;
+    pointer-events: none;
+}
+
+.ev-input-with-icon {
+    padding-left: 38px !important;
+}
 
 .ev-error {
     padding: 12px 16px;

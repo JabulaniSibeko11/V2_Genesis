@@ -1016,6 +1016,372 @@
     border: 1px solid rgba(156,163,175,.2);
 }
 
+/* ══════════════════════════════════════════════════════════════════
+   View toggle — Tiles / List
+   ══════════════════════════════════════════════════════════════════ */
+.cd-view-toggle {
+    display: inline-flex;
+    gap: 4px;
+    background: #f0f0f0;
+    border-radius: 10px;
+    padding: 4px;
+    margin-bottom: 20px;
+}
+
+.cd-view-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 18px;
+    border-radius: 7px;
+    border: none;
+    background: transparent;
+    color: #6b6b6b;
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background .15s, color .15s;
+}
+
+    .cd-view-btn.active {
+        background: #1a2e35;
+        color: var(--p-gold);
+    }
+
+    .cd-view-btn:not(.active):hover {
+        background: rgba(0,0,0,.06);
+        color: #1a1a1a;
+    }
+
+/* ══════════════════════════════════════════════════════════════════
+   Tile grid (default view)
+   ══════════════════════════════════════════════════════════════════ */
+.cd-tile-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 18px;
+}
+
+.cd-tile {
+    position: relative;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: var(--p-shadow-roll);
+    padding: 22px;
+    cursor: pointer;
+    border-left: 4px solid transparent;
+    transition: box-shadow .2s, transform .15s, border-color .2s;
+}
+
+    .cd-tile:hover {
+        box-shadow: 0 12px 48px rgba(0,0,0,.16), 0 2px 8px rgba(0,0,0,.08);
+        transform: translateY(-2px);
+        border-left-color: var(--p-gold);
+    }
+
+.cd-tile-icon {
+    width: 46px;
+    height: 46px;
+    background: var(--p-gold-dim);
+    border: 1.5px solid var(--p-gold-border);
+    border-radius: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 19px;
+    color: var(--p-gold);
+    margin-bottom: 14px;
+}
+
+.cd-tile-name {
+    font-size: 15px;
+    font-weight: 800;
+    color: #1a1a1a;
+    margin: 0 0 3px;
+}
+
+.cd-tile-short {
+    font-size: 11.5px;
+    color: #8a8a8a;
+    display: block;
+    margin-bottom: 16px;
+}
+
+.cd-tile-stats {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 14px;
+}
+
+    .cd-tile-stats span {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        font-weight: 700;
+        color: #4a4a4a;
+    }
+
+    .cd-tile-stats i {
+        color: var(--p-gold);
+        font-size: 12px;
+    }
+
+.cd-tile-badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    padding: 4px 12px;
+    border-radius: 100px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+}
+
+.cd-tile-open-hint {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--p-gold);
+    margin-top: 4px;
+}
+
+.cd-tile:hover .cd-tile-open-hint i {
+    transform: translateX(3px);
+}
+
+.cd-tile-open-hint i {
+    transition: transform .15s;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   Slide-over drawer (Tiles view detail)
+   ══════════════════════════════════════════════════════════════════ */
+.cd-drawer-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 30, 35, .5);
+    z-index: 1040;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .25s;
+}
+
+    .cd-drawer-backdrop.open {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+.cd-drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    height: 100vh;
+    width: min(900px, 92vw);
+    background: #f4f4f4;
+    z-index: 1050;
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform .3s ease;
+    box-shadow: -8px 0 32px rgba(0,0,0,.2);
+}
+
+    .cd-drawer.open {
+        transform: translateX(0);
+    }
+
+.cd-drawer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 26px;
+    background: linear-gradient(135deg, #1e3a40 0%, #0f2a30 100%);
+    flex-shrink: 0;
+}
+
+    .cd-drawer-header h2 {
+        font-size: 17px;
+        font-weight: 800;
+        color: #fff;
+        margin: 0;
+    }
+
+.cd-drawer-close {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.1);
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background .15s;
+}
+
+    .cd-drawer-close:hover {
+        background: rgba(255,255,255,.2);
+    }
+
+.cd-drawer-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 22px;
+}
+
+.cd-roll-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 60px 20px;
+    color: #8a8a8a;
+    font-size: 13.5px;
+    font-weight: 600;
+}
+
+.cd-roll-error {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 20px;
+    border-radius: 10px;
+    background: #fef2f2;
+    border: 1px solid #fca5a5;
+    color: #b91c1c;
+    font-size: 13px;
+}
+
+/* ── Tiles / List / Drawer — responsive ─────────────────────────────
+   Matches this file's existing breakpoint convention:
+   900px (tablet), 700px/640px (small tablet/large phone),
+   600px/480px/380px (phone), 1920px/2560px (large/ultra-wide)
+   ─────────────────────────────────────────────────────────────────── */
+
+/* Tablet — tighten tile grid, drawer takes ~70% width */
+@media (max-width: 900px) {
+    .cd-tile-grid {
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 14px;
+    }
+
+    .cd-drawer {
+        width: min(640px, 88vw);
+    }
+}
+
+/* Large phone / small tablet — two-column tiles, drawer nearly full-width */
+@media (max-width: 700px) {
+    .cd-tile-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+
+    .cd-drawer {
+        width: 100vw;
+    }
+
+    .cd-view-toggle {
+        width: 100%;
+    }
+
+    .cd-view-btn {
+        flex: 1;
+        justify-content: center;
+    }
+}
+
+/* Phone — single column tiles, full-bleed drawer, tighter padding */
+@media (max-width: 480px) {
+    .cd-tile-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .cd-tile {
+        padding: 18px;
+    }
+
+    .cd-tile-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 17px;
+        margin-bottom: 10px;
+    }
+
+    .cd-tile-stats {
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .cd-drawer-header {
+        padding: 16px 18px;
+    }
+
+        .cd-drawer-header h2 {
+            font-size: 15px;
+        }
+
+    .cd-drawer-body {
+        padding: 14px;
+    }
+
+    .cd-view-toggle {
+        padding: 3px;
+        margin-bottom: 14px;
+    }
+
+    .cd-view-btn {
+        padding: 8px 10px;
+        font-size: 12px;
+    }
+}
+
+/* Very small phones — drop the open-hint line to save vertical space */
+@media (max-width: 380px) {
+    .cd-tile-open-hint {
+        display: none;
+    }
+
+    .cd-tile-short {
+        margin-bottom: 10px;
+    }
+}
+
+/* Large screens — wider tiles, cap the grid so tiles don't stretch too thin */
+@media (min-width: 1920px) {
+    .cd-tile-grid {
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 22px;
+    }
+
+    .cd-drawer {
+        width: min(1000px, 60vw);
+    }
+}
+
+/* Ultra-wide — even more breathing room, drawer stays a readable fixed max width */
+@media (min-width: 2560px) {
+    .cd-tile-grid {
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 26px;
+    }
+
+    .cd-tile {
+        padding: 26px;
+    }
+
+    .cd-drawer {
+        width: 1100px;
+    }
+}
+
 .cd-roll-chevron {
     color: var(--p-gold);
     font-size: 14px;
@@ -1524,7 +1890,6 @@
     align-items: center;
     justify-content: space-between;
     border-bottom: 2px solid rgba(230,176,0,.2);
-    
 }
 
     .cd-notification-head strong {
@@ -1658,6 +2023,7 @@
     font-size: 11px;
     color: #aaa;
 }
+
 .cd-note-body {
     background: transparent !important;
 }
@@ -1897,6 +2263,7 @@
         font-size: 17px;
     }
 }
+
 .attr-insp-modal-backdrop {
     position: fixed;
     inset: 0;
@@ -1968,6 +2335,7 @@
     justify-content: flex-end;
     gap: 10px;
 }
+
 .pin-backdrop {
     position: fixed;
     inset: 0;

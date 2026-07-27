@@ -5,6 +5,7 @@ using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 using System.Data.SqlClient;
 using V2_Genesis.Models;
+using V2_Genesis.Helpers;
 using V2_Genesis.Models.Notice;
 using V2_Genesis.Models.Results;
 using V2_Genesis.Services.Interfaces;
@@ -21,7 +22,7 @@ public class NoticeService : INoticeService
     private readonly NoticeRollSettings _noticeSettings;
     private readonly RollDatesSettings _rollDates;
     private readonly ILogger<NoticeService> _logger;
-    private  readonly IConfiguration _config;
+    private readonly IConfiguration _config;
 
     private const string HEADER_IMAGE = "Images/Obj_Header.PNG";
 
@@ -37,7 +38,7 @@ public class NoticeService : INoticeService
         _env = env;
         _noticeSettings = noticeOpts.Value;
         _rollDates = rollDatesOpts.Value;
-        _config= config;
+        _config = config;
         _logger = logger;
 
         // Set QuestPDF community licence (free for open-source / internal tools)
@@ -77,7 +78,7 @@ public class NoticeService : INoticeService
     private string QueryRoot => _config["ObjectionRolls:Objection_Query:QueryRootPath"] ?? "";
 
 
-   
+
 
     // ── Section 49 ────────────────────────────────────────────────────
     public async Task<(byte[] Pdf, string FileName)> GenerateSection49Async(
@@ -104,6 +105,76 @@ public class NoticeService : INoticeService
         await SaveToDiskAsync(roll.Section49Path, main.PropertyDesc, pdfBytes);
 
         return (pdfBytes, fileName);
+    }
+
+    public async Task<(byte[] Pdf, string FileName)> GenerateSection49ForObjectionAsync(
+        string rollSource,
+        string unitKey,
+        string valuationKey,
+        string objectionNo,
+        string propertyDescription)
+    {
+        if (!IsSupportedSection49Roll(rollSource))
+        {
+            throw new InvalidOperationException(
+                $"Section 49 is not available for roll source '{rollSource}'.");
+        }
+
+        if (string.IsNullOrWhiteSpace(objectionNo))
+            throw new ArgumentException("Objection number is required.", nameof(objectionNo));
+
+        unitKey = FloatKeyHelper.Normalize(unitKey);
+        valuationKey = FloatKeyHelper.Normalize(valuationKey);
+
+        if (string.IsNullOrWhiteSpace(unitKey))
+            throw new ArgumentException("A valid unit key is required.", nameof(unitKey));
+
+        if (string.IsNullOrWhiteSpace(valuationKey))
+            throw new ArgumentException("A valid valuation key is required.", nameof(valuationKey));
+
+        var items = await _search.GetPropertyDetailsAsync(
+            rollSource, unitKey, valuationKey);
+
+        if (items is null || items.Count == 0)
+        {
+            throw new InvalidOperationException(
+                $"No roll property found for UnitKey={unitKey}, ValuationKey={valuationKey}.");
+        }
+
+        var roll = _noticeSettings.For(rollSource);
+        var dates = _rollDates.For(rollSource);
+        var main = items.First();
+
+        var finalPropertyDescription = string.IsNullOrWhiteSpace(propertyDescription)
+            ? main.PropertyDesc ?? unitKey
+            : propertyDescription.Trim();
+
+        var fileName =
+            $"{SanitiseName(objectionNo)}_{SanitiseName(finalPropertyDescription)}_Section49.pdf";
+
+        var pdfBytes = GenerateSection49Pdf(items, main, roll, dates);
+
+        if (pdfBytes is null || pdfBytes.Length == 0)
+            throw new InvalidOperationException($"Section 49 PDF is empty for {objectionNo}.");
+
+        _logger.LogInformation(
+            "[Section49 Submission] Generated {FileName} for {ObjectionNo}. Roll={RollSource}, UnitKey={UnitKey}, ValuationKey={ValuationKey}",
+            fileName, objectionNo, rollSource, unitKey, valuationKey);
+
+        return (pdfBytes, fileName);
+    }
+
+    private static bool IsSupportedSection49Roll(string? rollSource)
+    {
+        return rollSource?.Trim() switch
+        {
+            "Objection" => true,
+            "Objection_Supp1" => true,
+            "Objection_Supp2" => true,
+            "Objection_Supp3" => true,
+            "Objection_Supp4" => true,
+            _ => false
+        };
     }
 
     // ── PDF build ─────────────────────────────────────────────────────
@@ -484,9 +555,6 @@ public class NoticeService : INoticeService
 
         var pdfBytes = BuildAcknowledgementPdf(data, roll, dates);
 
-        // Save copy to disk (non-blocking)
-        _ = SaveAckToDiskAsync(roll, data, pdfBytes,fileName);
-
         return Task.FromResult((pdfBytes, fileName));
     }
 
@@ -549,7 +617,7 @@ public class NoticeService : INoticeService
                     // HEADER IMAGE
                     if (hasHeader)
                         //col.Item().Height(80).Image(headerPath, ImageScaling.FitArea);
-                    col.Item().AlignCenter().Width(500).Height(100).Image(headerPath, ImageScaling.FitArea);
+                        col.Item().AlignCenter().Width(500).Height(100).Image(headerPath, ImageScaling.FitArea);
                     // DATE
                     //col.Item().AlignRight()
                     //    .Text(letterDate)
@@ -682,7 +750,7 @@ public class NoticeService : INoticeService
 
                     var docs = data.UploadedDocumentNames ?? new List<string>();
 
-                  
+
 
                     col.Item().Element(e => SupportingDocumentsBlock(e, docs));
                     // CLOSING DATE
@@ -1134,7 +1202,7 @@ public class NoticeService : INoticeService
                         bool alt = false;
                         for (int i = 0; i < fileNames.Count; i++)
                         {
-                           
+
                             var bg = alt ? Colors.Grey.Lighten5 : Colors.White;
                             alt = !alt;
 
@@ -1601,94 +1669,5 @@ public class NoticeService : INoticeService
             AppealCloseDate = appealClose,
         };
     }
-    public async Task<(bool Success, byte[]? FileBytes, string? FileName, string? Error)>
-GetSavedAcknowledgementAsync(string referenceNo, string rollSource)
-    {
-        if (string.IsNullOrWhiteSpace(referenceNo))
-            return (false, null, null, "Reference number is required.");
-
-        if (string.IsNullOrWhiteSpace(rollSource))
-            return (false, null, null, "Roll source is required.");
-
-        referenceNo = referenceNo.Trim();
-        rollSource = rollSource.Trim();
-
-        try
-        {
-            var fileRootPath = _config[$"ObjectionRolls:{rollSource}:FileRootPath"];
-            var appealRootPath = _config[$"ObjectionRolls:{rollSource}:AppealRootPath"];
-
-            var isAppeal =
-                referenceNo.StartsWith("APP-", StringComparison.OrdinalIgnoreCase)
-                || referenceNo.Contains("APP-GV", StringComparison.OrdinalIgnoreCase);
-
-            var rootFolder = isAppeal
-                ? appealRootPath
-                : fileRootPath;
-
-            if (string.IsNullOrWhiteSpace(rootFolder))
-            {
-                return (false, null, null,
-                    $"Acknowledgement root folder is not configured for {rollSource}.");
-            }
-
-            if (!Directory.Exists(rootFolder))
-            {
-                return (false, null, null,
-                    $"Acknowledgement root folder does not exist: {rootFolder}");
-            }
-
-            var referenceFolder = Path.Combine(rootFolder, referenceNo);
-
-            List<string> matchingFiles;
-
-            if (Directory.Exists(referenceFolder))
-            {
-                matchingFiles = Directory
-                    .EnumerateFiles(referenceFolder, "*.pdf", SearchOption.TopDirectoryOnly)
-                    .Where(path =>
-                    {
-                        var fileName = Path.GetFileName(path);
-
-                        return fileName.Contains(referenceNo, StringComparison.OrdinalIgnoreCase)
-                               && fileName.Contains("Acknowledgement", StringComparison.OrdinalIgnoreCase);
-                    })
-                    .OrderByDescending(File.GetLastWriteTime)
-                    .ToList();
-            }
-            else
-            {
-                matchingFiles = Directory
-                    .EnumerateFiles(rootFolder, "*.pdf", SearchOption.AllDirectories)
-                    .Where(path =>
-                    {
-                        var fileName = Path.GetFileName(path);
-
-                        return fileName.Contains(referenceNo, StringComparison.OrdinalIgnoreCase)
-                               && fileName.Contains("Acknowledgement", StringComparison.OrdinalIgnoreCase);
-                    })
-                    .OrderByDescending(File.GetLastWriteTime)
-                    .ToList();
-            }
-
-            var ackPath = matchingFiles.FirstOrDefault();
-
-            if (string.IsNullOrWhiteSpace(ackPath) || !File.Exists(ackPath))
-            {
-                return (false, null, null,
-                    $"Acknowledgement PDF was not found for reference {referenceNo}.");
-            }
-
-            var bytes = await File.ReadAllBytesAsync(ackPath);
-            var fileNameToDownload = Path.GetFileName(ackPath);
-
-            return (true, bytes, fileNameToDownload, null);
-        }
-        catch (Exception ex)
-        {
-            return (false, null, null,
-                $"Could not read acknowledgement PDF. {ex.Message}");
-        }
-    }
 }
- 
+
