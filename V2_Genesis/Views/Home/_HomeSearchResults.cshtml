@@ -1,109 +1,234 @@
 ﻿@model List<V2_Genesis.Models.Results.Home.HomeSearchResult>
+
 @{
     bool isAuth = ViewBag.IsAuthenticated as bool? ?? false;
 }
-<link href="~/css/views/nohomeresults.css" rel="stylesheet" asp-append-version="true"/>
+
+<link href="~/css/views/nohomeresults.css"
+      rel="stylesheet"
+      asp-append-version="true" />
+
 @if (!isAuth)
 {
     <div class="hs-login-notice">
         <i class="fa-solid fa-circle-info"></i>
+
         <span>
-            Found <strong>@Model.Count</strong> propert@(Model.Count == 1 ? "y" : "ies").
-            <a href="/account/login">Sign in</a> to view full details, link
-            to your profile and download Section 49.
+            Found <strong>@Model.Count</strong>
+            propert@(Model.Count == 1 ? "y" : "ies").
+
+            <a href="/account/login">Sign in</a> to view full details,
+            link to your profile and download Section 49.
         </span>
     </div>
 }
+
 <div class="table-responsive">
-<table id="homeResultsTable"
-       class="display table hs-table">
-    <thead>
-        <tr>
-            <th>ROLL</th>
-            <th>TOWNSHIP</th>
-            <th>ADDRESS</th>
-            <th>ERF</th>
-            <th>PTN</th>
-            <th>CATEGORY</th>
-            <th>EXTENT</th>
-            <th>MARKET VALUE</th>
-            <th>SCHEME</th>
-            <th>UNIT</th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var item in Model)
-        {
+
+    <table id="homeResultsTable"
+           class="display table hs-table">
+
+        <thead>
             <tr>
-                <td>
-                    <span class="hs-roll-badge hs-roll-@item.RollSource.ToLower()
-                                                            .Replace("_","").Replace(" ","")">
-                        @item.RollName
-                    </span>
-                </td>
-                <td>@(item.TownNameDesc ?? "–")</td>
-                <td>@(item.LisStreetAddress ?? "–")</td>
-                <td>@item.Erf</td>
-                <td>@item.Ptn</td>
-                <td>@(item.CatDesc ?? "–")</td>
-                <td>@(item.RateableArea ?? "–")</td>
-                <td class="hs-value">@item.MarketValue</td>
-                <td>@(item.SchemeName ?? "–")</td>
-                <td>@(item.UnitNo > 0 ? item.UnitNo.ToString() : "–")</td>
-                
-                        <td>
-                            @{
-                                var url = $"/property/view?rollSource={item.RollSource}&unitKey={item.UnitKey}&valuationKey={item.ValuationKey}&propertyFrom={item.RollSource}";
-                            }
-                            <a href="@url" class="hs-view-btn">
-                                <i class="fa-solid fa-circle-arrow-right"></i> View
-                            </a>
-                        </td>
-                   
-                
+                <th>ROLL</th>
+                <th>TOWNSHIP</th>
+                <th>ADDRESS</th>
+                <th>ERF</th>
+                <th>PTN</th>
+                <th>CATEGORY</th>
+                <th>EXTENT</th>
+                <th>MARKET VALUE</th>
+                <th>SCHEME</th>
+                <th>UNIT</th>
+                <th>ACTIONS</th>
             </tr>
-        }
-    </tbody>
-</table>
-        </div>
+        </thead>
+
+        <tbody>
+
+            @foreach (var item in Model)
+            {
+                var propertyUrl =
+                    $"/property/view" +
+                    $"?rollSource={Uri.EscapeDataString(item.RollSource ?? string.Empty)}" +
+                    $"&unitKey={Uri.EscapeDataString(item.UnitKey ?? string.Empty)}" +
+                    $"&valuationKey={Uri.EscapeDataString(item.ValuationKey ?? string.Empty)}" +
+                    $"&propertyFrom={Uri.EscapeDataString(item.RollSource ?? string.Empty)}";
+
+                <tr>
+
+                    <td>
+                        <span class="hs-roll-badge
+                            hs-roll-@item.RollSource.ToLower()
+                            .Replace(" _", "" )
+                              .Replace(" ", " ")">
+                            @item.RollName
+                        </span>
+                    </td>
+
+                    <td>
+                        @(item.TownNameDesc ?? "–")
+                    </td>
+
+                    <td>
+                        @(item.LisStreetAddress ?? "–")
+                    </td>
+
+                    <td>
+                        @item.Erf
+                    </td>
+
+                    <td>
+                        @item.Ptn
+                    </td>
+
+                    <td>
+                        @(item.CatDesc ?? "–")
+                    </td>
+
+                    <td>
+                        @(item.RateableArea ?? "–")
+                    </td>
+
+                    <td class="hs-value">
+                        @item.MarketValue
+                    </td>
+
+                    <td>
+                        @(item.SchemeName ?? "–")
+                    </td>
+
+                    <td>
+                        @(item.UnitNo > 0
+                            ? item.UnitNo.ToString()
+                            : "–")
+                    </td>
+
+                    <td>
+                        <div class="hs-result-actions">
+
+                            <a href="@propertyUrl"
+                                   class="hs-view-btn">
+
+                                <i class="fa-solid fa-circle-arrow-right"></i>
+                                View
+                            </a>
+
+                            <button type="button"
+                                    class="hs-rates-btn"
+                                    data-market-value="@item.MarketValue"
+                                    data-category="@item.CatDesc"
+                                    data-property-description="@item.PropertyDisplay"
+                                    data-roll-name="@item.RollName"
+                                    onclick="openRatesFromProperty(this)">
+
+                                <i class="fa-solid fa-calculator"></i>
+                                Possible Rates
+                            </button>
+
+                        </div>
+                    </td>
+
+                </tr>
+            }
+
+        </tbody>
+
+    </table>
+
+</div>
+
 <script>
     $(document).ready(function () {
+
         if ($.fn.DataTable.isDataTable('#homeResultsTable')) {
             $('#homeResultsTable').DataTable().destroy();
         }
 
         $('#homeResultsTable').DataTable({
-            responsive  : false,
-            scrollX     : true,
-            autoWidth   : false,
-            dom         : '<"hs-dt-top"lf>rt<"hs-dt-bottom"ip>',
-            lengthMenu  : [[10, 25, 50, -1], [10, 25, 50, 'All']],
-            pageLength  : 10,
+            responsive: false,
+            scrollX: true,
+            autoWidth: false,
+
+            dom:
+                '<"hs-dt-top"lf>' +
+                'rt' +
+                '<"hs-dt-bottom"ip>',
+
+            lengthMenu: [
+                [10, 25, 50, -1],
+                [10, 25, 50, 'All']
+            ],
+
+            pageLength: 10,
+
             language: {
-                search           : '_INPUT_',
+                search: '_INPUT_',
                 searchPlaceholder: 'Filter results…',
-                emptyTable       : 'No properties found',
-                info             : 'Showing _START_ to _END_ of _TOTAL_',
-                infoEmpty        : 'No properties found',
-                infoFiltered     : '(filtered from _MAX_ total)'
+                emptyTable: 'No properties found',
+                info: 'Showing _START_ to _END_ of _TOTAL_',
+                infoEmpty: 'No properties found',
+                infoFiltered: '(filtered from _MAX_ total)'
             },
-            drawCallback : function () { formatMv(); },
-            initComplete : function () { formatMv(); }
+
+            columnDefs: [
+                {
+                    orderable: false,
+                    targets: 10
+                }
+            ],
+
+            drawCallback: function () {
+                formatHomeMarketValues();
+            },
+
+            initComplete: function () {
+                formatHomeMarketValues();
+
+                var count = this.api().rows().count();
+                var badge =
+                    document.getElementById('hsResultCount');
+
+                if (badge) {
+                    badge.textContent =
+                        count +
+                        ' propert' +
+                        (count === 1 ? 'y' : 'ies') +
+                        ' found';
+
+                    badge.style.display = 'inline-flex';
+                }
+            }
         });
     });
 
-    function formatMv() {
-        document.querySelectorAll('.hs-value').forEach(function (el) {
-            var raw = parseFloat(el.textContent.replace(/[^0-9.-]+/g, ''));
-            if (!isNaN(raw) && raw > 0) {
-                el.textContent = raw.toLocaleString('en-ZA', {
-                    style: 'currency',
-                    currency: 'ZAR',
-                    minimumFractionDigits: 0,
-                    maximumFractionDigits: 0
-                });
-            }
-        });
+    function formatHomeMarketValues() {
+        document
+            .querySelectorAll('#homeResultsTable .hs-value')
+            .forEach(function (element) {
+
+                if (element.dataset.formatted === 'true') {
+                    return;
+                }
+
+                var rawValue = parseFloat(
+                    element.textContent.replace(
+                        /[^0-9.-]+/g,
+                        ''
+                    )
+                );
+
+                if (!isNaN(rawValue) && rawValue >= 0) {
+                    element.textContent =
+                        rawValue.toLocaleString('en-ZA', {
+                            style: 'currency',
+                            currency: 'ZAR',
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 0
+                        });
+
+                    element.dataset.formatted = 'true';
+                }
+            });
     }
 </script>

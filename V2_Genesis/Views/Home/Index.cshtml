@@ -10,6 +10,7 @@
 <link href="~/css/views/homeindex1.css" rel="stylesheet" asp-append-version="true" />
 <link href="~/css/views/layout.css" rel="stylesheet" asp-append-version="true" />
 <link href="~/css/views/homeindex2.css" rel="stylesheet" asp-append-version="true" />
+<link href="~/css/views/rate-calculator.css" rel="stylesheet" asp-append-version="true" />
 <link href="~/css/views/info-carousel.css" rel="stylesheet" />
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" />
 <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css" />
@@ -136,6 +137,38 @@
         </div>
         <div class="tiles-grid">
 
+            <div class="tile tile-rates">
+                <div class="tile-status-row">
+                    <span class="tile-status badge-open">
+                        <span class="tile-status-dot"></span> NEW
+                    </span>
+
+                    <span class="tile-badge-public">Public</span>
+                </div>
+
+                <div class="tile-icon">
+                    <i class="fa-solid fa-calculator"></i>
+                </div>
+
+                <h3 class="tile-title">
+                    Possible Rates Calculator
+                </h3>
+
+                <p class="tile-desc">
+                    Estimate possible monthly and annual property rates by
+                    entering a market value and selecting a property category.
+                    No property search or login is required.
+                </p>
+
+                <div class="tile-actions">
+                    <button type="button"
+                            class="tile-btn tile-btn-solid"
+                            id="openRatesCalculator">
+                        <i class="fa-solid fa-calculator"></i>
+                        Open Calculator
+                    </button>
+                </div>
+            </div>
             <div class="tile tile-evidence">
                 <div class="tile-status-row">
                     <span class="tile-status badge-open">
@@ -247,7 +280,212 @@
         </div>
     </div>
 </section>
+<div class="rates-modal-backdrop"
+     id="ratesModalBackdrop"
+     hidden>
+</div>
 
+<div class="rates-modal"
+     id="ratesCalculatorModal"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="ratesCalculatorTitle"
+     hidden>
+
+    <div class="rates-modal-card">
+
+        <div class="rates-modal-header">
+            <div>
+                <span class="rates-modal-kicker">
+                    <i class="fa-solid fa-calculator"></i>
+                    Property Rates
+                </span>
+
+                <h2 id="ratesCalculatorTitle">
+                    Possible Rates Calculator
+                </h2>
+
+                <p>
+                    Enter a market value and select a category to
+                    receive an indicative estimate.
+                </p>
+            </div>
+
+            <button type="button"
+                    class="rates-close-btn"
+                    id="closeRatesCalculator"
+                    aria-label="Close calculator">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <div class="rates-modal-body">
+
+            <div id="ratesAlert"
+                 class="rates-alert"
+                 hidden>
+            </div>
+
+            <div class="rates-form-grid">
+
+                <div class="rates-field">
+                    <label for="rateMarketValue">
+                        Market value
+                    </label>
+
+                    <div class="rates-money-input">
+                        <span>R</span>
+
+                        <input type="number"
+                               id="rateMarketValue"
+                               min="1"
+                               step="0.01"
+                               inputmode="decimal"
+                               placeholder="e.g. 1500000" />
+                    </div>
+
+                    <small>
+                        Enter the property market value you want to test.
+                    </small>
+                </div>
+
+                <div class="rates-field">
+                    <label for="rateCategory">
+                        Property category
+                    </label>
+
+                    <select id="rateCategory" disabled>
+                        <option value="">
+                            Loading active tariffs…
+                        </option>
+                    </select>
+
+                    <small id="rateTariffInfo">
+                        Tariff information will appear after selection.
+                    </small>
+                </div>
+
+            </div>
+
+            <label class="rates-check"
+                   id="residentialExclusionRow"
+                   hidden>
+
+                <input type="checkbox"
+                       id="applyResidentialExclusion"
+                       checked />
+
+                <span>
+                    Apply the qualifying residential value exclusion
+                </span>
+            </label>
+
+            <div class="rates-actions">
+
+                <button type="button"
+                        class="rates-btn rates-btn-light"
+                        id="clearRatesCalculator">
+                    <i class="fa-solid fa-rotate-left"></i>
+                    Clear
+                </button>
+
+                <button type="button"
+                        class="rates-btn rates-btn-primary"
+                        id="calculateRates"
+                        disabled>
+                    <i class="fa-solid fa-calculator"></i>
+                    Calculate Estimate
+                </button>
+
+            </div>
+
+            <div id="ratesLoading"
+                 class="rates-loading"
+                 hidden>
+                <i class="fa-solid fa-spinner fa-spin"></i>
+                Calculating possible rates…
+            </div>
+
+            <div id="ratesResult"
+                 class="rates-result"
+                 aria-live="polite"
+                 hidden>
+
+                <div class="rates-result-heading">
+                    <div>
+                        <span>Calculation summary</span>
+                        <h3 id="resultCategory">—</h3>
+                    </div>
+
+                    <span class="rates-year-badge"
+                          id="resultFinancialYear">
+                        —
+                    </span>
+                </div>
+
+                <div class="rates-summary-grid">
+
+                    <div>
+                        <span>Market value</span>
+                        <strong id="resultMarketValue">
+                            R0.00
+                        </strong>
+                    </div>
+
+                    <div>
+                        <span>Rateable value</span>
+                        <strong id="resultRateableValue">
+                            R0.00
+                        </strong>
+                    </div>
+
+                    <div>
+                        <span>Annual tariff</span>
+                        <strong id="resultTariff">
+                            0
+                        </strong>
+                    </div>
+
+                    <div>
+                        <span>Exclusion applied</span>
+                        <strong id="resultExclusion">
+                            R0.00
+                        </strong>
+                    </div>
+
+                </div>
+
+                <div class="rates-total-grid">
+
+                    <div class="rates-total-card">
+                        <span>Estimated monthly rates</span>
+                        <strong id="resultMonthly">
+                            R0.00
+                        </strong>
+                    </div>
+
+                    <div class="rates-total-card">
+                        <span>Estimated annual rates</span>
+                        <strong id="resultAnnual">
+                            R0.00
+                        </strong>
+                    </div>
+
+                </div>
+
+                <div id="ratesWarnings"
+                     class="rates-warnings"
+                     hidden>
+                </div>
+
+                <p class="rates-disclaimer"
+                       id="ratesDisclaimer">
+                </p>
+
+            </div>
+        </div>
+    </div>
+</div>
 @section Scripts {
   
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
@@ -259,191 +497,1707 @@
 
 
     <script>
-        // ════════════════════════════════════════════════════════════════════
-        //  GLOBAL FUNCTIONS — must be outside DOMContentLoaded so onclick=""
-        //  attributes on HTML elements can reach them
-        // ════════════════════════════════════════════════════════════════════
+        // ════════════════════════════════════════════════════════════════════════
+        // HOME INDEX
+        // Property search, disclaimer and Possible Rates Calculator
+        // ════════════════════════════════════════════════════════════════════════
 
-        // ── Load townships + schemes on page load ────────────────────────────
-        function loadTownshipsAndSchemes() {
-        var townSel   = document.getElementById('hs_town');
-        var schemeSel = document.getElementById('hs_scheme');
-        if (!townSel || !schemeSel) return;
+        let activeRateTariffs = [];
+        let rateTariffsLoadingPromise = null;
 
-        townSel.disabled    = true;
-        schemeSel.disabled  = true;
-        townSel.innerHTML   = '<option value="">— Loading townships… —</option>';
-        schemeSel.innerHTML = '<option value="">— Loading schemes… —</option>';
+        // Stores the element that opened the calculator so keyboard focus can
+        // return to it when the modal closes.
+        let calculatorTriggerElement = null;
 
-        fetch('/home/townships')
-        .then(function (r) {
-        if (!r.ok) throw new Error('HTTP ' + r.status);
-        return r.json();
-        })
-        .then(function (data) {
-        var towns   = Array.isArray(data.towns)   ? data.towns   : [];
-        var schemes = Array.isArray(data.schemes) ? data.schemes : [];
 
-        // Populate townships
-        townSel.innerHTML =
-        '<option value="">— Select Township (optional) —</option>';
-        towns.forEach(function (t) {
-        var o = document.createElement('option');
-        o.value = t; o.textContent = t;
-        townSel.appendChild(o);
-        });
-        townSel.disabled = false;
+        // ════════════════════════════════════════════════════════════════════════
+        // SHARED HELPERS
+        // ════════════════════════════════════════════════════════════════════════
 
-        // Populate schemes
-        schemeSel.innerHTML =
-        '<option value="">— Select Scheme (optional) —</option>';
-        schemes.forEach(function (s) {
-        var o = document.createElement('option');
-        o.value = s; o.textContent = s;
-        schemeSel.appendChild(o);
-        });
-        schemeSel.disabled = false;
+        function getToken() {
+        const tokenElement = document.querySelector(
+        'input[name="__RequestVerificationToken"]'
+        );
 
-        console.log('[HomeSearch] ' + towns.length +
-        ' towns + ' + schemes.length + ' schemes loaded');
-        })
-        .catch(function (err) {
-        console.error('[HomeSearch] Load error:', err);
-        townSel.innerHTML =
-        '<option value="">— Could not load —</option>';
-        schemeSel.innerHTML =
-        '<option value="">— Could not load —</option>';
-        townSel.disabled   = false;
-        schemeSel.disabled = false;
-
-        // Retry button under the town dropdown
-        var btn       = document.createElement('button');
-        btn.type      = 'button';
-        btn.className = 'hs-retry-btn';
-        btn.innerHTML = '<i class="fa-solid fa-rotate-right"></i> Retry';
-        btn.onclick   = function () { btn.remove(); loadTownshipsAndSchemes(); };
-        townSel.parentElement.appendChild(btn);
-        });
+        return tokenElement ? tokenElement.value : '';
         }
 
-        // ── Search all rolls ─────────────────────────────────────────────────
-        function runHomeSearch() {
-        var town    = document.getElementById('hs_town').value.trim();
-        var stand   = document.getElementById('hs_stand').value.trim();
-        var address = document.getElementById('hs_address').value.trim();
-        var scheme  = document.getElementById('hs_scheme').value.trim();
-        var unit    = document.getElementById('hs_unit').value.trim();
+        function formatRand(value) {
+        const numericValue = Number(value);
 
-        if (!town && !stand && !address && !scheme && !unit) {
-        showHsError('Please enter at least one search field.');
+        return new Intl.NumberFormat('en-ZA', {
+        style: 'currency',
+        currency: 'ZAR',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+        }).format(Number.isFinite(numericValue) ? numericValue : 0);
+        }
+
+        function formatTariff(value) {
+        const numericValue = Number(value);
+
+        if (!Number.isFinite(numericValue)) {
+        return '0.000000';
+        }
+
+        return numericValue.toFixed(6);
+        }
+
+        async function readResponsePayload(response) {
+        const contentType = response.headers.get('content-type') || '';
+
+        if (contentType.includes('application/json')) {
+        return await response.json();
+        }
+
+        const text = await response.text();
+
+        return {
+        success: false,
+        message: text || 'The server returned an unexpected response.'
+        };
+        }
+
+
+        // ════════════════════════════════════════════════════════════════════════
+        // HOME PROPERTY SEARCH
+        // ════════════════════════════════════════════════════════════════════════
+
+        async function loadTownshipsAndSchemes() {
+        const townSelect = document.getElementById('hs_town');
+        const schemeSelect = document.getElementById('hs_scheme');
+
+        if (!townSelect || !schemeSelect) {
         return;
         }
 
-        var btn      = document.getElementById('hsSearchBtn');
-        btn.innerHTML= '<i class="fa-solid fa-spinner fa-spin"></i> Searching all rolls…';
-        btn.disabled = true;
+        removeTownshipRetryButton();
 
-        var body = new URLSearchParams({
-        SearchTownName : town,
-        SearchStand    : stand,
-        SearchAddress  : address,
-        SearchScheme   : scheme,
-        SearchUnit     : unit
-        });
+        townSelect.disabled = true;
+        schemeSelect.disabled = true;
 
-        fetch('/home/search', {
-        method : 'POST',
+        townSelect.innerHTML =
+        '<option value="">— Loading townships… —</option>';
+
+        schemeSelect.innerHTML =
+        '<option value="">— Loading schemes… —</option>';
+
+        try {
+        const response = await fetch('/home/townships', {
+        method: 'GET',
         headers: {
-        'Content-Type'             : 'application/x-www-form-urlencoded',
-        'RequestVerificationToken' : getToken(),
-        'X-Requested-With'         : 'XMLHttpRequest'
+        'X-Requested-With': 'XMLHttpRequest'
+        }
+        });
+
+        if (!response.ok) {
+        throw new Error('HTTP ' + response.status);
+        }
+
+        const data = await response.json();
+
+        const towns = Array.isArray(data.towns)
+        ? data.towns
+        : [];
+
+        const schemes = Array.isArray(data.schemes)
+        ? data.schemes
+        : [];
+
+        populateSelect(
+        townSelect,
+        towns,
+        '— Select Township —'
+        );
+
+        populateSelect(
+        schemeSelect,
+        schemes,
+        '— Select Scheme (optional) —'
+        );
+
+        townSelect.disabled = false;
+        schemeSelect.disabled = false;
+
+        console.log(
+        '[HomeSearch] ' +
+        towns.length +
+        ' townships and ' +
+        schemes.length +
+        ' schemes loaded.'
+        );
+        }
+        catch (error) {
+        console.error(
+        '[HomeSearch] Township and scheme load failed:',
+        error
+        );
+
+        townSelect.innerHTML =
+        '<option value="">— Could not load townships —</option>';
+
+        schemeSelect.innerHTML =
+        '<option value="">— Could not load schemes —</option>';
+
+        townSelect.disabled = false;
+        schemeSelect.disabled = false;
+
+        addTownshipRetryButton();
+        }
+        }
+
+        function populateSelect(selectElement, values, defaultText) {
+        selectElement.innerHTML = '';
+
+        const defaultOption = document.createElement('option');
+
+        defaultOption.value = '';
+        defaultOption.textContent = defaultText;
+
+        selectElement.appendChild(defaultOption);
+
+        values.forEach(function (value) {
+        const option = document.createElement('option');
+
+        option.value = value;
+        option.textContent = value;
+
+        selectElement.appendChild(option);
+        });
+        }
+
+        function addTownshipRetryButton() {
+        const townSelect = document.getElementById('hs_town');
+
+        if (!townSelect || document.getElementById('hsTownRetryBtn')) {
+        return;
+        }
+
+        const retryButton = document.createElement('button');
+
+        retryButton.type = 'button';
+        retryButton.id = 'hsTownRetryBtn';
+        retryButton.className = 'hs-retry-btn';
+
+        retryButton.innerHTML =
+        '<i class="fa-solid fa-rotate-right"></i> Retry loading';
+
+        retryButton.addEventListener(
+        'click',
+        loadTownshipsAndSchemes
+        );
+
+        townSelect.parentElement.appendChild(retryButton);
+        }
+
+        function removeTownshipRetryButton() {
+        const retryButton = document.getElementById('hsTownRetryBtn');
+
+        if (retryButton) {
+        retryButton.remove();
+        }
+        }
+
+        async function runHomeSearch() {
+        clearHsError();
+
+        const townElement = document.getElementById('hs_town');
+        const standElement = document.getElementById('hs_stand');
+        const addressElement = document.getElementById('hs_address');
+        const schemeElement = document.getElementById('hs_scheme');
+        const unitElement = document.getElementById('hs_unit');
+        const searchButton = document.getElementById('hsSearchBtn');
+
+        if (
+        !townElement ||
+        !standElement ||
+        !addressElement ||
+        !schemeElement ||
+        !unitElement ||
+        !searchButton
+        ) {
+        return;
+        }
+
+        const town = townElement.value.trim();
+        const stand = standElement.value.trim();
+        const address = addressElement.value.trim();
+        const scheme = schemeElement.value.trim();
+        const unit = unitElement.value.trim();
+
+        // Township is required according to the Home search validation rule.
+        if (!town) {
+        showHsError(
+        'Please select a township before searching.'
+        );
+
+        townElement.focus();
+        return;
+        }
+
+        // Township alone should not produce a very broad search.
+        if (!stand && !address && !scheme && !unit) {
+        showHsError(
+        'Enter an ERF/Stand number, street address, scheme name or unit number.'
+        );
+
+        standElement.focus();
+        return;
+        }
+
+        setSearchButtonLoading(searchButton, true);
+
+        const requestBody = new URLSearchParams({
+        SearchTownName: town,
+        SearchStand: stand,
+        SearchAddress: address,
+        SearchScheme: scheme,
+        SearchUnit: unit
+        });
+
+        try {
+        const response = await fetch('/home/search', {
+        method: 'POST',
+
+        headers: {
+        'Content-Type':
+        'application/x-www-form-urlencoded;charset=UTF-8',
+
+        'RequestVerificationToken':
+        getToken(),
+
+        'X-Requested-With':
+        'XMLHttpRequest'
         },
-        body: body.toString()
-        })
-        .then(function (r) {
-        if (!r.ok) throw new Error('HTTP ' + r.status);
-        return r.text();
-        })
-        .then(function (html) {
-        var wrap  = document.getElementById('hsResults');
-        var inner = document.getElementById('hsResultsInner');
-        $(inner).html(html);   
-        wrap.style.display = 'block';
 
-        var badge = document.getElementById('hsResultCount');
-        if (badge) badge.style.display = 'inline-flex';
+        body: requestBody.toString()
+        });
 
-        wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        })
-        .catch(function (err) {
-        console.error('[HomeSearch]', err);
-        showHsError('Search failed. Please try again.');
-        })
-        .finally(function () {
-        btn.innerHTML= '<i class="fa-solid fa-magnifying-glass"></i> Search All Rolls';
-        btn.disabled = false;
+        if (!response.ok) {
+        const responseText = await response.text();
+
+        throw new Error(
+        responseText ||
+        'The search request failed with status ' +
+        response.status +
+        '.'
+        );
+        }
+
+        const html = await response.text();
+
+        displayHomeSearchResults(html);
+        }
+        catch (error) {
+        console.error('[HomeSearch] Search failed:', error);
+
+        showHsError(
+        'The property search could not be completed. Please try again.'
+        );
+        }
+        finally {
+        setSearchButtonLoading(searchButton, false);
+        }
+        }
+
+        function setSearchButtonLoading(button, isLoading) {
+        if (!button) {
+        return;
+        }
+
+        button.disabled = isLoading;
+
+        button.innerHTML = isLoading
+        ? '<i class="fa-solid fa-spinner fa-spin"></i> Searching all rolls…'
+        : '<i class="fa-solid fa-magnifying-glass"></i> Search All Rolls';
+        }
+
+        function displayHomeSearchResults(html) {
+        const resultsWrapper = document.getElementById('hsResults');
+        const resultsInner = document.getElementById('hsResultsInner');
+        const resultBadge = document.getElementById('hsResultCount');
+
+        if (!resultsWrapper || !resultsInner) {
+        return;
+        }
+
+        // jQuery is already loaded and may be needed by partial-view scripts.
+        if (window.jQuery) {
+        window.jQuery(resultsInner).html(html);
+        }
+        else {
+        resultsInner.innerHTML = html;
+        }
+
+        resultsWrapper.style.display = 'block';
+
+        if (resultBadge) {
+        const resultCount =
+        resultsInner.querySelectorAll(
+        'tbody tr, .hs-result-item, [data-search-result]'
+        ).length;
+
+        if (resultCount > 0) {
+        resultBadge.textContent =
+        resultCount +
+        (resultCount === 1 ? ' result' : ' results');
+
+        resultBadge.style.display = 'inline-flex';
+        }
+        else {
+        resultBadge.style.display = 'none';
+        }
+        }
+
+        initialiseSearchResultTables();
+
+        resultsWrapper.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
         });
         }
 
-        // ── Show inline error ────────────────────────────────────────────────
-        function showHsError(msg) {
-        var old = document.getElementById('hsSearchErr');
-        if (old) old.remove();
-        var div       = document.createElement('div');
-        div.id        = 'hsSearchErr';
-        div.className = 'hs-search-error';
-        div.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> ' + msg;
-        document.getElementById('hsFormBody')
-        .insertAdjacentElement('afterend', div);
-        setTimeout(function () { div.remove(); }, 5000);
+        function initialiseSearchResultTables() {
+        if (!window.jQuery || !window.jQuery.fn.DataTable) {
+        return;
         }
 
-        // ── Get antiforgery token ────────────────────────────────────────────
-        function getToken() {
-        var el = document.querySelector(
-        'input[name="__RequestVerificationToken"]');
-        return el ? el.value : '';
+        window.jQuery(
+        '#hsResultsInner table[data-datatable="true"]'
+        ).each(function () {
+        const table = window.jQuery(this);
+
+        if (window.jQuery.fn.DataTable.isDataTable(this)) {
+        return;
         }
 
-        // ════════════════════════════════════════════════════════════════════
-        //  INIT — only wiring up, no function definitions here
-        // ════════════════════════════════════════════════════════════════════
-        document.addEventListener('DOMContentLoaded', function () {
-
-        // Load townships + schemes automatically
-        loadTownshipsAndSchemes();
-
-        // Enter key on text-only inputs triggers search
-        // (hs_town and hs_scheme are selects — no Enter needed there)
-        ['hs_stand', 'hs_address', 'hs_unit'].forEach(function (id) {
-        var el = document.getElementById(id);
-        if (el) el.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter') runHomeSearch();
+        table.DataTable({
+        pageLength: 10,
+        lengthMenu: [10, 25, 50, 100],
+        ordering: true,
+        searching: false,
+        responsive: true,
+        autoWidth: false
         });
         });
+        }
 
-        // Disclaimer
-        var backdrop  = document.getElementById('disclaimerBackdrop');
-        var modal     = document.getElementById('disclaimerModal');
-        var acceptBtn = document.getElementById('acceptDisclaimer');
-        if (modal && acceptBtn) {
+        function showHsError(message) {
+        clearHsError();
+
+        const formBody = document.getElementById('hsFormBody');
+
+        if (!formBody) {
+        return;
+        }
+
+        const errorElement = document.createElement('div');
+
+        errorElement.id = 'hsSearchErr';
+        errorElement.className = 'hs-search-error';
+
+        const icon = document.createElement('i');
+        icon.className = 'fa-solid fa-circle-xmark';
+
+        const text = document.createElement('span');
+        text.textContent = message;
+
+        errorElement.appendChild(icon);
+        errorElement.appendChild(text);
+
+        formBody.insertAdjacentElement(
+        'afterend',
+        errorElement
+        );
+
+        window.setTimeout(function () {
+        if (errorElement.isConnected) {
+        errorElement.remove();
+        }
+        }, 6000);
+        }
+
+        function clearHsError() {
+        const existingError =
+        document.getElementById('hsSearchErr');
+
+        if (existingError) {
+        existingError.remove();
+        }
+        }
+
+
+        // ════════════════════════════════════════════════════════════════════════
+        // DISCLAIMER
+        // ════════════════════════════════════════════════════════════════════════
+
+        function initialiseDisclaimer() {
+        const backdrop =
+        document.getElementById('disclaimerBackdrop');
+
+        const modal =
+        document.getElementById('disclaimerModal');
+
+        const acceptButton =
+        document.getElementById('acceptDisclaimer');
+
+        if (!modal || !acceptButton) {
+        return;
+        }
+
         document.body.style.overflow = 'hidden';
-        acceptBtn.addEventListener('click', async function () {
-        await fetch('/accept-disclaimer', {
-        method : 'POST',
-        headers: { 'RequestVerificationToken': getToken() }
-        });
-        if (backdrop) backdrop.classList.remove('show');
+
+        acceptButton.addEventListener(
+        'click',
+        async function () {
+        const originalContent =
+        acceptButton.innerHTML;
+
+        acceptButton.disabled = true;
+
+        acceptButton.innerHTML =
+        '<i class="fa-solid fa-spinner fa-spin"></i> Saving…';
+
+        try {
+        const response = await fetch(
+        '/accept-disclaimer',
+        {
+        method: 'POST',
+
+        headers: {
+        'RequestVerificationToken':
+        getToken(),
+
+        'X-Requested-With':
+        'XMLHttpRequest'
+        }
+        }
+        );
+
+        if (!response.ok) {
+        throw new Error(
+        'HTTP ' + response.status
+        );
+        }
+
+        if (backdrop) {
+        backdrop.classList.remove('show');
+        }
+
         modal.classList.remove('show');
+
+        window.setTimeout(function () {
+        if (backdrop) {
+        backdrop.remove();
+        }
+
+        modal.remove();
+
         document.body.style.overflow = '';
-        });
-        requestAnimationFrame(function () {
-        if (backdrop) backdrop.classList.add('show');
+        }, 250);
+        }
+        catch (error) {
+        console.error(
+        '[Disclaimer] Acceptance failed:',
+        error
+        );
+
+        acceptButton.disabled = false;
+        acceptButton.innerHTML = originalContent;
+
+        window.alert(
+        'The disclaimer could not be accepted. Please try again.'
+        );
+        }
+        }
+        );
+
+        window.requestAnimationFrame(function () {
+        if (backdrop) {
+        backdrop.classList.add('show');
+        }
+
         modal.classList.add('show');
         });
         }
 
+
+        // ════════════════════════════════════════════════════════════════════════
+        // POSSIBLE RATES CALCULATOR
+        // ════════════════════════════════════════════════════════════════════════
+
+        function getRatesElements() {
+        return {
+        modal:
+        document.getElementById('ratesCalculatorModal'),
+
+        backdrop:
+        document.getElementById('ratesModalBackdrop'),
+
+        openButton:
+        document.getElementById('openRatesCalculator'),
+
+        closeButton:
+        document.getElementById('closeRatesCalculator'),
+
+        clearButton:
+        document.getElementById('clearRatesCalculator'),
+
+        calculateButton:
+        document.getElementById('calculateRates'),
+
+        marketValue:
+        document.getElementById('rateMarketValue'),
+
+        category:
+        document.getElementById('rateCategory'),
+
+        tariffInfo:
+        document.getElementById('rateTariffInfo'),
+
+        exclusionRow:
+        document.getElementById(
+        'residentialExclusionRow'
+        ),
+
+        exclusionCheckbox:
+        document.getElementById(
+        'applyResidentialExclusion'
+        ),
+
+        alert:
+        document.getElementById('ratesAlert'),
+
+        loading:
+        document.getElementById('ratesLoading'),
+
+        result:
+        document.getElementById('ratesResult'),
+
+        warnings:
+        document.getElementById('ratesWarnings')
+        };
+        }
+
+        function initialiseRatesCalculator() {
+        const elements = getRatesElements();
+
+        if (!elements.modal || !elements.openButton) {
+        return;
+        }
+
+        elements.openButton.addEventListener(
+        'click',
+        function (event) {
+        clearRatesCalculator();
+        hideCalculatorPropertyContext();
+        openRatesCalculator(event);
+        }
+        );
+
+        if (elements.closeButton) {
+        elements.closeButton.addEventListener(
+        'click',
+        closeRatesCalculator
+        );
+        }
+
+        if (elements.backdrop) {
+        elements.backdrop.addEventListener(
+        'click',
+        closeRatesCalculator
+        );
+        }
+
+        if (elements.clearButton) {
+        elements.clearButton.addEventListener(
+        'click',
+        clearRatesCalculator
+        );
+        }
+
+        if (elements.calculateButton) {
+        elements.calculateButton.addEventListener(
+        'click',
+        calculatePossibleRates
+        );
+        }
+
+        if (elements.marketValue) {
+        elements.marketValue.addEventListener(
+        'input',
+        function () {
+        clearRatesAlert();
+        hideRatesResult();
+        validateRatesInputs();
+        }
+        );
+
+        elements.marketValue.addEventListener(
+        'keydown',
+        function (event) {
+        if (
+        event.key === 'Enter' &&
+        elements.calculateButton &&
+        !elements.calculateButton.disabled
+        ) {
+        event.preventDefault();
+        calculatePossibleRates();
+        }
+        }
+        );
+        }
+
+        if (elements.category) {
+        elements.category.addEventListener(
+        'change',
+        function () {
+        clearRatesAlert();
+        hideRatesResult();
+        updateTariffInformation();
+        }
+        );
+        }
+
+        if (elements.exclusionCheckbox) {
+        elements.exclusionCheckbox.addEventListener(
+        'change',
+        function () {
+        clearRatesAlert();
+        hideRatesResult();
+        }
+        );
+        }
+
+        document.addEventListener(
+        'keydown',
+        function (event) {
+        if (
+        event.key === 'Escape' &&
+        elements.modal &&
+        !elements.modal.hidden
+        ) {
+        closeRatesCalculator();
+        }
+        }
+        );
+
+        validateRatesInputs();
+        }
+        async function openRatesCalculator(event) {
+        const elements = getRatesElements();
+
+        if (!elements.modal || !elements.backdrop) {
+        return;
+        }
+
+        calculatorTriggerElement =
+        event && event.currentTarget
+        ? event.currentTarget
+        : document.activeElement;
+
+        elements.modal.hidden = false;
+        elements.backdrop.hidden = false;
+
+        document.body.classList.add('rates-modal-open');
+        clearRatesAlert();
+
+        if (!activeRateTariffs.length) {
+        await loadRateTariffs();
+        }
+
+        window.setTimeout(function () {
+        if (elements.marketValue) {
+        elements.marketValue.focus();
+        }
+        }, 50);
+        }
+
+        function closeRatesCalculator() {
+        const elements = getRatesElements();
+
+        if (elements.modal) {
+        elements.modal.hidden = true;
+        }
+
+        if (elements.backdrop) {
+        elements.backdrop.hidden = true;
+        }
+
+        document.body.classList.remove('rates-modal-open');
+
+        if (
+        calculatorTriggerElement &&
+        typeof calculatorTriggerElement.focus === 'function'
+        ) {
+        calculatorTriggerElement.focus();
+        }
+        }
+        async function loadRateTariffs(forceReload) {
+        const elements = getRatesElements();
+
+        if (!elements.category) {
+        return [];
+        }
+
+        if (
+        activeRateTariffs.length > 0 &&
+        forceReload !== true
+        ) {
+        populateRateCategoryDropdown();
+        return activeRateTariffs;
+        }
+
+        // Reuse the same in-flight request. This prevents the property
+        // calculator from checking the tariff list before loading finishes.
+        if (rateTariffsLoadingPromise) {
+        return await rateTariffsLoadingPromise;
+        }
+
+        elements.category.disabled = true;
+        elements.category.innerHTML =
+        '<option value="">Loading active tariffs…</option>';
+
+        rateTariffsLoadingPromise = (async function () {
+        try {
+        const response = await fetch(
+        '/home/rates/tariffs',
+        {
+        method: 'GET',
+        headers: {
+        'X-Requested-With': 'XMLHttpRequest'
+        }
+        }
+        );
+
+        const payload = await readResponsePayload(response);
+
+        if (!response.ok) {
+        throw new Error(
+        payload.message ||
+        'The tariff request failed.'
+        );
+        }
+
+        if (!Array.isArray(payload)) {
+        throw new Error(
+        'No valid tariff information was returned.'
+        );
+        }
+
+        activeRateTariffs = payload;
+        populateRateCategoryDropdown();
+        clearRatesAlert();
+
+        return activeRateTariffs;
+        }
+        catch (error) {
+        console.error(
+        '[RatesCalculator] Tariff load failed:',
+        error
+        );
+
+        activeRateTariffs = [];
+
+        elements.category.innerHTML =
+        '<option value="">— Tariffs unavailable —</option>';
+
+        elements.category.disabled = true;
+
+        showRatesAlert(
+        'The active property-rate tariffs could not be loaded. Please try again.'
+        );
+
+        throw error;
+        }
+        finally {
+        rateTariffsLoadingPromise = null;
+        validateRatesInputs();
+        }
+        })();
+
+        return await rateTariffsLoadingPromise;
+        }
+
+        function populateRateCategoryDropdown() {
+        const elements = getRatesElements();
+
+        if (!elements.category) {
+        return;
+        }
+
+        const previousValue = elements.category.value;
+
+        elements.category.innerHTML = '';
+
+        const defaultOption = document.createElement('option');
+
+        defaultOption.value = '';
+        defaultOption.textContent =
+        '— Select property category —';
+
+        elements.category.appendChild(defaultOption);
+
+        activeRateTariffs
+        .slice()
+        .sort(function (left, right) {
+        return String(left.categoryName)
+        .localeCompare(
+        String(right.categoryName),
+        'en-ZA'
+        );
+        })
+        .forEach(function (tariff) {
+        const option =
+        document.createElement('option');
+
+        option.value = tariff.categoryCode;
+        option.textContent = tariff.categoryName;
+
+        const tariffDescription =
+        tariff.isMultipurpose
+        ? 'Component-based calculation required'
+        : tariff.isZeroRated
+        ? 'Zero-rated category'
+        : 'Annual tariff ' +
+        formatTariff(
+        tariff.annualTariff
+        );
+
+        option.title =
+        tariff.financialYear +
+        ' | Ratio ' +
+        (tariff.ratio || 'N/A') +
+        ' | ' +
+        tariffDescription;
+
+        elements.category.appendChild(option);
         });
+
+        elements.category.disabled =
+        activeRateTariffs.length === 0;
+
+        if (
+        previousValue &&
+        activeRateTariffs.some(function (tariff) {
+        return tariff.categoryCode === previousValue;
+        })
+        ) {
+        elements.category.value = previousValue;
+        }
+
+        updateTariffInformation();
+        }
+
+        function getSelectedRateTariff() {
+        const categoryElement =
+        document.getElementById('rateCategory');
+
+        if (!categoryElement) {
+        return null;
+        }
+
+        const selectedCode =
+        categoryElement.value.trim();
+
+        return activeRateTariffs.find(
+        function (tariff) {
+        return tariff.categoryCode === selectedCode;
+        }
+        ) || null;
+        }
+
+        function updateTariffInformation() {
+        const elements = getRatesElements();
+        const selectedTariff = getSelectedRateTariff();
+
+        if (!elements.tariffInfo) {
+        return;
+        }
+
+        if (!selectedTariff) {
+        elements.tariffInfo.textContent =
+        'Tariff information will appear after selection.';
+
+        if (elements.exclusionRow) {
+        elements.exclusionRow.hidden = true;
+        }
+
+        validateRatesInputs();
+        return;
+        }
+
+        let categoryNote;
+
+        if (selectedTariff.isMultipurpose) {
+        categoryNote =
+        'Multipurpose properties require values to be divided by use category.';
+        }
+        else if (selectedTariff.isZeroRated) {
+        categoryNote =
+        'This category currently has a zero property-rate tariff.';
+        }
+        else if (selectedTariff.isPenaltyTariff) {
+        categoryNote =
+        'Penalty annual tariff: ' +
+        formatTariff(
+        selectedTariff.annualTariff
+        );
+        }
+        else {
+        categoryNote =
+        'Annual tariff: ' +
+        formatTariff(
+        selectedTariff.annualTariff
+        );
+        }
+
+        elements.tariffInfo.textContent =
+        selectedTariff.financialYear +
+        ' · Ratio ' +
+        (selectedTariff.ratio || 'N/A') +
+        ' · ' +
+        categoryNote;
+
+        if (elements.exclusionRow) {
+        elements.exclusionRow.hidden =
+        selectedTariff.categoryCode !== 'RES';
+        }
+
+        validateRatesInputs();
+        }
+        function validateRatesInputs() {
+        const elements = getRatesElements();
+
+        if (!elements.calculateButton) {
+        return false;
+        }
+
+        const marketValue = elements.marketValue
+        ? Number(elements.marketValue.value)
+        : 0;
+
+        const selectedTariff = getSelectedRateTariff();
+
+        const inputsAreValid =
+        Number.isFinite(marketValue) &&
+        marketValue > 0 &&
+        selectedTariff !== null &&
+        rateTariffsLoadingPromise === null;
+
+        elements.calculateButton.disabled = !inputsAreValid;
+
+        return inputsAreValid;
+        }
+
+        function showRatesAlert(message) {
+        const alertElement =
+        document.getElementById('ratesAlert');
+
+        if (!alertElement) {
+        return;
+        }
+
+        alertElement.textContent =
+        message || 'An unexpected error occurred.';
+
+        alertElement.hidden = false;
+        }
+
+        function clearRatesAlert() {
+        const alertElement =
+        document.getElementById('ratesAlert');
+
+        if (!alertElement) {
+        return;
+        }
+
+        alertElement.hidden = true;
+        alertElement.textContent = '';
+        }
+
+        function hideRatesResult() {
+        const resultElement =
+        document.getElementById('ratesResult');
+
+        if (resultElement) {
+        resultElement.hidden = true;
+        }
+        }
+
+        function clearRatesCalculator() {
+        const elements = getRatesElements();
+
+        if (elements.marketValue) {
+        elements.marketValue.value = '';
+        }
+
+        if (elements.category) {
+        elements.category.value = '';
+        }
+
+        if (elements.exclusionCheckbox) {
+        elements.exclusionCheckbox.checked = true;
+        }
+
+        if (elements.exclusionRow) {
+        elements.exclusionRow.hidden = true;
+        }
+
+        if (elements.tariffInfo) {
+        elements.tariffInfo.textContent =
+        'Tariff information will appear after selection.';
+        }
+
+        if (elements.warnings) {
+        elements.warnings.innerHTML = '';
+        elements.warnings.hidden = true;
+        }
+
+        clearRatesAlert();
+        hideRatesResult();
+        resetRatesResultValues();
+        validateRatesInputs();
+
+        if (elements.marketValue) {
+        elements.marketValue.focus();
+        }
+        }
+
+        function resetRatesResultValues() {
+        setTextContent('resultCategory', '—');
+        setTextContent('resultFinancialYear', '—');
+        setTextContent('resultMarketValue', 'R0.00');
+        setTextContent('resultRateableValue', 'R0.00');
+        setTextContent('resultTariff', '0.000000');
+        setTextContent('resultExclusion', 'R0.00');
+        setTextContent('resultMonthly', 'R0.00');
+        setTextContent('resultAnnual', 'R0.00');
+        setTextContent('ratesDisclaimer', '');
+        }
+
+        async function calculatePossibleRates() {
+        clearRatesAlert();
+        hideRatesResult();
+
+        const elements = getRatesElements();
+        const selectedTariff = getSelectedRateTariff();
+
+        const marketValue = elements.marketValue
+        ? Number(elements.marketValue.value)
+        : 0;
+
+        if (
+        !Number.isFinite(marketValue) ||
+        marketValue <= 0
+        ) {
+        showRatesAlert(
+        'Enter a market value greater than zero.'
+        );
+
+        if (elements.marketValue) {
+        elements.marketValue.focus();
+        }
+
+        return;
+        }
+
+        if (!selectedTariff) {
+        showRatesAlert(
+        'Select a valid property category.'
+        );
+
+        if (elements.category) {
+        elements.category.focus();
+        }
+
+        return;
+        }
+
+        const requestBody = new URLSearchParams({
+        MarketValue:
+        marketValue.toString(),
+
+        CategoryCode:
+        selectedTariff.categoryCode,
+
+        FinancialYearId:
+        selectedTariff.financialYearId.toString(),
+
+        ApplyResidentialExclusion:
+        (
+        selectedTariff.categoryCode === 'RES' &&
+        elements.exclusionCheckbox &&
+        elements.exclusionCheckbox.checked
+        ).toString()
+        });
+
+        setRatesCalculationLoading(true);
+
+        try {
+        const response = await fetch(
+        '/home/rates/calculate',
+        {
+        method: 'POST',
+
+        headers: {
+        'Content-Type':
+        'application/x-www-form-urlencoded;charset=UTF-8',
+
+        'RequestVerificationToken':
+        getToken(),
+
+        'X-Requested-With':
+        'XMLHttpRequest'
+        },
+
+        body: requestBody.toString()
+        }
+        );
+
+        const payload =
+        await readResponsePayload(response);
+
+        if (!response.ok || payload.success !== true) {
+        throw new Error(
+        payload.message ||
+        'The calculation could not be completed.'
+        );
+        }
+
+        if (!payload.data) {
+        throw new Error(
+        'No calculation result was returned.'
+        );
+        }
+
+        renderPossibleRatesResult(payload.data);
+        }
+        catch (error) {
+        console.error(
+        '[RatesCalculator] Calculation failed:',
+        error
+        );
+
+        showRatesAlert(
+        error.message ||
+        'The estimate could not be calculated. Please try again.'
+        );
+        }
+        finally {
+        setRatesCalculationLoading(false);
+        validateRatesInputs();
+        }
+        }
+
+        function setRatesCalculationLoading(isLoading) {
+        const elements = getRatesElements();
+
+        if (elements.loading) {
+        elements.loading.hidden = !isLoading;
+        }
+
+        if (elements.marketValue) {
+        elements.marketValue.disabled = isLoading;
+        }
+
+        if (elements.category) {
+        elements.category.disabled =
+        isLoading ||
+        activeRateTariffs.length === 0;
+        }
+
+        if (elements.exclusionCheckbox) {
+        elements.exclusionCheckbox.disabled = isLoading;
+        }
+
+        if (elements.clearButton) {
+        elements.clearButton.disabled = isLoading;
+        }
+
+        if (elements.calculateButton) {
+        elements.calculateButton.disabled = true;
+
+        elements.calculateButton.innerHTML = isLoading
+        ? '<i class="fa-solid fa-spinner fa-spin"></i> Calculating…'
+        : '<i class="fa-solid fa-calculator"></i> Calculate Estimate';
+        }
+        }
+
+        function renderPossibleRatesResult(data) {
+        if (data.isMultipurpose) {
+        const multipurposeWarnings =
+        Array.isArray(data.warnings)
+        ? data.warnings
+        : [];
+
+        showRatesAlert(
+        multipurposeWarnings.length > 0
+        ? multipurposeWarnings.join(' ')
+        : 'Multipurpose properties require a component-based calculation and cannot be calculated using one tariff.'
+        );
+
+        return;
+        }
+
+        setTextContent(
+        'resultCategory',
+        data.categoryName || 'Selected category'
+        );
+
+        setTextContent(
+        'resultFinancialYear',
+        data.financialYear || '—'
+        );
+
+        setTextContent(
+        'resultMarketValue',
+        formatRand(data.marketValue)
+        );
+
+        setTextContent(
+        'resultRateableValue',
+        formatRand(data.rateableValue)
+        );
+
+        setTextContent(
+        'resultTariff',
+        formatTariff(data.annualTariff)
+        );
+
+        setTextContent(
+        'resultExclusion',
+        formatRand(data.exclusionAmount)
+        );
+
+        setTextContent(
+        'resultMonthly',
+        formatRand(data.estimatedMonthlyRates)
+        );
+
+        setTextContent(
+        'resultAnnual',
+        formatRand(data.estimatedAnnualRates)
+        );
+
+        setTextContent(
+        'ratesDisclaimer',
+        data.disclaimer ||
+        'This calculation is an estimate for information purposes only and is not an official municipal account.'
+        );
+
+        renderRatesWarnings(data.warnings);
+
+        const resultElement =
+        document.getElementById('ratesResult');
+
+        if (resultElement) {
+        resultElement.hidden = false;
+
+        resultElement.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest'
+        });
+        }
+        }
+
+        function renderRatesWarnings(warnings) {
+        const warningsElement =
+        document.getElementById('ratesWarnings');
+
+        if (!warningsElement) {
+        return;
+        }
+
+        warningsElement.innerHTML = '';
+
+        if (!Array.isArray(warnings) || warnings.length === 0) {
+        warningsElement.hidden = true;
+        return;
+        }
+
+        warnings.forEach(function (warning) {
+        const item = document.createElement('div');
+
+        const icon = document.createElement('i');
+        icon.className =
+        'fa-solid fa-triangle-exclamation';
+
+        const text = document.createElement('span');
+        text.textContent = warning;
+
+        item.appendChild(icon);
+        item.appendChild(text);
+
+        warningsElement.appendChild(item);
+        });
+
+        warningsElement.hidden = false;
+        }
+
+        function setTextContent(elementId, value) {
+        const element = document.getElementById(elementId);
+
+        if (element) {
+        element.textContent =
+        value === null || value === undefined
+        ? ''
+        : String(value);
+        }
+        }
+
+
+        // ════════════════════════════════════════════════════════════════════════
+        // PAGE INITIALISATION
+        // ════════════════════════════════════════════════════════════════════════
+
+        document.addEventListener(
+        'DOMContentLoaded',
+        function () {
+        loadTownshipsAndSchemes();
+        initialiseDisclaimer();
+        initialiseRatesCalculator();
+
+        [
+        'hs_stand',
+        'hs_address',
+        'hs_unit'
+        ].forEach(function (elementId) {
+        const element =
+        document.getElementById(elementId);
+
+        if (!element) {
+        return;
+        }
+
+        element.addEventListener(
+        'keydown',
+        function (event) {
+        if (event.key === 'Enter') {
+        event.preventDefault();
+        runHomeSearch();
+        }
+        }
+        );
+        });
+        }
+        );
+
+
+        // Required because the current Search button uses:
+        // onclick="runHomeSearch()"
+        window.runHomeSearch = runHomeSearch;
+        window.openRatesFromProperty = openRatesFromProperty;
+        async function openRatesFromProperty(button) {
+        if (!button) {
+        return;
+        }
+
+        const rawMarketValue =
+        button.getAttribute('data-market-value') || '';
+
+        const propertyCategory =
+        button.getAttribute('data-category') || '';
+
+        const propertyDescription =
+        button.getAttribute('data-property-description') || '';
+
+        const rollName =
+        button.getAttribute('data-roll-name') || '';
+
+        const marketValue =
+        parsePropertyMarketValue(rawMarketValue);
+
+        try {
+        // Opening the modal now waits for the tariff request to finish.
+        await openRatesCalculator({
+        currentTarget: button
+        });
+
+        if (!activeRateTariffs.length) {
+        throw new Error(
+        'No active property-rate tariffs were loaded.'
+        );
+        }
+
+        populateCalculatorFromProperty(
+        marketValue,
+        propertyCategory,
+        propertyDescription,
+        rollName
+        );
+        }
+        catch (error) {
+        console.error(
+        '[RatesCalculator] Property calculator setup failed:',
+        error
+        );
+
+        const marketValueInput =
+        document.getElementById('rateMarketValue');
+
+        if (marketValueInput && marketValue > 0) {
+        marketValueInput.value = marketValue;
+        }
+
+        showRatesAlert(
+        'The property values were loaded, but the category could not be selected automatically. Please select the category manually.'
+        );
+
+        validateRatesInputs();
+        }
+        }
+
+        function parsePropertyMarketValue(value) {
+        if (
+        value === null ||
+        value === undefined ||
+        value === ''
+        ) {
+        return 0;
+        }
+
+        var cleanedValue = String(value)
+        .replace(/\s/g, '')
+        .replace(/R/gi, '')
+        .replace(/,/g, '')
+        .replace(/[^\d.-]/g, '');
+
+        var parsedValue = Number(cleanedValue);
+
+        return Number.isFinite(parsedValue)
+        ? parsedValue
+        : 0;
+        }
+
+
+        function populateCalculatorFromProperty(
+        marketValue,
+        propertyCategory,
+        propertyDescription,
+        rollName
+        ) {
+        var marketValueInput =
+        document.getElementById('rateMarketValue');
+
+        var categorySelect =
+        document.getElementById('rateCategory');
+
+        if (!marketValueInput || !categorySelect) {
+        return;
+        }
+
+        clearRatesAlert();
+        hideRatesResult();
+
+        marketValueInput.value =
+        marketValue > 0
+        ? marketValue
+        : '';
+
+        var matchedTariff =
+        findTariffForPropertyCategory(
+        propertyCategory
+        );
+
+        if (matchedTariff) {
+        categorySelect.value =
+        matchedTariff.categoryCode;
+
+        updateTariffInformation();
+        }
+        else {
+        categorySelect.value = '';
+
+        updateTariffInformation();
+
+        showRatesAlert(
+        'The property category "' +
+        (propertyCategory || 'Unknown') +
+        '" could not be matched automatically. Please select the correct category.'
+        );
+        }
+
+        updateCalculatorPropertyContext(
+        propertyDescription,
+        rollName,
+        propertyCategory
+        );
+
+        validateRatesInputs();
+
+        if (marketValue > 0 && matchedTariff) {
+        window.setTimeout(function () {
+        calculatePossibleRates();
+        }, 150);
+        }
+        else if (marketValue <= 0) {
+        showRatesAlert(
+        'This property does not have a valid market value. Please enter a market value manually.'
+        );
+        }
+        }
+
+        function updateCalculatorPropertyContext(
+        propertyDescription,
+        rollName,
+        originalCategory
+        ) {
+        const context =
+        document.getElementById('ratesPropertyContext');
+
+        // The context panel is optional. The calculator still works when
+        // the current modal markup does not include it.
+        if (!context) {
+        return;
+        }
+
+        setTextContent(
+        'ratesPropertyDescription',
+        propertyDescription || 'Selected property'
+        );
+
+        setTextContent(
+        'ratesPropertyRoll',
+        rollName || '—'
+        );
+
+        setTextContent(
+        'ratesOriginalCategory',
+        originalCategory || '—'
+        );
+
+        context.hidden = false;
+        }
+
+        function hideCalculatorPropertyContext() {
+        const context =
+        document.getElementById('ratesPropertyContext');
+
+        if (context) {
+        context.hidden = true;
+        }
+        }
+
+        function findTariffForPropertyCategory(
+        propertyCategory
+        ) {
+        var normalisedCategory =
+        normalisePropertyCategory(propertyCategory);
+
+        if (!normalisedCategory) {
+        return null;
+        }
+
+        var categoryCode =
+        mapPropertyCategoryToTariffCode(
+        normalisedCategory
+        );
+
+        if (categoryCode) {
+        var codeMatch =
+        activeRateTariffs.find(
+        function (tariff) {
+        return String(
+        tariff.categoryCode || ''
+        ).toUpperCase() === categoryCode;
+        }
+        );
+
+        if (codeMatch) {
+        return codeMatch;
+        }
+        }
+
+        return activeRateTariffs.find(
+        function (tariff) {
+        var tariffName =
+        normalisePropertyCategory(
+        tariff.categoryName
+        );
+
+        return (
+        tariffName === normalisedCategory ||
+        tariffName.includes(normalisedCategory) ||
+        normalisedCategory.includes(tariffName)
+        );
+        }
+        ) || null;
+        }
+
+        function normalisePropertyCategory(value) {
+        return String(value || '')
+        .trim()
+        .toLowerCase()
+        .replace(/&/g, 'and')
+        .replace(/[-_/]/g, ' ')
+        .replace(/\s+/g, ' ');
+        }
+
+        function mapPropertyCategoryToTariffCode(
+        normalisedCategory
+        ) {
+        var categoryMappings = {
+        'res': 'RES',
+        'residential': 'RES',
+
+        'bus': 'BUS',
+        'business': 'BUS',
+        'business and commercial': 'BUS',
+        'business commercial': 'BUS',
+
+        'agric': 'AGRIC',
+        'agricultural': 'AGRIC',
+        'agriculture': 'AGRIC',
+
+        'industrial': 'IND',
+
+        'mining land': 'MINING',
+        'mining': 'MINING',
+
+        'multi': 'MULTI',
+        'multipurpose': 'MULTI',
+        'multi purpose': 'MULTI',
+
+        'municipal property': 'MUNICIPAL',
+        'municipal': 'MUNICIPAL',
+
+        'private open space': 'PRIVATE_OPEN',
+
+        'public benefit organisation': 'PBO',
+        'public benefit organization': 'PBO',
+
+        'public open space': 'PUBLIC_OPEN',
+
+        'public service infrastructure': 'PSI',
+
+        'public service infrastructure private':
+        'PSI_PRIVATE',
+
+        'public service purpose': 'PSP',
+
+        'religious': 'RELIGIOUS',
+
+        'residential consent use':
+        'RES_CONSENT',
+
+        'township development':
+        'TOWNSHIP',
+
+        'vacant land': 'VACANT',
+        'vacant': 'VACANT',
+
+        'unauthorised use':
+        'UNAUTHORISED',
+
+        'unauthorized use':
+        'UNAUTHORISED'
+        };
+
+        return categoryMappings[
+        normalisedCategory
+        ] || null;
+        }
     </script>
 
     @Html.AntiForgeryToken()

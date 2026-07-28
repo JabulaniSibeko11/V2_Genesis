@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using V2_Genesis.Models.Rates;
 using V2_Genesis.Models.ViewModels.Home;
 using V2_Genesis.Services;
 using V2_Genesis.Services.Interfaces;
@@ -15,18 +16,21 @@ public class HomeController : Controller
     private readonly ValuationRollSettings _roll;
     private readonly IHomeSearchService _homeSearchService;
     private readonly ILogger<HomeController> _logger;
-
+    private readonly IPropertyRateCalculatorService _rateCalculator;
     public HomeController(
         IAnnouncementService announcement,
         IOptions<DisclaimerSettings> disclaimerOpts,
         IOptions<ValuationRollSettings> rollOpts,
-        IHomeSearchService homeSearchService,ILogger<HomeController> logger)
+        IHomeSearchService homeSearchService,
+        ILogger<HomeController> logger,
+        IPropertyRateCalculatorService rateCalculator)
     {
         _announcement = announcement;
         _disclaimer = disclaimerOpts.Value;
         _roll = rollOpts.Value;
         _homeSearchService = homeSearchService;
         _logger = logger;
+        _rateCalculator = rateCalculator;
     }
     public IActionResult Contact() { 
     return View();
@@ -139,5 +143,66 @@ public class HomeController : Controller
             return PartialView("_HomeSearchNoResults");
 
         return PartialView("_HomeSearchResults", results);
+    }
+
+    [HttpGet]
+    [AllowAnonymous]
+    [Route("home/rates/tariffs")]
+    public async Task<IActionResult> GetRateTariffs(
+    CancellationToken cancellationToken)
+    {
+        var tariffs = await _rateCalculator
+            .GetActiveTariffsAsync(cancellationToken);
+
+        return Json(tariffs.Select(x => new
+        {
+            financialYearId = x.FinancialYearId,
+            financialYear = x.FinancialYear.FinancialYear,
+            categoryCode = x.CategoryCode,
+            categoryName = x.CategoryName,
+            ratio = x.Ratio,
+            annualTariff = x.AnnualTariff,
+            isZeroRated = x.IsZeroRated,
+            isMultipurpose = x.IsMultipurpose,
+            isPenaltyTariff = x.IsPenaltyTariff
+        }));
+    }
+
+    [HttpPost]
+    [AllowAnonymous]
+    [ValidateAntiForgeryToken]
+    [Route("home/rates/calculate")]
+    public async Task<IActionResult> CalculatePossibleRates(
+    [FromForm] PossibleRateCalculationRequest request,
+    CancellationToken cancellationToken)
+    {
+        try
+        {
+            var result = await _rateCalculator.CalculateAsync(
+                request,
+                cancellationToken);
+
+            return Json(new
+            {
+                success = true,
+                data = result
+            });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new
+            {
+                success = false,
+                message = ex.Message
+            });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new
+            {
+                success = false,
+                message = ex.Message
+            });
+        }
     }
 }

@@ -21,6 +21,7 @@ using Microsoft.EntityFrameworkCore;
 using V2_Genesis.Models;
 using V2_Genesis.Models.Entities;
 using V2_Genesis.Models.Notifications;
+using V2_Genesis.Models.Rates;
 
 namespace V2_Genesis.Data
 {
@@ -48,6 +49,10 @@ namespace V2_Genesis.Data
         public DbSet<Obj_WithdrawalsModel> Obj_Withdrawals { get; set; }
         public DbSet<Que_WithdrawalsModel> Que_Withdrawals { get; set; }
         public DbSet<Notifications> Notifications { get; set; }
+
+        public DbSet<RateFinancialYear> RateFinancialYears =>Set<RateFinancialYear>();
+
+        public DbSet<PropertyRateTariff> PropertyRateTariffs =>Set<PropertyRateTariff>();
 
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options) { }
@@ -135,7 +140,25 @@ namespace V2_Genesis.Data
                 e.Property(x => x.Objection_No)
                  .ValueGeneratedOnAddOrUpdate();  // DB-computed trigger
             });
+            builder.Entity<RateFinancialYear>(entity =>
+            {
+                entity.HasIndex(x => x.FinancialYear)
+                    .IsUnique();
+            });
 
+            builder.Entity<PropertyRateTariff>(entity =>
+            {
+                entity.HasIndex(x => new
+                {
+                    x.FinancialYearId,
+                    x.CategoryCode
+                }).IsUnique();
+
+                entity.HasOne(x => x.FinancialYear)
+                    .WithMany(x => x.Tariffs)
+                    .HasForeignKey(x => x.FinancialYearId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
             // ── Obj_Property_Info_AppealModel — key is Appeal_ID ──
             // Already declared correctly in the model.
         }

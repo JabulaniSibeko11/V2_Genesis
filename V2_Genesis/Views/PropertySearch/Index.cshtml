@@ -5,10 +5,15 @@
     var schemes   = ViewBag.Schemes   as List<string> ?? new();
     ViewData["Title"] = $"Property Search – {roll?.Short}";
     Layout = "~/Views/Shared/_ClientLayout.cshtml";
-}
+} 
 
 @section Styles {
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css" />
+
     <link href="~/css/views/clientdashboardcss.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/views/client-dashboard.css" rel="stylesheet" asp-append-version="true" />
+
     <link href="~/css/views/property-search.css"    rel="stylesheet" asp-append-version="true" />
    @*  <link href="~/css/views/searchpropertycss.css"  rel="stylesheet" asp-append-version="true" /> *@
 }
@@ -19,9 +24,9 @@
 
     <div class="srch-hero">
         <div class="srch-hero-inner">
-            <div class="srch-hero-logo">
+           @*  <div class="srch-hero-logo">
                 <img src="~/images/joburg_logo.png" alt="City of Johannesburg" />
-            </div>
+            </div> *@
             <div class="srch-hero-text">
                 <div class="srch-hero-org">City of Johannesburg · Valuation Services</div>
                 <h1 class="srch-hero-title">
@@ -222,6 +227,13 @@
 </div>
 
 @section Scripts {
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+
     <script>
         const stand  = document.getElementById('Stand');
         const scheme = document.getElementById('Scheme');
