@@ -10,4 +10,6 @@ public interface IDashboardService
 {
     Task<RollData> GetRollDataAsync(string rollSource, string userId, string userEmail);
     Task<List<AttrLinkedPropertyResult>> GetAttributesLinkedAsync(string userId);
+
+   
 }

@@ -183,6 +183,89 @@
         "Rejected" => "<span class='cd-pill cd-pill-rejected'>Rejected</span>",
         _ => $"<span class='cd-pill cd-pill-pending'>{status ?? "Pending"}</span>"
     };
+
+    string GetReviewStatusPill(string? status)
+    {
+        if (string.Equals(
+                status,
+                "Open",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return """
+            <span class="cd-pill cd-pill-completed">
+                Review Open
+            </span>
+            """;
+        }
+
+        return """
+        <span class="cd-pill cd-pill-rejected">
+            Review Closed
+        </span>
+        """;
+    }
+
+    string FormatReviewCloseDate(DateTime? closeDate)
+    {
+        return closeDate.HasValue
+            ? closeDate.Value.ToString("dd MMM yyyy")
+            : "Not set";
+    }
+    string ResolveSection78PropertyType(string? category)
+    {
+        var value =
+            category?.Trim()
+            ?? string.Empty;
+
+        if (
+            value.Contains(
+                "Multiple",
+                StringComparison.OrdinalIgnoreCase)
+            ||
+            value.Contains(
+                "Multipurpose",
+                StringComparison.OrdinalIgnoreCase)
+            ||
+            value.Contains(
+                "Multi Purpose",
+                StringComparison.OrdinalIgnoreCase)
+        )
+        {
+            return "Multi";
+        }
+
+        if (
+            value.Contains(
+                "Business",
+                StringComparison.OrdinalIgnoreCase)
+            ||
+            value.Contains(
+                "Commercial",
+                StringComparison.OrdinalIgnoreCase)
+            ||
+            value.Contains(
+                "Industrial",
+                StringComparison.OrdinalIgnoreCase)
+        )
+        {
+            return "Bus";
+        }
+
+        if (
+            value.Contains(
+                "Agricultural",
+                StringComparison.OrdinalIgnoreCase)
+            ||
+            value.Contains(
+                "Agriculture",
+                StringComparison.OrdinalIgnoreCase)
+        )
+        {
+            return "Agric";
+        }
+
+        return "Res";
+    }
 }
 
 
@@ -386,7 +469,44 @@
         </button>
     </div>
 }
+@if (TempData["ReviewStatus"] != null)
+{
+    var reviewStatus =
+        TempData["ReviewStatus"]?.ToString();
 
+    <div class="dash-link-alert
+        @(string.Equals(
+                     reviewStatus,
+                     "Open",
+                     StringComparison.OrdinalIgnoreCase)
+                     ? "dash-link-success"
+                     : "dash-link-error")">
+
+        <i class="fa-solid
+            @(string.Equals(
+                           reviewStatus,
+                           "Open",
+                           StringComparison.OrdinalIgnoreCase)
+                           ? "fa-unlock"
+                           : "fa-lock")">
+        </i>
+
+        <div>
+            <strong>
+                Section 78 status:
+                @reviewStatus
+            </strong>
+
+            @if (TempData["ReviewCloseDate"] != null)
+            {
+                <div>
+                    Review closing date:
+                    @TempData["ReviewCloseDate"]
+                </div>
+            }
+        </div>
+    </div>
+}
 
 <!-- ── Tiles / List toggle (simple — no AJAX, everything below is already rendered) ── -->
 <div class="cd-body" style="padding-bottom:0;">
@@ -629,7 +749,9 @@
                                             <th>Category</th>
                                             <th>Town</th>
                                             <th>Market Value</th>
-                                            <th>With Effective Date</th>
+                                            <th>Effective Date</th>
+                                            <th>Review Status</th>
+                                            <th>Review Close Date</th>
                                             <th>Options</th>
                                         </tr>
                                     </thead>
@@ -638,14 +760,45 @@
                                         {
                                             <tr>
                                                 <td>@item.PropertyDesc</td>
+
                                                 <td>@item.CatDesc</td>
+
                                                 <td>@item.TownNameDesc</td>
+
                                                 <td>@FormatZAR(item.MarketValue)</td>
+
                                                 <td>
-                                                    @(DateTime.TryParse(item.WefDate, out var wefDate)
-                                                        ? wefDate.ToString("dd MMMM yyyy")
-                                                        : item.WefDate)
+                                                    @(DateTime.TryParse(
+                                                        item.WefDate,
+                                                        out var wefDate)
+                                                            ? wefDate.ToString("dd MMM yyyy")
+                                                            : item.WefDate)
                                                 </td>
+
+                                                <td>
+                                                    @Html.Raw(
+                                                        GetReviewStatusPill(
+                                                            item.Review_Status))
+                                                </td>
+
+                                                <td>
+                                                    @if (item.Review_Close_Date.HasValue)
+                                                    {
+                                                        <span>
+                                                            <i class="fa-solid fa-calendar-day"></i>
+                                                            @FormatReviewCloseDate(
+                                                                item.Review_Close_Date)
+                                                        </span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="text-muted">
+                                                            No review closing date
+                                                        </span>
+                                                    }
+                                                </td>
+
+                                                
                                                 <td>
                                                     <div class="dropdown">
                                                         <button class="cd-action-btn dropdown-toggle"
@@ -653,12 +806,107 @@
                                                             Actions
                                                         </button>
                                                         <ul class="dropdown-menu">
-                                                            <li>
-                                                                <a class="dropdown-item"
-                                                                       href="/objection/check?rollSource=@roll.Source&sourceTable=@item.PropertyFrom&unitKey=@item.UnitKey&valuationKey=@item.ValuationKey&appealStatus=False">
-                                                                    <i class="fa-solid fa-file-pen"></i> Lodge Query
-                                                                </a>
-                                                            </li>
+                                                         @{
+    var reviewIsOpen =
+        string.Equals(
+            item.Review_Status,
+            "Open",
+            StringComparison.OrdinalIgnoreCase);
+
+    var reviewIsClosed =
+        string.Equals(
+            item.Review_Status,
+            "Closed",
+            StringComparison.OrdinalIgnoreCase);
+
+  
+    var canLodgeQuery =
+        reviewIsOpen &&
+        !item.Review_Close_Date.HasValue;
+
+    var canLodgeReview =
+        reviewIsOpen &&
+        item.Review_Close_Date.HasValue;
+}
+
+@if (canLodgeQuery)
+{
+    <li>
+        @{
+            var querySourceTable =
+                string.IsNullOrWhiteSpace(item.PropertyFrom)
+                    ? "Objection_Query"
+                    : item.PropertyFrom;
+        }
+
+        <a class="dropdown-item"
+           href="/objection/check?rollSource=@roll.Source&sourceTable=@querySourceTable&unitKey=@item.UnitKey&valuationKey=@item.ValuationKey&appealStatus=False">
+
+            <i class="fa-solid fa-file-circle-question"></i>
+            Lodge Query
+        </a>
+    </li>
+}
+else if (canLodgeReview)
+{
+    
+        var linkedReviewUrl =
+    "/objection/check"
+    + "?rollSource=" + Uri.EscapeDataString(roll.Source ?? "Query")
+    + "&sourceTable=Objection_Query"
+    + "&unitKey=" + Uri.EscapeDataString(item.UnitKey ?? "")
+    + "&valuationKey=" + Uri.EscapeDataString(item.ValuationKey ?? "")
+    + "&appealStatus=False"
+    + "&PropertyFrom=Objection_Query"
+    + "&qtype=Review";
+    
+
+    <li>
+        <a class="dropdown-item"
+           href="@linkedReviewUrl">
+
+            <i class="fa-solid fa-magnifying-glass-chart"
+               style="color:#b88700;"></i>
+
+            <strong>Lodge Review</strong>
+        </a>
+    </li>
+}
+else if (reviewIsClosed)
+{
+    <li>
+        <span class="dropdown-item disabled"
+              aria-disabled="true">
+
+            <i class="fa-solid fa-lock"></i>
+            Review Closed
+        </span>
+    </li>
+
+    @if (item.Review_Close_Date.HasValue)
+    {
+        <li>
+            <span class="dropdown-item-text text-muted">
+                Closed on
+                @item.Review_Close_Date.Value
+                    .ToString("dd MMM yyyy")
+            </span>
+        </li>
+    }
+}
+else
+{
+    <li>
+        <span class="dropdown-item disabled"
+              aria-disabled="true">
+
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            Section 78 status unavailable
+        </span>
+    </li>
+}
+                                                            
+                                                            
                                                             <li>
                                                                 <a class="dropdown-item"
                                                                        href="/property/unlink?linkedId=@item.Id&rollSource=@roll.Source&returnUrl=/Dashboard?openRoll=@roll.Source">
@@ -698,7 +946,9 @@
                                             <th>Category</th>
                                             <th>Town</th>
                                             <th>Market Value</th>
-                                            <th>Status</th>
+                                            <th>Query Status</th>
+                                            <th>Review Status</th>
+                                            <th>Review Close Date</th>
                                             <th>Options</th>
                                         </tr>
                                     </thead>
@@ -711,7 +961,31 @@
                                                 <td>@item.Old_Category</td>
                                                 <td>@item.Town_Name</td>
                                                 <td>@FormatZAR(item.Old_Market_Value)</td>
-                                                <td>@Html.Raw(GetStatusPill(item.objection_Status))</td>
+                                                <td>
+                                                    @Html.Raw(
+                                                        GetStatusPill(
+                                                            item.objection_Status))
+                                                </td>
+
+                                                <td>
+                                                    @Html.Raw(
+                                                        GetReviewStatusPill(
+                                                            item.Review_Status))
+                                                </td>
+
+                                                <td>
+                                                    @if (item.Review_Close_Date.HasValue)
+                                                    {
+                                                        @item.Review_Close_Date.Value.ToString("dd MMM yyyy")
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="text-muted">
+                                                            Not set
+                                                        </span>
+                                                    }
+                                                </td>
+
                                                 <td>
                                                     <div class="dropdown">
                                                         <button class="cd-action-btn dropdown-toggle"
@@ -769,17 +1043,70 @@
                                                                 </li>
                                                             }
                                                             @* ── Review button — only when Query-Finalized ── *@
-                                                            @if (item.objection_Status == "Query-Finalized")
+                                                            @if (item.CanLodgeReview)
                                                             {
-                                                                <li><hr class="dropdown-divider" /></li>
+                                                                var reviewUrl =
+                                                                    "/Section78/Section78Query"
+                                                                    + "?qtype=Review"
+                                                                    + "&UKey=" + Uri.EscapeDataString(
+                                                                        item.Unit_key ?? "")
+                                                                    + "&VKey=" + Uri.EscapeDataString(
+                                                                        item.Valuation_Key ?? "")
+                                                                    + "&PropDesc=" + Uri.EscapeDataString(
+                                                                        item.Property_Desc ?? "")
+                                                                    + "&addr="
+                                                                    + "&cat=" + Uri.EscapeDataString(
+                                                                        item.Old_Category ?? "")
+                                                                    + "&queryNo=" + Uri.EscapeDataString(
+                                                                        item.Objection_No ?? "");
+
+                                                                <li>
+                                                                    <hr class="dropdown-divider" />
+                                                                </li>
+
                                                                 <li>
                                                                     <a class="dropdown-item"
-                                                                           href="/Section78/Section78Query?qtype=Review&UKey=@item.Unit_key&VKey=@item.Valuation_Key&PropDesc=@item.Property_Desc&addr=&cat=@item.Old_Category">
-                                                                        <i class="fa-solid fa-magnifying-glass"
-                                                                           style="color:#e6b000;"></i>
+                                                                           href="@reviewUrl">
+                                                                        <i class="fa-solid fa-magnifying-glass-chart"
+                                                                           style="color:#b88700;"></i>
+
                                                                         <strong>Lodge Review</strong>
                                                                     </a>
                                                                 </li>
+                                                            }
+                                                            else if (
+                                                                string.Equals(
+                                                                    item.objection_Status,
+                                                                    "Query-Finalized",
+                                                                    StringComparison.OrdinalIgnoreCase)
+                                                                &&
+                                                                string.Equals(
+                                                                    item.Review_Status,
+                                                                    "Closed",
+                                                                    StringComparison.OrdinalIgnoreCase))
+                                                            {
+                                                                <li>
+                                                                    <hr class="dropdown-divider" />
+                                                                </li>
+
+                                                                <li>
+                                                                    <span class="dropdown-item disabled"
+                                                                          aria-disabled="true">
+                                                                        <i class="fa-solid fa-lock"></i>
+                                                                        Review Closed
+                                                                    </span>
+                                                                </li>
+
+                                                                @if (item.Review_Close_Date.HasValue)
+                                                                {
+                                                                    <li>
+                                                                        <span class="dropdown-item-text text-muted">
+                                                                            The review period closed on
+                                                                            @item.Review_Close_Date.Value
+                                                                            .ToString("dd MMM yyyy").
+                                                                        </span>
+                                                                    </li>
+                                                                }
                                                             }
                                                         </ul>
                                                     </div>
@@ -810,8 +1137,9 @@
                             {
                                 <div style="padding:20px 24px; font-size:13.5px; color:#888;">
                                     <i class="fa-solid fa-circle-info" style="color:#89b7b2; margin-right:6px;"></i>
-                                    No reviews lodged yet. A <strong>Lodge Review</strong> button will appear
-                                    on your Query once its status is <strong>Query-Finalized</strong>.
+                                    No reviews lodged yet. A <strong>Lodge Review</strong>
+                                    button will appear when the Query has been finalised and
+                                    the property’s Section 78 review period is still open.
                                 </div>
                             }
                             else

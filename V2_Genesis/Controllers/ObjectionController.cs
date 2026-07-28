@@ -66,14 +66,15 @@ public class ObjectionController : Controller
     [HttpGet]
     [Route("objection/check")]
     public async Task<IActionResult> CheckProperty(
-       string rollSource,
-       string sourceTable,
-       string? unitKey = null,
-       string? valuationKey = null,
-       string? objectionNo = null,
-       string appealStatus = "False",
-       string? PropertyFrom = null,
-       bool omission = false)
+    string rollSource,
+    string sourceTable,
+    string? unitKey = null,
+    string? valuationKey = null,
+    string? objectionNo = null,
+    string appealStatus = "False",
+    string? PropertyFrom = null,
+    bool omission = false,
+    string? qtype = null)
     {
         unitKey = FloatKeyHelper.Normalize(unitKey);
         valuationKey = FloatKeyHelper.Normalize(valuationKey);
@@ -118,6 +119,41 @@ public class ObjectionController : Controller
             TempData.Peek("OmissionStatus")?.ToString() == "True";
 
         bool isAppeal = appealStatus == "True";
+        var isSection78Review =
+    string.Equals(
+        qtype,
+        "Review",
+        StringComparison.OrdinalIgnoreCase);
+
+        var section78ProcessType =
+            isSection78Review
+                ? "Review"
+                : "Query";
+
+        TempData["ReviewStat"] =
+            isSection78Review
+                ? "R"
+                : "Q";
+
+        TempData["Section78ProcessType"] =
+            section78ProcessType;
+
+        TempData.Keep("ReviewStat");
+        TempData.Keep("Section78ProcessType");
+
+        ViewBag.IsSection78Review =
+            isSection78Review;
+
+        ViewBag.Section78ProcessType =
+            section78ProcessType;
+
+        HttpContext.Session.SetString(
+    "Section78ProcessType",
+    section78ProcessType);
+
+        HttpContext.Session.SetString(
+            "ReviewStat",
+            isSection78Review ? "R" : "Q");
 
         if (isOmission)
         {
@@ -207,30 +243,71 @@ public class ObjectionController : Controller
         if (isQuery)
         {
             var queItem = await _section78Service
-                .GetPropertyDetailAsync(unitKey, valuationKey);
+                .GetPropertyDetailAsync(
+                    unitKey,
+                    valuationKey);
 
             Queitems = queItem != null
-                ? new List<Section78PropertyDetail> { queItem }
+                ? new List<Section78PropertyDetail>
+                {
+            queItem
+                }
                 : new List<Section78PropertyDetail>();
 
             if (Queitems.Any())
             {
                 var q = Queitems.First();
 
-                TempData["CurrentFilter_PD"] = q.PropertyDesc;
-                TempData["CurrentFilter_Prop"] = q.PropertyDesc;
-                TempData["CurrentFilter_CD"] = q.CatDesc;
-                TempData["CurrentFilter_LSA"] = q.LisStreetAddress;
-                TempData["CurrentFilter_RA"] = q.RateableArea;
-                TempData["CurrentFilter_MV"] = q.MarketValue;
-                TempData["CurrentFilter_ON"] = q.OwnerName;
-                TempData["CurrentFilter_TN"] = q.TownNameDesc;
-                TempData["CurrentFilter_P_ID"] = q.PremiseId;
-                TempData["CurrentFilter_P_I"] = q.PropertyId;
-                TempData["CurrentFilter_UK"] = q.UnitKey;
-                TempData["CurrentFilter_VK"] = q.ValuationKey;
-                TempData["CurrentFilter_S"] = q.Sector;
-                TempData["AppealStatus"] = "False";
+                TempData["CurrentFilter_PD"] =
+                    q.PropertyDesc;
+
+                TempData["CurrentFilter_Prop"] =
+                    q.PropertyDesc;
+
+                TempData["CurrentFilter_CD"] =
+                    q.CatDesc;
+
+                TempData["CurrentFilter_LSA"] =
+                    q.LisStreetAddress;
+
+                TempData["CurrentFilter_RA"] =
+                    q.RateableArea;
+
+                TempData["CurrentFilter_MV"] =
+                    q.MarketValue;
+
+                TempData["CurrentFilter_ON"] =
+                    q.OwnerName;
+
+                TempData["CurrentFilter_TN"] =
+                    q.TownNameDesc;
+
+                TempData["CurrentFilter_P_ID"] =
+                    q.PremiseId;
+
+                TempData["CurrentFilter_P_I"] =
+                    q.PropertyId;
+
+                TempData["CurrentFilter_UK"] =
+                    q.UnitKey;
+
+                TempData["CurrentFilter_VK"] =
+                    q.ValuationKey;
+
+                TempData["CurrentFilter_S"] =
+                    q.Sector;
+
+                TempData["AppealStatus"] =
+                    "False";
+
+                TempData["ReviewStat"] =
+                    isSection78Review ? "R" : "Q";
+
+                TempData["Section78ProcessType"] =
+                    section78ProcessType;
+
+                TempData.Keep("ReviewStat");
+                TempData.Keep("Section78ProcessType");
 
                 KeepObjectionFormTempData();
             }
@@ -821,7 +898,10 @@ public class ObjectionController : Controller
         "Omission_Address",
         "Omission_Stand",
         "Omission_Scheme",
-        "Omission_Unit"
+        "Omission_Unit",
+
+        "ReviewStat",
+"Section78ProcessType"
     };
 
         foreach (var key in keys)
@@ -848,6 +928,9 @@ public class ObjectionController : Controller
         "RollSource",
         "SourceTable",
         "PropertyFrom",
+
+         "ReviewStat",
+    "Section78ProcessType",
 
         "CurrentFilter_PD",
         "CurrentFilter_Prop",
@@ -1569,41 +1652,6 @@ public class ObjectionController : Controller
     {
         return $"/Admin/Search?reference={Uri.EscapeDataString(referenceNumber)}";
     }
-    //[HttpGet]
-    //[Route("notice/acknowledgement/download")]
-    //public async Task<IActionResult> DownloadAcknowledgement(string objectionNo,string rollSource)
-    //{
-    //    if (string.IsNullOrWhiteSpace(objectionNo))
-    //    {
-    //        TempData["DownloadError"] = "Reference number is missing.";
-    //        return RedirectToAction("Index", "Dashboard");
-    //    }
-
-    //    if (string.IsNullOrWhiteSpace(rollSource))
-    //    {
-    //        TempData["DownloadError"] = "Roll source is missing.";
-    //        return RedirectToAction("Index", "Dashboard");
-    //    }
-
-    //    //var result = await _noticeService.GetSavedAcknowledgementAsync(
-    //    //    objectionNo,
-    //    //    rollSource);
-
-    //    if (!result.Success || result.FileBytes == null)
-    //    {
-    //        TempData["DownloadError"] = result.Error
-    //            ?? "Acknowledgement PDF was not found.";
-
-    //        return RedirectToAction("Index", "Dashboard", new
-    //        {
-    //            openRoll = rollSource
-    //        });
-    //    }
-
-    //    return File(
-    //        result.FileBytes,
-    //        "application/pdf",
-    //        result.FileName ?? $"{objectionNo}_Acknowledgement.pdf");
-    //}
+   
 
 }

@@ -41,5 +41,7 @@
         public string? ADDR5 { get; set; }
         public string? LeaseStatus { get; set; }
         public string? AdditionalNotes { get; set; }
+        public DateTime? Review_Close_Date { get; set; }
+        public string? Review_Status { get; set; }
+        }
     }
-}

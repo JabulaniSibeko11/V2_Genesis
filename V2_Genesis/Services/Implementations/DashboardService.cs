@@ -12,6 +12,7 @@ public class DashboardService : IDashboardService
 {
     private readonly IConfiguration _config;
     private readonly AttributesDbContext _attrDb;
+    private readonly ILogger<DashboardService> _logger;
 
     private const string SP_LINKED = "DashboardLinked";
     private const string SP_OBJECTED = "DashboardObjection";
@@ -24,99 +25,325 @@ public class DashboardService : IDashboardService
     private readonly string SP_QUERY_NOTIFICATION = "DashboardNotification";
     public DashboardService(
         IConfiguration config,
-        AttributesDbContext attrDb)
+        AttributesDbContext attrDb,
+        ILogger<DashboardService> logger)
     {
         _config = config;
         _attrDb = attrDb;
+        _logger = logger;
     }
 
     // ── Roll data — unchanged ─────────────────────────────────────────
     public async Task<RollData> GetRollDataAsync(
-          string rollSource, string userId, string userEmail)
+         string rollSource,
+         string userId,
+         string userEmail)
     {
-        var rollData = new RollData();
+        var rollData =
+            new RollData();
 
-        if (!RollSearchRegistry.Configs.TryGetValue(rollSource, out var config))
+        if (string.IsNullOrWhiteSpace(rollSource))
             return rollData;
 
-        var connString = _config.GetConnectionString(config.ConnectionKey)
-                         ?? _config.GetConnectionString("DefaultConnection")!;
+        if (string.IsNullOrWhiteSpace(userId))
+            return rollData;
 
-        // ── Detect if this is a Section 78 Query roll ─────────────────
-        bool isQuery = config.IsQuery;   // flag on RollSearchConfig
-                                         // OR: rollSource.Contains("Query")
+        if (!RollSearchRegistry.Configs.TryGetValue(
+                rollSource,
+                out var config))
+        {
+            _logger.LogWarning(
+                "Dashboard requested for unknown roll source {RollSource}",
+                rollSource);
 
-        var spLinked = isQuery ? SP_QUERY_LINKED : SP_LINKED;
-        var spObjected = isQuery ? SP_QUERY_OBJECTED : SP_OBJECTED;
+            return rollData;
+        }
 
-        await using var conn = new SqlConnection(connString);
+        var connectionString =
+            _config.GetConnectionString(
+                config.ConnectionKey)
+            ?? _config.GetConnectionString(
+                "DefaultConnection");
+
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            _logger.LogError(
+                "No dashboard connection string was found for roll {RollSource} using key {ConnectionKey}",
+                rollSource,
+                config.ConnectionKey);
+
+            return rollData;
+        }
+
+        var isQuery =
+            config.IsQuery ||
+            rollSource.Equals(
+                "Query",
+                StringComparison.OrdinalIgnoreCase);
+
+        var linkedProcedure =
+            isQuery
+                ? SP_QUERY_LINKED
+                : SP_LINKED;
+
+        var objectedProcedure =
+            isQuery
+                ? SP_QUERY_OBJECTED
+                : SP_OBJECTED;
+
+        await using var conn =
+            new SqlConnection(connectionString);
+
         await conn.OpenAsync();
 
-        // ── Linked properties ─────────────────────────────────────────
+        // ─────────────────────────────────────────────────────────
+        // Linked properties
+        // ─────────────────────────────────────────────────────────
+
         try
         {
-            var linked = await conn.QueryAsync<LinkedPropertyResult>(
-                spLinked,
-                new { userName = userId },
-                commandType: CommandType.StoredProcedure,
-                commandTimeout: 60);
-            rollData.LinkedProperties = linked.ToList();
+            var linked =
+                await conn.QueryAsync<LinkedPropertyResult>(
+                    linkedProcedure,
+                    new
+                    {
+                        userName = userId
+                    },
+                    commandType:
+                        CommandType.StoredProcedure,
+                    commandTimeout: 60);
+
+            var linkedProperties =
+                linked.ToList();
+
+            if (isQuery)
+            {
+                NormaliseQueryLinkedProperties(
+                    linkedProperties);
+            }
+
+            rollData.LinkedProperties =
+                linkedProperties;
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine(
-                $"[Dashboard] {spLinked} failed for {rollSource}: {ex.Message}");
+            _logger.LogError(
+                ex,
+                "{StoredProcedure} failed for roll {RollSource} and user {UserId}",
+                linkedProcedure,
+                rollSource,
+                userId);
         }
 
-        // ── Submitted queries / objections ────────────────────────────
+        // ─────────────────────────────────────────────────────────
+        // Submitted Queries / Reviews / Objections
+        // ─────────────────────────────────────────────────────────
+
         try
         {
-            var objected = await conn.QueryAsync<ObjectedPropertyResult>(
-                spObjected,
-                new { userName = userId },
-                commandType: CommandType.StoredProcedure,
-                commandTimeout: 60);
-            rollData.ObjectedProperties = objected.ToList();
+            var objected =
+                await conn.QueryAsync<ObjectedPropertyResult>(
+                    objectedProcedure,
+                    new
+                    {
+                        userName = userId
+                    },
+                    commandType:
+                        CommandType.StoredProcedure,
+                    commandTimeout: 60);
+
+            var objectedProperties =
+                objected.ToList();
+
+            if (isQuery)
+            {
+                NormaliseSubmittedQueryProperties(
+                    objectedProperties);
+            }
+
+            rollData.ObjectedProperties =
+                objectedProperties;
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine(
-                $"[Dashboard] {spObjected} failed for {rollSource}: {ex.Message}");
+            _logger.LogError(
+                ex,
+                "{StoredProcedure} failed for roll {RollSource} and user {UserId}",
+                objectedProcedure,
+                rollSource,
+                userId);
         }
 
-        // ── Appeals — same SP for both roll types ─────────────────────
+        // ─────────────────────────────────────────────────────────
+        // Appeals
+        // ─────────────────────────────────────────────────────────
+
         try
         {
-            var appeals = await conn.QueryAsync<AppealResult>(
+            var appeals =
+                await conn.QueryAsync<AppealResult>(
+                    SP_APPEALS,
+                    new
+                    {
+                        userName = userId
+                    },
+                    commandType:
+                        CommandType.StoredProcedure,
+                    commandTimeout: 60);
+
+            rollData.Appeals =
+                appeals.ToList();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "{StoredProcedure} failed for roll {RollSource} and user {UserId}",
                 SP_APPEALS,
-                new { userName = userId },
-                commandType: CommandType.StoredProcedure,
-                commandTimeout: 60);
-            rollData.Appeals = appeals.ToList();
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine(
-                $"[Dashboard] {SP_APPEALS} failed for {rollSource}: {ex.Message}");
+                rollSource,
+                userId);
         }
 
-        // ── Notifications — uses email, same SP for both ───────────────
+        // ─────────────────────────────────────────────────────────
+        // Notifications
+        // ─────────────────────────────────────────────────────────
+
         try
         {
-            var notifications = await conn.QueryAsync<NotificationResult>(
-                SP_NOTIFICATIONS,
-                new { userEmail = userEmail },
-                commandType: CommandType.StoredProcedure,
-                commandTimeout: 60);
-            rollData.Notifications = notifications.ToList();
+            if (!string.IsNullOrWhiteSpace(userEmail))
+            {
+                var notifications =
+                    await conn.QueryAsync<NotificationResult>(
+                        SP_NOTIFICATIONS,
+                        new
+                        {
+                            userEmail
+                        },
+                        commandType:
+                            CommandType.StoredProcedure,
+                        commandTimeout: 60);
+
+                rollData.Notifications =
+                    notifications.ToList();
+            }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine(
-                $"[Dashboard] {SP_NOTIFICATIONS} failed for {rollSource}: {ex.Message}");
+            _logger.LogError(
+                ex,
+                "{StoredProcedure} failed for roll {RollSource} and email {UserEmail}",
+                SP_NOTIFICATIONS,
+                rollSource,
+                userEmail);
         }
 
         return rollData;
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // Section 78 Query dashboard safeguards
+    // ─────────────────────────────────────────────────────────────
+
+    private static void NormaliseQueryLinkedProperties(
+        List<LinkedPropertyResult> properties)
+    {
+        foreach (var property in properties)
+        {
+            property.Review_Status =
+                NormaliseReviewStatus(
+                    property.Review_Status,
+                    property.Review_Close_Date);
+
+            /*
+             * The updated DashboardLinkedQ procedure should return
+             * AvailableAction. This fallback protects the UI if an
+             * older row or partial result does not contain it.
+             */
+            if (string.IsNullOrWhiteSpace(
+                    property.AvailableAction))
+            {
+                property.AvailableAction =
+                    ResolveAvailableAction(
+                        property.Review_Status,
+                        property.HasCompletedQuery);
+            }
+        }
+    }
+
+    private static void NormaliseSubmittedQueryProperties(
+        List<ObjectedPropertyResult> properties)
+    {
+        foreach (var property in properties)
+        {
+            property.Review_Status =
+                NormaliseReviewStatus(
+                    property.Review_Status,
+                    property.Review_Close_Date);
+
+            property.CanLodgeReview =
+                string.Equals(
+                    property.Review_Status,
+                    "Open",
+                    StringComparison.OrdinalIgnoreCase);
+
+            if (string.IsNullOrWhiteSpace(
+                    property.ReviewActionText))
+            {
+                property.ReviewActionText =
+                    property.CanLodgeReview
+                        ? "Lodge Review"
+                        : "Review Closed";
+            }
+        }
+    }
+
+    private static string NormaliseReviewStatus(
+        string? databaseStatus,
+        DateTime? reviewCloseDate)
+    {
+        /*
+         * The persisted Review_Status is the primary value.
+         */
+        if (string.Equals(
+                databaseStatus,
+                "Closed",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return "Closed";
+        }
+
+        /*
+         * A past closing date must never remain open in the UI,
+         * even if the SQL Agent job has not run yet.
+         */
+        if (reviewCloseDate.HasValue &&
+            reviewCloseDate.Value.Date < DateTime.Today)
+        {
+            return "Closed";
+        }
+
+        /*
+         * NULL closing date means the initial Query process is
+         * still available.
+         */
+        return "Open";
+    }
+
+    private static string ResolveAvailableAction(
+        string? reviewStatus,
+        bool hasCompletedQuery)
+    {
+        if (string.Equals(
+                reviewStatus,
+                "Closed",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return "Closed";
+        }
+
+        return hasCompletedQuery
+            ? "Review"
+            : "Query";
     }
 
     // ── Attributes linked properties ──────────────────────────────────

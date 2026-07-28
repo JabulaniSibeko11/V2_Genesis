@@ -26,6 +26,8 @@ public class PropertySearchResult
     public string? Reason { get; set; }
     public string? AdditionalNotes { get; set; }
     public string? Lease { get; set; }
+    public DateTime? Review_Close_Date { get; set; }
+    public string? Review_Status { get; set; }
 
     // ── Computed display helpers ──────────────────────────────────────
     public string PropertyDisplay =>
@@ -35,4 +37,16 @@ public class PropertySearchResult
 
     public string AddressDisplay =>
         LisStreetAddress ?? "–";
+
+    public bool IsReviewOpen =>
+      string.Equals(
+          Review_Status,
+          "Open",
+          StringComparison.OrdinalIgnoreCase);
+
+    public bool IsReviewClosed =>
+        string.Equals(
+            Review_Status,
+            "Closed",
+            StringComparison.OrdinalIgnoreCase);
 }

@@ -8,6 +8,8 @@ using System.Security.Claims;
 using V2_Genesis.Data;
 using V2_Genesis.Models;
 using V2_Genesis.Models.Entities;
+using V2_Genesis.Models.Results;
+using V2_Genesis.Models.Section78;
 using V2_Genesis.Models.ViewModels.Attributes;
 using V2_Genesis.Models.ViewModels.Dashboard;
 using V2_Genesis.Services;
@@ -66,9 +68,23 @@ public class DashboardController : Controller
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
         var userEmail = User.FindFirstValue(ClaimTypes.Name) ?? string.Empty;
 
-        var data = await _dashboardService.GetRollDataAsync(rollSource, userId, userEmail);
-        var dates = _rollDates.Dates.GetValueOrDefault(rollSource);
-        var periodStatus = V2_Genesis.Helpers.RollPeriodHelper.GetPeriodStatus(dates);
+        var data = await _dashboardService.GetRollDataAsync(
+        rollSource,
+        userId,
+        userEmail);
+
+        if (roll.IsQuery)
+        {
+            PrepareSection78DashboardData(data);
+        }
+
+        var dates =
+            _rollDates.Dates.GetValueOrDefault(rollSource);
+
+        var periodStatus = roll.IsQuery
+            ? "section78"
+            : V2_Genesis.Helpers.RollPeriodHelper
+                .GetPeriodStatus(dates);
 
         var vm = new RollDetailViewModel
         {
@@ -150,8 +166,18 @@ public class DashboardController : Controller
         await Task.WhenAll(rollDataTasks.Values);
 
         var rollData = rollDataTasks.ToDictionary(
-            kvp => kvp.Key,
-            kvp => kvp.Value.Result);
+     kvp => kvp.Key,
+     kvp => kvp.Value.Result);
+
+        foreach (var queryRoll in rolls.Where(x => x.IsQuery))
+        {
+            if (rollData.TryGetValue(
+                    queryRoll.Source,
+                    out var queryData))
+            {
+                PrepareSection78DashboardData(queryData);
+            }
+        }
 
         // ── REMOVED: foreach (var roll in rolls.Where(r => r.IsQuery))
         //                 rollData[roll.Source] = new RollData();
@@ -180,6 +206,126 @@ public class DashboardController : Controller
             vm.Rebates = new();
         }
         return View(vm);
+    }
+
+    private static void PrepareSection78DashboardData(
+    RollData rollData)
+    {
+        ArgumentNullException.ThrowIfNull(rollData);
+
+        PrepareSection78LinkedProperties(
+            rollData.LinkedProperties);
+
+        PrepareSection78SubmittedProperties(
+            rollData.ObjectedProperties);
+    }
+
+    private static void PrepareSection78LinkedProperties(
+        IEnumerable<LinkedPropertyResult>? properties)
+    {
+        if (properties == null)
+            return;
+
+        foreach (var property in properties)
+        {
+            property.Review_Status =
+                ResolveSection78ReviewStatus(
+                    property.Review_Status,
+                    property.Review_Close_Date);
+
+            if (Section78ReviewStatus.IsClosed(
+                    property.Review_Status))
+            {
+                property.AvailableAction = "Closed";
+                continue;
+            }
+
+            property.AvailableAction =
+                property.HasCompletedQuery
+                    ? "Review"
+                    : "Query";
+        }
+    }
+
+    private static void PrepareSection78SubmittedProperties(
+        IEnumerable<ObjectedPropertyResult>? properties)
+    {
+        if (properties == null)
+            return;
+
+        foreach (var property in properties)
+        {
+            property.Review_Status =
+                ResolveSection78ReviewStatus(
+                    property.Review_Status,
+                    property.Review_Close_Date);
+
+            /*
+             * A Review may only be lodged when:
+             *
+             * 1. This is an original Query, not an existing Review.
+             * 2. The Query has been finalised.
+             * 3. The Review period is still open.
+             */
+            property.CanLodgeReview =
+                property.Sub_typ == 0
+                &&
+                string.Equals(
+                    property.objection_Status,
+                    "Query-Finalized",
+                    StringComparison.OrdinalIgnoreCase)
+                &&
+                Section78ReviewStatus.IsOpen(
+                    property.Review_Status);
+
+            if (property.Sub_typ != 0)
+            {
+                property.ReviewActionText = null;
+                continue;
+            }
+
+            if (!string.Equals(
+                    property.objection_Status,
+                    "Query-Finalized",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                property.ReviewActionText =
+                    "Query must be finalised first";
+
+                continue;
+            }
+
+            property.ReviewActionText =
+                property.CanLodgeReview
+                    ? "Lodge Review"
+                    : "Review Closed";
+        }
+    }
+
+    private static string ResolveSection78ReviewStatus(
+        string? storedStatus,
+        DateTime? reviewCloseDate)
+    {
+        /*
+         * A past close date always wins, even if the SQL Agent job
+         * has not updated Review_Status yet.
+         */
+        if (reviewCloseDate.HasValue &&
+            reviewCloseDate.Value.Date < DateTime.Today)
+        {
+            return Section78ReviewStatus.Closed;
+        }
+
+        if (Section78ReviewStatus.IsClosed(storedStatus))
+        {
+            return Section78ReviewStatus.Closed;
+        }
+
+        /*
+         * NULL Review_Close_Date means the original Query process
+         * remains available.
+         */
+        return Section78ReviewStatus.Open;
     }
     // ── STUB — replace each case with real DB query when ready ─────────────
     private Task<RollData> GetRollDataAsync(GvList roll, string userId)

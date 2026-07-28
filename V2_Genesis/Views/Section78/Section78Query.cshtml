@@ -58,6 +58,22 @@
     TempData.Keep("AppealStatus");
     TempData.Keep("CurrentFilter_PD");
     TempData.Keep("CurrentFilter_Prop");
+
+    bool _isReview =
+        string.Equals(
+            ViewBag.ReviewStat?.ToString(),
+            "R",
+            StringComparison.OrdinalIgnoreCase)
+        || string.Equals(
+            TempData.Peek("ReviewStat")?.ToString(),
+            "R",
+            StringComparison.OrdinalIgnoreCase);
+
+    string _processName = _isReview ? "Review" : "Query";
+    string _processNameUpper = _processName.ToUpperInvariant();
+    string _processNameLower = _processName.ToLowerInvariant();
+
+    TempData.Keep("ReviewStat");
 }
 
 
@@ -277,29 +293,39 @@
             <div class="obj-hero-logo">
                 <img src="~/images/joburg_logo.png" alt="City of Johannesburg" />
             </div>
+
             <div class="obj-hero-text">
-                <div class="obj-hero-org">City of Johannesburg · Valuation Services</div>
-                @if (_isAppeal)
-                {
-                    <h1 class="obj-hero-title">
-                        Lodging of an <span>Review</span>
-                    </h1>
-                    <div class="obj-hero-sub">Appeal against a matter reflected in the Supplementary Valuation Roll</div>
-                }
-                else
-                {
-                    <h1 class="obj-hero-title">
-                        Lodging of an <span>Query</span>
-                    </h1>
-                    <div class="obj-hero-sub">Objection against a matter reflected in the Valuation Roll / Supplementary Valuation Roll</div>
-                }
+                <div class="obj-hero-org">
+                    City of Johannesburg · Valuation Services
+                </div>
+
+                <h1 class="obj-hero-title">
+                    Lodging of a Section 78
+                    <span>@_processName</span>
+                </h1>
+
+                <div class="obj-hero-sub">
+                    @if (_isReview)
+                    {
+                        @:Review of the outcome of a previously lodged Section 78 Query
+                    }
+                    else
+                    {
+                        @:Query about a matter reflected in the valuation record for the property
+                    }
+                </div>
             </div>
         </div>
+
         <div class="obj-hero-right">
             <div class="obj-hero-type-badge">
-                <i class="fa-solid @(_isAppeal ? "fa-gavel" : "fa-file-pen")"></i>
-                @(_isAppeal ? "Appeal Form" : "Objection Form")
+                <i class="fa-solid @(_isReview
+                    ? "fa-magnifying-glass-chart"
+                    : "fa-file-magnifying-glass")"></i>
+
+                Section 78 @_processName Form
             </div>
+
             @if (!string.IsNullOrWhiteSpace(_propDesc))
             {
                 <div class="obj-hero-prop">
@@ -309,18 +335,18 @@
         </div>
     </div>
 
-    {{-- Form type bar (updated by JS after load) --}}
     <div class="obj-form-head">
         <span class="obj-form-head-label">Form Type</span>
         <span class="obj-form-head-title" id="form_head">
-            SECTION 78 QUERY FORM      </span>
+            SECTION 78 @_processNameUpper FORM
+        </span>
     </div>
 </div>
 
 @* <div class="form-header-container">
     <h4 id="form_head">
         <span class="form-icon">📋</span>
-        SECTION 78 QUERY FORM
+        SECTION 78 @_processNameUpper FORM
     </h4>
 </div>
 
@@ -329,20 +355,32 @@
 
 
 @* <div style="display:flex;justify-content: center;">
-    <h4 style="margin-top: 2%;" id="form_head">SECTION 78 QUERY FORM</h4>
+    <h4 style="margin-top: 2%;" id="form_head">SECTION 78 @_processNameUpper FORM</h4>
 </div>
  *@
 
 <form id="myForm" method="post" enctype="multipart/form-data" asp-controller="Section78" asp-action="Section78Query" style="margin-left: 0px">
 
+    @Html.AntiForgeryToken()
+
+    <input type="hidden"
+           name="reviewStat"
+           id="reviewStat"
+           value="@(_isReview ? "R" : "Q")" />
+
+    <div asp-validation-summary="ModelOnly"
+         class="alert alert-danger"
+         role="alert"></div>
+
+
     <div style="display:flex; justify-content: center; margin-bottom: 20px;">
         <div style="margin-top: 12px; border-radius: 12px; border: 3px solid #e6b000; padding: 30px; width: 1050px; background: linear-gradient(135deg, #006570 0%, #004d56 100%); box-shadow: 0 10px 40px rgba(0, 101, 112, 0.25);">
             <h6 style="color: #ffffff; font-size: 20px; font-weight: 700; margin: 0 0 18px 0; line-height: 1.5; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.5px; text-align: center; border-bottom: 2px solid #e6b000; padding-bottom: 15px;">
-                📋 LODGING OF A QUERY AGAINST MATTERS PERTAINING TO A GENERAL / SUPPLEMENTARY VALUATION ON THE PROPERTY DESCRIBED BELOW
+                📋 LODGING OF A SECTION 78 @_processNameUpper RELATING TO THE PROPERTY DESCRIBED BELOW
             </h6>
 
             <h6 style="color: #e6b000; font-size: 18px; font-weight: 600; margin: 15px 0 12px 0; line-height: 1.4; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.5px; text-align: center;">
-                🏘️ DESCRIPTION OF PROPERTY IN RESPECT OF WHICH THE QUERY IS MADE
+                🏘️ DESCRIPTION OF PROPERTY IN RESPECT OF WHICH THE @_processNameUpper IS MADE
             </h6>
 
             <h6 style="color: #ffffff; font-size: 15px; font-weight: 500; margin: 0; line-height: 1.4; font-family: 'Poppins', sans-serif; font-style: italic; text-align: center; opacity: 0.95;">

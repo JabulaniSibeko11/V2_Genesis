@@ -3,12 +3,38 @@
     ViewData["Title"] = Model.IsAppeal ? "Property Appeal" : "Property Objection";
     Layout = "~/Views/Shared/_ClientLayout.cshtml";
 
-    var d  = Model.Main;
-    var q  = Model.Queitems?.FirstOrDefault();
+    var d = Model.Main;
+    var q = Model.Queitems?.FirstOrDefault();
     var src = Model.SourceTable;
+
     bool isQuery = Model.IsQuery;
 
-    if (isQuery) ViewData["Title"] = "Property Query System";
+    bool isReview =
+        isQuery &&
+        (
+            ViewBag.IsSection78Review == true
+            ||
+            string.Equals(
+                ViewBag.Section78ProcessType?.ToString(),
+                "Review",
+                StringComparison.OrdinalIgnoreCase)
+            ||
+            string.Equals(
+                TempData.Peek("ReviewStat")?.ToString(),
+                "R",
+                StringComparison.OrdinalIgnoreCase)
+        );
+
+    var section78ProcessName =
+        isReview
+            ? "Review"
+            : "Query";
+
+    if (isQuery)
+    {
+        ViewData["Title"] =
+            $"Property Section 78 {section78ProcessName}";
+    }
 }
 
 @section Styles {
@@ -32,12 +58,16 @@
             <div class="cp-hero-text">
                 <div class="cp-hero-eyebrow">City of Johannesburg · Valuation Services</div>
                 <h1 class="cp-hero-title" id="pageTitle">
-                    @(isQuery ? "Property Query System" :
-                      Model.IsAppeal ? "Property Appeal System" :
-                      "Property Objection System")
+                    @(isQuery
+      ? $"Property Section 78 {section78ProcessName} System"
+      : Model.IsAppeal
+          ? "Property Appeal System"
+          : "Property Objection System")
                 </h1>
                 <p class="cp-hero-sub" id="pageSubtitle">
-                    @(isQuery ? "Submit your Section 78 query or review online" :
+                    @(isQuery
+        ? $"Submit your Section 78 {section78ProcessName.ToLowerInvariant()} online"
+        :
                       Model.IsAppeal ? "Submit your property appeal online" :
                       "Submit your property objection online")
                 </p>
@@ -54,7 +84,7 @@
                 <span id="disclaimerTitle">
                     @if (isQuery)
                     {
-                        @:Disclaimer | Online Section 78 Query
+                        @:Disclaimer | Online Section 78 @section78ProcessName
                     }
                     else
                     {
@@ -67,7 +97,13 @@
             <div class="cp-card-body">
                 <p class="cp-disclaimer-intro" id="disclaimerIntro">
                     You are about to commence with the online
-                    <strong id="actionWord">@(isQuery ? "Section 78 query" : Model.IsAppeal ? "appeal" : "objection")</strong>
+                    <strong id="actionWord">
+                        @(isQuery
+                            ? $"Section 78 {section78ProcessName.ToLowerInvariant()}"
+                            : Model.IsAppeal
+                                ? "appeal"
+                                : "objection")
+                    </strong>
                     process. If you wish to upload supporting documents, please ensure your evidence is ready.
                 </p>
 
@@ -108,7 +144,11 @@
                         onclick="showMainForm()">
                     <i class="fa-solid fa-circle-check"></i>
                     <span id="continueBtnText">
-                        Continue to @(isQuery ? "Query" : Model.IsAppeal ? "Appeal" : "Objection") Form
+                        Continue to @(isQuery
+                            ? section78ProcessName
+                        : Model.IsAppeal
+                            ? "Appeal"
+                            : "Objection") Form
                     </span>
                 </button>
             </div>
@@ -123,7 +163,17 @@
                     <i class="fa-solid fa-map-marker-alt"></i>
                     Property Information
                     <span class="cp-card-sub" id="propInfoSub">
-                        Details of the property you are @(Model.IsAppeal ? "appealing" : "objecting to")
+                        @if (isQuery)
+                        {
+                            @:Details of the property you are submitting a Section 78
+                            @section78ProcessName.ToLowerInvariant()
+                            @:for
+  }
+                        else
+                        {
+                            @:Details of the property you are
+                            @(Model.IsAppeal ? "appealing" : "objecting to")
+                        }
                     </span>
                 </div>
                <div class="cp-card-body">
@@ -404,23 +454,57 @@
             {
                 <div class="cp-card">
                     <div class="cp-card-hdr">
-                        <i class="fa-solid fa-file-magnifying-glass"></i>
-                        Section 78 Query
-                        <span class="cp-card-sub">Submit a formal query about your property valuation</span>
+                        <i class="fa-solid
+                            @(isReview
+                                               ? "fa-magnifying-glass-chart"
+                                               : "fa-file-magnifying-glass")">
+                        </i>
+
+                        Section 78 @section78ProcessName
+
+                        <span class="cp-card-sub">
+                            @if (isReview)
+                            {
+                                @:Submit a formal review of the Section 78 query outcome
+                            }
+                            else
+                            {
+                                @:Submit a formal query about your property valuation
+                            }
+                        </span>
                     </div>
+
                     <div class="cp-card-body">
                         <div class="cp-s78-info">
-                            Click <strong>Lodge Section 78 Query</strong> below to proceed to the application form.
-                            <br />
-                            <em style="font-size:12.5px;color:#9aa3af;">
-                                If you are not satisfied with the outcome of your query,
-                                a Review option will appear on your dashboard once the outcome has been issued.
-                            </em>
+                            Click
+                            <strong>
+                                Lodge Section 78 @section78ProcessName
+                            </strong>
+                            below to proceed to the application form.
+
+                            @if (!isReview)
+                            {
+                                <br />
+
+                                <em style="font-size:12.5px;color:#9aa3af;">
+                                    If you are not satisfied with the outcome of your
+                                    query, a Review option will appear on your dashboard
+                                    when the review period is open.
+                                </em>
+                            }
+                            else
+                            {
+                                <br />
+
+                                <em style="font-size:12.5px;color:#9aa3af;">
+                                    You are reviewing the outcome of an existing
+                                    Section 78 Query.
+                                </em>
+                            }
                         </div>
                     </div>
                 </div>
             }
-
      
             <div id="lodgeSection" style="display:none;">
                 <div class="cp-card cp-lodge-card">
@@ -603,8 +687,17 @@ var IS_APPEAL = (function () {
 })();
 sessionStorage.setItem('AppealStatus', IS_APPEAL ? 'True' : 'False');
 
-var property_type = "", objector_type = "", submission_type = "Query",
-    query_type = "Query", direction = "Normal",
+        var SECTION78_PROCESS =
+            '@(isReview ? "Review" : "Query")';
+
+        var property_type = "",
+            objector_type = "",
+            submission_type = SECTION78_PROCESS,
+            query_type = SECTION78_PROCESS,
+            direction = "Normal",
+            selectedProperty = '',
+            selectedObjector = '',
+            pendingUrl = '';
     selectedProperty = '', selectedObjector = '', pendingUrl = '';
 
 function onTypeSelect(name, feedbackId) {
@@ -726,14 +819,84 @@ function updateAppealLabels() {
     document.querySelectorAll('.instr-action-word-cap').forEach(function(el){ el.textContent='Appeal'; });
 }
 
-function updateQueryLabels() {
-    if (!IS_QUERY) return;
-    setText('continueBtnText','Continue to Query Form'); setText('propInfoSub','Details of the property you are querying');
-    setText('propTypeSub','Choose the property type you want to query'); setText('objectorTypeHeader','Applicant Type');
-    setText('objectorTypeSub','Choose the type of applicant'); setText('startBtnWord','Query');
-    setText('modalTitle','Section 78 Query Form Instructions');
-    setText('modalSubtitle','Please read all instructions carefully before starting your query');
-}
+               function updateQueryLabels() {
+            if (!IS_QUERY) {
+                return;
+            }
+
+            var processName =
+                SECTION78_PROCESS === 'Review'
+                    ? 'Review'
+                    : 'Query';
+
+            var processLower =
+                processName.toLowerCase();
+
+            setText(
+                'pageTitle',
+                'Property Section 78 ' + processName + ' System'
+            );
+
+            setText(
+                'pageSubtitle',
+                'Submit your Section 78 ' + processLower + ' online'
+            );
+
+            setText(
+                'disclaimerTitle',
+                'Disclaimer | Online Section 78 ' + processName
+            );
+
+            setText(
+                'actionWord',
+                'Section 78 ' + processLower
+            );
+
+            setText(
+                'continueBtnText',
+                'Continue to ' + processName + ' Form'
+            );
+
+            setText(
+                'propInfoSub',
+                'Details of the property for this Section 78 ' +
+                processLower
+            );
+
+            setText(
+                'propTypeSub',
+                'Choose the property type for this ' +
+                processLower
+            );
+
+            setText(
+                'objectorTypeHeader',
+                'Applicant Type'
+            );
+
+            setText(
+                'objectorTypeSub',
+                'Choose the type of applicant'
+            );
+
+            setText(
+                'startBtnWord',
+                processName
+            );
+
+            setText(
+                'modalTitle',
+                'Section 78 ' +
+                processName +
+                ' Form Instructions'
+            );
+
+            setText(
+                'modalSubtitle',
+                'Please read all instructions carefully before starting your ' +
+                processLower
+            );
+        }
 
 function setText(id, text) { var el=document.getElementById(id); if(el) el.textContent=text; }
 
@@ -745,8 +908,18 @@ document.addEventListener('DOMContentLoaded', function() {
             if (radio) { radio.checked=true; radio.dispatchEvent(new Event('change',{bubbles:true})); }
         });
     });
-    if (IS_QUERY) {
-        document.getElementById('sub_type')?.setAttribute('value','Query');
+            if (IS_QUERY) {
+            document.getElementById('sub_type')
+                ?.setAttribute(
+                    'value',
+                    SECTION78_PROCESS
+                );
+
+            submission_type =
+                SECTION78_PROCESS;
+
+            query_type =
+                SECTION78_PROCESS;
         var savedProp=sessionStorage.getItem('property_choice'), savedObj=sessionStorage.getItem('objector_choice');
         if (savedProp) { var r=document.querySelector('input[name="propertyType"][value="'+savedProp+'"]'); if(r){r.checked=true;property_type=savedProp;direction=(savedProp==='Multi')?'Multi':'Normal';r.closest('.obj-radio-card')?.classList.add('selected');} }
         if (savedObj)  { var r2=document.querySelector('input[name="objectorType"][value="'+savedObj+'"]'); if(r2){r2.checked=true;objector_type=savedObj;r2.closest('.obj-radio-card')?.classList.add('selected');} }

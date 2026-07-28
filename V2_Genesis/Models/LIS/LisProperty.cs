@@ -35,6 +35,7 @@ public class LisProperty
     public string? AdditionalNotes { get; set; }
     public string? Lease { get; set; }
     public string? Sector { get; set; }
+    public DateTime? ReviewCloseDate { get; set; }
 }
 
 

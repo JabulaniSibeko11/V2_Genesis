@@ -11,8 +11,10 @@ using System.Text.RegularExpressions;
 using V2_Genesis.Data;
 using V2_Genesis.Models;
 using V2_Genesis.Models.Attributes;
+using V2_Genesis.Models.Lis;
 using V2_Genesis.Models.LIS;
 using V2_Genesis.Models.Results;
+using V2_Genesis.Models.Section78;
 using V2_Genesis.Services.Implementations;
 using V2_Genesis.Services.Interfaces;
 using V2_Genesis.Services.PropertySearch;
@@ -53,10 +55,56 @@ public class PropertySearchController : Controller
         _attributesService = attributesService;
     }
     private bool IsAdmin(string? email) =>
-      !string.IsNullOrEmpty(email) && (
-          email.Equals("AdministrationEnquiries@Joburg.org.za",
-              StringComparison.OrdinalIgnoreCase) ||
-          AdminPattern.IsMatch(email));
+       !string.IsNullOrWhiteSpace(email) &&
+       (
+           email.Equals(
+               "AdministrationEnquiries@Joburg.org.za",
+               StringComparison.OrdinalIgnoreCase)
+           ||
+           AdminPattern.IsMatch(email)
+       );
+
+    private static bool IsQueryRoll(string? rollSource)
+    {
+        return string.Equals(
+            rollSource,
+            "Query",
+            StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string ResolveReviewStatus(
+        DateTime? reviewCloseDate)
+    {
+        /*
+         * Current business rule:
+         *
+         * NULL Review_Close_Date:
+         *     Initial Section 78 Query is open.
+         *
+         * Today or future date:
+         *     Review period is open.
+         *
+         * Past date:
+         *     Review period is closed.
+         */
+        if (!reviewCloseDate.HasValue)
+            return Section78ReviewStatus.Open;
+
+        return reviewCloseDate.Value.Date >= DateTime.Today
+            ? Section78ReviewStatus.Open
+            : Section78ReviewStatus.Closed;
+    }
+
+    private static void ApplySection78ReviewStatus(
+        IEnumerable<PropertyDetailResult> properties)
+    {
+        foreach (var property in properties)
+        {
+            property.Review_Status =
+                ResolveReviewStatus(
+                    property.Review_Close_Date);
+        }
+    }
     // ── GET /search/{rollSource} ──────────────────────────────────────
     [HttpGet]
     [Route("search/{rollSource}")]
@@ -188,21 +236,65 @@ public class PropertySearchController : Controller
             HttpContext.Session.SetString("RollSource", rollSource);
             HttpContext.Session.SetString("PropertyFrom", "LIS");
 
+            if (IsQueryRoll(rollSource))
+            {
+                var reviewStatus =
+                    ResolveReviewStatus(
+                        lisItem.ReviewCloseDate);
+
+                HttpContext.Session.SetString(
+                    "ReviewStatus",
+                    reviewStatus);
+
+                if (lisItem.ReviewCloseDate.HasValue)
+                {
+                    HttpContext.Session.SetString(
+                        "ReviewCloseDate",
+                        lisItem.ReviewCloseDate.Value
+                            .ToString(
+                                "yyyy-MM-dd",
+                                CultureInfo.InvariantCulture));
+                }
+                else
+                {
+                    HttpContext.Session.Remove(
+                        "ReviewCloseDate");
+                }
+            }
+
             ViewBag.GvList = await _db.GvList
                 .OrderBy(r => r.ID)
                 .ToListAsync();
 
             var dates = _rollDates.For(rollSource);
 
+            var mappedLisProperty =
+      MapLisPropertyToResult(lisItem);
+
+            if (IsQueryRoll(rollSource))
+            {
+                mappedLisProperty.Review_Status =
+                    ResolveReviewStatus(
+                        mappedLisProperty.Review_Close_Date);
+            }
+
             var lisVm = new PropertyDetailViewModel
             {
                 Items = new List<PropertyDetailResult>
-            {
-                MapLisPropertyToResult(lisItem)
-            },
+    {
+        mappedLisProperty
+    },
+
                 Roll = roll,
-                OpenDate = dates?.OpenDate,
-                VisibleUntil = dates?.VisibleUntil,
+
+                OpenDate = IsQueryRoll(rollSource)
+                    ? null
+                    : dates?.OpenDate,
+
+                VisibleUntil = IsQueryRoll(rollSource)
+                    ? null
+                    : dates?.VisibleUntil,
+
                 IsAttributes = false,
                 IsLis = true
             };
@@ -221,9 +313,17 @@ public class PropertySearchController : Controller
             return NotFound($"Roll '{rollSource}' not found.");
 
         var items = await _search.GetPropertyDetailsAsync(
-            rollSource,
-            unitKey,
-            valuationKey);
+      rollSource,
+      unitKey,
+      valuationKey);
+
+        if (!items.Any())
+            return NotFound("Property details not found.");
+
+        if (IsQueryRoll(rollSource))
+        {
+            ApplySection78ReviewStatus(items);
+        }
 
         if (!items.Any())
             return NotFound("Property details not found.");
@@ -255,45 +355,98 @@ public class PropertySearchController : Controller
 
         return View(vm);
     }
-    private static PropertyDetailResult MapLisPropertyToResult(V2_Genesis.Models.Lis.LisProperty l)
+    private static PropertyDetailResult MapLisPropertyToResult(
+        LisProperty property)
     {
         return new PropertyDetailResult
         {
-            TownNameDesc = l.TownNameDescription,
-            PropertyDesc = !string.IsNullOrWhiteSpace(l.PropertyDescription)
-                ? l.PropertyDescription
-                : BuildLisPropertyDescription(l),
+            TownNameDesc =
+                property.TownNameDescription,
 
-            LisStreetAddress = l.LisStreetAddress,
+            PropertyDesc =
+                !string.IsNullOrWhiteSpace(
+                    property.PropertyDescription)
+                    ? property.PropertyDescription
+                    : BuildLisPropertyDescription(property),
 
-            Erf = l.Erf,
-            Ptn = l.Ptn.ToString(),
-            Re = string.IsNullOrWhiteSpace(l.Re) ? "-" : l.Re,
+            LisStreetAddress =
+                property.LisStreetAddress,
 
-            CatDesc = l.CATDescription,
-            RateableArea = l.RateableArea,
-            MarketValue = l.MarketValue,
+            Erf =
+                property.Erf,
 
-            SchemeName = l.SchemeName,
-            SchemeNumber = l.SchemeNumber,
-            SchemeYear = l.SchemeYear,
+            Ptn =
+                property.Ptn.ToString(),
 
-           // Lease = l.Lease,
-            UnitNo = int.TryParse(l.UnitNo, out var unitNo) ? unitNo : 0,
+            Re =
+                string.IsNullOrWhiteSpace(property.Re)
+                    ? "-"
+                    : property.Re,
 
-            Reason = l.Reason,
-            UnitKey = l.UnitKey,
-            ValuationKey = l.ValuationKey,
+            CatDesc =
+                property.CATDescription,
 
-            WefDate = l.ValuationEffectiveDateWefDate,
-            AdditionalNotes = l.AdditionalNotes,
-            ValuationDate = l.ValuationEndDate,
+            RateableArea =
+                property.RateableArea,
 
-            OwnerName = l.OwnerName,
-            PremiseId = l.PremiseId,
-            PropertyId = l.PropertyId,
-           // LeaseStatus = l.SGID,
-            Sector = l.Sector
+            MarketValue =
+                property.MarketValue,
+
+            SchemeName =
+                property.SchemeName,
+
+            SchemeNumber =
+                property.SchemeNumber,
+
+            SchemeYear =
+                property.SchemeYear,
+
+            UnitNo =
+                int.TryParse(
+                    property.UnitNo,
+                    out var unitNumber)
+                        ? unitNumber
+                        : 0,
+
+            Reason =
+                property.Reason,
+
+            UnitKey =
+                property.UnitKey,
+
+            ValuationKey =
+                property.ValuationKey,
+
+            WefDate =
+                property.ValuationEffectiveDateWefDate,
+
+            AdditionalNotes =
+                property.AdditionalNotes,
+
+            ValuationDate =
+                property.ValuationEndDate,
+
+            OwnerName =
+                property.OwnerName,
+
+            PremiseId =
+                property.PremiseId,
+
+            PropertyId =
+                property.PropertyId,
+
+            Sector =
+                property.Sector,
+
+            /*
+             * Section 78 Review information.
+             */
+            Review_Close_Date =
+                property.ReviewCloseDate,
+
+            Review_Status =
+                ResolveReviewStatus(
+                    property.ReviewCloseDate)
         };
     }
     private static string BuildLisPropertyDescription(V2_Genesis.Models.Lis.LisProperty l)
@@ -410,7 +563,10 @@ public class PropertySearchController : Controller
             ? sourceTable
             : propertyFrom.Trim();
 
-        var isLis = propertyFrom.Equals("LIS", StringComparison.OrdinalIgnoreCase);
+        var isLis = string.Equals(
+        propertyFrom,
+        "LIS",
+        StringComparison.OrdinalIgnoreCase);
 
         var currentEmail = User.FindFirstValue(ClaimTypes.Name) ?? "";
 
@@ -459,24 +615,62 @@ public class PropertySearchController : Controller
 
             if (result.Success)
             {
-                TempData["LinkSuccess"] = isLis
-                    ? "LIS property successfully linked to your profile."
-                    : "Property successfully linked to your profile.";
+                var isQuery =
+                    IsQueryRoll(rollSource);
+
+                if (isQuery)
+                {
+                    TempData["ReviewStatus"] =
+                        result.ReviewStatus
+                        ?? Section78ReviewStatus.Open;
+
+                    if (result.ReviewCloseDate.HasValue)
+                    {
+                        TempData["ReviewCloseDate"] =
+                            result.ReviewCloseDate.Value
+                                .ToString(
+                                    "dd MMMM yyyy",
+                                    CultureInfo.GetCultureInfo("en-ZA"));
+                    }
+
+                    TempData["LinkSuccess"] =
+                        result.ReviewStatus?.Equals(
+                            Section78ReviewStatus.Closed,
+                            StringComparison.OrdinalIgnoreCase) == true
+
+                            ? "Property linked successfully. The Section 78 review period for this property is closed."
+
+                            : "Property linked successfully. You can continue with the available Section 78 process from your dashboard.";
+                }
+                else
+                {
+                    TempData["LinkSuccess"] = isLis
+                        ? "LIS property successfully linked to your profile."
+                        : "Property successfully linked to your profile.";
+                }
 
                 _logger.LogInformation(
-                    "User {UserId} linked property {PropertyKey} from {Roll}. PropertyFrom={PropertyFrom}, PropertyId={PropertyId}, UnitKey={UnitKey}, ValuationKey={ValuationKey}",
+                    "User {UserId} linked property {PropertyKey} from {Roll}. " +
+                    "PropertyFrom={PropertyFrom}, PropertyId={PropertyId}, " +
+                    "UnitKey={UnitKey}, ValuationKey={ValuationKey}, " +
+                    "ReviewStatus={ReviewStatus}, ReviewCloseDate={ReviewCloseDate}",
                     userId,
                     idProperty,
                     rollSource,
                     linkPropertyFrom,
                     propertyId,
                     unitKey,
-                    valuationKey);
+                    valuationKey,
+                    result.ReviewStatus,
+                    result.ReviewCloseDate);
             }
             else
             {
-                TempData["LinkError"] = result.ErrorMessage;
+                TempData["LinkError"] =
+                    result.ErrorMessage
+                    ?? "The property could not be linked.";
             }
+           
         }
         catch (Exception ex)
         {
@@ -583,25 +777,65 @@ public class PropertySearchController : Controller
         }
 
         // Map and return results in the standard partial
-        var mapped = lisResults.Select(l => new PropertySearchResult
-        {
-            TownNameDesc = l.TownNameDescription,
-            LisStreetAddress = l.LisStreetAddress,
-            Erf = l.Erf,
-            Ptn = l.Ptn,
-            Re = l.Re,
-            CatDesc = l.CATDescription,
-            RateableArea = l.RateableArea,
-            MarketValue = l.MarketValue,
-            SchemeName = l.SchemeName,
-            SchemeNumber = l.SchemeNumber,
-            SchemeYear = l.SchemeYear,
-            Lease = l.Lease,
-            UnitNo = int.TryParse(l.UnitNo, out var u) ? u : 0,
-            Reason = l.Reason,
-            UnitKey = l.UnitKey,
-            ValuationKey = l.ValuationKey,
-        }).ToList();
+        var mapped = lisResults
+     .Select(property => new PropertySearchResult
+     {
+         TownNameDesc =
+             property.TownNameDescription,
+
+         LisStreetAddress =
+             property.LisStreetAddress,
+
+         Erf =
+             property.Erf,
+
+         Ptn =
+             property.Ptn,
+
+         Re =
+             property.Re,
+
+         CatDesc =
+             property.CATDescription,
+
+         RateableArea =
+             property.RateableArea,
+
+         MarketValue =
+             property.MarketValue,
+
+         SchemeName =
+             property.SchemeName,
+
+         SchemeNumber =
+             property.SchemeNumber,
+
+         SchemeYear =
+             property.SchemeYear,
+
+         Lease =
+             property.Lease,
+
+         UnitNo =
+             int.TryParse(
+                 property.UnitNo,
+                 out var unitNumber)
+                     ? unitNumber
+                     : 0,
+
+         Reason =
+             property.Reason,
+
+         UnitKey =
+             property.UnitKey,
+
+         ValuationKey =
+             property.ValuationKey,
+
+         Review_Close_Date =
+             property.ReviewCloseDate
+     })
+     .ToList();
 
         var rollRecord = await _db.GvList
             .FirstOrDefaultAsync(r => r.Source == rollSource);
