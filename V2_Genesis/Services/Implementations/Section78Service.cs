@@ -8,6 +8,7 @@ using System.Net.Mime;
 using V2_Genesis.Data;
 using V2_Genesis.Models;
 using V2_Genesis.Models.Emails;
+using V2_Genesis.Models.Results.Acknowledgement;
 using V2_Genesis.Models.Results.Section78;
 using V2_Genesis.Models.ViewModels.Section78;
 using V2_Genesis.Services.Interfaces;
@@ -759,6 +760,1017 @@ namespace V2_Genesis.Services.Implementations
                 return rows.ToList();
             }
             catch { return new(); }
+        }
+        public async Task<GeneratedAcknowledgementResult>
+    GenerateAcknowledgementFromDatabaseAsync(
+        string queryReference,
+        string userId,
+        CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(queryReference))
+            {
+                throw new ArgumentException(
+                    "Section 78 reference is required.",
+                    nameof(queryReference));
+            }
+
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                throw new UnauthorizedAccessException(
+                    "The current user could not be identified.");
+            }
+
+            var reference = queryReference.Trim();
+
+            await using var conn =
+                new SqlConnection(_queryConn);
+
+            await conn.OpenAsync(cancellationToken);
+
+            const string sql =
+                """
+        SELECT TOP (1)
+            Q.Query_ID,
+            Q.QUERY_No,
+            Q.QUERY_Status,
+            Q.Sub_typ,
+            Q.Property_Type,
+            Q.Property_Desc,
+            Q.Valuation_Key,
+            Q.UserID,
+
+            S6.Old_Property_Description,
+            S6.Old_Category,
+            S6.Old_Address,
+            S6.Old_Extent,
+            S6.Old_Market_Value,
+            S6.Old_Owner,
+
+            S6.Old2_Category,
+            S6.Old2_Extent,
+            S6.Old2_Market_Value,
+
+            S6.Old3_Category,
+            S6.Old3_Extent,
+            S6.Old3_Market_Value,
+
+            S6.New_Property_Description,
+            S6.New_Category,
+            S6.New_Address,
+            S6.New_Extent,
+            S6.New_Market_Value,
+            S6.New_Owner,
+
+            S6.New2_Category,
+            S6.New2_Extent,
+            S6.New2_Market_Value,
+
+            S6.New3_Category,
+            S6.New3_Extent,
+            S6.New3_Market_Value,
+
+            S6.Objection_Reasons,
+
+            S7.RandomPin,
+            S7.Objection_Date,
+
+            F.Evidence_count,
+            F.Files1,
+            F.Files2,
+            F.Files3,
+            F.Files4,
+            F.Files5,
+            F.Files6,
+            F.Files7,
+            F.Files8,
+            F.Files9,
+            F.Files10
+
+        FROM dbo.QUE_Property_Info AS Q
+
+        LEFT JOIN dbo.Obj_Section6 AS S6
+            ON LTRIM(RTRIM(S6.Objection_Ref_S6))
+               = LTRIM(RTRIM(Q.QUERY_No))
+
+        LEFT JOIN dbo.Obj_Section7 AS S7
+            ON LTRIM(RTRIM(S7.Objection_Ref_S7))
+               = LTRIM(RTRIM(Q.QUERY_No))
+
+        LEFT JOIN dbo.Obj_Files AS F
+            ON LTRIM(RTRIM(F.Objection_Ref_files))
+               = LTRIM(RTRIM(Q.QUERY_No))
+
+        WHERE LTRIM(RTRIM(Q.QUERY_No))
+              = LTRIM(RTRIM(@QueryReference))
+
+          AND Q.UserID = @UserId;
+        """;
+
+            var row =
+                await conn.QueryFirstOrDefaultAsync<
+                    Section78AcknowledgementDbRow>(
+                    new CommandDefinition(
+                        sql,
+                        new
+                        {
+                            QueryReference = reference,
+                            UserId = userId
+                        },
+                        cancellationToken:
+                            cancellationToken));
+
+            if (row is null)
+            {
+                throw new KeyNotFoundException(
+                    $"Section 78 submission '{reference}' was not found for the current user.");
+            }
+
+            var isReview =
+                row.Sub_typ == 1
+                ||
+                reference.EndsWith(
+                    "-R",
+                    StringComparison.OrdinalIgnoreCase);
+
+            var files =
+                new[]
+                {
+            row.Files1,
+            row.Files2,
+            row.Files3,
+            row.Files4,
+            row.Files5,
+            row.Files6,
+            row.Files7,
+            row.Files8,
+            row.Files9,
+            row.Files10
+                };
+
+            var actualFileCount =
+                files.Count(x =>
+                    !string.IsNullOrWhiteSpace(x));
+
+            var result =
+                new Section78SubmitResult
+                {
+                    QueryRef =
+                        reference,
+
+                    QueryId =
+                        row.Query_ID,
+
+                    RandomPin =
+                        row.RandomPin,
+
+                    IsReview =
+                        isReview,
+
+                    IsMulti =
+                        string.Equals(
+                            row.Property_Type,
+                            "Multi",
+                            StringComparison.OrdinalIgnoreCase),
+
+                    ValuationKey =
+                        row.Valuation_Key,
+
+                    FileCount =
+                        row.Evidence_count > 0
+                            ? row.Evidence_count
+                            : actualFileCount,
+
+                    Files =
+                        files,
+
+                    Section6 =
+                        new Obj_Section6Model
+                        {
+                            Old_Property_Description =
+                                FirstNotEmpty(
+                                    row.Old_Property_Description,
+                                    row.Property_Desc),
+
+                            Old_Category =
+                                row.Old_Category,
+
+                            Old_Address =
+                                row.Old_Address,
+
+                            Old_Extent =
+                                row.Old_Extent,
+
+                            Old_Market_Value =
+                                row.Old_Market_Value,
+
+                            Old_Owner =
+                                row.Old_Owner,
+
+                            Old2_Category =
+                                row.Old2_Category,
+
+                            Old2_Extent =
+                                row.Old2_Extent,
+
+                            Old2_Market_Value =
+                                row.Old2_Market_Value,
+
+                            Old3_Category =
+                                row.Old3_Category,
+
+                            Old3_Extent =
+                                row.Old3_Extent,
+
+                            Old3_Market_Value =
+                                row.Old3_Market_Value,
+
+                            New_Property_Description =
+                                row.New_Property_Description,
+
+                            New_Category =
+                                row.New_Category,
+
+                            New_Address =
+                                row.New_Address,
+
+                            New_Extent =
+                                row.New_Extent,
+
+                            New_Market_Value =
+                                row.New_Market_Value,
+
+                            New_Owner =
+                                row.New_Owner,
+
+                            New2_Category =
+                                row.New2_Category,
+
+                            New2_Extent =
+                                row.New2_Extent,
+
+                            New2_Market_Value =
+                                row.New2_Market_Value,
+
+                            New3_Category =
+                                row.New3_Category,
+
+                            New3_Extent =
+                                row.New3_Extent,
+
+                            New3_Market_Value =
+                                row.New3_Market_Value,
+
+                            Objection_Reasons =
+                                row.Objection_Reasons
+                        }
+                };
+
+            var pdfBytes =
+                GenerateAcknowledgementPdf(
+                    result,
+                    row.Objection_Date);
+
+            if (pdfBytes is null || pdfBytes.Length == 0)
+            {
+                throw new InvalidOperationException(
+                    $"Acknowledgement PDF generation returned no data for '{reference}'.");
+            }
+
+            var submissionType =
+                isReview
+                    ? "Section78Review"
+                    : "Section78Query";
+
+            var fileName =
+                $"{SanitiseFileName(reference)}_" +
+                $"{submissionType}_Acknowledgement_" +
+                $"{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
+
+            _logger.LogInformation(
+                "[S78 Acknowledgement Download] Generated {SubmissionType} acknowledgement from database for {Reference}. User={UserId}",
+                submissionType,
+                reference,
+                userId);
+
+            return new GeneratedAcknowledgementResult
+            {
+                ReferenceNumber =
+                    reference,
+
+                FileName =
+                    fileName,
+
+                PdfBytes =
+                    pdfBytes,
+
+                SubmissionType =
+                    submissionType
+            };
+        }
+
+        private byte[] GenerateAcknowledgementPdf(
+    Section78SubmitResult result,
+    DateTime? submittedAt = null)
+        {
+            var headerPath =
+                !string.IsNullOrWhiteSpace(
+                    _config["AppSettings:QueryHeaderImage"])
+                    ? _config["AppSettings:QueryHeaderImage"]!
+                    : Path.Combine(
+                        _env.WebRootPath,
+                        "Images",
+                        "Obj_Header.PNG");
+
+            var hasHeader =
+                File.Exists(headerPath);
+
+            var section6 =
+                result.Section6;
+
+            var processTitle =
+                result.IsReview
+                    ? "REVIEW"
+                    : "QUERY";
+
+            var processLower =
+                result.IsReview
+                    ? "review"
+                    : "query";
+
+            var capturedAt =
+                submittedAt ?? DateTime.Now;
+
+            var generatedAt =
+                DateTime.Now;
+
+            var validFiles =
+                result.Files?
+                    .Where(file =>
+                        !string.IsNullOrWhiteSpace(file))
+                    .Select(file =>
+                        file!.Trim())
+                    .Take(10)
+                    .ToList()
+                ?? new List<string>();
+
+            var fileCount =
+                result.FileCount > 0
+                    ? result.FileCount
+                    : validFiles.Count;
+
+            QuestPDF.Settings.License =
+                LicenseType.Community;
+
+            return Document.Create(document =>
+            {
+                document.Page(page =>
+                {
+                    page.Size(PageSizes.A4);
+
+                    page.Margin(36);
+
+                    page.DefaultTextStyle(style =>
+                        style
+                            .FontFamily("Arial")
+                            .FontSize(9));
+
+                    page.Content().Column(column =>
+                    {
+                        column.Spacing(8);
+
+                        if (hasHeader)
+                        {
+                            column.Item()
+                                .AlignCenter()
+                                .Width(500)
+                                .Height(90)
+                                .Image(
+                                    headerPath,
+                                    ImageScaling.FitArea);
+                        }
+
+                        column.Item()
+                            .AlignRight()
+                            .Text(
+                                capturedAt.ToString(
+                                    "dd MMMM yyyy"))
+                            .FontSize(10)
+                            .SemiBold();
+
+                        column.Item()
+                            .AlignCenter()
+                            .Text(
+                                "CITY OF JOHANNESBURG")
+                            .FontSize(13)
+                            .Bold();
+
+                        column.Item()
+                            .AlignCenter()
+                            .Text(
+                                $"SECTION 78 {processTitle} ACKNOWLEDGEMENT")
+                            .FontSize(12)
+                            .Bold();
+
+                        column.Item()
+                            .BorderBottom(1)
+                            .BorderColor("#555555");
+
+                        column.Item()
+                            .Text(
+                                $"This is to acknowledge that your Section 78 {processLower} has been successfully received and logged. The details below are provided for your records.")
+                            .FontSize(9);
+
+                        column.Item()
+                            .Text(
+                                "IMPORTANT NOTICE: You have 48 hours from submission to upload any outstanding supporting documents.")
+                            .FontSize(9)
+                            .Bold();
+
+                        column.Item()
+                            .AlignCenter()
+                            .Text("REFERENCE DETAILS")
+                            .FontSize(10)
+                            .Bold();
+
+                        column.Item()
+                            .Background("#eeeeee")
+                            .Border(1)
+                            .BorderColor("#444444")
+                            .Padding(10)
+                            .Column(referenceBox =>
+                            {
+                                ReferenceRow(
+                                    referenceBox,
+                                    "Property Description:",
+                                    FirstNotEmpty(
+                                        section6?
+                                            .Old_Property_Description,
+                                        section6?
+                                            .New_Property_Description));
+
+                                ReferenceRow(
+                                    referenceBox,
+                                    $"{processTitle} Reference:",
+                                    result.QueryRef);
+
+                                ReferenceRow(
+                                    referenceBox,
+                                    "PIN:",
+                                    result.RandomPin);
+
+                                ReferenceRow(
+                                    referenceBox,
+                                    "Date Captured:",
+                                    capturedAt.ToString(
+                                        "dd MMMM yyyy HH:mm"));
+
+                                if (!string.IsNullOrWhiteSpace(
+                                        result.ValuationKey))
+                                {
+                                    ReferenceRow(
+                                        referenceBox,
+                                        "Valuation Key:",
+                                        result.ValuationKey);
+                                }
+                            });
+
+                        column.Item()
+                            .BorderBottom(1)
+                            .BorderColor("#555555");
+
+                        column.Item()
+                            .AlignCenter()
+                            .Text(
+                                "PROPERTY DETAILS AS LISTED IN THE VALUATION ROLL")
+                            .FontSize(10)
+                            .Bold();
+
+                        Section78PropertyTable(
+                            column,
+                            section6?
+                                .Old_Property_Description,
+                            section6?
+                                .Old_Category,
+                            section6?
+                                .Old_Address,
+                            FormatMV(
+                                section6?
+                                    .Old_Market_Value),
+                            section6?
+                                .Old_Extent,
+                            section6?
+                                .Old_Owner,
+                            result.IsMulti,
+                            section6?
+                                .Old2_Category,
+                            FormatMV(
+                                section6?
+                                    .Old2_Market_Value),
+                            section6?
+                                .Old2_Extent,
+                            section6?
+                                .Old3_Category,
+                            FormatMV(
+                                section6?
+                                    .Old3_Market_Value),
+                            section6?
+                                .Old3_Extent);
+
+                        column.Item()
+                            .BorderBottom(1)
+                            .BorderColor("#555555");
+
+                        column.Item()
+                            .AlignCenter()
+                            .Text(
+                                $"PROPERTY DETAILS AS PER YOUR {processTitle}")
+                            .FontSize(10)
+                            .Bold();
+
+                        Section78PropertyTable(
+                            column,
+                            section6?
+                                .New_Property_Description,
+                            section6?
+                                .New_Category,
+                            section6?
+                                .New_Address,
+                            FormatMV(
+                                section6?
+                                    .New_Market_Value),
+                            section6?
+                                .New_Extent,
+                            section6?
+                                .New_Owner,
+                            result.IsMulti,
+                            section6?
+                                .New2_Category,
+                            FormatMV(
+                                section6?
+                                    .New2_Market_Value),
+                            section6?
+                                .New2_Extent,
+                            section6?
+                                .New3_Category,
+                            FormatMV(
+                                section6?
+                                    .New3_Market_Value),
+                            section6?
+                                .New3_Extent);
+
+                        column.Item()
+                            .BorderBottom(1)
+                            .BorderColor("#555555");
+
+                        column.Item()
+                            .AlignCenter()
+                            .Text(
+                                $"REASONS FOR {processTitle}")
+                            .FontSize(10)
+                            .Bold();
+
+                        column.Item()
+                            .Background("#eaf4fb")
+                            .Border(1)
+                            .BorderColor("#444444")
+                            .Padding(8)
+                            .Text(
+                                string.IsNullOrWhiteSpace(
+                                    section6?
+                                        .Objection_Reasons)
+                                    ? "No reasons provided."
+                                    : section6
+                                        .Objection_Reasons)
+                            .FontSize(8);
+
+                        column.Item()
+                            .BorderBottom(1)
+                            .BorderColor("#555555");
+
+                        column.Item()
+                            .AlignCenter()
+                            .Text(
+                                $"REQUIRED DOCUMENTATION FOR {processTitle}")
+                            .FontSize(10)
+                            .Bold();
+
+                        column.Item()
+                            .Text(
+                                $"You have uploaded {fileCount} document(s).")
+                            .FontSize(9);
+
+                        column.Item()
+                            .Element(container =>
+                                SupportingDocumentsTable(
+                                    container,
+                                    validFiles));
+                    });
+
+                    page.Footer()
+                        .PaddingTop(5)
+                        .AlignCenter()
+                        .Column(footer =>
+                        {
+                            footer.Item()
+                                .Text(
+                                    "This is an official document generated by the City of Johannesburg")
+                                .FontSize(7)
+                                .FontColor("#666666");
+
+                            footer.Item()
+                                .Text(
+                                    $"Generated on: {generatedAt:dd MMMM yyyy HH:mm}")
+                                .FontSize(7)
+                                .FontColor("#666666");
+
+                            if (!string.IsNullOrWhiteSpace(
+                                    result.ValuationKey))
+                            {
+                                footer.Item()
+                                    .Text(
+                                        result.ValuationKey)
+                                    .FontSize(8)
+                                    .SemiBold()
+                                    .FontColor("#cc0000");
+                            }
+                        });
+                });
+            }).GeneratePdf();
+
+            static void ReferenceRow(
+                ColumnDescriptor column,
+                string label,
+                string? value)
+            {
+                column.Item().Text(text =>
+                {
+                    text.Span(label + " ")
+                        .Bold();
+
+                    text.Span(
+                        string.IsNullOrWhiteSpace(value)
+                            ? "—"
+                            : value);
+                });
+            }
+
+            static void Section78PropertyTable(
+                ColumnDescriptor column,
+                string? propertyDescription,
+                string? category,
+                string? physicalAddress,
+                string? marketValue,
+                string? extent,
+                string? owner,
+                bool isMulti,
+                string? category2,
+                string? marketValue2,
+                string? extent2,
+                string? category3,
+                string? marketValue3,
+                string? extent3)
+            {
+                column.Item().Table(table =>
+                {
+                    table.ColumnsDefinition(columns =>
+                    {
+                        columns.RelativeColumn(2.2f);
+                        columns.RelativeColumn(1.6f);
+                        columns.RelativeColumn(1.7f);
+                        columns.RelativeColumn(1.2f);
+                        columns.RelativeColumn(0.8f);
+                        columns.RelativeColumn(1.1f);
+                    });
+
+                    HeaderCell(
+                        table,
+                        "Property Description");
+
+                    HeaderCell(
+                        table,
+                        "Category");
+
+                    HeaderCell(
+                        table,
+                        "Physical Address");
+
+                    HeaderCell(
+                        table,
+                        "Market Value");
+
+                    HeaderCell(
+                        table,
+                        "Extent");
+
+                    HeaderCell(
+                        table,
+                        "Owner");
+
+                    DataCell(
+                        table,
+                        propertyDescription);
+
+                    DataCell(
+                        table,
+                        category);
+
+                    DataCell(
+                        table,
+                        physicalAddress);
+
+                    DataCell(
+                        table,
+                        marketValue);
+
+                    DataCell(
+                        table,
+                        extent);
+
+                    DataCell(
+                        table,
+                        owner);
+
+                    if (isMulti &&
+                        HasAny(
+                            category2,
+                            marketValue2,
+                            extent2))
+                    {
+                        DataCell(table, "");
+                        DataCell(table, category2);
+                        DataCell(table, "");
+                        DataCell(table, marketValue2);
+                        DataCell(table, extent2);
+                        DataCell(table, "");
+                    }
+
+                    if (isMulti &&
+                        HasAny(
+                            category3,
+                            marketValue3,
+                            extent3))
+                    {
+                        DataCell(table, "");
+                        DataCell(table, category3);
+                        DataCell(table, "");
+                        DataCell(table, marketValue3);
+                        DataCell(table, extent3);
+                        DataCell(table, "");
+                    }
+                });
+            }
+
+            static void SupportingDocumentsTable(
+                IContainer container,
+                IReadOnlyList<string> files)
+            {
+                var leftFiles =
+                    files
+                        .Take(5)
+                        .ToList();
+
+                var rightFiles =
+                    files
+                        .Skip(5)
+                        .Take(5)
+                        .ToList();
+
+                container.Table(table =>
+                {
+                    table.ColumnsDefinition(columns =>
+                    {
+                        columns.RelativeColumn();
+                        columns.RelativeColumn();
+                    });
+
+                    table.Cell()
+                        .Background("#eaf4fb")
+                        .Border(1)
+                        .BorderColor("#444444")
+                        .Padding(8)
+                        .Column(left =>
+                        {
+                            left.Item()
+                                .Text(
+                                    "Uploaded Documents (1–5):")
+                                .FontSize(8)
+                                .Bold();
+
+                            if (leftFiles.Count == 0)
+                            {
+                                left.Item()
+                                    .Text(
+                                        "No documents uploaded.")
+                                    .FontSize(8)
+                                    .Italic()
+                                    .FontColor("#666666");
+                            }
+                            else
+                            {
+                                foreach (var file in leftFiles)
+                                {
+                                    left.Item()
+                                        .Text($"• {file}")
+                                        .FontSize(7.5f);
+                                }
+                            }
+                        });
+
+                    table.Cell()
+                        .Background("#eaf4fb")
+                        .Border(1)
+                        .BorderColor("#444444")
+                        .Padding(8)
+                        .Column(right =>
+                        {
+                            right.Item()
+                                .Text(
+                                    "Uploaded Documents (6–10):")
+                                .FontSize(8)
+                                .Bold();
+
+                            foreach (var file in rightFiles)
+                            {
+                                right.Item()
+                                    .Text($"• {file}")
+                                    .FontSize(7.5f);
+                            }
+                        });
+                });
+            }
+
+            static bool HasAny(
+                params string?[] values)
+            {
+                return values.Any(value =>
+                    !string.IsNullOrWhiteSpace(value));
+            }
+
+            static void HeaderCell(
+                TableDescriptor table,
+                string value)
+            {
+                table.Cell()
+                    .Background("#3f7fb5")
+                    .Border(1)
+                    .BorderColor("#222222")
+                    .Padding(5)
+                    .AlignCenter()
+                    .Text(value)
+                    .FontSize(8)
+                    .FontColor(Colors.White)
+                    .Bold();
+            }
+
+            static void DataCell(
+                TableDescriptor table,
+                string? value)
+            {
+                table.Cell()
+                    .Border(1)
+                    .BorderColor("#222222")
+                    .Padding(5)
+                    .Text(
+                        string.IsNullOrWhiteSpace(value)
+                            ? ""
+                            : value)
+                    .FontSize(8);
+            }
+        }
+        private static string FirstNotEmpty(
+    params string?[] values)
+        {
+            foreach (var value in values)
+            {
+                if (!string.IsNullOrWhiteSpace(value))
+                {
+                    return value.Trim();
+                }
+            }
+
+            return string.Empty;
+        }
+
+        private static string SanitiseFileName(
+            string value)
+        {
+            var cleaned =
+                string.Concat(
+                    value.Split(
+                        Path.GetInvalidFileNameChars()));
+
+            cleaned =
+                cleaned
+                    .Replace(" ", "_")
+                    .Replace("/", "_")
+                    .Replace("\\", "_")
+                    .Replace(":", "_")
+                    .Trim();
+
+            while (cleaned.Contains("__"))
+            {
+                cleaned =
+                    cleaned.Replace("__", "_");
+            }
+
+            return string.IsNullOrWhiteSpace(cleaned)
+                ? "Section78"
+                : cleaned;
+        }
+  
+        private sealed class Section78AcknowledgementDbRow
+        {
+            public long Query_ID { get; set; }
+
+            public string? QUERY_No { get; set; }
+
+            public string? QUERY_Status { get; set; }
+
+            public int Sub_typ { get; set; }
+
+            public string? Property_Type { get; set; }
+
+            public string? Property_Desc { get; set; }
+
+            public string? Valuation_Key { get; set; }
+
+            public string? UserID { get; set; }
+
+            public string? Old_Property_Description { get; set; }
+
+            public string? Old_Category { get; set; }
+
+            public string? Old_Address { get; set; }
+
+            public string? Old_Extent { get; set; }
+
+            public string? Old_Market_Value { get; set; }
+
+            public string? Old_Owner { get; set; }
+
+            public string? Old2_Category { get; set; }
+
+            public string? Old2_Extent { get; set; }
+
+            public string? Old2_Market_Value { get; set; }
+
+            public string? Old3_Category { get; set; }
+
+            public string? Old3_Extent { get; set; }
+
+            public string? Old3_Market_Value { get; set; }
+
+            public string? New_Property_Description { get; set; }
+
+            public string? New_Category { get; set; }
+
+            public string? New_Address { get; set; }
+
+            public string? New_Extent { get; set; }
+
+            public string? New_Market_Value { get; set; }
+
+            public string? New_Owner { get; set; }
+
+            public string? New2_Category { get; set; }
+
+            public string? New2_Extent { get; set; }
+
+            public string? New2_Market_Value { get; set; }
+
+            public string? New3_Category { get; set; }
+
+            public string? New3_Extent { get; set; }
+
+            public string? New3_Market_Value { get; set; }
+
+            public string? Objection_Reasons { get; set; }
+
+            public string? RandomPin { get; set; }
+
+            public DateTime? Objection_Date { get; set; }
+
+            public int Evidence_count { get; set; }
+
+            public string? Files1 { get; set; }
+
+            public string? Files2 { get; set; }
+
+            public string? Files3 { get; set; }
+
+            public string? Files4 { get; set; }
+
+            public string? Files5 { get; set; }
+
+            public string? Files6 { get; set; }
+
+            public string? Files7 { get; set; }
+
+            public string? Files8 { get; set; }
+
+            public string? Files9 { get; set; }
+
+            public string? Files10 { get; set; }
         }
     }
 }

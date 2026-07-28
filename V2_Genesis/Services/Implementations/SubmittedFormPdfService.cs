@@ -342,17 +342,42 @@ public class SubmittedFormPdfService : ISubmittedFormPdfService
             Main = que
         };
 
-        aggregate.Sections["Section1"] = obj1;
-        aggregate.Sections["Section2"] = obj2;
-        aggregate.Sections["Section2Query"] = que1;
-        aggregate.Sections["Section3"] = objR3;
-        aggregate.Sections["Section4"] = objB3;
-        aggregate.Sections["Section5"] = objA3;
-        aggregate.Sections["Section6"] = objB4;
-        aggregate.Sections["Section7"] = objR4;
-        aggregate.Sections["Section8"] = obj5;
-        aggregate.Sections["Section9"] = obj6;
-        aggregate.Sections["Section10"] = obj7;
+        /*
+         * These keys must match the names used inside
+         * QueryFormBDocument and QueryFarmDocument.
+         */
+        aggregate.Sections["Section1"] =
+            obj1;
+
+        aggregate.Sections["Section2"] =
+            obj2;
+
+        aggregate.Sections["Section2Query"] =
+            que1;
+
+        aggregate.Sections["Section3Res"] =
+            objR3;
+
+        aggregate.Sections["Section3Bus"] =
+            objB3;
+
+        aggregate.Sections["Section3Agri"] =
+            objA3;
+
+        aggregate.Sections["Section4Bus"] =
+            objB4;
+
+        aggregate.Sections["Section4Res"] =
+            objR4;
+
+        aggregate.Sections["Section5"] =
+            obj5;
+
+        aggregate.Sections["Section6"] =
+            obj6;
+
+        aggregate.Sections["Section7"] =
+            obj7;
 
         var wording = Wording.ForType(isReview ? "Review" : "Query");
 
@@ -392,159 +417,219 @@ public class SubmittedFormPdfService : ISubmittedFormPdfService
     // SECTION 78 — DB VERSION
     // ─────────────────────────────────────────────────────────────
     public async Task<SubmittedFormPdfResult> GenerateSection78FormFromDbAsync(
-        string queryRef,
-        string folderPath)
+       string queryRef,
+       string folderPath)
     {
         if (string.IsNullOrWhiteSpace(queryRef))
-            throw new ArgumentException("Query reference is required.", nameof(queryRef));
+        {
+            throw new ArgumentException(
+                "Query reference is required.",
+                nameof(queryRef));
+        }
 
         if (string.IsNullOrWhiteSpace(folderPath))
-            throw new ArgumentException("Folder path is required.", nameof(folderPath));
+        {
+            throw new ArgumentException(
+                "Folder path is required.",
+                nameof(folderPath));
+        }
 
         Directory.CreateDirectory(folderPath);
 
-        await using var conn = new SqlConnection(_queryConn);
+        await using var conn =
+            new SqlConnection(_queryConn);
 
-        var que = await conn.QueryFirstOrDefaultAsync<Que_Property_InfoModel>(
-            @"
-            SELECT TOP 1 *
-            FROM dbo.QUE_Property_Info
-            WHERE LTRIM(RTRIM(QUERY_No)) = LTRIM(RTRIM(@Ref))
-            ",
-            new { Ref = queryRef });
+        await conn.OpenAsync();
 
-        if (que == null)
-            throw new InvalidOperationException($"QUE_Property_Info not found for {queryRef}.");
+        using var grid =
+            await conn.QueryMultipleAsync(
+                "dbo.Section78_GetSubmittedFormData",
+                new
+                {
+                    QueryRef = queryRef.Trim()
+                },
+                commandType: CommandType.StoredProcedure,
+                commandTimeout: 60);
 
-        var obj1 = await conn.QueryFirstOrDefaultAsync<Obj_Section1Model>(
-            @"
-            SELECT TOP 1 *
-            FROM dbo.Obj_Section1
-            WHERE LTRIM(RTRIM(Objection_Ref_S1)) = LTRIM(RTRIM(@Ref))
-            ",
-            new { Ref = queryRef }) ?? new Obj_Section1Model();
+        var que =
+            await grid.ReadFirstOrDefaultAsync<
+                Que_Property_InfoModel>()
+            ?? throw new InvalidOperationException(
+                $"QUE_Property_Info was not found for reference '{queryRef}'.");
 
-        var obj2 = await conn.QueryFirstOrDefaultAsync<Obj_Section2Model>(
-            @"
-            SELECT TOP 1 *
-            FROM dbo.Obj_Section2
-            WHERE LTRIM(RTRIM(Objection_Ref_S2)) = LTRIM(RTRIM(@Ref))
-            ",
-            new { Ref = queryRef }) ?? new Obj_Section2Model();
+        var obj1 =
+            await grid.ReadFirstOrDefaultAsync<
+                Obj_Section1Model>()
+            ?? new Obj_Section1Model();
 
-        var que1 = await conn.QueryFirstOrDefaultAsync<Obj_Section2QueryModel>(
-            @"
-            SELECT TOP 1 *
-            FROM dbo.Obj_Section2Query
-            WHERE LTRIM(RTRIM(Objection_Ref_SQ)) = LTRIM(RTRIM(@Ref))
-            ",
-            new { Ref = queryRef }) ?? new Obj_Section2QueryModel();
+        var obj2 =
+            await grid.ReadFirstOrDefaultAsync<
+                Obj_Section2Model>()
+            ?? new Obj_Section2Model();
 
-        var objB3 = await conn.QueryFirstOrDefaultAsync<Obj_Section3BusModel>(
-            @"
-            SELECT TOP 1 *
-            FROM dbo.Obj_Section3Bus
-            WHERE LTRIM(RTRIM(Objection_Ref_SB3)) = LTRIM(RTRIM(@Ref))
-            ",
-            new { Ref = queryRef }) ?? new Obj_Section3BusModel();
+        var que1 =
+            await grid.ReadFirstOrDefaultAsync<
+                Obj_Section2QueryModel>()
+            ?? new Obj_Section2QueryModel();
 
-        var objA3 = await conn.QueryFirstOrDefaultAsync<Obj_Section3AgriModel>(
-            @"
-            SELECT TOP 1 *
-            FROM dbo.Obj_Section3Agri
-            WHERE LTRIM(RTRIM(Objection_Ref_SA3)) = LTRIM(RTRIM(@Ref))
-            ",
-            new { Ref = queryRef }) ?? new Obj_Section3AgriModel();
+        var objR3 =
+            await grid.ReadFirstOrDefaultAsync<
+                Obj_Section3ResModel>()
+            ?? new Obj_Section3ResModel();
 
-        var objB4 = await conn.QueryFirstOrDefaultAsync<Obj_Section4BusModel>(
-            @"
-            SELECT TOP 1 *
-            FROM dbo.Obj_Section4Bus
-            WHERE LTRIM(RTRIM(Objection_Ref_SB4)) = LTRIM(RTRIM(@Ref))
-            ",
-            new { Ref = queryRef }) ?? new Obj_Section4BusModel();
+        var objB3 =
+            await grid.ReadFirstOrDefaultAsync<
+                Obj_Section3BusModel>()
+            ?? new Obj_Section3BusModel();
 
-        var objR4 = await conn.QueryFirstOrDefaultAsync<Obj_Section4ResModel>(
-            @"
-            SELECT TOP 1 *
-            FROM dbo.Obj_Section4Res
-            WHERE LTRIM(RTRIM(Objection_Ref_SR4)) = LTRIM(RTRIM(@Ref))
-            ",
-            new { Ref = queryRef }) ?? new Obj_Section4ResModel();
+        var objA3 =
+            await grid.ReadFirstOrDefaultAsync<
+                Obj_Section3AgriModel>()
+            ?? new Obj_Section3AgriModel();
 
-        var obj5 = await conn.QueryFirstOrDefaultAsync<Obj_Section5Model>(
-            @"
-            SELECT TOP 1 *
-            FROM dbo.Obj_Section5
-            WHERE LTRIM(RTRIM(Objection_Ref_S5)) = LTRIM(RTRIM(@Ref))
-            ",
-            new { Ref = queryRef }) ?? new Obj_Section5Model();
+        var objR4 =
+            await grid.ReadFirstOrDefaultAsync<
+                Obj_Section4ResModel>()
+            ?? new Obj_Section4ResModel();
 
-        var obj6 = await conn.QueryFirstOrDefaultAsync<Obj_Section6Model>(
-            @"
-            SELECT TOP 1 *
-            FROM dbo.Obj_Section6
-            WHERE LTRIM(RTRIM(Objection_Ref_S6)) = LTRIM(RTRIM(@Ref))
-            ",
-            new { Ref = queryRef }) ?? new Obj_Section6Model();
+        var objB4 =
+            await grid.ReadFirstOrDefaultAsync<
+                Obj_Section4BusModel>()
+            ?? new Obj_Section4BusModel();
 
-        var obj7 = await conn.QueryFirstOrDefaultAsync<Obj_Section7Model>(
-            @"
-            SELECT TOP 1 *
-            FROM dbo.Obj_Section7
-            WHERE LTRIM(RTRIM(Objection_Ref_S7)) = LTRIM(RTRIM(@Ref))
-            ",
-            new { Ref = queryRef }) ?? new Obj_Section7Model();
+        var obj5 =
+            await grid.ReadFirstOrDefaultAsync<
+                Obj_Section5Model>()
+            ?? new Obj_Section5Model();
 
-        bool isReview = que.Sub_typ == 1;
+        var obj6 =
+            await grid.ReadFirstOrDefaultAsync<
+                Obj_Section6Model>()
+            ?? new Obj_Section6Model();
 
-        var aggregate = new InquiryAggregate
-        {
-            Main = que
-        };
+        var obj7 =
+            await grid.ReadFirstOrDefaultAsync<
+                Obj_Section7Model>()
+            ?? new Obj_Section7Model();
 
-        aggregate.Sections["Section1"] = obj1;
-        aggregate.Sections["Section2"] = obj2;
-        aggregate.Sections["Section2Query"] = que1;
-        aggregate.Sections["Section3Bus"] = objB3;
-        aggregate.Sections["Section3Agri"] = objA3;
-        aggregate.Sections["Section4Bus"] = objB4;
-        aggregate.Sections["Section4Res"] = objR4;
-        aggregate.Sections["Section5"] = obj5;
-        aggregate.Sections["Section6"] = obj6;
-        aggregate.Sections["Section7"] = obj7;
+        var isReview =
+            que.Sub_typ == 1
+            ||
+            queryRef.EndsWith(
+                "-R",
+                StringComparison.OrdinalIgnoreCase);
 
-        var wording = Wording.ForType(isReview ? "Review" : "Query");
+        var aggregate =
+            new InquiryAggregate
+            {
+                Main = que
+            };
 
-        string formType = NormalisePropertyType(que.Property_Type);
+        aggregate.Sections["Section1"] =
+            obj1;
 
-        byte[] pdfBytes = GenerateSection78PdfBytes(
-            aggregate,
-            wording,
-            formType);
+        aggregate.Sections["Section2"] =
+            obj2;
 
-        string propertyDesc = que.Property_Desc
-            ?? obj6.Old_Property_Description
-            ?? "NA";
+        aggregate.Sections["Section2Query"] =
+            que1;
 
-        string category = que.Property_Type
-            ?? obj6.Old_Category
-            ?? "NA";
+        aggregate.Sections["Section3Res"] =
+            objR3;
 
-        string submissionType = isReview
-            ? "Section78Review"
-            : "Section78Query";
+        aggregate.Sections["Section3Bus"] =
+            objB3;
 
-        string fileName = BuildSubmittedFormFileName(
+        aggregate.Sections["Section3Agri"] =
+            objA3;
+
+        aggregate.Sections["Section4Res"] =
+            objR4;
+
+        aggregate.Sections["Section4Bus"] =
+            objB4;
+
+        aggregate.Sections["Section5"] =
+            obj5;
+
+        aggregate.Sections["Section6"] =
+            obj6;
+
+        aggregate.Sections["Section7"] =
+            obj7;
+
+        var wording =
+            Wording.ForType(
+                isReview
+                    ? "Review"
+                    : "Query");
+
+        var formType =
+            NormalisePropertyType(
+                que.Property_Type);
+
+        _logger.LogInformation(
+            """
+        [Section 78 PDF]
+        Reference: {Reference}
+        IsReview: {IsReview}
+        PropertyType: {PropertyType}
+        OwnerName: {OwnerName}
+        RepresentativeName: {RepresentativeName}
+        Motivation: {Motivation}
+        PropertyDescription: {PropertyDescription}
+        UnitKey: {UnitKey}
+        ValuationKey: {ValuationKey}
+        """,
             queryRef,
-            propertyDesc,
-            category,
-            submissionType,
-            DateTime.Now);
+            isReview,
+            formType,
+            obj1.Owner_Name,
+            obj1.Representative_name,
+            que1.Motivation_for_Supp_Request,
+            que.Property_Desc,
+            que.Unit_key,
+            que.Valuation_Key);
 
-        string filePath = Path.Combine(folderPath, fileName);
+        var pdfBytes =
+            GenerateSection78PdfBytes(
+                aggregate,
+                wording,
+                formType);
 
-        await File.WriteAllBytesAsync(filePath, pdfBytes);
+        var propertyDesc =
+            FirstNotEmpty(
+                que.Property_Desc,
+                obj6.Old_Property_Description,
+                "NA");
+
+        var category =
+            FirstNotEmpty(
+                que.Property_Type,
+                obj6.Old_Category,
+                "NA");
+
+        var submissionType =
+            isReview
+                ? "Section78Review"
+                : "Section78Query";
+
+        var fileName =
+            BuildSubmittedFormFileName(
+                queryRef,
+                propertyDesc,
+                category,
+                submissionType,
+                DateTime.Now);
+
+        var filePath =
+            Path.Combine(
+                folderPath,
+                fileName);
+
+        await File.WriteAllBytesAsync(
+            filePath,
+            pdfBytes);
 
         _logger.LogInformation(
             "[Submitted Form PDF] {SubmissionType} form saved for {ReferenceNumber} at {FilePath}",
@@ -554,14 +639,36 @@ public class SubmittedFormPdfService : ISubmittedFormPdfService
 
         return new SubmittedFormPdfResult
         {
-            ReferenceNumber = queryRef,
-            FileName = fileName,
-            FilePath = filePath,
-            PdfBytes = pdfBytes,
-            SubmissionType = submissionType
+            ReferenceNumber =
+                queryRef,
+
+            FileName =
+                fileName,
+
+            FilePath =
+                filePath,
+
+            PdfBytes =
+                pdfBytes,
+
+            SubmissionType =
+                submissionType
         };
     }
 
+    private static string FirstNotEmpty(
+    params string?[] values)
+    {
+        foreach (var value in values)
+        {
+            if (!string.IsNullOrWhiteSpace(value))
+            {
+                return value.Trim();
+            }
+        }
+
+        return string.Empty;
+    }
     // ─────────────────────────────────────────────────────────────
     // HELPERS
     // ─────────────────────────────────────────────────────────────

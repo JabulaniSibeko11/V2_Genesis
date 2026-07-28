@@ -805,7 +805,7 @@
                                                                 data-bs-toggle="dropdown">
                                                             Actions
                                                         </button>
-                                                        <ul class="dropdown-menu">
+                                                        <ul class="dropdown-menu cd-action-menu">
                                                          @{
     var reviewIsOpen =
         string.Equals(
@@ -839,12 +839,12 @@
                     : item.PropertyFrom;
         }
 
-        <a class="dropdown-item"
-           href="/objection/check?rollSource=@roll.Source&sourceTable=@querySourceTable&unitKey=@item.UnitKey&valuationKey=@item.ValuationKey&appealStatus=False">
+                                                                    <a class="dropdown-item cd-action-primary"
+                                                                           href="/objection/check?rollSource=@roll.Source&sourceTable=@querySourceTable&unitKey=@item.UnitKey&valuationKey=@item.ValuationKey&appealStatus=False&qtype=Query">
 
-            <i class="fa-solid fa-file-circle-question"></i>
-            Lodge Query
-        </a>
+                                                                        <i class="fa-solid fa-file-circle-question"></i>
+                                                                        <span>Lodge Query</span>
+                                                                    </a>
     </li>
 }
 else if (canLodgeReview)
@@ -862,14 +862,12 @@ else if (canLodgeReview)
     
 
     <li>
-        <a class="dropdown-item"
-           href="@linkedReviewUrl">
+                                                                    <a class="dropdown-item cd-action-primary"
+                                                                           href="@linkedReviewUrl">
 
-            <i class="fa-solid fa-magnifying-glass-chart"
-               style="color:#b88700;"></i>
-
-            <strong>Lodge Review</strong>
-        </a>
+                                                                        <i class="fa-solid fa-magnifying-glass-chart"></i>
+                                                                        <span>Lodge Review</span>
+                                                                    </a>
     </li>
 }
 else if (reviewIsClosed)
@@ -908,9 +906,11 @@ else
                                                             
                                                             
                                                             <li>
-                                                                <a class="dropdown-item"
+                                                                <a class="dropdown-item cd-action-danger"
                                                                        href="/property/unlink?linkedId=@item.Id&rollSource=@roll.Source&returnUrl=/Dashboard?openRoll=@roll.Source">
-                                                                    <i class="fa-solid fa-link-slash"></i> Unlink Property
+
+                                                                    <i class="fa-solid fa-link-slash"></i>
+                                                                    <span>Unlink Property</span>
                                                                 </a>
                                                             </li>
                                                         </ul>
@@ -992,7 +992,7 @@ else
                                                                 data-bs-toggle="dropdown">
                                                             Actions
                                                         </button>
-                                                        <ul class="dropdown-menu">
+                                                        <ul class="dropdown-menu cd-action-menu">
                                                             <li>
                                                                 @{
                                                                     var queryRefNo = !string.IsNullOrWhiteSpace(item.Query_No)
@@ -1020,8 +1020,13 @@ else
                                                             </li>
                                                             <li>
                                                                 <a class="dropdown-item"
-                                                                       href="/notice/acknowledgement/download?objectionNo=@item.Objection_No&rollSource=@roll.Source">
-                                                                    <i class="fa-solid fa-download"></i> Download Acknowledgement
+                                                                       asp-controller="Notice"
+                                                                       asp-action="DownloadAcknowledgement"
+                                                                       asp-route-objectionNo="@item.Objection_No"
+                                                                       asp-route-rollSource="Query">
+
+                                                                    <i class="fa-solid fa-file-arrow-down"></i>
+                                                                    <span>Download Acknowledgement</span>
                                                                 </a>
                                                             </li>
                                                             @if (item.objection_Status == "Query-Lodging")
@@ -1180,7 +1185,7 @@ else
                                                                     data-bs-toggle="dropdown">
                                                                 Actions
                                                             </button>
-                                                            <ul class="dropdown-menu">
+                                                            <ul class="dropdown-menu cd-action-menu">
                                                                 <li>
                                                                     <a class="dropdown-item"
                                                                            href="/Home/FormData@(roll.ControllerName)?propertyID=@item.Property_Type&objectionNo=@item.Objection_No&AppealStatus=False">
@@ -1189,8 +1194,13 @@ else
                                                                 </li>
                                                                 <li>
                                                                     <a class="dropdown-item"
-                                                                           href="/notice/acknowledgement/download?objectionNo=@item.Objection_No&rollSource=@roll.Source">
-                                                                        <i class="fa-solid fa-download"></i>Download Acknowledgement
+                                                                           asp-controller="Notice"
+                                                                           asp-action="DownloadAcknowledgement"
+                                                                           asp-route-objectionNo="@item.Objection_No"
+                                                                           asp-route-rollSource="Query">
+
+                                                                        <i class="fa-solid fa-file-arrow-down"></i>
+                                                                        <span>Download Acknowledgement</span>
                                                                     </a>
                                                                 </li>
                                                                 @if (item.objection_Status is "Query-Lodging" or "Query-Unallocated")
@@ -1271,7 +1281,7 @@ else
                                                                 data-bs-toggle="dropdown">
                                                             Actions
                                                         </button>
-                                                        <ul class="dropdown-menu">
+                                                        <ul class="dropdown-menu cd-action-menu">
                                                             @if (roll.HasObjection && canLodgeObjectionForRoll)
                                                             {
                                                                 <li>
@@ -1287,9 +1297,11 @@ else
                                                                             : checkSourceTable;
                                                                     }
 
-                                                                    <a class="dropdown-item"
+                                                                    <a class="dropdown-item cd-action-primary"
                                                                            href="/objection/check?rollSource=@roll.Source&sourceTable=@checkSourceTable&unitKey=@item.UnitKey&valuationKey=@item.ValuationKey&appealStatus=False&PropertyFrom=@checkPropertyFrom">
-                                                                        <i class="fa-solid fa-file-pen"></i> Lodge Objection
+
+                                                                        <i class="fa-solid fa-file-pen"></i>
+                                                                        <span>Lodge Objection</span>
                                                                     </a>
                                                                 </li>
                                                             }
@@ -1354,7 +1366,7 @@ else
                                                                     data-bs-toggle="dropdown">
                                                                 Actions
                                                             </button>
-                                                            <ul class="dropdown-menu">
+                                                            <ul class="dropdown-menu cd-action-menu">
                                                                 <li>
                                                                     @{
                                                                         var viewFormUrl =
@@ -1375,8 +1387,13 @@ else
                                                                 <li>
 
                                                                     <a class="dropdown-item"
-                                                                           href="/notice/acknowledgement/download?objectionNo=@item.Objection_No&rollSource=@roll.Source">
-                                                                        <i class="fa-solid fa-download"></i> Download Acknowledgement
+                                                                           asp-controller="Notice"
+                                                                           asp-action="DownloadAcknowledgement"
+                                                                           asp-route-objectionNo="@item.Objection_No"
+                                                                           asp-route-rollSource="@roll.Source">
+
+                                                                        <i class="fa-solid fa-file-arrow-down"></i>
+                                                                        <span>Download Acknowledgement</span>
                                                                     </a>
                                                                 </li>
                                                                 @if (item.objection_Status == "Obj-Lodging")
@@ -1417,19 +1434,23 @@ else
                                                                 @if (canLodgeAppealForItem)
                                                                 {
                                                                     <li>
-                                                                        <a class="dropdown-item"
+                                                                        <a class="dropdown-item cd-action-primary"
                                                                                href="/objection/check?rollSource=@roll.Source&sourceTable=@item.PropertyFrom&unitKey=@item.Unit_key&valuationKey=@item.Valuation_Key&appealStatus=True&ObjectionNo=@item.Objection_No"
                                                                                onclick="logAction('Appeal', '@roll.Source', '@item.Unit_key')">
-                                                                            Lodge Appeal
+
+                                                                            <i class="fa-solid fa-gavel"></i>
+                                                                            <span>Lodge Appeal</span>
                                                                         </a>
                                                                     </li>
                                                                 }
                                                                 @if (item.objection_Status == "Obj-Lodging" || item.objection_Status == "Obj-Unallocated")
                                                                 {
                                                                     <li>
-                                                                        <a class="dropdown-item"
+                                                                        <a class="dropdown-item cd-action-danger"
                                                                                href="/objection/withdraw?objectionNo=@item.Objection_No&withdrawType=O&rollSource=@roll.Source&returnUrl=/dashboard">
-                                                                            <i class="fa-solid fa-ban"></i> Withdraw Objection
+
+                                                                            <i class="fa-solid fa-ban"></i>
+                                                                            <span>Withdraw Objection</span>
                                                                         </a>
                                                                     </li>
                                                                 }
@@ -1488,7 +1509,7 @@ else
                                                                     data-bs-toggle="dropdown">
                                                                 Actions
                                                             </button>
-                                                            <ul class="dropdown-menu">
+                                                            <ul class="dropdown-menu cd-action-menu">
                                                                 @{
                                                                     var appealAckRef = !string.IsNullOrWhiteSpace(item.Appeal_No)
                                                                         ? item.Appeal_No
@@ -1497,8 +1518,13 @@ else
 
                                                                 <li>
                                                                     <a class="dropdown-item"
-                                                                           href="/notice/acknowledgement/download?objectionNo=@appealAckRef&rollSource=@roll.Source">
-                                                                        <i class="fa-solid fa-download"></i> Download Acknowledgement
+                                                                           asp-controller="Notice"
+                                                                           asp-action="DownloadAcknowledgement"
+                                                                           asp-route-objectionNo="@appealAckRef"
+                                                                           asp-route-rollSource="@roll.Source">
+
+                                                                        <i class="fa-solid fa-file-arrow-down"></i>
+                                                                        <span>Download Acknowledgement</span>
                                                                     </a>
                                                                 </li>
                                                                 <li>
@@ -1692,7 +1718,7 @@ else
                                                             data-bs-toggle="dropdown">
                                                         Actions
                                                     </button>
-                                                    <ul class="dropdown-menu">
+                                                    <ul class="dropdown-menu cd-action-menu">
                                                         <li>
                                                             <a class="dropdown-item"
                                                                    asp-controller="Rebates"
@@ -1818,7 +1844,7 @@ else
                                                         data-bs-toggle="dropdown">
                                                     Actions
                                                 </button>
-                                                <ul class="dropdown-menu">
+                                                <ul class="dropdown-menu cd-action-menu">
                                                     @if (!item.HasSubmission)
                                                     {
                                                         @*     <li>
@@ -1936,7 +1962,7 @@ else
                                                         data-bs-toggle="dropdown">
                                                     Actions
                                                 </button>
-                                                <ul class="dropdown-menu">
+                                                <ul class="dropdown-menu cd-action-menu">
                                                     <li>
                                                         <a class="dropdown-item"
                                                                href="/attributes/submission/@item.Id">

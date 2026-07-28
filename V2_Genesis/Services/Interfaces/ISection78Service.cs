@@ -1,4 +1,5 @@
 ﻿using V2_Genesis.Models;
+using V2_Genesis.Models.Results.Acknowledgement;
 using V2_Genesis.Models.Results.Section78;
 using V2_Genesis.Models.ViewModels.Section78;
 
@@ -38,5 +39,10 @@ namespace V2_Genesis.Services.Interfaces
     string uploadRootPath,
     string propertyType,
     string userId);
+
+
+        Task<GeneratedAcknowledgementResult>GenerateAcknowledgementFromDatabaseAsync(string queryReference,string userId,CancellationToken cancellationToken = default);
     }
-}
+
+  
+    }

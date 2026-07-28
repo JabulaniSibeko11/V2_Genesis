@@ -130,6 +130,7 @@ builder.Services.AddScoped<IAdminFormViewService, AdminFormViewService>();
 builder.Services.AddScoped<ISupportingDocumentService, SupportingDocumentService>();
 builder.Services.AddScoped<IValuerInspectionEvidenceService, ValuerInspectionEvidenceService>();
 builder.Services.AddScoped<IPropertyRateCalculatorService, PropertyRateCalculatorService>();
+builder.Services.AddScoped<IAcknowledgementDownloadService,AcknowledgementDownloadService>();
 builder.Services.AddDataProtection();
 
 // ── App Pipeline ──────────────────────────────────────────────────────────────

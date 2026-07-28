@@ -18,18 +18,22 @@ public class NoticeController : Controller
     private readonly IPropertySearchService _search;
     private readonly ApplicationDbContext _db;
     private readonly RollDatesSettings _rollDates;
+    private readonly IAcknowledgementDownloadService _acknowledgementDownloadService;
     private readonly ILogger<NoticeController> _logger;
     public NoticeController(
         INoticeService notice,
         IObjectionFormService objectionFormService,
         IPropertySearchService search,
-        ApplicationDbContext db, IOptions<RollDatesSettings> rollDatesOpts, ILogger<NoticeController> logger)
+        ApplicationDbContext db, IOptions<RollDatesSettings> rollDatesOpts,
+        IAcknowledgementDownloadService acknowledgementDownloadService,
+        ILogger<NoticeController> logger)
     {
         _notice = notice;
         _objectionFormService = objectionFormService;
         _search = search;
         _db = db;
         _rollDates = rollDatesOpts.Value;
+        _acknowledgementDownloadService = acknowledgementDownloadService;
         _logger = logger;
     }
 
@@ -92,49 +96,86 @@ public class NoticeController : Controller
     [HttpGet]
     [Route("notice/acknowledgement/download")]
     public async Task<IActionResult> DownloadAcknowledgement(
-        string objectionNo,
-        string rollSource)
+    string objectionNo,
+    string? rollSource,
+    CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(objectionNo))
-            return BadRequest("Objection or appeal number is required.");
+        {
+            return BadRequest(
+                "The reference number is required.");
+        }
 
-        if (string.IsNullOrWhiteSpace(rollSource))
-            return BadRequest("Roll source is required.");
+        var userId = User.FindFirstValue(
+            ClaimTypes.NameIdentifier);
+
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Challenge();
+        }
 
         try
         {
-            var data = await _objectionFormService
-                .GetAcknowledgementDataAsync(rollSource, objectionNo);
+            var generated =
+                await _acknowledgementDownloadService
+                    .GenerateAsync(
+                        objectionNo,
+                        rollSource,
+                        userId,
+                        cancellationToken);
 
-            if (data is null)
-                return NotFound("The objection or appeal submission was not found.");
-
-            var (pdf, fileName) = await _notice
-                .GenerateAcknowledgementAsync(data);
-
-            if (pdf is null || pdf.Length == 0)
+            if (generated.PdfBytes.Length == 0)
+            {
                 throw new InvalidOperationException(
                     "Acknowledgement generation returned an empty PDF.");
+            }
 
             _logger.LogInformation(
-                "Generated acknowledgement on demand for {ReferenceNo} in {RollSource}",
-                objectionNo,
-                rollSource);
+                "Generated acknowledgement on demand for {ReferenceNumber}. Type={SubmissionType}",
+                generated.ReferenceNumber,
+                generated.SubmissionType);
 
-            return File(pdf, "application/pdf", fileName);
+            return File(
+                generated.PdfBytes,
+                "application/pdf",
+                generated.FileName);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            _logger.LogWarning(
+                ex,
+                "Acknowledgement data was not found for {ReferenceNumber}.",
+                objectionNo);
+
+            return NotFound(
+                "The submitted application was not found.");
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+        catch (NotSupportedException ex)
+        {
+            _logger.LogWarning(
+                ex,
+                "Unsupported acknowledgement reference {ReferenceNumber}.",
+                objectionNo);
+
+            return BadRequest(ex.Message);
         }
         catch (Exception ex)
         {
             _logger.LogError(
                 ex,
-                "Could not generate acknowledgement for {ReferenceNo} in {RollSource}",
-                objectionNo,
-                rollSource);
+                "Could not generate acknowledgement for {ReferenceNumber}.",
+                objectionNo);
 
             TempData["NoticeError"] =
                 "The acknowledgement could not be generated. Please try again.";
 
-            return RedirectToAction("Index", "Dashboard");
+            return RedirectToAction(
+                "Index",
+                "Dashboard");
         }
     }
 

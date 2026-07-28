@@ -359,10 +359,17 @@
 
         <div class="disp-card">
             <div class="disp-actions">
-                <a href="@Url.Action("DownloadAcknowledgement", "Section78",
-                          new { appeal = "False" })"
-                   class="disp-btn disp-btn-gold"
-                   onclick="showDlToast()">
+                <a href="@Url.Action(
+                                              "DownloadAcknowledgement",
+                                              "Notice",
+                                              new
+                                              {
+                                                  objectionNo = queryRef,
+                                                  rollSource = "Query"
+                                              })"
+                       class="disp-btn disp-btn-gold"
+                       onclick="showDlToast()">
+
                     <i class="fa-solid fa-file-pdf"></i>
                     Download Acknowledgement
                 </a>
