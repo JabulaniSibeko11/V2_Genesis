@@ -1,0 +1,213 @@
+@using V2_Genesis.Models.ViewModels.Submissions
+@model SubmissionViewModel
+
+@{
+    var applicant = Model.Applicant;
+
+    var ownerFields = new[]
+    {
+        applicant.OwnerFullName,
+        applicant.OwnerIdNumber,
+        applicant.OwnerEmail,
+        applicant.OwnerTelephone,
+        applicant.OwnerCellphone,
+        SubmissionFieldReader.Value(Model, "Owner_Company"),
+        SubmissionFieldReader.Value(Model, "Owner_Address_1"),
+        SubmissionFieldReader.Value(Model, "Owner_Address_2"),
+        SubmissionFieldReader.Value(Model, "Owner_Address_3"),
+        SubmissionFieldReader.Value(Model, "Owner_Address_4"),
+        SubmissionFieldReader.Value(Model, "Owner_Address_5"),
+        SubmissionFieldReader.Value(Model, "Owner_Postal_1"),
+        SubmissionFieldReader.Value(Model, "Owner_Postal_2"),
+        SubmissionFieldReader.Value(Model, "Owner_Postal_3"),
+        SubmissionFieldReader.Value(Model, "Owner_Postal_4"),
+        SubmissionFieldReader.Value(Model, "Owner_Postal_5"),
+        SubmissionFieldReader.Value(Model, "Owner_Work_Phone"),
+        SubmissionFieldReader.Value(Model, "Owner_Fax_Phone")
+    };
+
+    var objectorFields = new[]
+    {
+        applicant.ApplicantFullName,
+        applicant.ApplicantIdNumber,
+        applicant.ApplicantCompanyRegistrationNumber,
+        applicant.ApplicantEmail,
+        applicant.ApplicantTelephone,
+        applicant.ApplicantCellphone,
+        applicant.ApplicantAddress1,
+        applicant.ApplicantAddress2,
+        applicant.ApplicantAddress3,
+        applicant.ApplicantAddress4,
+        applicant.ApplicantPostalCode,
+        applicant.Capacity,
+        SubmissionFieldReader.Value(Model, "Objector_Home"),
+        SubmissionFieldReader.Value(Model, "Objector_Work"),
+        SubmissionFieldReader.Value(Model, "Objector_Fax")
+    };
+
+    var representativeFields = new[]
+    {
+        applicant.RepresentativeFullName,
+        applicant.RepresentativeIdNumber,
+        applicant.RepresentativeCompanyName,
+        applicant.RepresentativeCompanyRegistrationNumber,
+        applicant.RepresentativeEmail,
+        applicant.RepresentativeTelephone,
+        applicant.RepresentativeCellphone,
+        applicant.RepresentativeAddress1,
+        applicant.RepresentativeAddress2,
+        applicant.RepresentativeAddress3,
+        applicant.RepresentativeAddress4,
+        applicant.RepresentativePostalCode,
+        SubmissionFieldReader.Value(Model, "Rep_Home_Phone"),
+        SubmissionFieldReader.Value(Model, "Rep_Work_Phone"),
+        SubmissionFieldReader.Value(Model, "Rep_Fax_Phone")
+    };
+
+    var showOwner = ownerFields.Any(value => !string.IsNullOrWhiteSpace(value));
+    var showObjector = objectorFields.Any(value => !string.IsNullOrWhiteSpace(value));
+    var showRepresentative = representativeFields.Any(value => !string.IsNullOrWhiteSpace(value));
+}
+
+<div class="municipal-form-section">
+    <partial name="Partials/Forms/_SectionHeading"
+             model='new SubmissionSectionHeadingViewModel
+             {
+                 Number = "SECTION 1",
+                 Title = "OBJECTOR INFORMATION"
+             }' />
+
+    @if (showOwner)
+    {
+        <div class="municipal-subsection">
+            <div class="municipal-subsection-bar">
+                <span>1.1</span>
+                <strong>OBJECTOR IS THE OWNER</strong>
+            </div>
+
+            <div class="municipal-field-grid">
+                <div class="municipal-readonly-field municipal-readonly-field--wide">
+                    <label>Registered owner of property</label>
+                    <div class="municipal-readonly-input">@SubmissionFieldReader.Display(applicant.OwnerFullName)</div>
+                </div>
+                <div class="municipal-readonly-field">
+                    <label>Identity / passport number</label>
+                    <div class="municipal-readonly-input">@SubmissionFieldReader.Display(applicant.OwnerIdNumber)</div>
+                </div>
+                <div class="municipal-readonly-field">
+                    <label>Company or C.C registration number</label>
+                    <div class="municipal-readonly-input">@SubmissionFieldReader.Display(SubmissionFieldReader.Value(Model, "Owner_Company", "Owner_Company_Registration"))</div>
+                </div>
+            </div>
+
+            <div class="municipal-inner-heading">Physical address of owner</div>
+            <div class="municipal-field-grid municipal-field-grid--address">
+                <div class="municipal-readonly-field"><label>Street number</label><div class="municipal-readonly-input">@SubmissionFieldReader.Display(SubmissionFieldReader.Value(Model, "Owner_Address_1"))</div></div>
+                <div class="municipal-readonly-field municipal-readonly-field--span-3"><label>Street name</label><div class="municipal-readonly-input">@SubmissionFieldReader.Display(SubmissionFieldReader.Value(Model, "Owner_Address_2"))</div></div>
+                <div class="municipal-readonly-field municipal-readonly-field--wide"><label>Suburb name</label><div class="municipal-readonly-input">@SubmissionFieldReader.Display(SubmissionFieldReader.Value(Model, "Owner_Address_3"))</div></div>
+                <div class="municipal-readonly-field municipal-readonly-field--span-3"><label>Town name</label><div class="municipal-readonly-input">@SubmissionFieldReader.Display(SubmissionFieldReader.Value(Model, "Owner_Address_4"))</div></div>
+                <div class="municipal-readonly-field"><label>Postal code</label><div class="municipal-readonly-input">@SubmissionFieldReader.Display(SubmissionFieldReader.Value(Model, "Owner_Address_5"))</div></div>
+            </div>
+
+            <div class="municipal-inner-heading">Postal address of owner</div>
+            <div class="municipal-field-grid municipal-field-grid--address">
+                <div class="municipal-readonly-field"><label>Street number</label><div class="municipal-readonly-input">@SubmissionFieldReader.Display(SubmissionFieldReader.Value(Model, "Owner_Postal_1"))</div></div>
+                <div class="municipal-readonly-field municipal-readonly-field--span-3"><label>Street name</label><div class="municipal-readonly-input">@SubmissionFieldReader.Display(SubmissionFieldReader.Value(Model, "Owner_Postal_2"))</div></div>
+                <div class="municipal-readonly-field municipal-readonly-field--wide"><label>Suburb name</label><div class="municipal-readonly-input">@SubmissionFieldReader.Display(SubmissionFieldReader.Value(Model, "Owner_Postal_3"))</div></div>
+                <div class="municipal-readonly-field municipal-readonly-field--span-3"><label>Town name</label><div class="municipal-readonly-input">@SubmissionFieldReader.Display(SubmissionFieldReader.Value(Model, "Owner_Postal_4"))</div></div>
+                <div class="municipal-readonly-field"><label>Postal code</label><div class="municipal-readonly-input">@SubmissionFieldReader.Display(SubmissionFieldReader.Value(Model, "Owner_Postal_5"))</div></div>
+            </div>
+
+            <div class="municipal-inner-heading">Contact details</div>
+            <div class="municipal-field-grid">
+                <div class="municipal-readonly-field"><label>Home telephone</label><div class="municipal-readonly-input">@SubmissionFieldReader.Display(applicant.OwnerTelephone)</div></div>
+                <div class="municipal-readonly-field"><label>Work telephone</label><div class="municipal-readonly-input">@SubmissionFieldReader.Display(SubmissionFieldReader.Value(Model, "Owner_Work_Phone"))</div></div>
+                <div class="municipal-readonly-field"><label>Cellphone number</label><div class="municipal-readonly-input">@SubmissionFieldReader.Display(applicant.OwnerCellphone)</div></div>
+                <div class="municipal-readonly-field"><label>Fax</label><div class="municipal-readonly-input">@SubmissionFieldReader.Display(SubmissionFieldReader.Value(Model, "Owner_Fax_Phone"))</div></div>
+                <div class="municipal-readonly-field municipal-readonly-field--wide"><label>Email address</label><div class="municipal-readonly-input">@SubmissionFieldReader.Display(applicant.OwnerEmail)</div></div>
+            </div>
+        </div>
+    }
+
+    @if (showObjector)
+    {
+        <div class="municipal-subsection">
+            <div class="municipal-subsection-bar">
+                <span>1.2</span>
+                <strong>OBJECTOR IS NOT THE OWNER</strong>
+            </div>
+
+            <div class="municipal-field-grid">
+                <div class="municipal-readonly-field municipal-readonly-field--wide"><label>Name of objector</label><div class="municipal-readonly-input">@SubmissionFieldReader.Display(applicant.ApplicantFullName)</div></div>
+                <div class="municipal-readonly-field"><label>Identity / passport number</label><div class="municipal-readonly-input">@SubmissionFieldReader.Display(applicant.ApplicantIdNumber)</div></div>
+                <div class="municipal-readonly-field"><label>Company registration number</label><div class="municipal-readonly-input">@SubmissionFieldReader.Display(applicant.ApplicantCompanyRegistrationNumber)</div></div>
+                <div class="municipal-readonly-field municipal-readonly-field--wide"><label>Status / capacity of objector</label><div class="municipal-readonly-input">@SubmissionFieldReader.Display(applicant.Capacity)</div></div>
+            </div>
+
+            <div class="municipal-inner-heading">Postal address of objector</div>
+            <div class="municipal-field-grid municipal-field-grid--address">
+                <div class="municipal-readonly-field"><label>Street number</label><div class="municipal-readonly-input">@SubmissionFieldReader.Display(applicant.ApplicantAddress1)</div></div>
+                <div class="municipal-readonly-field municipal-readonly-field--span-3"><label>Street name</label><div class="municipal-readonly-input">@SubmissionFieldReader.Display(applicant.ApplicantAddress2)</div></div>
+                <div class="municipal-readonly-field municipal-readonly-field--wide"><label>Suburb name</label><div class="municipal-readonly-input">@SubmissionFieldReader.Display(applicant.ApplicantAddress3)</div></div>
+                <div class="municipal-readonly-field municipal-readonly-field--span-3"><label>Town name</label><div class="municipal-readonly-input">@SubmissionFieldReader.Display(applicant.ApplicantAddress4)</div></div>
+                <div class="municipal-readonly-field"><label>Postal code</label><div class="municipal-readonly-input">@SubmissionFieldReader.Display(applicant.ApplicantPostalCode)</div></div>
+            </div>
+
+            <div class="municipal-inner-heading">Contact details</div>
+            <div class="municipal-field-grid">
+                <div class="municipal-readonly-field"><label>Home telephone</label><div class="municipal-readonly-input">@SubmissionFieldReader.Display(SubmissionFieldReader.Value(Model, "Objector_Home", "Objector_Home_Phone"))</div></div>
+                <div class="municipal-readonly-field"><label>Work telephone</label><div class="municipal-readonly-input">@SubmissionFieldReader.Display(SubmissionFieldReader.Value(Model, "Objector_Work", "Objector_Work_Phone"))</div></div>
+                <div class="municipal-readonly-field"><label>Cellphone number</label><div class="municipal-readonly-input">@SubmissionFieldReader.Display(applicant.ApplicantCellphone)</div></div>
+                <div class="municipal-readonly-field"><label>Fax</label><div class="municipal-readonly-input">@SubmissionFieldReader.Display(SubmissionFieldReader.Value(Model, "Objector_Fax"))</div></div>
+                <div class="municipal-readonly-field municipal-readonly-field--wide"><label>Email address</label><div class="municipal-readonly-input">@SubmissionFieldReader.Display(applicant.ApplicantEmail)</div></div>
+            </div>
+        </div>
+    }
+
+    @if (showRepresentative)
+    {
+        <div class="municipal-subsection">
+            <div class="municipal-subsection-bar">
+                <span>1.3</span>
+                <strong>AUTHORISED REPRESENTATIVE OF THE OBJECTOR</strong>
+            </div>
+
+            <div class="municipal-field-grid">
+                <div class="municipal-readonly-field municipal-readonly-field--wide"><label>Name of representative</label><div class="municipal-readonly-input">@SubmissionFieldReader.Display(applicant.RepresentativeFullName)</div></div>
+                <div class="municipal-readonly-field"><label>Identity / passport number</label><div class="municipal-readonly-input">@SubmissionFieldReader.Display(applicant.RepresentativeIdNumber)</div></div>
+                <div class="municipal-readonly-field"><label>Company</label><div class="municipal-readonly-input">@SubmissionFieldReader.Display(applicant.RepresentativeCompanyName)</div></div>
+                <div class="municipal-readonly-field"><label>Company registration number</label><div class="municipal-readonly-input">@SubmissionFieldReader.Display(applicant.RepresentativeCompanyRegistrationNumber)</div></div>
+            </div>
+
+            <div class="municipal-inner-heading">Postal address of representative</div>
+            <div class="municipal-field-grid municipal-field-grid--address">
+                <div class="municipal-readonly-field"><label>Street number</label><div class="municipal-readonly-input">@SubmissionFieldReader.Display(applicant.RepresentativeAddress1)</div></div>
+                <div class="municipal-readonly-field municipal-readonly-field--span-3"><label>Street name</label><div class="municipal-readonly-input">@SubmissionFieldReader.Display(applicant.RepresentativeAddress2)</div></div>
+                <div class="municipal-readonly-field municipal-readonly-field--wide"><label>Suburb name</label><div class="municipal-readonly-input">@SubmissionFieldReader.Display(applicant.RepresentativeAddress3)</div></div>
+                <div class="municipal-readonly-field municipal-readonly-field--span-3"><label>Town name</label><div class="municipal-readonly-input">@SubmissionFieldReader.Display(applicant.RepresentativeAddress4)</div></div>
+                <div class="municipal-readonly-field"><label>Postal code</label><div class="municipal-readonly-input">@SubmissionFieldReader.Display(applicant.RepresentativePostalCode)</div></div>
+            </div>
+
+            <div class="municipal-inner-heading">Contact details</div>
+            <div class="municipal-field-grid">
+                <div class="municipal-readonly-field"><label>Home telephone</label><div class="municipal-readonly-input">@SubmissionFieldReader.Display(SubmissionFieldReader.Value(Model, "Rep_Home_Phone"))</div></div>
+                <div class="municipal-readonly-field"><label>Work telephone</label><div class="municipal-readonly-input">@SubmissionFieldReader.Display(SubmissionFieldReader.Value(Model, "Rep_Work_Phone"))</div></div>
+                <div class="municipal-readonly-field"><label>Cellphone number</label><div class="municipal-readonly-input">@SubmissionFieldReader.Display(applicant.RepresentativeCellphone)</div></div>
+                <div class="municipal-readonly-field"><label>Fax</label><div class="municipal-readonly-input">@SubmissionFieldReader.Display(SubmissionFieldReader.Value(Model, "Rep_Fax_Phone"))</div></div>
+                <div class="municipal-readonly-field municipal-readonly-field--wide"><label>Email address</label><div class="municipal-readonly-input">@SubmissionFieldReader.Display(applicant.RepresentativeEmail)</div></div>
+            </div>
+
+            <div class="municipal-form-note">
+                Where a representative was appointed, proof of authorisation
+                should form part of the supporting documentation.
+            </div>
+        </div>
+    }
+
+    @if (!showOwner && !showObjector && !showRepresentative)
+    {
+        <div class="municipal-empty-section">
+            No objector information was recorded for this submission.
+        </div>
+    }
+</div>

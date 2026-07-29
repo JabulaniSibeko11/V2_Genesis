@@ -1,0 +1,60 @@
+@using V2_Genesis.Models.ViewModels.Submissions
+@model SubmissionViewModel
+
+@{
+    var names = new[]
+    {
+        "physical_address",
+        "Town_Name",
+        "Code",
+        "Extent",
+        "Municipal_Account_No",
+        "BondHolder_Name",
+        "Registered_Amount",
+        "Full_Details",
+        "Servitude_No",
+        "Affected_Area",
+        "Property_Favour_Of",
+        "Property_Purpose",
+        "Compensation_Paid",
+        "Payment_Date",
+        "Compensation_Amount"
+    };
+
+    var fields = names
+        .Select(name => SubmissionFieldReader.Find(Model, name))
+        .Where(field => field is not null)
+        .Cast<SubmissionFieldViewModel>()
+        .ToList();
+}
+
+<div class="municipal-form-section">
+    <partial name="Partials/Forms/_SectionHeading"
+             model='new SubmissionSectionHeadingViewModel
+             {
+                 Number = "SECTION 2",
+                 Title = "PROPERTY DETAILS",
+                 Subtitle = "For sectional-title information, see Section 4."
+             }' />
+
+    <div class="municipal-inner-heading">Physical property information</div>
+
+    <div class="municipal-field-grid">
+        <partial name="Partials/Forms/_FieldList"
+                 model="fields.Take(7)" />
+    </div>
+
+    <div class="municipal-inner-heading">Servitudes and endorsements</div>
+
+    <div class="municipal-field-grid">
+        <partial name="Partials/Forms/_FieldList"
+                 model="fields.Skip(7).Take(5)" />
+    </div>
+
+    <div class="municipal-inner-heading">Compensation</div>
+
+    <div class="municipal-field-grid">
+        <partial name="Partials/Forms/_FieldList"
+                 model="fields.Skip(12)" />
+    </div>
+</div>

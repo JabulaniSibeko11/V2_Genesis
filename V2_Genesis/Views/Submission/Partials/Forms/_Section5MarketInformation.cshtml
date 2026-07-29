@@ -1,0 +1,47 @@
+@using V2_Genesis.Models.ViewModels.Submissions
+@model SubmissionViewModel
+
+@{
+    var names = new[]
+    {
+        "Current_Asking_price",
+        "Offer_Received",
+        "Previous_Asking_price",
+        "Previous_Offer_Received",
+        "Agent_Name",
+        "Agent_Tel_No",
+        "Other_Nearby_Sales",
+        "Unit_No",
+        "Suburb_Name",
+        "Sale_Date",
+        "Selling_Price"
+    };
+
+    var fields = names
+        .Select(name => SubmissionFieldReader.Find(Model, name))
+        .Where(field => field is not null)
+        .Cast<SubmissionFieldViewModel>()
+        .ToList();
+
+    if (!fields.Any())
+    {
+        fields = SubmissionFieldReader.FromSection(
+            Model,
+            "Section5",
+            "Section8").ToList();
+    }
+}
+
+<div class="municipal-form-section">
+    <partial name="Partials/Forms/_SectionHeading"
+             model='new SubmissionSectionHeadingViewModel
+             {
+                 Number = "SECTION 5",
+                 Title = "MARKET INFORMATION"
+             }' />
+
+    <div class="municipal-field-grid">
+        <partial name="Partials/Forms/_FieldList"
+                 model="fields" />
+    </div>
+</div>

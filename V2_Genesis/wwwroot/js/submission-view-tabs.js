@@ -1,65 +1,62 @@
-document.addEventListener("DOMContentLoaded", () => {
-    document.querySelectorAll("[data-submission-tabs]").forEach(wrapper => {
-        const tabs = Array.from(wrapper.querySelectorAll("[data-submission-tab]"));
-        const panels = Array.from(wrapper.querySelectorAll("[data-submission-panel]"));
+document.addEventListener("DOMContentLoaded", function () {
+    document
+        .querySelectorAll("[data-submitted-form-tabs]")
+        .forEach(function (container) {
+            const tabs = Array.from(
+                container.querySelectorAll("[data-section-key]")
+            );
 
-        if (!tabs.length || !panels.length) {
-            return;
-        }
+            const panels = Array.from(
+                container.querySelectorAll("[data-section-panel]")
+            );
 
-        const activate = tab => {
-            const targetId = tab.dataset.submissionTab;
+            function activate(key, updateUrl) {
+                tabs.forEach(function (tab) {
+                    const active = tab.dataset.sectionKey === key;
 
-            tabs.forEach(item => {
-                const selected = item === tab;
-                item.classList.toggle("active", selected);
-                item.setAttribute("aria-selected", selected ? "true" : "false");
-                item.tabIndex = selected ? 0 : -1;
-            });
+                    tab.classList.toggle("active", active);
+                    tab.setAttribute(
+                        "aria-selected",
+                        active ? "true" : "false"
+                    );
+                });
 
-            panels.forEach(panel => {
-                const selected = panel.id === targetId;
-                panel.classList.toggle("active", selected);
-                panel.hidden = !selected;
+                panels.forEach(function (panel) {
+                    const active =
+                        panel.dataset.sectionPanel === key;
+
+                    panel.classList.toggle("active", active);
+                    panel.hidden = !active;
+                });
+
+                if (updateUrl) {
+                    const url = new URL(window.location.href);
+                    url.searchParams.set("section", key);
+                    window.history.replaceState(
+                        {},
+                        "",
+                        url.toString()
+                    );
+                }
+            }
+
+            tabs.forEach(function (tab) {
+                tab.addEventListener("click", function () {
+                    activate(tab.dataset.sectionKey, true);
+                });
             });
 
             const url = new URL(window.location.href);
-            url.searchParams.set("section", targetId.replace("submission-panel-", ""));
-            window.history.replaceState({}, "", url);
-        };
+            const requested = url.searchParams.get("section");
+            const requestedTab = tabs.find(
+                tab => tab.dataset.sectionKey === requested
+            );
 
-        tabs.forEach((tab, index) => {
-            tab.addEventListener("click", () => activate(tab));
-
-            tab.addEventListener("keydown", event => {
-                if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) {
-                    return;
-                }
-
-                event.preventDefault();
-
-                let nextIndex = index;
-
-                if (event.key === "ArrowRight") {
-                    nextIndex = (index + 1) % tabs.length;
-                } else if (event.key === "ArrowLeft") {
-                    nextIndex = (index - 1 + tabs.length) % tabs.length;
-                } else if (event.key === "Home") {
-                    nextIndex = 0;
-                } else if (event.key === "End") {
-                    nextIndex = tabs.length - 1;
-                }
-
-                tabs[nextIndex].focus();
-                activate(tabs[nextIndex]);
-            });
+            activate(
+                requestedTab
+                    ? requestedTab.dataset.sectionKey
+                    : tabs[0]?.dataset.sectionKey,
+                false
+            );
         });
-
-        const requestedSection = new URLSearchParams(window.location.search).get("section");
-        const requestedTab = requestedSection
-            ? tabs.find(tab => tab.dataset.submissionTab === `submission-panel-${requestedSection}`)
-            : null;
-
-        activate(requestedTab || tabs[0]);
-    });
 });

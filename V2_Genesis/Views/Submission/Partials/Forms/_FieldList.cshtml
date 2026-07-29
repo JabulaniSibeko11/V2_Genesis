@@ -1,0 +1,22 @@
+@using V2_Genesis.Models.ViewModels.Submissions
+@model IEnumerable<SubmissionFieldViewModel>
+
+@foreach (var field in Model)
+{
+    <div class="municipal-readonly-field @(field.IsLongText ? "municipal-readonly-field--wide" : "")">
+        <label>@field.Label</label>
+
+        @if (field.IsLongText)
+        {
+            <div class="municipal-readonly-textarea">
+                @SubmissionFieldReader.Display(field.Value)
+            </div>
+        }
+        else
+        {
+            <div class="municipal-readonly-input">
+                @SubmissionFieldReader.Display(field.Value)
+            </div>
+        }
+    </div>
+}

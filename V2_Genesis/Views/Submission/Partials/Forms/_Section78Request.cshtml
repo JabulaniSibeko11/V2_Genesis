@@ -1,0 +1,91 @@
+@using V2_Genesis.Models.ViewModels.Submissions
+@model SubmissionViewModel
+
+@{
+    var options = new[]
+    {
+        new { Code = "A", Field = "Option_A", Text = "incorrectly omitted from the valuation roll;", Note = "" },
+        new { Code = "B", Field = "Option_B", Text = "included in a municipality after the last general valuation;", Note = "" },
+        new { Code = "C", Field = "Option_C", Text = "subdivided or consolidated after the last general valuation;", Note = "" },
+        new { Code = "D", Field = "Option_D", Text = "of which the market value has substantially increased or decreased for any reason after the last general valuation;", Note = "" },
+        new { Code = "E", Field = "Option_E", Text = "substantially incorrectly valued during the last general valuation;", Note = "" },
+        new { Code = "F", Field = "Option_F", Text = "that must be revalued for any other exceptional reason.", Note = "[S 78(1)(f) amended by s 26(a) of Act 29 of 2014.]" },
+        new { Code = "G", Field = "Option_G", Text = "of which the category has changed; or", Note = "[S 78(1)(g) amended by s 26(b) of Act 29 of 2014.]" },
+        new { Code = "H", Field = "Option_H", Text = "the value of which was incorrectly recorded in the valuation roll as a result of a clerical or typing error.", Note = "[S 78(1) substituted by s 33(a) of Act 19 of 2008; s 78(1)(h) inserted by s 26(c) of Act 29 of 2014.]" }
+    };
+
+    var motivation = SubmissionFieldReader.Value(
+        Model,
+        "Motivation_for_Supp_Request",
+        "Query_Motivation",
+        "Review_Motivation",
+        "Motivation");
+}
+
+<div class="municipal-form-section">
+    <partial name="Partials/Forms/_SectionHeading"
+             model='new SubmissionSectionHeadingViewModel
+             {
+                 Number = Model.IsReview ? "REVIEW REQUEST" : "SECTION 78 REQUEST",
+                 Title = "SELECT THE REASON FOR THE SUPPLEMENTARY REQUEST"
+             }' />
+
+    <div class="section78-table-wrap">
+        <table class="section78-reason-table">
+            <thead>
+                <tr>
+                    <th class="section78-code-column">Section 78</th>
+                    <th>Supplementary valuations</th>
+                    <th class="section78-selected-column">Selected</th>
+                </tr>
+                <tr class="section78-intro-row">
+                    <td colspan="3">
+                        (1) A municipality must, whenever necessary, cause a
+                        supplementary valuation to be made in respect of any
+                        rateable property—
+                    </td>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var option in options)
+                {
+                    var value = SubmissionFieldReader.Value(Model, option.Field);
+                    var selected = SubmissionFieldReader.IsYes(value);
+
+                    <tr class="@(selected ? "section78-option-selected" : "")">
+                        <td class="section78-option-code">@option.Code</td>
+                        <td>
+                            <p>@option.Text</p>
+                            @if (!string.IsNullOrWhiteSpace(option.Note))
+                            {
+                                <small>@option.Note</small>
+                            }
+                        </td>
+                        <td class="section78-option-check">
+                            <span class="section78-readonly-checkbox @(selected ? "checked" : "")"
+                                  aria-label="@(selected ? "Selected" : "Not selected")">
+                                @if (selected)
+                                {
+                                    <i class="fa-solid fa-check"></i>
+                                }
+                            </span>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="municipal-inner-heading">
+        Reasons / Motivation why the above supplementary is to be done
+    </div>
+
+    <div class="municipal-field-grid">
+        <div class="municipal-readonly-field municipal-readonly-field--wide">
+            <label>Motivation for supplementary request</label>
+            <div class="municipal-readonly-textarea">
+                @SubmissionFieldReader.Display(motivation)
+            </div>
+        </div>
+    </div>
+</div>

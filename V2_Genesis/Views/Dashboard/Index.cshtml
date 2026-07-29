@@ -1924,9 +1924,15 @@
                                                                             Submit Attributes
                                                                         </a> *@
                                                             <a class="dropdown-item"
-                                                                   href="/attributes/select-form?unitKey=@item.IDProperty">
-                                                                <i class="fa-solid fa-file-pen"></i> Submit Attributes
+                                                                   asp-controller="Attributes"
+                                                                   asp-action="SelectForm"
+                                                                   asp-route-idProperty="@item.IDProperty"
+                                                                   asp-route-formType="@item.FormType">
+
+                                                                <i class="fa-solid fa-file-pen"></i>
+                                                                <span>Submit Attributes</span>
                                                             </a>
+
                                                         </li>
                                                     }
                                                     else

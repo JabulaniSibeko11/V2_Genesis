@@ -123,95 +123,501 @@ public class AttributesController : Controller
 
     // AttributesController.cs — updated Check + CheckConfirm + Form actions
 
+    // ════════════════════════════════════════════════════════════
+    // ATTRIBUTE FORM SELECTION
+    //
+    // Dashboard -> SelectForm.cshtml -> Representative/Form
+    //
+    // The old /attributes/check route remains available, but it now
+    // renders the SelectForm view instead of the old Check view.
+    // ════════════════════════════════════════════════════════════
+
     [HttpGet]
     [Authorize(Roles = "Client")]
     [Route("attributes/check")]
-    public async Task<IActionResult> Check(string idProperty, string formType = "Residential")
+    public Task<IActionResult> Check(
+        string? idProperty,
+        string? formType = null)
     {
-        ViewBag.GvList = await _db.GvList.OrderBy(r => r.ID).ToListAsync();
-
-        if (string.IsNullOrWhiteSpace(idProperty))
-        {
-            TempData["AttrLinkError"] = "Property reference was not supplied.";
-            return RedirectToAction("Index", "Dashboard");
-        }
-
-        // Load from LIS_20260116 + SAP_Contact0126
-        var detail = await _attrSearch.GetPropertyDetailAsync(idProperty);
-
-        // Auto-detect form type from CatDesc
-        if (detail is not null)
-            formType = ResolveFormType(detail.CatDesc) ?? formType;
-
-        formType = formType switch
-        {
-            "Business" => "BusinessCommercial",
-            "DRC" => "DRCMethod",
-            "Residential-ST" => "ResidentialST",
-            _ => formType
-        };
-
-        // Stash full detail for Form pre-fill
-        if (detail is not null)
-            TempData["Attr_Detail_Json"] =
-                System.Text.Json.JsonSerializer.Serialize(detail);
-
-        var vm = detail is not null
-            ? new CheckAttributesViewModel
-            {
-                IDProperty = idProperty,
-                FormType = formType,
-                PropertyDesc = detail.PropertyDesc,
-                CatDesc = detail.CatDesc,
-                TownNameDesc = detail.TownNameDesc,
-                LisStreetAddress = detail.LisStreetAddress,
-                MarketValue = detail.MarketValue,
-                RateableArea = detail.RateableAreaVal ?? detail.RateableArea,
-                Erf = detail.Erf,
-                Ptn = detail.Ptn,
-                Re = detail.Re,
-                SchemeName = detail.SchemeName,
-                SchemeNumber = detail.SchemeNumber,
-                SchemeYear = detail.SchemeYear,
-                UnitNo = detail.UnitNo,
-                OwnerName = detail.OwnerName,
-                ValuationDate = detail.ValuationDate,
-                Reason = detail.Reason,
-                Zoning = detail.Zoning,
-            }
-            : new CheckAttributesViewModel { IDProperty = idProperty, FormType = formType };
-
-        return View(vm);
+        return LoadSelectFormViewAsync(
+            idProperty,
+            formType);
     }
 
+    [HttpGet]
+    [Authorize(Roles = "Client")]
+    [Route("attributes/select-form")]
+    public Task<IActionResult> SelectForm(
+        string? unitKey,
+        string? idProperty,
+        string? formType = null)
+    {
+        var propertyReference =
+            !string.IsNullOrWhiteSpace(idProperty)
+                ? idProperty
+                : unitKey;
+
+        return LoadSelectFormViewAsync(
+            propertyReference,
+            formType);
+    }
+
+    private async Task<IActionResult> LoadSelectFormViewAsync(
+        string? propertyReference,
+        string? requestedFormType)
+    {
+        ViewBag.GvList = await _db.GvList
+            .OrderBy(x => x.ID)
+            .ToListAsync();
+
+        if (string.IsNullOrWhiteSpace(propertyReference))
+        {
+            TempData["AttrLinkError"] =
+                "Property reference was not supplied.";
+
+            return RedirectToAction(
+                "Index",
+                "Dashboard",
+                new { openRoll = "attributes" });
+        }
+
+        propertyReference = propertyReference.Trim();
+
+        var property =
+            await _attrSearch.GetPropertyDetailAsync(
+                propertyReference);
+
+        if (property is null)
+        {
+            TempData["AttrLinkError"] =
+                "Could not load the linked property. " +
+                "Please search and link it again.";
+
+            return RedirectToAction(
+                "Index",
+                "Dashboard",
+                new { openRoll = "attributes" });
+        }
+
+        TempData["Attr_Detail_Json"] =
+            System.Text.Json.JsonSerializer.Serialize(property);
+
+        TempData.Keep("Attr_Detail_Json");
+
+        var selectedFormType =
+            NormalizeAttributeFormType(
+                requestedFormType);
+
+        var model = new AttributeSelectViewModel
+        {
+            UnitKey = propertyReference,
+            PropertyDesc =
+                BuildDisplayPropertyDescription(property),
+            CatDesc = property.CatDesc,
+            TownNameDesc = property.TownNameDesc,
+            LisStreetAddress = property.LisStreetAddress,
+            MarketValue = property.MarketValue,
+            RateableArea =
+                property.RateableAreaVal
+                ?? property.RateableArea,
+            Erf = property.Erf,
+            Ptn = property.Ptn,
+            Re = property.Re,
+            SchemeName = property.SchemeName,
+            SchemeNumber = property.SchemeNumber,
+            SchemeYear = property.SchemeYear,
+            UnitNo = property.UnitNo,
+            OwnerName = property.OwnerName,
+            ValuationDate = property.ValuationDate,
+            Zoning = property.Zoning,
+            Reason = property.Reason,
+
+            SuggestedFormType =
+                ResolveSuggestedAttributeFormType(
+                    property.CatDesc,
+                    property.SchemeName,
+                    property.UnitNo.ToString()),
+
+            SelectedFormType =
+                IsValidAttributeFormType(selectedFormType)
+                    ? selectedFormType
+                    : string.Empty
+        };
+
+        return View("SelectForm", model);
+    }
+
+    [HttpPost]
+    [Authorize(Roles = "Client")]
+    [Route("attributes/select-form")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SelectForm(
+        AttributeSelectViewModel model)
+    {
+        ViewBag.GvList = await _db.GvList
+            .OrderBy(x => x.ID)
+            .ToListAsync();
+
+        if (string.IsNullOrWhiteSpace(model.UnitKey))
+        {
+            TempData["AttrLinkError"] =
+                "Property reference was not supplied.";
+
+            return RedirectToAction(
+                "Index",
+                "Dashboard",
+                new { openRoll = "attributes" });
+        }
+
+        model.UnitKey = model.UnitKey.Trim();
+
+        model.SelectedFormType =
+            NormalizeAttributeFormType(
+                model.SelectedFormType);
+
+        if (!IsValidAttributeFormType(
+                model.SelectedFormType))
+        {
+            ModelState.AddModelError(
+                nameof(model.SelectedFormType),
+                "Please select a valid attribute form.");
+        }
+
+        if (string.IsNullOrWhiteSpace(
+                model.DeclarationType))
+        {
+            ModelState.AddModelError(
+                nameof(model.DeclarationType),
+                "Please select whether you are the Owner " +
+                "or Representative.");
+        }
+        else
+        {
+            model.DeclarationType =
+                model.DeclarationType.Trim();
+
+            if (model.DeclarationType is not
+                    ("Owner" or "Representative"))
+            {
+                ModelState.AddModelError(
+                    nameof(model.DeclarationType),
+                    "Please select a valid submitter type.");
+            }
+        }
+
+        var detail =
+            await _attrSearch.GetPropertyDetailAsync(
+                model.UnitKey);
+
+        if (detail is null)
+        {
+            TempData["AttrLinkError"] =
+                "Could not load the linked property. " +
+                "Please search and link it again.";
+
+            return RedirectToAction(
+                "Index",
+                "Dashboard",
+                new { openRoll = "attributes" });
+        }
+
+        PopulateAttributeSelectModel(
+            model,
+            detail);
+
+        if (!ModelState.IsValid)
+        {
+            return View("SelectForm", model);
+        }
+
+        TempData["Attr_Detail_Json"] =
+            System.Text.Json.JsonSerializer.Serialize(detail);
+
+        TempData["AttrDeclaration"] =
+            model.DeclarationType;
+
+        TempData["AttrRepRequired"] =
+            model.DeclarationType == "Representative"
+                ? "true"
+                : "false";
+
+        TempData.Keep("Attr_Detail_Json");
+        TempData.Keep("AttrDeclaration");
+        TempData.Keep("AttrRepRequired");
+
+        if (model.DeclarationType == "Representative")
+        {
+            return RedirectToAction(
+                nameof(Representative),
+                new
+                {
+                    idProperty = model.UnitKey,
+                    formType = model.SelectedFormType
+                });
+        }
+
+        return RedirectToAction(
+            nameof(Form),
+            new
+            {
+                idProperty = model.UnitKey,
+                formType = model.SelectedFormType
+            });
+    }
+
+    // Compatibility for an old Check form POST.
     [HttpPost]
     [Authorize(Roles = "Client")]
     [Route("attributes/check")]
     [ValidateAntiForgeryToken]
     public IActionResult CheckConfirm(
-     string idProperty,
-     string formType,
-     string declarationType)
+        string idProperty,
+        string formType,
+        string declarationType)
     {
-        if (string.IsNullOrWhiteSpace(declarationType))
+        if (string.IsNullOrWhiteSpace(idProperty))
         {
-            TempData["AttrCheckError"] =
-                "Please select whether you are the Owner or Representative.";
-            return RedirectToAction("Check", new { idProperty, formType });
+            TempData["AttrLinkError"] =
+                "Property reference was not supplied.";
+
+            return RedirectToAction(
+                "Index",
+                "Dashboard",
+                new { openRoll = "attributes" });
         }
 
-        TempData["AttrDeclaration"] = declarationType;
+        formType =
+            NormalizeAttributeFormType(formType);
+
+        if (!IsValidAttributeFormType(formType))
+        {
+            TempData["AttrFormError"] =
+                "Please select a valid attribute form.";
+
+            return RedirectToAction(
+                nameof(SelectForm),
+                new { unitKey = idProperty });
+        }
+
+        if (declarationType is not
+                ("Owner" or "Representative"))
+        {
+            TempData["AttrCheckError"] =
+                "Please select whether you are the " +
+                "Owner or Representative.";
+
+            return RedirectToAction(
+                nameof(SelectForm),
+                new
+                {
+                    unitKey = idProperty,
+                    formType
+                });
+        }
+
+        TempData["AttrDeclaration"] =
+            declarationType;
+
         TempData["AttrRepRequired"] =
-            declarationType == "Representative" ? "true" : "false";
+            declarationType == "Representative"
+                ? "true"
+                : "false";
+
         TempData.Keep("Attr_Detail_Json");
-        TempData.Keep("Attr_OwnerId");
+        TempData.Keep("AttrDeclaration");
+        TempData.Keep("AttrRepRequired");
 
-        // Representative → separate rep details page
         if (declarationType == "Representative")
-            return RedirectToAction("Representative", new { idProperty, formType });
+        {
+            return RedirectToAction(
+                nameof(Representative),
+                new { idProperty, formType });
+        }
 
-        // Owner → straight to form (no ID validation)
-        return RedirectToAction("Form", new { idProperty, formType });
+        return RedirectToAction(
+            nameof(Form),
+            new { idProperty, formType });
+    }
+
+    private static void PopulateAttributeSelectModel(
+        AttributeSelectViewModel model,
+        LisPropertyDetail detail)
+    {
+        model.PropertyDesc =
+            BuildDisplayPropertyDescription(detail);
+
+        model.CatDesc = detail.CatDesc;
+        model.TownNameDesc = detail.TownNameDesc;
+        model.LisStreetAddress = detail.LisStreetAddress;
+        model.MarketValue = detail.MarketValue;
+        model.RateableArea =
+            detail.RateableAreaVal
+            ?? detail.RateableArea;
+        model.Erf = detail.Erf;
+        model.Ptn = detail.Ptn;
+        model.Re = detail.Re;
+        model.SchemeName = detail.SchemeName;
+        model.SchemeNumber = detail.SchemeNumber;
+        model.SchemeYear = detail.SchemeYear;
+        model.UnitNo = detail.UnitNo;
+        model.OwnerName = detail.OwnerName;
+        model.ValuationDate = detail.ValuationDate;
+        model.Zoning = detail.Zoning;
+        model.Reason = detail.Reason;
+
+        model.SuggestedFormType =
+            ResolveSuggestedAttributeFormType(
+                detail.CatDesc,
+                detail.SchemeName,
+                detail.UnitNo.ToString());
+    }
+
+    private static string NormalizeAttributeFormType(
+        string? formType)
+    {
+        if (string.IsNullOrWhiteSpace(formType))
+            return string.Empty;
+
+        return formType.Trim() switch
+        {
+            "Business" => "BusinessCommercial",
+            "BusinessCommercial" => "BusinessCommercial",
+            "NonResidential" => "BusinessCommercial",
+            "Non-Residential" => "BusinessCommercial",
+            "Non Res" => "BusinessCommercial",
+
+            "DRC" => "DRCMethod",
+            "DRCMethod" => "DRCMethod",
+            "DRC Method" => "DRCMethod",
+
+            "Residential-ST" => "ResidentialST",
+            "Residential ST" => "ResidentialST",
+            "ResidentialST" => "ResidentialST",
+
+            "Residential" => "Residential",
+
+            _ => formType.Trim()
+        };
+    }
+
+    private static bool IsValidAttributeFormType(
+        string? formType)
+    {
+        return NormalizeAttributeFormType(formType) is
+            "Residential"
+            or "ResidentialST"
+            or "BusinessCommercial"
+            or "DRCMethod";
+    }
+
+    private static string ResolveSuggestedAttributeFormType(
+        string? catDesc,
+        string? schemeName,
+        string? unitNo)
+    {
+        var category =
+            (catDesc ?? string.Empty)
+            .Trim()
+            .ToLowerInvariant();
+
+        if (!string.IsNullOrWhiteSpace(schemeName)
+            || (!string.IsNullOrWhiteSpace(unitNo)
+                && unitNo != "0"))
+        {
+            return "ResidentialST";
+        }
+
+        if (category.Contains("business")
+            || category.Contains("commercial")
+            || category.Contains("industrial")
+            || category.Contains("retail")
+            || category.Contains("office"))
+        {
+            return "BusinessCommercial";
+        }
+
+        if (category.Contains("drc")
+            || category.Contains("public service")
+            || category.Contains("municipal")
+            || category.Contains("religious")
+            || category.Contains("mining")
+            || category.Contains("agricultural")
+            || category.Contains("vacant")
+            || category.Contains("institutional"))
+        {
+            return "DRCMethod";
+        }
+
+        return "Residential";
+    }
+
+    private static string BuildDisplayPropertyDescription(
+        LisPropertyDetail property)
+    {
+        if (!string.IsNullOrWhiteSpace(
+                property.PropertyDesc))
+        {
+            return property.PropertyDesc;
+        }
+
+        var town =
+            property.TownNameDesc
+            ?? string.Empty;
+
+        var scheme =
+            property.SchemeName
+            ?? string.Empty;
+
+        var unitNo = property.UnitNo;
+        var erf = property.Erf;
+
+        var portion =
+            property.Ptn?.ToString()
+            ?? string.Empty;
+
+        var remainder =
+            property.Re
+            ?? string.Empty;
+
+        if (!string.IsNullOrWhiteSpace(scheme)
+            || unitNo != 0)
+        {
+            var parts = new List<string>();
+
+            if (unitNo != 0)
+                parts.Add($"UNIT {unitNo}");
+
+            if (!string.IsNullOrWhiteSpace(scheme))
+                parts.Add(scheme);
+
+            if (!string.IsNullOrWhiteSpace(town))
+                parts.Add(town);
+
+            return "Scheme " +
+                   string.Join(", ", parts);
+        }
+
+        if (!string.IsNullOrWhiteSpace(portion)
+            && portion != "0"
+            && !string.IsNullOrWhiteSpace(town))
+        {
+            if (remainder.Equals(
+                    "RE",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return $"RE PORTION {portion} {town}";
+            }
+
+            return $"PORTION {portion} {town}";
+        }
+
+        if (erf != 0
+            && !string.IsNullOrWhiteSpace(town))
+        {
+            return $"Full Title ERF {erf} {town}";
+        }
+
+        return town;
     }
 
     [HttpGet]

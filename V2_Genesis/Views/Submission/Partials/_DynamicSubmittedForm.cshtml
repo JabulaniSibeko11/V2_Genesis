@@ -1,0 +1,95 @@
+@using V2_Genesis.Models.ViewModels.Submissions
+@model SubmissionViewModel
+
+@{
+    var sections = Model.FormSections
+        .Where(section => section.IsAvailable)
+        .OrderBy(section => section.Order)
+        .ToList();
+
+    string ResolvePartial(string key) => key switch
+    {
+        "section-1" => "Partials/Forms/_Section1Objector",
+        "section-78-request" => "Partials/Forms/_Section78Request",
+        "section-2" => "Partials/Forms/_Section2PropertyDetails",
+        "section-3-res" => "Partials/Forms/_Section3Residential",
+        "section-3-agri" => "Partials/Forms/_Section3Agricultural",
+        "section-3-bus" => "Partials/Forms/_Section3Business",
+        "section-4-res" => "Partials/Forms/_Section4Residential",
+        "section-4-bus" => "Partials/Forms/_Section4Business",
+        "section-5" => "Partials/Forms/_Section5MarketInformation",
+        "section-6" => "Partials/Forms/_Section6SubmissionDetails",
+        "section-7" => "Partials/Forms/_Section7Declaration",
+        _ => string.Empty
+    };
+}
+
+@if (sections.Any())
+{
+    <section class="submitted-form-body"
+             data-submitted-form-tabs>
+
+        <div class="submitted-form-heading">
+            <div>
+                <span class="submitted-form-eyebrow">Submitted form</span>
+                <h2>@Model.SubmissionType form details</h2>
+                <p>
+                    Select a section below to view the information captured
+                    when the form was lodged.
+                </p>
+            </div>
+
+            <span class="submitted-form-type">
+                @(Model.IsMulti
+                    ? "Form D · Multipurpose"
+                    : $"Form {Model.FormType}")
+            </span>
+        </div>
+
+        <div class="submitted-tabs-scroll">
+            <div class="submitted-tabs"
+                 role="tablist"
+                 aria-label="Submitted form sections">
+
+                @for (var index = 0; index < sections.Count; index++)
+                {
+                    var sect = sections[index];
+
+                    <button type="button"
+                            id="tab-@sect.Key"
+                            class="submitted-tab @(index == 0 ? "active" : "")"
+                            role="tab"
+                            aria-selected="@(index == 0 ? "true" : "false")"
+                            aria-controls="panel-@sect.Key"
+                            data-section-key="@sect.Key">
+
+                        <strong>@sect.TabText</strong>
+                        <span>@sect.Title</span>
+                    </button>
+                }
+            </div>
+        </div>
+
+        <div class="submitted-panels">
+            @for (var index = 0; index < sections.Count; index++)
+            {
+                var sect = sections[index];
+                var partialName = ResolvePartial(sect.Key);
+
+                <section id="panel-@sect.Key"
+                         class="submitted-panel @(index == 0 ? "active" : "")"
+                         role="tabpanel"
+                         aria-labelledby="tab-@sect.Key"
+                         data-section-panel="@sect.Key"
+                         hidden="@(index == 0 ? null : "hidden")">
+
+                    @if (!string.IsNullOrWhiteSpace(partialName))
+                    {
+                        <partial name="@partialName"
+                                 model="Model" />
+                    }
+                </section>
+            }
+        </div>
+    </section>
+}

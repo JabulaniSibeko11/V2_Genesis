@@ -1,0 +1,59 @@
+@using V2_Genesis.Models.ViewModels.Submissions
+@model SubmissionViewModel
+
+@{
+    var signatureName = SubmissionFieldReader.Value(
+        Model,
+        "Signature_Name");
+
+    var capturer = SubmissionFieldReader.Value(
+        Model,
+        "Capturer");
+
+    var declarationDate = SubmissionFieldReader.Value(
+        Model,
+        "Declaration_Date");
+
+    var signaturePicture = SubmissionFieldReader.Value(
+        Model,
+        "Signature_Picture");
+}
+
+<div class="municipal-form-section">
+    <partial name="Partials/Forms/_SectionHeading"
+             model='new SubmissionSectionHeadingViewModel
+             {
+                 Number = "SECTION 7",
+                 Title = "DECLARATION"
+             }' />
+
+    <div class="municipal-declaration-notice">
+        The person who lodged the submission declared that the supplied
+        information and particulars were true and correct.
+    </div>
+
+    <div class="municipal-field-grid">
+        <div class="municipal-readonly-field">
+            <label>Declared by</label>
+            <div class="municipal-readonly-input">@SubmissionFieldReader.Display(signatureName)</div>
+        </div>
+
+        <div class="municipal-readonly-field">
+            <label>Declaration date</label>
+            <div class="municipal-readonly-input">@SubmissionFieldReader.Display(declarationDate)</div>
+        </div>
+
+        <div class="municipal-readonly-field municipal-readonly-field--wide">
+            <label>Captured by</label>
+            <div class="municipal-readonly-input">@SubmissionFieldReader.Display(capturer)</div>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(signaturePicture))
+    {
+        <div class="municipal-signature-status">
+            <i class="fa-solid fa-signature"></i>
+            A signature was captured with this submission.
+        </div>
+    }
+</div>

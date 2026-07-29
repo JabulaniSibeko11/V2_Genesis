@@ -1,0 +1,136 @@
+@using V2_Genesis.Models.ViewModels.Submissions
+@model SubmissionViewModel
+
+@{
+    var title =
+        Model.IsAppeal ? "APPEAL DETAILS"
+        : Model.IsReview ? "REVIEW DETAILS"
+        : Model.IsQuery ? "QUERY DETAILS"
+        : "OBJECTION DETAILS";
+}
+
+<div class="municipal-form-section">
+    <partial name="Partials/Forms/_SectionHeading"
+             model='new SubmissionSectionHeadingViewModel
+             {
+                 Number = "SECTION 6",
+                 Title = title
+             }' />
+
+    @if (Model.IsMulti && Model.MultiPurposeLines.Any())
+    {
+        <div class="municipal-inner-heading">
+            Multipurpose valuation comparison
+        </div>
+
+        <div class="municipal-comparison-table-wrap">
+            <table class="municipal-comparison-table">
+                <thead>
+                    <tr>
+                        <th rowspan="2">Line</th>
+                        <th colspan="3">Current valuation record</th>
+                        <th colspan="3">Requested by client</th>
+                    </tr>
+                    <tr>
+                        <th>Category</th>
+                        <th>Extent</th>
+                        <th>Market value</th>
+                        <th>Category</th>
+                        <th>Extent</th>
+                        <th>Market value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var line in Model.MultiPurposeLines.OrderBy(x => x.LineNumber))
+                {
+                    <tr>
+                        <td>@line.LineNumber</td>
+                        <td>@SubmissionFieldReader.Display(line.CurrentCategory)</td>
+                        <td>@SubmissionFieldReader.Display(line.CurrentExtent)</td>
+                        <td>@SubmissionFieldReader.Display(line.CurrentMarketValue)</td>
+                        <td>@SubmissionFieldReader.Display(line.RequestedCategory)</td>
+                        <td>@SubmissionFieldReader.Display(line.RequestedExtent)</td>
+                        <td>@SubmissionFieldReader.Display(line.RequestedMarketValue)</td>
+                    </tr>
+                    @if (!string.IsNullOrWhiteSpace(line.Remarks))
+                    {
+                        <tr class="municipal-comparison-remarks">
+                            <td></td>
+                            <td colspan="6">
+                                <strong>Remarks:</strong> @line.Remarks
+                            </td>
+                        </tr>
+                    }
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <div class="municipal-comparison-grid">
+            <article>
+                <header>Current valuation record</header>
+                <dl>
+                    <dt>Property description</dt><dd>@SubmissionFieldReader.Display(Model.CurrentValuation.PropertyDescription)</dd>
+                    <dt>Category</dt><dd>@SubmissionFieldReader.Display(Model.CurrentValuation.Category)</dd>
+                    <dt>Address</dt><dd>@SubmissionFieldReader.Display(Model.CurrentValuation.Address)</dd>
+                    <dt>Extent</dt><dd>@SubmissionFieldReader.Display(Model.CurrentValuation.Extent)</dd>
+                    <dt>Market value</dt><dd>@SubmissionFieldReader.Display(Model.CurrentValuation.MarketValue)</dd>
+                    <dt>Owner</dt><dd>@SubmissionFieldReader.Display(Model.CurrentValuation.Owner)</dd>
+                </dl>
+            </article>
+
+            <article class="municipal-comparison-requested">
+                <header>Requested by client</header>
+                <dl>
+                    <dt>Property description</dt><dd>@SubmissionFieldReader.Display(Model.RequestedValuation.PropertyDescription)</dd>
+                    <dt>Category</dt><dd>@SubmissionFieldReader.Display(Model.RequestedValuation.Category)</dd>
+                    <dt>Address</dt><dd>@SubmissionFieldReader.Display(Model.RequestedValuation.Address)</dd>
+                    <dt>Extent</dt><dd>@SubmissionFieldReader.Display(Model.RequestedValuation.Extent)</dd>
+                    <dt>Market value</dt><dd>@SubmissionFieldReader.Display(Model.RequestedValuation.MarketValue)</dd>
+                    <dt>Owner</dt><dd>@SubmissionFieldReader.Display(Model.RequestedValuation.Owner)</dd>
+                </dl>
+            </article>
+        </div>
+    }
+
+    @if (Model.Reasons.HasReasons)
+    {
+        <div class="municipal-inner-heading">Reasons and motivation</div>
+
+        <div class="municipal-field-grid">
+            @if (!string.IsNullOrWhiteSpace(Model.Reasons.PrimaryReason))
+            {
+                <div class="municipal-readonly-field municipal-readonly-field--wide">
+                    <label>Primary reason</label>
+                    <div class="municipal-readonly-textarea">@Model.Reasons.PrimaryReason</div>
+                </div>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(Model.Reasons.Motivation))
+            {
+                <div class="municipal-readonly-field municipal-readonly-field--wide">
+                    <label>Motivation</label>
+                    <div class="municipal-readonly-textarea">@Model.Reasons.Motivation</div>
+                </div>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(Model.Reasons.RequestedOutcome))
+            {
+                <div class="municipal-readonly-field municipal-readonly-field--wide">
+                    <label>Requested outcome</label>
+                    <div class="municipal-readonly-textarea">@Model.Reasons.RequestedOutcome</div>
+                </div>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(Model.Reasons.OtherReason))
+            {
+                <div class="municipal-readonly-field municipal-readonly-field--wide">
+                    <label>Additional information</label>
+                    <div class="municipal-readonly-textarea">@Model.Reasons.OtherReason</div>
+                </div>
+            }
+        </div>
+    }
+</div>

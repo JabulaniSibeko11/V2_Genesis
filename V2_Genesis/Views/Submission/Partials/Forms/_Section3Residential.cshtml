@@ -1,0 +1,31 @@
+@using V2_Genesis.Models.ViewModels.Submissions
+@model SubmissionViewModel
+
+@{
+    var fields = SubmissionFieldReader.ByPrefix(
+        Model,
+        "Res_", "Res4_");
+}
+
+<div class="municipal-form-section">
+    <partial name="Partials/Forms/_SectionHeading"
+             model='new SubmissionSectionHeadingViewModel
+             {
+                 Number = "SECTION 3",
+                 Title = "DESCRIPTION OF RESIDENTIAL DWELLING"
+             }' />
+
+    @if (fields.Any())
+    {
+        <div class="municipal-field-grid">
+            <partial name="Partials/Forms/_FieldList"
+                     model="fields" />
+        </div>
+    }
+    else
+    {
+        <div class="municipal-empty-section">
+            No submitted values were recorded for this section.
+        </div>
+    }
+</div>

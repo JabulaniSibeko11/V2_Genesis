@@ -298,6 +298,11 @@ namespace V2_Genesis.Services.Implementations
 
             RemoveEmptySections(model);
 
+            HydrateTypedModelsFromSections(model);
+
+            model.FormSections =
+                BuildFormSections(model);
+
             return SubmissionViewResult.Ok(model);
         }
 
@@ -570,6 +575,11 @@ namespace V2_Genesis.Services.Implementations
             }
 
             RemoveEmptySections(model);
+
+            HydrateTypedModelsFromSections(model);
+
+            model.FormSections =
+                BuildFormSections(model);
 
             return SubmissionViewResult.Ok(model);
         }
@@ -1381,9 +1391,11 @@ namespace V2_Genesis.Services.Implementations
             int order,
             object source)
         {
+            // Keep every database column in the submitted-view model,
+            // including columns whose value is NULL or empty. The Razor
+            // partials decide how empty values are displayed.
             var fields = ToDictionary(source)
                 .Where(x => !HiddenFields.Contains(x.Key))
-                .Where(x => HasDisplayValue(x.Value))
                 .Select(x => new SubmissionFieldViewModel
                 {
                     Name = x.Key,
@@ -1570,6 +1582,566 @@ namespace V2_Genesis.Services.Implementations
                 .Where(x => x.Fields.Count > 0)
                 .OrderBy(x => x.Order)
                 .ToList();
+
+        private static void HydrateTypedModelsFromSections(
+            SubmissionViewModel model)
+        {
+            string Value(params string[] names)
+            {
+                foreach (var name in names)
+                {
+                    var value = model.Sections
+                        .SelectMany(section => section.Fields)
+                        .FirstOrDefault(field =>
+                            field.Name.Equals(
+                                name,
+                                StringComparison.OrdinalIgnoreCase))
+                        ?.Value
+                        ?.Trim();
+
+                    if (!string.IsNullOrWhiteSpace(value))
+                        return value;
+                }
+
+                return string.Empty;
+            }
+
+            static string FirstExisting(
+                string current,
+                params string[] candidates)
+            {
+                if (!string.IsNullOrWhiteSpace(current))
+                    return current.Trim();
+
+                return candidates
+                    .FirstOrDefault(value =>
+                        !string.IsNullOrWhiteSpace(value))
+                    ?.Trim()
+                    ?? string.Empty;
+            }
+
+            var property = model.Property ?? new SubmissionPropertyViewModel();
+
+            property.PropertyDescription = FirstExisting(
+                property.PropertyDescription,
+                model.PropertyDescription,
+                Value(
+                    "A_Property_Desc",
+                    "Property_Desc",
+                    "PropertyDesc",
+                    "Old_Property_Description",
+                    "Old_Property_Desc"));
+
+            property.PropertyType = FirstExisting(
+                property.PropertyType,
+                Value(
+                    "A_Property_Type",
+                    "Property_Type",
+                    "PropertyType"),
+                model.FormType);
+
+            property.PropertyId = FirstExisting(
+                property.PropertyId,
+                Value(
+                    "A_Property_id",
+                    "Property_id",
+                    "PropertyId"));
+
+            property.UnitKey = FirstExisting(
+                property.UnitKey,
+                Value(
+                    "A_Unit_key",
+                    "Unit_key",
+                    "UnitKey"));
+
+            property.ValuationKey = FirstExisting(
+                property.ValuationKey,
+                Value(
+                    "A_Valuation_Key",
+                    "Valuation_Key",
+                    "ValuationKey"));
+
+            property.Township = FirstExisting(
+                property.Township,
+                Value(
+                    "TownNameDesc",
+                    "Township",
+                    "Town_Name",
+                    "Town_Name_Desc"));
+
+            property.Erf = FirstExisting(
+                property.Erf,
+                Value(
+                    "ERF",
+                    "Erf",
+                    "Stand_No",
+                    "StandNo",
+                    "Unit_No"));
+
+            property.Sector = FirstExisting(
+                property.Sector,
+                Value(
+                    "A_Sector",
+                    "Sector",
+                    "Sector_Type"));
+
+            property.Category = FirstExisting(
+                property.Category,
+                Value(
+                    "Old_Category",
+                    "GV_Category",
+                    "Category",
+                    "CatDesc"));
+
+            property.Extent = FirstExisting(
+                property.Extent,
+                Value(
+                    "Old_Extent",
+                    "GV_Extent",
+                    "Extent",
+                    "RateableArea"));
+
+            property.MarketValue = FirstExisting(
+                property.MarketValue,
+                Value(
+                    "Old_Market_Value",
+                    "GV_Market_Value",
+                    "MarketValue",
+                    "Market_Value"));
+
+            property.OwnerName = FirstExisting(
+                property.OwnerName,
+                Value(
+                    "Owner_Name",
+                    "OwnerName"));
+
+            var addressParts = new[]
+            {
+                Value("physical_address", "Property_Address", "ADDR1", "Address1", "LisStreetAddress"),
+                Value("ADDR2", "Address2"),
+                Value("ADDR3", "Address3"),
+                Value("ADDR4", "Address4"),
+                Value("ADDR5", "Address5")
+            }
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+            property.Address = FirstExisting(
+                property.Address,
+                string.Join(", ", addressParts));
+
+            model.Property = property;
+
+            model.PropertyDescription = FirstExisting(
+                model.PropertyDescription,
+                property.PropertyDescription);
+
+            model.PropertyKey = FirstExisting(
+                model.PropertyKey,
+                property.PropertyId,
+                property.UnitKey,
+                property.ValuationKey);
+
+            var applicant = model.Applicant ?? new SubmissionApplicantViewModel();
+
+            applicant.ObjectorType = FirstExisting(
+                applicant.ObjectorType,
+                Value("Objector_Type", "Applicant_Type", "Query_Type"));
+
+            applicant.ApplicantName = FirstExisting(
+                applicant.ApplicantName,
+                Value("Objector_Name", "Applicant_Name"));
+
+            applicant.ApplicantSurname = FirstExisting(
+                applicant.ApplicantSurname,
+                Value("Objector_Surname", "Applicant_Surname"));
+
+            applicant.ApplicantIdNumber = FirstExisting(
+                applicant.ApplicantIdNumber,
+                Value("Objector_Identity", "Objector_ID", "Applicant_ID", "ID_Number"));
+
+            applicant.ApplicantCompanyRegistrationNumber = FirstExisting(
+                applicant.ApplicantCompanyRegistrationNumber,
+                Value("Objector_Company", "Objector_Company_Reg_No", "Applicant_Company_Reg_No"));
+
+            applicant.ApplicantEmail = FirstExisting(
+                applicant.ApplicantEmail,
+                Value("Objector_Email", "Applicant_Email", "Email"));
+
+            applicant.ApplicantTelephone = FirstExisting(
+                applicant.ApplicantTelephone,
+                Value("Objector_Home_Phone", "Objector_Work_Phone", "Objector_Telephone"));
+
+            applicant.ApplicantCellphone = FirstExisting(
+                applicant.ApplicantCellphone,
+                Value("Objector_Cell", "Objector_Cell_Phone", "Objector_Cellphone"));
+
+            applicant.ApplicantAddress1 = FirstExisting(applicant.ApplicantAddress1, Value("Objector_Postal_1"));
+            applicant.ApplicantAddress2 = FirstExisting(applicant.ApplicantAddress2, Value("Objector_Postal_2"));
+            applicant.ApplicantAddress3 = FirstExisting(applicant.ApplicantAddress3, Value("Objector_Postal_3"));
+            applicant.ApplicantAddress4 = FirstExisting(applicant.ApplicantAddress4, Value("Objector_Postal_4"));
+            applicant.ApplicantPostalCode = FirstExisting(applicant.ApplicantPostalCode, Value("Objector_Postal_5"));
+
+            applicant.OwnerName = FirstExisting(applicant.OwnerName, Value("Owner_Name"));
+            applicant.OwnerSurname = FirstExisting(applicant.OwnerSurname, Value("Owner_Surname"));
+            applicant.OwnerIdNumber = FirstExisting(applicant.OwnerIdNumber, Value("Owner_Identity", "Owner_ID", "Owner_ID_Number"));
+            applicant.OwnerEmail = FirstExisting(applicant.OwnerEmail, Value("Owner_Email"));
+            applicant.OwnerTelephone = FirstExisting(applicant.OwnerTelephone, Value("Owner_Home_Phone", "Owner_Work_Phone", "Owner_Telephone"));
+            applicant.OwnerCellphone = FirstExisting(applicant.OwnerCellphone, Value("Owner_Cell_Phone", "Owner_Cellphone", "Owner_Cell"));
+
+            applicant.RepresentativeName = FirstExisting(applicant.RepresentativeName, Value("Representative_name", "Representative_Name", "Rep_Name"));
+            applicant.RepresentativeSurname = FirstExisting(applicant.RepresentativeSurname, Value("Representative_Surname", "Rep_Surname"));
+            applicant.RepresentativeIdNumber = FirstExisting(applicant.RepresentativeIdNumber, Value("Representative_ID", "Representative_Identity", "Rep_ID"));
+            applicant.RepresentativeCompanyName = FirstExisting(applicant.RepresentativeCompanyName, Value("Representative_Company", "Rep_Company"));
+            applicant.RepresentativeCompanyRegistrationNumber = FirstExisting(applicant.RepresentativeCompanyRegistrationNumber, Value("Representative_Company_Reg_No", "Rep_Company_Reg_No"));
+            applicant.RepresentativeEmail = FirstExisting(applicant.RepresentativeEmail, Value("Representative_Email", "Rep_Email"));
+            applicant.RepresentativeTelephone = FirstExisting(applicant.RepresentativeTelephone, Value("Rep_Home_Phone", "Rep_Work_Phone", "Representative_Telephone"));
+            applicant.RepresentativeCellphone = FirstExisting(applicant.RepresentativeCellphone, Value("Rep_Cell_Phone", "Representative_Cellphone", "Rep_Cell"));
+            applicant.RepresentativeAddress1 = FirstExisting(applicant.RepresentativeAddress1, Value("Rep_Postal_1"));
+            applicant.RepresentativeAddress2 = FirstExisting(applicant.RepresentativeAddress2, Value("Rep_Postal_2"));
+            applicant.RepresentativeAddress3 = FirstExisting(applicant.RepresentativeAddress3, Value("Rep_Postal_3"));
+            applicant.RepresentativeAddress4 = FirstExisting(applicant.RepresentativeAddress4, Value("Rep_Postal_4"));
+            applicant.RepresentativePostalCode = FirstExisting(applicant.RepresentativePostalCode, Value("Rep_Postal_5"));
+            applicant.Capacity = FirstExisting(applicant.Capacity, Value("Objector_Status", "Capacity", "Representative_Capacity"));
+
+            model.Applicant = applicant;
+
+            model.CurrentValuation = BuildCurrentValuationFromFields(
+                model,
+                model.CurrentValuation);
+
+            model.RequestedValuation = BuildRequestedValuationFromFields(
+                model,
+                model.RequestedValuation);
+
+            model.Reasons = BuildReasonsFromFields(
+                model,
+                model.Reasons);
+
+            model.MultiPurposeLines = BuildMultiPurposeLinesFromFields(
+                model,
+                model.MultiPurposeLines);
+        }
+
+        private static SubmissionValuationViewModel BuildCurrentValuationFromFields(
+            SubmissionViewModel model,
+            SubmissionValuationViewModel current)
+        {
+            string Value(params string[] names) => model.Sections
+                .SelectMany(section => section.Fields)
+                .FirstOrDefault(field => names.Contains(field.Name, StringComparer.OrdinalIgnoreCase))
+                ?.Value
+                ?.Trim()
+                ?? string.Empty;
+
+            current.PropertyDescription = FirstNonEmpty(
+                current.PropertyDescription,
+                Value("Old_Property_Description", "Old_Property_Desc", "Property_Desc"));
+            current.Category = FirstNonEmpty(current.Category, Value("Old_Category", "GV_Category"));
+            current.Address = FirstNonEmpty(current.Address, Value("Old_Address", "GV_Address", "LisStreetAddress"));
+            current.Extent = FirstNonEmpty(current.Extent, Value("Old_Extent", "GV_Extent", "RateableArea"));
+            current.MarketValue = FirstNonEmpty(current.MarketValue, Value("Old_Market_Value", "GV_Market_Value", "MarketValue"));
+            current.Owner = FirstNonEmpty(current.Owner, Value("Old_Owner", "Owner_Name"));
+            return current;
+        }
+
+        private static SubmissionValuationViewModel BuildRequestedValuationFromFields(
+            SubmissionViewModel model,
+            SubmissionValuationViewModel requested)
+        {
+            string Value(params string[] names) => model.Sections
+                .SelectMany(section => section.Fields)
+                .FirstOrDefault(field => names.Contains(field.Name, StringComparer.OrdinalIgnoreCase))
+                ?.Value
+                ?.Trim()
+                ?? string.Empty;
+
+            requested.PropertyDescription = FirstNonEmpty(requested.PropertyDescription, Value("new_Property_Description", "New_Property_Description", "New_Property_Desc"));
+            requested.Category = FirstNonEmpty(requested.Category, Value("new_Category", "New_Category", "Requested_Category"));
+            requested.Address = FirstNonEmpty(requested.Address, Value("new_Address", "New_Address", "Requested_Address"));
+            requested.Extent = FirstNonEmpty(requested.Extent, Value("new_Extent", "New_Extent", "Requested_Extent"));
+            requested.MarketValue = FirstNonEmpty(requested.MarketValue, Value("new_Market_Value", "New_Market_Value", "Requested_Market_Value"));
+            requested.Owner = FirstNonEmpty(requested.Owner, Value("new_Owner", "New_Owner", "Requested_Owner"));
+            return requested;
+        }
+
+        private static SubmissionReasonViewModel BuildReasonsFromFields(
+            SubmissionViewModel model,
+            SubmissionReasonViewModel reasons)
+        {
+            string Value(params string[] names) => model.Sections
+                .SelectMany(section => section.Fields)
+                .FirstOrDefault(field => names.Contains(field.Name, StringComparer.OrdinalIgnoreCase))
+                ?.Value
+                ?.Trim()
+                ?? string.Empty;
+
+            reasons.PrimaryReason = FirstNonEmpty(reasons.PrimaryReason, Value("Objection_Reasons", "Query_Reason", "Review_Reason", "Reason"));
+            reasons.AdditionalReason = FirstNonEmpty(reasons.AdditionalReason, Value("Additional_Reason", "Additional_Reasons"));
+            reasons.Motivation = FirstNonEmpty(reasons.Motivation, Value("Motivation_for_Supp_Request", "Motivation", "Query_Motivation", "Review_Motivation"));
+            reasons.RequestedOutcome = FirstNonEmpty(reasons.RequestedOutcome, Value("Requested_Outcome", "Appellant_Request", "Requested_Decision"));
+            reasons.OtherReason = FirstNonEmpty(reasons.OtherReason, Value("Other_Reason", "Other_Reasons", "Remarks", "Comments"));
+            return reasons;
+        }
+
+        private static List<MultiPurposeLineViewModel> BuildMultiPurposeLinesFromFields(
+            SubmissionViewModel model,
+            List<MultiPurposeLineViewModel> currentLines)
+        {
+            string Value(params string[] names) => model.Sections
+                .SelectMany(section => section.Fields)
+                .FirstOrDefault(field => names.Contains(field.Name, StringComparer.OrdinalIgnoreCase))
+                ?.Value
+                ?.Trim()
+                ?? string.Empty;
+
+            var lines = new List<MultiPurposeLineViewModel>();
+
+            for (var index = 1; index <= 10; index++)
+            {
+                var suffix = index == 1 ? string.Empty : index.ToString(CultureInfo.InvariantCulture);
+                var line = new MultiPurposeLineViewModel
+                {
+                    LineNumber = index,
+                    CurrentCategory = Value($"Old{suffix}_Category", $"Old_Category{suffix}", $"GV_Category{suffix}"),
+                    CurrentExtent = Value($"Old{suffix}_Extent", $"Old_Extent{suffix}", $"GV_Extent{suffix}"),
+                    CurrentMarketValue = Value($"Old{suffix}_Market_Value", $"Old_Market_Value{suffix}", $"GV_Market_Value{suffix}"),
+                    RequestedCategory = Value($"new{suffix}_Category", $"New{suffix}_Category", $"New_Category{suffix}"),
+                    RequestedExtent = Value($"new{suffix}_Extent", $"New{suffix}_Extent", $"New_Extent{suffix}"),
+                    RequestedMarketValue = Value($"new{suffix}_Market_Value", $"New{suffix}_Market_Value", $"New_Market_Value{suffix}"),
+                    Remarks = Value($"Remarks{suffix}", $"GV_Remarks{suffix}", $"New_Remarks{suffix}")
+                };
+
+                if (line.HasValues)
+                    lines.Add(line);
+            }
+
+            return lines.Count > 0 ? lines : currentLines;
+        }
+
+        private static List<SubmissionFormSectionViewModel> BuildFormSections(
+    SubmissionViewModel model)
+        {
+            var definitions = new List<SubmissionFormSectionViewModel>
+    {
+        new()
+        {
+            Key = "section-1",
+            TabText = "Section 1",
+            Title = "Objector Information",
+            Description = "Owner, objector and authorised representative information.",
+            Order = 1,
+
+            // The submitted procedures may return Section 1 across
+            // one or two result sets.
+            SourceKeys =
+            {
+                "Section1",
+                "Section2"
+            }
+        },
+
+        new()
+        {
+            Key = "section-78-request",
+            TabText = model.IsReview
+                ? "Review Request"
+                : "Section 78 Request",
+            Title = model.IsReview
+                ? "Section 78 Review Request"
+                : "Section 78 Query Request",
+            Description = "The Section 78 request, motivation and requested outcome.",
+            Order = 2,
+            IsAvailable = model.IsSection78,
+            SourceKeys =
+            {
+                "Section2Query"
+            }
+        },
+
+        new()
+        {
+            Key = "section-2",
+            TabText = "Section 2",
+            Title = "Property Details",
+            Description = "Physical property, bond, servitude and compensation details.",
+            Order = 3,
+
+            // Objection procedures generally expose this as Section2.
+            // Section 78 procedure mappings can be adjusted after the
+            // exact stored-procedure result order is confirmed.
+            SourceKeys =
+            {
+                "Section2",
+                "Section3"
+            }
+        },
+
+        new()
+        {
+            Key = "section-3-res",
+            TabText = "Section 3 · Residential",
+            Title = "Description of Residential Dwelling",
+            Description = "Residential dwelling, outbuilding and property features.",
+            Order = 4,
+            IsAvailable =
+                model.FormType.Equals("Res", StringComparison.OrdinalIgnoreCase)
+                || model.IsMulti,
+            SourceKeys =
+            {
+                "Section3Res",
+                "Section3"
+            }
+        },
+
+        new()
+        {
+            Key = "section-3-agri",
+            TabText = "Section 3 · Agricultural",
+            Title = "Agricultural Property Details",
+            Description = "Agricultural land, improvements and farming information.",
+            Order = 5,
+            IsAvailable =
+                model.FormType.Equals("Agric", StringComparison.OrdinalIgnoreCase)
+                || model.IsMulti,
+            SourceKeys =
+            {
+                "Section3Agri",
+                "Section5"
+            }
+        },
+
+        new()
+        {
+            Key = "section-3-bus",
+            TabText = "Section 3 · Business",
+            Title = "Business Property Details",
+            Description = "Business use, accommodation and property information.",
+            Order = 6,
+            IsAvailable =
+                model.FormType.Equals("Bus", StringComparison.OrdinalIgnoreCase)
+                || model.IsMulti,
+            SourceKeys =
+            {
+                "Section3Bus",
+                "Section4"
+            }
+        },
+
+        new()
+        {
+            Key = "section-4-res",
+            TabText = "Section 4 · Residential",
+            Title = "Residential Sectional Title Units",
+            Description = "Residential sectional-title and exclusive-use areas.",
+            Order = 7,
+            IsAvailable =
+                model.FormType.Equals("Res", StringComparison.OrdinalIgnoreCase)
+                || model.IsMulti,
+            SourceKeys =
+            {
+                "Section4Res",
+                "Section6"
+            }
+        },
+
+        new()
+        {
+            Key = "section-4-bus",
+            TabText = "Section 4 · Business",
+            Title = "Business Sectional Title Units",
+            Description = "Business sectional-title and common-property information.",
+            Order = 8,
+            IsAvailable =
+                model.FormType.Equals("Bus", StringComparison.OrdinalIgnoreCase)
+                || model.IsMulti,
+            SourceKeys =
+            {
+                "Section4Bus",
+                "Section7"
+            }
+        },
+
+        new()
+        {
+            Key = "section-5",
+            TabText = "Section 5",
+            Title = "Market Information",
+            Description = "Asking prices, offers, agents and comparable transactions.",
+            Order = 9,
+            SourceKeys =
+            {
+                "Section5",
+                "Section8"
+            }
+        },
+
+        new()
+        {
+            Key = "section-6",
+            TabText = "Section 6",
+            Title = ResolveSubmissionDetailsTitle(model),
+            Description = "Current valuation record, requested changes and supporting reasons.",
+            Order = 10,
+            SourceKeys =
+            {
+                "Section6",
+                "Section9"
+            }
+        },
+
+        new()
+        {
+            Key = "section-7",
+            TabText = "Section 7",
+            Title = "Declaration",
+            Description = "Declaration and submission confirmation.",
+            Order = 11,
+            SourceKeys =
+            {
+                "Section7",
+                "Section10"
+            }
+        }
+    };
+
+            foreach (var definition in definitions)
+            {
+                definition.DataSections = model.Sections
+                    .Where(section =>
+                        definition.SourceKeys.Contains(
+                            section.Key,
+                            StringComparer.OrdinalIgnoreCase))
+                    .Where(section => section.Fields.Count > 0)
+                    .OrderBy(section => section.Order)
+                    .ToList();
+            }
+
+            return definitions
+                .Where(section => section.IsAvailable)
+                .Where(section =>
+                    section.HasFields
+                    || section.Key == "section-6"
+                    || section.Key == "section-7")
+                .OrderBy(section => section.Order)
+                .ToList();
+        }
+
+        private static string ResolveSubmissionDetailsTitle(
+            SubmissionViewModel model)
+        {
+            if (model.IsAppeal)
+                return "Appeal Details";
+
+            if (model.IsReview)
+                return "Review Details";
+
+            if (model.IsQuery)
+                return "Query Details";
+
+            return "Objection Details";
+        }
 
         private string GetConnectionStringForRoll(string rollSource)
         {

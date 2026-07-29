@@ -1,0 +1,15 @@
+@model V2_Genesis.Models.ViewModels.Submissions.SubmissionSectionHeadingViewModel
+
+<header class="municipal-section-heading">
+    <span>@Model.Number</span>
+    <h3>@Model.Title</h3>
+
+    @if (!string.IsNullOrWhiteSpace(Model.Subtitle))
+    {
+        <p>@Model.Subtitle</p>
+    }
+
+    <div class="municipal-section-divider">
+        <i></i><b></b><i></i>
+    </div>
+</header>
