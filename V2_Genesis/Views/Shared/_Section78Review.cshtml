@@ -1,0 +1,18 @@
+﻿@model V2_Genesis.Models.ViewModels.Submissions.SubmissionViewModel
+
+<partial name="_ReviewInformation"
+         model="Model.IsSection78" />
+
+<partial name="_Section78Information"
+         model="Model.IsSection78" />
+
+@if (Model.IsMulti)
+{
+    <partial name="Forms/_Section78Multipurpose"
+             model="Model" />
+}
+else
+{
+    <partial name="Forms/_Section78Standard"
+             model="Model" />
+}

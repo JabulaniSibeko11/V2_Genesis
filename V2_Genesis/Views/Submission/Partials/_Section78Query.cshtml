@@ -1,0 +1,7 @@
+@model V2_Genesis.Models.ViewModels.Submissions.SubmissionViewModel
+<section class="submission-process-banner"><strong>Section 78 Query</strong><span>This is the information submitted with the original Section 78 query.</span></section>
+@if (Model.IsMulti) { <partial name="Partials/_MultipurposeValuation" model="Model" /> }
+else { <partial name="Partials/_ValuationComparison" model="Model" /> }
+<partial name="Partials/_Reasons" model="Model.Reasons" />
+<partial name="Partials/_DynamicSections"
+         model="@(Model.Sections.Where(x => x.Order > 0 && x.Key != "Section6").ToList())" />

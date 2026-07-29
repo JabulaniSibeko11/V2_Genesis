@@ -1,0 +1,34 @@
+@model V2_Genesis.Models.ViewModels.Submissions.SubmissionViewModel
+@if (Model.CurrentValuation.HasValues || Model.RequestedValuation.HasValues)
+{
+    <section class="submission-section">
+        <div class="submission-section-heading"><span class="submission-section-number">06</span><h2>Current and requested valuation details</h2></div>
+        <div class="valuation-comparison-grid">
+            <article class="valuation-panel">
+                <header>Current valuation record</header>
+                <dl>
+                    <dt>Property description</dt><dd>@Display(Model.CurrentValuation.PropertyDescription)</dd>
+                    <dt>Category</dt><dd>@Display(Model.CurrentValuation.Category)</dd>
+                    <dt>Address</dt><dd>@Display(Model.CurrentValuation.Address)</dd>
+                    <dt>Extent</dt><dd>@Display(Model.CurrentValuation.Extent)</dd>
+                    <dt>Market value</dt><dd>@Display(Model.CurrentValuation.MarketValue)</dd>
+                    <dt>Owner</dt><dd>@Display(Model.CurrentValuation.Owner)</dd>
+                </dl>
+            </article>
+            <article class="valuation-panel valuation-panel--requested">
+                <header>Requested by client</header>
+                <dl>
+                    <dt>Property description</dt><dd>@Display(Model.RequestedValuation.PropertyDescription)</dd>
+                    <dt>Category</dt><dd>@Display(Model.RequestedValuation.Category)</dd>
+                    <dt>Address</dt><dd>@Display(Model.RequestedValuation.Address)</dd>
+                    <dt>Extent</dt><dd>@Display(Model.RequestedValuation.Extent)</dd>
+                    <dt>Market value</dt><dd>@Display(Model.RequestedValuation.MarketValue)</dd>
+                    <dt>Owner</dt><dd>@Display(Model.RequestedValuation.Owner)</dd>
+                </dl>
+            </article>
+        </div>
+    </section>
+}
+@functions {
+    private static string Display(string? value) => string.IsNullOrWhiteSpace(value) ? "Not provided" : value.Trim();
+}

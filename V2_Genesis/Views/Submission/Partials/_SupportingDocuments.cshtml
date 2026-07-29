@@ -1,0 +1,19 @@
+@model List<V2_Genesis.Models.ViewModels.Submissions.SubmissionDocumentViewModel>
+@if (Model.Any())
+{
+    <section class="submission-section">
+        <div class="submission-section-heading"><span class="submission-section-number">DOC</span><h2>Supporting documents</h2></div>
+        <div class="submission-document-list">
+            @foreach (var document in Model)
+            {
+                <article class="submission-document">
+                    <div><strong>@document.FileName</strong><span>@document.DocumentType @document.DisplayFileSize</span></div>
+                    <div class="submission-document-actions">
+                        @if (!string.IsNullOrWhiteSpace(document.PreviewUrl) && document.CanPreview) { <a href="@document.PreviewUrl" target="_blank" rel="noopener">Preview</a> }
+                        @if (!string.IsNullOrWhiteSpace(document.DownloadUrl)) { <a href="@document.DownloadUrl">Download</a> }
+                    </div>
+                </article>
+            }
+        </div>
+    </section>
+}

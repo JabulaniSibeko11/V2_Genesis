@@ -1,0 +1,26 @@
+﻿@model V2_Genesis.Models.ViewModels.Submissions.SubmissionViewModel
+
+<section class="submission-section">
+    <div class="submission-section-heading">
+        <span class="submission-section-number">06</span>
+        <h2>Valuation details</h2>
+    </div>
+
+    <div class="valuation-comparison-grid">
+
+        <article class="valuation-panel">
+            <header>Current valuation record</header>
+
+            <partial name="../_ValuationDetails"
+                     model="Model.CurrentValuation" />
+        </article>
+
+        <article class="valuation-panel valuation-panel--requested">
+            <header>Requested by client</header>
+
+            <partial name="../_ValuationDetails"
+                     model="Model.RequestedValuation" />
+        </article>
+
+    </div>
+</section>

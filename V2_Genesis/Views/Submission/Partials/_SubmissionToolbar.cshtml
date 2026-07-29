@@ -1,0 +1,14 @@
+@model V2_Genesis.Models.ViewModels.Submissions.SubmissionViewModel
+@{
+    var returnUrl = ViewData["ReturnUrl"]?.ToString() ?? "/Dashboard";
+}
+<div class="submission-toolbar">
+    <a href="@returnUrl" class="submission-back-link">
+        <span aria-hidden="true">←</span>
+        Back to dashboard
+    </a>
+    <div class="submission-toolbar-actions">
+        <button type="button" class="submission-print-button" onclick="window.print()">Print submission</button>
+        <span class="submission-readonly-badge">Read-only submission</span>
+    </div>
+</div>

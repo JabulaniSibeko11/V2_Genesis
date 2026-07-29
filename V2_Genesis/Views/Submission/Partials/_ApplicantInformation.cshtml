@@ -1,0 +1,40 @@
+@model V2_Genesis.Models.ViewModels.Submissions.SubmissionApplicantViewModel
+<section class="submission-section">
+    <div class="submission-section-heading"><span class="submission-section-number">02</span><h2>Applicant, owner and representative</h2></div>
+    <div class="submission-subsection">
+        <h3>Applicant</h3>
+        <div class="submission-field-grid">
+            <div class="submission-field"><span class="submission-field-label">Applicant type</span><div class="submission-field-value">@Display(Model.ObjectorType)</div></div>
+            <div class="submission-field"><span class="submission-field-label">Applicant name</span><div class="submission-field-value">@Display(Model.ApplicantFullName)</div></div>
+            <div class="submission-field"><span class="submission-field-label">Email</span><div class="submission-field-value">@Display(Model.ApplicantEmail)</div></div>
+            <div class="submission-field"><span class="submission-field-label">Cellphone</span><div class="submission-field-value">@Display(Model.ApplicantCellphone)</div></div>
+        </div>
+    </div>
+    @if (Model.HasOwnerDetails)
+    {
+        <div class="submission-subsection">
+            <h3>Owner</h3>
+            <div class="submission-field-grid">
+                <div class="submission-field"><span class="submission-field-label">Owner name</span><div class="submission-field-value">@Display(Model.OwnerFullName)</div></div>
+                <div class="submission-field"><span class="submission-field-label">Owner email</span><div class="submission-field-value">@Display(Model.OwnerEmail)</div></div>
+                <div class="submission-field"><span class="submission-field-label">Owner ID</span><div class="submission-field-value">@Display(Model.OwnerIdNumber)</div></div>
+                <div class="submission-field"><span class="submission-field-label">Owner cellphone</span><div class="submission-field-value">@Display(Model.OwnerCellphone)</div></div>
+            </div>
+        </div>
+    }
+    @if (Model.HasRepresentativeDetails)
+    {
+        <div class="submission-subsection">
+            <h3>Representative</h3>
+            <div class="submission-field-grid">
+                <div class="submission-field"><span class="submission-field-label">Representative name</span><div class="submission-field-value">@Display(Model.RepresentativeFullName)</div></div>
+                <div class="submission-field"><span class="submission-field-label">Company</span><div class="submission-field-value">@Display(Model.RepresentativeCompanyName)</div></div>
+                <div class="submission-field"><span class="submission-field-label">Email</span><div class="submission-field-value">@Display(Model.RepresentativeEmail)</div></div>
+                <div class="submission-field"><span class="submission-field-label">Capacity</span><div class="submission-field-value">@Display(Model.Capacity)</div></div>
+            </div>
+        </div>
+    }
+</section>
+@functions {
+    private static string Display(string? value) => string.IsNullOrWhiteSpace(value) ? "Not provided" : value.Trim();
+}

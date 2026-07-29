@@ -1,0 +1,36 @@
+@model V2_Genesis.Models.ViewModels.Submissions.SubmissionViewModel
+@if (Model.MultiPurposeLines.Any())
+{
+    <section class="submission-section">
+        <div class="submission-section-heading"><span class="submission-section-number">06</span><h2>Multipurpose valuation details</h2></div>
+        <div class="submission-table-wrap">
+            <table class="submission-comparison-table">
+                <thead>
+                    <tr><th rowspan="2">Line</th><th colspan="3">Current valuation</th><th colspan="3">Requested valuation</th></tr>
+                    <tr><th>Category</th><th>Extent</th><th>Market value</th><th>Category</th><th>Extent</th><th>Market value</th></tr>
+                </thead>
+                <tbody>
+                @foreach (var line in Model.MultiPurposeLines.OrderBy(x => x.LineNumber))
+                {
+                    <tr>
+                        <td>@line.LineNumber</td>
+                        <td>@Display(line.CurrentCategory)</td>
+                        <td>@Display(line.CurrentExtent)</td>
+                        <td>@Display(line.CurrentMarketValue)</td>
+                        <td>@Display(line.RequestedCategory)</td>
+                        <td>@Display(line.RequestedExtent)</td>
+                        <td>@Display(line.RequestedMarketValue)</td>
+                    </tr>
+                    @if (!string.IsNullOrWhiteSpace(line.Remarks))
+                    {
+                        <tr class="submission-remarks-row"><td></td><td colspan="6"><strong>Remarks:</strong> @line.Remarks</td></tr>
+                    }
+                }
+                </tbody>
+            </table>
+        </div>
+    </section>
+}
+@functions {
+    private static string Display(string? value) => string.IsNullOrWhiteSpace(value) ? "—" : value.Trim();
+}

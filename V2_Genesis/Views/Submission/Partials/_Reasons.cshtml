@@ -1,0 +1,15 @@
+@model V2_Genesis.Models.ViewModels.Submissions.SubmissionReasonViewModel
+@if (Model.HasReasons)
+{
+    <section class="submission-section">
+        <div class="submission-section-heading"><span class="submission-section-number">07</span><h2>Reasons and motivation</h2></div>
+        <div class="submission-field-grid">
+            @if (!string.IsNullOrWhiteSpace(Model.PrimaryReason)) { <div class="submission-field submission-field--wide"><span class="submission-field-label">Primary reason</span><div class="submission-field-value submission-long-text">@Model.PrimaryReason</div></div> }
+            @if (!string.IsNullOrWhiteSpace(Model.AdditionalReason)) { <div class="submission-field submission-field--wide"><span class="submission-field-label">Additional reason</span><div class="submission-field-value submission-long-text">@Model.AdditionalReason</div></div> }
+            @if (!string.IsNullOrWhiteSpace(Model.Motivation)) { <div class="submission-field submission-field--wide"><span class="submission-field-label">Motivation</span><div class="submission-field-value submission-long-text">@Model.Motivation</div></div> }
+            @if (!string.IsNullOrWhiteSpace(Model.RequestedOutcome)) { <div class="submission-field submission-field--wide"><span class="submission-field-label">Requested outcome</span><div class="submission-field-value submission-long-text">@Model.RequestedOutcome</div></div> }
+            @if (!string.IsNullOrWhiteSpace(Model.MarketValueReason)) { <div class="submission-field submission-field--wide"><span class="submission-field-label">Market value reason</span><div class="submission-field-value submission-long-text">@Model.MarketValueReason</div></div> }
+            @if (!string.IsNullOrWhiteSpace(Model.OtherReason)) { <div class="submission-field submission-field--wide"><span class="submission-field-label">Other reason</span><div class="submission-field-value submission-long-text">@Model.OtherReason</div></div> }
+        </div>
+    </section>
+}

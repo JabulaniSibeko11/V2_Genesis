@@ -1,0 +1,157 @@
+@model V2_Genesis.Models.ViewModels.Submissions.SubmissionViewModel
+
+@{
+    var sec = Model.Sections
+        .Where(x => x.Order > 0 && x.Fields.Any())
+        .OrderBy(x => x.Order)
+        .ToList();
+}
+
+@if (sec.Any())
+{
+    <section class="submission-form-wrapper" data-submission-tabs>
+        <div class="submission-form-intro">
+            <div>
+                <span class="submission-form-kicker">Submitted form</span>
+                <h2>@Model.SubmissionType form details</h2>
+                <p>Select a section below to view the information captured when the form was lodged.</p>
+            </div>
+
+            <span class="submission-form-type-pill">
+                @(Model.IsSection78
+                    ? (Model.IsReview ? "Section 78 Review" : "Section 78 Query")
+                    : Model.IsMulti
+                        ? "Form D · Multipurpose"
+                        : $"Form {Model.FormType}")
+            </span>
+        </div>
+
+        <nav class="submission-form-tabs"
+             role="tablist"
+             aria-label="Submitted form sections">
+            @for (var i = 0; i < sec.Count; i++)
+            {
+                var secc = sec[i];
+                var tabId = $"submission-tab-{secc.Order}";
+                var panelId = $"submission-panel-{secc.Order}";
+
+                <button type="button"
+                        id="@tabId"
+                        class="submission-form-tab @(i == 0 ? "active" : "")"
+                        role="tab"
+                        aria-selected="@(i == 0 ? "true" : "false")"
+                        aria-controls="@panelId"
+                        data-submission-tab="@panelId">
+                    <span>Section @secc.Order</span>
+                    <small>@ShortTitle(secc.Title)</small>
+                </button>
+            }
+        </nav>
+
+        <div class="submission-form-panels">
+            @for (var i = 0; i < sec.Count; i++)
+            {
+                var secc = sec[i];
+                var tabId = $"submission-tab-{secc.Order}";
+                var panelId = $"submission-panel-{secc.Order}";
+
+                <article id="@panelId"
+                         class="submission-form-panel @(i == 0 ? "active" : "")"
+                         role="tabpanel"
+                         aria-labelledby="@tabId"
+                         data-submission-panel
+                         @(i == 0 ? null : "hidden")>
+
+                    <header class="submission-original-section-heading">
+                        <span>SECTION @secc.Order</span>
+                        <h3>@secc.Title.ToUpperInvariant()</h3>
+                    </header>
+
+                    <div class="submission-original-form-grid">
+                        @foreach (var field in secc.Fields)
+                        {
+                            var fieldCss = field.IsLongText
+                                ? "submission-original-control submission-original-control--wide"
+                                : "submission-original-control";
+
+                            <div class="@fieldCss">
+                                <label>@field.Label.ToUpperInvariant()</label>
+
+                                @if (field.IsLongText)
+                                {
+                                    <div class="submission-readonly-textarea"
+                                         role="textbox"
+                                         aria-readonly="true">
+                                        @Display(field.Value)
+                                    </div>
+                                }
+                                else if (IsYesNo(field.Value))
+                                {
+                                    <div class="submission-choice-group"
+                                         aria-label="@field.Label">
+                                        <span class="submission-choice @(IsSelected(field.Value, "Yes") ? "selected" : "")">
+                                            Yes
+                                        </span>
+                                        <span class="submission-choice @(IsSelected(field.Value, "No") ? "selected" : "")">
+                                            No
+                                        </span>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="submission-readonly-input"
+                                         role="textbox"
+                                         aria-readonly="true">
+                                        @Display(field.Value)
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                </article>
+            }
+        </div>
+    </section>
+}
+else
+{
+    <section class="submission-empty-form">
+        <i class="fa-solid fa-file-circle-exclamation"></i>
+        <div>
+            <strong>No submitted form sections were returned.</strong>
+            <span>The submission exists, but no section data was available for display.</span>
+        </div>
+    </section>
+}
+
+@functions {
+    private static string Display(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value)
+            ? "Not provided"
+            : value.Trim();
+    }
+
+    private static bool IsYesNo(string? value)
+    {
+        return string.Equals(value?.Trim(), "Yes", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(value?.Trim(), "No", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsSelected(string? value, string expected)
+    {
+        return string.Equals(value?.Trim(), expected, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string ShortTitle(string title)
+    {
+        if (string.IsNullOrWhiteSpace(title))
+            return string.Empty;
+
+        var value = title.Trim();
+
+        return value.Length <= 28
+            ? value
+            : value[..25] + "…";
+    }
+}

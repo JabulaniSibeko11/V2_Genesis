@@ -1,0 +1,26 @@
+﻿@model V2_Genesis.Models.ViewModels.Submissions.SubmissionViewModel
+
+@{
+    ViewData["Title"] = $"View {Model.SubmissionType} - {Model.ReferenceNumber}";
+}
+
+<link rel="stylesheet"href="~/css/Views/Submission-View.css" asp-append-version="true" />
+
+<main class="submission-view-page">
+    <div class="submission-view-shell">
+        <partial name="Partials/_SubmissionToolbar" model="Model" />
+        <partial name="Partials/_SubmissionHeader" model="Model" />
+        <partial name="Partials/_SubmissionSummary" model="Model" />
+
+        @* Keep the property card above the form tabs. *@
+        <partial name="Partials/_PropertyInformation" model="Model.Property" />
+
+        @* One reusable tabbed form for Objection, Appeal, Query and Review. *@
+        <partial name="Partials/_TabbedFormSections" model="Model" />
+
+        <partial name="Partials/_SupportingDocuments" model="Model.Documents" />
+        <partial name="Partials/_SubmissionFooter" model="Model" />
+    </div>
+</main>
+
+<script src="~/js/submission-view-tabs.js" asp-append-version="true"></script>

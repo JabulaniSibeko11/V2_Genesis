@@ -1,0 +1,16 @@
+@model List<V2_Genesis.Models.ViewModels.Submissions.SubmissionSectionViewModel>
+@foreach (var sec in Model.Where(x => x.Order > 0).OrderBy(x => x.Order))
+{
+    <section class="submission-section">
+        <div class="submission-section-heading"><span class="submission-section-number">@($"{sec.Order:00}")</span><h2>@sec.Title</h2></div>
+        <div class="submission-field-grid">
+            @foreach (var field in sec.Fields)
+            {
+                <div class="submission-field @(field.IsLongText ? "submission-field--wide" : "")">
+                    <span class="submission-field-label">@field.Label</span>
+                    <div class="submission-field-value @(field.IsLongText ? "submission-long-text" : "")">@field.Value</div>
+                </div>
+            }
+        </div>
+    </section>
+}

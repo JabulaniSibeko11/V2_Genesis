@@ -1,0 +1,11 @@
+@model V2_Genesis.Models.ViewModels.Submissions.SubmissionViewModel
+<header class="submission-hero">
+    <div>
+        <p class="submission-eyebrow">City of Johannesburg · Valuation Services</p>
+        <h1>@Model.SubmissionType submission</h1>
+        <p class="submission-reference">@Model.ReferenceNumber</p>
+    </div>
+    <div class="submission-status-wrap">
+        <span class="submission-status">@(string.IsNullOrWhiteSpace(Model.Status) ? "Submitted" : Model.Status)</span>
+    </div>
+</header>

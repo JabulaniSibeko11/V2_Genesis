@@ -1,0 +1,78 @@
+@model V2_Genesis.Models.ViewModels.Submissions.SubmissionPropertyViewModel
+
+<section class="submission-section submission-property-card">
+    <div class="submission-section-heading">
+        <span class="submission-section-number">01</span>
+        <h2>Property information</h2>
+    </div>
+
+    <div class="submission-field-grid">
+        <div class="submission-field submission-field--wide">
+            <span class="submission-field-label">Property description</span>
+            <div class="submission-field-value">@Display(Model.PropertyDescription)</div>
+        </div>
+
+        <div class="submission-field">
+            <span class="submission-field-label">Property type</span>
+            <div class="submission-field-value">@Display(Model.PropertyType)</div>
+        </div>
+
+        @* Premise ID intentionally removed from the client submitted view. *@
+
+        <div class="submission-field">
+            <span class="submission-field-label">Property ID</span>
+            <div class="submission-field-value">@Display(Model.PropertyId)</div>
+        </div>
+
+        <div class="submission-field">
+            <span class="submission-field-label">Unit key</span>
+            <div class="submission-field-value">@Display(Model.UnitKey)</div>
+        </div>
+
+        <div class="submission-field">
+            <span class="submission-field-label">Valuation key</span>
+            <div class="submission-field-value">@Display(Model.ValuationKey)</div>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(Model.Address))
+        {
+            <div class="submission-field submission-field--wide">
+                <span class="submission-field-label">Address</span>
+                <div class="submission-field-value">@Display(Model.Address)</div>
+            </div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(Model.Township))
+        {
+            <div class="submission-field">
+                <span class="submission-field-label">Township</span>
+                <div class="submission-field-value">@Display(Model.Township)</div>
+            </div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(Model.Erf))
+        {
+            <div class="submission-field">
+                <span class="submission-field-label">ERF / Stand</span>
+                <div class="submission-field-value">@Display(Model.Erf)</div>
+            </div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(Model.Sector))
+        {
+            <div class="submission-field">
+                <span class="submission-field-label">Sector</span>
+                <div class="submission-field-value">@Display(Model.Sector)</div>
+            </div>
+        }
+    </div>
+</section>
+
+@functions {
+    private static string Display(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value)
+            ? "Not provided"
+            : value.Trim();
+    }
+}

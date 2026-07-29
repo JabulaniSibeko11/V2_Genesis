@@ -1,0 +1,30 @@
+﻿@model V2_Genesis.Models.ViewModels.Submissions.SubmissionViewModel
+
+<partial name="_AppealInformation"
+         model="Model.Appeal" />
+
+@if (Model.IsMulti)
+{
+    <partial name="Forms/_FormDMultipurpose"
+             model="Model" />
+}
+else
+{
+    switch (Model.FormType?.Trim().ToUpperInvariant())
+    {
+        case "A":
+            <partial name="Forms/_FormAResidential"
+                     model="Model" />
+            break;
+
+        case "B":
+            <partial name="Forms/_FormBBusiness"
+                     model="Model" />
+            break;
+
+        case "C":
+            <partial name="Forms/_FormCAgricultural"
+                     model="Model" />
+            break;
+    }
+}

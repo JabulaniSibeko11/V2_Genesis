@@ -1,0 +1,14 @@
+@model V2_Genesis.Models.ViewModels.Submissions.AppealSubmissionViewModel
+<section class="submission-section">
+    <div class="submission-section-heading"><span class="submission-section-number">03</span><h2>Appeal information</h2></div>
+    <div class="submission-field-grid">
+        <div class="submission-field"><span class="submission-field-label">Appeal number</span><div class="submission-field-value">@Display(Model.AppealNumber)</div></div>
+        <div class="submission-field"><span class="submission-field-label">Objection number</span><div class="submission-field-value">@Display(Model.ObjectionNumber)</div></div>
+        <div class="submission-field submission-field--wide"><span class="submission-field-label">Objection outcome</span><div class="submission-field-value">@Display(Model.ObjectionOutcome)</div></div>
+        <div class="submission-field submission-field--wide"><span class="submission-field-label">Appellant request</span><div class="submission-field-value">@Display(Model.AppellantRequest)</div></div>
+        <div class="submission-field submission-field--wide"><span class="submission-field-label">Grounds of appeal</span><div class="submission-field-value submission-long-text">@Display(Model.GroundsOfAppeal)</div></div>
+    </div>
+</section>
+@functions {
+    private static string Display(string? value) => string.IsNullOrWhiteSpace(value) ? "Not provided" : value.Trim();
+}

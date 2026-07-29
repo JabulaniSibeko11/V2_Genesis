@@ -1,0 +1,7 @@
+@model V2_Genesis.Models.ViewModels.Submissions.SubmissionViewModel
+<section class="submission-summary" aria-label="Submission summary">
+    <div><span>Roll</span><strong>@Model.RollDisplayName</strong></div>
+    <div><span>Form</span><strong>@(Model.FormType == "Multi" ? "Form D" : Model.FormType)</strong></div>
+    <div><span>Property</span><strong>@(string.IsNullOrWhiteSpace(Model.PropertyDescription) ? Model.Property.PropertyDescription : Model.PropertyDescription)</strong></div>
+    <div><span>Date submitted</span><strong>@(Model.SubmittedAt?.ToString("dd MMMM yyyy HH:mm") ?? "Not available")</strong></div>
+</section>
