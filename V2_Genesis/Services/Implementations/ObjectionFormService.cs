@@ -1549,30 +1549,50 @@ public class ObjectionFormService : IObjectionFormService
     {
         try
         {
-            // Re-enable this DbSet in ApplicationDbContext if it is still
-            // commented out:
-            //   public DbSet<LinkedProperties> LinkedProperties { get; set; }
             var record = await _db.LinkedProperties
                 .FirstOrDefaultAsync(p => p.ID == linkedId && p.UserID == userId);
 
             if (record is null)
-                return (false, "Property not found or you do not have permission to unlink it.");
+            {
+                return (false,
+                    "Property not found, it may already have been unlinked, " +
+                    "or you do not have permission to unlink it.");
+            }
 
+            var propertyKey = record.IDProperty?.Trim();
+
+            // Unlink removes only the dashboard link. It does not delete
+            // Objections, Appeals, Queries, Reviews, evidence or audit records.
             _db.LinkedProperties.Remove(record);
             await _db.SaveChangesAsync();
 
             _logger.LogInformation(
-                "User {User} unlinked property record {Id}.", userId, linkedId);
+                "User {User} unlinked property record {Id}. PropertyKey: {PropertyKey}",
+                userId,
+                linkedId,
+                propertyKey);
 
             return (true, null);
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            _logger.LogWarning(ex,
+                "Linked property {Id} was already removed for user {User}.",
+                linkedId,
+                userId);
+
+            return (false, "This property has already been unlinked. Please refresh your dashboard.");
         }
         catch (Exception ex)
         {
             _logger.LogError(ex,
                 "Error unlinking property {Id} for user {User}.", linkedId, userId);
-            return (false, "An error occurred while removing the property. Please try again.");
+
+            return (false,
+                "An error occurred while unlinking the property. Please try again.");
         }
     }
+
     private static List<string> GetUploadedDocumentNames(Obj_Files objFile)
     {
         var docs = new List<string>();

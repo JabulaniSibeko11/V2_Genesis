@@ -9,7 +9,7 @@
 @model V2_Genesis.Models.ViewModels.Dashboard.ClientDashboardViewModel
 
 @{
-    ViewData["Title"] = "My Dashboard"; 
+    ViewData["Title"] = "My Dashboard";
     Layout = "~/Views/Shared/_ClientLayout.cshtml";
 
     var ann = Model.Announcement;
@@ -274,7 +274,7 @@
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" />
     <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css" />
 
-   @*   <link href="~/css/views/clientdashboardcss.css" rel="stylesheet" asp-append-version="true" /> *@
+    @*   <link href="~/css/views/clientdashboardcss.css" rel="stylesheet" asp-append-version="true" /> *@
     <link href="~/css/site.css" rel="stylesheet" asp-append-version="true" />
     <link href="~/css/views/client-dashboard.css" rel="stylesheet" asp-append-version="true" />
 }
@@ -476,19 +476,19 @@
 
     <div class="dash-link-alert
         @(string.Equals(
-                     reviewStatus,
-                     "Open",
-                     StringComparison.OrdinalIgnoreCase)
-                     ? "dash-link-success"
-                     : "dash-link-error")">
+                              reviewStatus,
+                              "Open",
+                              StringComparison.OrdinalIgnoreCase)
+                              ? "dash-link-success"
+                              : "dash-link-error")">
 
         <i class="fa-solid
             @(string.Equals(
-                           reviewStatus,
-                           "Open",
-                           StringComparison.OrdinalIgnoreCase)
-                           ? "fa-unlock"
-                           : "fa-lock")">
+                                      reviewStatus,
+                                      "Open",
+                                      StringComparison.OrdinalIgnoreCase)
+                                      ? "fa-unlock"
+                                      : "fa-lock")">
         </i>
 
         <div>
@@ -806,38 +806,38 @@
                                                             Actions
                                                         </button>
                                                         <ul class="dropdown-menu cd-action-menu">
-                                                         @{
-    var reviewIsOpen =
-        string.Equals(
-            item.Review_Status,
-            "Open",
-            StringComparison.OrdinalIgnoreCase);
+                                                            @{
+                                                                var reviewIsOpen =
+                                                                    string.Equals(
+                                                                        item.Review_Status,
+                                                                        "Open",
+                                                                        StringComparison.OrdinalIgnoreCase);
 
-    var reviewIsClosed =
-        string.Equals(
-            item.Review_Status,
-            "Closed",
-            StringComparison.OrdinalIgnoreCase);
+                                                                var reviewIsClosed =
+                                                                    string.Equals(
+                                                                        item.Review_Status,
+                                                                        "Closed",
+                                                                        StringComparison.OrdinalIgnoreCase);
 
   
-    var canLodgeQuery =
-        reviewIsOpen &&
-        !item.Review_Close_Date.HasValue;
+                                                                var canLodgeQuery =
+                                                                    reviewIsOpen &&
+                                                                    !item.Review_Close_Date.HasValue;
 
-    var canLodgeReview =
-        reviewIsOpen &&
-        item.Review_Close_Date.HasValue;
-}
+                                                                var canLodgeReview =
+                                                                    reviewIsOpen &&
+                                                                    item.Review_Close_Date.HasValue;
+                                                            }
 
-@if (canLodgeQuery)
-{
-    <li>
-        @{
-            var querySourceTable =
-                string.IsNullOrWhiteSpace(item.PropertyFrom)
-                    ? "Objection_Query"
-                    : item.PropertyFrom;
-        }
+                                                            @if (canLodgeQuery)
+                                                            {
+                                                                <li>
+                                                                    @{
+                                                                        var querySourceTable =
+                                                                            string.IsNullOrWhiteSpace(item.PropertyFrom)
+                                                                                ? "Objection_Query"
+                                                                                : item.PropertyFrom;
+                                                                    }
 
                                                                     <a class="dropdown-item cd-action-primary"
                                                                            href="/objection/check?rollSource=@roll.Source&sourceTable=@querySourceTable&unitKey=@item.UnitKey&valuationKey=@item.ValuationKey&appealStatus=False&qtype=Query">
@@ -845,69 +845,79 @@
                                                                         <i class="fa-solid fa-file-circle-question"></i>
                                                                         <span>Lodge Query</span>
                                                                     </a>
-    </li>
-}
-else if (canLodgeReview)
-{
+                                                                </li>
+                                                            }
+                                                            else if (canLodgeReview)
+                                                            {
     
-        var linkedReviewUrl =
-    "/objection/check"
-    + "?rollSource=" + Uri.EscapeDataString(roll.Source ?? "Query")
-    + "&sourceTable=Objection_Query"
-    + "&unitKey=" + Uri.EscapeDataString(item.UnitKey ?? "")
-    + "&valuationKey=" + Uri.EscapeDataString(item.ValuationKey ?? "")
-    + "&appealStatus=False"
-    + "&PropertyFrom=Objection_Query"
-    + "&qtype=Review";
-    
+                                                                var linkedReviewUrl =
+                                                            "/objection/check"
+                                                            + "?rollSource=" + Uri.EscapeDataString(roll.Source ?? "Query")
+                                                            + "&sourceTable=Objection_Query"
+                                                            + "&unitKey=" + Uri.EscapeDataString(item.UnitKey ?? "")
+                                                            + "&valuationKey=" + Uri.EscapeDataString(item.ValuationKey ?? "")
+                                                            + "&appealStatus=False"
+                                                            + "&PropertyFrom=Objection_Query"
+                                                            + "&qtype=Review";
 
-    <li>
+    
+                                                                <li>
                                                                     <a class="dropdown-item cd-action-primary"
                                                                            href="@linkedReviewUrl">
 
                                                                         <i class="fa-solid fa-magnifying-glass-chart"></i>
                                                                         <span>Lodge Review</span>
                                                                     </a>
-    </li>
-}
-else if (reviewIsClosed)
-{
-    <li>
-        <span class="dropdown-item disabled"
-              aria-disabled="true">
+                                                                </li>
+                                                            }
+                                                            else if (reviewIsClosed)
+                                                            {
+                                                                <li>
+                                                                    <span class="dropdown-item disabled"
+                                                                          aria-disabled="true">
 
-            <i class="fa-solid fa-lock"></i>
-            Review Closed
-        </span>
-    </li>
+                                                                        <i class="fa-solid fa-lock"></i>
+                                                                        Review Closed
+                                                                    </span>
+                                                                </li>
 
-    @if (item.Review_Close_Date.HasValue)
-    {
-        <li>
-            <span class="dropdown-item-text text-muted">
-                Closed on
-                @item.Review_Close_Date.Value
-                    .ToString("dd MMM yyyy")
-            </span>
-        </li>
-    }
-}
-else
-{
-    <li>
-        <span class="dropdown-item disabled"
-              aria-disabled="true">
+                                                                @if (item.Review_Close_Date.HasValue)
+                                                                {
+                                                                    <li>
+                                                                        <span class="dropdown-item-text text-muted">
+                                                                            Closed on
+                                                                            @item.Review_Close_Date.Value
+                                                                            .ToString("dd MMM yyyy")
+                                                                        </span>
+                                                                    </li>
+                                                                }
+                                                            }
+                                                            else
+                                                            {
+                                                                <li>
+                                                                    <span class="dropdown-item disabled"
+                                                                          aria-disabled="true">
 
-            <i class="fa-solid fa-triangle-exclamation"></i>
-            Section 78 status unavailable
-        </span>
-    </li>
-}
-                                                            
+                                                                        <i class="fa-solid fa-triangle-exclamation"></i>
+                                                                        Section 78 status unavailable
+                                                                    </span>
+                                                                </li>
+                                                            }
+
                                                             
                                                             <li>
-                                                                <a class="dropdown-item cd-action-danger"
-                                                                       href="/property/unlink?linkedId=@item.Id&rollSource=@roll.Source&returnUrl=/Dashboard?openRoll=@roll.Source">
+                                                                <a href="@Url.RouteUrl(
+                                                                                                                                                                                                                      "PropertyUnlink",
+                                                                                                                                                                                                                      new
+                                                                                                                                                                                                                      {
+                                                                                                                                                                                                                          linkedId = item.Id,
+                                                                                                                                                                                                                          rollSource = roll.Source,
+                                                                                                                                                                                                                          returnUrl = Url.Action(
+                                                                                                                                                                                                                              "Index",
+                                                                                                                                                                                                                              "Dashboard",
+                                                                                                                                                                                                                              new { openRoll = roll.Source })
+                                                                                                                                                                                                                      })"
+                                                                       class="dropdown-item cd-action-danger">
 
                                                                     <i class="fa-solid fa-link-slash"></i>
                                                                     <span>Unlink Property</span>
@@ -1307,9 +1317,21 @@ else
                                                             }
                                                 
                                                             <li>
-                                                                <a class="dropdown-item"
-                                                                       href="/property/unlink?linkedId=@item.Id&rollSource=@roll.Source&returnUrl=/Dashboard?openRoll=@roll.Source">
-                                                                    <i class="fa-solid fa-link-slash"></i> Unlink
+                                                                <a href="@Url.RouteUrl(
+                                                                                                                                                                                                                      "PropertyUnlink",
+                                                                                                                                                                                                                      new
+                                                                                                                                                                                                                      {
+                                                                                                                                                                                                                          linkedId = item.Id,
+                                                                                                                                                                                                                          rollSource = roll.Source,
+                                                                                                                                                                                                                          returnUrl = Url.Action(
+                                                                                                                                                                                                                              "Index",
+                                                                                                                                                                                                                              "Dashboard",
+                                                                                                                                                                                                                              new { openRoll = roll.Source })
+                                                                                                                                                                                                                      })"
+                                                                       class="dropdown-item cd-action-danger">
+
+                                                                    <i class="fa-solid fa-link-slash"></i>
+                                                                    <span>Unlink Property</span>
                                                                 </a>
                                                             </li>
                                                         </ul>
@@ -1834,7 +1856,7 @@ else
                                         <td>@item.MarketValue</td>
                                         <td>
                                             <span class="attr-form-pill attr-pill-@(item.FormType.ToLower()
-                                                                                                                                                                                          .Replace(" ", "").Replace("&", "").Replace("/", ""))">
+                                                                                                                                                                                                                                                                                            .Replace(" ", "").Replace("&", "").Replace("/", ""))">
                                                 @item.FormType
                                             </span>
                                         </td>
@@ -2580,16 +2602,16 @@ else
 
         // ── Roll section toggle ─────────────────────────────────────
         function toggleRoll(key) {
-            const body = document.getElementById('rollbody-' + key);
-            const chevron = document.getElementById('chevron-' + key);
+        const body = document.getElementById('rollbody-' + key);
+        const chevron = document.getElementById('chevron-' + key);
 
-            if (!body) return;
+        if (!body) return;
 
-            const isOpen = body.classList.toggle('open');
+        const isOpen = body.classList.toggle('open');
 
-            if (chevron) {
-                chevron.style.transform = isOpen ? 'rotate(180deg)' : 'rotate(0deg)';
-            }
+        if (chevron) {
+        chevron.style.transform = isOpen ? 'rotate(180deg)' : 'rotate(0deg)';
+        }
         }
 
         // ── Tiles view: AJAX slide-over drawer (GV/Supp/Query rolls) ──
@@ -2598,67 +2620,67 @@ else
         const rollDetailCache = {};
 
         function openRollDrawer(tileEl) {
-            const rollSource = tileEl.dataset.rollSource;
-            const rollName = tileEl.dataset.rollName;
-            const url = tileEl.dataset.drawerUrl ||
-                (rollSource ? '/dashboard/roll-detail/' + encodeURIComponent(rollSource) : null);
+        const rollSource = tileEl.dataset.rollSource;
+        const rollName = tileEl.dataset.rollName;
+        const url = tileEl.dataset.drawerUrl ||
+        (rollSource ? '/dashboard/roll-detail/' + encodeURIComponent(rollSource) : null);
 
-            const drawer = document.getElementById('cdDrawer');
-            const backdrop = document.getElementById('cdDrawerBackdrop');
-            const title = document.getElementById('cdDrawerTitle');
-            const body = document.getElementById('cdDrawerBody');
+        const drawer = document.getElementById('cdDrawer');
+        const backdrop = document.getElementById('cdDrawerBackdrop');
+        const title = document.getElementById('cdDrawerTitle');
+        const body = document.getElementById('cdDrawerBody');
 
-            if (!drawer || !backdrop || !body || !url) return;
+        if (!drawer || !backdrop || !body || !url) return;
 
-            title.textContent = rollName || 'Details';
-            body.innerHTML =
-                '<div class="cd-roll-loading"><i class="fa-solid fa-circle-notch fa-spin"></i> Loading…</div>';
+        title.textContent = rollName || 'Details';
+        body.innerHTML =
+        '<div class="cd-roll-loading"><i class="fa-solid fa-circle-notch fa-spin"></i> Loading…</div>';
 
-            drawer.classList.add('open');
-            backdrop.classList.add('open');
-            document.body.style.overflow = 'hidden';
+        drawer.classList.add('open');
+        backdrop.classList.add('open');
+        document.body.style.overflow = 'hidden';
 
-            if (rollDetailCache[url]) {
-                body.innerHTML = rollDetailCache[url];
-                initTablesWithin(body);
-                reparentFixedModals(body);
-                return;
-            }
+        if (rollDetailCache[url]) {
+        body.innerHTML = rollDetailCache[url];
+        initTablesWithin(body);
+        reparentFixedModals(body);
+        return;
+        }
 
-            fetch(url)
-                .then(function (res) {
-                    if (!res.ok) throw new Error('Failed to load (' + res.status + ')');
-                    return res.text();
-                })
-                .then(function (html) {
-                    rollDetailCache[url] = html;
-                    body.innerHTML = html;
-                    initTablesWithin(body);
-                    reparentFixedModals(body);
-                })
-                .catch(function (err) {
-                    body.innerHTML =
-                        '<div class="cd-roll-error">' +
-                        '<i class="fa-solid fa-triangle-exclamation"></i> ' +
-                        'Could not load these details. Please try again.' +
-                        '</div>';
-                    console.error('[Dashboard] drawer fetch failed:', err);
-                });
+        fetch(url)
+        .then(function (res) {
+        if (!res.ok) throw new Error('Failed to load (' + res.status + ')');
+        return res.text();
+        })
+        .then(function (html) {
+        rollDetailCache[url] = html;
+        body.innerHTML = html;
+        initTablesWithin(body);
+        reparentFixedModals(body);
+        })
+        .catch(function (err) {
+        body.innerHTML =
+        '<div class="cd-roll-error">' +
+        '<i class="fa-solid fa-triangle-exclamation"></i> ' +
+        'Could not load these details. Please try again.' +
+        '</div>';
+        console.error('[Dashboard] drawer fetch failed:', err);
+        });
         }
 
         function closeRollDrawer() {
-            const drawer = document.getElementById('cdDrawer');
-            const backdrop = document.getElementById('cdDrawerBackdrop');
+        const drawer = document.getElementById('cdDrawer');
+        const backdrop = document.getElementById('cdDrawerBackdrop');
 
-            drawer?.classList.remove('open');
-            backdrop?.classList.remove('open');
-            document.body.style.overflow = '';
+        drawer?.classList.remove('open');
+        backdrop?.classList.remove('open');
+        document.body.style.overflow = '';
         }
 
         function initTablesWithin(container) {
-            container.querySelectorAll('.cd-table').forEach(function (t) {
-                if (t.id) initDataTable('#' + t.id);
-            });
+        container.querySelectorAll('.cd-table').forEach(function (t) {
+        if (t.id) initDataTable('#' + t.id);
+        });
         }
 
         // ── Move full-screen modals out of the drawer ───────────────
@@ -2669,242 +2691,242 @@ else
         //    the drawer's own box instead of covering the full screen.
         //    Re-parenting to <body> keeps them truly full-screen.
         function reparentFixedModals(container) {
-            container
-                .querySelectorAll('.pin-backdrop, .attr-insp-modal-backdrop')
-                .forEach(function (modal) {
-                    document.body.appendChild(modal);
-                });
+        container
+        .querySelectorAll('.pin-backdrop, .attr-insp-modal-backdrop')
+        .forEach(function (modal) {
+        document.body.appendChild(modal);
+        });
         }
 
         // ── Tile click (used only where no drawer endpoint exists) ────
         //    Switches to List view, opens the matching section, and
         //    scrolls to it. Everything there is already rendered. ─────
         function openTileRoll(key) {
-            setViewMode('list');
+        setViewMode('list');
 
-            const section = document.getElementById('roll-' + key);
-            const body = document.getElementById('rollbody-' + key);
-            const chevron = document.getElementById('chevron-' + key);
+        const section = document.getElementById('roll-' + key);
+        const body = document.getElementById('rollbody-' + key);
+        const chevron = document.getElementById('chevron-' + key);
 
-            if (!section || !body) return;
+        if (!section || !body) return;
 
-            document.querySelectorAll('.cd-roll-body.open').forEach(b => {
-                if (b.id !== 'rollbody-' + key) b.classList.remove('open');
-            });
-            document.querySelectorAll('.cd-roll-chevron').forEach(icon => {
-                icon.style.transform = 'rotate(0deg)';
-            });
+        document.querySelectorAll('.cd-roll-body.open').forEach(b => {
+        if (b.id !== 'rollbody-' + key) b.classList.remove('open');
+        });
+        document.querySelectorAll('.cd-roll-chevron').forEach(icon => {
+        icon.style.transform = 'rotate(0deg)';
+        });
 
-            body.classList.add('open');
-            if (chevron) chevron.style.transform = 'rotate(180deg)';
+        body.classList.add('open');
+        if (chevron) chevron.style.transform = 'rotate(180deg)';
 
-            setTimeout(() => {
-                section.querySelectorAll('.cd-widget-body.open .cd-table').forEach(t => {
-                    if (t.id) initDataTable('#' + t.id);
-                });
-                section.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }, 100);
+        setTimeout(() => {
+        section.querySelectorAll('.cd-widget-body.open .cd-table').forEach(t => {
+        if (t.id) initDataTable('#' + t.id);
+        });
+        section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
         }
 
         // ── View mode toggle (Tiles / List) — remembered via localStorage ──
         const VIEW_MODE_KEY = 'cd_view_mode';
 
         function setViewMode(mode) {
-            const tileGrid = document.getElementById('cdTileGrid');
-            const btnTiles = document.getElementById('viewBtnTiles');
-            const btnList = document.getElementById('viewBtnList');
-            const rollSections = document.querySelectorAll('.cd-roll-section');
+        const tileGrid = document.getElementById('cdTileGrid');
+        const btnTiles = document.getElementById('viewBtnTiles');
+        const btnList = document.getElementById('viewBtnList');
+        const rollSections = document.querySelectorAll('.cd-roll-section');
 
-            if (!tileGrid) return;
+        if (!tileGrid) return;
 
-            if (mode === 'list') {
-                tileGrid.style.display = 'none';
-                rollSections.forEach(s => s.style.display = '');
-                btnList?.classList.add('active');
-                btnTiles?.classList.remove('active');
-            } else {
-                mode = 'tiles';
-                tileGrid.style.display = '';
-                rollSections.forEach(s => s.style.display = 'none');
-                btnTiles?.classList.add('active');
-                btnList?.classList.remove('active');
-            }
+        if (mode === 'list') {
+        tileGrid.style.display = 'none';
+        rollSections.forEach(s => s.style.display = '');
+        btnList?.classList.add('active');
+        btnTiles?.classList.remove('active');
+        } else {
+        mode = 'tiles';
+        tileGrid.style.display = '';
+        rollSections.forEach(s => s.style.display = 'none');
+        btnTiles?.classList.add('active');
+        btnList?.classList.remove('active');
+        }
 
-            localStorage.setItem(VIEW_MODE_KEY, mode);
+        localStorage.setItem(VIEW_MODE_KEY, mode);
         }
 
         function initViewToggle() {
-            const saved = localStorage.getItem(VIEW_MODE_KEY) || 'tiles';
-            setViewMode(saved);
+        const saved = localStorage.getItem(VIEW_MODE_KEY) || 'tiles';
+        setViewMode(saved);
 
-            document.getElementById('viewBtnTiles')
-                ?.addEventListener('click', function () { setViewMode('tiles'); });
+        document.getElementById('viewBtnTiles')
+        ?.addEventListener('click', function () { setViewMode('tiles'); });
 
-            document.getElementById('viewBtnList')
-                ?.addEventListener('click', function () { setViewMode('list'); });
+        document.getElementById('viewBtnList')
+        ?.addEventListener('click', function () { setViewMode('list'); });
         }
 
         // ── Widget sub-section toggle ───────────────────────────────
         function toggleWidget(key) {
-            const body = document.getElementById('widget-' + key);
-            const chevron = document.getElementById('wchev-' + key);
+        const body = document.getElementById('widget-' + key);
+        const chevron = document.getElementById('wchev-' + key);
 
-            if (!body) return;
+        if (!body) return;
 
-            const isOpen = body.classList.toggle('open');
+        const isOpen = body.classList.toggle('open');
 
-            if (chevron) {
-                chevron.style.transform = isOpen ? 'rotate(180deg)' : 'rotate(0deg)';
-            }
+        if (chevron) {
+        chevron.style.transform = isOpen ? 'rotate(180deg)' : 'rotate(0deg)';
+        }
         }
 
         // ── Init DataTables ─────────────────────────────────────────
         function initDataTable(selector) {
-            if (!selector || !$(selector).length) return;
-            if ($.fn.DataTable.isDataTable(selector)) return;
+        if (!selector || !$(selector).length) return;
+        if ($.fn.DataTable.isDataTable(selector)) return;
 
-            $(selector).DataTable({
-                responsive: true,
-                dom: '\u003C"cd-dt-top"lBf\u003Ert\u003C"cd-dt-bottom"ip\u003E',
-                lengthMenu: [[5, 10, 25, -1], [5, 10, 25, 'All']],
-                buttons: [
-                    {
-                        extend: 'excel',
-                        text: '<i class="fa-solid fa-file-excel"></i> Excel',
-                        className: 'cd-dt-btn'
-                    },
-                    {
-                        extend: 'pdf',
-                        text: '<i class="fa-solid fa-file-pdf"></i> PDF',
-                        className: 'cd-dt-btn'
-                    }
-                ],
-                language: {
-                    search: '_INPUT_',
-                    searchPlaceholder: 'Search...',
-                    lengthMenu: '_MENU_ per page'
-                }
-            });
+        $(selector).DataTable({
+        responsive: true,
+        dom: '\u003C"cd-dt-top"lBf\u003Ert\u003C"cd-dt-bottom"ip\u003E',
+        lengthMenu: [[5, 10, 25, -1], [5, 10, 25, 'All']],
+        buttons: [
+        {
+        extend: 'excel',
+        text: '<i class="fa-solid fa-file-excel"></i> Excel',
+        className: 'cd-dt-btn'
+        },
+        {
+        extend: 'pdf',
+        text: '<i class="fa-solid fa-file-pdf"></i> PDF',
+        className: 'cd-dt-btn'
+        }
+        ],
+        language: {
+        search: '_INPUT_',
+        searchPlaceholder: 'Search...',
+        lengthMenu: '_MENU_ per page'
+        }
+        });
         }
 
         // ── Open roll after redirect ────────────────────────────────
         function openLinkedRollFromQueryString() {
-            const params = new URLSearchParams(window.location.search);
-            const openRoll = params.get('openRoll');
+        const params = new URLSearchParams(window.location.search);
+        const openRoll = params.get('openRoll');
 
-            if (!openRoll) return;
+        if (!openRoll) return;
 
-            let rollSection = document.querySelector(
-                `.cd-roll-section[data-roll-source="${openRoll}"]`
-            );
+        let rollSection = document.querySelector(
+        `.cd-roll-section[data-roll-source="${openRoll}"]`
+        );
 
-            if (!rollSection && openRoll.toLowerCase() === "attributes") {
-                rollSection = document.getElementById("roll-attributes");
-            }
+        if (!rollSection && openRoll.toLowerCase() === "attributes") {
+        rollSection = document.getElementById("roll-attributes");
+        }
 
-            if (!rollSection && openRoll.toLowerCase() === "rebates") {
-                rollSection = document.getElementById("roll-rebates");
-            }
+        if (!rollSection && openRoll.toLowerCase() === "rebates") {
+        rollSection = document.getElementById("roll-rebates");
+        }
 
-            if (!rollSection) {
-                console.warn('Roll section not found for:', openRoll);
-                return;
-            }
+        if (!rollSection) {
+        console.warn('Roll section not found for:', openRoll);
+        return;
+        }
 
-            setViewMode('list');
+        setViewMode('list');
 
-            const rollKey = rollSection.id.replace('roll-', '');
+        const rollKey = rollSection.id.replace('roll-', '');
 
-            document.querySelectorAll('.cd-roll-body.open').forEach(body => {
-                if (body.id !== 'rollbody-' + rollKey) {
-                    body.classList.remove('open');
-                }
-            });
+        document.querySelectorAll('.cd-roll-body.open').forEach(body => {
+        if (body.id !== 'rollbody-' + rollKey) {
+        body.classList.remove('open');
+        }
+        });
 
-            document.querySelectorAll('.cd-roll-chevron').forEach(icon => {
-                icon.style.transform = 'rotate(0deg)';
-            });
+        document.querySelectorAll('.cd-roll-chevron').forEach(icon => {
+        icon.style.transform = 'rotate(0deg)';
+        });
 
-            const rollBody = document.getElementById('rollbody-' + rollKey);
-            const rollChevron = document.getElementById('chevron-' + rollKey);
+        const rollBody = document.getElementById('rollbody-' + rollKey);
+        const rollChevron = document.getElementById('chevron-' + rollKey);
 
-            if (rollBody) {
-                rollBody.classList.add('open');
-            }
+        if (rollBody) {
+        rollBody.classList.add('open');
+        }
 
-            if (rollChevron) {
-                rollChevron.style.transform = 'rotate(180deg)';
-            }
+        if (rollChevron) {
+        rollChevron.style.transform = 'rotate(180deg)';
+        }
 
-            const linkedWidget = document.getElementById('widget-' + rollKey + '-linked');
-            const linkedChevron = document.getElementById('wchev-' + rollKey + '-linked');
+        const linkedWidget = document.getElementById('widget-' + rollKey + '-linked');
+        const linkedChevron = document.getElementById('wchev-' + rollKey + '-linked');
 
-            if (linkedWidget) {
-                linkedWidget.classList.add('open');
-            }
+        if (linkedWidget) {
+        linkedWidget.classList.add('open');
+        }
 
-            if (linkedChevron) {
-                linkedChevron.style.transform = 'rotate(180deg)';
-            }
+        if (linkedChevron) {
+        linkedChevron.style.transform = 'rotate(180deg)';
+        }
 
-            setTimeout(function () {
-                const linkedTable = document.querySelector(
-                    '#widget-' + rollKey + '-linked .cd-table'
-                );
+        setTimeout(function () {
+        const linkedTable = document.querySelector(
+        '#widget-' + rollKey + '-linked .cd-table'
+        );
 
-                if (linkedTable && linkedTable.id) {
-                    initDataTable('#' + linkedTable.id);
-                }
-            }, 150);
+        if (linkedTable && linkedTable.id) {
+        initDataTable('#' + linkedTable.id);
+        }
+        }, 150);
 
-            rollSection.classList.add('linked-roll-active');
+        rollSection.classList.add('linked-roll-active');
 
-            setTimeout(function () {
-                rollSection.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'start'
-                });
-            }, 250);
+        setTimeout(function () {
+        rollSection.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+        });
+        }, 250);
 
-            window.history.replaceState({}, document.title, window.location.pathname);
+        window.history.replaceState({}, document.title, window.location.pathname);
         }
 
         // ── Inspection date response modal ──────────────────────────
         function openInspectionResponseModal(id) {
-            const modal = document.getElementById('inspectionModal_' + id);
+        const modal = document.getElementById('inspectionModal_' + id);
 
-            if (modal) {
-                modal.style.display = 'flex';
-                document.body.style.overflow = 'hidden';
-            }
+        if (modal) {
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        }
         }
 
         function closeInspectionResponseModal(id) {
-            const modal = document.getElementById('inspectionModal_' + id);
+        const modal = document.getElementById('inspectionModal_' + id);
 
-            if (modal) {
-                modal.style.display = 'none';
-                document.body.style.overflow = '';
-            }
+        if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = '';
+        }
         }
 
         // ── Returned correction / resubmission modal ────────────────
         function openReturnedCorrectionModal(id) {
-            const modal = document.getElementById('returnedCorrectionModal_' + id);
+        const modal = document.getElementById('returnedCorrectionModal_' + id);
 
-            if (modal) {
-                modal.style.display = 'flex';
-                document.body.style.overflow = 'hidden';
-            }
+        if (modal) {
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        }
         }
 
         function closeReturnedCorrectionModal(id) {
-            const modal = document.getElementById('returnedCorrectionModal_' + id);
+        const modal = document.getElementById('returnedCorrectionModal_' + id);
 
-            if (modal) {
-                modal.style.display = 'none';
-                document.body.style.overflow = '';
-            }
+        if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = '';
+        }
         }
 
         // ── PIN modal keypad ────────────────────────────────────────
@@ -2912,342 +2934,342 @@ else
         const PIN_LEN = 4;
 
         function openPinModal(id) {
-            pinValues[id] = '';
+        pinValues[id] = '';
 
-            const modal = document.getElementById('pinModal_' + id);
-            const input = document.getElementById('pinHiddenInput_' + id);
-            const error = document.getElementById('pinError_' + id);
-            const submit = document.getElementById('pinSubmitBtn_' + id);
+        const modal = document.getElementById('pinModal_' + id);
+        const input = document.getElementById('pinHiddenInput_' + id);
+        const error = document.getElementById('pinError_' + id);
+        const submit = document.getElementById('pinSubmitBtn_' + id);
 
-            if (!modal || !input || !submit) {
-                console.warn('PIN modal elements missing for appointment:', id);
-                return;
-            }
+        if (!modal || !input || !submit) {
+        console.warn('PIN modal elements missing for appointment:', id);
+        return;
+        }
 
-            input.value = '';
+        input.value = '';
 
-            if (error) {
-                error.classList.remove('show');
-            }
+        if (error) {
+        error.classList.remove('show');
+        }
 
-            submit.disabled = true;
+        submit.disabled = true;
 
-            updatePinDots(id);
+        updatePinDots(id);
 
-            modal.style.display = 'flex';
-            modal.classList.add('open');
-            document.body.style.overflow = 'hidden';
+        modal.style.display = 'flex';
+        modal.classList.add('open');
+        document.body.style.overflow = 'hidden';
 
-            setTimeout(function () {
-                input.focus();
-            }, 100);
+        setTimeout(function () {
+        input.focus();
+        }, 100);
         }
 
         function closePinModal(id) {
-            const modal = document.getElementById('pinModal_' + id);
-            const input = document.getElementById('pinHiddenInput_' + id);
-            const error = document.getElementById('pinError_' + id);
-            const submit = document.getElementById('pinSubmitBtn_' + id);
+        const modal = document.getElementById('pinModal_' + id);
+        const input = document.getElementById('pinHiddenInput_' + id);
+        const error = document.getElementById('pinError_' + id);
+        const submit = document.getElementById('pinSubmitBtn_' + id);
 
-            if (modal) {
-                modal.classList.remove('open');
-                modal.style.display = 'none';
-            }
+        if (modal) {
+        modal.classList.remove('open');
+        modal.style.display = 'none';
+        }
 
-            pinValues[id] = '';
+        pinValues[id] = '';
 
-            if (input) {
-                input.value = '';
-            }
+        if (input) {
+        input.value = '';
+        }
 
-            if (error) {
-                error.classList.remove('show');
-            }
+        if (error) {
+        error.classList.remove('show');
+        }
 
-            if (submit) {
-                submit.disabled = true;
-            }
+        if (submit) {
+        submit.disabled = true;
+        }
 
-            updatePinDots(id);
+        updatePinDots(id);
 
-            document.body.style.overflow = '';
+        document.body.style.overflow = '';
         }
 
         function pinKey(id, digit) {
-            let value = pinValues[id] || '';
+        let value = pinValues[id] || '';
 
-            if (value.length >= PIN_LEN) return;
+        if (value.length >= PIN_LEN) return;
 
-            value += digit;
-            pinValues[id] = value;
+        value += digit;
+        pinValues[id] = value;
 
-            const input = document.getElementById('pinHiddenInput_' + id);
-            const error = document.getElementById('pinError_' + id);
-            const submit = document.getElementById('pinSubmitBtn_' + id);
+        const input = document.getElementById('pinHiddenInput_' + id);
+        const error = document.getElementById('pinError_' + id);
+        const submit = document.getElementById('pinSubmitBtn_' + id);
 
-            if (input) {
-                input.value = value;
-            }
+        if (input) {
+        input.value = value;
+        }
 
-            if (error) {
-                error.classList.remove('show');
-            }
+        if (error) {
+        error.classList.remove('show');
+        }
 
-            if (submit) {
-                submit.disabled = value.length < PIN_LEN;
-            }
+        if (submit) {
+        submit.disabled = value.length < PIN_LEN;
+        }
 
-            updatePinDots(id);
+        updatePinDots(id);
         }
 
         function pinDelete(id) {
-            let value = pinValues[id] || '';
+        let value = pinValues[id] || '';
 
-            if (value.length === 0) return;
+        if (value.length === 0) return;
 
-            value = value.slice(0, -1);
-            pinValues[id] = value;
+        value = value.slice(0, -1);
+        pinValues[id] = value;
 
-            const input = document.getElementById('pinHiddenInput_' + id);
-            const error = document.getElementById('pinError_' + id);
-            const submit = document.getElementById('pinSubmitBtn_' + id);
+        const input = document.getElementById('pinHiddenInput_' + id);
+        const error = document.getElementById('pinError_' + id);
+        const submit = document.getElementById('pinSubmitBtn_' + id);
 
-            if (input) {
-                input.value = value;
-            }
+        if (input) {
+        input.value = value;
+        }
 
-            if (error) {
-                error.classList.remove('show');
-            }
+        if (error) {
+        error.classList.remove('show');
+        }
 
-            if (submit) {
-                submit.disabled = value.length < PIN_LEN;
-            }
+        if (submit) {
+        submit.disabled = value.length < PIN_LEN;
+        }
 
-            updatePinDots(id);
+        updatePinDots(id);
         }
 
         function updatePinDots(id) {
-            const value = pinValues[id] || '';
+        const value = pinValues[id] || '';
 
-            for (let i = 0; i < PIN_LEN; i++) {
-                const dot = document.getElementById('dot_' + id + '_' + i);
+        for (let i = 0; i < PIN_LEN; i++) {
+        const dot = document.getElementById('dot_' + id + '_' + i);
 
-                if (!dot) continue;
+        if (!dot) continue;
 
-                dot.classList.remove('filled', 'gold', 'error');
+        dot.classList.remove('filled', 'gold', 'error');
 
-                if (i < value.length) {
-                    dot.classList.add('filled');
-                }
+        if (i < value.length) {
+        dot.classList.add('filled');
+        }
 
-                if (value.length === PIN_LEN && i === PIN_LEN - 1) {
-                    dot.classList.add('gold');
-                }
-            }
+        if (value.length === PIN_LEN && i === PIN_LEN - 1) {
+        dot.classList.add('gold');
+        }
+        }
         }
 
         // ── Status modal ────────────────────────────────────────────
         function initStatusExplanationModal() {
-            const modal = document.getElementById("statusExplainModal");
-            const title = document.getElementById("statusExplainTitle");
-            const message = document.getElementById("statusExplainMessage");
+        const modal = document.getElementById("statusExplainModal");
+        const title = document.getElementById("statusExplainTitle");
+        const message = document.getElementById("statusExplainMessage");
 
-            document.querySelectorAll(".client-status-badge").forEach(badge => {
-                badge.addEventListener("click", function () {
-                    if (!modal || !title || !message) return;
+        document.querySelectorAll(".client-status-badge").forEach(badge => {
+        badge.addEventListener("click", function () {
+        if (!modal || !title || !message) return;
 
-                    title.innerText = this.dataset.statusTitle || "Status Information";
-                    message.innerText = this.dataset.statusMessage || "No explanation available.";
+        title.innerText = this.dataset.statusTitle || "Status Information";
+        message.innerText = this.dataset.statusMessage || "No explanation available.";
 
-                    modal.style.display = "flex";
-                    document.body.style.overflow = "hidden";
-                });
-            });
+        modal.style.display = "flex";
+        document.body.style.overflow = "hidden";
+        });
+        });
 
-            function closeStatusModal() {
-                if (modal) {
-                    modal.style.display = "none";
-                }
+        function closeStatusModal() {
+        if (modal) {
+        modal.style.display = "none";
+        }
 
-                document.body.style.overflow = "";
-            }
+        document.body.style.overflow = "";
+        }
 
-            document.getElementById("closeStatusExplainModal")
-                ?.addEventListener("click", closeStatusModal);
+        document.getElementById("closeStatusExplainModal")
+        ?.addEventListener("click", closeStatusModal);
 
-            document.getElementById("okayStatusExplainModal")
-                ?.addEventListener("click", closeStatusModal);
+        document.getElementById("okayStatusExplainModal")
+        ?.addEventListener("click", closeStatusModal);
 
-            modal?.addEventListener("click", function (e) {
-                if (e.target === modal) {
-                    closeStatusModal();
-                }
-            });
+        modal?.addEventListener("click", function (e) {
+        if (e.target === modal) {
+        closeStatusModal();
+        }
+        });
         }
 
         // ── Notification bell ───────────────────────────────────────
         function initNotificationBell() {
-            const bellBtn = document.getElementById("notificationBellBtn");
-            const panel = document.getElementById("notificationPanel");
+        const bellBtn = document.getElementById("notificationBellBtn");
+        const panel = document.getElementById("notificationPanel");
 
-            bellBtn?.addEventListener("click", function (e) {
-                e.stopPropagation();
-                panel?.classList.toggle("open");
-            });
+        bellBtn?.addEventListener("click", function (e) {
+        e.stopPropagation();
+        panel?.classList.toggle("open");
+        });
 
-            panel?.addEventListener("click", function (e) {
-                e.stopPropagation();
-            });
+        panel?.addEventListener("click", function (e) {
+        e.stopPropagation();
+        });
 
-            document.addEventListener("click", function () {
-                panel?.classList.remove("open");
-            });
+        document.addEventListener("click", function () {
+        panel?.classList.remove("open");
+        });
         }
 
         // ── Global click handlers ───────────────────────────────────
         document.addEventListener('click', function (e) {
-            // Close PIN modal when backdrop is clicked.
-            const pinBackdrop = e.target.closest('.pin-backdrop');
+        // Close PIN modal when backdrop is clicked.
+        const pinBackdrop = e.target.closest('.pin-backdrop');
 
-            if (pinBackdrop && e.target === pinBackdrop) {
-                const id = pinBackdrop.id.replace('pinModal_', '');
-                closePinModal(id);
-                return;
-            }
+        if (pinBackdrop && e.target === pinBackdrop) {
+        const id = pinBackdrop.id.replace('pinModal_', '');
+        closePinModal(id);
+        return;
+        }
 
-            // Close normal inspection / correction modals on backdrop click.
-            if (e.target.classList.contains('attr-insp-modal-backdrop')) {
-                e.target.style.display = 'none';
-                document.body.style.overflow = '';
-            }
+        // Close normal inspection / correction modals on backdrop click.
+        if (e.target.classList.contains('attr-insp-modal-backdrop')) {
+        e.target.style.display = 'none';
+        document.body.style.overflow = '';
+        }
         });
 
         // ── Keyboard handlers ──────────────────────────────────────
         document.addEventListener('keydown', function (e) {
-            if (e.key !== 'Escape') return;
+        if (e.key !== 'Escape') return;
 
-            document.querySelectorAll('.pin-backdrop.open').forEach(function (modal) {
-                const id = modal.id.replace('pinModal_', '');
-                closePinModal(id);
-            });
+        document.querySelectorAll('.pin-backdrop.open').forEach(function (modal) {
+        const id = modal.id.replace('pinModal_', '');
+        closePinModal(id);
+        });
 
-            document.querySelectorAll('.attr-insp-modal-backdrop').forEach(function (modal) {
-                if (modal.style.display === 'flex') {
-                    modal.style.display = 'none';
-                    document.body.style.overflow = '';
-                }
-            });
+        document.querySelectorAll('.attr-insp-modal-backdrop').forEach(function (modal) {
+        if (modal.style.display === 'flex') {
+        modal.style.display = 'none';
+        document.body.style.overflow = '';
+        }
+        });
 
-            const drawer = document.getElementById('cdDrawer');
-            if (drawer?.classList.contains('open')) {
-                closeRollDrawer();
-            }
+        const drawer = document.getElementById('cdDrawer');
+        if (drawer?.classList.contains('open')) {
+        closeRollDrawer();
+        }
         });
 
         // ── Physical keyboard / pasted PIN input ───────────────────
         document.addEventListener('input', function (e) {
-            if (!e.target || !e.target.id || !e.target.id.startsWith('pinHiddenInput_')) {
-                return;
-            }
+        if (!e.target || !e.target.id || !e.target.id.startsWith('pinHiddenInput_')) {
+        return;
+        }
 
-            const id = e.target.id.replace('pinHiddenInput_', '');
-            const value = e.target.value.replace(/\D/g, '').slice(0, PIN_LEN);
+        const id = e.target.id.replace('pinHiddenInput_', '');
+        const value = e.target.value.replace(/\D/g, '').slice(0, PIN_LEN);
 
-            e.target.value = value;
-            pinValues[id] = value;
+        e.target.value = value;
+        pinValues[id] = value;
 
-            const error = document.getElementById('pinError_' + id);
-            const submit = document.getElementById('pinSubmitBtn_' + id);
+        const error = document.getElementById('pinError_' + id);
+        const submit = document.getElementById('pinSubmitBtn_' + id);
 
-            if (error) {
-                error.classList.remove('show');
-            }
+        if (error) {
+        error.classList.remove('show');
+        }
 
-            if (submit) {
-                submit.disabled = value.length < PIN_LEN;
-            }
+        if (submit) {
+        submit.disabled = value.length < PIN_LEN;
+        }
 
-            updatePinDots(id);
+        updatePinDots(id);
         });
 
         // ── Init everything once page loads ────────────────────────
         $(document).ready(function () {
-            document.querySelectorAll('.cd-widget-body.open .cd-table').forEach(t => {
-                if (t.id) {
-                    initDataTable('#' + t.id);
-                }
-            });
+        document.querySelectorAll('.cd-widget-body.open .cd-table').forEach(t => {
+        if (t.id) {
+        initDataTable('#' + t.id);
+        }
+        });
 
-            document.querySelectorAll('.cd-widget-toggle').forEach(toggle => {
-                toggle.addEventListener('click', function () {
-                    const bodyId = this.nextElementSibling?.id;
+        document.querySelectorAll('.cd-widget-toggle').forEach(toggle => {
+        toggle.addEventListener('click', function () {
+        const bodyId = this.nextElementSibling?.id;
 
-                    if (!bodyId) return;
+        if (!bodyId) return;
 
-                    setTimeout(() => {
-                        const table = document.querySelector('#' + bodyId + ' .cd-table');
+        setTimeout(() => {
+        const table = document.querySelector('#' + bodyId + ' .cd-table');
 
-                        if (table && table.id) {
-                            initDataTable('#' + table.id);
-                        }
-                    }, 100);
-                });
-            });
+        if (table && table.id) {
+        initDataTable('#' + table.id);
+        }
+        }, 100);
+        });
+        });
 
-            initViewToggle();
-            openLinkedRollFromQueryString();
-            initNotificationBell();
-            initStatusExplanationModal();
+        initViewToggle();
+        openLinkedRollFromQueryString();
+        initNotificationBell();
+        initStatusExplanationModal();
         });
 
         // ── Re-open PIN modal if server returned PIN error ─────────
-               // ── Re-open PIN modal if server returned PIN error ─────────
+        // ── Re-open PIN modal if server returned PIN error ─────────
         const serverPinError = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["PinError"]?.ToString()));
 
         document.addEventListener('DOMContentLoaded', function () {
-            if (!serverPinError) {
-                return;
-            }
+        if (!serverPinError) {
+        return;
+        }
 
-            const firstPinModal = document.querySelector('.pin-backdrop[id^="pinModal_"]');
+        const firstPinModal = document.querySelector('.pin-backdrop[id^="pinModal_"]');
 
-            if (!firstPinModal) {
-                return;
-            }
+        if (!firstPinModal) {
+        return;
+        }
 
-            const id = firstPinModal.id.replace('pinModal_', '');
+        const id = firstPinModal.id.replace('pinModal_', '');
 
-            openPinModal(id);
+        openPinModal(id);
 
-            const error = document.getElementById('pinError_' + id);
-            const errorMsg = document.getElementById('pinErrorMsg_' + id);
+        const error = document.getElementById('pinError_' + id);
+        const errorMsg = document.getElementById('pinErrorMsg_' + id);
 
-            if (errorMsg) {
-                errorMsg.textContent = serverPinError;
-            }
+        if (errorMsg) {
+        errorMsg.textContent = serverPinError;
+        }
 
-            if (error) {
-                error.classList.add('show');
-            }
+        if (error) {
+        error.classList.add('show');
+        }
 
-            for (let i = 0; i < PIN_LEN; i++) {
-                const dot = document.getElementById('dot_' + id + '_' + i);
+        for (let i = 0; i < PIN_LEN; i++) {
+        const dot = document.getElementById('dot_' + id + '_' + i);
 
-                if (dot) {
-                    dot.classList.add('error');
-                }
-            }
+        if (dot) {
+        dot.classList.add('error');
+        }
+        }
 
-            setTimeout(function () {
-                for (let i = 0; i < PIN_LEN; i++) {
-                    const dot = document.getElementById('dot_' + id + '_' + i);
+        setTimeout(function () {
+        for (let i = 0; i < PIN_LEN; i++) {
+        const dot = document.getElementById('dot_' + id + '_' + i);
 
-                    if (dot) {
-                        dot.classList.remove('error');
-                    }
-                }
-            }, 600);
+        if (dot) {
+        dot.classList.remove('error');
+        }
+        }
+        }, 600);
         });
     </script>
 }

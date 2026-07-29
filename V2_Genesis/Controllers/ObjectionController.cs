@@ -31,7 +31,7 @@ public class ObjectionController : Controller
     private readonly INotificationService _notificationService;
     private readonly IEmailService _emailService;
     private readonly ISupportingDocumentService _supportingDocumentService;
-
+    private readonly IDashboardService _dashboardService;
     private readonly IConfiguration _config;
     private readonly INoticeService _noticeService;
     private readonly ILogger<ObjectionController> _logger;
@@ -42,7 +42,8 @@ public class ObjectionController : Controller
         IObjectionFormService objectionFormService, ISection78Service section78Service, INoticeService noticeService
         , IEmailService emailService, IConfiguration config, ISubmittedFormPdfService submittedFormPdfService,
         ISupportingDocumentService supportingDocumentService
-        , INotificationService notificationService, ILogger<ObjectionController> logger)
+        , INotificationService notificationService, IDashboardService dashboardService
+        , ILogger<ObjectionController> logger)
     {
         _objectionService = objectionService;
         _db = db;
@@ -53,6 +54,7 @@ public class ObjectionController : Controller
         _config = config;
         _noticeService = noticeService;
         _section78Service = section78Service;
+        _dashboardService = dashboardService;   
 
         _supportingDocumentService = supportingDocumentService;
         _logger = logger;
@@ -1582,79 +1584,394 @@ public class ObjectionController : Controller
         });
     }
     // ══════════════════════════════════════════════════════════════
-    //  UNLINK — remove a linked / saved property
+    //  UNLINK — remove only the client dashboard property link.
+    //  The selected roll determines which database is queried.
+    //  Existing submissions and evidence remain unchanged.
     // ══════════════════════════════════════════════════════════════
 
-    [HttpGet]
+    [HttpGet("property/unlink", Name = "PropertyUnlink")]
     [Authorize]
-    [Route("property/unlink")]
-    public IActionResult UnlinkProperty(long linkedId, string? returnUrl = null)
+    public async Task<IActionResult> UnlinkProperty(
+        long linkedId,
+        string? rollSource = null,
+        string? returnUrl = null)
     {
-        TempData["UnlinkId"] = linkedId;
-        TempData["ReturnUrl"] = returnUrl ?? "/dashboard";
-        TempData.Keep();
-        return View();
-    }
+        if (linkedId <= 0)
+        {
+            TempData["ErrorMessage"] =
+                "The linked property reference is invalid.";
 
-    [HttpPost]
-    [Authorize]
-    [Route("property/unlink")]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> UnlinkPropertyConfirm(
-    long linkedId,
-    string rollSource,
-    string? returnUrl)
-    {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+            return RedirectToAction("Index", "Dashboard");
+        }
+
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (string.IsNullOrWhiteSpace(userId))
+            return Challenge();
+
+        rollSource = ResolveUnlinkRollSource(rollSource);
 
         if (string.IsNullOrWhiteSpace(rollSource))
         {
-            rollSource = TempData.Peek("UnlinkRollSource")?.ToString()
-                         ?? HttpContext.Session.GetString("RollSource")
-                         ?? "Objection_Supp3";
+            TempData["ErrorMessage"] =
+                "The valuation roll could not be identified.";
+
+            return RedirectToAction("Index", "Dashboard");
         }
 
-        ;
+        HttpContext.Session.SetString("RollSource", rollSource);
 
-        var (success, error) = await _objectionFormService.UnlinkPropertyAsync(linkedId, userId);
-
-
-        if (!success)
+        try
         {
-            TempData["UnlinkError"] = error;
+            await using var rollDb = CreateDbContextForRoll(rollSource);
 
-            return RedirectToAction("Index", "Dashboard", new
+            var linkedProperty = await rollDb.LinkedProperties
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x =>
+                    x.IDProperty == linkedId.ToString() &&
+                    x.UserID == userId);
+
+            if (linkedProperty is null)
             {
-                openRoll = rollSource
-            });
+                TempData["ErrorMessage"] =
+                    $"The property was not found in {GetRollDisplayName(rollSource)}, " +
+                    "may already be unlinked, or does not belong to your account.";
+
+                return RedirectToAction(
+                    "Index",
+                    "Dashboard",
+                    new { openRoll = rollSource });
+            }
+
+            var propertyKey = linkedProperty.IDProperty?.Trim();
+
+            var propertyDescription =
+
+    await ResolveUnlinkPropertyDescriptionAsync(
+        linkedId,
+        userId,
+        rollSource,
+        propertyKey);
+
+            ViewData["LinkedId"] = linkedProperty.ID.ToString();
+            ViewData["PropertyDescription"] = propertyDescription;
+            ViewData["PropertyKey"] = propertyKey ?? string.Empty;
+            ViewData["RollSource"] = rollSource;
+            ViewData["RollDisplayName"] = GetRollDisplayName(rollSource);
+
+            ViewData["ReturnUrl"] =
+                !string.IsNullOrWhiteSpace(returnUrl) &&
+                Url.IsLocalUrl(returnUrl)
+                    ? returnUrl
+                    : $"/Dashboard?openRoll={Uri.EscapeDataString(rollSource)}";
+
+            return View("UnlinkProperty");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Failed to load unlink page for linked property {LinkedId}, " +
+                "user {UserId}, roll {RollSource}.",
+                linkedId,
+                userId,
+                rollSource);
+
+            TempData["ErrorMessage"] =
+                "The property could not be loaded for unlinking. Please try again.";
+
+            return RedirectToAction(
+                "Index",
+                "Dashboard",
+                new { openRoll = rollSource });
+        }
+    }
+
+    [HttpPost("property/unlink/confirm", Name = "PropertyUnlinkConfirm")]
+    [Authorize]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UnlinkPropertyConfirm(
+        long linkedId,
+        string? rollSource,
+        string? returnUrl)
+    {
+        if (linkedId <= 0)
+        {
+            TempData["UnlinkError"] =
+                "The linked property reference is invalid.";
+
+            return RedirectToAction("Index", "Dashboard");
+        }
+
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (string.IsNullOrWhiteSpace(userId))
+            return Challenge();
+
+        rollSource = ResolveUnlinkRollSource(rollSource);
+
+        if (string.IsNullOrWhiteSpace(rollSource))
+        {
+            TempData["UnlinkError"] =
+                "The valuation roll could not be identified.";
+
+            return RedirectToAction("Index", "Dashboard");
+        }
+
+        HttpContext.Session.SetString("RollSource", rollSource);
+
+        string? propertyKey = null;
+        string propertyDescription = "Property";
+
+        try
+        {
+            await using var rollDb = CreateDbContextForRoll(rollSource);
+
+            // This query is tracked because the row is deleted below.
+            var linkedProperty = await rollDb.LinkedProperties
+    .FirstOrDefaultAsync(x =>
+        x.ID == linkedId &&
+        x.UserID == userId);
+
+            if (linkedProperty is null)
+            {
+                TempData["UnlinkError"] =
+                    $"The property was not found in {GetRollDisplayName(rollSource)}, " +
+                    "may already be unlinked, or does not belong to your account.";
+
+                return RedirectToAction(
+                    nameof(UnlinkProperty),
+                    new
+                    {
+                        linkedId,
+                        rollSource,
+                        returnUrl
+                    });
+            }
+
+            propertyKey = linkedProperty.IDProperty?.Trim();
+
+            // Resolve from DashboardLinked before deleting.
+            propertyDescription =
+                await ResolveUnlinkPropertyDescriptionAsync(
+                    linkedId,
+                    userId,
+                    rollSource,
+                    propertyKey);
+
+            rollDb.LinkedProperties.Remove(linkedProperty);
+            await rollDb.SaveChangesAsync();
+
+            _logger.LogInformation(
+                "User {UserId} unlinked property record {LinkedId} " +
+                "from roll {RollSource}. Property key: {PropertyKey}.",
+                userId,
+                linkedId,
+                rollSource,
+                propertyKey);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Failed to unlink property {LinkedId} for user {UserId} " +
+                "from roll {RollSource}.",
+                linkedId,
+                userId,
+                rollSource);
+
+            TempData["UnlinkError"] =
+                "The property could not be removed. Please try again.";
+
+            return RedirectToAction(
+                nameof(UnlinkProperty),
+                new
+                {
+                    linkedId,
+                    rollSource,
+                    returnUrl
+                });
         }
 
         TempData["UnlinkSuccess"] =
-            "Property has been removed from your profile. " +
-            "You can search and link it again at any time.";
+            $"{propertyDescription} has been removed from your linked-properties dashboard.";
 
         var currentUserEmail = GetCurrentUserEmail();
 
-        await _notificationService.CreateClientNotificationAsync(
-            userId: userId,
-            userEmail: currentUserEmail,
-            title: "Property removed from profile",
-            message: "A linked property has been removed from your profile.",
-            referenceNumber: null,
-            premiseId: null,
-            rollSource: rollSource,
-            sourceTable: ResolveSourceTable(rollSource),
-            url: $"/Dashboard?openRoll={rollSource}",
-            createdBy: userId);
-
-        if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
-            return LocalRedirect(returnUrl);
-
-        return RedirectToAction("Index", "Dashboard", new
+        try
         {
-            openRoll = rollSource
-        });
+            await _notificationService.CreateClientNotificationAsync(
+                userId: userId,
+                userEmail: currentUserEmail,
+                title: "Property unlinked successfully",
+                message:
+                    $"{propertyDescription} was removed from your linked-properties dashboard. " +
+                    "Existing submissions and uploaded evidence were not deleted.",
+                referenceNumber: null,
+                premiseId: propertyKey,
+                rollSource: rollSource,
+                sourceTable: ResolveSourceTable(rollSource),
+                url:
+                    $"/Dashboard?openRoll={Uri.EscapeDataString(rollSource)}",
+                createdBy: userId);
+        }
+        catch (Exception ex)
+        {
+            // The unlink itself has already succeeded.
+            _logger.LogError(
+                ex,
+                "Property {LinkedId} was unlinked, but the client notification failed.",
+                linkedId);
+        }
+
+        if (!string.IsNullOrWhiteSpace(returnUrl) &&
+            Url.IsLocalUrl(returnUrl))
+        {
+            return LocalRedirect(returnUrl);
+        }
+
+        return RedirectToAction(
+            "Index",
+            "Dashboard",
+            new { openRoll = rollSource });
     }
+
+    private string ResolveUnlinkRollSource(string? rollSource)
+    {
+        var value =
+            !string.IsNullOrWhiteSpace(rollSource)
+                ? rollSource.Trim()
+                : HttpContext.Session.GetString("RollSource")
+                  ?? TempData.Peek("RollSource")?.ToString()
+                  ?? string.Empty;
+
+        if (string.IsNullOrWhiteSpace(value))
+            return string.Empty;
+
+        return value.Trim() switch
+        {
+            "GV23" => "Objection",
+            "GV23-SUP1" => "Objection_Supp1",
+            "GV23-SUP2" => "Objection_Supp2",
+            "GV23-SUP3" => "Objection_Supp3",
+            "GV23-SUP4" => "Objection_Supp4",
+            "GV23-SUP5" => "Objection_Supp5",
+
+            "Sup1" => "Objection_Supp1",
+            "Sup2" => "Objection_Supp2",
+            "Sup3" => "Objection_Supp3",
+            "Sup4" => "Objection_Supp4",
+            "Sup5" => "Objection_Supp5",
+
+            "SUP1" => "Objection_Supp1",
+            "SUP2" => "Objection_Supp2",
+            "SUP3" => "Objection_Supp3",
+            "SUP4" => "Objection_Supp4",
+            "SUP5" => "Objection_Supp5",
+
+            var normalized => normalized
+        };
+    }
+
+    private ApplicationDbContext CreateDbContextForRoll(string rollSource)
+    {
+        var normalizedRoll = ResolveUnlinkRollSource(rollSource);
+
+        var connectionKey = normalizedRoll switch
+        {
+            "Objection" => "DefaultConnection",
+            "Objection_Supp1" => "Sup1Connection",
+            "Objection_Supp2" => "Sup2Connection",
+            "Objection_Supp3" => "Sup3Connection",
+            "Objection_Supp4" => "Sup4Connection",
+            "Objection_Supp5" => "Sup5Connection",
+            "Objection_Query" => "QueryConnection",
+            "Query" => "QueryConnection",
+            _ => throw new InvalidOperationException(
+                $"Unsupported valuation roll '{rollSource}'.")
+        };
+
+        var connectionString =
+            _config.GetConnectionString(connectionKey);
+
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            throw new InvalidOperationException(
+                $"Connection string '{connectionKey}' was not found.");
+        }
+
+        var options =
+            new DbContextOptionsBuilder<ApplicationDbContext>()
+                .UseSqlServer(connectionString)
+                .Options;
+
+        return new ApplicationDbContext(options);
+    }
+
+    private async Task<string> ResolveUnlinkPropertyDescriptionAsync(
+     long linkedId,
+     string userId,
+     string rollSource,
+     string? propertyKey)
+    {
+        const string fallback = "Property description not available";
+
+        try
+        {
+            var userEmail = GetCurrentUserEmail();
+
+            // This uses DashboardLinked or DashboardLinkedQ,
+            // which is the same source used to display linked properties.
+            var rollData = await _dashboardService.GetRollDataAsync(
+                rollSource,
+                userId,
+                userEmail);
+
+            var linkedProperty = rollData.LinkedProperties
+                .FirstOrDefault(x => x.Id == linkedId);
+
+            var propertyDescription =
+                FirstNotEmpty(
+                    linkedProperty?.PropertyDesc,
+                    linkedProperty?.LisStreetAddress,
+                    propertyKey);
+
+            return string.IsNullOrWhiteSpace(propertyDescription)
+                ? fallback
+                : propertyDescription.Trim();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Failed to resolve the linked-property description. " +
+                "LinkedId={LinkedId}, UserId={UserId}, RollSource={RollSource}.",
+                linkedId,
+                userId,
+                rollSource);
+
+            return !string.IsNullOrWhiteSpace(propertyKey)
+                ? propertyKey.Trim()
+                : fallback;
+        }
+    }
+
+    private static string GetRollDisplayName(string rollSource)
+    {
+        return rollSource switch
+        {
+            "Objection" => "General Valuation Roll 2023",
+            "Objection_Supp1" => "Supplementary Valuation Roll 1",
+            "Objection_Supp2" => "Supplementary Valuation Roll 2",
+            "Objection_Supp3" => "Supplementary Valuation Roll 3",
+            "Objection_Supp4" => "Supplementary Valuation Roll 4",
+            "Objection_Supp5" => "Supplementary Valuation Roll 5",
+            "Objection_Query" => "Section 78 Query",
+            "Query" => "Section 78 Query",
+            _ => rollSource
+        };
+    }
+
     private string GetCurrentUserEmail()
     {
         return User.FindFirstValue(ClaimTypes.Email)

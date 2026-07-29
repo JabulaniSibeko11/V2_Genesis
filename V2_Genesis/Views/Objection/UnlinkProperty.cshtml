@@ -1,48 +1,125 @@
 ﻿@{
     ViewData["Title"] = "Unlink Property";
 
-    var linkedId = TempData.Peek("UnlinkId")?.ToString() ?? "";
-    var rollSource = TempData.Peek("UnlinkRollSource")?.ToString() ?? "";
-    var returnUrl = TempData.Peek("ReturnUrl")?.ToString() ?? "/dashboard";
-
-    TempData.Keep("UnlinkId");
-    TempData.Keep("UnlinkRollSource");
-    TempData.Keep("ReturnUrl");
+    var linkedId = ViewData["LinkedId"]?.ToString() ?? "";
+    var propertyDescription = ViewData["PropertyDescription"]?.ToString()
+        ?? "Property description not available";
+    var propertyKey = ViewData["PropertyKey"]?.ToString() ?? "";
+    var rollSource = ViewData["RollSource"]?.ToString() ?? "";
+    var returnUrl = ViewData["ReturnUrl"]?.ToString() ?? "/Dashboard";
+    var error = TempData["UnlinkError"]?.ToString();
 }
 
-<div class="container mt-4">
-    <div class="card shadow-sm border-0">
-        <div class="card-body">
-            <h4 class="mb-3">
-                <i class="fa-solid fa-link-slash text-danger"></i>
-                Unlink Property
-            </h4>
+<link rel="stylesheet"
+      href="~/css/Views/Objection-Unlink.css"
+      asp-append-version="true" />
 
-            <p>
-                Are you sure you want to remove this property from your profile?
-            </p>
+<section class="unlink-page">
+    <div class="unlink-container">
 
-            <p class="text-muted">
-                This will only remove the property from your dashboard. It will not delete any submitted objection, appeal, query, review, or evidence.
-            </p>
+        <a href="@returnUrl" class="unlink-back-link">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M15 18l-6-6 6-6" />
+            </svg>
+            Back to dashboard
+        </a>
 
-            <form asp-action="UnlinkPropertyConfirm"
-                  asp-controller="Objection"
-                  method="post">
-                @Html.AntiForgeryToken()
+        <div class="unlink-card">
+            <header class="unlink-card-header">
+                <div class="unlink-header-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M10 13a5 5 0 0 0 7.07.07l2-2a5 5 0 0 0-7.07-7.07l-1.15 1.15" />
+                        <path d="M14 11a5 5 0 0 0-7.07-.07l-2 2A5 5 0 0 0 12 20l1.15-1.15" />
+                        <path d="M4 4l16 16" />
+                    </svg>
+                </div>
 
-                <input type="hidden" name="linkedId" value="@linkedId" />
-                <input type="hidden" name="rollSource" value="@rollSource" />
-                <input type="hidden" name="returnUrl" value="@returnUrl" />
+                <div>
+                    <h1>Unlink Property</h1>
+                    <p>Remove this property from your linked-properties dashboard.</p>
+                </div>
+            </header>
 
-                <button type="submit" class="btn btn-danger">
-                    Yes, Unlink Property
-                </button>
+            <div class="unlink-card-body">
+                @if (!string.IsNullOrWhiteSpace(error))
+                {
+                    <div class="unlink-alert unlink-alert-danger" role="alert">
+                        <div class="unlink-alert-icon" aria-hidden="true">!</div>
+                        <div>
+                            <strong>Unable to unlink property</strong>
+                            <span>@error</span>
+                        </div>
+                    </div>
+                }
 
-                <a href="@returnUrl" class="btn btn-secondary">
-                    Cancel
-                </a>
-            </form>
+                <div class="unlink-property-summary">
+                    <span class="unlink-property-label">Property being unlinked</span>
+                    <strong>@propertyDescription</strong>
+
+                    @if (!string.IsNullOrWhiteSpace(propertyKey))
+                    {
+                        <span class="unlink-property-key">Property key: @propertyKey</span>
+                    }
+                </div>
+
+                <div class="unlink-alert unlink-alert-warning">
+                    <div class="unlink-alert-icon" aria-hidden="true">!</div>
+                    <div>
+                        <strong>Please confirm</strong>
+                        <span>
+                            This removes only the property link from your dashboard.
+                            Existing Objections, Appeals, Queries, Reviews and uploaded
+                            evidence will not be deleted.
+                        </span>
+                    </div>
+                </div>
+
+                <form action="@Url.RouteUrl("PropertyUnlinkConfirm")"
+                      method="post"
+                      id="unlinkForm"
+                      class="unlink-form">
+                    @Html.AntiForgeryToken()
+
+                    <input type="hidden" name="linkedId" value="@linkedId" />
+                    <input type="hidden" name="rollSource" value="@rollSource" />
+                    <input type="hidden" name="returnUrl" value="@returnUrl" />
+
+                    <div class="unlink-actions">
+                        <button type="submit"
+                                class="unlink-button unlink-button-danger"
+                                id="unlinkButton">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M10 13a5 5 0 0 0 7.07.07l2-2a5 5 0 0 0-7.07-7.07l-1.15 1.15" />
+                                <path d="M14 11a5 5 0 0 0-7.07-.07l-2 2A5 5 0 0 0 12 20l1.15-1.15" />
+                                <path d="M4 4l16 16" />
+                            </svg>
+                            <span>Yes, Unlink Property</span>
+                        </button>
+
+                        <a href="@returnUrl"
+                               class="unlink-button unlink-button-secondary">
+                            Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
-</div>
+</section>
+
+@section Scripts {
+    <script>
+        (() => {
+            const form = document.getElementById('unlinkForm');
+            const button = document.getElementById('unlinkButton');
+
+            form?.addEventListener('submit', () => {
+                if (!button) return;
+
+                button.disabled = true;
+                button.classList.add('is-loading');
+                button.querySelector('span').textContent = 'Unlinking...';
+            });
+        })();
+    </script>
+}
