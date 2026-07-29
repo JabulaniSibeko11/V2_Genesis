@@ -224,3 +224,21 @@
     }
 }
 
+
+/* Withdrawal reason */
+.wd-field textarea {
+    width: 100%;
+    min-height: 110px;
+    padding: 12px 14px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font: inherit;
+    resize: vertical;
+    box-sizing: border-box;
+}
+
+    .wd-field textarea:focus {
+        outline: none;
+        border-color: #b68a00;
+        box-shadow: 0 0 0 3px rgba(182, 138, 0, 0.15);
+    }

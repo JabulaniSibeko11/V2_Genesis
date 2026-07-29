@@ -39,23 +39,23 @@ public class ObjectionController : Controller
     public ObjectionController(
         IObjectionService objectionService,
         ApplicationDbContext db,
-        IObjectionFormService objectionFormService,ISection78Service section78Service, INoticeService noticeService
-        ,IEmailService emailService, IConfiguration config,ISubmittedFormPdfService submittedFormPdfService, 
+        IObjectionFormService objectionFormService, ISection78Service section78Service, INoticeService noticeService
+        , IEmailService emailService, IConfiguration config, ISubmittedFormPdfService submittedFormPdfService,
         ISupportingDocumentService supportingDocumentService
-        ,INotificationService notificationService, ILogger<ObjectionController> logger)
+        , INotificationService notificationService, ILogger<ObjectionController> logger)
     {
         _objectionService = objectionService;
         _db = db;
         _objectionFormService = objectionFormService;
         _emailService = emailService;
         _notificationService = notificationService;
-      _submittedFormPdfService = submittedFormPdfService;   
+        _submittedFormPdfService = submittedFormPdfService;
         _config = config;
         _noticeService = noticeService;
-     _section78Service= section78Service;
+        _section78Service = section78Service;
 
         _supportingDocumentService = supportingDocumentService;
-        _logger = logger; 
+        _logger = logger;
     }
 
     private static readonly System.Text.RegularExpressions.Regex AdminEmailRx =
@@ -1072,8 +1072,8 @@ public class ObjectionController : Controller
         TempData.Keep("RollDisplayName");
 
         var result = await _objectionFormService.SubmitAsync(
-            rollSource,userId,AppealStat,obj_appeal,propertyFrom,obj,obj1, obj2,objR3,objB3,
-            objA3,objB4,objR4,obj5,obj6,obj7,obj_file,files,fileR,appeal);
+            rollSource, userId, AppealStat, obj_appeal, propertyFrom, obj, obj1, obj2, objR3, objB3,
+            objA3, objB4, objR4, obj5, obj6, obj7, obj_file, files, fileR, appeal);
 
         if (!result.Success)
         {
@@ -1497,12 +1497,25 @@ public class ObjectionController : Controller
         string objectionNo,
         string withdrawType,
         string rollSource,
+        string withdrawalReason,
         string? returnUrl)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
+        if (string.IsNullOrWhiteSpace(withdrawalReason))
+        {
+            TempData["WithdrawError"] = "Please provide a reason for the withdrawal.";
+            TempData["ObjectionNum"] = objectionNo;
+            TempData["WithdrawType"] = withdrawType;
+            TempData["RollSource"] = rollSource;
+            TempData["ReturnUrl"] = returnUrl ?? "/dashboard";
+            TempData["WithdrawalReason"] = withdrawalReason;
+            TempData.Keep();
+            return View("Withdrawal");
+        }
+
         var (success, error) = await _objectionFormService.WithdrawAsync(
-            objectionNo, withdrawType, rollSource, userId);
+            objectionNo, withdrawType, rollSource, userId, withdrawalReason);
 
         if (!success)
         {
@@ -1512,16 +1525,19 @@ public class ObjectionController : Controller
             TempData["WithdrawType"] = withdrawType;
             TempData["RollSource"] = rollSource;
             TempData["ReturnUrl"] = returnUrl ?? "/dashboard";
+            TempData["WithdrawalReason"] = withdrawalReason;
             TempData.Keep();
             return View();
         }
 
         bool isAppeal = withdrawType?.Contains("Appeal", StringComparison.OrdinalIgnoreCase) == true;
-        bool isQuery = withdrawType?.Equals("Query", StringComparison.OrdinalIgnoreCase) == true
-                     || withdrawType?.Equals("Section78", StringComparison.OrdinalIgnoreCase) == true;
+        bool isReview = withdrawType?.Contains("Review", StringComparison.OrdinalIgnoreCase) == true;
+        bool isQuery = !isReview &&
+                       (withdrawType?.Equals("Query", StringComparison.OrdinalIgnoreCase) == true
+                        || withdrawType?.Contains("Section78", StringComparison.OrdinalIgnoreCase) == true);
 
         TempData["WithdrawSuccess"] =
-            $"{(isAppeal ? "Appeal" : isQuery ? "Query" : "Objection")} " +
+            $"{(isAppeal ? "Appeal" : isReview ? "Review" : isQuery ? "Query" : "Objection")} " +
             $"{objectionNo} has been successfully withdrawn.";
 
         var sourceTable = ResolveSourceTable(rollSource);
@@ -1529,15 +1545,17 @@ public class ObjectionController : Controller
 
         var withdrawLabel = isAppeal
             ? "Appeal"
-            : isQuery
-                ? "Query"
-                : "Objection";
+            : isReview
+                ? "Review"
+                : isQuery
+                    ? "Query"
+                    : "Objection";
 
         await _notificationService.CreateClientNotificationAsync(
             userId: userId,
             userEmail: currentUserEmail,
             title: $"{withdrawLabel} withdrawn successfully",
-            message: $"Your {withdrawLabel.ToLower()} {objectionNo} has been withdrawn.",
+            message: $"Your {withdrawLabel.ToLower()} {objectionNo} has been withdrawn. Reason: {withdrawalReason.Trim()}",
             referenceNumber: objectionNo,
             premiseId: null,
             rollSource: rollSource,
@@ -1547,7 +1565,7 @@ public class ObjectionController : Controller
 
         await _notificationService.CreateAdminNotificationAsync(
             title: $"{withdrawLabel} withdrawn",
-            message: $"{withdrawLabel} {objectionNo} was withdrawn by the client.",
+            message: $"{withdrawLabel} {objectionNo} was withdrawn by the client. Reason: {withdrawalReason.Trim()}",
             referenceNumber: objectionNo,
             premiseId: null,
             rollSource: rollSource,
@@ -1555,11 +1573,13 @@ public class ObjectionController : Controller
             url: BuildAdminNotificationUrl(objectionNo),
             createdBy: userId);
 
-        // Redirect back to wherever the user came from (dashboard, admin, etc.)
-        if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
-            return LocalRedirect(returnUrl);
+        TempData["LinkPropertyInfo"] =
+            $"The property linked to {objectionNo} is available to link again.";
 
-        return RedirectToAction("Index", "Dashboard");
+        return RedirectToAction("Index", "PropertySearch", new
+        {
+            rollSource
+        });
     }
     // ══════════════════════════════════════════════════════════════
     //  UNLINK — remove a linked / saved property
@@ -1652,6 +1672,6 @@ public class ObjectionController : Controller
     {
         return $"/Admin/Search?reference={Uri.EscapeDataString(referenceNumber)}";
     }
-   
+
 
 }

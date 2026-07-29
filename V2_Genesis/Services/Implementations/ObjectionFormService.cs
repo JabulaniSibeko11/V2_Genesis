@@ -1078,13 +1078,19 @@ public class ObjectionFormService : IObjectionFormService
     }
 
     public async Task<(bool Success, string? Error)> WithdrawAsync(
-  string objectionNo,
-  string withdrawType,
-  string rollSource,
-  string userId)
+        string objectionNo,
+        string withdrawType,
+        string rollSource,
+        string userId,
+        string withdrawalReason)
     {
         if (string.IsNullOrWhiteSpace(objectionNo))
             return (false, "Objection / reference number is required.");
+
+        if (string.IsNullOrWhiteSpace(withdrawalReason))
+            return (false, "Withdrawal reason is required.");
+
+        withdrawalReason = withdrawalReason.Trim();
 
         objectionNo = objectionNo.Trim();
         withdrawType = withdrawType?.Trim() ?? string.Empty;
@@ -1179,7 +1185,8 @@ public class ObjectionFormService : IObjectionFormService
                         var body = BuildWithdrawalEmailBody(
                             referenceNo: objectionNo,
                             submissionType: submissionType,
-                            recipientName: recipient.Name);
+                            recipientName: recipient.Name,
+                            withdrawalReason: withdrawalReason);
 
                         await _emailService.SendEmailWithAttachmentsAsync(
                             toEmail: recipient.Address,
@@ -1205,6 +1212,9 @@ public class ObjectionFormService : IObjectionFormService
                     objectionNo,
                     submissionType);
             }
+
+            await ReleaseLinkedPropertyAfterWithdrawalAsync(
+                conn, objectionNo, isAppeal, isQuery, userId);
 
             _logger.LogInformation(
                 "Withdrew {Type} {Ref} (roll: {Roll}) for user {User}.",
@@ -1377,9 +1387,10 @@ public class ObjectionFormService : IObjectionFormService
     }
 
     private static string BuildWithdrawalEmailBody(
-    string referenceNo,
-    string submissionType,
-    string recipientName)
+        string referenceNo,
+        string submissionType,
+        string recipientName,
+        string withdrawalReason)
     {
         var safeName = string.IsNullOrWhiteSpace(recipientName)
             ? "Valued Ratepayer"
@@ -1440,6 +1451,14 @@ public class ObjectionFormService : IObjectionFormService
                         {date}
                     </td>
                 </tr>
+                <tr>
+                    <td style='padding:10px;border:1px solid #ddd;background:#f8f8f8;font-weight:bold;'>
+                        Withdrawal Reason
+                    </td>
+                    <td style='padding:10px;border:1px solid #ddd;'>
+                        {System.Net.WebUtility.HtmlEncode(withdrawalReason)}
+                    </td>
+                </tr>
             </table>
 
             <p>
@@ -1460,6 +1479,64 @@ public class ObjectionFormService : IObjectionFormService
 </body>
 </html>";
     }
+
+    private async Task ReleaseLinkedPropertyAfterWithdrawalAsync(
+        SqlConnection submissionConnection,
+        string referenceNo,
+        bool isAppeal,
+        bool isQuery,
+        string userId)
+    {
+        try
+        {
+            string sql = isAppeal
+                ? @"SELECT TOP 1 A_Premise_id
+                    FROM dbo.Obj_Property_Info_Appeal
+                    WHERE LTRIM(RTRIM(Appeal_No)) = LTRIM(RTRIM(@Ref));"
+                : isQuery
+                    ? @"SELECT TOP 1 Premise_id
+                        FROM dbo.QUE_Property_Info
+                        WHERE LTRIM(RTRIM(Query_No)) = LTRIM(RTRIM(@Ref));"
+                    : @"SELECT TOP 1 Premise_id
+                        FROM dbo.Obj_Property_Info
+                        WHERE LTRIM(RTRIM(Objection_No)) = LTRIM(RTRIM(@Ref));";
+
+            var premiseId = await submissionConnection.QueryFirstOrDefaultAsync<string?>(
+                sql, new { Ref = referenceNo });
+
+            if (string.IsNullOrWhiteSpace(premiseId))
+            {
+                _logger.LogWarning(
+                    "No premise ID found while releasing linked property for {Ref}.",
+                    referenceNo);
+                return;
+            }
+
+            var linkedRecords = await _db.LinkedProperties
+                .Where(x => x.UserID == userId && x.IDProperty == premiseId.Trim())
+                .ToListAsync();
+
+            if (linkedRecords.Count == 0)
+                return;
+
+            _db.LinkedProperties.RemoveRange(linkedRecords);
+            await _db.SaveChangesAsync();
+
+            _logger.LogInformation(
+                "Released {Count} linked-property record(s) for withdrawn submission {Ref}.",
+                linkedRecords.Count,
+                referenceNo);
+        }
+        catch (Exception ex)
+        {
+            // The withdrawal remains valid even if the dashboard link cleanup fails.
+            _logger.LogError(
+                ex,
+                "Withdrawal succeeded, but linked property release failed for {Ref}.",
+                referenceNo);
+        }
+    }
+
     // ══════════════════════════════════════════════════════════════
     //  UNLINK — remove a saved / linked property
     //

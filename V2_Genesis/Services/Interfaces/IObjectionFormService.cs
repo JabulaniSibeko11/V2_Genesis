@@ -37,10 +37,11 @@ public interface IObjectionFormService
         string referenceNo);
 
     Task<(bool Success, string? Error)> WithdrawAsync(
-    string objectionNo,
-    string withdrawType,
-    string rollSource,
-    string userId);
+        string objectionNo,
+        string withdrawType,
+        string rollSource,
+        string userId,
+        string withdrawalReason);
 
     // Unlink a saved property from the user's dashboard.
     Task<(bool Success, string? Error)> UnlinkPropertyAsync(

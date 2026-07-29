@@ -489,19 +489,17 @@ public class AttributesController : Controller
     [HttpGet]
     public async Task<IActionResult> DownloadAcknowledgement(long id)
     {
-        var model = await _attributeService.GetAcknowledgementAsync(id);
+        var generated = await _attributeService.GenerateAcknowledgementPdfAsync(id);
 
-        if (model == null || string.IsNullOrWhiteSpace(model.AcknowledgementPath))
-            return NotFound();
+        if (generated is null || generated.Value.Pdf.Length == 0)
+        {
+            _logger.LogWarning(
+                "[Attributes] On-demand acknowledgement generation returned nothing for Attr_ID={AttrId}",
+                id);
+            return NotFound("Could not generate the acknowledgement for this submission.");
+        }
 
-        if (!System.IO.File.Exists(model.AcknowledgementPath))
-            return NotFound();
-
-        var fileName = model.AcknowledgementFileName ?? $"{model.AttrNo}_Acknowledgement.pdf";
-
-        var bytes = await System.IO.File.ReadAllBytesAsync(model.AcknowledgementPath);
-
-        return File(bytes, "application/pdf", fileName);
+        return File(generated.Value.Pdf, "application/pdf", generated.Value.FileName);
     }
 
 
@@ -865,23 +863,16 @@ public class AttributesController : Controller
         if (string.IsNullOrWhiteSpace(attrNo))
             return BadRequest("Attribute number is required.");
 
-        var files = await _attrDb.AttrFiles
-            .FirstOrDefaultAsync(f => f.Attr_No == attrNo.Trim());
+        var generated = await _attributeService.GenerateAcknowledgementPdfAsync(attrNo.Trim());
 
-        if (files is null || string.IsNullOrWhiteSpace(files.RootFolder))
-            return NotFound("Acknowledgement record not found.");
+        if (generated is null || generated.Value.Pdf.Length == 0)
+        {
+            _logger.LogWarning(
+                "[Attributes] On-demand acknowledgement generation returned nothing for Attr_No={AttrNo}",
+                attrNo);
+            return NotFound("Could not generate the acknowledgement for this submission.");
+        }
 
-        // Acknowledgement_FileName is a DB computed column:
-        // Attr_Ref_Files + '_Acknowledgement.pdf'
-        var fileName = files.Acknowledgement_FileName
-                       ?? $"{attrNo.Trim()}_Acknowledgement.pdf";
-
-        var filePath = Path.Combine(files.RootFolder, fileName);
-
-        if (!System.IO.File.Exists(filePath))
-            return NotFound("Acknowledgement PDF not found on server.");
-
-        var bytes = await System.IO.File.ReadAllBytesAsync(filePath);
-        return File(bytes, "application/pdf", fileName);
+        return File(generated.Value.Pdf, "application/pdf", generated.Value.FileName);
     }
 }
