@@ -216,10 +216,10 @@
                             <span class="res-value">@(m.Valuation_Key ?? "—")</span>
                         </div>
 
-                        <div class="res-field">
+                       @*  <div class="res-field">
                             <span class="res-label">Premise ID</span>
                             <span class="res-value">@(m.PremiseId ?? "—")</span>
-                        </div>
+                        </div> *@
 
                         <div class="res-field">
                             <span class="res-label">Origin</span>
@@ -227,15 +227,51 @@
                         </div>
                     </div>
 
+                    <div class="res-client-account @(m.ClientAccountResolved ? "resolved" : "unresolved")">
+                        <div class="res-client-account-icon">
+                            <i class="fa-solid @(m.ClientAccountType == "Company" ? "fa-building" : "fa-user")"></i>
+                        </div>
+                        <div class="res-client-account-body">
+                            <span class="res-label">Client account</span>
+                            @if (m.ClientAccountResolved)
+                            {
+                                <strong>@m.ClientDisplayName</strong>
+                                <span>@m.ClientEmail</span>
+                                @if (!string.IsNullOrWhiteSpace(m.ClientPhoneNumber))
+                                {
+                                    <small>@m.ClientPhoneNumber</small>
+                                }
+                            }
+                            else
+                            {
+                                <strong>Account could not be resolved</strong>
+                                <span>No valid UserID was found for this submission.</span>
+                            }
+                        </div>
+                        @if (m.ClientAccountResolved && !string.IsNullOrWhiteSpace(m.UserId))
+                        {
+                            <a class="res-client-account-open"
+                                   asp-controller="Admin"
+                                   asp-action="ClientAccount"
+                                   asp-route-userId="@m.UserId"
+                                   asp-route-returnUrl="@Context.Request.Path@Context.Request.QueryString">
+                                <i class="fa-solid fa-folder-open"></i>
+                                Open Client Properties
+                            </a>
+                        }
+
+                        <span class="res-client-account-type">@(m.ClientAccountType ?? "Unknown")</span>
+                    </div>
+
                     <div class="res-ref-footer">
 
-                        @if (!string.IsNullOrWhiteSpace(m.Unit_key) || !string.IsNullOrWhiteSpace(m.Valuation_Key))
+                        @* @if (!string.IsNullOrWhiteSpace(m.Unit_key) || !string.IsNullOrWhiteSpace(m.Valuation_Key))
                         {
                             <a class="res-btn res-btn-primary"
                                    href="/property/view?rollSource=@m.RollSource&unitKey=@m.Unit_key&valuationKey=@m.Valuation_Key">
                                 <i class="fa-solid fa-eye"></i> View Property
                             </a>
-                        }
+                        } *@
 
                         @if (m.RefType == "Query" || m.RefType == "Review")
                         {
@@ -310,6 +346,7 @@
                                 <th>Category</th>
                                 <th>Market Value</th>
                                 <th>Status</th>
+                                <th>Client Account</th>
                                 <th>Options</th>
                             </tr>
                         </thead>
@@ -326,6 +363,17 @@
                                     <td>@FormatMoney(m.Old_Market_Value)</td>
                                     <td>@Html.Raw(StatusPill(m.objection_Status))</td>
                                     <td>
+                                        @if (m.ClientAccountResolved)
+                                        {
+                                            <strong>@m.ClientDisplayName</strong><br />
+                                            <small>@m.ClientEmail</small>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">Not resolved</span>
+                                        }
+                                    </td>
+                                    <td>
                                         <div class="dropdown">
                                             <button class="cd-action-btn dropdown-toggle"
                                                     data-bs-toggle="dropdown">
@@ -333,12 +381,26 @@
                                             </button>
 
                                             <ul class="dropdown-menu">
-                                                @if (!string.IsNullOrWhiteSpace(m.Unit_key) || !string.IsNullOrWhiteSpace(m.Valuation_Key))
+                                              @*   @if (!string.IsNullOrWhiteSpace(m.Unit_key) || !string.IsNullOrWhiteSpace(m.Valuation_Key))
                                                 {
                                                     <li>
                                                         <a class="dropdown-item"
                                                                href="/property/view?rollSource=@m.RollSource&unitKey=@m.Unit_key&valuationKey=@m.Valuation_Key">
                                                             <i class="fa-solid fa-eye"></i> View Property
+                                                        </a>
+                                                    </li>
+                                                } *@
+
+                                                @if (m.ClientAccountResolved && !string.IsNullOrWhiteSpace(m.UserId))
+                                                {
+                                                    <li>
+                                                        <a class="dropdown-item"
+                                                               asp-controller="Admin"
+                                                               asp-action="ClientAccount"
+                                                               asp-route-userId="@m.UserId"
+                                                               asp-route-returnUrl="@Context.Request.Path@Context.Request.QueryString">
+                                                            <i class="fa-solid fa-folder-open"></i>
+                                                            Open Client Properties
                                                         </a>
                                                     </li>
                                                 }
@@ -369,20 +431,8 @@
             if ($('#resTable').length && !$.fn.DataTable.isDataTable('#resTable')) {
                 $('#resTable').DataTable({
                     responsive: true,
-                    dom: '<"cd-dt-top"lBf>rt<"cd-dt-bottom"ip>',
+                    dom: '<"cd-dt-top"lf>rt<"cd-dt-bottom"ip>',
                     lengthMenu: [[10, 25, 50, -1], [10, 25, 50, 'All']],
-                    buttons: [
-                        {
-                            extend: 'excel',
-                            className: 'cd-dt-btn',
-                            text: '<i class="fa-solid fa-file-excel"></i> Excel'
-                        },
-                        {
-                            extend: 'pdf',
-                            className: 'cd-dt-btn',
-                            text: '<i class="fa-solid fa-file-pdf"></i> PDF'
-                        }
-                    ],
                     language: {
                         search: '_INPUT_',
                         searchPlaceholder: 'Filter results…'

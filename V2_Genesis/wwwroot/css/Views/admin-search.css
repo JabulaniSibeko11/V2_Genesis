@@ -289,3 +289,53 @@
     }
 }
 
+
+
+.res-client-account {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0 18px 16px;
+    padding: 14px 16px;
+    border: 1px solid #d9e3e6;
+    border-left: 5px solid #36626d;
+    border-radius: 10px;
+    background: #f7fbfc
+}
+
+    .res-client-account.unresolved {
+        border-left-color: #c98a00;
+        background: #fffaf0
+    }
+
+.res-client-account-icon {
+    display: flex;
+    width: 38px;
+    height: 38px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9px;
+    color: #fff;
+    background: #36626d;
+    flex-shrink: 0
+}
+
+.res-client-account-body {
+    display: flex;
+    min-width: 0;
+    flex: 1;
+    flex-direction: column
+}
+
+    .res-client-account-body strong, .res-client-account-body span, .res-client-account-body small {
+        overflow-wrap: anywhere
+    }
+
+.res-client-account-type {
+    padding: 6px 10px;
+    border-radius: 999px;
+    color: #5d4800;
+    background: #fff0b3;
+    font-size: 11px;
+    font-weight: 800
+}

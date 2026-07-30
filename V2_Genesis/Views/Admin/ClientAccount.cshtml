@@ -1,0 +1,185 @@
+﻿@using System.Globalization
+@using V2_Genesis.Models.ViewModels.Admin
+@using V2_Genesis.Helpers
+@model AdminClientAccountViewModel
+@{
+    ViewData["Title"] = "Client Property Account";
+    Layout = "~/Views/Shared/_ClientLayout.cshtml";
+
+    string FormatZar(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return "";
+        var clean = value.Replace("R", "", StringComparison.OrdinalIgnoreCase)
+                         .Replace(" ", "").Replace(",", "").Trim();
+        return decimal.TryParse(clean, NumberStyles.Any, CultureInfo.InvariantCulture, out var n)
+            ? "R " + n.ToString("N0", CultureInfo.GetCultureInfo("en-ZA"))
+            : value;
+    }
+
+    string SupportUrl(AdminClientSubmissionViewModel x) =>
+        Url.Action("PropertyEnquiry", "Admin", new
+        {
+            userId = Model.UserId,
+            propertyKey = x.PropertyKey,
+            returnUrl = Context.Request.Path + Context.Request.QueryString
+        }) ?? "#";
+
+    string SubmissionUrl(AdminClientSubmissionViewModel x) =>
+        Url.RouteUrl("ViewSubmission", new
+        {
+            submissionType = x.SubmissionType,
+            referenceNumber = x.ReferenceNumber,
+            rollSource = x.RollSource,
+            returnUrl = Context.Request.Path + Context.Request.QueryString
+        }) ?? "#";
+}
+@section Styles {
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/jquery.dataTables.min.css" />
+    <link href="~/css/views/client-dashboard.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/Views/admin-client-account.css" rel="stylesheet" asp-append-version="true" />
+}
+<div class="account-page">
+    <header class="account-hero">
+        <div>
+            <div class="account-eyebrow"><i class="fa-solid fa-shield-halved"></i> Admin Enquiry</div>
+            <h1>@Model.DisplayName</h1><p>All records linked to this UserID.</p>
+        </div>
+        <a class="account-back" href="@(ViewBag.ReturnUrl ?? Url.Action("Search", "Admin"))"><i class="fa-solid fa-arrow-left"></i> Back</a>
+    </header>
+
+    <section class="account-client-card">
+        <div class="account-avatar"><i class="fa-solid @(Model.AccountType == "Company" ? "fa-building" : "fa-user")"></i></div>
+        <div class="account-client-main"><span class="account-label">Client</span><strong>@Model.DisplayName</strong><span>@Model.Email</span></div>
+        <div class="account-client-detail"><span class="account-label">Phone</span><strong>@Model.PhoneNumber</strong></div>
+        <div class="account-client-detail"><span class="account-label">Type</span><strong>@Model.AccountType</strong></div>
+        <div class="account-client-detail"><span class="account-label">Email</span><strong>@(Model.EmailConfirmed ? "Confirmed" : "Not confirmed")</strong></div>
+    </section>
+
+    <section class="account-kpis">
+        <div><span>Objections</span><strong>@Model.ObjectionCount</strong></div>
+        <div><span>Appeals</span><strong>@Model.AppealCount</strong></div>
+        <div><span>Queries</span><strong>@Model.QueryCount</strong></div>
+        <div><span>Reviews</span><strong>@Model.ReviewCount</strong></div>
+        <div><span>Attributes</span><strong>@Model.AttributeCount</strong></div>
+        <div><span>Rebates</span><strong>@Model.Rebates.Count</strong></div>
+    </section>
+
+    @{
+        var tables = new[] {
+        ("objectionsTable","Objected Properties","Objection No.",Model.Objections),
+        ("appealsTable","Appeal Properties","Appeal No.",Model.Appeals),
+        ("queriesTable","Query Properties","Query No.",Model.Queries),
+        ("reviewsTable","Review Properties","Review No.",Model.Reviews)
+    };
+    }
+    @foreach (var table in tables)
+    {
+        <section class="account-section">
+            <div class="account-section-head"><div><h2>@table.Item2</h2></div><span class="account-count">@table.Item4.Count records</span></div>
+            <div class="table-responsive">
+                <table id="@table.Item1" class="display account-table" style="width:100%">
+                    <thead><tr><th>@table.Item3</th><th>Property Description</th><th>Roll</th><th>Town</th><th>Category</th><th>Market Value</th><th>Status</th><th>Submitted</th><th>Actions</th></tr></thead>
+                    <tbody>
+                        @foreach (var item in table.Item4)
+                        {
+                            <tr>
+                                <td><strong>@item.ReferenceNumber</strong></td>
+                                <td>@item.PropertyDescription</td>
+                                <td>@item.RollName</td>
+                                <td>@item.Town</td>
+                                <td>@item.Category</td>
+                                <td>@FormatZar(item.MarketValue)</td>
+                                <td><span class="@AdminSubmissionStatusDisplayHelper.GetCssClass(item.Status)">@AdminSubmissionStatusDisplayHelper.GetDisplayStatus(item.Status)</span></td>
+                                <td data-order="@(item.SubmittedAt?.Ticks ?? 0)">@(item.SubmittedAt?.ToString("dd MMM yyyy") ?? "")</td>
+                                <td>
+                                    <div class="dropdown">
+                                        <button class="account-btn account-btn-primary dropdown-toggle" data-bs-toggle="dropdown">Actions</button>
+                                        <ul class="dropdown-menu account-action-menu">
+                                            <li><a class="dropdown-item" href="@SupportUrl(item)"><i class="fa-solid fa-headset"></i> Property Support</a></li>
+                                            <li><a class="dropdown-item" href="@SubmissionUrl(item)"><i class="fa-solid fa-eye"></i> View Submission</a></li>
+                                        </ul>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    }
+
+    <section class="account-section">
+        <div class="account-section-head"><div><h2>Attribute Properties and Inspections</h2></div><span class="account-count">@Model.Attributes.Count records</span></div>
+        <div class="table-responsive">
+            <table id="attributesTable" class="display account-table" style="width:100%">
+                <thead><tr><th>Attribute No.</th><th>Property Description</th><th>Form Type</th><th>Status</th><th>Submitted</th><th>Inspection Ref.</th><th>Inspection Status</th><th>Scheduled Date</th><th>Time</th><th>Valuer</th><th>Actions</th></tr></thead>
+                <tbody>
+                    @foreach (var item in Model.Attributes)
+                    {
+                        <tr>
+                            <td><strong>@item.ReferenceNumber</strong></td>
+                            <td>@item.PropertyDescription</td>
+                            <td>@item.RollName</td>
+                            <td><span class="@AdminSubmissionStatusDisplayHelper.GetCssClass(item.Status)">@AdminSubmissionStatusDisplayHelper.GetDisplayStatus(item.Status)</span></td>
+                            <td data-order="@(item.SubmittedAt?.Ticks ?? 0)">@(item.SubmittedAt?.ToString("dd MMM yyyy") ?? "")</td>
+                            <td>@item.InspectionAppointmentRef</td>
+                            <td>@if(item.HasInspection){
+                                <span class="@AdminSubmissionStatusDisplayHelper.GetCssClass(item.InspectionStatus)">@AdminSubmissionStatusDisplayHelper.GetDisplayStatus(item.InspectionStatus)</span>
+                            }else
+                            {
+
+                                <span class="account-not-linked">No inspection</span>
+                            }
+                        </td>
+                        <td data-order="@(item.InspectionDate?.Ticks ?? 0)">@if(item.InspectionDate.HasValue){
+                            <strong>@item.InspectionDate.Value.ToString("dd MMM yyyy")</strong>
+                        }else if (item.HasInspection)
+                        {
+
+                            <span class="account-inspection-warning">Date not scheduled</span>
+                        }
+                    </td>
+                    <td>@item.InspectionTimeSlot</td>
+                    <td>@item.InspectionValuerName</td>
+                    <td>
+                        <div class="dropdown">
+                            <button class="account-btn account-btn-primary dropdown-toggle" data-bs-toggle="dropdown">Actions</button>
+                            <ul class="dropdown-menu account-action-menu"><li><a class="dropdown-item" href="@SupportUrl(item)"><i class="fa-solid fa-headset"></i> Property Support</a></li><li><a class="dropdown-item" href="@SubmissionUrl(item)"><i class="fa-solid fa-eye"></i> View Attribute</a></li></ul>
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+</section>
+
+<section class="account-section">
+    <div class="account-section-head"><div><h2>Rebate Applications</h2></div><span class="account-count">@Model.Rebates.Count records</span></div>
+    <div class="table-responsive">
+        <table id="rebatesTable" class="display account-table" style="width:100%">
+            <thead><tr><th>Rebate No.</th><th>Type</th><th>Account No.</th><th>Applicant</th><th>Property / Stand</th><th>Suburb</th><th>Email</th><th>Status</th><th>Submitted</th></tr></thead>
+            <tbody>
+                @foreach (var item in Model.Rebates)
+                {
+                    var applicant = string.Join(" ", new[] { item.FirstNames, item.Surname }.Where(x => !string.IsNullOrWhiteSpace(x)));
+                    var prop = string.Join(" ", new[] { item.StandNumber, item.PortionNumber, item.UnitNumberDoorNumber }.Where(x => !string.IsNullOrWhiteSpace(x)));
+                    <tr><td><strong>@item.Rebate_No</strong></td><td>@item.Rebate_Type</td><td>@item.AccountNumber</td><td>@applicant</td><td>@prop</td><td>@item.Suburb</td><td>@item.Email</td><td><span class="@AdminSubmissionStatusDisplayHelper.GetCssClass(item.Status)">@AdminSubmissionStatusDisplayHelper.GetDisplayStatus(item.Status)</span></td><td>@item.DateOfSubmission</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</section>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded",function(){
+        if(!window.jQuery||!jQuery.fn.DataTable)return;
+        const lang={search:"",searchPlaceholder:"Search this table...",lengthMenu:"Show _MENU_ records",info:"Showing _START_ to _END_ of _TOTAL_ records",infoEmpty:"No records available",zeroRecords:"No matching records found"};
+        function init(id,action,date){$(id).DataTable({pageLength:10,lengthMenu:[10,25,50,100],order:[[date,"desc"]],scrollX:true,autoWidth:false,language:lang,columnDefs:action>=0?[{targets:[action],orderable:false,searchable:false}]:[]});}
+        init("#objectionsTable",8,7);init("#appealsTable",8,7);init("#queriesTable",8,7);init("#reviewsTable",8,7);init("#attributesTable",10,4);init("#rebatesTable",-1,8);
+        });
+    </script>
+}

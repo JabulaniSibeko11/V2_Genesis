@@ -2,6 +2,8 @@
 //  Services/Implementations/AdminDashboardService.cs  — REPLACE FULL FILE
 // ═══════════════════════════════════════════════════════════════
 using Dapper;
+using Microsoft.EntityFrameworkCore;
+using V2_Genesis.Data;
 using Microsoft.Data.SqlClient;
 using System.Data;
 using V2_Genesis.Models.Admin;
@@ -17,12 +19,16 @@ public class AdminDashboardService : IAdminDashboardService
 {
     private readonly IConfiguration _config;
     private readonly ILogger<AdminDashboardService> _logger;
+    private readonly ApplicationDbContext _db;
 
-    public AdminDashboardService(IConfiguration config,
-        ILogger<AdminDashboardService> logger)
+    public AdminDashboardService(
+        IConfiguration config,
+        ILogger<AdminDashboardService> logger,
+        ApplicationDbContext db)
     {
         _config = config;
         _logger = logger;
+        _db = db;
     }
 
     private SqlConnection GetConn(string rollSource)
@@ -260,6 +266,8 @@ public class AdminDashboardService : IAdminDashboardService
                         A_Unit_key,
                         A_Valuation_Key,
                         PremiseID,
+                        A_UserID,
+                        Obj_Ref,
                         Objector_Type
                     FROM dbo.Obj_Property_Info_Appeal
                     WHERE Appeal_No = @Ref
@@ -291,6 +299,12 @@ public class AdminDashboardService : IAdminDashboardService
                         Unit_key = aRow.A_Unit_key?.ToString(),
                         Valuation_Key = aRow.A_Valuation_Key?.ToString(),
                         PremiseId = aRow.PremiseID?.ToString(),
+                        UserId = FirstNonEmptyDynamic(
+                            aRow.A_UserID,
+                            await ResolveObjectionUserIdAsync(
+                                conn,
+                                aRow.Obj_Ref?.ToString()
+                                ?? aRow.Objection_No?.ToString())),
 
                         IsThirdParty = aRow.Objector_Type?.ToString()
                             ?.Contains("Third", StringComparison.OrdinalIgnoreCase) == true,
@@ -300,6 +314,7 @@ public class AdminDashboardService : IAdminDashboardService
                     };
 
                     match.Notices = BuildNoticeOptions(match);
+                    await PopulateClientAccountAsync(match);
 
                     result.RefMatches.Add(match);
                 }
@@ -319,6 +334,7 @@ public class AdminDashboardService : IAdminDashboardService
                         Valuation_Key,
                         Premise_id,
                         PropertyFrom,
+                        UserID,
                         Objector_Type
                     FROM dbo.Obj_Property_Info a
                     inner join Obj_Section6 on a.Objection_No = Obj_Section6.[Objection_Ref_S6]
@@ -352,6 +368,7 @@ public class AdminDashboardService : IAdminDashboardService
                         Valuation_Key = oRow.Valuation_Key?.ToString(),
                         PremiseId = oRow.Premise_id?.ToString(),
                         PropertyFrom = oRow.PropertyFrom?.ToString(),
+                        UserId = oRow.UserID?.ToString(),
 
                         IsThirdParty = oRow.Objector_Type?.ToString()
                             ?.Contains("Third", StringComparison.OrdinalIgnoreCase) == true,
@@ -361,6 +378,7 @@ public class AdminDashboardService : IAdminDashboardService
                     };
 
                     match.Notices = BuildNoticeOptions(match);
+                    await PopulateClientAccountAsync(match);
 
                     result.RefMatches.Add(match);
                 }
@@ -466,7 +484,7 @@ public class AdminDashboardService : IAdminDashboardService
 
                 foreach (var r in rows)
                 {
-                    result.PropMatches.Add(new AdminPropMatch
+                    var propertyMatch = new AdminPropMatch
                     {
                         RollSource = roll,
                         RollName = RollName(roll),
@@ -483,7 +501,11 @@ public class AdminDashboardService : IAdminDashboardService
                         Unit_key = r.Unit_key?.ToString(),
                         Valuation_Key = r.Valuation_Key?.ToString(),
                         PropertyFrom = r.PropertyFrom?.ToString(),
-                    });
+                        UserId = r.UserID?.ToString(),
+                    };
+
+                    await PopulateClientAccountAsync(propertyMatch);
+                    result.PropMatches.Add(propertyMatch);
                 }
             }
             catch (Exception ex)
@@ -802,6 +824,99 @@ public class AdminDashboardService : IAdminDashboardService
             _ => "Objection"
         };
     }
+    private async Task PopulateClientAccountAsync(AdminRefMatch match)
+    {
+        var client = await ResolveClientAccountAsync(match.UserId);
+        if (client is null) return;
+
+        match.UserId = client.UserId;
+        match.ClientDisplayName = client.DisplayName;
+        match.ClientEmail = client.Email;
+        match.ClientPhoneNumber = client.PhoneNumber;
+        match.ClientAccountType = client.AccountType;
+        match.ClientAccountResolved = true;
+    }
+
+    private async Task PopulateClientAccountAsync(AdminPropMatch match)
+    {
+        var client = await ResolveClientAccountAsync(match.UserId);
+        if (client is null) return;
+
+        match.UserId = client.UserId;
+        match.ClientDisplayName = client.DisplayName;
+        match.ClientEmail = client.Email;
+        match.ClientPhoneNumber = client.PhoneNumber;
+        match.ClientAccountType = client.AccountType;
+        match.ClientAccountResolved = true;
+    }
+
+    private async Task<ResolvedClientAccount?> ResolveClientAccountAsync(string? userId)
+    {
+        if (string.IsNullOrWhiteSpace(userId)) return null;
+        var cleanUserId = userId.Trim();
+
+        var user = await _db.Users.AsNoTracking()
+            .Where(x => x.Id == cleanUserId)
+            .Select(x => new
+            {
+                x.Id,
+                x.Email,
+                x.PhoneNumber,
+                x.FirstName,
+                x.LastName,
+                x.CompanyName,
+                x.CompanyRegistration
+            })
+            .FirstOrDefaultAsync();
+
+        if (user is null)
+        {
+            _logger.LogWarning(
+                "[AdminSearch] Submission UserID {UserId} was not found in AspNetUsers.",
+                cleanUserId);
+            return null;
+        }
+
+        var isCompany = !string.IsNullOrWhiteSpace(user.CompanyName)
+            || !string.IsNullOrWhiteSpace(user.CompanyRegistration);
+
+        var displayName = isCompany
+            ? user.CompanyName?.Trim()
+            : string.Join(" ", new[] { user.FirstName, user.LastName }
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Select(x => x!.Trim()));
+
+        return new ResolvedClientAccount(
+            user.Id,
+            string.IsNullOrWhiteSpace(displayName) ? user.Email ?? "Client" : displayName,
+            user.Email ?? string.Empty,
+            user.PhoneNumber ?? string.Empty,
+            isCompany ? "Company" : "Individual");
+    }
+
+    private static async Task<string> ResolveObjectionUserIdAsync(
+        SqlConnection connection, string? objectionReference)
+    {
+        if (string.IsNullOrWhiteSpace(objectionReference)) return string.Empty;
+
+        return (await connection.QueryFirstOrDefaultAsync<string>(
+            """
+            SELECT TOP 1 UserID
+            FROM dbo.Obj_Property_Info
+            WHERE LTRIM(RTRIM(Objection_No)) = LTRIM(RTRIM(@Reference))
+            """,
+            new { Reference = objectionReference.Trim() }))?.Trim() ?? string.Empty;
+    }
+
+    private static string FirstNonEmptyDynamic(params object?[] values) =>
+        values.Select(value => value?.ToString()?.Trim())
+            .FirstOrDefault(value => !string.IsNullOrWhiteSpace(value))
+        ?? string.Empty;
+
+    private sealed record ResolvedClientAccount(
+        string UserId, string DisplayName, string Email,
+        string PhoneNumber, string AccountType);
+
     private async Task SearchQueryOrReviewReferenceAsync(
     AdminSearchResult result,
     string refNo,
@@ -834,7 +949,8 @@ public class AdminDashboardService : IAdminDashboardService
                   Query_Status,
                   Unit_key,
                   Valuation_Key,
-                  Premise_id
+                  Premise_id,
+                  UserID
               FROM dbo.Que_Property_Info
               WHERE Review_No = @Ref
               """
@@ -850,7 +966,8 @@ public class AdminDashboardService : IAdminDashboardService
                   Query_Status,
                   Unit_key,
                   Valuation_Key,
-                  Premise_id
+                  Premise_id,
+                  UserID
               FROM dbo.Que_Property_Info
               WHERE Query_No = @Ref
               """;
@@ -884,10 +1001,12 @@ public class AdminDashboardService : IAdminDashboardService
 
                 Unit_key = qRow.Unit_key?.ToString(),
                 Valuation_Key = qRow.Valuation_Key?.ToString(),
-                PremiseId = qRow.Premise_id?.ToString()
+                PremiseId = qRow.Premise_id?.ToString(),
+                UserId = qRow.UserID?.ToString()
             };
 
             match.Notices = BuildNoticeOptions(match);
+            await PopulateClientAccountAsync(match);
 
             result.RefMatches.Add(match);
         }

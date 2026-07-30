@@ -1,0 +1,473 @@
+﻿@using System.Globalization
+@using V2_Genesis.Models.ViewModels.Admin
+@model AdminPropertyEnquiryViewModel
+
+@{
+    ViewData["Title"] = "Property Support";
+    Layout = "~/Views/Shared/_ClientLayout.cshtml";
+
+    string FormatZar(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return string.Empty;
+
+        var cleaned = value
+            .Replace("R", "", StringComparison.OrdinalIgnoreCase)
+            .Replace(" ", "")
+            .Replace(",", "")
+            .Trim();
+
+        return decimal.TryParse(
+            cleaned,
+            NumberStyles.Any,
+            CultureInfo.InvariantCulture,
+            out var amount)
+                ? "R " + amount.ToString(
+                    "N0",
+                    CultureInfo.GetCultureInfo("en-ZA"))
+                : value;
+    }
+}
+
+@section Styles {
+    <link href="~/css/views/client-dashboard.css"
+          rel="stylesheet"
+          asp-append-version="true" />
+
+    <link href="~/css/Views/admin-property-enquiry.css"
+          rel="stylesheet"
+          asp-append-version="true" />
+}
+
+<div class="support-page">
+    <header class="support-hero">
+        <div>
+            <div class="support-eyebrow">
+                <i class="fa-solid fa-headset"></i>
+                Admin Property Support
+            </div>
+
+            <h1>@Model.Property.PropertyDescription</h1>
+
+            <p>
+                Resolve the client's property enquiry from one workspace.
+            </p>
+        </div>
+
+        <a class="support-back"
+               href="@(ViewBag.ReturnUrl ?? Url.Action(
+                                      "ClientAccount",
+                                      "Admin",
+                                      new { userId = Model.Client.UserId }))">
+            <i class="fa-solid fa-arrow-left"></i>
+            Client Properties
+        </a>
+    </header>
+
+    @if (TempData["SearchError"] is string error)
+    {
+        <div class="support-alert support-alert-danger">
+            <i class="fa-solid fa-circle-exclamation"></i>
+            @error
+        </div>
+    }
+
+    <section class="support-summary-grid">
+        <article class="support-summary-card">
+            <span>Client</span>
+            <strong>@Model.Client.DisplayName</strong>
+            <small>@Model.Client.Email</small>
+        </article>
+
+        <article class="support-summary-card">
+            <span>Roll</span>
+            <strong>@Model.Property.RollName</strong>
+            <small>@Model.Property.RollSource</small>
+        </article>
+
+        <article class="support-summary-card">
+            <span>Category</span>
+            <strong>@Model.Property.Category</strong>
+            <small>@FormatZar(Model.Property.MarketValue)</small>
+        </article>
+
+        <article class="support-summary-card">
+            <span>Identifiers</span>
+            <strong>@Model.Property.UnitKey</strong>
+            <small>@Model.Property.ValuationKey</small>
+        </article>
+    </section>
+
+    <nav class="support-tabs">
+        <button class="active"
+                type="button"
+                data-support-tab="submissions">
+            Submissions
+            <span>@Model.Submissions.Count</span>
+        </button>
+
+        <button type="button"
+                data-support-tab="acknowledgements">
+            Acknowledgements
+            <span>@Model.Acknowledgements.Count</span>
+        </button>
+
+        <button type="button"
+                data-support-tab="notices">
+            Notices & Emails
+            <span>@Model.Notices.Count</span>
+        </button>
+
+        <button type="button"
+                data-support-tab="appeal-dates">
+            Appeal Dates
+            <span>@Model.AppealWindows.Count</span>
+        </button>
+    </nav>
+
+    <section class="support-panel active"
+             data-support-panel="submissions">
+        <div class="support-panel-head">
+            <div>
+                <span>Property history</span>
+                <h2>Related submissions</h2>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="support-table">
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>Reference</th>
+                        <th>Status</th>
+                        <th>Roll</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.Submissions)
+                    {
+                        var submissionUrl =
+                            Url.RouteUrl(
+                                "ViewSubmission",
+                                new
+                                {
+                                    submissionType =
+                                        item.SubmissionType,
+
+                                    referenceNumber =
+                                        item.ReferenceNumber,
+
+                                    rollSource =
+                                        item.RollSource,
+
+                                    returnUrl =
+                                        Context.Request.Path
+                                        + Context.Request.QueryString
+                                });
+
+                        <tr>
+                            <td>@item.SubmissionType</td>
+                            <td><strong>@item.ReferenceNumber</strong></td>
+                            <td>@item.Status</td>
+                            <td>@item.RollName</td>
+                            <td>
+                                <a class="support-action"
+                                       href="@submissionUrl">
+                                    <i class="fa-solid fa-eye"></i>
+                                    View Submission
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="support-panel"
+             data-support-panel="acknowledgements">
+        <div class="support-panel-head">
+            <div>
+                <span>Client documents</span>
+                <h2>Acknowledgements</h2>
+            </div>
+
+            <div class="support-panel-stat">
+                @Model.AvailableAcknowledgementCount available
+            </div>
+        </div>
+
+        <div class="support-card-grid">
+            @foreach (var item in Model.Acknowledgements)
+            {
+                <article class="support-document-card">
+                    <div class="support-document-icon">
+                        <i class="fa-solid fa-file-signature"></i>
+                    </div>
+
+                    <div>
+                        <span>@item.SubmissionType acknowledgement</span>
+                        <strong>@item.ReferenceNumber</strong>
+                    </div>
+
+                    @if (item.CanGenerate)
+                    {
+                        <a class="support-action support-action-primary"
+                               asp-controller="Admin"
+                               asp-action="DownloadClientAcknowledgement"
+                               asp-route-userId="@Model.Client.UserId"
+                               asp-route-referenceNumber="@item.ReferenceNumber"
+                               asp-route-rollSource="@item.RollSource"
+                               asp-route-returnUrl="@Context.Request.Path@Context.Request.QueryString">
+                            <i class="fa-solid fa-download"></i>
+                            Generate & Download
+                        </a>
+                    }
+                    else
+                    {
+                        <span class="support-unavailable">
+                            @item.UnavailableReason
+                        </span>
+                    }
+                </article>
+            }
+        </div>
+    </section>
+
+    <section class="support-panel"
+             data-support-panel="notices">
+        <div class="support-panel-head">
+            <div>
+                <span>Communication evidence</span>
+                <h2>Notices and email copies</h2>
+            </div>
+
+            <div class="support-panel-stat">
+                @Model.AvailableNoticeCount files ·
+                @Model.EmailCopyCount email copies
+            </div>
+        </div>
+
+        @if (!Model.Notices.Any())
+        {
+            <div class="support-empty">
+                <i class="fa-solid fa-envelope-open-text"></i>
+                <strong>No notice files were found for this property.</strong>
+                <span>
+                    The system did not find a PDF or EML copy in the
+                    configured notice folders.
+                </span>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="support-table">
+                    <thead>
+                        <tr>
+                            <th>Notice</th>
+                            <th>Reference</th>
+                            <th>Issued</th>
+                            <th>Email used</th>
+                            <th>Email subject</th>
+                            <th>File</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var notice in Model.Notices)
+                        {
+                            <tr>
+                                <td>
+                                    <strong>@notice.TypeLabel</strong>
+                                    <small>@notice.RollName</small>
+                                </td>
+
+                                <td>@notice.ReferenceNumber</td>
+
+                                <td>
+                                    @(notice.EmailSentAt
+                                        ?? notice.IssuedDate)
+                                    ?.ToString("dd MMM yyyy HH:mm")
+                                </td>
+
+                                <td>
+                                    @if (notice.IsEmailCopy)
+                                    {
+                                        <strong>
+                                            @(string.IsNullOrWhiteSpace(
+                                                notice.EmailTo)
+                                                    ? "Email copy available"
+                                                    : notice.EmailTo)
+                                        </strong>
+
+                                        @if (!string.IsNullOrWhiteSpace(
+                                                notice.EmailCc))
+                                        {
+                                            <small>
+                                                CC: @notice.EmailCc
+                                            </small>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="support-muted">
+                                            No email copy
+                                        </span>
+                                    }
+                                </td>
+
+                                <td>
+                                    @if (!string.IsNullOrWhiteSpace(
+                                            notice.EmailSubject))
+                                    {
+                                        @notice.EmailSubject
+                                    }
+                                </td>
+
+                                <td>
+                                    @if (notice.FileExists)
+                                    {
+                                        <a class="support-action"
+                                               asp-controller="Admin"
+                                               asp-action="DownloadClientNotice"
+                                               asp-route-userId="@Model.Client.UserId"
+                                               asp-route-path="@Uri.EscapeDataString(notice.FilePath)">
+                                            <i class="fa-solid
+                                                @(notice.IsEmailCopy
+                                                                                               ? "fa-envelope"
+                                                                                               : "fa-file-pdf")">
+                                            </i>
+
+                                            Download
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <span class="support-unavailable">
+                                            Copy unavailable
+                                        </span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
+
+    <section class="support-panel"
+             data-support-panel="appeal-dates">
+        <div class="support-panel-head">
+            <div>
+                <span>Appeal assistance</span>
+                <h2>Appeal opening and closing dates</h2>
+            </div>
+        </div>
+
+        @if (!Model.AppealWindows.Any())
+        {
+            <div class="support-empty">
+                <i class="fa-solid fa-calendar-xmark"></i>
+                <strong>No objection appeal period was found.</strong>
+                <span>
+                    This property has no objection with an appeal-window
+                    record in Objection_MVD.
+                </span>
+            </div>
+        }
+        else
+        {
+            <div class="support-card-grid">
+                @foreach (var period in Model.AppealWindows)
+                {
+                    <article class="support-date-card">
+                        <div class="support-date-head">
+                            <div>
+                                <span>Objection</span>
+                                <strong>@period.ObjectionNumber</strong>
+                            </div>
+
+                            <span class="support-window
+                                @(period.IsOpen
+                                                                      ? "support-window-open"
+                                                                      : "support-window-closed")">
+                                @(period.IsOpen
+                                    ? "Appeal Open"
+                                    : "Appeal Closed")
+                            </span>
+                        </div>
+
+                        <dl>
+                            <div>
+                                <dt>Opening date</dt>
+                                <dd>
+                                    @(period.OpenDate?.ToString(
+                                        "dd MMMM yyyy")
+                                        ?? "")
+                                </dd>
+                            </div>
+
+                            <div>
+                                <dt>Closing date</dt>
+                                <dd>
+                                    @(period.CloseDate?.ToString(
+                                        "dd MMMM yyyy")
+                                        ?? "")
+                                </dd>
+                            </div>
+
+                            <div>
+                                <dt>Days remaining</dt>
+                                <dd>
+                                    @(period.IsOpen
+                                        ? period.DaysRemaining?.ToString()
+                                        : "0")
+                                </dd>
+                            </div>
+
+                            <div>
+                                <dt>Source roll</dt>
+                                <dd>@period.RollSource</dd>
+                            </div>
+                        </dl>
+                    </article>
+                }
+            </div>
+        }
+    </section>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const buttons =
+                document.querySelectorAll("[data-support-tab]");
+
+            const panels =
+                document.querySelectorAll("[data-support-panel]");
+
+            buttons.forEach(button => {
+                button.addEventListener("click", function () {
+                    const target =
+                        button.getAttribute("data-support-tab");
+
+                    buttons.forEach(item =>
+                        item.classList.remove("active"));
+
+                    panels.forEach(item =>
+                        item.classList.remove("active"));
+
+                    button.classList.add("active");
+
+                    document
+                        .querySelector(
+                            `[data-support-panel="${target}"]`)
+                        ?.classList.add("active");
+                });
+            });
+        });
+    </script>
+}

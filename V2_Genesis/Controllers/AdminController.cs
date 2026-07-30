@@ -10,6 +10,7 @@ using System.Text.RegularExpressions;
 using V2_Genesis.Data;
 using V2_Genesis.Models.Admin;
 using V2_Genesis.Models.Results.Admin;
+using V2_Genesis.Models.ViewModels.Admin;
 using V2_Genesis.Models.ViewModels.Dashboard;
 using V2_Genesis.Services;
 using V2_Genesis.Services.Attributes;
@@ -22,6 +23,9 @@ public class AdminController : Controller
 {
     private readonly IDashboardService _dashboardService;
     private readonly IAdminDashboardService _adminService;
+    private readonly IAdminClientAccountService _adminClientAccountService;
+    private readonly IAdminPropertyEnquiryService _adminPropertyEnquiryService;
+    private readonly IAcknowledgementDownloadService _acknowledgementDownloadService;
     private readonly IAuditService _audit;
     private readonly ApplicationDbContext _db;
     private readonly RollDatesSettings _rollDates;
@@ -40,6 +44,9 @@ public class AdminController : Controller
     public AdminController(
         IDashboardService dashboardService,
         IAdminDashboardService adminService,
+        IAdminClientAccountService adminClientAccountService,
+        IAdminPropertyEnquiryService adminPropertyEnquiryService,
+        IAcknowledgementDownloadService acknowledgementDownloadService,
         IAuditService audit,
         ApplicationDbContext db,
         IOptions<RollDatesSettings> rollDatesOpts,
@@ -53,6 +60,9 @@ public class AdminController : Controller
     {
         _dashboardService = dashboardService;
         _adminService = adminService;
+        _adminClientAccountService = adminClientAccountService;
+        _adminPropertyEnquiryService = adminPropertyEnquiryService;
+        _acknowledgementDownloadService = acknowledgementDownloadService;
         _audit = audit;
         _db = db;
         _adminFormViewService = adminFormViewService;
@@ -78,7 +88,7 @@ public class AdminController : Controller
 
     private string AdminEmail => User.FindFirstValue(ClaimTypes.Name) ?? string.Empty;
     private string UserId => User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
-    private string SapNumber =>User.FindFirstValue("SAPNumber")?? HttpContext.Session.GetString("AdminSapNumber") ?? string.Empty;
+    private string SapNumber => User.FindFirstValue("SAPNumber") ?? HttpContext.Session.GetString("AdminSapNumber") ?? string.Empty;
     private string ClientIp => HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
 
     // ══════════════════════════════════════════════════════════════════
@@ -226,6 +236,249 @@ public class AdminController : Controller
             searchValue: result.SearchInput, ipAddress: ClientIp);
 
         return View("SearchResults", result);
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    //  GET /admin/client-account
+    //  Phase 2: load the full client property account by resolved UserID.
+    // ══════════════════════════════════════════════════════════════════
+    [HttpGet]
+    [Route("admin/client-account")]
+    public async Task<IActionResult> ClientAccount(
+        string userId,
+        string? returnUrl,
+        CancellationToken cancellationToken)
+    {
+        if (!IsAdmin())
+            return View("_NoAccess");
+
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            TempData["SearchError"] =
+                "The client account could not be opened because no UserID was supplied.";
+
+            return RedirectToAction(nameof(Search));
+        }
+
+        var model =
+            await _adminClientAccountService.GetClientAccountAsync(
+                userId,
+                cancellationToken);
+
+        if (model is null)
+        {
+            TempData["SearchError"] =
+                "The selected UserID was not found in AspNetUsers.";
+
+            return RedirectToAction(nameof(Search));
+        }
+
+        ViewBag.ReturnUrl =
+            !string.IsNullOrWhiteSpace(returnUrl)
+            && Url.IsLocalUrl(returnUrl)
+                ? returnUrl
+                : Url.Action(nameof(Search), "Admin");
+
+        await _audit.LogAsync(
+            AdminEmail,
+            AuditActions.Search,
+            SapNumber,
+            rollSource: "ClientAccount",
+            searchValue: model.UserId,
+            entityRef: model.Email,
+            details:
+                $"Opened the complete client property account for {model.DisplayName}.",
+            ipAddress: ClientIp);
+
+        return View("ClientAccount", model);
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    //  GET /admin/client-account/property
+    //  Phase 3: support workspace for the selected property.
+    // ══════════════════════════════════════════════════════════════════
+    [HttpGet]
+    [Route("admin/client-account/property")]
+    public async Task<IActionResult> PropertyEnquiry(
+        string userId,
+        string propertyKey,
+        string? returnUrl,
+        CancellationToken cancellationToken)
+    {
+        if (!IsAdmin())
+            return View("_NoAccess");
+
+        var model =
+            await _adminPropertyEnquiryService.GetAsync(
+                userId,
+                propertyKey,
+                cancellationToken);
+
+        if (model is null)
+        {
+            TempData["SearchError"] =
+                "The selected property enquiry could not be loaded.";
+
+            return RedirectToAction(
+                nameof(ClientAccount),
+                new { userId });
+        }
+
+        ViewBag.ReturnUrl =
+            !string.IsNullOrWhiteSpace(returnUrl)
+            && Url.IsLocalUrl(returnUrl)
+                ? returnUrl
+                : Url.Action(
+                    nameof(ClientAccount),
+                    "Admin",
+                    new { userId });
+
+        await _audit.LogAsync(
+            AdminEmail,
+            "OpenPropertyEnquiry",
+            SapNumber,
+            rollSource:
+                model.Property.RollSource,
+            searchValue:
+                model.Property.PropertyDescription,
+            entityRef:
+                model.Client.Email,
+            details:
+                $"Opened the support workspace for property '{model.Property.PropertyDescription}'.",
+            ipAddress:
+                ClientIp);
+
+        return View(
+            "PropertyEnquiry",
+            model);
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    //  GET /admin/client-account/acknowledgement
+    //  Generates the acknowledgement using the client's UserID.
+    // ══════════════════════════════════════════════════════════════════
+    [HttpGet]
+    [Route("admin/client-account/acknowledgement")]
+    public async Task<IActionResult> DownloadClientAcknowledgement(
+        string userId,
+        string referenceNumber,
+        string? rollSource,
+        string? returnUrl,
+        CancellationToken cancellationToken)
+    {
+        if (!IsAdmin())
+            return View("_NoAccess");
+
+        try
+        {
+            var generated =
+                await _acknowledgementDownloadService.GenerateAsync(
+                    referenceNumber,
+                    rollSource,
+                    userId,
+                    cancellationToken);
+
+            await _audit.LogAsync(
+                AdminEmail,
+                "DownloadClientAcknowledgement",
+                SapNumber,
+                rollSource:
+                    rollSource,
+                searchValue:
+                    referenceNumber,
+                entityRef:
+                    userId,
+                details:
+                    $"Generated and downloaded the {generated.SubmissionType} acknowledgement.",
+                ipAddress:
+                    ClientIp);
+
+            return File(
+                generated.PdfBytes,
+                "application/pdf",
+                generated.FileName);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Admin acknowledgement generation failed for {ReferenceNumber}.",
+                referenceNumber);
+
+            TempData["SearchError"] =
+                "The acknowledgement could not be generated.";
+
+            if (!string.IsNullOrWhiteSpace(returnUrl)
+                && Url.IsLocalUrl(returnUrl))
+            {
+                return LocalRedirect(returnUrl);
+            }
+
+            return RedirectToAction(nameof(Search));
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    //  GET /admin/client-account/notice-download
+    //  Downloads only a notice already resolved for this client.
+    // ══════════════════════════════════════════════════════════════════
+    [HttpGet]
+    [Route("admin/client-account/notice-download")]
+    public async Task<IActionResult> DownloadClientNotice(
+        string userId,
+        string path,
+        CancellationToken cancellationToken)
+    {
+        if (!IsAdmin())
+            return View("_NoAccess");
+
+        if (string.IsNullOrWhiteSpace(path))
+            return BadRequest("The notice path is required.");
+
+        var decoded =
+            Uri.UnescapeDataString(path);
+
+        var belongsToClient =
+            await _adminPropertyEnquiryService
+                .NoticeBelongsToClientAsync(
+                    userId,
+                    decoded,
+                    cancellationToken);
+
+        if (!belongsToClient)
+            return Forbid();
+
+        if (!System.IO.File.Exists(decoded))
+            return NotFound("The notice or email copy was not found.");
+
+        await _audit.LogAsync(
+            AdminEmail,
+            "DownloadClientNotice",
+            SapNumber,
+            searchValue:
+                Path.GetFileName(decoded),
+            entityRef:
+                userId,
+            details:
+                "Downloaded a client notice or email copy from the property support workspace.",
+            ipAddress:
+                ClientIp);
+
+        var extension =
+            Path.GetExtension(decoded)
+                .ToLowerInvariant();
+
+        var contentType =
+            extension == ".eml"
+                ? "message/rfc822"
+                : "application/pdf";
+
+        return File(
+            await System.IO.File.ReadAllBytesAsync(
+                decoded,
+                cancellationToken),
+            contentType,
+            Path.GetFileName(decoded));
     }
 
     // ══════════════════════════════════════════════════════════════════

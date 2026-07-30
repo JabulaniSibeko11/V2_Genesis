@@ -132,6 +132,8 @@ builder.Services.AddScoped<IValuerInspectionEvidenceService, ValuerInspectionEvi
 builder.Services.AddScoped<IPropertyRateCalculatorService, PropertyRateCalculatorService>();
 builder.Services.AddScoped<IAcknowledgementDownloadService,AcknowledgementDownloadService>();
 builder.Services.AddScoped<ISubmissionViewService, SubmissionViewService>();
+builder.Services.AddScoped<IAdminClientAccountService, AdminClientAccountService>();
+builder.Services.AddScoped<IAdminPropertyEnquiryService, AdminPropertyEnquiryService>();
 builder.Services.AddDataProtection();
 
 // ── App Pipeline ──────────────────────────────────────────────────────────────

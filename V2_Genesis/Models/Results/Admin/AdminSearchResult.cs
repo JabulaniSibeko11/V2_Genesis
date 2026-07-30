@@ -40,6 +40,13 @@ public class AdminRefMatch
     public string? PremiseId { get; set; }
     public string? PropertyFrom { get; set; }
 
+    public string? UserId { get; set; }
+    public string? ClientDisplayName { get; set; }
+    public string? ClientEmail { get; set; }
+    public string? ClientPhoneNumber { get; set; }
+    public string? ClientAccountType { get; set; }
+    public bool ClientAccountResolved { get; set; }
+
     public bool IsThirdParty { get; set; }
     public bool IsRepresentative { get; set; }
 
@@ -69,6 +76,13 @@ public class AdminPropMatch
     public string? Unit_key { get; set; }
     public string? Valuation_Key { get; set; }
     public string? PropertyFrom { get; set; }
+
+    public string? UserId { get; set; }
+    public string? ClientDisplayName { get; set; }
+    public string? ClientEmail { get; set; }
+    public string? ClientPhoneNumber { get; set; }
+    public string? ClientAccountType { get; set; }
+    public bool ClientAccountResolved { get; set; }
 
     public int Sub_typ { get; set; }
 }
