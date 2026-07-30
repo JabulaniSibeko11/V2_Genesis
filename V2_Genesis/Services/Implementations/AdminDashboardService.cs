@@ -164,32 +164,47 @@ public class AdminDashboardService : IAdminDashboardService
             }).ToList();
 
             // ── All appeals (no UserID filter) ─────────────────────
-            var appRows = await conn.QueryAsync(
-                @"SELECT TOP 200
-                    Appeal_No,
-                    A_Property_Desc,
-                    Town_Name,
-                    Old_Market_Value,
-                    Old_Category,
-                    A_Unit_key,
-                    A_Valuation_Key,
-                    A_Property_Type,
-                    Appeal_Status
-                  FROM dbo.Obj_Property_Info_Appeal
-                  ORDER BY Appeal_No DESC");
+            var appeals =
+                (await conn.QueryAsync<AppealResult>(
+                    @"SELECT TOP 200
+                        Appeal_No,
+                        Obj_Ref,
+                        A_Property_Desc,
+                        Town_Name,
+                        Old_Market_Value,
+                        Old_Category,
+                        A_Unit_key,
+                        A_Valuation_Key,
+                        A_Property_Type,
+                        LTRIM(RTRIM(Appeal_Status)) AS Appeal_Status,
+                        Appeal_Start_DateTime,
 
-            var appeals = appRows.Select(r => new AppealResult
-            {
-                Appeal_No = r.Appeal_No?.ToString(),
-                A_Property_Desc = r.A_Property_Desc?.ToString(),
-                Town_Name = r.Town_Name?.ToString(),
-                Old_Market_Value = r.Old_Market_Value?.ToString(),
-                Old_Category = r.Old_Category?.ToString(),
-                A_Unit_key = r.A_Unit_key?.ToString(),
-                A_Valuation_Key = r.A_Valuation_Key?.ToString(),
-                A_Property_Type = r.A_Property_Type?.ToString(),
-                Appeal_Status = r.Appeal_Status?.ToString(),
-            }).ToList();
+                        DATEADD(
+                            HOUR,
+                            48,
+                            Appeal_Start_DateTime
+                        ) AS Evidence_Expires_At,
+
+                        CAST(
+                            CASE
+                                WHEN Appeal_Start_DateTime IS NOT NULL
+                                 AND LTRIM(RTRIM(Appeal_Status)) IN
+                                     ('App-Lodging', 'App-Unallocated')
+                                 AND SYSDATETIME() <=
+                                     DATEADD(
+                                         HOUR,
+                                         48,
+                                         Appeal_Start_DateTime
+                                     )
+                                THEN 1
+                                ELSE 0
+                            END
+                            AS BIT
+                        ) AS Evidence_Window_Open
+
+                      FROM dbo.Obj_Property_Info_Appeal
+                      ORDER BY Appeal_ID DESC"))
+                .ToList();
 
             return new RollData
             {

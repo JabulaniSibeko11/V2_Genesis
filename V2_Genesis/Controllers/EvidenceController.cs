@@ -35,7 +35,8 @@ public class EvidenceController : Controller
     [HttpGet]
     [AllowAnonymous]
     [Route("evidence/VerifyObj")]
-    public async Task<IActionResult> VerifyObj( 
+    [Route("evidence/verify")]
+    public async Task<IActionResult> VerifyObj(
         string? objectionNo = null,
         string? rollSource = null)
     {
@@ -77,16 +78,16 @@ public class EvidenceController : Controller
         var result = await _evidenceService.ValidateAsync(
             rollSource, refNo.Trim(), pin.Trim());
 
-        // ── Restore the validation check ─────────────────────────────
-        //if (!result.IsValid)
-        //{
-        //    ViewBag.Error = result.Error;
-        //    ViewBag.PrefilledRef = refNo;
-        //    ViewBag.PrefilledRoll = rollSource;
-        //    ViewBag.IsAuthenticated = User.Identity?.IsAuthenticated == true;
-        //    ViewBag.IsAppeal = refNo.Trim().ToUpper().StartsWith("APP");
-        //    return View();
-        //}
+        // Validate the reference, PIN, status and 48-hour evidence window.
+        if (!result.IsValid)
+        {
+            ViewBag.Error = result.Error;
+            ViewBag.PrefilledRef = refNo;
+            ViewBag.PrefilledRoll = rollSource;
+            ViewBag.IsAuthenticated = User.Identity?.IsAuthenticated == true;
+            ViewBag.IsAppeal = refNo.Trim().ToUpperInvariant().StartsWith("APP");
+            return View();
+        }
 
         HttpContext.Session.SetString(SESSION_VALIDATED, "true");
         HttpContext.Session.SetString(SESSION_ROLL, rollSource);

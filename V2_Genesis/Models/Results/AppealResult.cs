@@ -12,6 +12,19 @@
         public string? A_Valuation_Key { get; set; }
         public string? A_Property_Type { get; set; }
         public string? Appeal_Status { get; set; }
+        public DateTime? Appeal_Start_DateTime { get; set; }
+
+        // Calculated by SQL Server using the same database clock that
+        // stores Appeal_Start_DateTime.
+        public DateTime? Evidence_Expires_At { get; set; }
+        public bool Evidence_Window_Open { get; set; }
+
+        public DateTime? EvidenceExpiresAt =>
+            Evidence_Expires_At
+            ?? Appeal_Start_DateTime?.AddHours(48);
+
+        public bool IsEvidenceWindowOpen =>
+            Evidence_Window_Open;
 
         // View-friendly aliases
         public string? Objection_No => Appeal_No;

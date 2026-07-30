@@ -1,6 +1,7 @@
 ﻿using Dapper;
 using Microsoft.Data.SqlClient;
 using System.Data;
+using System.Globalization;
 using V2_Genesis.Data;
 using V2_Genesis.Models.Results.Atrributes;
 using V2_Genesis.Models.Results.Evidence;
@@ -63,24 +64,91 @@ public class EvidenceService : IEvidenceService
                 return EvidenceValidateResult.Fail(
                     "Incorrect PIN. Please check and try again.");
 
-            // Step 2: check 48-hour window via status
-            var statusRow = await conn.QueryFirstOrDefaultAsync(
-                @"SELECT TOP 1 Objection_Status, Date_Submitted
-                  FROM dbo.Obj_Property_Info
-                  WHERE Objection_No = @ObjNo",
-                new { ObjNo = objectionNo.Trim() });
+            // Step 2: check the correct submission table and 48-hour window.
+            dynamic? statusRow;
+
+            if (isAppeal)
+            {
+                statusRow = await conn.QueryFirstOrDefaultAsync(
+                    @"SELECT TOP 1
+                          Appeal_Status AS Submission_Status,
+                          Appeal_Start_DateTime AS Date_Submitted
+                      FROM dbo.Obj_Property_Info_Appeal
+                      WHERE LTRIM(RTRIM(Appeal_No)) =
+                            LTRIM(RTRIM(@RefNo))",
+                    new { RefNo = objectionNo.Trim() });
+            }
+            else
+            {
+                statusRow = await conn.QueryFirstOrDefaultAsync(
+                    @"SELECT TOP 1
+                          objection_Status AS Submission_Status,
+                          COALESCE(Date_Submitted, Objection_Start_DateTime)
+                              AS Date_Submitted
+                      FROM dbo.Obj_Property_Info
+                      WHERE LTRIM(RTRIM(Objection_No)) =
+                            LTRIM(RTRIM(@RefNo))",
+                    new { RefNo = objectionNo.Trim() });
+            }
 
             if (statusRow is null)
-                return EvidenceValidateResult.Fail("Objection record not found.");
+            {
+                return EvidenceValidateResult.Fail(
+                    isAppeal
+                        ? "Appeal record not found."
+                        : "Objection record not found.");
+            }
 
-            string status = statusRow.Objection_Status?.ToString() ?? "";
-            DateTime? submitted = statusRow.Date_Submitted as DateTime?;
+            string status =
+                statusRow.Submission_Status?.ToString()?.Trim()
+                ?? string.Empty;
 
-            // Must be Obj-Lodging AND within 48 hours
+            DateTime? submitted = null;
+
+            object? submittedValue =
+                statusRow.Date_Submitted;
+
+            if (submittedValue is DateTime submittedDate)
+            {
+                submitted = submittedDate;
+            }
+            else
+            {
+                var submittedText =
+                    Convert.ToString(
+                        submittedValue,
+                        CultureInfo.InvariantCulture);
+
+                DateTime parsedDate = default;
+
+                var parsedSuccessfully =
+                    !string.IsNullOrWhiteSpace(submittedText)
+                    && DateTime.TryParse(
+                        submittedText,
+                        CultureInfo.InvariantCulture,
+                        DateTimeStyles.AllowWhiteSpaces,
+                        out parsedDate);
+
+                if (parsedSuccessfully)
+                    submitted = parsedDate;
+            }
+
+            var statusAllowsEvidence = isAppeal
+                ? status.Equals(
+                      "App-Lodging",
+                      StringComparison.OrdinalIgnoreCase)
+                  || status.Equals(
+                      "App-Unallocated",
+                      StringComparison.OrdinalIgnoreCase)
+                : status.Equals(
+                      "Obj-Lodging",
+                      StringComparison.OrdinalIgnoreCase);
+
             bool withinWindow =
-                status == "Obj-Lodging" &&
-                submitted.HasValue &&
-                submitted.Value.AddHours(WINDOW_HOURS) > DateTime.Now;
+                statusAllowsEvidence
+                && submitted.HasValue
+                && DateTime.Now <=
+                    submitted.Value.AddHours(WINDOW_HOURS);
 
             if (!withinWindow)
                 return EvidenceValidateResult.Expired();
@@ -193,148 +261,148 @@ public class EvidenceService : IEvidenceService
     }
 
 
-// ── ValidateAttributeAsync ───────────────────────────────────────
+    // ── ValidateAttributeAsync ───────────────────────────────────────
 
-public async Task<AttrEvidenceValidateResult> ValidateAttributeAsync(
-    string attrNo, string pin)
-{
-    try
+    public async Task<AttrEvidenceValidateResult> ValidateAttributeAsync(
+        string attrNo, string pin)
     {
-        // 1. Find declaration by Attr_No + EvidencePin
-        var decl = await _attrDb.AttrDeclarations
-            .FirstOrDefaultAsync(d =>
-                d.Attr_No == attrNo.Trim() &&
-                d.EvidencePin == pin.Trim());
- 
-        if (decl is null)
-            return AttrEvidenceValidateResult.Fail(
-                "Invalid Attribute Number or PIN. Please check and try again.");
- 
-        // 2. Check PIN is still active and within window
-        if (decl.PinIsActive != true ||
-            decl.PinExpiryDateTime == null ||
-            decl.PinExpiryDateTime <= DateTime.Now)
-            return AttrEvidenceValidateResult.Expired();
- 
-        // 3. Get current file count + folder from AttrFiles
-        var files = await _attrDb.AttrFiles
-            .FirstOrDefaultAsync(f => f.Attr_No == attrNo.Trim());
- 
-        int currentCount = files?.Evidence_Count ?? 0;
-        string? rootFolder = files?.RootFolder;
- 
-        if (currentCount >= 10)
-            return AttrEvidenceValidateResult.Fail(
-                "This submission already has the maximum of 10 evidence files.");
- 
-        // 4. Get property description from AttrPropertyInfo
-        var info = await _attrDb.AttrPropertyInfo
-            .FirstOrDefaultAsync(p => p.Attr_No == attrNo.Trim());
- 
-        return AttrEvidenceValidateResult.Ok(
-            currentCount,
-            attrNo.Trim(),
-            info?.Property_Desc,
-            rootFolder,
-            decl.PinExpiryDateTime);
-    }
-    catch (Exception ex)
-    {
-        _logger.LogError(ex,
-            "[AttrEvidence] ValidateAttribute failed for {AttrNo}", attrNo);
-        return AttrEvidenceValidateResult.Fail(
-            "A system error occurred. Please try again.");
-    }
-}
-
-
-// ── UploadAttributeEvidenceAsync ─────────────────────────────────
-
-public async Task<(bool Success, string? Error, int NewCount, List<string> FileNames)>
-    UploadAttributeEvidenceAsync(
-        string attrNo, int currentCount, List<IFormFile> files)
-{
-    int newTotal = currentCount + files.Count;
-    if (newTotal > 10)
-        return (false,
-            $"Cannot upload {files.Count} file(s). " +
-            $"You have {currentCount} files and the maximum is 10.",
-            currentCount, new());
- 
-    // Get root folder from AttrFiles
-    var fileRecord = await _attrDb.AttrFiles
-        .FirstOrDefaultAsync(f => f.Attr_No == attrNo.Trim());
- 
-    if (fileRecord is null)
-        return (false, "Submission file record not found.", currentCount, new());
- 
-    // Save to \Attribute Lodged Evidence subfolder
-    var evidenceFolder = Path.Combine(
-        fileRecord.RootFolder ?? string.Empty,
-        "Attribute Lodged Evidence");
- 
-    Directory.CreateDirectory(evidenceFolder);
- 
-    var savedNames = new List<string>();
-    int slotIndex  = currentCount;
- 
-    foreach (var file in files)
-    {
-        if (file.Length > MAX_FILE_MB * 1024 * 1024)
-            return (false,
-                $"'{file.FileName}' exceeds {MAX_FILE_MB} MB limit.",
-                currentCount, new());
- 
-        slotIndex++;
-        var ext      = Path.GetExtension(file.FileName);
-        var safeName = $"{attrNo}_Additional_Evidence_{slotIndex}" +
-                       $"_{DateTime.Now:yyyyMMddHHmmssfff}{ext}";
-        var path     = Path.Combine(evidenceFolder, safeName);
- 
-        await using var stream = new FileStream(path, FileMode.Create);
-        await file.CopyToAsync(stream);
-        savedNames.Add(safeName);
-    }
- 
-    // Fill next available Files slots on AttrFiles record
-    FillFileSlots(fileRecord, savedNames, currentCount);
-    fileRecord.Evidence_Count = newTotal;
- 
-    // Update AttrPropertyInfo
-    var info = await _attrDb.AttrPropertyInfo
-        .FirstOrDefaultAsync(p => p.Attr_No == attrNo.Trim());
- 
-    if (info is not null)
-    {
-        info.Evidence_Count = newTotal;
-        info.Has_Client_Evidence = true;
-        info.Last_Evidence_Uploaded_DateTime = DateTime.Now;
-    }
- 
-    await _attrDb.SaveChangesAsync();
- 
-    return (true, null, newTotal, savedNames);
-}
- 
-private static void FillFileSlots(AttrFiles f, List<string> names, int startIndex)
-{
-    int slot = startIndex;
-    foreach (var name in names)
-    {
-        slot++;
-        switch (slot)
+        try
         {
-            case 1:  f.Files1  = name; break;
-            case 2:  f.Files2  = name; break;
-            case 3:  f.Files3  = name; break;
-            case 4:  f.Files4  = name; break;
-            case 5:  f.Files5  = name; break;
-            case 6:  f.Files6  = name; break;
-            case 7:  f.Files7  = name; break;
-            case 8:  f.Files8  = name; break;
-            case 9:  f.Files9  = name; break;
-            case 10: f.Files10 = name; break;
+            // 1. Find declaration by Attr_No + EvidencePin
+            var decl = await _attrDb.AttrDeclarations
+                .FirstOrDefaultAsync(d =>
+                    d.Attr_No == attrNo.Trim() &&
+                    d.EvidencePin == pin.Trim());
+
+            if (decl is null)
+                return AttrEvidenceValidateResult.Fail(
+                    "Invalid Attribute Number or PIN. Please check and try again.");
+
+            // 2. Check PIN is still active and within window
+            if (decl.PinIsActive != true ||
+                decl.PinExpiryDateTime == null ||
+                decl.PinExpiryDateTime <= DateTime.Now)
+                return AttrEvidenceValidateResult.Expired();
+
+            // 3. Get current file count + folder from AttrFiles
+            var files = await _attrDb.AttrFiles
+                .FirstOrDefaultAsync(f => f.Attr_No == attrNo.Trim());
+
+            int currentCount = files?.Evidence_Count ?? 0;
+            string? rootFolder = files?.RootFolder;
+
+            if (currentCount >= 10)
+                return AttrEvidenceValidateResult.Fail(
+                    "This submission already has the maximum of 10 evidence files.");
+
+            // 4. Get property description from AttrPropertyInfo
+            var info = await _attrDb.AttrPropertyInfo
+                .FirstOrDefaultAsync(p => p.Attr_No == attrNo.Trim());
+
+            return AttrEvidenceValidateResult.Ok(
+                currentCount,
+                attrNo.Trim(),
+                info?.Property_Desc,
+                rootFolder,
+                decl.PinExpiryDateTime);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,
+                "[AttrEvidence] ValidateAttribute failed for {AttrNo}", attrNo);
+            return AttrEvidenceValidateResult.Fail(
+                "A system error occurred. Please try again.");
         }
     }
-}
+
+
+    // ── UploadAttributeEvidenceAsync ─────────────────────────────────
+
+    public async Task<(bool Success, string? Error, int NewCount, List<string> FileNames)>
+        UploadAttributeEvidenceAsync(
+            string attrNo, int currentCount, List<IFormFile> files)
+    {
+        int newTotal = currentCount + files.Count;
+        if (newTotal > 10)
+            return (false,
+                $"Cannot upload {files.Count} file(s). " +
+                $"You have {currentCount} files and the maximum is 10.",
+                currentCount, new());
+
+        // Get root folder from AttrFiles
+        var fileRecord = await _attrDb.AttrFiles
+            .FirstOrDefaultAsync(f => f.Attr_No == attrNo.Trim());
+
+        if (fileRecord is null)
+            return (false, "Submission file record not found.", currentCount, new());
+
+        // Save to \Attribute Lodged Evidence subfolder
+        var evidenceFolder = Path.Combine(
+            fileRecord.RootFolder ?? string.Empty,
+            "Attribute Lodged Evidence");
+
+        Directory.CreateDirectory(evidenceFolder);
+
+        var savedNames = new List<string>();
+        int slotIndex = currentCount;
+
+        foreach (var file in files)
+        {
+            if (file.Length > MAX_FILE_MB * 1024 * 1024)
+                return (false,
+                    $"'{file.FileName}' exceeds {MAX_FILE_MB} MB limit.",
+                    currentCount, new());
+
+            slotIndex++;
+            var ext = Path.GetExtension(file.FileName);
+            var safeName = $"{attrNo}_Additional_Evidence_{slotIndex}" +
+                           $"_{DateTime.Now:yyyyMMddHHmmssfff}{ext}";
+            var path = Path.Combine(evidenceFolder, safeName);
+
+            await using var stream = new FileStream(path, FileMode.Create);
+            await file.CopyToAsync(stream);
+            savedNames.Add(safeName);
+        }
+
+        // Fill next available Files slots on AttrFiles record
+        FillFileSlots(fileRecord, savedNames, currentCount);
+        fileRecord.Evidence_Count = newTotal;
+
+        // Update AttrPropertyInfo
+        var info = await _attrDb.AttrPropertyInfo
+            .FirstOrDefaultAsync(p => p.Attr_No == attrNo.Trim());
+
+        if (info is not null)
+        {
+            info.Evidence_Count = newTotal;
+            info.Has_Client_Evidence = true;
+            info.Last_Evidence_Uploaded_DateTime = DateTime.Now;
+        }
+
+        await _attrDb.SaveChangesAsync();
+
+        return (true, null, newTotal, savedNames);
+    }
+
+    private static void FillFileSlots(AttrFiles f, List<string> names, int startIndex)
+    {
+        int slot = startIndex;
+        foreach (var name in names)
+        {
+            slot++;
+            switch (slot)
+            {
+                case 1: f.Files1 = name; break;
+                case 2: f.Files2 = name; break;
+                case 3: f.Files3 = name; break;
+                case 4: f.Files4 = name; break;
+                case 5: f.Files5 = name; break;
+                case 6: f.Files6 = name; break;
+                case 7: f.Files7 = name; break;
+                case 8: f.Files8 = name; break;
+                case 9: f.Files9 = name; break;
+                case 10: f.Files10 = name; break;
+            }
+        }
+    }
 }

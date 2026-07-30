@@ -65,8 +65,10 @@
             => "<span class='cd-pill cd-pill-inprogress'>Obj-InProgress</span>",
         "Obj-Lodging"
             => "<span class='cd-pill cd-pill-lodging'>Obj-Lodging</span>",
-        "App-Unallocated" or "App-Lodging"
-            => "<span class='cd-pill cd-pill-pending'>@status</span>",
+        "App-Unallocated"
+            => "<span class='cd-pill cd-pill-pending'>Appeal Pending</span>",
+        "App-Lodging"
+            => "<span class='cd-pill cd-pill-lodging'>Appeal Lodged</span>",
         "App-Finalized"
             => "<span class='cd-pill cd-pill-completed'>App-Finalized</span>",
         _ => $"<span class='cd-pill cd-pill-completed'>{status}</span>"
@@ -1005,57 +1007,120 @@
                                                                     data-bs-toggle="dropdown">
                                                                 Actions
                                                             </button>
-                                                            <ul class="dropdown-menu">
+                                                            <ul class="dropdown-menu cd-action-menu">
+                                                                @{
+                                                                    var appealReference =
+                                                                        !string.IsNullOrWhiteSpace(item.Appeal_No)
+                                                                            ? item.Appeal_No
+                                                                            : item.Objection_No;
+
+                                                                    var viewAppealSubmissionUrl =
+                                                                        Url.RouteUrl(
+                                                                            "ViewSubmission",
+                                                                            new
+                                                                            {
+                                                                                submissionType = "Appeal",
+                                                                                referenceNumber = appealReference,
+                                                                                rollSource = roll.Source,
+                                                                                returnUrl = Url.Action(
+                                                                                    "Index",
+                                                                                    "Admin",
+                                                                                    new
+                                                                                    {
+                                                                                        openRoll = roll.Source
+                                                                                    })
+                                                                            });
+                                                                }
+
                                                                 <li>
-                                                                   @{
-    var refNo = !string.IsNullOrWhiteSpace(item.Appeal_No)
-        ? item.Appeal_No
-        : item.Objection_No;
-
-    var viewAppealFormUrl =
-        "/admin/enquiry/form-view"
-        + "?referenceNo=" + Uri.EscapeDataString(refNo ?? "")
-        + "&rollSource=" + Uri.EscapeDataString(roll.Source ?? "")
-        + "&propertyType=" + Uri.EscapeDataString(item.Property_Type ?? "")
-        + "&appealStatus=True"
-        + "&isQuery=false";
-}
-
-<a class="dropdown-item"
-   href="@viewAppealFormUrl"
-   target="_blank">
-    <i class="fa-solid fa-eye"></i> View Appeal Form
-</a>
+                                                                    <a class="dropdown-item"
+                                                                       href="@viewAppealSubmissionUrl">
+                                                                        <i class="fa-solid fa-eye"></i>
+                                                                        <span>View Submitted Appeal</span>
+                                                                    </a>
                                                                 </li>
 
-                                                                 @if ( item.objection_Status == "App-Unallocated")
-                                                                {
-                                                                    @if (User.Identity?.IsAuthenticated == true)
-                                                                        {
-                                                                            <a class="btn btn-sm btn-primary"
-                                                                                   href="/evidence/verify?objectionNo=@item.Objection_No&rollSource=@roll.Source">
-                                                                                <i class="fa-solid fa-upload"></i> Add Evidence
-                                                                            </a>
-                                                                        }
-                                                                    
-                                                                }
-                                                                   @if (item.objection_Status == "App-Finalized" )
+                                                                <li>
+                                                                    <a class="dropdown-item"
+                                                                       href="/notice/acknowledgement/download?objectionNo=@appealReference&rollSource=@roll.Source"
+                                                                       onclick="logAction(
+                                                                           'DownloadAck',
+                                                                           '@roll.Source',
+                                                                           '@appealReference')">
+                                                                        <i class="fa-solid fa-file-arrow-down"></i>
+                                                                        <span>Download Acknowledgement</span>
+                                                                    </a>
+                                                                </li>
+
+                                                                @if (item.IsEvidenceWindowOpen)
                                                                 {
                                                                     <li>
-                                                                        <a class="dropdown-item"
-                                                                               href="/@roll.ControllerName/DownloadAppeal?ObjectionNum=@item.Objection_No"
-                                                                               onclick="logAction('DownloadDecision', '@roll.Source', '@item.Objection_No')">
-                                                                            Download Appeal Notice
+                                                                        <a class="dropdown-item cd-action-primary"
+                                                                           href="/evidence/verify?objectionNo=@appealReference&rollSource=@roll.Source">
+                                                                            <i class="fa-solid fa-upload"></i>
+                                                                            <span>Add Evidence</span>
                                                                         </a>
                                                                     </li>
-                     
+
+                                                                    @if (item.EvidenceExpiresAt.HasValue)
+                                                                    {
+                                                                        <li>
+                                                                            <span class="dropdown-item-text text-muted"
+                                                                                  style="font-size:11px;">
+                                                                                Evidence closes:
+                                                                                @item.EvidenceExpiresAt.Value.ToString(
+                                                                                    "dd MMM yyyy HH:mm")
+                                                                            </span>
+                                                                        </li>
+                                                                    }
                                                                 }
-                                                                @if (item.objection_Status == "App-Lodging" || item.objection_Status == "App-Unallocated")
+                                                                else if (item.objection_Status is
+                                                                    "App-Lodging" or "App-Unallocated")
+                                                                {
+                                                                    <li>
+                                                                        <span class="dropdown-item disabled"
+                                                                              aria-disabled="true">
+                                                                            <i class="fa-solid fa-lock"></i>
+                                                                            <span>Evidence Window Closed</span>
+                                                                        </span>
+                                                                    </li>
+
+                                                                    @if (item.EvidenceExpiresAt.HasValue)
+                                                                    {
+                                                                        <li>
+                                                                            <span class="dropdown-item-text text-muted"
+                                                                                  style="font-size:11px;">
+                                                                                Closed:
+                                                                                @item.EvidenceExpiresAt.Value.ToString(
+                                                                                    "dd MMM yyyy HH:mm")
+                                                                            </span>
+                                                                        </li>
+                                                                    }
+                                                                }
+
+                                                                @if (item.objection_Status == "App-Finalized")
                                                                 {
                                                                     <li>
                                                                         <a class="dropdown-item"
-                                                                               href="/@roll.ControllerName/Withdrawal?ObjectionNum=@item.Objection_No&Withdraw=AppealSup1">
-                                                                            Withdraw
+                                                                           href="/@roll.ControllerName/DownloadAppeal?ObjectionNum=@appealReference"
+                                                                           onclick="logAction(
+                                                                               'DownloadDecision',
+                                                                               '@roll.Source',
+                                                                               '@appealReference')">
+                                                                            <i class="fa-solid fa-file-pdf"></i>
+                                                                            <span>Download Appeal Notice</span>
+                                                                        </a>
+                                                                    </li>
+                                                                }
+
+                                                                @if (item.objection_Status is
+                                                                    "App-Lodging" or "App-Unallocated")
+                                                                {
+                                                                    <li>
+                                                                        <a class="dropdown-item cd-action-danger"
+                                                                           href="/objection/withdraw?objectionNo=@appealReference&withdrawType=Appeal&rollSource=@roll.Source&returnUrl=/admin">
+                                                                            <i class="fa-solid fa-ban"></i>
+                                                                            <span>Withdraw Appeal</span>
                                                                         </a>
                                                                     </li>
                                                                 }

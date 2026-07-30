@@ -34,7 +34,8 @@ namespace V2_Genesis.Models
 
         [StringLength(25)]
         public string? Appeal_Status { get; set; }
-
+        public DateTime? Appeal_Start_DateTime { get; set; }
+        
 
     }
 

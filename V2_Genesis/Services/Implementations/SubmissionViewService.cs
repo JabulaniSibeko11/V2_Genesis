@@ -79,7 +79,8 @@ namespace V2_Genesis.Services.Implementations
             string referenceNumber,
             string rollSource,
             string userId,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default,
+            bool allowAdministrativeAccess = false)
         {
             if (string.IsNullOrWhiteSpace(referenceNumber))
                 return SubmissionViewResult.Fail("The submission reference number is required.");
@@ -109,12 +110,13 @@ namespace V2_Genesis.Services.Implementations
                             cancellationToken),
 
                     "Objection" or "Appeal" =>
-                        await LoadObjectionOrAppealAsync(
-                            type,
-                            cleanReference,
-                            NormalizeRollSource(rollSource),
-                            userId,
-                            cancellationToken),
+                          await LoadObjectionOrAppealAsync(
+        type,
+        cleanReference,
+        NormalizeRollSource(rollSource),
+        userId,
+        cancellationToken,
+        allowAdministrativeAccess),
 
                     _ =>
                         SubmissionViewResult.Fail(
@@ -297,7 +299,8 @@ namespace V2_Genesis.Services.Implementations
             string referenceNumber,
             string rollSource,
             string userId,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken,
+            bool allowAdministrativeAccess)
         {
             var isAppeal =
                 submissionType.Equals(
@@ -355,7 +358,8 @@ namespace V2_Genesis.Services.Implementations
 
             resultSets.Add(main);
 
-            if (!BelongsToUser(main, userId, isAppeal))
+            if (!allowAdministrativeAccess
+                && !BelongsToUser(main, userId, isAppeal))
             {
                 return SubmissionViewResult.Fail(
                     "This submission does not belong to your account.");

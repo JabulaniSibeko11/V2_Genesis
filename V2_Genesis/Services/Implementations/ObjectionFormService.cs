@@ -389,8 +389,8 @@ public class ObjectionFormService : IObjectionFormService
         string rollSource,
         ObjectionRollEntry cfg,
         string userId,
-        string propertyFrom,
         string? objAppeal,
+        string propertyFrom,
         Obj_Property_InfoModel obj,
         Obj_Section1Model obj1,
         Obj_Section2Model obj2,
@@ -414,7 +414,8 @@ public class ObjectionFormService : IObjectionFormService
 
         appeal.A_UserID = userId;
         appeal.Appeal_Status = "App-Lodging";
-        appeal.Obj_Ref = objAppeal;
+        appeal.Appeal_Start_DateTime = DateTime.Now;
+        appeal.Obj_Ref = objAppeal?.Trim();
 
         // Important: set these BEFORE first SaveChangesAsync().
         appeal.Appeal_Type = obj.Objector_Type;
@@ -445,6 +446,16 @@ public class ObjectionFormService : IObjectionFormService
             db.Obj_Property_Info_Appeal.Update(appeal);
             await db.SaveChangesAsync();
         }
+
+        // Copy the complete Objection pack into the Appeal folder.
+        // The copied pack is stored in a subfolder named with the original
+        // Objection number and does not count against the Appeal's own
+        // maximum of 10 evidence uploads.
+        await CopyObjectionPackToAppealAsync(
+            cfg.FileRootPath,
+            cfg.AppealRootPath,
+            objAppeal,
+            appNo);
 
         // Keep obj in sync because the PDF service uses obj + appeal.
         obj.Property_Type = appealPropertyType;
@@ -551,6 +562,108 @@ public class ObjectionFormService : IObjectionFormService
             IsMulti = isMulti,
             IsAppeal = true
         };
+    }
+
+    private async Task CopyObjectionPackToAppealAsync(
+        string objectionRootPath,
+        string appealRootPath,
+        string? objectionNo,
+        string appealNo)
+    {
+        if (string.IsNullOrWhiteSpace(objectionNo)
+            || string.IsNullOrWhiteSpace(appealNo))
+        {
+            _logger.LogWarning(
+                "[Appeal Pack] Objection or Appeal reference is missing. " +
+                "Objection={ObjectionNo}, Appeal={AppealNo}",
+                objectionNo,
+                appealNo);
+
+            return;
+        }
+
+        var cleanObjectionNo = objectionNo.Trim();
+        var cleanAppealNo = appealNo.Trim();
+
+        var sourceFolder =
+            Path.Combine(
+                objectionRootPath,
+                cleanObjectionNo);
+
+        if (!Directory.Exists(sourceFolder))
+        {
+            _logger.LogWarning(
+                "[Appeal Pack] Objection folder was not found: {Folder}",
+                sourceFolder);
+
+            return;
+        }
+
+        var appealFolder =
+            Path.Combine(
+                appealRootPath,
+                cleanAppealNo);
+
+        var destinationFolder =
+            Path.Combine(
+                appealFolder,
+                cleanObjectionNo);
+
+        Directory.CreateDirectory(destinationFolder);
+
+        await Task.Run(() =>
+        {
+            CopyDirectoryRecursive(
+                sourceFolder,
+                destinationFolder);
+        });
+
+        _logger.LogInformation(
+            "[Appeal Pack] Copied Objection pack {ObjectionNo} " +
+            "into Appeal {AppealNo}. Destination={Destination}",
+            cleanObjectionNo,
+            cleanAppealNo,
+            destinationFolder);
+    }
+
+    private static void CopyDirectoryRecursive(
+        string sourceFolder,
+        string destinationFolder)
+    {
+        Directory.CreateDirectory(destinationFolder);
+
+        foreach (var sourceFile in
+                 Directory.EnumerateFiles(sourceFolder))
+        {
+            var fileName =
+                Path.GetFileName(sourceFile);
+
+            var destinationFile =
+                Path.Combine(
+                    destinationFolder,
+                    fileName);
+
+            File.Copy(
+                sourceFile,
+                destinationFile,
+                overwrite: true);
+        }
+
+        foreach (var sourceSubFolder in
+                 Directory.EnumerateDirectories(sourceFolder))
+        {
+            var folderName =
+                Path.GetFileName(sourceSubFolder);
+
+            var destinationSubFolder =
+                Path.Combine(
+                    destinationFolder,
+                    folderName);
+
+            CopyDirectoryRecursive(
+                sourceSubFolder,
+                destinationSubFolder);
+        }
     }
 
     private async Task GeneratePdfAndSendEmailAsync(
@@ -704,30 +817,16 @@ public class ObjectionFormService : IObjectionFormService
                 submittedFormPdf.PdfBytes.Length,
                 submittedFormPdf.FilePath);
 
-            // 4. Attach the populated submitted form PDF.
-            // For an Appeal this is mandatory together with the
-            // acknowledgement PDF.
-            var submittedFormAttachment =
+            // 4. Attach populated form PDF to email
+            var extraAttachments = new List<EmailAttachment>
+            {
                 new EmailAttachment
                 {
                     FileName = submittedFormPdf.FileName,
                     FileBytes = submittedFormPdf.PdfBytes,
                     ContentType = MediaTypeNames.Application.Pdf
-                };
-
-            if (isAppeal
-                && (submittedFormAttachment.FileBytes is null
-                    || submittedFormAttachment.FileBytes.Length == 0))
-            {
-                throw new InvalidOperationException(
-                    $"The populated Appeal form attachment is empty for {referenceNo}.");
-            }
-
-            var extraAttachments =
-                new List<EmailAttachment>
-                {
-                    submittedFormAttachment
-                };
+                }
+            };
 
             // 5. Generate Section 49 only for an objection against a property
             // that exists on the valuation roll. LIS and Omission submissions
@@ -800,18 +899,11 @@ public class ObjectionFormService : IObjectionFormService
         }
         catch (Exception ex)
         {
+            // Submission already saved, so we only log the PDF/email issue.
             _logger.LogError(
                 ex,
                 "[ObjectionFormService] Failed to generate PDFs/send email for {ReferenceNo}",
                 referenceNo);
-
-            // Appeal submission must not report that the complete process
-            // succeeded when the acknowledgement package was not created
-            // or emailed. The Appeal database record remains available for
-            // controlled recovery and the duplicate protection prevents a
-            // second Appeal from being created.
-            if (isAppeal)
-                throw;
         }
     }
     private static bool ShouldGenerateSection49(
