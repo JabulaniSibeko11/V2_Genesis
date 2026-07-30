@@ -54,7 +54,7 @@ public class ObjectionController : Controller
         _config = config;
         _noticeService = noticeService;
         _section78Service = section78Service;
-        _dashboardService = dashboardService;   
+        _dashboardService = dashboardService;
 
         _supportingDocumentService = supportingDocumentService;
         _logger = logger;
@@ -64,6 +64,33 @@ public class ObjectionController : Controller
     new(@"^val\.admin(1[0-9]?|[1-9])@joburg\.org\.za$",
         System.Text.RegularExpressions.RegexOptions.IgnoreCase |
         System.Text.RegularExpressions.RegexOptions.Compiled);
+
+    private bool IsAdminAppealRequest()
+    {
+        var email =
+            User.FindFirstValue(ClaimTypes.Email)
+            ?? User.FindFirstValue(ClaimTypes.Name)
+            ?? HttpContext.Session.GetString("AdminAppEmail")
+            ?? string.Empty;
+
+        return email.Equals(
+                   "AdministrationEnquiries@Joburg.org.za",
+                   StringComparison.OrdinalIgnoreCase)
+               || AdminEmailRx.IsMatch(email);
+    }
+
+    private IActionResult RedirectAfterAppealBlock(string rollSource)
+    {
+        return IsAdminAppealRequest()
+            ? RedirectToAction(
+                "Index",
+                "Admin",
+                new { openRoll = rollSource })
+            : RedirectToAction(
+                "Index",
+                "Dashboard",
+                new { openRoll = rollSource });
+    }
 
     [HttpGet]
     [Route("objection/check")]
@@ -235,10 +262,7 @@ public class ObjectionController : Controller
             {
                 TempData["LodgementWindowError"] = objectionWindow.Message;
 
-                return RedirectToAction("Index", "Dashboard", new
-                {
-                    openRoll = rollSource
-                });
+                return RedirectAfterAppealBlock(rollSource);
             }
         }
 
@@ -326,8 +350,56 @@ public class ObjectionController : Controller
         }
         else
         {
-            if (isAppeal && !string.IsNullOrEmpty(objectionNo))
+            if (isAppeal)
             {
+                if (string.IsNullOrWhiteSpace(objectionNo))
+                {
+                    TempData["LodgementWindowError"] =
+                        "The objection reference number is required before an appeal can be lodged.";
+
+                    return RedirectAfterAppealBlock(rollSource);
+                }
+
+                var eligibility =
+                    await _objectionService.CheckAppealEligibilityAsync(
+                        rollSource: rollSource,
+                        objectionNo: objectionNo,
+                        unitKey: unitKey,
+                        valuationKey: valuationKey,
+                        propertyDesc: null);
+
+                if (!eligibility.CanLodge)
+                {
+                    TempData["LodgementWindowError"] = eligibility.Message;
+
+                    if (eligibility.AppealCloseDate.HasValue)
+                    {
+                        TempData["AppealCloseDate"] =
+                            eligibility.AppealCloseDate.Value
+                                .ToString("dd MMMM yyyy");
+                    }
+
+                    if (eligibility.ExistingAppealFound)
+                    {
+                        TempData["DuplicateLodgementError"] =
+                            eligibility.Message;
+                        TempData["DuplicateReferenceNo"] =
+                            eligibility.ExistingAppealNumber;
+                        TempData["DuplicateStatus"] =
+                            eligibility.ExistingAppealStatus;
+                    }
+
+                    return RedirectAfterAppealBlock(rollSource);
+                }
+
+                // Preserve the original Objection reference through
+                // CheckProperty -> Appeal form -> Appeal submission.
+                TempData["ObjectionNum"] = objectionNo.Trim();
+                HttpContext.Session.SetString(
+                    "ObjectionNum",
+                    objectionNo.Trim());
+                TempData.Keep("ObjectionNum");
+
                 items = await _objectionService
                     .GetPropertyForAppealAsync(rollSource, objectionNo);
             }
@@ -346,59 +418,42 @@ public class ObjectionController : Controller
             var d = items.First();
 
             // ============================================================
-            // APPEAL PERIOD CHECK
-            // Appeal dates come from dbo.Objection_MVD:
-            // Appeal_Start_Date / Appeal_Close_Date
-            // or Appeal_Start_Date_ReviseMVD / Appeal_Close_Date_ReviseMVD
-            // ============================================================
-            if (isAppeal)
-            {
-                var appealWindow = await _objectionService.CheckAppealWindowAsync(
-                    rollSource: rollSource,
-                    objectionNo: objectionNo,
-                    unitKey: d.UnitKey,
-                    valuationKey: d.ValuationKey,
-                    propertyDesc: d.PropertyDesc);
-
-                if (!appealWindow.IsOpen)
-                {
-                    TempData["LodgementWindowError"] = appealWindow.Message;
-
-                    return RedirectToAction("Index", "Dashboard", new
-                    {
-                        openRoll = rollSource
-                    });
-                }
-            }
-
-            // ============================================================
             // DUPLICATE LODGEMENT CHECK
-            // Blocks duplicate objection/appeal before form opens.
+            //
+            // Appeal duplicates were already checked by
+            // CheckAppealEligibilityAsync against
+            // Obj_Property_Info_Appeal. Do not run the generic check
+            // again because the existing Objection is the valid parent
+            // record for the Appeal.
             // ============================================================
-            var duplicate = await _objectionService.CheckDuplicateLodgementAsync(
-                rollSource: rollSource,
-                sourceTable: sourceTable,
-                unitKey: d.UnitKey,
-                valuationKey: d.ValuationKey,
-                propertyDesc: d.PropertyDesc,
-                isAppeal: isAppeal);
-
-            if (duplicate.Exists)
+            if (!isAppeal)
             {
-                var typeWord = isAppeal ? "appeal" : "objection";
+                var duplicate =
+                    await _objectionService.CheckDuplicateLodgementAsync(
+                        rollSource: rollSource,
+                        sourceTable: sourceTable,
+                        unitKey: d.UnitKey,
+                        valuationKey: d.ValuationKey,
+                        propertyDesc: d.PropertyDesc,
+                        isAppeal: false);
 
-                TempData["DuplicateLodgementError"] =
-                    $"This property already has an {typeWord} lodged or in progress. " +
-                    "You cannot lodge it again. Please contact the Valuation team.";
-
-                TempData["DuplicateReferenceNo"] = duplicate.ReferenceNo;
-                TempData["DuplicateStatus"] = duplicate.Status;
-                TempData["DuplicatePropertyDescription"] = duplicate.PropertyDescription;
-
-                return RedirectToAction("Index", "Dashboard", new
+                if (duplicate.Exists)
                 {
-                    openRoll = rollSource
-                });
+                    TempData["DuplicateLodgementError"] =
+                        "This property already has an objection lodged or in progress. " +
+                        "You cannot lodge it again. Please contact the Valuation team.";
+
+                    TempData["DuplicateReferenceNo"] =
+                        duplicate.ReferenceNo;
+
+                    TempData["DuplicateStatus"] =
+                        duplicate.Status;
+
+                    TempData["DuplicatePropertyDescription"] =
+                        duplicate.PropertyDescription;
+
+                    return RedirectAfterAppealBlock(rollSource);
+                }
             }
 
             TempData["CurrentFilter_PD"] = d.PropertyDesc;
@@ -864,6 +919,7 @@ public class ObjectionController : Controller
         var keys = new[]
         {
         "AppealStatus",
+        "ObjectionNum",
 
         "CurrentFilter_PD",
         "CurrentFilter_Prop",
@@ -926,6 +982,7 @@ public class ObjectionController : Controller
         var keys = new[]
         {
         "AppealStatus",
+        "ObjectionNum",
 
         "RollSource",
         "SourceTable",

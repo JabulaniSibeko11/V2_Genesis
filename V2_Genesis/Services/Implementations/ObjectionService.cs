@@ -26,7 +26,7 @@ public class ObjectionService : IObjectionService
         ["GV23-SUP2"] = ("Sup2Connection", "CheckPropertyFromSup2"),
         ["GV23-SUP1"] = ("Sup1Connection", "CheckPropertyFromSup1"),
         ["GV23"] = ("DefaultConnection", "CheckProperty")
-        
+
     };
 
     // ── sourceTable → MVC controller name ─────────────────────────────
@@ -38,7 +38,7 @@ public class ObjectionService : IObjectionService
         ["GV23-SUP2"] = "Sup2",
         ["GV23-SUP1"] = "Sup1",
         ["GV23"] = "Objection",
-       
+
     };
 
     // ── rollSource → MVC controller name ──────────────────────────────
@@ -330,10 +330,10 @@ public class ObjectionService : IObjectionService
             PropertyId = r.Property_ID?.ToString(),
             ValuationKey = NormalizeKey(r.Valuation_Key),
 
-            Sector = r.sector?.ToString() ,
+            Sector = r.sector?.ToString(),
 
             // Use SAP address as extra owner/postal address if you need it later
-           
+
         }).ToList();
     }
     private static int ToInt(object? value)
@@ -618,6 +618,169 @@ WHERE
             CloseDate = closeDate
         });
     }
+
+    public async Task<AppealEligibilityResult> CheckAppealEligibilityAsync(
+        string rollSource,
+        string objectionNo,
+        string? unitKey,
+        string? valuationKey,
+        string? propertyDesc)
+    {
+        rollSource = NormalizeRollSource(rollSource);
+        objectionNo = objectionNo?.Trim() ?? string.Empty;
+        unitKey = FloatKeyHelper.Normalize(unitKey);
+        valuationKey = FloatKeyHelper.Normalize(valuationKey);
+        propertyDesc = propertyDesc?.Trim();
+
+        if (string.IsNullOrWhiteSpace(objectionNo))
+        {
+            return new AppealEligibilityResult();
+        }
+
+        var connectionKey = GetConnectionKeyFromRollSource(rollSource);
+        var connectionString =
+            _config.GetConnectionString(connectionKey)
+            ?? _config.GetConnectionString("DefaultConnection");
+
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            throw new InvalidOperationException(
+                $"Connection string '{connectionKey}' was not found.");
+        }
+
+        const string sql = @"
+SELECT TOP (1)
+    obj.Objection_No,
+    obj.objection_Status,
+    obj.Property_Desc,
+    obj.Unit_key,
+    obj.Valuation_Key,
+
+    mvd.Appeal_Start_Date,
+    mvd.Appeal_Close_Date,
+    mvd.Appeal_Start_Date_ReviseMVD,
+    mvd.Appeal_Close_Date_ReviseMVD,
+    mvd.Revise_MVD,
+
+    existing.Appeal_No AS Existing_Appeal_No,
+    existing.Appeal_Status AS Existing_Appeal_Status
+FROM dbo.Obj_Property_Info AS obj
+OUTER APPLY
+(
+    SELECT TOP (1)
+        x.Appeal_Start_Date,
+        x.Appeal_Close_Date,
+        x.Appeal_Start_Date_ReviseMVD,
+        x.Appeal_Close_Date_ReviseMVD,
+        x.Revise_MVD
+    FROM dbo.Objection_MVD1 AS x
+    WHERE LTRIM(RTRIM(x.Objection_No)) = LTRIM(RTRIM(obj.Objection_No))
+    ORDER BY x.Batch_Date DESC
+) AS mvd
+OUTER APPLY
+(
+    SELECT TOP (1)
+        appeal.Appeal_No,
+        appeal.Appeal_Status
+    FROM dbo.Obj_Property_Info_Appeal AS appeal
+    WHERE
+        LTRIM(RTRIM(ISNULL(appeal.Obj_Ref, '')))
+            = LTRIM(RTRIM(obj.Objection_No))
+        OR
+        (
+            NULLIF(@ValuationKey, '') IS NOT NULL
+            AND CAST(appeal.A_Valuation_Key AS NVARCHAR(100)) = @ValuationKey
+        )
+        OR
+        (
+            NULLIF(@UnitKey, '') IS NOT NULL
+            AND CAST(appeal.A_Unit_key AS NVARCHAR(100)) = @UnitKey
+        )
+        OR
+        (
+            NULLIF(@PropertyDesc, '') IS NOT NULL
+            AND LTRIM(RTRIM(appeal.A_Property_Desc))
+                = LTRIM(RTRIM(@PropertyDesc))
+        )
+    ORDER BY appeal.Appeal_ID DESC
+) AS existing
+WHERE LTRIM(RTRIM(obj.Objection_No)) = LTRIM(RTRIM(@ObjectionNo));";
+
+        await using var connection = new SqlConnection(connectionString);
+
+        var row = await connection.QueryFirstOrDefaultAsync(sql, new
+        {
+            ObjectionNo = objectionNo,
+            UnitKey = unitKey ?? string.Empty,
+            ValuationKey = valuationKey ?? string.Empty,
+            PropertyDesc = propertyDesc ?? string.Empty
+        });
+
+        if (row is null)
+        {
+            return new AppealEligibilityResult
+            {
+                ObjectionNumber = objectionNo
+            };
+        }
+
+        var status = row.objection_Status?.ToString()?.Trim() ?? string.Empty;
+        var reviseText = row.Revise_MVD?.ToString()?.Trim() ?? string.Empty;
+
+        var usesRevisedDates =
+            reviseText.Equals("True", StringComparison.OrdinalIgnoreCase)
+            || reviseText.Equals("Yes", StringComparison.OrdinalIgnoreCase)
+            || reviseText.Equals("1", StringComparison.OrdinalIgnoreCase)
+            || !string.IsNullOrWhiteSpace(
+                row.Appeal_Close_Date_ReviseMVD?.ToString());
+
+        DateTime? startDate = null;
+        DateTime? closeDate = null;
+
+        if (usesRevisedDates)
+        {
+            startDate = TryDate(row.Appeal_Start_Date_ReviseMVD);
+            closeDate = TryDate(row.Appeal_Close_Date_ReviseMVD);
+        }
+
+        startDate ??= TryDate(row.Appeal_Start_Date);
+        closeDate ??= TryDate(row.Appeal_Close_Date);
+
+        var today = TodaySa();
+        var periodExists = startDate.HasValue && closeDate.HasValue;
+        var periodOpen =
+            periodExists
+            && today >= startDate!.Value.Date
+            && today <= closeDate!.Value.Date;
+
+        var existingAppealNumber =
+            row.Existing_Appeal_No?.ToString()?.Trim() ?? string.Empty;
+
+        var existingAppealStatus =
+            row.Existing_Appeal_Status?.ToString()?.Trim() ?? string.Empty;
+
+        return new AppealEligibilityResult
+        {
+            ObjectionExists = true,
+            HasNoticeSentStatus = status.Equals(
+                "Notice-Sent",
+                StringComparison.OrdinalIgnoreCase),
+            AppealPeriodExists = periodExists,
+            IsAppealPeriodOpen = periodOpen,
+            ExistingAppealFound =
+                !string.IsNullOrWhiteSpace(existingAppealNumber)
+                || !string.IsNullOrWhiteSpace(existingAppealStatus),
+            UsesRevisedMvdDates = usesRevisedDates,
+            ObjectionNumber = row.Objection_No?.ToString()?.Trim() ?? objectionNo,
+            ObjectionStatus = status,
+            PropertyDescription = row.Property_Desc?.ToString()?.Trim() ?? string.Empty,
+            AppealStartDate = startDate,
+            AppealCloseDate = closeDate,
+            ExistingAppealNumber = existingAppealNumber,
+            ExistingAppealStatus = existingAppealStatus
+        };
+    }
+
     public async Task<LodgementWindowResult> CheckAppealWindowAsync(
     string rollSource,
     string? objectionNo,

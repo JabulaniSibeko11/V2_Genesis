@@ -45,5 +45,12 @@ namespace V2_Genesis.Services.Interfaces
             string? unitKey,
             string? valuationKey,
             string? propertyDesc);
+
+        Task<AppealEligibilityResult> CheckAppealEligibilityAsync(
+            string rollSource,
+            string objectionNo,
+            string? unitKey,
+            string? valuationKey,
+            string? propertyDesc);
     }
 }

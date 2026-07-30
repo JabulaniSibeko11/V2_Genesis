@@ -38,8 +38,8 @@
 }
 
 @section Styles {
-    <link href="~/css/views/objection.css"          rel="stylesheet" asp-append-version="true" />
-    <link href="~/css/views/property-search.css"    rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/views/objection.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/views/property-search.css" rel="stylesheet" asp-append-version="true" />
     <link href="~/css/views/clientdashboardcss.css" rel="stylesheet" asp-append-version="true" />
     <link href="~/css/views/site.css" rel="stylesheet" asp-append-version="true" />
     <link href="~/css/views/check-property.css" rel="stylesheet" asp-append-version="true" />
@@ -145,10 +145,10 @@
                     <i class="fa-solid fa-circle-check"></i>
                     <span id="continueBtnText">
                         Continue to @(isQuery
-                            ? section78ProcessName
-                        : Model.IsAppeal
-                            ? "Appeal"
-                            : "Objection") Form
+                                                    ? section78ProcessName
+                                            : Model.IsAppeal
+                                                ? "Appeal"
+                                                : "Objection") Form
                     </span>
                 </button>
             </div>
@@ -168,7 +168,7 @@
                             @:Details of the property you are submitting a Section 78
                             @section78ProcessName.ToLowerInvariant()
                             @:for
-  }
+                        }
                         else
                         {
                             @:Details of the property you are
@@ -176,168 +176,168 @@
                         }
                     </span>
                 </div>
-               <div class="cp-card-body">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                <div class="cp-card-body">
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
 
-        @if (Model.IsOmission)
-        {
-            <div style="grid-column:1/-1;display:inline-flex;align-items:center;gap:8px;
-                 padding:8px 14px;border-radius:8px;background:#fff7ed;
-                 border:1.5px solid #fed7aa;font-size:13px;font-weight:700;color:#c2410c;">
-                <i class="fa-solid fa-circle-exclamation"></i>
-                Omitted Property — Not on Valuation Roll
-            </div>
-            @if (!string.IsNullOrWhiteSpace(Model.OmittedTownName))
-            {
-                <div style="display:flex;flex-direction:column;gap:4px;padding:12px 14px;
-                     border-radius:9px;background:#f8f9fa;border:1.5px solid #f0f0f0;">
-                    <span style="font-size:10px;font-weight:700;letter-spacing:1px;color:#36626d;
-                          text-transform:uppercase;display:flex;align-items:center;gap:5px;">
-                        <i class="fa-solid fa-map-pin" style="color:#e6b000;"></i>Township
-                    </span>
-                    <span style="font-size:13.5px;font-weight:600;color:#1a2e35;">
-                        @Model.OmittedTownName
-                    </span>
-                </div>
-            }
-            @if (!string.IsNullOrWhiteSpace(Model.OmittedPropertyDesc))
-            {
-                <div style="display:flex;flex-direction:column;gap:4px;padding:12px 14px;
-                     border-radius:9px;background:#f8f9fa;border:1.5px solid #f0f0f0;">
-                    <span style="font-size:10px;font-weight:700;letter-spacing:1px;color:#36626d;
-                          text-transform:uppercase;display:flex;align-items:center;gap:5px;">
-                        <i class="fa-solid fa-file-alt" style="color:#e6b000;"></i>Property Description
-                    </span>
-                    <span style="font-size:13.5px;font-weight:600;color:#1a2e35;">
-                        @Model.OmittedPropertyDesc
-                    </span>
-                </div>
-            }
-            @if (!string.IsNullOrWhiteSpace(Model.OmittedAddress))
-            {
-                <div style="display:flex;flex-direction:column;gap:4px;padding:12px 14px;
-                     border-radius:9px;background:#f8f9fa;border:1.5px solid #f0f0f0;">
-                    <span style="font-size:10px;font-weight:700;letter-spacing:1px;color:#36626d;
-                          text-transform:uppercase;display:flex;align-items:center;gap:5px;">
-                        <i class="fa-solid fa-road" style="color:#e6b000;"></i>Address
-                    </span>
-                    <span style="font-size:13.5px;font-weight:600;color:#1a2e35;">
-                        @Model.OmittedAddress
-                    </span>
-                </div>
-            }
-            @if (!string.IsNullOrWhiteSpace(Model.OmittedStand))
-            {
-                <div style="display:flex;flex-direction:column;gap:4px;padding:12px 14px;
-                     border-radius:9px;background:#f8f9fa;border:1.5px solid #f0f0f0;">
-                    <span style="font-size:10px;font-weight:700;letter-spacing:1px;color:#36626d;
-                          text-transform:uppercase;display:flex;align-items:center;gap:5px;">
-                        <i class="fa-solid fa-hashtag" style="color:#e6b000;"></i>ERF / Stand
-                    </span>
-                    <span style="font-size:13.5px;font-weight:600;color:#1a2e35;">
-                        @Model.OmittedStand
-                    </span>
-                </div>
-            }
-        }
-        else if (isQuery && q is not null)
-        {
-            <div style="display:flex;flex-direction:column;gap:4px;padding:12px 14px;
-                 border-radius:9px;background:#f8f9fa;border:1.5px solid #f0f0f0;">
-                <span style="font-size:10px;font-weight:700;letter-spacing:1px;color:#36626d;
-                      text-transform:uppercase;display:flex;align-items:center;gap:5px;">
-                    <i class="fa-solid fa-file-alt" style="color:#e6b000;"></i>Property Description
-                </span>
-                <span style="font-size:13.5px;font-weight:600;color:#1a2e35;">
-                    @(q.PropertyDesc ?? "N/A")
-                </span>
-            </div>
-            <div style="display:flex;flex-direction:column;gap:4px;padding:12px 14px;
-                 border-radius:9px;background:#f8f9fa;border:1.5px solid #f0f0f0;">
-                <span style="font-size:10px;font-weight:700;letter-spacing:1px;color:#36626d;
-                      text-transform:uppercase;display:flex;align-items:center;gap:5px;">
-                    <i class="fa-solid fa-home" style="color:#e6b000;"></i>Address
-                </span>
-                <span style="font-size:13.5px;font-weight:600;color:#1a2e35;">
-                    @(q.LisStreetAddress ?? "N/A")
-                </span>
-            </div>
-            <div style="display:flex;flex-direction:column;gap:4px;padding:12px 14px;
-                 border-radius:9px;background:#f8f9fa;border:1.5px solid #f0f0f0;">
-                <span style="font-size:10px;font-weight:700;letter-spacing:1px;color:#36626d;
-                      text-transform:uppercase;display:flex;align-items:center;gap:5px;">
-                    <i class="fa-solid fa-tag" style="color:#e6b000;"></i>Category
-                </span>
-                <span style="font-size:13.5px;font-weight:600;color:#1a2e35;">
-                    @(q.CatDesc ?? "N/A")
-                </span>
-            </div>
-            <div style="display:flex;flex-direction:column;gap:4px;padding:12px 14px;
-                 border-radius:9px;background:#f8f9fa;border:1.5px solid #f0f0f0;">
-                <span style="font-size:10px;font-weight:700;letter-spacing:1px;color:#36626d;
-                      text-transform:uppercase;display:flex;align-items:center;gap:5px;">
-                    <i class="fa-solid fa-city" style="color:#e6b000;"></i>Township
-                </span>
-                <span style="font-size:13.5px;font-weight:600;color:#1a2e35;">
-                    @(q.TownNameDesc ?? "N/A")
-                </span>
-            </div>
-        }
-        else if (d is not null)
-        {
-            <div style="display:flex;flex-direction:column;gap:4px;padding:12px 14px;
-                 border-radius:9px;background:#f8f9fa;border:1.5px solid #f0f0f0;">
-                <span style="font-size:10px;font-weight:700;letter-spacing:1px;color:#36626d;
-                      text-transform:uppercase;display:flex;align-items:center;gap:5px;">
-                    <i class="fa-solid fa-file-alt" style="color:#e6b000;"></i>Property Description
-                </span>
-                <span style="font-size:13.5px;font-weight:600;color:#1a2e35;">
-                    @(d.PropertyDesc ?? "N/A")
-                </span>
-            </div>
-            <div style="display:flex;flex-direction:column;gap:4px;padding:12px 14px;
-                 border-radius:9px;background:#f8f9fa;border:1.5px solid #f0f0f0;">
-                <span style="font-size:10px;font-weight:700;letter-spacing:1px;color:#36626d;
-                      text-transform:uppercase;display:flex;align-items:center;gap:5px;">
-                    <i class="fa-solid fa-home" style="color:#e6b000;"></i>Address
-                </span>
-                <span style="font-size:13.5px;font-weight:600;color:#1a2e35;">
-                    @(d.LisStreetAddress ?? "N/A")
-                </span>
-            </div>
-            <div style="display:flex;flex-direction:column;gap:4px;padding:12px 14px;
-                 border-radius:9px;background:#f8f9fa;border:1.5px solid #f0f0f0;">
-                <span style="font-size:10px;font-weight:700;letter-spacing:1px;color:#36626d;
-                      text-transform:uppercase;display:flex;align-items:center;gap:5px;">
-                    <i class="fa-solid fa-tag" style="color:#e6b000;"></i>Category
-                </span>
-                <span style="font-size:13.5px;font-weight:600;color:#1a2e35;">
-                    @(d.CatDesc ?? "N/A")
-                </span>
-            </div>
-            <div style="display:flex;flex-direction:column;gap:4px;padding:12px 14px;
-                 border-radius:9px;background:#f8f9fa;border:1.5px solid #f0f0f0;">
-                <span style="font-size:10px;font-weight:700;letter-spacing:1px;color:#36626d;
-                      text-transform:uppercase;display:flex;align-items:center;gap:5px;">
-                    <i class="fa-solid fa-city" style="color:#e6b000;"></i>Township
-                </span>
-                <span style="font-size:13.5px;font-weight:600;color:#1a2e35;">
-                    @(d.TownNameDesc ?? "N/A")
-                </span>
-            </div>
-        }
-        else
-        {
+                        @if (Model.IsOmission)
+                        {
+                            <div style="grid-column:1/-1;display:inline-flex;align-items:center;gap:8px;
+                                padding:8px 14px;border-radius:8px;background:#fff7ed;
+                                border:1.5px solid #fed7aa;font-size:13px;font-weight:700;color:#c2410c;">
+                                <i class="fa-solid fa-circle-exclamation"></i>
+                                Omitted Property — Not on Valuation Roll
+                            </div>
+                            @if (!string.IsNullOrWhiteSpace(Model.OmittedTownName))
+                            {
+                                <div style="display:flex;flex-direction:column;gap:4px;padding:12px 14px;
+                                    border-radius:9px;background:#f8f9fa;border:1.5px solid #f0f0f0;">
+                                    <span style="font-size:10px;font-weight:700;letter-spacing:1px;color:#36626d;
+                                        text-transform:uppercase;display:flex;align-items:center;gap:5px;">
+                                        <i class="fa-solid fa-map-pin" style="color:#e6b000;"></i>Township
+                                    </span>
+                                    <span style="font-size:13.5px;font-weight:600;color:#1a2e35;">
+                                        @Model.OmittedTownName
+                                    </span>
+                                </div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(Model.OmittedPropertyDesc))
+                            {
+                                <div style="display:flex;flex-direction:column;gap:4px;padding:12px 14px;
+                                    border-radius:9px;background:#f8f9fa;border:1.5px solid #f0f0f0;">
+                                    <span style="font-size:10px;font-weight:700;letter-spacing:1px;color:#36626d;
+                                        text-transform:uppercase;display:flex;align-items:center;gap:5px;">
+                                        <i class="fa-solid fa-file-alt" style="color:#e6b000;"></i>Property Description
+                                    </span>
+                                    <span style="font-size:13.5px;font-weight:600;color:#1a2e35;">
+                                        @Model.OmittedPropertyDesc
+                                    </span>
+                                </div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(Model.OmittedAddress))
+                            {
+                                <div style="display:flex;flex-direction:column;gap:4px;padding:12px 14px;
+                                    border-radius:9px;background:#f8f9fa;border:1.5px solid #f0f0f0;">
+                                    <span style="font-size:10px;font-weight:700;letter-spacing:1px;color:#36626d;
+                                        text-transform:uppercase;display:flex;align-items:center;gap:5px;">
+                                        <i class="fa-solid fa-road" style="color:#e6b000;"></i>Address
+                                    </span>
+                                    <span style="font-size:13.5px;font-weight:600;color:#1a2e35;">
+                                        @Model.OmittedAddress
+                                    </span>
+                                </div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(Model.OmittedStand))
+                            {
+                                <div style="display:flex;flex-direction:column;gap:4px;padding:12px 14px;
+                                    border-radius:9px;background:#f8f9fa;border:1.5px solid #f0f0f0;">
+                                    <span style="font-size:10px;font-weight:700;letter-spacing:1px;color:#36626d;
+                                        text-transform:uppercase;display:flex;align-items:center;gap:5px;">
+                                        <i class="fa-solid fa-hashtag" style="color:#e6b000;"></i>ERF / Stand
+                                    </span>
+                                    <span style="font-size:13.5px;font-weight:600;color:#1a2e35;">
+                                        @Model.OmittedStand
+                                    </span>
+                                </div>
+                            }
+                        }
+                        else if (isQuery && q is not null)
+                        {
+                            <div style="display:flex;flex-direction:column;gap:4px;padding:12px 14px;
+                                border-radius:9px;background:#f8f9fa;border:1.5px solid #f0f0f0;">
+                                <span style="font-size:10px;font-weight:700;letter-spacing:1px;color:#36626d;
+                                    text-transform:uppercase;display:flex;align-items:center;gap:5px;">
+                                    <i class="fa-solid fa-file-alt" style="color:#e6b000;"></i>Property Description
+                                </span>
+                                <span style="font-size:13.5px;font-weight:600;color:#1a2e35;">
+                                    @(q.PropertyDesc ?? "N/A")
+                                </span>
+                            </div>
+                            <div style="display:flex;flex-direction:column;gap:4px;padding:12px 14px;
+                                border-radius:9px;background:#f8f9fa;border:1.5px solid #f0f0f0;">
+                                <span style="font-size:10px;font-weight:700;letter-spacing:1px;color:#36626d;
+                                    text-transform:uppercase;display:flex;align-items:center;gap:5px;">
+                                    <i class="fa-solid fa-home" style="color:#e6b000;"></i>Address
+                                </span>
+                                <span style="font-size:13.5px;font-weight:600;color:#1a2e35;">
+                                    @(q.LisStreetAddress ?? "N/A")
+                                </span>
+                            </div>
+                            <div style="display:flex;flex-direction:column;gap:4px;padding:12px 14px;
+                                border-radius:9px;background:#f8f9fa;border:1.5px solid #f0f0f0;">
+                                <span style="font-size:10px;font-weight:700;letter-spacing:1px;color:#36626d;
+                                    text-transform:uppercase;display:flex;align-items:center;gap:5px;">
+                                    <i class="fa-solid fa-tag" style="color:#e6b000;"></i>Category
+                                </span>
+                                <span style="font-size:13.5px;font-weight:600;color:#1a2e35;">
+                                    @(q.CatDesc ?? "N/A")
+                                </span>
+                            </div>
+                            <div style="display:flex;flex-direction:column;gap:4px;padding:12px 14px;
+                                border-radius:9px;background:#f8f9fa;border:1.5px solid #f0f0f0;">
+                                <span style="font-size:10px;font-weight:700;letter-spacing:1px;color:#36626d;
+                                    text-transform:uppercase;display:flex;align-items:center;gap:5px;">
+                                    <i class="fa-solid fa-city" style="color:#e6b000;"></i>Township
+                                </span>
+                                <span style="font-size:13.5px;font-weight:600;color:#1a2e35;">
+                                    @(q.TownNameDesc ?? "N/A")
+                                </span>
+                            </div>
+                        }
+                        else if (d is not null)
+                        {
+                            <div style="display:flex;flex-direction:column;gap:4px;padding:12px 14px;
+                                border-radius:9px;background:#f8f9fa;border:1.5px solid #f0f0f0;">
+                                <span style="font-size:10px;font-weight:700;letter-spacing:1px;color:#36626d;
+                                    text-transform:uppercase;display:flex;align-items:center;gap:5px;">
+                                    <i class="fa-solid fa-file-alt" style="color:#e6b000;"></i>Property Description
+                                </span>
+                                <span style="font-size:13.5px;font-weight:600;color:#1a2e35;">
+                                    @(d.PropertyDesc ?? "N/A")
+                                </span>
+                            </div>
+                            <div style="display:flex;flex-direction:column;gap:4px;padding:12px 14px;
+                                border-radius:9px;background:#f8f9fa;border:1.5px solid #f0f0f0;">
+                                <span style="font-size:10px;font-weight:700;letter-spacing:1px;color:#36626d;
+                                    text-transform:uppercase;display:flex;align-items:center;gap:5px;">
+                                    <i class="fa-solid fa-home" style="color:#e6b000;"></i>Address
+                                </span>
+                                <span style="font-size:13.5px;font-weight:600;color:#1a2e35;">
+                                    @(d.LisStreetAddress ?? "N/A")
+                                </span>
+                            </div>
+                            <div style="display:flex;flex-direction:column;gap:4px;padding:12px 14px;
+                                border-radius:9px;background:#f8f9fa;border:1.5px solid #f0f0f0;">
+                                <span style="font-size:10px;font-weight:700;letter-spacing:1px;color:#36626d;
+                                    text-transform:uppercase;display:flex;align-items:center;gap:5px;">
+                                    <i class="fa-solid fa-tag" style="color:#e6b000;"></i>Category
+                                </span>
+                                <span style="font-size:13.5px;font-weight:600;color:#1a2e35;">
+                                    @(d.CatDesc ?? "N/A")
+                                </span>
+                            </div>
+                            <div style="display:flex;flex-direction:column;gap:4px;padding:12px 14px;
+                                border-radius:9px;background:#f8f9fa;border:1.5px solid #f0f0f0;">
+                                <span style="font-size:10px;font-weight:700;letter-spacing:1px;color:#36626d;
+                                    text-transform:uppercase;display:flex;align-items:center;gap:5px;">
+                                    <i class="fa-solid fa-city" style="color:#e6b000;"></i>Township
+                                </span>
+                                <span style="font-size:13.5px;font-weight:600;color:#1a2e35;">
+                                    @(d.TownNameDesc ?? "N/A")
+                                </span>
+                            </div>
+                        }
+                        else
+                        {
             
-            <div style="grid-column:1/-1;padding:16px;text-align:center;
-                 color:#9aa3af;font-size:13px;font-style:italic;">
-                <i class="fa-solid fa-circle-exclamation" style="margin-right:6px;color:#e6b000;"></i>
-                Property details could not be loaded. Please go back and try again.
-            </div>
-        }
+                            <div style="grid-column:1/-1;padding:16px;text-align:center;
+                                color:#9aa3af;font-size:13px;font-style:italic;">
+                                <i class="fa-solid fa-circle-exclamation" style="margin-right:6px;color:#e6b000;"></i>
+                                Property details could not be loaded. Please go back and try again.
+                            </div>
+                        }
 
-    </div>
-</div>
+                    </div>
+                </div>
             </div>
 
           
@@ -415,7 +415,12 @@
                                    onchange="onTypeSelect('objectorType','obj-feedback')" />
                             <div class="obj-radio-content">
                                 <i class="fa-solid fa-user-check"></i>
-                                <strong>Owner</strong>
+                                <strong>@(Model.IsAppeal ? "Owner Appellant" : "Owner")</strong>
+                                <small>
+                                    @(Model.IsAppeal
+                                        ? "The registered owner is lodging the appeal"
+                                        : "The registered owner is lodging the objection")
+                                </small>
                             </div>
                             <div class="obj-radio-check"><i class="fa-solid fa-circle-check"></i></div>
                         </label>
@@ -427,7 +432,12 @@
                                        onchange="onTypeSelect('objectorType','obj-feedback')" />
                                 <div class="obj-radio-content">
                                     <i class="fa-solid fa-users"></i>
-                                    <strong>Third Party</strong>
+                                    <strong>@(Model.IsAppeal ? "Third-Party Appellant" : "Third Party")</strong>
+                                    <small>
+                                        @(Model.IsAppeal
+                                            ? "A person other than the owner is lodging the appeal"
+                                            : "A person other than the owner is lodging the objection")
+                                    </small>
                                 </div>
                                 <div class="obj-radio-check"><i class="fa-solid fa-circle-check"></i></div>
                             </label>
@@ -438,7 +448,12 @@
                                    onchange="onTypeSelect('objectorType','obj-feedback')" />
                             <div class="obj-radio-content">
                                 <i class="fa-solid fa-user-tie"></i>
-                                <strong>Representative</strong>
+                                <strong>@(Model.IsAppeal ? "Appellant Representative" : "Representative")</strong>
+                                <small>
+                                    @(Model.IsAppeal
+                                        ? "An authorised representative is lodging for the appellant"
+                                        : "An authorised representative is lodging for the objector")
+                                </small>
                             </div>
                             <div class="obj-radio-check"><i class="fa-solid fa-circle-check"></i></div>
                         </label>
@@ -456,8 +471,8 @@
                     <div class="cp-card-hdr">
                         <i class="fa-solid
                             @(isReview
-                                               ? "fa-magnifying-glass-chart"
-                                               : "fa-file-magnifying-glass")">
+                                                                          ? "fa-magnifying-glass-chart"
+                                                                          : "fa-file-magnifying-glass")">
                         </i>
 
                         Section 78 @section78ProcessName
@@ -516,49 +531,49 @@
                             <input type="hidden" id="Direct" value="" />
 
                             <a asp-controller="Section78" asp-action="Section78Query"
-                               asp-route-qtype="Query" asp-route-Direct=""
-                               asp-route-PropDesc="@(isQuery ? q?.PropertyDesc : d?.PropertyDesc)"
-                               asp-route-addr="@(isQuery ? q?.LisStreetAddress : d?.LisStreetAddress)"
-                               asp-route-cat="@(isQuery ? q?.CatDesc : d?.CatDesc)"
-                               asp-route-UKey="@(isQuery ? q?.UnitKey : d?.UnitKey)"
-                               asp-route-VKey="@(isQuery ? q?.ValuationKey : d?.ValuationKey)"
-                               id="btn_choice" class="obj-lodge-btn" hidden>
+                                   asp-route-qtype="Query" asp-route-Direct=""
+                                   asp-route-PropDesc="@(isQuery ? q?.PropertyDesc : d?.PropertyDesc)"
+                                   asp-route-addr="@(isQuery ? q?.LisStreetAddress : d?.LisStreetAddress)"
+                                   asp-route-cat="@(isQuery ? q?.CatDesc : d?.CatDesc)"
+                                   asp-route-UKey="@(isQuery ? q?.UnitKey : d?.UnitKey)"
+                                   asp-route-VKey="@(isQuery ? q?.ValuationKey : d?.ValuationKey)"
+                                   id="btn_choice" class="obj-lodge-btn" hidden>
                                 <i class="fa-solid fa-file-magnifying-glass"></i>
                                 Lodge Section 78 Query
                             </a>
 
                             <a asp-controller="Section78" asp-action="Section78Query"
-                               asp-route-qtype="Review" asp-route-Direct=""
-                               asp-route-PropDesc="@(isQuery ? q?.PropertyDesc : d?.PropertyDesc)"
-                               asp-route-addr="@(isQuery ? q?.LisStreetAddress : d?.LisStreetAddress)"
-                               asp-route-cat="@(isQuery ? q?.CatDesc : d?.CatDesc)"
-                               asp-route-UKey="@(isQuery ? q?.UnitKey : d?.UnitKey)"
-                               asp-route-VKey="@(isQuery ? q?.ValuationKey : d?.ValuationKey)"
-                               id="btn_choice1" class="obj-lodge-btn" hidden>
+                                   asp-route-qtype="Review" asp-route-Direct=""
+                                   asp-route-PropDesc="@(isQuery ? q?.PropertyDesc : d?.PropertyDesc)"
+                                   asp-route-addr="@(isQuery ? q?.LisStreetAddress : d?.LisStreetAddress)"
+                                   asp-route-cat="@(isQuery ? q?.CatDesc : d?.CatDesc)"
+                                   asp-route-UKey="@(isQuery ? q?.UnitKey : d?.UnitKey)"
+                                   asp-route-VKey="@(isQuery ? q?.ValuationKey : d?.ValuationKey)"
+                                   id="btn_choice1" class="obj-lodge-btn" hidden>
                                 <i class="fa-solid fa-magnifying-glass"></i>
                                 Lodge Section 78 Review
                             </a>
 
                             <a asp-controller="Section78" asp-action="Section78Query"
-                               asp-route-qtype="Query" asp-route-Direct="Multi"
-                               asp-route-PropDesc="@(isQuery ? q?.PropertyDesc : d?.PropertyDesc)"
-                               asp-route-addr="@(isQuery ? q?.LisStreetAddress : d?.LisStreetAddress)"
-                               asp-route-cat="@(isQuery ? q?.CatDesc : d?.CatDesc)"
-                               asp-route-UKey="@(isQuery ? q?.UnitKey : d?.UnitKey)"
-                               asp-route-VKey="@(isQuery ? q?.ValuationKey : d?.ValuationKey)"
-                               id="btn_choiceM" class="obj-lodge-btn" hidden>
+                                   asp-route-qtype="Query" asp-route-Direct="Multi"
+                                   asp-route-PropDesc="@(isQuery ? q?.PropertyDesc : d?.PropertyDesc)"
+                                   asp-route-addr="@(isQuery ? q?.LisStreetAddress : d?.LisStreetAddress)"
+                                   asp-route-cat="@(isQuery ? q?.CatDesc : d?.CatDesc)"
+                                   asp-route-UKey="@(isQuery ? q?.UnitKey : d?.UnitKey)"
+                                   asp-route-VKey="@(isQuery ? q?.ValuationKey : d?.ValuationKey)"
+                                   id="btn_choiceM" class="obj-lodge-btn" hidden>
                                 <i class="fa-solid fa-file-magnifying-glass"></i>
                                 Lodge Section 78 Query (Multi)
                             </a>
 
                             <a asp-controller="Section78" asp-action="Section78Query"
-                               asp-route-qtype="Review" asp-route-Direct="Multi"
-                               asp-route-PropDesc="@(isQuery ? q?.PropertyDesc : d?.PropertyDesc)"
-                               asp-route-addr="@(isQuery ? q?.LisStreetAddress : d?.LisStreetAddress)"
-                               asp-route-cat="@(isQuery ? q?.CatDesc : d?.CatDesc)"
-                               asp-route-UKey="@(isQuery ? q?.UnitKey : d?.UnitKey)"
-                               asp-route-VKey="@(isQuery ? q?.ValuationKey : d?.ValuationKey)"
-                               id="btn_choiceM1" class="obj-lodge-btn" hidden>
+                                   asp-route-qtype="Review" asp-route-Direct="Multi"
+                                   asp-route-PropDesc="@(isQuery ? q?.PropertyDesc : d?.PropertyDesc)"
+                                   asp-route-addr="@(isQuery ? q?.LisStreetAddress : d?.LisStreetAddress)"
+                                   asp-route-cat="@(isQuery ? q?.CatDesc : d?.CatDesc)"
+                                   asp-route-UKey="@(isQuery ? q?.UnitKey : d?.UnitKey)"
+                                   asp-route-VKey="@(isQuery ? q?.ValuationKey : d?.ValuationKey)"
+                                   id="btn_choiceM1" class="obj-lodge-btn" hidden>
                                 <i class="fa-solid fa-magnifying-glass"></i>
                                 Lodge Section 78 Review (Multi)
                             </a>
@@ -672,259 +687,259 @@
 <script asp-append-version="true" src="~/js/QueryIndex.js" type="text/javascript"></script>
 
 @section Scripts {
-<script>
-var CONTROLLER = '@Model.ControllerName';
-var SOURCE     = '@Model.SourceTable';
-var IS_LIS     = SOURCE === 'LIS';
-var IS_QUERY   = @(Model.IsQuery ? "true" : "false");
+    <script>
+        var CONTROLLER = '@Model.ControllerName';
+        var SOURCE     = '@Model.SourceTable';
+        var IS_LIS     = SOURCE === 'LIS';
+        var IS_QUERY   = @(Model.IsQuery ? "true" : "false");
 
-var IS_APPEAL = (function () {
-    var fromRazor = '@Model.AppealStatus';
-    if (fromRazor === 'True' || fromRazor === 'False') return fromRazor === 'True';
-    var urlParam = new URLSearchParams(window.location.search).get('AppealStatus');
-    if (urlParam !== null) { sessionStorage.setItem('AppealStatus', urlParam); return urlParam === 'True'; }
-    return sessionStorage.getItem('AppealStatus') === 'True';
-})();
-sessionStorage.setItem('AppealStatus', IS_APPEAL ? 'True' : 'False');
+        var IS_APPEAL = (function () {
+            var fromRazor = '@Model.AppealStatus';
+            if (fromRazor === 'True' || fromRazor === 'False') return fromRazor === 'True';
+            var urlParam = new URLSearchParams(window.location.search).get('AppealStatus');
+            if (urlParam !== null) { sessionStorage.setItem('AppealStatus', urlParam); return urlParam === 'True'; }
+            return sessionStorage.getItem('AppealStatus') === 'True';
+        })();
+        sessionStorage.setItem('AppealStatus', IS_APPEAL ? 'True' : 'False');
 
-        var SECTION78_PROCESS =
-            '@(isReview ? "Review" : "Query")';
+                var SECTION78_PROCESS =
+                    '@(isReview ? "Review" : "Query")';
 
-        var property_type = "",
-            objector_type = "",
-            submission_type = SECTION78_PROCESS,
-            query_type = SECTION78_PROCESS,
-            direction = "Normal",
-            selectedProperty = '',
-            selectedObjector = '',
-            pendingUrl = '';
-    selectedProperty = '', selectedObjector = '', pendingUrl = '';
+                var property_type = "",
+                    objector_type = "",
+                    submission_type = SECTION78_PROCESS,
+                    query_type = SECTION78_PROCESS,
+                    direction = "Normal",
+                    selectedProperty = '',
+                    selectedObjector = '',
+                    pendingUrl = '';
+            selectedProperty = '', selectedObjector = '', pendingUrl = '';
 
-function onTypeSelect(name, feedbackId) {
-    var selected = document.querySelector('input[name="' + name + '"]:checked');
-    if (!selected) return;
-    document.querySelectorAll('input[name="' + name + '"]').forEach(function (r) {
-        r.closest('.obj-radio-card').classList.remove('selected');
-    });
-    selected.closest('.obj-radio-card').classList.add('selected');
-    var labels = { Res:'Residential', Agric:'Agricultural', Bus:'Business / Other',
-                   Multi:'Multiple Purposes', Owner:'Owner', Third_Party:'Third Party',
-                   Representative:'Representative' };
-    var feedback = document.getElementById(feedbackId);
-    if (feedback) feedback.innerHTML =
-        '<i class="fa-solid fa-circle-check" style="color:#22c55e;margin-right:5px;"></i>' +
-        'Selected: <strong>' + (labels[selected.value] || selected.value) + '</strong>';
-    if (IS_QUERY) {
-        if (name === 'propertyType') { property_type = selected.value; sessionStorage.setItem('property_choice', property_type); direction = (property_type === 'Multi') ? 'Multi' : 'Normal'; sessionStorage.setItem('direction', direction); }
-        if (name === 'objectorType') { objector_type = selected.value; sessionStorage.setItem('objector_choice', objector_type); }
-        checkQueryFormCompletion();
-    } else {
-        if (name === 'propertyType') { selectedProperty = selected.value; sessionStorage.setItem('property_choice', selectedProperty); }
-        if (name === 'objectorType') { selectedObjector = selected.value; sessionStorage.setItem('objector_choice', selectedObjector); localStorage.setItem('objectorType', selectedObjector); }
-        checkBothSelected();
-    }
-}
-
-function checkQueryFormCompletion() {
-    if (property_type && objector_type) {
-        document.getElementById("lodgeSection").style.display = "block";
-        updateQueryButtonVisibility(); updateLodgeSummary();
-        setTimeout(function() { document.getElementById('lodgeSection').scrollIntoView({behavior:'smooth',block:'nearest'}); }, 150);
-    } else { document.getElementById("lodgeSection").style.display = "none"; }
-}
-
-function updateQueryButtonVisibility() {
-    var isMulti = direction === 'Multi';
-    ['btn_choice','btn_choice1','btn_choiceM','btn_choiceM1'].forEach(function(id){ var el=document.getElementById(id); if(el) el.setAttribute('hidden',true); });
-    var targetId = isMulti ? (submission_type==='Query'?'btn_choiceM':'btn_choiceM1') : (submission_type==='Query'?'btn_choice':'btn_choice1');
-    var target = document.getElementById(targetId);
-    if (target) {
-        target.removeAttribute('hidden');
-        try { var url=new URL(target.href); url.searchParams.set('Direct',isMulti?'Multi':''); url.searchParams.set('objectorType',objector_type); target.href=url.toString(); } catch(e){}
-    }
-}
-
-function updateLodgeSummary() {
-    var propLabels = {Res:'Residential',Agric:'Agricultural',Bus:'Business / Other',Multi:'Multiple Purposes'};
-    var el = document.getElementById('lodgeSummary');
-    if (el) el.innerHTML = '<i class="fa-solid fa-circle-check" style="color:#22c55e;margin-right:6px;"></i>Section 78 Query as <strong>' + (objector_type==='Owner'?'Owner':'Representative') + '</strong> on a <strong>' + (propLabels[property_type]||property_type) + '</strong> property';
-}
-
-        function buildLodgeUrl(isMulti) {
-            var qs =
-                '?PropertyFrom=' + encodeURIComponent(SOURCE) +
-                '&objectorType=' + encodeURIComponent(selectedObjector) +
-                '&appeal=' + (IS_APPEAL ? 'True' : 'False');
-
-            // Do not hard-code Sup3 here.
-            // LIS/Omission must still go through the same Objection form route
-            // and keep PropertyFrom=LIS/Omission in TempData/form hidden fields.
-            return isMulti
-                ? '/objection/multipurpose' + qs
-                : '/objection/form' + qs;
-        }
-
-function checkBothSelected() {
-    if (!selectedProperty || !selectedObjector) return;
-    var isMulti = selectedProperty === 'Multi';
-    var url = buildLodgeUrl(isMulti);
-    localStorage.setItem('propertyType', selectedProperty); localStorage.setItem('sourceTable', SOURCE);
-    document.getElementById('lodgeSection').style.display = 'block';
-    var propLabels = {Res:'Residential',Agric:'Agricultural',Bus:'Business / Other',Multi:'Multiple Purposes'};
-    var objLabels  = {Owner:'Owner',Third_Party:'Third Party',Representative:'Representative'};
-    document.getElementById('lodgeSummary').innerHTML =
-        '<i class="fa-solid fa-circle-check" style="color:#22c55e;margin-right:6px;"></i>' +
-        (IS_APPEAL?'Appeal':'Objection') + ' as <strong>' + (objLabels[selectedObjector]||selectedObjector) +
-        '</strong> on a <strong>' + (propLabels[selectedProperty]||selectedProperty) + '</strong> property';
-    ['btn_choice','btn_choice1'].forEach(function(id){var el=document.getElementById(id);if(el) el.setAttribute('hidden',true);});
-    var target = document.getElementById(isMulti?'btn_choice1':'btn_choice');
-    if (target) { target.href=url; target.removeAttribute('hidden'); }
-    setTimeout(function(){ document.getElementById('lodgeSection').scrollIntoView({behavior:'smooth',block:'nearest'}); }, 200);
-}
-
-function onAgreeChange(cb) { document.getElementById('continueBtn').disabled = !cb.checked; }
-
-function showMainForm() {
-    document.getElementById('disclaimerSection').style.display = 'none';
-    var f = document.getElementById('mainForm'); f.style.display = 'flex';
-}
-
-document.addEventListener('click', function(e) {
-    var btn = e.target.closest('#btn_choice,#btn_choice1,#btn_choiceM,#btn_choiceM1');
-    if (!btn) return; e.preventDefault(); pendingUrl = btn.href;
-    document.getElementById('instrAgree').checked = false;
-    document.getElementById('startFormBtn').disabled = true;
-    document.getElementById('instrBackdrop').classList.add('show');
-    document.getElementById('instrModal').classList.add('show');
-    document.body.style.overflow = 'hidden';
-});
-
-function onInstrAgree(cb) { document.getElementById('startFormBtn').disabled = !cb.checked; }
-function closeInstrModal() { document.getElementById('instrBackdrop').classList.remove('show'); document.getElementById('instrModal').classList.remove('show'); document.body.style.overflow=''; pendingUrl=''; }
-function proceedToForm() { if (pendingUrl) window.location.href = pendingUrl; }
-document.getElementById('instrBackdrop')?.addEventListener('click', closeInstrModal);
-document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeInstrModal(); });
-
-function updateAppealLabels() {
-    if (!IS_APPEAL || IS_QUERY) return;
-    setText('pageTitle','Property Appeal System'); setText('pageSubtitle','Submit your property appeal online');
-    setText('disclaimerTitle','Disclaimer | Online Appeal'); setText('actionWord','appeal');
-    setText('continueBtnText','Continue to Appeal Form'); setText('propTypeSub','Choose the property type you want to appeal on');
-    setText('propInfoSub','Details of the property you are appealing'); setText('objectorTypeHeader','Appellant Type');
-    setText('objectorTypeSub','Choose the type of appellant'); setText('lodgeBtnText','Lodge Appeal');
-    setText('lodgeBtnText1','Lodge Appeal'); setText('modalTitle','Appeal Form Instructions');
-    setText('modalSubtitle','Please read all instructions carefully before starting your appeal');
-    setText('instrSection2Title','Appellant Type Requirements'); setText('startBtnWord','Appeal');
-    document.querySelectorAll('.instr-action-word').forEach(function(el){ el.textContent=el.textContent.replace(/objection/gi,'appeal').replace(/objector/gi,'appellant').replace(/object to/gi,'appeal'); });
-    document.querySelectorAll('.instr-action-word-cap').forEach(function(el){ el.textContent='Appeal'; });
-}
-
-               function updateQueryLabels() {
-            if (!IS_QUERY) {
-                return;
-            }
-
-            var processName =
-                SECTION78_PROCESS === 'Review'
-                    ? 'Review'
-                    : 'Query';
-
-            var processLower =
-                processName.toLowerCase();
-
-            setText(
-                'pageTitle',
-                'Property Section 78 ' + processName + ' System'
-            );
-
-            setText(
-                'pageSubtitle',
-                'Submit your Section 78 ' + processLower + ' online'
-            );
-
-            setText(
-                'disclaimerTitle',
-                'Disclaimer | Online Section 78 ' + processName
-            );
-
-            setText(
-                'actionWord',
-                'Section 78 ' + processLower
-            );
-
-            setText(
-                'continueBtnText',
-                'Continue to ' + processName + ' Form'
-            );
-
-            setText(
-                'propInfoSub',
-                'Details of the property for this Section 78 ' +
-                processLower
-            );
-
-            setText(
-                'propTypeSub',
-                'Choose the property type for this ' +
-                processLower
-            );
-
-            setText(
-                'objectorTypeHeader',
-                'Applicant Type'
-            );
-
-            setText(
-                'objectorTypeSub',
-                'Choose the type of applicant'
-            );
-
-            setText(
-                'startBtnWord',
-                processName
-            );
-
-            setText(
-                'modalTitle',
-                'Section 78 ' +
-                processName +
-                ' Form Instructions'
-            );
-
-            setText(
-                'modalSubtitle',
-                'Please read all instructions carefully before starting your ' +
-                processLower
-            );
-        }
-
-function setText(id, text) { var el=document.getElementById(id); if(el) el.textContent=text; }
-
-document.addEventListener('DOMContentLoaded', function() {
-    updateAppealLabels(); updateQueryLabels();
-    document.querySelectorAll('.obj-radio-card').forEach(function(card) {
-        card.addEventListener('click', function() {
-            var radio = card.querySelector('input[type="radio"]');
-            if (radio) { radio.checked=true; radio.dispatchEvent(new Event('change',{bubbles:true})); }
-        });
-    });
+        function onTypeSelect(name, feedbackId) {
+            var selected = document.querySelector('input[name="' + name + '"]:checked');
+            if (!selected) return;
+            document.querySelectorAll('input[name="' + name + '"]').forEach(function (r) {
+                r.closest('.obj-radio-card').classList.remove('selected');
+            });
+            selected.closest('.obj-radio-card').classList.add('selected');
+            var labels = { Res:'Residential', Agric:'Agricultural', Bus:'Business / Other',
+                           Multi:'Multiple Purposes', Owner:'Owner', Third_Party:'Third Party',
+                           Representative:'Representative' };
+            var feedback = document.getElementById(feedbackId);
+            if (feedback) feedback.innerHTML =
+                '<i class="fa-solid fa-circle-check" style="color:#22c55e;margin-right:5px;"></i>' +
+                'Selected: <strong>' + (labels[selected.value] || selected.value) + '</strong>';
             if (IS_QUERY) {
-            document.getElementById('sub_type')
-                ?.setAttribute(
-                    'value',
-                    SECTION78_PROCESS
-                );
+                if (name === 'propertyType') { property_type = selected.value; sessionStorage.setItem('property_choice', property_type); direction = (property_type === 'Multi') ? 'Multi' : 'Normal'; sessionStorage.setItem('direction', direction); }
+                if (name === 'objectorType') { objector_type = selected.value; sessionStorage.setItem('objector_choice', objector_type); }
+                checkQueryFormCompletion();
+            } else {
+                if (name === 'propertyType') { selectedProperty = selected.value; sessionStorage.setItem('property_choice', selectedProperty); }
+                if (name === 'objectorType') { selectedObjector = selected.value; sessionStorage.setItem('objector_choice', selectedObjector); localStorage.setItem('objectorType', selectedObjector); }
+                checkBothSelected();
+            }
+        }
 
-            submission_type =
-                SECTION78_PROCESS;
+        function checkQueryFormCompletion() {
+            if (property_type && objector_type) {
+                document.getElementById("lodgeSection").style.display = "block";
+                updateQueryButtonVisibility(); updateLodgeSummary();
+                setTimeout(function() { document.getElementById('lodgeSection').scrollIntoView({behavior:'smooth',block:'nearest'}); }, 150);
+            } else { document.getElementById("lodgeSection").style.display = "none"; }
+        }
 
-            query_type =
-                SECTION78_PROCESS;
-        var savedProp=sessionStorage.getItem('property_choice'), savedObj=sessionStorage.getItem('objector_choice');
-        if (savedProp) { var r=document.querySelector('input[name="propertyType"][value="'+savedProp+'"]'); if(r){r.checked=true;property_type=savedProp;direction=(savedProp==='Multi')?'Multi':'Normal';r.closest('.obj-radio-card')?.classList.add('selected');} }
-        if (savedObj)  { var r2=document.querySelector('input[name="objectorType"][value="'+savedObj+'"]'); if(r2){r2.checked=true;objector_type=savedObj;r2.closest('.obj-radio-card')?.classList.add('selected');} }
-        if (savedProp && savedObj) checkQueryFormCompletion();
-    }
-});
-</script>
+        function updateQueryButtonVisibility() {
+            var isMulti = direction === 'Multi';
+            ['btn_choice','btn_choice1','btn_choiceM','btn_choiceM1'].forEach(function(id){ var el=document.getElementById(id); if(el) el.setAttribute('hidden',true); });
+            var targetId = isMulti ? (submission_type==='Query'?'btn_choiceM':'btn_choiceM1') : (submission_type==='Query'?'btn_choice':'btn_choice1');
+            var target = document.getElementById(targetId);
+            if (target) {
+                target.removeAttribute('hidden');
+                try { var url=new URL(target.href); url.searchParams.set('Direct',isMulti?'Multi':''); url.searchParams.set('objectorType',objector_type); target.href=url.toString(); } catch(e){}
+            }
+        }
+
+        function updateLodgeSummary() {
+            var propLabels = {Res:'Residential',Agric:'Agricultural',Bus:'Business / Other',Multi:'Multiple Purposes'};
+            var el = document.getElementById('lodgeSummary');
+            if (el) el.innerHTML = '<i class="fa-solid fa-circle-check" style="color:#22c55e;margin-right:6px;"></i>Section 78 Query as <strong>' + (objector_type==='Owner'?'Owner':'Representative') + '</strong> on a <strong>' + (propLabels[property_type]||property_type) + '</strong> property';
+        }
+
+                function buildLodgeUrl(isMulti) {
+                    var qs =
+                        '?PropertyFrom=' + encodeURIComponent(SOURCE) +
+                        '&objectorType=' + encodeURIComponent(selectedObjector) +
+                        '&appeal=' + (IS_APPEAL ? 'True' : 'False');
+
+                    // Do not hard-code Sup3 here.
+                    // LIS/Omission must still go through the same Objection form route
+                    // and keep PropertyFrom=LIS/Omission in TempData/form hidden fields.
+                    return isMulti
+                        ? '/objection/multipurpose' + qs
+                        : '/objection/form' + qs;
+                }
+
+        function checkBothSelected() {
+            if (!selectedProperty || !selectedObjector) return;
+            var isMulti = selectedProperty === 'Multi';
+            var url = buildLodgeUrl(isMulti);
+            localStorage.setItem('propertyType', selectedProperty); localStorage.setItem('sourceTable', SOURCE);
+            document.getElementById('lodgeSection').style.display = 'block';
+            var propLabels = {Res:'Residential',Agric:'Agricultural',Bus:'Business / Other',Multi:'Multiple Purposes'};
+            var objLabels  = {Owner:'Owner',Third_Party:'Third Party',Representative:'Representative'};
+            document.getElementById('lodgeSummary').innerHTML =
+                '<i class="fa-solid fa-circle-check" style="color:#22c55e;margin-right:6px;"></i>' +
+                (IS_APPEAL?'Appeal':'Objection') + ' as <strong>' + (objLabels[selectedObjector]||selectedObjector) +
+                '</strong> on a <strong>' + (propLabels[selectedProperty]||selectedProperty) + '</strong> property';
+            ['btn_choice','btn_choice1'].forEach(function(id){var el=document.getElementById(id);if(el) el.setAttribute('hidden',true);});
+            var target = document.getElementById(isMulti?'btn_choice1':'btn_choice');
+            if (target) { target.href=url; target.removeAttribute('hidden'); }
+            setTimeout(function(){ document.getElementById('lodgeSection').scrollIntoView({behavior:'smooth',block:'nearest'}); }, 200);
+        }
+
+        function onAgreeChange(cb) { document.getElementById('continueBtn').disabled = !cb.checked; }
+
+        function showMainForm() {
+            document.getElementById('disclaimerSection').style.display = 'none';
+            var f = document.getElementById('mainForm'); f.style.display = 'flex';
+        }
+
+        document.addEventListener('click', function(e) {
+            var btn = e.target.closest('#btn_choice,#btn_choice1,#btn_choiceM,#btn_choiceM1');
+            if (!btn) return; e.preventDefault(); pendingUrl = btn.href;
+            document.getElementById('instrAgree').checked = false;
+            document.getElementById('startFormBtn').disabled = true;
+            document.getElementById('instrBackdrop').classList.add('show');
+            document.getElementById('instrModal').classList.add('show');
+            document.body.style.overflow = 'hidden';
+        });
+
+        function onInstrAgree(cb) { document.getElementById('startFormBtn').disabled = !cb.checked; }
+        function closeInstrModal() { document.getElementById('instrBackdrop').classList.remove('show'); document.getElementById('instrModal').classList.remove('show'); document.body.style.overflow=''; pendingUrl=''; }
+        function proceedToForm() { if (pendingUrl) window.location.href = pendingUrl; }
+        document.getElementById('instrBackdrop')?.addEventListener('click', closeInstrModal);
+        document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeInstrModal(); });
+
+        function updateAppealLabels() {
+            if (!IS_APPEAL || IS_QUERY) return;
+            setText('pageTitle','Property Appeal System'); setText('pageSubtitle','Submit your property appeal online');
+            setText('disclaimerTitle','Disclaimer | Online Appeal'); setText('actionWord','appeal');
+            setText('continueBtnText','Continue to Appeal Form'); setText('propTypeSub','Choose the property type you want to appeal on');
+            setText('propInfoSub','Details of the property you are appealing'); setText('objectorTypeHeader','Appellant Type');
+            setText('objectorTypeSub','Choose the type of appellant'); setText('lodgeBtnText','Lodge Appeal');
+            setText('lodgeBtnText1','Lodge Appeal'); setText('modalTitle','Appeal Form Instructions');
+            setText('modalSubtitle','Please read all instructions carefully before starting your appeal');
+            setText('instrSection2Title','Appellant Type Requirements'); setText('startBtnWord','Appeal');
+            document.querySelectorAll('.instr-action-word').forEach(function(el){ el.textContent=el.textContent.replace(/objection/gi,'appeal').replace(/objector/gi,'appellant').replace(/object to/gi,'appeal'); });
+            document.querySelectorAll('.instr-action-word-cap').forEach(function(el){ el.textContent='Appeal'; });
+        }
+
+                       function updateQueryLabels() {
+                    if (!IS_QUERY) {
+                        return;
+                    }
+
+                    var processName =
+                        SECTION78_PROCESS === 'Review'
+                            ? 'Review'
+                            : 'Query';
+
+                    var processLower =
+                        processName.toLowerCase();
+
+                    setText(
+                        'pageTitle',
+                        'Property Section 78 ' + processName + ' System'
+                    );
+
+                    setText(
+                        'pageSubtitle',
+                        'Submit your Section 78 ' + processLower + ' online'
+                    );
+
+                    setText(
+                        'disclaimerTitle',
+                        'Disclaimer | Online Section 78 ' + processName
+                    );
+
+                    setText(
+                        'actionWord',
+                        'Section 78 ' + processLower
+                    );
+
+                    setText(
+                        'continueBtnText',
+                        'Continue to ' + processName + ' Form'
+                    );
+
+                    setText(
+                        'propInfoSub',
+                        'Details of the property for this Section 78 ' +
+                        processLower
+                    );
+
+                    setText(
+                        'propTypeSub',
+                        'Choose the property type for this ' +
+                        processLower
+                    );
+
+                    setText(
+                        'objectorTypeHeader',
+                        'Applicant Type'
+                    );
+
+                    setText(
+                        'objectorTypeSub',
+                        'Choose the type of applicant'
+                    );
+
+                    setText(
+                        'startBtnWord',
+                        processName
+                    );
+
+                    setText(
+                        'modalTitle',
+                        'Section 78 ' +
+                        processName +
+                        ' Form Instructions'
+                    );
+
+                    setText(
+                        'modalSubtitle',
+                        'Please read all instructions carefully before starting your ' +
+                        processLower
+                    );
+                }
+
+        function setText(id, text) { var el=document.getElementById(id); if(el) el.textContent=text; }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            updateAppealLabels(); updateQueryLabels();
+            document.querySelectorAll('.obj-radio-card').forEach(function(card) {
+                card.addEventListener('click', function() {
+                    var radio = card.querySelector('input[type="radio"]');
+                    if (radio) { radio.checked=true; radio.dispatchEvent(new Event('change',{bubbles:true})); }
+                });
+            });
+                    if (IS_QUERY) {
+                    document.getElementById('sub_type')
+                        ?.setAttribute(
+                            'value',
+                            SECTION78_PROCESS
+                        );
+
+                    submission_type =
+                        SECTION78_PROCESS;
+
+                    query_type =
+                        SECTION78_PROCESS;
+                var savedProp=sessionStorage.getItem('property_choice'), savedObj=sessionStorage.getItem('objector_choice');
+                if (savedProp) { var r=document.querySelector('input[name="propertyType"][value="'+savedProp+'"]'); if(r){r.checked=true;property_type=savedProp;direction=(savedProp==='Multi')?'Multi':'Normal';r.closest('.obj-radio-card')?.classList.add('selected');} }
+                if (savedObj)  { var r2=document.querySelector('input[name="objectorType"][value="'+savedObj+'"]'); if(r2){r2.checked=true;objector_type=savedObj;r2.closest('.obj-radio-card')?.classList.add('selected');} }
+                if (savedProp && savedObj) checkQueryFormCompletion();
+            }
+        });
+    </script>
 }

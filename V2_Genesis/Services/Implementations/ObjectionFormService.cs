@@ -704,16 +704,30 @@ public class ObjectionFormService : IObjectionFormService
                 submittedFormPdf.PdfBytes.Length,
                 submittedFormPdf.FilePath);
 
-            // 4. Attach populated form PDF to email
-            var extraAttachments = new List<EmailAttachment>
-            {
+            // 4. Attach the populated submitted form PDF.
+            // For an Appeal this is mandatory together with the
+            // acknowledgement PDF.
+            var submittedFormAttachment =
                 new EmailAttachment
                 {
                     FileName = submittedFormPdf.FileName,
                     FileBytes = submittedFormPdf.PdfBytes,
                     ContentType = MediaTypeNames.Application.Pdf
-                }
-            };
+                };
+
+            if (isAppeal
+                && (submittedFormAttachment.FileBytes is null
+                    || submittedFormAttachment.FileBytes.Length == 0))
+            {
+                throw new InvalidOperationException(
+                    $"The populated Appeal form attachment is empty for {referenceNo}.");
+            }
+
+            var extraAttachments =
+                new List<EmailAttachment>
+                {
+                    submittedFormAttachment
+                };
 
             // 5. Generate Section 49 only for an objection against a property
             // that exists on the valuation roll. LIS and Omission submissions
@@ -786,11 +800,18 @@ public class ObjectionFormService : IObjectionFormService
         }
         catch (Exception ex)
         {
-            // Submission already saved, so we only log the PDF/email issue.
             _logger.LogError(
                 ex,
                 "[ObjectionFormService] Failed to generate PDFs/send email for {ReferenceNo}",
                 referenceNo);
+
+            // Appeal submission must not report that the complete process
+            // succeeded when the acknowledgement package was not created
+            // or emailed. The Appeal database record remains available for
+            // controlled recovery and the duplicate protection prevents a
+            // second Appeal from being created.
+            if (isAppeal)
+                throw;
         }
     }
     private static bool ShouldGenerateSection49(

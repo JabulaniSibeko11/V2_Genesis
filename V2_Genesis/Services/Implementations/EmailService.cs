@@ -163,18 +163,41 @@ namespace V2_Genesis.Services.Implementations
         {
             try
             {
-                var recipients = await ResolveRecipientsAsync(objectionRef, rollSource, isAppeal);
+                if (acknowledgementPdf is null
+                    || acknowledgementPdf.Length == 0)
+                {
+                    throw new InvalidOperationException(
+                        $"The acknowledgement PDF is empty for {objectionRef}.");
+                }
+
+                if (isAppeal
+                    && (extraAttachments is null
+                        || !extraAttachments.Any(x =>
+                            x.FileBytes is { Length: > 0 }
+                            && x.FileName.EndsWith(
+                                ".pdf",
+                                StringComparison.OrdinalIgnoreCase))))
+                {
+                    throw new InvalidOperationException(
+                        $"The populated Appeal form PDF is missing for {objectionRef}.");
+                }
+
+                var recipients =
+                    await ResolveRecipientsAsync(
+                        objectionRef,
+                        rollSource,
+                        isAppeal);
 
                 if (!recipients.Any())
                 {
-                    _logger.LogWarning(
-                        "[Email] No valid email addresses found for {ObjRef} — skipping.",
-                        objectionRef);
-
-                    return;
+                    throw new InvalidOperationException(
+                        $"No valid client email address was found for {objectionRef}.");
                 }
 
-                var rollTitle = RollTitles.GetValueOrDefault(rollSource, rollSource);
+                var rollTitle =
+                    RollTitles.GetValueOrDefault(
+                        rollSource,
+                        rollSource);
 
                 var submissionType = isAppeal ? "Appeal" : "Objection";
 
@@ -221,9 +244,12 @@ namespace V2_Genesis.Services.Implementations
                 }
 
                 _logger.LogInformation(
-                    "[Email] Sent {Count} acknowledgement email(s) for {ObjRef}",
+                    "[Email] Sent {Count} {SubmissionType} acknowledgement email(s) for {ObjRef}. AcknowledgementBytes={AcknowledgementBytes}, ExtraAttachments={ExtraAttachmentCount}",
                     recipients.Count,
-                    objectionRef);
+                    submissionType,
+                    objectionRef,
+                    acknowledgementPdf.Length,
+                    extraAttachments?.Count ?? 0);
             }
             catch (Exception ex)
             {
@@ -231,6 +257,8 @@ namespace V2_Genesis.Services.Implementations
                     ex,
                     "[Email] Failed sending acknowledgement for {ObjRef}",
                     objectionRef);
+
+                throw;
             }
         }
 
@@ -711,8 +739,9 @@ City of Johannesburg — Valuation Services Department<br>This is an automated m
         //    Third_Party    → Objector_Email
         //    Representative → Owner_Email + Rep_Email
         //
-        //  For appeals, Objector_Type is retrieved via:
-        //    Obj_Property_Info_Appeal.Obj_Ref → Obj_Property_Info.Objector_Type
+        //  For appeals, the current Appeal_Type is authoritative.
+        //  The original objection Objector_Type is only a fallback for
+        //  legacy appeal rows where Appeal_Type is empty.
         // ════════════════════════════════════════════════════════════
         private async Task<List<EmailRecipient>> ResolveRecipientsAsync(
      string objectionRef,
@@ -738,7 +767,10 @@ City of Johannesburg — Valuation Services Department<br>This is an automated m
                     s1.Objector_Email,
                     s1.Representative_name,
                     s1.Rep_Email,
-                    COALESCE(opi.Objector_Type, opia.Appeal_Type) AS Objector_Type
+                    COALESCE(
+                        NULLIF(LTRIM(RTRIM(opia.Appeal_Type)), ''),
+                        NULLIF(LTRIM(RTRIM(opi.Objector_Type)), '')
+                    ) AS Objector_Type
                 FROM dbo.Obj_Section1 s1
                 LEFT JOIN dbo.Obj_Property_Info_Appeal opia
                        ON opia.Appeal_No = @Ref
@@ -976,8 +1008,12 @@ City of Johannesburg — Valuation Services Department<br>This is an automated m
     </div>
  
     <p style='font-size:13px;color:#444;line-height:1.7;'>
-      Please find your official acknowledgement document attached to this email.
-      Keep it for your records as proof of submission.
+      {(
+          isAppeal
+              ? "Please find your official Appeal acknowledgement and your populated Appeal form attached to this email."
+              : "Please find your official Objection acknowledgement and your populated Objection form attached to this email."
+      )}
+      Keep the attached documents for your records as proof of submission.
     </p>
  
     <p style='font-size:13px;color:#444;margin-top:16px;'>

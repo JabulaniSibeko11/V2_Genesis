@@ -92,7 +92,89 @@
   
     <link href="~/css/views/client-dashboard.css" rel="stylesheet" asp-append-version="true" />
 
+
+<style>
+    .cd-action-menu {
+        min-width: 270px;
+        padding: 8px;
+        border: 1px solid #dce5e7;
+        border-radius: 12px;
+        box-shadow: 0 14px 35px rgba(18, 47, 54, .16);
+    }
+
+    .cd-action-menu .dropdown-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        border-radius: 8px;
+        font-size: 12.5px;
+        font-weight: 700;
+        color: #263e44;
+    }
+
+    .cd-action-menu .dropdown-item:hover {
+        background: #eef5f6;
+        color: #173b43;
+    }
+
+    .cd-action-menu .dropdown-item i {
+        width: 17px;
+        color: #36626d;
+        text-align: center;
+    }
+
+    .cd-action-menu .cd-action-primary {
+        margin-top: 5px;
+        background: #173b43;
+        color: #fff;
+    }
+
+    .cd-action-menu .cd-action-primary:hover {
+        background: #0f2d33;
+        color: #fff;
+    }
+
+    .cd-action-menu .cd-action-primary i {
+        color: #e6b000;
+    }
+
+    .cd-action-menu .cd-action-danger {
+        margin-top: 5px;
+        color: #991b1b;
+    }
+
+    .cd-action-menu .cd-action-danger i {
+        color: #dc2626;
+    }
+
+    .appeal-modal-icon {
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #fff4cc;
+        color: #b7791f;
+        font-size: 22px;
+        flex-shrink: 0;
+    }
+
+    .appeal-modal-date {
+        margin-top: 14px;
+        padding: 10px 12px;
+        border-radius: 8px;
+        background: #fff8dc;
+        border: 1px solid #f3d77d;
+        font-weight: 700;
+        color: #6b4f00;
+    }
+</style>
+
 }
+
+
 @if (TempData["DuplicateLodgementError"] != null)
 {
     <div class="alert alert-warning" style="border-left:5px solid #e6b000;">
@@ -116,6 +198,78 @@
         Please contact the Valuation team for assistance.
     </div>
 }
+
+@if (TempData["LodgementWindowError"] != null)
+{
+    <div class="modal fade"
+         id="appealBlockedModal"
+         tabindex="-1"
+         aria-labelledby="appealBlockedModalLabel"
+         aria-hidden="true">
+
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content"
+                 style="border-radius:16px; overflow:hidden; border:none;">
+
+                <div class="modal-header"
+                     style="background:#173b43; color:#fff; border-bottom:3px solid #e6b000;">
+                    <h5 class="modal-title"
+                        id="appealBlockedModalLabel">
+                        Appeal Cannot Be Lodged Online
+                    </h5>
+
+                    <button type="button"
+                            class="btn-close btn-close-white"
+                            data-bs-dismiss="modal"
+                            aria-label="Close">
+                    </button>
+                </div>
+
+                <div class="modal-body" style="padding:24px;">
+                    <div style="display:flex; gap:16px; align-items:flex-start;">
+                        <div class="appeal-modal-icon">
+                            <i class="fa-solid fa-calendar-xmark"></i>
+                        </div>
+
+                        <div>
+                            <p style="margin:0; color:#324b51; line-height:1.6;">
+                                @TempData["LodgementWindowError"]
+                            </p>
+
+                            @if (TempData["AppealCloseDate"] != null)
+                            {
+                                <div class="appeal-modal-date">
+                                    <i class="fa-solid fa-calendar-day"
+                                       style="margin-right:6px;"></i>
+
+                                    Appeal closing date:
+                                    @TempData["AppealCloseDate"]
+                                </div>
+                            }
+
+                            <p style="margin:14px 0 0; color:#5b6f74; line-height:1.6;">
+                                Please visit the City of Johannesburg Valuation
+                                Services office for assistance with the available
+                                late-appeal or condonation process.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer"
+                     style="background:#f7fafb; border-top:1px solid #e3ecee;">
+                    <button type="button"
+                            class="btn"
+                            data-bs-dismiss="modal"
+                            style="background:#173b43; color:#fff; font-weight:700;">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 <!-- ══════════════════════════════════════════════════════════════
      ADMIN COMMAND BAR
      Deliberately distinct from Views/Dashboard/Index.cshtml (the
@@ -701,75 +855,94 @@
                                                                     data-bs-toggle="dropdown">
                                                                 Actions
                                                             </button>
-                                                            <ul class="dropdown-menu">
+                                                            <ul class="dropdown-menu cd-action-menu">
                                                                 <li>
                                                                     @{
-    var viewFormUrl =
-        "/admin/enquiry/form-view"
-        + "?referenceNo=" + Uri.EscapeDataString(item.Objection_No ?? "")
-        + "&rollSource=" + Uri.EscapeDataString(roll.Source ?? "")
-        + "&propertyType=" + Uri.EscapeDataString(item.Property_Type ?? "")
-        + "&appealStatus=False"
-        + "&isQuery=false";
-}
+                                                                        var viewFormUrl =
+                                                                            "/admin/enquiry/form-view"
+                                                                            + "?referenceNo=" + Uri.EscapeDataString(item.Objection_No ?? "")
+                                                                            + "&rollSource=" + Uri.EscapeDataString(roll.Source ?? "")
+                                                                            + "&propertyType=" + Uri.EscapeDataString(item.Property_Type ?? "")
+                                                                            + "&appealStatus=False"
+                                                                            + "&isQuery=false";
+                                                                    }
 
-<a class="dropdown-item"
-   href="@viewFormUrl"
-   target="_blank">
-    <i class="fa-solid fa-eye"></i> View Form
-</a>
+                                                                    <a class="dropdown-item"
+                                                                       href="@viewFormUrl"
+                                                                       target="_blank">
+                                                                        <i class="fa-solid fa-eye"></i>
+                                                                        <span>View Submitted Objection</span>
+                                                                    </a>
                                                                 </li>
-                                                                <li>
-                                                                  
 
+                                                                <li>
                                                                     <a class="dropdown-item"
                                                                        href="/notice/acknowledgement/download?objectionNo=@item.Objection_No&rollSource=@roll.Source"
                                                                        onclick="logAction('DownloadAck', '@roll.Source', '@item.Objection_No')">
-                                                                        Acknowledgement
+                                                                        <i class="fa-solid fa-file-arrow-down"></i>
+                                                                        <span>Download Acknowledgement</span>
                                                                     </a>
                                                                 </li>
+
                                                                 @if (item.objection_Status == "Obj-Lodging")
                                                                 {
                                                                     <li>
-                                                                       @if (User.Identity?.IsAuthenticated == true)
-                                                                                            {
-                                                                                                <a class="btn btn-sm btn-primary"
-                                                                                                    href="/evidence/verify?objectionNo=@item.Objection_No&rollSource=@roll.Source">
-                                                                                                    <i class="fa-solid fa-upload"></i> Add Evidence
-                                                                                                </a>
-                                                                                            }
-                                                                    </li>
-                                                                }
-                                                                @if (item.objection_Status == "Notice-Sent" || item.objection_Status == "Appeal-Closed")
-                                                                {
-                                                                    <li>
                                                                         <a class="dropdown-item"
-                                                                               href="/@roll.ControllerName/DownloadSection53?ObjectionNum=@item.Objection_No"
-                                                                               onclick="logAction('DownloadDecision', '@roll.Source', '@item.Objection_No')">
-                                                                            Download Section 53 Notice
+                                                                           href="/evidence/verify?objectionNo=@item.Objection_No&rollSource=@roll.Source">
+                                                                            <i class="fa-solid fa-upload"></i>
+                                                                            <span>Add Evidence</span>
                                                                         </a>
                                                                     </li>
-                                                                    
                                                                 }
-                                                                @if ( item.objection_Status == "Notice-Sent")
-                                                                {
-                                                             
-                                                                <li>
-                                                                    <a class="dropdown-item"
-                                                                           href="/objection/check?rollSource=@roll.Source&sourceTable=@item.PropertyFrom&unitKey=@item.Unit_key&valuationKey=@item.Valuation_Key&appealStatus=True&ObjectionNo=@item.Objection_No"
-                                                                           onclick="logAction('Appeal', '@roll.Source', '@item.Unit_key')">
-                                                                         Lodge Appeal
-                                                                    </a>
-                                                                </li>
-                                                              
-                                                                
-                                                                }
-                                                                @if (item.objection_Status == "Obj-Lodging" || item.objection_Status == "Obj-Unallocated")
+
+                                                                @if (item.objection_Status == "Notice-Sent"
+                                                                    || item.objection_Status == "Appeal-Closed")
                                                                 {
                                                                     <li>
                                                                         <a class="dropdown-item"
-                                                                               href="/@roll.ControllerName/Withdrawal?ObjectionNum=@item.Objection_No&Withdraw=O">
-                                                                             Withdraw
+                                                                           href="/@roll.ControllerName/DownloadSection53?ObjectionNum=@item.Objection_No"
+                                                                           onclick="logAction('DownloadDecision', '@roll.Source', '@item.Objection_No')">
+                                                                            <i class="fa-solid fa-file-pdf"></i>
+                                                                            <span>Download Section 53 Notice</span>
+                                                                        </a>
+                                                                    </li>
+                                                                }
+
+                                                                @if (string.Equals(
+                                                                    item.objection_Status?.Trim(),
+                                                                    "Notice-Sent",
+                                                                    StringComparison.OrdinalIgnoreCase))
+                                                                {
+                                                                    <li>
+                                                                        <a class="dropdown-item cd-action-primary"
+                                                                           href="@Url.Action(
+                                                                               "CheckProperty",
+                                                                               "Objection",
+                                                                               new
+                                                                               {
+                                                                                   rollSource = roll.Source,
+                                                                                   sourceTable = item.PropertyFrom,
+                                                                                   unitKey = item.Unit_key,
+                                                                                   valuationKey = item.Valuation_Key,
+                                                                                   objectionNo = item.Objection_No,
+                                                                                   appealStatus = "True",
+                                                                                   PropertyFrom = item.PropertyFrom
+                                                                               })"
+                                                                           onclick="logAction('Appeal', '@roll.Source', '@item.Unit_key')">
+                                                                            <i class="fa-solid fa-gavel"></i>
+                                                                            <span>Lodge Appeal</span>
+                                                                        </a>
+                                                                    </li>
+                                                                }
+
+                                                                @if (item.objection_Status == "Obj-Lodging"
+                                                                    || item.objection_Status == "Obj-Unallocated")
+                                                                {
+                                                                    <li>
+                                                                        <a class="dropdown-item cd-action-danger"
+                                                                           href="/objection/withdraw?objectionNo=@item.Objection_No&withdrawType=O&rollSource=@roll.Source&returnUrl=/admin">
+                                                                            <i class="fa-solid fa-ban"></i>
+                                                                            <span>Withdraw Objection</span>
                                                                         </a>
                                                                     </li>
                                                                 }
@@ -1160,6 +1333,20 @@
         }
 
         document.addEventListener('DOMContentLoaded', function () {
+
+        const appealBlockedModalElement =
+            document.getElementById('appealBlockedModal');
+
+        if (appealBlockedModalElement) {
+            const appealBlockedModal =
+                new bootstrap.Modal(appealBlockedModalElement, {
+                    backdrop: 'static',
+                    keyboard: true
+                });
+
+            appealBlockedModal.show();
+        }
+
             // Auto-init first roll's tables
             document.querySelectorAll('.cd-roll-body.open').forEach(body => {
                 const key = body.id.replace('rollbody-', '');
