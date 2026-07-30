@@ -1,10 +1,12 @@
 ﻿using Dapper;
+using Microsoft.EntityFrameworkCore;
 using System.Collections;
 using System.Data;
 using System.Data.SqlClient;
 using System.Globalization;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using V2_Genesis.Data;
 using V2_Genesis.Models;
 using V2_Genesis.Models.ViewModels.Submissions;
 using V2_Genesis.Services.Interfaces;
@@ -15,6 +17,8 @@ namespace V2_Genesis.Services.Implementations
     {
         private readonly IConfiguration _config;
         private readonly ILogger<SubmissionViewService> _logger;
+        private readonly AttributesDbContext _attributesDb;
+        private readonly IAttributeSubmissionService _attributeSubmissionService;
 
         private static readonly HashSet<string> HiddenFields = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -62,10 +66,12 @@ namespace V2_Genesis.Services.Implementations
 
         public SubmissionViewService(
             IConfiguration config,
-            ILogger<SubmissionViewService> logger)
+            ILogger<SubmissionViewService> logger, AttributesDbContext attributesDb, IAttributeSubmissionService attributeSubmissionService)
         {
             _config = config;
             _logger = logger;
+            _attributesDb = attributesDb;
+            _attributeSubmissionService = attributeSubmissionService;
         }
 
         public async Task<SubmissionViewResult> GetSubmissionAsync(
@@ -85,14 +91,35 @@ namespace V2_Genesis.Services.Implementations
 
             try
             {
-                return type is "Query" or "Review"
-                    ? await LoadSection78Async(type, referenceNumber.Trim(), userId, cancellationToken)
-                    : await LoadObjectionOrAppealAsync(
-                        type,
-                        referenceNumber.Trim(),
-                        NormalizeRollSource(rollSource),
-                        userId,
-                        cancellationToken);
+                var cleanReference = referenceNumber.Trim();
+
+                return type switch
+                {
+                    "Attribute" =>
+                        await LoadAttributeAsync(
+                            cleanReference,
+                            userId,
+                            cancellationToken),
+
+                    "Query" or "Review" =>
+                        await LoadSection78Async(
+                            type,
+                            cleanReference,
+                            userId,
+                            cancellationToken),
+
+                    "Objection" or "Appeal" =>
+                        await LoadObjectionOrAppealAsync(
+                            type,
+                            cleanReference,
+                            NormalizeRollSource(rollSource),
+                            userId,
+                            cancellationToken),
+
+                    _ =>
+                        SubmissionViewResult.Fail(
+                            $"Unsupported submission type '{submissionType}'.")
+                };
             }
             catch (Exception ex)
             {
@@ -101,11 +128,168 @@ namespace V2_Genesis.Services.Implementations
                     "Failed to load submitted {SubmissionType} {ReferenceNumber} from {RollSource}.",
                     type,
                     referenceNumber,
-                    rollSource);
+                    type == "Attribute"
+                        ? "Attributes"
+                        : rollSource);
 
                 return SubmissionViewResult.Fail(
                     "The submitted form could not be loaded. Please try again or contact Valuation Services.");
             }
+        }
+
+        private async Task<SubmissionViewResult> LoadAttributeAsync(
+            string referenceNumber,
+            string userId,
+            CancellationToken cancellationToken)
+        {
+            referenceNumber = referenceNumber.Trim();
+            userId = userId.Trim();
+
+            var info = await _attributesDb.AttrPropertyInfo
+                .AsNoTracking()
+                .FirstOrDefaultAsync(
+                    x =>
+                        x.Attr_No != null
+                        && x.Attr_No.Trim() == referenceNumber
+                        && x.SubmittedByUserId != null
+                        && x.SubmittedByUserId.Trim() == userId
+                        && x.IsActive,
+                    cancellationToken);
+
+            if (info is null)
+            {
+                return SubmissionViewResult.Fail(
+                    $"Attribute submission {referenceNumber} was not found " +
+                    "or does not belong to your account.");
+            }
+
+            var attribute =
+                await _attributeSubmissionService.GetSubmittedViewAsync(
+                    referenceNumber,
+                    userId,
+                    cancellationToken);
+
+            if (attribute is null)
+            {
+                return SubmissionViewResult.Fail(
+                    $"Attribute submission {referenceNumber} could not be loaded.");
+            }
+
+            var files = await _attributesDb.AttrFiles
+                .AsNoTracking()
+                .FirstOrDefaultAsync(
+                    x => x.Attr_ID == info.Attr_ID && x.IsActive,
+                    cancellationToken);
+
+            var documents = new List<SubmissionDocumentViewModel>();
+
+            if (files is not null)
+            {
+                AddAttributeDocument(documents, files.Files1, files.RootFolder);
+                AddAttributeDocument(documents, files.Files2, files.RootFolder);
+                AddAttributeDocument(documents, files.Files3, files.RootFolder);
+                AddAttributeDocument(documents, files.Files4, files.RootFolder);
+                AddAttributeDocument(documents, files.Files5, files.RootFolder);
+                AddAttributeDocument(documents, files.Files6, files.RootFolder);
+                AddAttributeDocument(documents, files.Files7, files.RootFolder);
+                AddAttributeDocument(documents, files.Files8, files.RootFolder);
+                AddAttributeDocument(documents, files.Files9, files.RootFolder);
+                AddAttributeDocument(documents, files.Files10, files.RootFolder);
+            }
+
+            var property = attribute.PropertyDetails;
+            var valuation = attribute.ValuationDetails;
+            var owner = attribute.ContactInfos
+                .FirstOrDefault(x =>
+                    string.Equals(
+                        x.ContactType,
+                        "Owner",
+                        StringComparison.OrdinalIgnoreCase))
+                ?? attribute.ContactInfos.FirstOrDefault();
+
+            var model = new SubmissionViewModel
+            {
+                SubmissionType = "Attribute",
+                ReferenceNumber = referenceNumber,
+                Status = info.Attr_Status,
+                RollSource = "Attributes",
+                RollDisplayName =
+                    property.RollDescription
+                    ?? property.RollType
+                    ?? "Property Attributes",
+                FormType = attribute.FormType,
+                PropertyDescription =
+                    property.PropertyDesc
+                    ?? info.Property_Desc
+                    ?? string.Empty,
+                PropertyKey =
+                    property.PremiseId
+                    ?? property.UnitKey
+                    ?? property.PropertyId
+                    ?? string.Empty,
+                SubmittedAt = info.SubmissionDateTime,
+                Attribute = attribute,
+                Documents = documents,
+
+                Property = new SubmissionPropertyViewModel
+                {
+                    PropertyDescription =
+                        property.PropertyDesc
+                        ?? info.Property_Desc
+                        ?? string.Empty,
+                    PropertyType = attribute.FormType,
+                    PremiseId = property.PremiseId ?? string.Empty,
+                    PropertyId = property.PropertyId ?? string.Empty,
+                    UnitKey = property.UnitKey ?? string.Empty,
+                    ValuationKey = property.ValuationKey ?? string.Empty,
+                    Address = property.Address ?? string.Empty,
+                    Township = property.Township ?? string.Empty,
+                    Erf = property.Erf ?? string.Empty,
+                    Sector = property.Sector ?? string.Empty,
+                    Category =
+                        valuation.ValuationCategoryOnRoll
+                        ?? string.Empty,
+                    Extent = property.Extent ?? string.Empty,
+                    MarketValue =
+                        attribute.Calculations.DRCFinalValue?.ToString("N0")
+                        ?? attribute.Calculations.TotalValueNonRes?.ToString("N0")
+                        ?? attribute.Calculations.Tla?.ToString("N0")
+                        ?? string.Empty,
+                    OwnerName = owner is null
+                        ? string.Empty
+                        : owner.IsCompany
+                            ? owner.CompanyName ?? string.Empty
+                            : string.Join(
+                                " ",
+                                new[]
+                                {
+                                    owner.FirstNames,
+                                    owner.LastName
+                                }.Where(x =>
+                                    !string.IsNullOrWhiteSpace(x)))
+                }
+            };
+
+            return SubmissionViewResult.Ok(model);
+        }
+
+        private static void AddAttributeDocument(
+            ICollection<SubmissionDocumentViewModel> documents,
+            string? fileName,
+            string? rootFolder)
+        {
+            if (string.IsNullOrWhiteSpace(fileName))
+                return;
+
+            documents.Add(new SubmissionDocumentViewModel
+            {
+                FileName = fileName,
+                DisplayName = Path.GetFileName(fileName),
+                FilePath = string.IsNullOrWhiteSpace(rootFolder)
+                    ? fileName
+                    : Path.Combine(rootFolder, fileName),
+                Exists = true
+            });
         }
 
         private async Task<SubmissionViewResult> LoadObjectionOrAppealAsync(
@@ -2140,6 +2324,9 @@ namespace V2_Genesis.Services.Implementations
             if (model.IsQuery)
                 return "Query Details";
 
+            if (model.IsAttribute)
+                return "Attribute Details";
+
             return "Objection Details";
         }
 
@@ -2210,19 +2397,78 @@ namespace V2_Genesis.Services.Implementations
             };
         }
 
-        private static string NormalizeSubmissionType(string? value, string referenceNumber)
+        private static string NormalizeSubmissionType(
+            string? value,
+            string referenceNumber)
         {
-            if (referenceNumber.EndsWith("-R", StringComparison.OrdinalIgnoreCase)) return "Review";
-            if (referenceNumber.StartsWith("APP-", StringComparison.OrdinalIgnoreCase)) return "Appeal";
-            if (referenceNumber.Contains("QUE", StringComparison.OrdinalIgnoreCase))
-                return value?.Contains("Review", StringComparison.OrdinalIgnoreCase) == true ? "Review" : "Query";
+            var requestedType =
+                value?.Trim()
+                ?? string.Empty;
 
-            return value?.Trim().ToLowerInvariant() switch
+            var reference =
+                referenceNumber?.Trim()
+                ?? string.Empty;
+
+            if (requestedType.Equals(
+                    "Attribute",
+                    StringComparison.OrdinalIgnoreCase)
+                || requestedType.Equals(
+                    "Attributes",
+                    StringComparison.OrdinalIgnoreCase)
+                || reference.StartsWith(
+                    "ATTR-",
+                    StringComparison.OrdinalIgnoreCase))
             {
-                "appeal" => "Appeal",
-                "query" or "section78query" or "section78" => "Query",
-                "review" or "section78review" => "Review",
-                _ => "Objection"
+                return "Attribute";
+            }
+
+            if (reference.EndsWith(
+                    "-R",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return "Review";
+            }
+
+            if (reference.StartsWith(
+                    "APP-",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return "Appeal";
+            }
+
+            if (reference.Contains(
+                    "QUE",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return requestedType.Contains(
+                    "Review",
+                    StringComparison.OrdinalIgnoreCase)
+                        ? "Review"
+                        : "Query";
+            }
+
+            return requestedType.ToLowerInvariant() switch
+            {
+                "attribute" or "attributes" =>
+                    "Attribute",
+
+                "appeal" =>
+                    "Appeal",
+
+                "query"
+                or "section78query"
+                or "section78" =>
+                    "Query",
+
+                "review"
+                or "section78review" =>
+                    "Review",
+
+                "objection" or "" =>
+                    "Objection",
+
+                _ =>
+                    requestedType
             };
         }
 

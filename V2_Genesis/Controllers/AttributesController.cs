@@ -881,6 +881,80 @@ public class AttributesController : Controller
         }
     }
 
+    // Compatibility route for older dashboard links such as:
+    // /attributes/submission/7
+    //
+    // The numeric database ID is resolved to the public Attr_No and
+    // redirected to the shared submitted-form viewer.
+    [HttpGet]
+    [Authorize(Roles = "Client")]
+    [Route("attributes/submission/{id:long}", Name = "AttributeSubmissionById")]
+    public async Task<IActionResult> Submission(
+        long id,
+        string? returnUrl,
+        CancellationToken cancellationToken)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (string.IsNullOrWhiteSpace(userId))
+            return Challenge();
+
+        var submission = await _attrDb.AttrPropertyInfo
+            .AsNoTracking()
+            .Where(row =>
+                row.Attr_ID == id
+                && row.SubmittedByUserId == userId
+                && row.IsActive)
+            .Select(row => new
+            {
+                row.Attr_No
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (submission is null)
+        {
+            TempData["ErrorMessage"] =
+                "The attribute submission could not be found, " +
+                "or you do not have permission to view it.";
+
+            return RedirectToAction(
+                "Index",
+                "Dashboard",
+                new { openRoll = "attributes" });
+        }
+
+        if (string.IsNullOrWhiteSpace(submission.Attr_No))
+        {
+            TempData["ErrorMessage"] =
+                "The attribute submission does not yet have a valid " +
+                "attribute reference number.";
+
+            return RedirectToAction(
+                "Index",
+                "Dashboard",
+                new { openRoll = "attributes" });
+        }
+
+        var safeReturnUrl =
+            !string.IsNullOrWhiteSpace(returnUrl)
+            && Url.IsLocalUrl(returnUrl)
+                ? returnUrl
+                : Url.Action(
+                    "Index",
+                    "Dashboard",
+                    new { openRoll = "attributes" });
+
+        return RedirectToRoute(
+            "ViewSubmission",
+            new
+            {
+                submissionType = "Attribute",
+                referenceNumber = submission.Attr_No.Trim(),
+                rollSource = "Attributes",
+                returnUrl = safeReturnUrl
+            });
+    }
+
     [HttpGet]
     public async Task<IActionResult> Details(long id)
     {

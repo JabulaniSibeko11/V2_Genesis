@@ -3,10 +3,10 @@
     ViewData["Title"] = "Attribute Property Submission";
     Layout = "~/Views/Shared/_ClientLayout.cshtml";
 
-    bool isRes  = Model.FormType == "Residential";
-    bool isSt   = Model.FormType == "ResidentialST";
-    bool isBus  = Model.FormType == "BusinessCommercial";
-    bool isDrc  = Model.FormType == "DRCMethod";
+    bool isRes = Model.FormType == "Residential";
+    bool isSt = Model.FormType == "ResidentialST";
+    bool isBus = Model.FormType == "BusinessCommercial";
+    bool isDrc = Model.FormType == "DRCMethod";
 
     string formLabel = Model.FormType switch
     {
@@ -14,15 +14,15 @@
         "ResidentialST" => "Residential — Sectional Title",
         "BusinessCommercial" => "Non-Residential / Business and Commercial",
         "DRCMethod" => "DRC Method",
-        _                   => "Attribute Submission"
+        _ => "Attribute Submission"
     };
     string formIcon = Model.FormType switch
     {
-        "Residential"        => "fa-house",
-        "ResidentialST"      => "fa-building",
+        "Residential" => "fa-house",
+        "ResidentialST" => "fa-building",
         "BusinessCommercial" => "fa-store",
-        "DRCMethod"          => "fa-calculator",
-        _                    => "fa-clipboard-list"
+        "DRCMethod" => "fa-calculator",
+        _ => "fa-clipboard-list"
     };
 }
 <link href="~/css/views/attribute-create.css" rel="stylesheet" asp-append-version="true" />
@@ -76,44 +76,44 @@
 
 @* ── FORM ─────────────────────────────────────────────────────────── *@
 <div class="attr-page">
-<form asp-action="Create" asp-controller="Attributes"
-      method="post" enctype="multipart/form-data">
+    <form asp-action="Create" asp-controller="Attributes"
+          method="post" enctype="multipart/form-data">
 
-    @Html.AntiForgeryToken()
+        @Html.AntiForgeryToken()
 
-    @* ── Hidden system fields — never shown to client ── *@
-    <input asp-for="FormType"                        type="hidden" />
-    <input asp-for="AttrId"                          type="hidden" />
-    <input asp-for="AttrNo"                          type="hidden" />
-    <input asp-for="PropertyDetails.PropertyId"      type="hidden" />
-    <input asp-for="PropertyDetails.PremiseId"       type="hidden" />
-    <input asp-for="PropertyDetails.UnitKey"         type="hidden" />
-    <input asp-for="PropertyDetails.ValuationKey"    type="hidden" />
-    <input asp-for="PropertyDetails.Sector"          type="hidden" />
-    <input asp-for="PropertyDetails.RollType"        type="hidden" />
-    <input asp-for="PropertyDetails.RollDescription" type="hidden" />
-    @* <input asp-for="PropertyDetails.HArea"           type="hidden" />
+        @* ── Hidden system fields — never shown to client ── *@
+        <input asp-for="FormType" type="hidden" />
+        <input asp-for="AttrId" type="hidden" />
+        <input asp-for="AttrNo" type="hidden" />
+        <input asp-for="PropertyDetails.PropertyId" type="hidden" />
+        <input asp-for="PropertyDetails.PremiseId" type="hidden" />
+        <input asp-for="PropertyDetails.UnitKey" type="hidden" />
+        <input asp-for="PropertyDetails.ValuationKey" type="hidden" />
+        <input asp-for="PropertyDetails.Sector" type="hidden" />
+        <input asp-for="PropertyDetails.RollType" type="hidden" />
+        <input asp-for="PropertyDetails.RollDescription" type="hidden" />
+        @* <input asp-for="PropertyDetails.HArea"           type="hidden" />
     <input asp-for="PropertyDetails.CollectionBlock" type="hidden" />
     <input asp-for="PropertyDetails.DataController"  type="hidden" />
     <input asp-for="PropertyDetails.DataCollector"   type="hidden" />
     <input asp-for="PropertyDetails.Centroid"        type="hidden" />
     <input asp-for="PropertyDetails.LandUseFinancials" type="hidden" />
     <input asp-for="PropertyDetails.Sources"         type="hidden" /> *@
-    <input asp-for="ValuationDetails.OwnersTitleDeeds"  type="hidden" />
-    <input asp-for="ValuationDetails.OwnersFinancials"  type="hidden" />
-    <input asp-for="PrimaryAttributes.AdjustmentFactor" type="hidden" />
-    <input asp-for="Calculations.CalcUpdateTla"      type="hidden" />
-    <input asp-for="Calculations.Tla"                type="hidden" />
-    <input asp-for="Calculations.CalcUpdateWgba"     type="hidden" />
-    <input asp-for="Calculations.AdjustedWgba"       type="hidden" />
-    <input asp-for="Calculations.TotalValueNonRes"   type="hidden" />
-    <input asp-for="Calculations.TotalValueUnutilisedLand" type="hidden" />
-    <input asp-for="Calculations.DRCFinalValue"      type="hidden" />
-    <input asp-for="Calculations.CalculationStatus"  type="hidden" />
-    <input asp-for="BusinessGeneral.UnutilisedLandRate"   type="hidden" />
-    <input asp-for="DrcMarketValueDemolition.DemolitionRate"            type="hidden" />
-    <input asp-for="DrcMarketValueDemolition.MarketValue"               type="hidden" />
-    <input asp-for="DrcMarketValueDemolition.MarketValueAfterDemolition" type="hidden" />
+        <input asp-for="ValuationDetails.OwnersTitleDeeds" type="hidden" />
+        <input asp-for="ValuationDetails.OwnersFinancials" type="hidden" />
+        <input asp-for="PrimaryAttributes.AdjustmentFactor" type="hidden" />
+        <input asp-for="Calculations.CalcUpdateTla" type="hidden" />
+        <input asp-for="Calculations.Tla" type="hidden" />
+        <input asp-for="Calculations.CalcUpdateWgba" type="hidden" />
+        <input asp-for="Calculations.AdjustedWgba" type="hidden" />
+        <input asp-for="Calculations.TotalValueNonRes" type="hidden" />
+        <input asp-for="Calculations.TotalValueUnutilisedLand" type="hidden" />
+        <input asp-for="Calculations.DRCFinalValue" type="hidden" />
+        <input asp-for="Calculations.CalculationStatus" type="hidden" />
+        <input asp-for="BusinessGeneral.UnutilisedLandRate" type="hidden" />
+        <input asp-for="DrcMarketValueDemolition.DemolitionRate" type="hidden" />
+        <input asp-for="DrcMarketValueDemolition.MarketValue" type="hidden" />
+        <input asp-for="DrcMarketValueDemolition.MarketValueAfterDemolition" type="hidden" />
         @* ACCESS is hidden on the online client form.Backend/PDF can still keep the structure. *@
         <input asp-for="Access.AccessType" type="hidden" />
         <input asp-for="Access.PermissionStatus" type="hidden" />
@@ -131,26 +131,26 @@
             </div>
         }
 
-    @* ════════════════════════════════════════════════
+        @* ════════════════════════════════════════════════
        SECTION 1 — PROPERTY DETAILS (same on all forms)
     ════════════════════════════════════════════════ *@
-    <div class="attr-card">
-        <div class="attr-title">
-            <i class="fa-solid fa-map-pin" style="color:var(--at-gold);margin-right:8px;"></i>
-            Section 1: Property Details
-        </div>
-        <div class="attr-divider"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
-
-        @if (!string.IsNullOrWhiteSpace(Model.PropertyDetails?.PropertyDesc))
-        {
-            <div class="attr-prop-banner">
-                <div class="attr-prop-banner-icon"><i class="fa-solid fa-location-dot"></i></div>
-                <div>
-                    <span class="attr-prop-banner-label">Property Description</span>
-                    <span class="attr-prop-banner-value">@Model.PropertyDetails.PropertyDesc</span>
-                </div>
+        <div class="attr-card">
+            <div class="attr-title">
+                <i class="fa-solid fa-map-pin" style="color:var(--at-gold);margin-right:8px;"></i>
+                Section 1: Property Details
             </div>
-        }
+            <div class="attr-divider"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
+
+            @if (!string.IsNullOrWhiteSpace(Model.PropertyDetails?.PropertyDesc))
+            {
+                <div class="attr-prop-banner">
+                    <div class="attr-prop-banner-icon"><i class="fa-solid fa-location-dot"></i></div>
+                    <div>
+                        <span class="attr-prop-banner-label">Property Description</span>
+                        <span class="attr-prop-banner-value">@Model.PropertyDetails.PropertyDesc</span>
+                    </div>
+                </div>
+            }
 
             <div class="attr-section-title"><span class="num">1.1</span> Property Identification</div>
 
@@ -291,7 +291,7 @@
                 <tr>
                     <td class="attr-label">Valuation Category on Roll <span class="req">*</span></td>
                     <td>
-                        <select asp-for="ValuationDetails.ValuationCategoryOnRoll"class="attr-select"id="valuationCategory"required>
+                        <select asp-for="ValuationDetails.ValuationCategoryOnRoll" class="attr-select" id="valuationCategory" required>
                             <option value="">-- Select Category --</option>
                             <option>Agricultural</option>
                             <option>Business and Commercial</option>
@@ -312,7 +312,7 @@
 
                     <td class="attr-label">Actual Use <span class="req">*</span></td>
                     <td>
-                        <input asp-for="ValuationDetails.ActualUse"class="attr-input"maxlength="255"requiredplaceholder="e.g. Residential, Business, Church" />
+                        <input asp-for="ValuationDetails.ActualUse" class="attr-input" maxlength="255" requiredplaceholder="e.g. Residential, Business, Church" />
                         <span asp-validation-for="ValuationDetails.ActualUse" class="attr-field-error"></span>
                     </td>
                 </tr>
@@ -337,7 +337,7 @@
                     </td>
                 </tr>
             </table>
-    </div>
+        </div>
 
    
         @* ════════════════════════════════════════════════
@@ -361,7 +361,10 @@
             @for (int i = 0; i < Model.ContactInfos.Count; i++)
             {
                 <div class="attr-section-title">
-                    <span class="num">@(i + 1)</span> Contact Details
+                    <span class="num">@(i + 1)</span>
+                    <span id="contactHeading-@i" class="contact-heading-label">
+                        @(Model.ContactInfos[i].IsCompany ? "Company Details" : "Owner Details")
+                    </span>
                 </div>
 
                 @* Hidden fields kept for backend/PDF structure *@
@@ -449,8 +452,25 @@
                         <td class="attr-label">Physical Address</td>
                         <td colspan="3">
                             <textarea asp-for="ContactInfos[i].PhysicalAddress"
+                                      id="physicalAddress-@i"
                                       class="attr-textarea"
                                       placeholder="Physical address"></textarea>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td class="attr-label"></td>
+                        <td colspan="3">
+                            <label class="attr-same-address-toggle">
+                                <input type="checkbox"
+                                       id="samePostalAddress-@i"
+                                       class="same-postal-checkbox"
+                                       data-index="@i"
+                                @(!string.IsNullOrWhiteSpace(Model.ContactInfos[i].PhysicalAddress) &&
+                                                                    Model.ContactInfos[i].PhysicalAddress == Model.ContactInfos[i].PostalAddress
+                                                                    ? "checked" : "") />
+                                Postal address is the same as the physical address
+                            </label>
                         </td>
                     </tr>
 
@@ -458,6 +478,7 @@
                         <td class="attr-label">Postal Address</td>
                         <td colspan="3">
                             <textarea asp-for="ContactInfos[i].PostalAddress"
+                                      id="postalAddress-@i"
                                       class="attr-textarea"
                                       placeholder="Postal address"></textarea>
                         </td>
@@ -515,17 +536,17 @@
             }
         </div>
 
-    @* ════════════════════════════════════════════════
+        @* ════════════════════════════════════════════════
        SECTION 4 — FORM-SPECIFIC ATTRIBUTES
     ════════════════════════════════════════════════ *@
-    @if (isRes || isSt)
-    {
-        <div class="attr-card">
-            <div class="attr-title">
-                <i class="fa-solid fa-house-chimney-window" style="color:var(--at-gold);margin-right:8px;"></i>
+        @if (isRes || isSt)
+        {
+            <div class="attr-card">
+                <div class="attr-title">
+                    <i class="fa-solid fa-house-chimney-window" style="color:var(--at-gold);margin-right:8px;"></i>
                     Section 3: @(isSt ? "Sectional Title Residential" : "Residential") Attributes
-            </div>
-            <div class="attr-divider"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
+                </div>
+                <div class="attr-divider"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
                 <div class="attr-glossary">
                     <div class="attr-glossary-title">
                         <i class="fa-solid fa-circle-info"></i>
@@ -543,11 +564,11 @@
                         <div><strong>ST Main</strong><span>Sectional title main unit area</span></div>
                     </div>
                 </div>
-            <div class="attr-section-title"><span class="num">3.1</span> Primary Attributes</div>
-            <table class="attr-table">
-                @if (isRes)
-                {
-                    <tr>
+                <div class="attr-section-title"><span class="num">3.1</span> Primary Attributes</div>
+                <table class="attr-table">
+                    @if (isRes)
+                    {
+                        <tr>
                             <td class="attr-label">TLA 1</td>
                             <td>
                                 <input asp-for="PrimaryAttributes.Tla1"
@@ -557,38 +578,38 @@
                                        step="0.01" />
                                 <span asp-validation-for="PrimaryAttributes.Tla1" class="attr-field-error"></span>
                             </td>
-                        <td class="attr-label">TLA 2</td>
-                        <td><input asp-for="PrimaryAttributes.Tla2" class="attr-input" /></td>
-                    </tr>
-                    <tr>
-                        <td class="attr-label">TLA 3</td>
-                        <td>
-                            <input asp-for="PrimaryAttributes.Tla3"
-                                   class="attr-input"
-                                   type="number"
-                                   min="0"
-                                   step="0.01" />
-                            <span asp-validation-for="PrimaryAttributes.Tla3" class="attr-field-error"></span>
-                        </td>
-                        <td class="attr-label">Garage</td>
-                        <td><input asp-for="PrimaryAttributes.Garage" class="attr-input" /></td>
-                    </tr>
-                    <tr>
-                        <td class="attr-label">Carport</td>
-                        <td><input asp-for="PrimaryAttributes.CarportCp" class="attr-input" /></td>
-                        <td class="attr-label">Granny Flat</td>
-                        <td><input asp-for="PrimaryAttributes.GrannyFlatGf" class="attr-input" /></td>
-                    </tr>
-                    <tr>
-                        <td class="attr-label">Staff Quarters</td>
-                        <td><input asp-for="PrimaryAttributes.StaffQuartersSq" class="attr-input" /></td>
-                        <td class="attr-label">Storage</td>
-                        <td><input asp-for="PrimaryAttributes.Storage" class="attr-input" /></td>
-                    </tr>
-                }
-                @if (isSt)
-                {
-                    <tr>
+                            <td class="attr-label">TLA 2</td>
+                            <td><input asp-for="PrimaryAttributes.Tla2" class="attr-input" /></td>
+                        </tr>
+                        <tr>
+                            <td class="attr-label">TLA 3</td>
+                            <td>
+                                <input asp-for="PrimaryAttributes.Tla3"
+                                       class="attr-input"
+                                       type="number"
+                                       min="0"
+                                       step="0.01" />
+                                <span asp-validation-for="PrimaryAttributes.Tla3" class="attr-field-error"></span>
+                            </td>
+                            <td class="attr-label">Garage</td>
+                            <td><input asp-for="PrimaryAttributes.Garage" class="attr-input" /></td>
+                        </tr>
+                        <tr>
+                            <td class="attr-label">Carport</td>
+                            <td><input asp-for="PrimaryAttributes.CarportCp" class="attr-input" /></td>
+                            <td class="attr-label">Granny Flat</td>
+                            <td><input asp-for="PrimaryAttributes.GrannyFlatGf" class="attr-input" /></td>
+                        </tr>
+                        <tr>
+                            <td class="attr-label">Staff Quarters</td>
+                            <td><input asp-for="PrimaryAttributes.StaffQuartersSq" class="attr-input" /></td>
+                            <td class="attr-label">Storage</td>
+                            <td><input asp-for="PrimaryAttributes.Storage" class="attr-input" /></td>
+                        </tr>
+                    }
+                    @if (isSt)
+                    {
+                        <tr>
                             <td class="attr-label">ST Main <span class="req">*</span></td>
                             <td>
                                 <input asp-for="PrimaryAttributes.STMain"
@@ -599,110 +620,124 @@
                                        required />
                                 <span asp-validation-for="PrimaryAttributes.STMain" class="attr-field-error"></span>
                             </td>
-                        <td class="attr-label">Garage</td>
-                        <td><input asp-for="PrimaryAttributes.Garage" class="attr-input" /></td>
-                    </tr>
-                    <tr>
-                        <td class="attr-label">Carport</td>
-                        <td><input asp-for="PrimaryAttributes.CarportCp" class="attr-input" /></td>
-                        <td class="attr-label">Storage</td>
-                        <td><input asp-for="PrimaryAttributes.Storage" class="attr-input" /></td>
-                    </tr>
-                }
-            </table>
+                            <td class="attr-label">Garage</td>
+                            <td><input asp-for="PrimaryAttributes.Garage" class="attr-input" /></td>
+                        </tr>
+                        <tr>
+                            <td class="attr-label">Carport</td>
+                            <td><input asp-for="PrimaryAttributes.CarportCp" class="attr-input" /></td>
+                            <td class="attr-label">Storage</td>
+                            <td><input asp-for="PrimaryAttributes.Storage" class="attr-input" /></td>
+                        </tr>
+                    }
+                </table>
 
-            <div class="attr-section-title"><span class="num">3.2</span> Secondary Attributes</div>
-            <table class="attr-table">
-                @if (isRes)
-                {
-                    <tr>
-                        <td class="attr-label">Storeys</td>
-                        <td>
-                            <select asp-for="SecondaryAttributes.Storeys" class="attr-select">
-                                <option value="">-- Select --</option>
-                                <option value="1">1</option><option value="2">2</option>
-                                <option value="3">3</option><option value="4">4</option>
-                            </select>
-                        </td>
-                        <td class="attr-label">Security</td>
-                        <td>
-                            <select asp-for="SecondaryAttributes.Security" class="attr-select">
-                                <option value="">-- Select --</option>
-                                <option>High</option><option>Medium</option>
-                                <option>Low</option><option>None</option>
-                            </select>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="attr-label">Noise</td>
-                        <td>
-                            <select asp-for="SecondaryAttributes.Noise" class="attr-select">
-                                <option value="">-- Select --</option>
-                                <option>Freeway</option><option>Major Road</option>
-                                <option>Side Street</option><option>Cul-de-sac</option>
-                                <option>Entertainment</option>
-                            </select>
-                        </td>
-                        <td class="attr-label">Topography</td>
-                        <td>
-                            <select asp-for="SecondaryAttributes.Topography" class="attr-select">
-                                <option value="">-- Select --</option>
-                                <option>Level</option><option>Average</option>
-                                <option>Slope</option><option>Steep</option>
-                            </select>
-                        </td>
-                    </tr>
-                    <tr>
+                <div class="attr-section-title"><span class="num">3.2</span> Secondary Attributes</div>
+                <table class="attr-table">
+                    @if (isRes)
+                    {
+                        <tr>
+                            <td class="attr-label">Storeys</td>
+                            <td>
+                                <select asp-for="SecondaryAttributes.Storeys" class="attr-select">
+                                    <option value="">-- Select --</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                </select>
+                            </td>
+                            <td class="attr-label">Security</td>
+                            <td>
+                                <select asp-for="SecondaryAttributes.Security" class="attr-select">
+                                    <option value="">-- Select --</option>
+                                    <option>High</option>
+                                    <option>Medium</option>
+                                    <option>Low</option>
+                                    <option>None</option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="attr-label">Noise</td>
+                            <td>
+                                <select asp-for="SecondaryAttributes.Noise" class="attr-select">
+                                    <option value="">-- Select --</option>
+                                    <option>Freeway</option>
+                                    <option>Major Road</option>
+                                    <option>Side Street</option>
+                                    <option>Cul-de-sac</option>
+                                    <option>Entertainment</option>
+                                </select>
+                            </td>
+                            <td class="attr-label">Topography</td>
+                            <td>
+                                <select asp-for="SecondaryAttributes.Topography" class="attr-select">
+                                    <option value="">-- Select --</option>
+                                    <option>Level</option>
+                                    <option>Average</option>
+                                    <option>Slope</option>
+                                    <option>Steep</option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
                             <td class="attr-label">Quality <span class="req">*</span></td>
                             <td>
                                 <select asp-for="SecondaryAttributes.Quality"
                                         class="attr-select"
                                         required>
-                                <option value="">-- Select --</option>
-                                <option>Excellent</option><option>Good</option>
-                                <option>Average</option><option>Poor</option>
-                            </select>
-                        </td>
+                                    <option value="">-- Select --</option>
+                                    <option>Excellent</option>
+                                    <option>Good</option>
+                                    <option>Average</option>
+                                    <option>Poor</option>
+                                </select>
+                            </td>
                             <td class="attr-label">Condition <span class="req">*</span></td>
                             <td>
                                 <select asp-for="SecondaryAttributes.Condition" class="attr-select" required>
-                                <option value="">-- Select --</option>
-                                <option>Excellent</option><option>Good</option>
-                                <option>Average</option><option>Poor</option>
-                            </select>
+                                    <option value="">-- Select --</option>
+                                    <option>Excellent</option>
+                                    <option>Good</option>
+                                    <option>Average</option>
+                                    <option>Poor</option>
+                                </select>
                                 <span asp-validation-for="SecondaryAttributes.Condition" class="attr-field-error"></span>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="attr-label">Swimming Pool</td>
-                        <td>
-                            <div class="attr-radio-row">
-                                <label><input type="radio" asp-for="SecondaryAttributes.SwimmingPool" value="true" /> Yes</label>
-                                <label><input type="radio" asp-for="SecondaryAttributes.SwimmingPool" value="false" /> No</label>
-                            </div>
-                        </td>
-                        <td class="attr-label">Tennis Court</td>
-                        <td>
-                            <div class="attr-radio-row">
-                                <label><input type="radio" asp-for="SecondaryAttributes.TennisCourt" value="true" /> Yes</label>
-                                <label><input type="radio" asp-for="SecondaryAttributes.TennisCourt" value="false" /> No</label>
-                            </div>
-                        </td>
-                    </tr>
-                }
-                @if (isSt)
-                {
-                    <tr>
-                        <td class="attr-label">ST Condition</td>
-                        <td>
-                            <select asp-for="SecondaryAttributes.STCondition" class="attr-select">
-                                <option value="">-- Select --</option>
-                                <option value="1">Excellent</option><option value="2">Good</option>
-                                <option value="3">Average</option><option value="4">Fair</option>
-                                <option value="5">Poor</option>
-                            </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="attr-label">Swimming Pool</td>
+                            <td>
+                                <div class="attr-radio-row">
+                                    <label><input type="radio" asp-for="SecondaryAttributes.SwimmingPool" value="true" /> Yes</label>
+                                    <label><input type="radio" asp-for="SecondaryAttributes.SwimmingPool" value="false" /> No</label>
+                                </div>
+                            </td>
+                            <td class="attr-label">Tennis Court</td>
+                            <td>
+                                <div class="attr-radio-row">
+                                    <label><input type="radio" asp-for="SecondaryAttributes.TennisCourt" value="true" /> Yes</label>
+                                    <label><input type="radio" asp-for="SecondaryAttributes.TennisCourt" value="false" /> No</label>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                    @if (isSt)
+                    {
+                        <tr>
+                            <td class="attr-label">ST Condition</td>
+                            <td>
+                                <select asp-for="SecondaryAttributes.STCondition" class="attr-select">
+                                    <option value="">-- Select --</option>
+                                    <option value="1">Excellent</option>
+                                    <option value="2">Good</option>
+                                    <option value="3">Average</option>
+                                    <option value="4">Fair</option>
+                                    <option value="5">Poor</option>
+                                </select>
                                 <span asp-validation-for="SecondaryAttributes.STCondition" class="attr-field-error"></span>
-                        </td>
+                            </td>
                             <td class="attr-label">ST Floor <span class="req">*</span></td>
                             <td>
                                 <input asp-for="SecondaryAttributes.STFloor"
@@ -713,915 +748,1054 @@
                                        required />
                                 <span asp-validation-for="SecondaryAttributes.STFloor" class="attr-field-error"></span>
                             </td>
-                    </tr>
-                    <tr>
-                        <td class="attr-label">Quality</td>
-                        <td colspan="3">
-                            <div class="attr-radio-row">
-                                <label><input type="radio" asp-for="SecondaryAttributes.Quality" value="Excellent" /> Excellent</label>
-                                <label><input type="radio" asp-for="SecondaryAttributes.Quality" value="Good" /> Good</label>
-                                <label><input type="radio" asp-for="SecondaryAttributes.Quality" value="Average" /> Average</label>
-                                <label><input type="radio" asp-for="SecondaryAttributes.Quality" value="Poor" /> Poor</label>
-                            </div>
-                        </td>
-                    </tr>
-                }
-            </table>
-        </div>
-    }
-
-    @if (isBus)
-    {
-        <div class="attr-card">
-            <div class="attr-title">
-                <i class="fa-solid fa-store" style="color:var(--at-gold);margin-right:8px;"></i>
-                    Section 3: Non-Residential Buildings &amp; Sections
-            </div>
-            <div class="attr-divider"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
-
-            <div class="attr-section-title"><span class="num">3.1</span> Buildings</div>
-            <div class="table-responsive">
-                <table class="attr-dyn-table" id="tbl-bus-buildings">
-                    <thead>
-                        <tr>
-                            <th>Building Nr</th>
-                            <th>Quality</th>
-                            <th>Condition</th>
-                            <th>Year Built</th>
-                            <th>Storeys</th>
-                            <th>GBA (m²)</th>
-                            <th style="width:36px;"></th>
                         </tr>
-                    </thead>
-                    <tbody id="body-bus-buildings">
-                        @for (int i = 0; i < 2; i++)
-                        {
-                            <tr>
-                                <td><input name="BusinessBuildings[@i].BuildingNr" class="attr-input" /></td>
-                                <td>
-                                    <select name="BusinessBuildings[@i].Quality" class="attr-input attr-select">
-                                        <option value="">--</option>
-                                        <option>Excellent</option><option>Good</option>
-                                        <option>Average</option><option>Fair</option><option>Poor</option>
-                                    </select>
-                                </td>
-                                <td>
-                                    <select name="BusinessBuildings[@i].Condition" class="attr-input attr-select">
-                                        <option value="">--</option>
-                                        <option>Excellent</option><option>Good</option>
-                                        <option>Average</option><option>Fair</option><option>Poor</option>
-                                    </select>
-                                </td>
-                               <td><input name="BusinessBuildings[@i].YearBuilt" class="attr-input" type="number" min="1800" max="2100" placeholder="e.g. 2005" /></td>
-                                <td><input name="BusinessBuildings[@i].Storeys" class="attr-input" type="number" min="0" step="1" /></td>
-                                <td><input name="BusinessBuildings[@i].GBA" class="attr-input" type="number" min="0" step="0.01" /></td>
-                                @* Hidden: Depreciation, Cost, DRC *@
-                                <input type="hidden" name="BusinessBuildings[@i].Depreciation" />
-                                <input type="hidden" name="BusinessBuildings[@i].Cost" />
-                                <input type="hidden" name="BusinessBuildings[@i].DRC" />
-                                <td><button type="button" class="dyn-del-btn" onclick="delRow(this)" title="Remove"><i class="fa-solid fa-xmark"></i></button></td>
-                            </tr>
-                        }
-                    </tbody>
+                        <tr>
+                            <td class="attr-label">Quality</td>
+                            <td colspan="3">
+                                <div class="attr-radio-row">
+                                    <label><input type="radio" asp-for="SecondaryAttributes.Quality" value="Excellent" /> Excellent</label>
+                                    <label><input type="radio" asp-for="SecondaryAttributes.Quality" value="Good" /> Good</label>
+                                    <label><input type="radio" asp-for="SecondaryAttributes.Quality" value="Average" /> Average</label>
+                                    <label><input type="radio" asp-for="SecondaryAttributes.Quality" value="Poor" /> Poor</label>
+                                </div>
+                            </td>
+                        </tr>
+                    }
                 </table>
             </div>
-            <div class="dyn-add-bar">
-                <button type="button" class="dyn-add-btn" onclick="addRow('body-bus-buildings', busBuildingTemplate)">
-                    <i class="fa-solid fa-plus"></i> Add Building
-                </button>
-            </div>
+        }
 
-            <div class="attr-section-title"><span class="num">3.2</span> Sections <small>— provide details of registered leases</small></div>
-            <div class="table-responsive">
-                <table class="attr-dyn-table" id="tbl-bus-sections">
-                    <thead>
-                        <tr>
-                            <th>Building Nr</th>
-                            <th>Usage</th>
-                            <th>GBA (m²)</th>
-                            <th>NLA (m²)</th>
-                            <th>Rental (R/m²)</th>
-                            <th style="width:36px;"></th>
-                        </tr>
-                    </thead>
-                    <tbody id="body-bus-sections">
-                        @for (int i = 0; i < 2; i++)
-                        {
+        @if (isBus)
+        {
+            <div class="attr-card">
+                <div class="attr-title">
+                    <i class="fa-solid fa-store" style="color:var(--at-gold);margin-right:8px;"></i>
+                    Section 3: Non-Residential Buildings &amp; Sections
+                </div>
+                <div class="attr-divider"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
+
+                <div class="attr-section-title"><span class="num">3.1</span> Buildings</div>
+                <div class="table-responsive">
+                    <table class="attr-dyn-table" id="tbl-bus-buildings">
+                        <thead>
                             <tr>
-                                <td><input name="BusinessSections[@i].BuildingNr" class="attr-input" /></td>
-                                <td><input name="BusinessSections[@i].Usage" class="attr-input" /></td>
+                                <th>Building Nr</th>
+                                <th>Quality</th>
+                                <th>Condition</th>
+                                <th>Year Built</th>
+                                <th>Storeys</th>
+                                <th>GBA (m²)</th>
+                                <th style="width:36px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="body-bus-buildings">
+                            @for (int i = 0; i < 2; i++)
+                            {
+                                <tr>
+                                    <td><input name="BusinessBuildings[@i].BuildingNr" class="attr-input" /></td>
+                                    <td>
+                                        <select name="BusinessBuildings[@i].Quality" class="attr-input attr-select">
+                                            <option value="">--</option>
+                                            <option>Excellent</option>
+                                            <option>Good</option>
+                                            <option>Average</option>
+                                            <option>Fair</option>
+                                            <option>Poor</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <select name="BusinessBuildings[@i].Condition" class="attr-input attr-select">
+                                            <option value="">--</option>
+                                            <option>Excellent</option>
+                                            <option>Good</option>
+                                            <option>Average</option>
+                                            <option>Fair</option>
+                                            <option>Poor</option>
+                                        </select>
+                                    </td>
+                                    <td><input name="BusinessBuildings[@i].YearBuilt" class="attr-input" type="number" min="1800" max="2100" placeholder="e.g. 2005" /></td>
+                                    <td><input name="BusinessBuildings[@i].Storeys" class="attr-input" type="number" min="0" step="1" /></td>
+                                    <td><input name="BusinessBuildings[@i].GBA" class="attr-input" type="number" min="0" step="0.01" /></td>
+                                    @* Hidden: Depreciation, Cost, DRC *@
+                                    <input type="hidden" name="BusinessBuildings[@i].Depreciation" />
+                                    <input type="hidden" name="BusinessBuildings[@i].Cost" />
+                                    <input type="hidden" name="BusinessBuildings[@i].DRC" />
+                                    <td><button type="button" class="dyn-del-btn" onclick="delRow(this)" title="Remove"><i class="fa-solid fa-xmark"></i></button></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <div class="dyn-add-bar">
+                    <button type="button" class="dyn-add-btn" onclick="addRow('body-bus-buildings', busBuildingTemplate)">
+                        <i class="fa-solid fa-plus"></i> Add Building
+                    </button>
+                </div>
+
+                <div class="attr-section-title"><span class="num">3.2</span> Sections <small>— provide details of registered leases</small></div>
+                <div class="table-responsive">
+                    <table class="attr-dyn-table" id="tbl-bus-sections">
+                        <thead>
+                            <tr>
+                                <th>Building Nr</th>
+                                <th>Usage</th>
+                                <th>GBA (m²)</th>
+                                <th>NLA (m²)</th>
+                                <th>Rental (R/m²)</th>
+                                <th style="width:36px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="body-bus-sections">
+                            @for (int i = 0; i < 2; i++)
+                            {
+                                <tr>
+                                    <td><input name="BusinessSections[@i].BuildingNr" class="attr-input" /></td>
+                                    <td><input name="BusinessSections[@i].Usage" class="attr-input" /></td>
                                     <td><input name="BusinessSections[@i].GBA" class="attr-input" type="number" min="0" step="0.01" /></td>
                                     <td><input name="BusinessSections[@i].NLA" class="attr-input" type="number" min="0" step="0.01" /></td>
                                     <td><input name="BusinessSections[@i].Rental" class="attr-input" type="number" min="0" step="0.01" /></td>
-                                @* Hidden: MarketGroup, Quality, CostRate, Cost, Vac, Exp, Cap, Gross, Normalised, Nett, Value *@
-                                <input type="hidden" name="BusinessSections[@i].MarketGroup" />
-                                <input type="hidden" name="BusinessSections[@i].Quality" />
-                                <input type="hidden" name="BusinessSections[@i].CostRate" />
-                                <input type="hidden" name="BusinessSections[@i].Cost" />
-                                <input type="hidden" name="BusinessSections[@i].Vac" />
-                                <input type="hidden" name="BusinessSections[@i].Exp" />
-                                <input type="hidden" name="BusinessSections[@i].Cap" />
-                                <input type="hidden" name="BusinessSections[@i].Gross" />
-                                <input type="hidden" name="BusinessSections[@i].Normalised" />
-                                <input type="hidden" name="BusinessSections[@i].Nett" />
-                                <input type="hidden" name="BusinessSections[@i].Value" />
-                                <td><button type="button" class="dyn-del-btn" onclick="delRow(this)" title="Remove"><i class="fa-solid fa-xmark"></i></button></td>
-                            </tr>
-                        }
-                    </tbody>
+                                    @* Hidden: MarketGroup, Quality, CostRate, Cost, Vac, Exp, Cap, Gross, Normalised, Nett, Value *@
+                                    <input type="hidden" name="BusinessSections[@i].MarketGroup" />
+                                    <input type="hidden" name="BusinessSections[@i].Quality" />
+                                    <input type="hidden" name="BusinessSections[@i].CostRate" />
+                                    <input type="hidden" name="BusinessSections[@i].Cost" />
+                                    <input type="hidden" name="BusinessSections[@i].Vac" />
+                                    <input type="hidden" name="BusinessSections[@i].Exp" />
+                                    <input type="hidden" name="BusinessSections[@i].Cap" />
+                                    <input type="hidden" name="BusinessSections[@i].Gross" />
+                                    <input type="hidden" name="BusinessSections[@i].Normalised" />
+                                    <input type="hidden" name="BusinessSections[@i].Nett" />
+                                    <input type="hidden" name="BusinessSections[@i].Value" />
+                                    <td><button type="button" class="dyn-del-btn" onclick="delRow(this)" title="Remove"><i class="fa-solid fa-xmark"></i></button></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <div class="dyn-add-bar">
+                    <button type="button" class="dyn-add-btn" onclick="addRow('body-bus-sections', busSectionTemplate)">
+                        <i class="fa-solid fa-plus"></i> Add Section
+                    </button>
+                </div>
+
+                <div class="attr-section-title"><span class="num">3.3</span> General</div>
+                <table class="attr-table">
+                    <tr>
+                        <td class="attr-label">Unutilised Land Extent (m²)</td>
+                        <td colspan="3"><input asp-for="BusinessGeneral.UnutilisedLandExtent" class="attr-input" /></td>
+                    </tr>
                 </table>
             </div>
-            <div class="dyn-add-bar">
-                <button type="button" class="dyn-add-btn" onclick="addRow('body-bus-sections', busSectionTemplate)">
-                    <i class="fa-solid fa-plus"></i> Add Section
-                </button>
+        }
+
+        @if (isDrc)
+        {
+            <div class="attr-card">
+                <div class="attr-title">
+                    <i class="fa-solid fa-calculator" style="color:var(--at-gold);margin-right:8px;"></i>
+                    Section 3: DRC Method — Buildings &amp; Land
+                </div>
+                <div class="attr-divider"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
+
+                <div class="attr-section-title"><span class="num">3.1</span> Buildings</div>
+                <div class="table-responsive">
+                    <table class="attr-dyn-table" id="tbl-drc-buildings">
+                        <thead>
+                            <tr>
+                                <th>Building Description</th>
+                                <th>Quality</th>
+                                <th>GBA (m²)</th>
+                                <th>Condition</th>
+                                <th style="width:36px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="body-drc-buildings">
+                            @for (int i = 0; i < 2; i++)
+                            {
+                                <tr>
+                                    <td><input name="DrcBuildings[@i].BuildingDescription" class="attr-input" /></td>
+                                    <td>
+                                        <select name="DrcBuildings[@i].Quality" class="attr-input attr-select">
+                                            <option value="">--</option>
+                                            <option>Excellent</option>
+                                            <option>Good</option>
+                                            <option>Average</option>
+                                            <option>Fair</option>
+                                            <option>Poor</option>
+                                        </select>
+                                    </td>
+                                    <td><input name="DrcBuildings[@i].GrossBuildingArea" class="attr-input" type="number" min="0" step="0.01" /></td>
+                                    <td>
+                                        <select name="DrcBuildings[@i].Condition" class="attr-input attr-select">
+                                            <option value="">--</option>
+                                            <option>Excellent</option>
+                                            <option>Good</option>
+                                            <option>Average</option>
+                                            <option>Fair</option>
+                                            <option>Poor</option>
+                                        </select>
+                                    </td>
+                                    @* Hidden: DepreciationPercentage, RatePerSQM, DepreciatedRate, ReplacementCost *@
+                                    <input type="hidden" name="DrcBuildings[@i].DepreciationPercentage" />
+                                    <input type="hidden" name="DrcBuildings[@i].RatePerSQM" />
+                                    <input type="hidden" name="DrcBuildings[@i].DepreciatedRate" />
+                                    <input type="hidden" name="DrcBuildings[@i].ReplacementCost" />
+                                    <td><button type="button" class="dyn-del-btn" onclick="delRow(this)"><i class="fa-solid fa-xmark"></i></button></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <div class="dyn-add-bar">
+                    <button type="button" class="dyn-add-btn" onclick="addRow('body-drc-buildings', drcBuildingTemplate)">
+                        <i class="fa-solid fa-plus"></i> Add Building
+                    </button>
+                </div>
+
+                <div class="attr-section-title"><span class="num">3.2</span> Improvements</div>
+                <div class="table-responsive">
+                    <table class="attr-dyn-table" id="tbl-drc-improvements">
+                        <thead>
+                            <tr>
+                                <th>Improvement Description</th>
+                                <th>Quality</th>
+                                <th>Area / Unit</th>
+                                <th>Condition</th>
+                                <th style="width:36px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="body-drc-improvements">
+                            @for (int i = 0; i < 2; i++)
+                            {
+                                <tr>
+                                    <td><input name="DrcImprovements[@i].ImprovementDescription" class="attr-input" /></td>
+                                    <td>
+                                        <select name="DrcImprovements[@i].Quality" class="attr-input attr-select">
+                                            <option value="">--</option>
+                                            <option>Excellent</option>
+                                            <option>Good</option>
+                                            <option>Average</option>
+                                            <option>Fair</option>
+                                            <option>Poor</option>
+                                        </select>
+                                    </td>
+                                    <td><input name="DrcImprovements[@i].AreaUnit" class="attr-input" type="number" min="0" step="0.01" /></td>
+                                    <td>
+                                        <select name="DrcImprovements[@i].Condition" class="attr-input attr-select">
+                                            <option value="">--</option>
+                                            <option>Excellent</option>
+                                            <option>Good</option>
+                                            <option>Average</option>
+                                            <option>Fair</option>
+                                            <option>Poor</option>
+                                        </select>
+                                    </td>
+                                    <input type="hidden" name="DrcImprovements[@i].DepreciationPercentage" />
+                                    <input type="hidden" name="DrcImprovements[@i].RatePerSQM" />
+                                    <input type="hidden" name="DrcImprovements[@i].DepreciatedRate" />
+                                    <input type="hidden" name="DrcImprovements[@i].ReplacementCost" />
+                                    <td><button type="button" class="dyn-del-btn" onclick="delRow(this)"><i class="fa-solid fa-xmark"></i></button></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <div class="dyn-add-bar">
+                    <button type="button" class="dyn-add-btn" onclick="addRow('body-drc-improvements', drcImprovementTemplate)">
+                        <i class="fa-solid fa-plus"></i> Add Improvement
+                    </button>
+                </div>
+
+                <div class="attr-section-title"><span class="num">3.3</span> Vacant Land</div>
+                <div class="table-responsive">
+                    <table class="attr-dyn-table" id="tbl-drc-vacant">
+                        <thead>
+                            <tr>
+                                <th>Region</th>
+                                <th>Area (m²)</th>
+                                <th style="width:36px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="body-drc-vacant">
+                            @for (int i = 0; i < 2; i++)
+                            {
+                                <tr>
+                                    <td><input name="DrcVacantLands[@i].Region" class="attr-input" /></td>
+                                    <td><input name="DrcVacantLands[@i].Area" class="attr-input" type="number" min="0" step="0.01" /></td>
+                                    <input type="hidden" name="DrcVacantLands[@i].MinRatePerSQM" />
+                                    <input type="hidden" name="DrcVacantLands[@i].MidRatePerSQM" />
+                                    <input type="hidden" name="DrcVacantLands[@i].MaxRatePerSQM" />
+                                    <input type="hidden" name="DrcVacantLands[@i].Rate" />
+                                    <input type="hidden" name="DrcVacantLands[@i].VacantLandCost" />
+                                    <td><button type="button" class="dyn-del-btn" onclick="delRow(this)"><i class="fa-solid fa-xmark"></i></button></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <div class="dyn-add-bar">
+                    <button type="button" class="dyn-add-btn" onclick="addRow('body-drc-vacant', drcVacantTemplate)">
+                        <i class="fa-solid fa-plus"></i> Add Land Entry
+                    </button>
+                </div>
             </div>
+        }
 
-            <div class="attr-section-title"><span class="num">3.3</span> General</div>
-            <table class="attr-table">
-                <tr>
-                    <td class="attr-label">Unutilised Land Extent (m²)</td>
-                    <td colspan="3"><input asp-for="BusinessGeneral.UnutilisedLandExtent" class="attr-input" /></td>
-                </tr>
-            </table>
-        </div>
-    }
-
-    @if (isDrc)
-    {
+        @* ════════════════════════════════════════════════
+       SECTION 5 — COMMENT
+    ════════════════════════════════════════════════ *@
         <div class="attr-card">
             <div class="attr-title">
-                <i class="fa-solid fa-calculator" style="color:var(--at-gold);margin-right:8px;"></i>
-                Section 3: DRC Method — Buildings &amp; Land
+                <i class="fa-solid fa-comment" style="color:var(--at-gold);margin-right:8px;"></i>
+                Section 4: Additional Comments
+            </div>
+            <div class="attr-divider"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
+            <textarea asp-for="ClientComment" class="attr-textarea" rows="4"
+                      placeholder="Please provide any additional information relevant to this property..."></textarea>
+        </div>
+
+        @* ════════════════════════════════════════════════
+       SECTION 6 — EVIDENCE FILES
+    ════════════════════════════════════════════════ *@
+        <div class="attr-card ev-card">
+            <div class="attr-title">
+                <i class="fa-solid fa-paperclip" style="color:var(--at-gold);margin-right:8px;"></i>
+                Section 5: Supporting Documents
+                <span class="ev-summary-badge" id="evSummaryBadge">0 files ready</span>
             </div>
             <div class="attr-divider"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
 
-            <div class="attr-section-title"><span class="num">3.1</span> Buildings</div>
-            <div class="table-responsive">
-                <table class="attr-dyn-table" id="tbl-drc-buildings">
-                    <thead>
-                        <tr>
-                            <th>Building Description</th>
-                            <th>Quality</th>
-                            <th>GBA (m²)</th>
-                            <th>Condition</th>
-                            <th style="width:36px;"></th>
-                        </tr>
-                    </thead>
-                    <tbody id="body-drc-buildings">
-                        @for (int i = 0; i < 2; i++)
-                        {
-                            <tr>
-                                <td><input name="DrcBuildings[@i].BuildingDescription" class="attr-input" /></td>
-                                <td>
-                                    <select name="DrcBuildings[@i].Quality" class="attr-input attr-select">
-                                        <option value="">--</option>
-                                        <option>Excellent</option><option>Good</option>
-                                        <option>Average</option><option>Fair</option><option>Poor</option>
-                                    </select>
-                                </td>
-                                    <td><input name="DrcBuildings[@i].GrossBuildingArea" class="attr-input" type="number" min="0" step="0.01" /></td>
-                                <td>
-                                    <select name="DrcBuildings[@i].Condition" class="attr-input attr-select">
-                                        <option value="">--</option>
-                                        <option>Excellent</option><option>Good</option>
-                                        <option>Average</option><option>Fair</option><option>Poor</option>
-                                    </select>
-                                </td>
-                                @* Hidden: DepreciationPercentage, RatePerSQM, DepreciatedRate, ReplacementCost *@
-                                <input type="hidden" name="DrcBuildings[@i].DepreciationPercentage" />
-                                <input type="hidden" name="DrcBuildings[@i].RatePerSQM" />
-                                <input type="hidden" name="DrcBuildings[@i].DepreciatedRate" />
-                                <input type="hidden" name="DrcBuildings[@i].ReplacementCost" />
-                                <td><button type="button" class="dyn-del-btn" onclick="delRow(this)"><i class="fa-solid fa-xmark"></i></button></td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-            <div class="dyn-add-bar">
-                <button type="button" class="dyn-add-btn" onclick="addRow('body-drc-buildings', drcBuildingTemplate)">
-                    <i class="fa-solid fa-plus"></i> Add Building
-                </button>
-            </div>
+            <p class="ev-section-intro">
+                Attach anything that supports the information you've given above — for
+                example a title deed, building plan, recent photos, or a municipal
+                account. This isn't compulsory, but it can help the valuer understand
+                your property faster.
+            </p>
 
-            <div class="attr-section-title"><span class="num">3.2</span> Improvements</div>
-            <div class="table-responsive">
-                <table class="attr-dyn-table" id="tbl-drc-improvements">
-                    <thead>
-                        <tr>
-                            <th>Improvement Description</th>
-                            <th>Quality</th>
-                            <th>Area / Unit</th>
-                            <th>Condition</th>
-                            <th style="width:36px;"></th>
-                        </tr>
-                    </thead>
-                    <tbody id="body-drc-improvements">
-                        @for (int i = 0; i < 2; i++)
-                        {
-                            <tr>
-                                <td><input name="DrcImprovements[@i].ImprovementDescription" class="attr-input" /></td>
-                                <td>
-                                    <select name="DrcImprovements[@i].Quality" class="attr-input attr-select">
-                                        <option value="">--</option>
-                                        <option>Excellent</option><option>Good</option>
-                                        <option>Average</option><option>Fair</option><option>Poor</option>
-                                    </select>
-                                </td>
-                                    <td><input name="DrcImprovements[@i].AreaUnit" class="attr-input" type="number" min="0" step="0.01" /></td>
-                                <td>
-                                    <select name="DrcImprovements[@i].Condition" class="attr-input attr-select">
-                                        <option value="">--</option>
-                                        <option>Excellent</option><option>Good</option>
-                                        <option>Average</option><option>Fair</option><option>Poor</option>
-                                    </select>
-                                </td>
-                                <input type="hidden" name="DrcImprovements[@i].DepreciationPercentage" />
-                                <input type="hidden" name="DrcImprovements[@i].RatePerSQM" />
-                                <input type="hidden" name="DrcImprovements[@i].DepreciatedRate" />
-                                <input type="hidden" name="DrcImprovements[@i].ReplacementCost" />
-                                <td><button type="button" class="dyn-del-btn" onclick="delRow(this)"><i class="fa-solid fa-xmark"></i></button></td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-            <div class="dyn-add-bar">
-                <button type="button" class="dyn-add-btn" onclick="addRow('body-drc-improvements', drcImprovementTemplate)">
-                    <i class="fa-solid fa-plus"></i> Add Improvement
-                </button>
-            </div>
+            @if (ViewBag.RepRequired == true)
+            {
+                <div class="ev-rep-notice">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <div>
+                        <strong>Authorisation letter required</strong> — you told us
+                        you're submitting as a representative, so we need the signed
+                        letter from the registered owner authorising you to act on
+                        their behalf.
+                    </div>
+                </div>
 
-            <div class="attr-section-title"><span class="num">3.3</span> Vacant Land</div>
-            <div class="table-responsive">
-                <table class="attr-dyn-table" id="tbl-drc-vacant">
-                    <thead>
-                        <tr>
-                            <th>Region</th>
-                            <th>Area (m²)</th>
-                            <th style="width:36px;"></th>
-                        </tr>
-                    </thead>
-                    <tbody id="body-drc-vacant">
-                        @for (int i = 0; i < 2; i++)
-                        {
-                            <tr>
-                                <td><input name="DrcVacantLands[@i].Region" class="attr-input" /></td>
-                                    <td><input name="DrcVacantLands[@i].Area" class="attr-input" type="number" min="0" step="0.01" /></td>
-                                <input type="hidden" name="DrcVacantLands[@i].MinRatePerSQM" />
-                                <input type="hidden" name="DrcVacantLands[@i].MidRatePerSQM" />
-                                <input type="hidden" name="DrcVacantLands[@i].MaxRatePerSQM" />
-                                <input type="hidden" name="DrcVacantLands[@i].Rate" />
-                                <input type="hidden" name="DrcVacantLands[@i].VacantLandCost" />
-                                <td><button type="button" class="dyn-del-btn" onclick="delRow(this)"><i class="fa-solid fa-xmark"></i></button></td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-            <div class="dyn-add-bar">
-                <button type="button" class="dyn-add-btn" onclick="addRow('body-drc-vacant', drcVacantTemplate)">
-                    <i class="fa-solid fa-plus"></i> Add Land Entry
-                </button>
-            </div>
-        </div>
-    }
+                <div class="ev-rep-upload" id="evRepUpload">
+                    <div class="ev-rep-label">
+                        <i class="fa-solid fa-file-signature"></i>
+                        Authorisation letter
+                        <span style="color:#e53e3e;">*</span>
+                    </div>
 
-    @* ════════════════════════════════════════════════
-       SECTION 5 — COMMENT
-    ════════════════════════════════════════════════ *@
-    <div class="attr-card">
-        <div class="attr-title">
-            <i class="fa-solid fa-comment" style="color:var(--at-gold);margin-right:8px;"></i>
-            Section 4: Additional Comments
-        </div>
-        <div class="attr-divider"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
-        <textarea asp-for="ClientComment" class="attr-textarea" rows="4"
-                  placeholder="Please provide any additional information relevant to this property..."></textarea>
-    </div>
-
-    @* ════════════════════════════════════════════════
-       SECTION 6 — EVIDENCE FILES
-    ════════════════════════════════════════════════ *@
-    <div class="attr-card ev-card">
-        <div class="attr-title">
-            <i class="fa-solid fa-paperclip" style="color:var(--at-gold);margin-right:8px;"></i>
-            Section 5: Supporting Documents
-            <span style="font-size:11px;font-weight:400;text-transform:none;margin-left:8px;">Maximum 10 files · 20 MB each</span>
-        </div>
-        <div class="attr-divider"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
-
-        @if (ViewBag.RepRequired == true)
-        {
-            <div class="ev-rep-notice">
-                <i class="fa-solid fa-triangle-exclamation"></i>
-                <div><strong>Authorisation Letter Required</strong> — Upload the signed letter from the registered owner authorising you as their representative.</div>
-            </div>
-        }
-        <div class="ev-rep-upload" style="@(ViewBag.RepRequired == true ? "" : "background:#f7fbfb;")">
-            <div class="ev-rep-label">
-                <i class="fa-solid fa-file-signature"></i>
-                Authorisation Letter @(ViewBag.RepRequired == true ? "" : "(optional)")
-                @if (ViewBag.RepRequired == true) { <span style="color:#e53e3e;">*</span> }
-            </div>
-                @if (ViewBag.RepRequired == true)
-                {
                     <input asp-for="Files.RepLetter"
                            type="file"
+                           id="evRepLetterInput"
                            class="ev-rep-input"
                            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
                            required />
-                }
-                else
-                {
-                    <input asp-for="Files.RepLetter"
-                           type="file"
-                           class="ev-rep-input"
-                           accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" />
-                }
+
+                    <div class="ev-rep-file-status" id="evRepFileStatus">
+                        <i class="fa-solid fa-circle-exclamation"></i>
+                        No file selected yet
+                    </div>
+                </div>
+            }
+
+            <div class="ev-section-label">
+                <i class="fa-solid fa-folder-open"></i>
+                Other supporting documents <span class="ev-optional-tag">(optional)</span>
+            </div>
+
+            <div class="ev-dropzone" id="evDropzone"
+                 onclick="document.getElementById('evFileInput').click()">
+                <div class="ev-dropzone-icon"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+                <div class="ev-dropzone-title">Drag files here to upload</div>
+                <div class="ev-dropzone-sub">PDF, Word, Excel, Images, Title Deeds, Plans</div>
+                <button type="button" class="ev-browse-btn"
+                        onclick="event.stopPropagation();document.getElementById('evFileInput').click()">
+                    <i class="fa-solid fa-folder-open"></i> Browse Files
+                </button>
+            </div>
+            <input type="file" id="evFileInput" name="Files.EvidenceFiles"
+                   multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xls,.xlsx" />
+
+            <div class="ev-counter">
+                <span id="evCountText">0 of 10 files added</span>
+                <div class="ev-counter-bar"><div class="ev-counter-fill" id="evCountFill"></div></div>
+            </div>
+            <div class="ev-file-list" id="evFileList"></div>
+            <div class="ev-note">
+                <i class="fa-solid fa-circle-info"></i>
+                Supported: PDF, Word, Excel, JPG, PNG &nbsp;|&nbsp; Max 10 files &nbsp;|&nbsp; Max 20 MB per file
+            </div>
         </div>
 
-        <div class="ev-dropzone" id="evDropzone"
-             onclick="document.getElementById('evFileInput').click()">
-            <div class="ev-dropzone-icon"><i class="fa-solid fa-cloud-arrow-up"></i></div>
-            <div class="ev-dropzone-title">Drag files here to upload</div>
-            <div class="ev-dropzone-sub">PDF, Word, Excel, Images, Title Deeds, Plans</div>
-            <button type="button" class="ev-browse-btn"
-                    onclick="event.stopPropagation();document.getElementById('evFileInput').click()">
-                <i class="fa-solid fa-folder-open"></i> Browse Files
-            </button>
-        </div>
-        <input type="file" id="evFileInput" name="Files.EvidenceFiles"
-               multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xls,.xlsx" />
-
-        <div class="ev-counter">
-            <span id="evCountText">0 / 10 files selected</span>
-            <div class="ev-counter-bar"><div class="ev-counter-fill" id="evCountFill"></div></div>
-        </div>
-        <div class="ev-file-list" id="evFileList"></div>
-        <div class="ev-note">
-            <i class="fa-solid fa-circle-info"></i>
-            Supported: PDF, Word, Excel, JPG, PNG &nbsp;|&nbsp; Max 10 files &nbsp;|&nbsp; Max 20 MB per file
-        </div>
-    </div>
-
-    @* ════════════════════════════════════════════════
+        @* ════════════════════════════════════════════════
        SECTION 7 — DECLARATION & SIGNATURE
     ════════════════════════════════════════════════ *@
-    <div class="attr-card">
-        <div class="attr-title">
-            <i class="fa-solid fa-signature" style="color:var(--at-gold);margin-right:8px;"></i>
-            Section 6: Declaration &amp; Signature
-        </div>
-        <div class="attr-divider"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
-
-        <div class="attr-legal-box">
-            <p>I declare that the information submitted is true and correct to the best of my knowledge. I understand that submitting this information does not mean it is automatically accepted and that it is subject to review by the City of Johannesburg valuation team.</p>
-        </div>
-
-        <input asp-for="Declaration.SignaturePicture" type="hidden" id="signatureData" />
-
-        <table class="attr-table">
-            <tr>
-                <td class="attr-label">I Accept <span style="color:#e53e3e;">*</span></td>
-                <td colspan="3">
-                    <label style="display:flex;align-items:center;gap:10px;font-size:13px;cursor:pointer;font-family:'Poppins',sans-serif;">
-                        <input asp-for="Declaration.DeclarationAccepted" type="checkbox" id="declAccepted"
-                               style="width:18px;height:18px;accent-color:#e6b000;" required />
-                        I confirm that I have read, understood and accept this declaration.
-                    </label>
-                </td>
-            </tr>
-            <tr>
-                <td class="attr-label">Capacity</td>
-                <td colspan="3">
-                    <input class="attr-input" value="@(ViewBag.Declaration?.ToString() ?? "Owner")" readonly
-                           style="background:var(--at-teal-pale);font-weight:700;color:var(--at-gold);" />
-                </td>
-            </tr>
-            <tr>
-                <td class="attr-label">Full Name <span style="color:#e53e3e;">*</span></td>
-                <td>
-                    <input asp-for="Declaration.SignatureName" class="attr-input"
-                           placeholder="Type your full name" required />
-                    <span asp-validation-for="Declaration.SignatureName" style="color:#e53e3e;font-size:12px;"></span>
-                </td>
-                <td class="attr-label">Date</td>
-                <td><input id="declDate" class="attr-input" readonly style="background:var(--at-teal-pale);" /></td>
-            </tr>
-        </table>
-
-        <div style="padding:14px;">
-            <div style="font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.5px;
-                color:#1a1a1a;margin-bottom:10px;display:flex;align-items:center;gap:8px;
-                font-family:'Poppins',sans-serif;">
-                <i class="fa-solid fa-pen-nib" style="color:var(--at-gold);"></i>
-                Draw Signature Below <span style="color:#e53e3e;font-weight:400;">*</span>
-                <span style="font-weight:400;text-transform:none;font-size:11px;color:#888;margin-left:4px;">(mouse or finger)</span>
+        <div class="attr-card">
+            <div class="attr-title">
+                <i class="fa-solid fa-signature" style="color:var(--at-gold);margin-right:8px;"></i>
+                Section 6: Declaration &amp; Signature
             </div>
-            <div class="attr-sig-canvas-wrap">
-                <canvas id="sigCanvas" width="598" height="160" style="width:100%;height:160px;"></canvas>
-                <div class="attr-sig-line"></div>
-                <div class="attr-sig-hint">Sign here</div>
+            <div class="attr-divider"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
+
+            <div class="attr-legal-box">
+                <p>I declare that the information submitted is true and correct to the best of my knowledge. I understand that submitting this information does not mean it is automatically accepted and that it is subject to review by the City of Johannesburg valuation team.</p>
             </div>
-            <div class="attr-sig-controls">
-                <button type="button" id="sigClearBtn" onclick="clearSignature()"
-                        style="padding:6px 16px;border-radius:6px;background:#f7f7f7;
+
+            <input asp-for="Declaration.SignaturePicture" type="hidden" id="signatureData" />
+
+            <table class="attr-table">
+                <tr>
+                    <td class="attr-label">I Accept <span style="color:#e53e3e;">*</span></td>
+                    <td colspan="3">
+                        <label style="display:flex;align-items:center;gap:10px;font-size:13px;cursor:pointer;font-family:'Poppins',sans-serif;">
+                            <input asp-for="Declaration.DeclarationAccepted" type="checkbox" id="declAccepted"
+                                   style="width:18px;height:18px;accent-color:#e6b000;" required />
+                            I confirm that I have read, understood and accept this declaration.
+                        </label>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="attr-label">Capacity</td>
+                    <td colspan="3">
+                        <input class="attr-input" value="@(ViewBag.Declaration?.ToString() ?? "Owner")" readonly
+                               style="background:var(--at-teal-pale);font-weight:700;color:var(--at-gold);" />
+                    </td>
+                </tr>
+                <tr>
+                    <td class="attr-label">Full Name <span style="color:#e53e3e;">*</span></td>
+                    <td>
+                        <input asp-for="Declaration.SignatureName" class="attr-input"
+                               placeholder="Type your full name" required />
+                        <span asp-validation-for="Declaration.SignatureName" style="color:#e53e3e;font-size:12px;"></span>
+                    </td>
+                    <td class="attr-label">Date</td>
+                    <td><input id="declDate" class="attr-input" readonly style="background:var(--at-teal-pale);" /></td>
+                </tr>
+            </table>
+
+            <div style="padding:14px;">
+                <div style="font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.5px;
+                    color:#1a1a1a;margin-bottom:10px;display:flex;align-items:center;gap:8px;
+                    font-family:'Poppins',sans-serif;">
+                    <i class="fa-solid fa-pen-nib" style="color:var(--at-gold);"></i>
+                    Draw Signature Below <span style="color:#e53e3e;font-weight:400;">*</span>
+                    <span style="font-weight:400;text-transform:none;font-size:11px;color:#888;margin-left:4px;">(mouse or finger)</span>
+                </div>
+                <div class="attr-sig-canvas-wrap">
+                    <canvas id="sigCanvas" width="598" height="160" style="width:100%;height:160px;"></canvas>
+                    <div class="attr-sig-line"></div>
+                    <div class="attr-sig-hint">Sign here</div>
+                </div>
+                <div class="attr-sig-controls">
+                    <button type="button" id="sigClearBtn" onclick="clearSignature()"
+                            style="padding:6px 16px;border-radius:6px;background:#f7f7f7;
                         border:1px solid #d0d0d0;font-size:12px;font-weight:700;
                         cursor:pointer;font-family:inherit;">
-                    <i class="fa-solid fa-rotate-left"></i> Clear
-                </button>
-                <span id="sigStatus" style="font-size:12px;color:#6b6b6b;font-family:'Poppins',sans-serif;">No signature drawn</span>
+                        <i class="fa-solid fa-rotate-left"></i> Clear
+                    </button>
+                    <span id="sigStatus" style="font-size:12px;color:#6b6b6b;font-family:'Poppins',sans-serif;">No signature drawn</span>
+                </div>
             </div>
         </div>
-    </div>
 
-    @* ── Submit actions ── *@
-    <div class="attr-actions">
-        <a asp-action="Create" asp-controller="Attributes"
-           asp-route-formType="@Model.FormType"
-           class="btn-attr-secondary">
-            <i class="fa-solid fa-rotate-left"></i> Reset Form
-        </a>
-        <button type="submit" class="btn-attr-primary">
-            <i class="fa-solid fa-paper-plane"></i> Submit Attribute Information
-        </button>
-    </div>
+        @* ── Submit actions ── *@
+        <div class="attr-actions">
+            <a asp-action="Create" asp-controller="Attributes"
+                   asp-route-formType="@Model.FormType"
+                   class="btn-attr-secondary">
+                <i class="fa-solid fa-rotate-left"></i> Reset Form
+            </a>
+            <button type="submit" class="btn-attr-primary">
+                <i class="fa-solid fa-paper-plane"></i> Submit Attribute Information
+            </button>
+        </div>
 
-</form>
+    </form>
 </div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-    <script src="~/js/attribute-create.js" asp-append-version="true"></script>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            initialiseDeclarationDate();
-            initialiseMixedUse();
-            initialiseContactTypeToggle();
-            initialiseEvidenceUpload();
-            initialiseSubmitValidation();
-        });
-
-        // ─────────────────────────────────────────────
-        // Declaration date
-        // ─────────────────────────────────────────────
-        function initialiseDeclarationDate() {
-            const declDate = document.getElementById('declDate');
-
-            if (!declDate) return;
-
-            declDate.value = new Date().toLocaleDateString('en-ZA', {
-                day: '2-digit',
-                month: 'long',
-                year: 'numeric'
+            document.addEventListener('DOMContentLoaded', function () {
+                initialiseDeclarationDate();
+                initialiseMixedUse();
+                initialiseContactTypeToggle();
+                initialiseSameAddressToggle();
+                initialiseEvidenceUpload();
+                initialiseSubmitValidation();
             });
-        }
 
-        // ─────────────────────────────────────────────
-        // Multipurpose / Mixed-use dropdown
-        // ─────────────────────────────────────────────
-        function initialiseMixedUse() {
-            const category = document.getElementById('valuationCategory');
-            const mixedRow = document.getElementById('mixedUseRow');
-            const mixedValue = document.getElementById('isMixedUseValue');
-            const mixedSelect = document.getElementById('mixedUseSelect');
+            // ─────────────────────────────────────────────
+            // Declaration date
+            // ─────────────────────────────────────────────
+            function initialiseDeclarationDate() {
+                const declDate = document.getElementById('declDate');
 
-            if (!category || !mixedRow || !mixedValue) return;
+                if (!declDate) return;
 
-            function updateMixedUse() {
-                const selectedValue = (category.value || '').trim().toLowerCase();
+                declDate.value = new Date().toLocaleDateString('en-ZA', {
+                    day: '2-digit',
+                    month: 'long',
+                    year: 'numeric'
+                });
+            }
 
-                const isMulti =
-                    selectedValue === 'multipurpose' ||
-                    selectedValue === 'multiple purposes' ||
-                    selectedValue === 'multi purpose' ||
-                    selectedValue === 'multi-purpose';
+            // ─────────────────────────────────────────────
+            // ─────────────────────────────────────────────
+            // Multipurpose / Mixed-use dropdown
+            // ─────────────────────────────────────────────
+            function initialiseMixedUse() {
+                const category = document.getElementById('valuationCategory');
+                const mixedRow = document.getElementById('mixedUseRow');
+                const mixedValue = document.getElementById('isMixedUseValue');
+                const mixedSelect = document.getElementById('mixedUseSelect');
 
-                mixedRow.style.display = isMulti ? '' : 'none';
-                mixedValue.value = isMulti ? 'true' : 'false';
+                if (!category || !mixedRow || !mixedValue) return;
 
-                if (!isMulti && mixedSelect) {
-                    mixedSelect.value = '';
+                function updateMixedUse() {
+                    const selectedValue = (category.value || '').trim().toLowerCase();
+                    const isMulti = selectedValue === 'multipurpose';
+
+                    mixedRow.style.display = isMulti ? '' : 'none';
+                    mixedValue.value = isMulti ? 'true' : 'false';
+
+                    if (mixedSelect) {
+                        mixedSelect.disabled = !isMulti;
+                        mixedSelect.required = isMulti;
+
+                        if (!isMulti) {
+                            mixedSelect.value = '';
+                            mixedSelect.setCustomValidity('');
+                        }
+                    }
                 }
+
+                category.addEventListener('change', updateMixedUse);
+                updateMixedUse();
             }
 
-            category.addEventListener('change', updateMixedUse);
-            updateMixedUse();
-        }
-
-        // ─────────────────────────────────────────────
-        // Owner / Company contact toggle
-        // ─────────────────────────────────────────────
-        function initialiseContactTypeToggle() {
-            const radios = document.querySelectorAll('.contact-type-radio');
-            const tables = document.querySelectorAll('.contact-table');
-
-            radios.forEach(function (radio) {
-                radio.addEventListener('change', function () {
-                    updateContactType(this.dataset.index);
+            // ─────────────────────────────────────────────
+            // Owner / Company contact toggle
+            // Uses event delegation on document so it keeps
+            // working even if rows are re-rendered later.
+            // ─────────────────────────────────────────────
+            function initialiseContactTypeToggle() {
+                document.addEventListener('change', function (e) {
+                    if (!e.target.classList.contains('contact-type-radio')) return;
+                    updateContactType(e.target.dataset.index);
                 });
-            });
 
-            tables.forEach(function (table) {
-                updateContactType(table.dataset.contactIndex);
-            });
-        }
-
-        function updateContactType(index) {
-            if (index === undefined || index === null || index === '') return;
-
-            const selected = document.querySelector(
-                'input[name="ContactInfos[' + index + '].IsCompany"]:checked'
-            );
-
-            const isCompany = selected && selected.value === 'true';
-
-            const ownerRows = document.querySelectorAll('.owner-fields-' + index);
-            const companyRows = document.querySelectorAll('.company-fields-' + index);
-
-            const hiddenContactType = document.querySelector(
-                'input[name="ContactInfos[' + index + '].ContactType"]'
-            );
-
-            ownerRows.forEach(function (row) {
-                row.style.display = isCompany ? 'none' : '';
-            });
-
-            companyRows.forEach(function (row) {
-                row.style.display = isCompany ? '' : 'none';
-            });
-
-            if (hiddenContactType) {
-                hiddenContactType.value = isCompany ? 'Company' : 'Owner';
+                document.querySelectorAll('.contact-table').forEach(function (table) {
+                    updateContactType(table.dataset.contactIndex);
+                });
             }
 
-            // Optional cleanup so hidden fields do not post wrong values
-            const firstNames = document.querySelector('[name="ContactInfos[' + index + '].FirstNames"]');
-            const lastName = document.querySelector('[name="ContactInfos[' + index + '].LastName"]');
-            const companyName = document.querySelector('[name="ContactInfos[' + index + '].CompanyName"]');
-            const companyReg = document.querySelector('[name="ContactInfos[' + index + '].CompanyRegistrationNumber"]');
+            function updateContactType(index) {
+                if (index === undefined || index === null || index === '') return;
 
-            if (isCompany) {
-                if (firstNames) firstNames.value = '';
-                if (lastName) lastName.value = '';
-            } else {
-                if (companyName) companyName.value = '';
-                if (companyReg) companyReg.value = '';
+                const selected = document.querySelector(
+                    'input[name="ContactInfos[' + index + '].IsCompany"]:checked'
+                );
+
+                const isCompany = selected ? selected.value === 'true' : false;
+
+                const ownerRows = document.querySelectorAll('.owner-fields-' + index);
+                const companyRows = document.querySelectorAll('.company-fields-' + index);
+                const heading = document.getElementById('contactHeading-' + index);
+
+                const hiddenContactType = document.querySelector(
+                    'input[name="ContactInfos[' + index + '].ContactType"]'
+                );
+
+                ownerRows.forEach(function (row) {
+                    row.style.display = isCompany ? 'none' : '';
+                });
+
+                companyRows.forEach(function (row) {
+                    row.style.display = isCompany ? '' : 'none';
+                });
+
+                if (heading) {
+                    heading.textContent = isCompany ? 'Company Details' : 'Owner Details';
+                }
+
+                if (hiddenContactType) {
+                    hiddenContactType.value = isCompany ? 'Company' : 'Owner';
+                }
+
+                // Toggle required-ness and clear whichever side is now hidden,
+                // so hidden fields never block submit or post stale values.
+                const firstNames = document.querySelector('[name="ContactInfos[' + index + '].FirstNames"]');
+                const lastName = document.querySelector('[name="ContactInfos[' + index + '].LastName"]');
+                const companyName = document.querySelector('[name="ContactInfos[' + index + '].CompanyName"]');
+                const companyReg = document.querySelector('[name="ContactInfos[' + index + '].CompanyRegistrationNumber"]');
+
+                if (firstNames) { firstNames.required = !isCompany; if (isCompany) firstNames.value = ''; }
+                if (lastName) { lastName.required = !isCompany; if (isCompany) lastName.value = ''; }
+                if (companyName) { companyName.required = isCompany; if (!isCompany) companyName.value = ''; }
+                if (companyReg) { if (!isCompany) companyReg.value = ''; }
             }
-        }
 
-        // ─────────────────────────────────────────────
-        // Dynamic rows
-        // ─────────────────────────────────────────────
-        function delRow(btn) {
-            const row = btn.closest('tr');
-
-            if (!row) return;
-
-            const tbody = row.closest('tbody');
-
-            row.remove();
-
-            if (tbody && tbody.rows.length === 0) {
-                // Leave empty; user can add again using button.
-            }
-
-            reIndex();
-        }
-
-        function reIndex() {
-            const bodyIds = [
-                'body-bus-buildings',
-                'body-bus-sections',
-                'body-drc-buildings',
-                'body-drc-improvements',
-                'body-drc-vacant'
-            ];
-
-            bodyIds.forEach(function (bodyId) {
-                const tbody = document.getElementById(bodyId);
-
-                if (!tbody) return;
-
-                Array.from(tbody.rows).forEach(function (row, i) {
-                    row.querySelectorAll('[name]').forEach(function (el) {
-                        el.name = el.name.replace(/\[\d+\]/, '[' + i + ']');
-                    });
-                });
-            });
-        }
-
-        function addRow(bodyId, templateFn) {
-            const tbody = document.getElementById(bodyId);
-
-            if (!tbody || typeof templateFn !== 'function') return;
-
-            const idx = tbody.rows.length;
-            const tr = document.createElement('tr');
-
-            tr.innerHTML = templateFn(idx);
-            tbody.appendChild(tr);
-
-            reIndex();
-        }
-
-        function qualitySelect(name) {
-            return '<select name="' + name + '" class="attr-input attr-select">' +
-                '<option value="">-- Select --</option>' +
-                '<option>Excellent</option>' +
-                '<option>Good</option>' +
-                '<option>Average</option>' +
-                '<option>Fair</option>' +
-                '<option>Poor</option>' +
-                '</select>';
-        }
-
-        function condSelect(name) {
-            return qualitySelect(name);
-        }
-
-        function delBtn() {
-            return '<td>' +
-                '<button type="button" class="dyn-del-btn" onclick="delRow(this)" title="Remove">' +
-                '<i class="fa-solid fa-xmark"></i>' +
-                '</button>' +
-                '</td>';
-        }
-
-        const busBuildingTemplate = function (i) {
-            return '' +
-                '<td><input name="BusinessBuildings[' + i + '].BuildingNr" class="attr-input" /></td>' +
-                '<td>' + qualitySelect('BusinessBuildings[' + i + '].Quality') + '</td>' +
-                '<td>' + condSelect('BusinessBuildings[' + i + '].Condition') + '</td>' +
-                '<td><input name="BusinessBuildings[' + i + '].YearBuilt" class="attr-input" type="number" /></td>' +
-                '<td><input name="BusinessBuildings[' + i + '].Storeys" class="attr-input" type="number" /></td>' +
-                '<td><input name="BusinessBuildings[' + i + '].GBA" class="attr-input" type="number" step="0.01" /></td>' +
-                '<input type="hidden" name="BusinessBuildings[' + i + '].Depreciation" />' +
-                '<input type="hidden" name="BusinessBuildings[' + i + '].Cost" />' +
-                '<input type="hidden" name="BusinessBuildings[' + i + '].DRC" />' +
-                delBtn();
-        };
-
-        const busSectionTemplate = function (i) {
-            return '' +
-                '<td><input name="BusinessSections[' + i + '].BuildingNr" class="attr-input" /></td>' +
-                '<td><input name="BusinessSections[' + i + '].Usage" class="attr-input" /></td>' +
-                '<td><input name="BusinessSections[' + i + '].GBA" class="attr-input" type="number" step="0.01" /></td>' +
-                '<td><input name="BusinessSections[' + i + '].NLA" class="attr-input" type="number" step="0.01" /></td>' +
-                '<td><input name="BusinessSections[' + i + '].Rental" class="attr-input" type="number" step="0.01" /></td>' +
-                '<input type="hidden" name="BusinessSections[' + i + '].MarketGroup" />' +
-                '<input type="hidden" name="BusinessSections[' + i + '].Quality" />' +
-                '<input type="hidden" name="BusinessSections[' + i + '].CostRate" />' +
-                '<input type="hidden" name="BusinessSections[' + i + '].Cost" />' +
-                '<input type="hidden" name="BusinessSections[' + i + '].Vac" />' +
-                '<input type="hidden" name="BusinessSections[' + i + '].Exp" />' +
-                '<input type="hidden" name="BusinessSections[' + i + '].Cap" />' +
-                '<input type="hidden" name="BusinessSections[' + i + '].Gross" />' +
-                '<input type="hidden" name="BusinessSections[' + i + '].Normalised" />' +
-                '<input type="hidden" name="BusinessSections[' + i + '].Nett" />' +
-                '<input type="hidden" name="BusinessSections[' + i + '].Value" />' +
-                delBtn();
-        };
-
-        const drcBuildingTemplate = function (i) {
-            return '' +
-                '<td><input name="DrcBuildings[' + i + '].BuildingDescription" class="attr-input" /></td>' +
-                '<td>' + qualitySelect('DrcBuildings[' + i + '].Quality') + '</td>' +
-                '<td><input name="DrcBuildings[' + i + '].GrossBuildingArea" class="attr-input" type="number" step="0.01" /></td>' +
-                '<td>' + condSelect('DrcBuildings[' + i + '].Condition') + '</td>' +
-                '<input type="hidden" name="DrcBuildings[' + i + '].DepreciationPercentage" />' +
-                '<input type="hidden" name="DrcBuildings[' + i + '].RatePerSQM" />' +
-                '<input type="hidden" name="DrcBuildings[' + i + '].DepreciatedRate" />' +
-                '<input type="hidden" name="DrcBuildings[' + i + '].ReplacementCost" />' +
-                delBtn();
-        };
-
-        const drcImprovementTemplate = function (i) {
-            return '' +
-                '<td><input name="DrcImprovements[' + i + '].ImprovementDescription" class="attr-input" /></td>' +
-                '<td>' + qualitySelect('DrcImprovements[' + i + '].Quality') + '</td>' +
-                '<td><input name="DrcImprovements[' + i + '].AreaUnit" class="attr-input" type="number" step="0.01" /></td>' +
-                '<td>' + condSelect('DrcImprovements[' + i + '].Condition') + '</td>' +
-                '<input type="hidden" name="DrcImprovements[' + i + '].DepreciationPercentage" />' +
-                '<input type="hidden" name="DrcImprovements[' + i + '].RatePerSQM" />' +
-                '<input type="hidden" name="DrcImprovements[' + i + '].DepreciatedRate" />' +
-                '<input type="hidden" name="DrcImprovements[' + i + '].ReplacementCost" />' +
-                delBtn();
-        };
-
-        const drcVacantTemplate = function (i) {
-            return '' +
-                '<td><input name="DrcVacantLands[' + i + '].Region" class="attr-input" /></td>' +
-                '<td><input name="DrcVacantLands[' + i + '].Area" class="attr-input" type="number" step="0.01" /></td>' +
-                '<input type="hidden" name="DrcVacantLands[' + i + '].MinRatePerSQM" />' +
-                '<input type="hidden" name="DrcVacantLands[' + i + '].MidRatePerSQM" />' +
-                '<input type="hidden" name="DrcVacantLands[' + i + '].MaxRatePerSQM" />' +
-                '<input type="hidden" name="DrcVacantLands[' + i + '].Rate" />' +
-                '<input type="hidden" name="DrcVacantLands[' + i + '].VacantLandCost" />' +
-                delBtn();
-        };
-
-        // ─────────────────────────────────────────────
-        // Evidence upload counter/list
-        // ─────────────────────────────────────────────
-        function initialiseEvidenceUpload() {
-            const input = document.getElementById('evFileInput');
-            const list = document.getElementById('evFileList');
-            const countText = document.getElementById('evCountText');
-            const countFill = document.getElementById('evCountFill');
-            const dropzone = document.getElementById('evDropzone');
-
-            if (!input) return;
-
-            input.addEventListener('change', function () {
-                updateEvidenceList(input.files, list, countText, countFill);
-            });
-
-            if (dropzone) {
-                dropzone.addEventListener('dragover', function (e) {
-                    e.preventDefault();
-                    dropzone.classList.add('drag-over');
+            // ─────────────────────────────────────────────
+            // "Postal address is the same as physical address"
+            // Event delegation, keyed per contact index so it
+            // works independently for each Owner/Company block.
+            // ─────────────────────────────────────────────
+            function initialiseSameAddressToggle() {
+                document.addEventListener('change', function (e) {
+                    if (!e.target.classList.contains('same-postal-checkbox')) return;
+                    applySameAddress(e.target.dataset.index, e.target.checked);
                 });
 
-                dropzone.addEventListener('dragleave', function () {
-                    dropzone.classList.remove('drag-over');
+                document.addEventListener('input', function (e) {
+                    if (!e.target.matches('.attr-textarea')) return;
+                    if (e.target.id.indexOf('physicalAddress-') !== 0) return;
+
+                    const index = e.target.id.replace('physicalAddress-', '');
+                    const checkbox = document.getElementById('samePostalAddress-' + index);
+
+                    if (checkbox && checkbox.checked) {
+                        applySameAddress(index, true);
+                    }
                 });
 
-                dropzone.addEventListener('drop', function (e) {
-                    e.preventDefault();
-                    dropzone.classList.remove('drag-over');
-
-                    if (e.dataTransfer && e.dataTransfer.files) {
-                        input.files = e.dataTransfer.files;
-                        updateEvidenceList(input.files, list, countText, countFill);
+                document.querySelectorAll('.same-postal-checkbox').forEach(function (checkbox) {
+                    if (checkbox.checked) {
+                        applySameAddress(checkbox.dataset.index, true);
                     }
                 });
             }
-        }
 
-               function updateEvidenceList(files, list, countText, countFill) {
-            const maxFiles = 10;
-            const maxFileSizeMb = 20;
-            const allowedExtensions = ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png', 'xls', 'xlsx'];
-            const fileCount = files ? files.length : 0;
+            function applySameAddress(index, isSame) {
+                const physical = document.getElementById('physicalAddress-' + index);
+                const postal = document.getElementById('postalAddress-' + index);
 
-            let hasError = false;
-            let errorMessages = [];
+                if (!physical || !postal) return;
 
-            if (fileCount > maxFiles) {
-                hasError = true;
-                errorMessages.push('You can upload a maximum of 10 files.');
+                if (isSame) {
+                    postal.value = physical.value;
+                    postal.readOnly = true;
+                    postal.classList.add('attr-textarea-synced');
+                } else {
+                    postal.readOnly = false;
+                    postal.classList.remove('attr-textarea-synced');
+                }
             }
 
-            Array.from(files || []).forEach(function (file) {
-                const sizeMb = file.size / 1024 / 1024;
-                const ext = (file.name.split('.').pop() || '').toLowerCase();
+            // ─────────────────────────────────────────────
+            // Dynamic rows
+            // ─────────────────────────────────────────────
+            function delRow(btn) {
+                const row = btn.closest('tr');
 
-                if (!allowedExtensions.includes(ext)) {
+                if (!row) return;
+
+                const tbody = row.closest('tbody');
+
+                row.remove();
+
+                if (tbody && tbody.rows.length === 0) {
+                    // Leave empty; user can add again using button.
+                }
+
+                reIndex();
+            }
+
+            function reIndex() {
+                const bodyIds = [
+                    'body-bus-buildings',
+                    'body-bus-sections',
+                    'body-drc-buildings',
+                    'body-drc-improvements',
+                    'body-drc-vacant'
+                ];
+
+                bodyIds.forEach(function (bodyId) {
+                    const tbody = document.getElementById(bodyId);
+
+                    if (!tbody) return;
+
+                    Array.from(tbody.rows).forEach(function (row, i) {
+                        row.querySelectorAll('[name]').forEach(function (el) {
+                            el.name = el.name.replace(/\[\d+\]/, '[' + i + ']');
+                        });
+                    });
+                });
+            }
+
+            function addRow(bodyId, templateFn) {
+                const tbody = document.getElementById(bodyId);
+
+                if (!tbody || typeof templateFn !== 'function') return;
+
+                const idx = tbody.rows.length;
+                const tr = document.createElement('tr');
+
+                tr.innerHTML = templateFn(idx);
+                tbody.appendChild(tr);
+
+                reIndex();
+            }
+
+            function qualitySelect(name) {
+                return '<select name="' + name + '" class="attr-input attr-select">' +
+                    '<option value="">-- Select --</option>' +
+                    '<option>Excellent</option>' +
+                    '<option>Good</option>' +
+                    '<option>Average</option>' +
+                    '<option>Fair</option>' +
+                    '<option>Poor</option>' +
+                    '</select>';
+            }
+
+            function condSelect(name) {
+                return qualitySelect(name);
+            }
+
+            function delBtn() {
+                return '<td>' +
+                    '<button type="button" class="dyn-del-btn" onclick="delRow(this)" title="Remove">' +
+                    '<i class="fa-solid fa-xmark"></i>' +
+                    '</button>' +
+                    '</td>';
+            }
+
+            const busBuildingTemplate = function (i) {
+                return '' +
+                    '<td><input name="BusinessBuildings[' + i + '].BuildingNr" class="attr-input" /></td>' +
+                    '<td>' + qualitySelect('BusinessBuildings[' + i + '].Quality') + '</td>' +
+                    '<td>' + condSelect('BusinessBuildings[' + i + '].Condition') + '</td>' +
+                    '<td><input name="BusinessBuildings[' + i + '].YearBuilt" class="attr-input" type="number" /></td>' +
+                    '<td><input name="BusinessBuildings[' + i + '].Storeys" class="attr-input" type="number" /></td>' +
+                    '<td><input name="BusinessBuildings[' + i + '].GBA" class="attr-input" type="number" step="0.01" /></td>' +
+                    '<input type="hidden" name="BusinessBuildings[' + i + '].Depreciation" />' +
+                    '<input type="hidden" name="BusinessBuildings[' + i + '].Cost" />' +
+                    '<input type="hidden" name="BusinessBuildings[' + i + '].DRC" />' +
+                    delBtn();
+            };
+
+            const busSectionTemplate = function (i) {
+                return '' +
+                    '<td><input name="BusinessSections[' + i + '].BuildingNr" class="attr-input" /></td>' +
+                    '<td><input name="BusinessSections[' + i + '].Usage" class="attr-input" /></td>' +
+                    '<td><input name="BusinessSections[' + i + '].GBA" class="attr-input" type="number" step="0.01" /></td>' +
+                    '<td><input name="BusinessSections[' + i + '].NLA" class="attr-input" type="number" step="0.01" /></td>' +
+                    '<td><input name="BusinessSections[' + i + '].Rental" class="attr-input" type="number" step="0.01" /></td>' +
+                    '<input type="hidden" name="BusinessSections[' + i + '].MarketGroup" />' +
+                    '<input type="hidden" name="BusinessSections[' + i + '].Quality" />' +
+                    '<input type="hidden" name="BusinessSections[' + i + '].CostRate" />' +
+                    '<input type="hidden" name="BusinessSections[' + i + '].Cost" />' +
+                    '<input type="hidden" name="BusinessSections[' + i + '].Vac" />' +
+                    '<input type="hidden" name="BusinessSections[' + i + '].Exp" />' +
+                    '<input type="hidden" name="BusinessSections[' + i + '].Cap" />' +
+                    '<input type="hidden" name="BusinessSections[' + i + '].Gross" />' +
+                    '<input type="hidden" name="BusinessSections[' + i + '].Normalised" />' +
+                    '<input type="hidden" name="BusinessSections[' + i + '].Nett" />' +
+                    '<input type="hidden" name="BusinessSections[' + i + '].Value" />' +
+                    delBtn();
+            };
+
+            const drcBuildingTemplate = function (i) {
+                return '' +
+                    '<td><input name="DrcBuildings[' + i + '].BuildingDescription" class="attr-input" /></td>' +
+                    '<td>' + qualitySelect('DrcBuildings[' + i + '].Quality') + '</td>' +
+                    '<td><input name="DrcBuildings[' + i + '].GrossBuildingArea" class="attr-input" type="number" step="0.01" /></td>' +
+                    '<td>' + condSelect('DrcBuildings[' + i + '].Condition') + '</td>' +
+                    '<input type="hidden" name="DrcBuildings[' + i + '].DepreciationPercentage" />' +
+                    '<input type="hidden" name="DrcBuildings[' + i + '].RatePerSQM" />' +
+                    '<input type="hidden" name="DrcBuildings[' + i + '].DepreciatedRate" />' +
+                    '<input type="hidden" name="DrcBuildings[' + i + '].ReplacementCost" />' +
+                    delBtn();
+            };
+
+            const drcImprovementTemplate = function (i) {
+                return '' +
+                    '<td><input name="DrcImprovements[' + i + '].ImprovementDescription" class="attr-input" /></td>' +
+                    '<td>' + qualitySelect('DrcImprovements[' + i + '].Quality') + '</td>' +
+                    '<td><input name="DrcImprovements[' + i + '].AreaUnit" class="attr-input" type="number" step="0.01" /></td>' +
+                    '<td>' + condSelect('DrcImprovements[' + i + '].Condition') + '</td>' +
+                    '<input type="hidden" name="DrcImprovements[' + i + '].DepreciationPercentage" />' +
+                    '<input type="hidden" name="DrcImprovements[' + i + '].RatePerSQM" />' +
+                    '<input type="hidden" name="DrcImprovements[' + i + '].DepreciatedRate" />' +
+                    '<input type="hidden" name="DrcImprovements[' + i + '].ReplacementCost" />' +
+                    delBtn();
+            };
+
+            const drcVacantTemplate = function (i) {
+                return '' +
+                    '<td><input name="DrcVacantLands[' + i + '].Region" class="attr-input" /></td>' +
+                    '<td><input name="DrcVacantLands[' + i + '].Area" class="attr-input" type="number" step="0.01" /></td>' +
+                    '<input type="hidden" name="DrcVacantLands[' + i + '].MinRatePerSQM" />' +
+                    '<input type="hidden" name="DrcVacantLands[' + i + '].MidRatePerSQM" />' +
+                    '<input type="hidden" name="DrcVacantLands[' + i + '].MaxRatePerSQM" />' +
+                    '<input type="hidden" name="DrcVacantLands[' + i + '].Rate" />' +
+                    '<input type="hidden" name="DrcVacantLands[' + i + '].VacantLandCost" />' +
+                    delBtn();
+            };
+
+            // ─────────────────────────────────────────────
+            // Evidence upload counter/list
+            // ─────────────────────────────────────────────
+            function initialiseEvidenceUpload() {
+                const input = document.getElementById('evFileInput');
+                const list = document.getElementById('evFileList');
+                const countText = document.getElementById('evCountText');
+                const countFill = document.getElementById('evCountFill');
+                const dropzone = document.getElementById('evDropzone');
+
+                initialiseRepLetterUpload();
+
+                if (!input) return;
+
+                input.addEventListener('change', function () {
+                    updateEvidenceList(input.files, list, countText, countFill);
+                });
+
+                if (dropzone) {
+                    dropzone.addEventListener('dragover', function (e) {
+                        e.preventDefault();
+                        dropzone.classList.add('drag-over');
+                    });
+
+                    dropzone.addEventListener('dragleave', function () {
+                        dropzone.classList.remove('drag-over');
+                    });
+
+                    dropzone.addEventListener('drop', function (e) {
+                        e.preventDefault();
+                        dropzone.classList.remove('drag-over');
+
+                        if (e.dataTransfer && e.dataTransfer.files) {
+                            input.files = e.dataTransfer.files;
+                            updateEvidenceList(input.files, list, countText, countFill);
+                        }
+                    });
+                }
+
+                updateEvSummaryBadge();
+            }
+
+            // ─────────────────────────────────────────────
+            // Authorisation letter — only present in the DOM
+            // when the client is submitting as a representative.
+            // ─────────────────────────────────────────────
+            function initialiseRepLetterUpload() {
+                const repInput = document.getElementById('evRepLetterInput');
+                const repStatus = document.getElementById('evRepFileStatus');
+
+                if (!repInput) return;
+
+                repInput.addEventListener('change', function () {
+                    const file = repInput.files && repInput.files[0];
+
+                    if (repStatus) {
+                        if (file) {
+                            const sizeMb = (file.size / 1024 / 1024).toFixed(2);
+                            repStatus.classList.add('ev-rep-file-status--ok');
+                            repStatus.innerHTML =
+                                '<i class="fa-solid fa-circle-check"></i> ' +
+                                escapeHtml(file.name) + ' <small>(' + sizeMb + ' MB)</small>';
+                        } else {
+                            repStatus.classList.remove('ev-rep-file-status--ok');
+                            repStatus.innerHTML =
+                                '<i class="fa-solid fa-circle-exclamation"></i> No file selected yet';
+                        }
+                    }
+
+                    updateEvSummaryBadge();
+                });
+            }
+
+            // ─────────────────────────────────────────────
+            // Combined "files ready" summary badge
+            // (authorisation letter + supporting documents)
+            // ─────────────────────────────────────────────
+            function updateEvSummaryBadge() {
+                const badge = document.getElementById('evSummaryBadge');
+
+                if (!badge) return;
+
+                const evInput = document.getElementById('evFileInput');
+                const repInput = document.getElementById('evRepLetterInput');
+
+                const evCount = evInput && evInput.files ? evInput.files.length : 0;
+                const repCount = repInput && repInput.files && repInput.files.length ? 1 : 0;
+                const total = evCount + repCount;
+
+                badge.textContent = total === 1 ? '1 file ready' : total + ' files ready';
+                badge.classList.toggle('ev-summary-badge--filled', total > 0);
+            }
+
+                   function updateEvidenceList(files, list, countText, countFill) {
+                const maxFiles = 10;
+                const maxFileSizeMb = 20;
+                const allowedExtensions = ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png', 'xls', 'xlsx'];
+                const fileCount = files ? files.length : 0;
+
+                let hasError = false;
+                let errorMessages = [];
+
+                if (fileCount > maxFiles) {
                     hasError = true;
-                    errorMessages.push(file.name + ' is not a supported file type.');
+                    errorMessages.push('You can upload a maximum of 10 files.');
                 }
 
-                if (sizeMb > maxFileSizeMb) {
-                    hasError = true;
-                    errorMessages.push(file.name + ' is larger than 20 MB.');
-                }
-            });
+                Array.from(files || []).forEach(function (file) {
+                    const sizeMb = file.size / 1024 / 1024;
+                    const ext = (file.name.split('.').pop() || '').toLowerCase();
 
-            if (countText) {
-                countText.textContent = fileCount + ' / ' + maxFiles + ' files selected';
+                    if (!allowedExtensions.includes(ext)) {
+                        hasError = true;
+                        errorMessages.push(file.name + ' is not a supported file type.');
+                    }
+
+                    if (sizeMb > maxFileSizeMb) {
+                        hasError = true;
+                        errorMessages.push(file.name + ' is larger than 20 MB.');
+                    }
+                });
+
+                if (countText) {
+                    countText.textContent = fileCount + ' of ' + maxFiles + ' files added';
+                }
+
+                if (countFill) {
+                    const percent = Math.min((fileCount / maxFiles) * 100, 100);
+                    countFill.style.width = percent + '%';
+                    countFill.classList.toggle('danger', hasError);
+                }
+
+                updateEvSummaryBadge();
+
+                if (!list) return;
+
+                list.innerHTML = '';
+
+                if (hasError) {
+                    const errorBox = document.createElement('div');
+                    errorBox.className = 'ev-file-error';
+                    errorBox.innerHTML =
+                        '<strong>File validation failed:</strong><br>' +
+                        errorMessages.map(escapeHtml).join('<br>');
+                    list.appendChild(errorBox);
+                }
+
+                if (!files || fileCount === 0) return;
+
+                Array.from(files).forEach(function (file) {
+                    const item = document.createElement('div');
+                    const sizeMb = file.size / 1024 / 1024;
+                    const ext = (file.name.split('.').pop() || '').toLowerCase();
+                    const invalid =
+                        sizeMb > maxFileSizeMb ||
+                        !allowedExtensions.includes(ext) ||
+                        fileCount > maxFiles;
+
+                    item.className = invalid ? 'ev-file-item ev-file-item-invalid' : 'ev-file-item';
+
+                    item.innerHTML =
+                        '<i class="fa-solid fa-file"></i>' +
+                        '<span>' + escapeHtml(file.name) + '</span>' +
+                        '<small>' + sizeMb.toFixed(2) + ' MB</small>';
+
+                    list.appendChild(item);
+                });
             }
 
-            if (countFill) {
-                const percent = Math.min((fileCount / maxFiles) * 100, 100);
-                countFill.style.width = percent + '%';
-                countFill.classList.toggle('danger', hasError);
+            function escapeHtml(value) {
+                return String(value || '')
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#039;');
             }
 
-            if (!list) return;
+            // ─────────────────────────────────────────────
+            // Final submit validation
+            // ─────────────────────────────────────────────
+            function initialiseSubmitValidation() {
+                const form = document.querySelector('form[asp-action="Create"], form[action*="/Attributes/Create"], form');
 
-            list.innerHTML = '';
+                if (!form) return;
 
-            if (hasError) {
-                const errorBox = document.createElement('div');
-                errorBox.className = 'ev-file-error';
-                errorBox.innerHTML =
-                    '<strong>File validation failed:</strong><br>' +
-                    errorMessages.map(escapeHtml).join('<br>');
-                list.appendChild(errorBox);
-            }
+                form.addEventListener('submit', function (e) {
+                    const category = document.getElementById('valuationCategory');
+                    const mixedSelect = document.getElementById('mixedUseSelect');
+                    const signatureData = document.getElementById('signatureData');
+                    const declarationAccepted = document.getElementById('declAccepted');
 
-            if (!files || fileCount === 0) return;
+                    const selectedCategory = category ? (category.value || '').trim().toLowerCase() : '';
 
-            Array.from(files).forEach(function (file) {
-                const item = document.createElement('div');
-                const sizeMb = file.size / 1024 / 1024;
-                const ext = (file.name.split('.').pop() || '').toLowerCase();
-                const invalid =
-                    sizeMb > maxFileSizeMb ||
-                    !allowedExtensions.includes(ext) ||
-                    fileCount > maxFiles;
+                    const isMulti =
+                        selectedCategory === 'multipurpose' ||
+                        selectedCategory === 'multiple purposes' ||
+                        selectedCategory === 'multi purpose' ||
+                        selectedCategory === 'multi-purpose';
 
-                item.className = invalid ? 'ev-file-item ev-file-item-invalid' : 'ev-file-item';
+                    if (isMulti && mixedSelect && !mixedSelect.value) {
+                        e.preventDefault();
+                        alert('Please select the mixed-use type.');
+                        mixedSelect.focus();
+                        return;
+                    }
 
-                item.innerHTML =
-                    '<i class="fa-solid fa-file"></i>' +
-                    '<span>' + escapeHtml(file.name) + '</span>' +
-                    '<small>' + sizeMb.toFixed(2) + ' MB</small>';
+                    if (declarationAccepted && !declarationAccepted.checked) {
+                        e.preventDefault();
+                        alert('Please accept the declaration before submitting.');
+                        declarationAccepted.focus();
+                        return;
+                    }
 
-                list.appendChild(item);
-            });
-        }
+                    if (signatureData && !signatureData.value) {
+                        // If your external signature JS sets this value, this will pass.
+                        // If not, it warns the client.
+                        e.preventDefault();
+                        alert('Please draw your signature before submitting.');
+                        return;
+                    }
+                });
+                        const evidenceInput = document.getElementById('evFileInput');
 
-        function escapeHtml(value) {
-            return String(value || '')
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#039;');
-        }
+            if (evidenceInput && evidenceInput.files) {
+                const maxFiles = 10;
+                const maxFileSizeMb = 20;
+                const allowedExtensions = ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png', 'xls', 'xlsx'];
 
-        // ─────────────────────────────────────────────
-        // Final submit validation
-        // ─────────────────────────────────────────────
-        function initialiseSubmitValidation() {
-            const form = document.querySelector('form[asp-action="Create"], form[action*="/Attributes/Create"], form');
-
-            if (!form) return;
-
-            form.addEventListener('submit', function (e) {
-                const category = document.getElementById('valuationCategory');
-                const mixedSelect = document.getElementById('mixedUseSelect');
-                const signatureData = document.getElementById('signatureData');
-                const declarationAccepted = document.getElementById('declAccepted');
-
-                const selectedCategory = category ? (category.value || '').trim().toLowerCase() : '';
-
-                const isMulti =
-                    selectedCategory === 'multipurpose' ||
-                    selectedCategory === 'multiple purposes' ||
-                    selectedCategory === 'multi purpose' ||
-                    selectedCategory === 'multi-purpose';
-
-                if (isMulti && mixedSelect && !mixedSelect.value) {
+                if (evidenceInput.files.length > maxFiles) {
                     e.preventDefault();
-                    alert('Please select the mixed-use type.');
-                    mixedSelect.focus();
-                    return;
-                }
-
-                if (declarationAccepted && !declarationAccepted.checked) {
-                    e.preventDefault();
-                    alert('Please accept the declaration before submitting.');
-                    declarationAccepted.focus();
-                    return;
-                }
-
-                if (signatureData && !signatureData.value) {
-                    // If your external signature JS sets this value, this will pass.
-                    // If not, it warns the client.
-                    e.preventDefault();
-                    alert('Please draw your signature before submitting.');
-                    return;
-                }
-            });
-                    const evidenceInput = document.getElementById('evFileInput');
-
-        if (evidenceInput && evidenceInput.files) {
-            const maxFiles = 10;
-            const maxFileSizeMb = 20;
-            const allowedExtensions = ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png', 'xls', 'xlsx'];
-
-            if (evidenceInput.files.length > maxFiles) {
-                e.preventDefault();
-                alert('You can upload a maximum of 10 supporting documents.');
-                evidenceInput.focus();
-                return;
-            }
-
-            for (const file of evidenceInput.files) {
-                const sizeMb = file.size / 1024 / 1024;
-                const ext = (file.name.split('.').pop() || '').toLowerCase();
-
-                if (!allowedExtensions.includes(ext)) {
-                    e.preventDefault();
-                    alert(file.name + ' is not a supported file type.');
+                    alert('You can upload a maximum of 10 supporting documents.');
                     evidenceInput.focus();
                     return;
                 }
 
-                if (sizeMb > maxFileSizeMb) {
-                    e.preventDefault();
-                    alert(file.name + ' is larger than 20 MB.');
-                    evidenceInput.focus();
-                    return;
+                for (const file of evidenceInput.files) {
+                    const sizeMb = file.size / 1024 / 1024;
+                    const ext = (file.name.split('.').pop() || '').toLowerCase();
+
+                    if (!allowedExtensions.includes(ext)) {
+                        e.preventDefault();
+                        alert(file.name + ' is not a supported file type.');
+                        evidenceInput.focus();
+                        return;
+                    }
+
+                    if (sizeMb > maxFileSizeMb) {
+                        e.preventDefault();
+                        alert(file.name + ' is larger than 20 MB.');
+                        evidenceInput.focus();
+                        return;
+                    }
                 }
             }
         }
-    }
     </script>
 }

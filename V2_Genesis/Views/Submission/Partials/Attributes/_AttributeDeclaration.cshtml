@@ -1,0 +1,15 @@
+@model V2_Genesis.Models.ViewModels.Attributes.AttributeSubmissionViewModel
+@{
+    string Show(object? value) => value is null || string.IsNullOrWhiteSpace(Convert.ToString(value))
+        ? "Not provided" : Convert.ToString(value)!;
+}
+<div class="municipal-form-section">
+    <partial name="Partials/Forms/_SectionHeading" model='new V2_Genesis.Models.ViewModels.Submissions.SubmissionSectionHeadingViewModel { Number = "SECTION 5", Title = "DECLARATION AND CLIENT COMMENTS" }' />
+    <div class="municipal-declaration-notice">The submitted values below are read-only.</div>
+    <div class="municipal-field-grid">
+        <div class="municipal-readonly-field"><label>Declaration accepted</label><div class="municipal-readonly-input">@(Model.Declaration.DeclarationAccepted ? "Yes" : "No")</div></div>
+        <div class="municipal-readonly-field"><label>Signature name</label><div class="municipal-readonly-input">@Show(Model.Declaration.SignatureName)</div></div>
+        <div class="municipal-readonly-field municipal-readonly-field--wide"><label>Declaration text</label><div class="municipal-readonly-textarea">@Show(Model.Declaration.DeclarationText)</div></div>
+        <div class="municipal-readonly-field municipal-readonly-field--wide"><label>Client comment</label><div class="municipal-readonly-textarea">@Show(Model.ClientComment)</div></div>
+    </div>
+</div>

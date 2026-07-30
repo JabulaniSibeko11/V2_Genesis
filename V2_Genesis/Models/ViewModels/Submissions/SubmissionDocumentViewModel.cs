@@ -30,6 +30,8 @@
 
         public bool Exists { get; set; }
 
+        public string? DisplayName { get; set; }
+        public string FilePath { get; set; }
         public bool CanPreview =>
             FileExtension.Equals(".pdf", StringComparison.OrdinalIgnoreCase)
             || FileExtension.Equals(".png", StringComparison.OrdinalIgnoreCase)

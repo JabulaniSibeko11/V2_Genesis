@@ -72,10 +72,28 @@
 <div class="municipal-form-section">
     <partial name="Partials/Forms/_SectionHeading"
              model='new SubmissionSectionHeadingViewModel
-             {
-                 Number = "SECTION 1",
-                 Title = "OBJECTOR INFORMATION"
-             }' />
+                 {
+                     Number = "SECTION 1",
+                     Title = "OBJECTOR INFORMATION"
+                 }' />
+
+<div class="municipal-declaration-row">
+        <span class="municipal-declaration-label">This submission was lodged as:</span>
+        <div class="municipal-choice-group" role="radiogroup" aria-label="Lodged as">
+            <label class="municipal-choice @(showOwner ? "municipal-choice--selected" : "")">
+                <input type="radio" disabled checked="@showOwner" />
+                <span>Owner</span>
+            </label>
+            <label class="municipal-choice @(showObjector ? "municipal-choice--selected" : "")">
+                <input type="radio" disabled checked="@showObjector" />
+                <span>Objector (not owner)</span>
+            </label>
+            <label class="municipal-choice @(showRepresentative ? "municipal-choice--selected" : "")">
+                <input type="radio" disabled checked="@showRepresentative" />
+                <span>Authorised representative</span>
+            </label>
+        </div>
+    </div>
 
     @if (showOwner)
     {

@@ -4,11 +4,17 @@
 }
 <div class="submission-toolbar">
     <a href="@returnUrl" class="submission-back-link">
-        <span aria-hidden="true">←</span>
+        <i class="fa-solid fa-arrow-left"></i>
         Back to dashboard
     </a>
     <div class="submission-toolbar-actions">
-        <button type="button" class="submission-print-button" onclick="window.print()">Print submission</button>
-        <span class="submission-readonly-badge">Read-only submission</span>
+        <span class="submission-readonly-badge">
+            <i class="fa-solid fa-lock"></i>
+            Read-only submission
+        </span>
+        <button type="button" class="submission-print-button" onclick="window.print()">
+            <i class="fa-solid fa-print"></i>
+            Print submission
+        </button>
     </div>
 </div>

@@ -48,7 +48,7 @@
                             <td>@item.MarketValue</td>
                             <td>
                                 <span class="attr-form-pill attr-pill-@(item.FormType.ToLower()
-                                                                                                                                                                              .Replace(" ", "").Replace("&", "").Replace("/", ""))">
+                                                                                                                                                                                                                                                        .Replace(" ", "").Replace("&", "").Replace("/", ""))">
                                     @item.FormType
                                 </span>
                             </td>
@@ -179,7 +179,9 @@
                                     <ul class="dropdown-menu">
                                         <li>
                                             <a class="dropdown-item"
-                                                   href="/attributes/submission/@item.Id">
+                                                   asp-route="AttributeSubmissionById"
+                                                   asp-route-id="@item.Id"
+                                                   asp-route-returnUrl="@Url.Action("Index", "Dashboard", new { openRoll = "attributes" })">
                                                 👁️ View Submission
                                             </a>
                                         </li>

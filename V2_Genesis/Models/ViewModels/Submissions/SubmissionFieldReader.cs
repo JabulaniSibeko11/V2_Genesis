@@ -1,7 +1,91 @@
-﻿namespace V2_Genesis.Models.ViewModels.Submissions
+﻿using System.Globalization;
+
+namespace V2_Genesis.Models.ViewModels.Submissions
 {
     public static class SubmissionFieldReader
     {
+        private static readonly CultureInfo SouthAfricanCulture =
+            CultureInfo.GetCultureInfo("en-ZA");
+
+        private static readonly string[] BinaryChoiceOptions =
+        {
+            "Yes",
+            "No"
+        };
+
+        private static readonly string[] GradedChoiceOptions =
+        {
+            "Good",
+            "Average",
+            "Poor"
+        };
+
+        private static readonly string[] MoneyFieldTerms =
+        {
+            "marketvalue",
+            "market_value",
+            "sellingprice",
+            "selling_price",
+            "askingprice",
+            "asking_price",
+            "purchaseprice",
+            "purchase_price",
+            "rental",
+            "rent",
+            "cost",
+            "drc",
+            "replacementcost",
+            "replacement_cost",
+            "vacantlandcost",
+            "vacant_land_cost",
+            "demolitionrate",
+            "demolition_rate",
+            "ratepersqm",
+            "rate_per_sqm",
+            "costrate",
+            "cost_rate",
+            "totalvalue",
+            "total_value",
+            "grossincome",
+            "gross_income",
+            "nett",
+            "netincome",
+            "net_income",
+            "compensationamount",
+            "compensation_amount",
+            "registeredamount",
+            "registered_amount",
+            "offerreceived",
+            "offer_received"
+        };
+
+        private static readonly string[] NonMoneyFieldTerms =
+        {
+            "valuationkey",
+            "valuation_key",
+            "propertykey",
+            "property_key",
+            "unitkey",
+            "unit_key",
+            "premiseid",
+            "premise_id",
+            "propertyid",
+            "property_id",
+            "attrid",
+            "attr_id",
+            "number",
+            "count",
+            "percentage",
+            "percent",
+            "extent",
+            "area",
+            "gba",
+            "nla",
+            "tla",
+            "storeys",
+            "year"
+        };
+
         public static SubmissionFieldViewModel? Find(
             SubmissionViewModel model,
             params string[] names)
@@ -94,11 +178,116 @@
                 .ToList();
         }
 
+        /// <summary>
+        /// Displays blank values as an empty string.
+        /// </summary>
         public static string Display(string? value)
         {
             return string.IsNullOrWhiteSpace(value)
-                ? "Not provided"
+                ? string.Empty
                 : value.Trim();
+        }
+
+        /// <summary>
+        /// Displays a value according to its field name. Monetary fields
+        /// are formatted using South African rand.
+        /// </summary>
+        public static string Display(
+            string? value,
+            string? fieldName)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return string.Empty;
+
+            return IsMoneyField(fieldName)
+                ? DisplayMoney(value)
+                : value.Trim();
+        }
+
+        /// <summary>
+        /// Formats a numeric value as South African rand.
+        /// Existing values beginning with R are normalised where possible.
+        /// </summary>
+        public static string DisplayMoney(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return string.Empty;
+
+            var trimmed = value.Trim();
+
+            var cleaned = trimmed
+                .Replace("R", string.Empty, StringComparison.OrdinalIgnoreCase)
+                .Replace("\u00A0", string.Empty)
+                .Replace(" ", string.Empty);
+
+            if (decimal.TryParse(
+                    cleaned,
+                    NumberStyles.Number |
+                    NumberStyles.AllowCurrencySymbol,
+                    SouthAfricanCulture,
+                    out var southAfricanAmount))
+            {
+                return southAfricanAmount.ToString(
+                    "C2",
+                    SouthAfricanCulture);
+            }
+
+            if (decimal.TryParse(
+                    cleaned,
+                    NumberStyles.Number |
+                    NumberStyles.AllowDecimalPoint |
+                    NumberStyles.AllowThousands,
+                    CultureInfo.InvariantCulture,
+                    out var invariantAmount))
+            {
+                return invariantAmount.ToString(
+                    "C2",
+                    SouthAfricanCulture);
+            }
+
+            // Do not destroy non-numeric database content.
+            return trimmed.StartsWith(
+                    "R",
+                    StringComparison.OrdinalIgnoreCase)
+                ? trimmed
+                : $"R {trimmed}";
+        }
+
+        public static bool IsMoneyField(string? fieldName)
+        {
+            if (string.IsNullOrWhiteSpace(fieldName))
+                return false;
+
+            var normalised = fieldName
+                .Replace(" ", string.Empty)
+                .Replace("-", string.Empty)
+                .Trim()
+                .ToLowerInvariant();
+
+            if (NonMoneyFieldTerms.Any(term =>
+                    normalised.Contains(
+                        term,
+                        StringComparison.OrdinalIgnoreCase)))
+            {
+                return false;
+            }
+
+            if (MoneyFieldTerms.Any(term =>
+                    normalised.Contains(
+                        term,
+                        StringComparison.OrdinalIgnoreCase)))
+            {
+                return true;
+            }
+
+            // Generic "Value" fields are treated as money, except identifiers
+            // and calculated area/count fields excluded above.
+            return normalised.EndsWith(
+                       "value",
+                       StringComparison.OrdinalIgnoreCase)
+                   || normalised.Contains(
+                       "amount",
+                       StringComparison.OrdinalIgnoreCase);
         }
 
         public static bool IsYes(string? value)
@@ -121,6 +310,32 @@
                     "False",
                     StringComparison.OrdinalIgnoreCase) == true
                 || value?.Trim() == "0";
+        }
+
+        public static string[]? GetChoiceOptions(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return null;
+
+            var trimmed = value.Trim();
+
+            if (BinaryChoiceOptions.Any(option =>
+                    option.Equals(
+                        trimmed,
+                        StringComparison.OrdinalIgnoreCase)))
+            {
+                return BinaryChoiceOptions;
+            }
+
+            if (GradedChoiceOptions.Any(option =>
+                    option.Equals(
+                        trimmed,
+                        StringComparison.OrdinalIgnoreCase)))
+            {
+                return GradedChoiceOptions;
+            }
+
+            return null;
         }
     }
 }

@@ -1,0 +1,41 @@
+@model V2_Genesis.Models.ViewModels.Attributes.AttributeSubmissionViewModel
+@{
+    string Show(object? value) => value is null || string.IsNullOrWhiteSpace(Convert.ToString(value))
+        ? "Not provided" : Convert.ToString(value)!;
+    var p = Model.PropertyDetails;
+    var v = Model.ValuationDetails;
+    var c = Model.Calculations;
+}
+<div class="municipal-form-section">
+    <partial name="Partials/Forms/_SectionHeading"
+             model='new V2_Genesis.Models.ViewModels.Submissions.SubmissionSectionHeadingViewModel { Number = "SECTION 1", Title = "PROPERTY AND VALUATION DETAILS" }' />
+    <div class="municipal-inner-heading">Property identifiers</div>
+    <div class="municipal-field-grid">
+        @foreach (var item in new[] {
+            ("Property description", Show(p.PropertyDesc)), ("Property ID", Show(p.PropertyId)),
+            ("Premise ID", Show(p.PremiseId)), ("Unit key", Show(p.UnitKey)),
+            ("Valuation key", Show(p.ValuationKey)), ("SG number", Show(p.SGNumber)),
+            ("Erf", Show(p.Erf)), ("Sectional title", Show(p.SectionalTitle)),
+            ("Roll type", Show(p.RollType)), ("Roll description", Show(p.RollDescription)),
+            ("Sector", Show(p.Sector)), ("Municipality", Show(p.Municipality))
+        }) {
+            <div class="municipal-readonly-field"><label>@item.Item1</label><div class="municipal-readonly-input">@item.Item2</div></div>
+        }
+    </div>
+    <div class="municipal-inner-heading">Location and valuation</div>
+    <div class="municipal-field-grid">
+        @foreach (var item in new[] {
+            ("Township", Show(p.Township)), ("Address", Show(p.Address)),
+            ("Ward", Show(p.Ward)), ("Zoning", Show(p.Zoning)),
+            ("Extent", Show(p.Extent)), ("H Area", Show(p.HArea)),
+            ("Centroid", Show(p.Centroid)), ("Sources", Show(p.Sources)),
+            ("Category on roll", Show(v.ValuationCategoryOnRoll)), ("Actual use", Show(v.ActualUse)),
+            ("Mixed use", v.IsMixedUse ? "Yes" : "No"), ("Alternate usages", Show(v.AlternateUsages)),
+            ("Owners title deeds", Show(v.OwnersTitleDeeds)), ("Owners financials", Show(v.OwnersFinancials)),
+            ("Calculated TLA", Show(c.Tla)), ("Adjusted WGBA", Show(c.AdjustedWgba)),
+            ("Total non-residential value", Show(c.TotalValueNonRes)), ("DRC final value", Show(c.DRCFinalValue))
+        }) {
+            <div class="municipal-readonly-field"><label>@item.Item1</label><div class="municipal-readonly-input">@item.Item2</div></div>
+        }
+    </div>
+</div>

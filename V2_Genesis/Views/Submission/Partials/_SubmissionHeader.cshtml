@@ -1,11 +1,24 @@
 @model V2_Genesis.Models.ViewModels.Submissions.SubmissionViewModel
+@{
+    var status = string.IsNullOrWhiteSpace(Model.Status) ? "Submitted" : Model.Status;
+    var statusSlug = status.ToLowerInvariant().Replace(" ", "-");
+}
 <header class="submission-hero">
-    <div>
-        <p class="submission-eyebrow">City of Johannesburg · Valuation Services</p>
-        <h1>@Model.SubmissionType submission</h1>
-        <p class="submission-reference">@Model.ReferenceNumber</p>
+    <div class="submission-hero-icon">
+        <i class="fa-solid fa-file-shield"></i>
+    </div>
+    <div class="submission-hero-text">
+        <p class="submission-eyebrow">City of Johannesburg &middot; Valuation Services</p>
+        <h1>@Model.SubmissionType Submission</h1>
+        <p class="submission-reference">
+            <i class="fa-solid fa-hashtag"></i>
+            @Model.ReferenceNumber
+        </p>
     </div>
     <div class="submission-status-wrap">
-        <span class="submission-status">@(string.IsNullOrWhiteSpace(Model.Status) ? "Submitted" : Model.Status)</span>
+        <span class="submission-status submission-status--@statusSlug">
+            <span class="submission-status-dot"></span>
+            @status
+        </span>
     </div>
 </header>

@@ -1,0 +1,51 @@
+@model V2_Genesis.Models.ViewModels.Attributes.AttributeSubmissionViewModel
+@{
+    string Show(object? value) => value is null || string.IsNullOrWhiteSpace(Convert.ToString(value))
+        ? "Not provided" : Convert.ToString(value)!;
+}
+<div class="municipal-form-section">
+    <partial name="Partials/Forms/_SectionHeading"
+             model='new V2_Genesis.Models.ViewModels.Submissions.SubmissionSectionHeadingViewModel { Number = "SECTION 2", Title = "APPLICANT AND REPRESENTATIVE" }' />
+    @if (Model.ContactInfos.Any())
+    {
+        @for (var i = 0; i < Model.ContactInfos.Count; i++)
+        {
+            var contact = Model.ContactInfos[i];
+            <div class="municipal-inner-heading">Contact @(i + 1) — @Show(contact.ContactType)</div>
+            <div class="municipal-field-grid">
+                @foreach (var item in new[] {
+                    ("Contact type", Show(contact.ContactType)), ("Company", Show(contact.CompanyName)),
+                    ("Company registration", Show(contact.CompanyRegistrationNumber)),
+                    ("First names", Show(contact.FirstNames)), ("Last name", Show(contact.LastName)),
+                    ("ID number", Show(contact.IDNumber)), ("Date of birth", Show(contact.DateOfBirth)),
+                    ("Gender", Show(contact.Gender)), ("Marital status", Show(contact.MaritalStatus)),
+                    ("Citizenship", Show(contact.Citizenship)), ("Physical address", Show(contact.PhysicalAddress)),
+                    ("Postal address", Show(contact.PostalAddress)), ("Email", Show(contact.Email)),
+                    ("Home phone", Show(contact.HomePhoneNo)), ("Work phone", Show(contact.WorkPhoneNo)),
+                    ("Cellphone", Show(contact.CellNo)), ("Fax", Show(contact.FaxNo)),
+                    ("Interviewed", contact.Interviewed.HasValue ? (contact.Interviewed.Value ? "Yes" : "No") : "Not provided"),
+                    ("Comments", Show(contact.Comments))
+                }) {
+                    <div class="municipal-readonly-field"><label>@item.Item1</label><div class="municipal-readonly-input">@item.Item2</div></div>
+                }
+            </div>
+        }
+    }
+    @if (Model.RepresentativeDetails.IsRepresentative)
+    {
+        var rep = Model.RepresentativeDetails;
+        <div class="municipal-inner-heading">Authorised representative</div>
+        <div class="municipal-field-grid">
+            @foreach (var item in new[] {
+                ("Representative name", Show(rep.Representative_Name)), ("Postal line 1", Show(rep.Rep_Postal_1)),
+                ("Postal line 2", Show(rep.Rep_Postal_2)), ("Postal line 3", Show(rep.Rep_Postal_3)),
+                ("Postal line 4", Show(rep.Rep_Postal_4)), ("Postal code", Show(rep.Rep_Postal_5)),
+                ("Home phone", Show(rep.Rep_Home_Phone)), ("Work phone", Show(rep.Rep_Work_Phone)),
+                ("Cellphone", Show(rep.Rep_Cell_Phone)), ("Fax", Show(rep.Rep_Fax_Phone)),
+                ("Email", Show(rep.Rep_Email))
+            }) {
+                <div class="municipal-readonly-field"><label>@item.Item1</label><div class="municipal-readonly-input">@item.Item2</div></div>
+            }
+        </div>
+    }
+</div>

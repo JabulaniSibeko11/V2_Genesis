@@ -1,0 +1,27 @@
+@model V2_Genesis.Models.ViewModels.Attributes.AttributeSubmissionViewModel
+@{
+    string Show(object? value) => value is null || string.IsNullOrWhiteSpace(Convert.ToString(value))
+        ? "Not provided" : Convert.ToString(value)!;
+    var buildings = Model.BusinessBuildings.ToList();
+    while (buildings.Count < 5) { buildings.Add(new V2_Genesis.Models.ViewModels.Attributes.AttributeBusinessBuildingVm()); }
+    var sections = Model.BusinessSections.ToList();
+    while (sections.Count < 5) { sections.Add(new V2_Genesis.Models.ViewModels.Attributes.AttributeBusinessSectionVm()); }
+}
+<div class="municipal-form-section">
+    <partial name="Partials/Forms/_SectionHeading"
+             model='new V2_Genesis.Models.ViewModels.Submissions.SubmissionSectionHeadingViewModel { Number = "SECTION 4", Title = "BUSINESS AND COMMERCIAL ATTRIBUTES" }' />
+    <div class="municipal-inner-heading">Buildings</div>
+    <div class="municipal-comparison-table-wrap">
+        <table class="municipal-comparison-table"><thead><tr><th>No.</th><th>Building</th><th>Quality</th><th>Condition</th><th>Year built</th><th>Storeys</th><th>GBA</th><th>Depreciation</th><th>Cost</th><th>DRC</th></tr></thead>
+        <tbody>@for (var i=0;i<buildings.Count;i++){var b=buildings[i];<tr><td>@(i+1)</td><td>@Show(b.BuildingNr)</td><td>@Show(b.Quality)</td><td>@Show(b.Condition)</td><td>@Show(b.YearBuilt)</td><td>@Show(b.Storeys)</td><td>@Show(b.GBA)</td><td>@Show(b.Depreciation)</td><td>@Show(b.Cost)</td><td>@Show(b.DRC)</td></tr>}</tbody></table>
+    </div>
+    <div class="municipal-inner-heading">Building sections</div>
+    <div class="municipal-comparison-table-wrap">
+        <table class="municipal-comparison-table"><thead><tr><th>No.</th><th>Building</th><th>Usage</th><th>Market group</th><th>Quality</th><th>GBA</th><th>NLA</th><th>Rental</th><th>Vacancy</th><th>Expenses</th><th>Cap rate</th><th>Value</th></tr></thead>
+        <tbody>@for (var i=0;i<sections.Count;i++){var s=sections[i];<tr><td>@(i+1)</td><td>@Show(s.BuildingNr)</td><td>@Show(s.Usage)</td><td>@Show(s.MarketGroup)</td><td>@Show(s.Quality)</td><td>@Show(s.GBA)</td><td>@Show(s.NLA)</td><td>@Show(s.Rental)</td><td>@Show(s.Vac)</td><td>@Show(s.Exp)</td><td>@Show(s.Cap)</td><td>@Show(s.Value)</td></tr>}</tbody></table>
+    </div>
+    <div class="municipal-field-grid">
+        <div class="municipal-readonly-field"><label>Unutilised land extent</label><div class="municipal-readonly-input">@Show(Model.BusinessGeneral.UnutilisedLandExtent)</div></div>
+        <div class="municipal-readonly-field"><label>Unutilised land rate</label><div class="municipal-readonly-input">@Show(Model.BusinessGeneral.UnutilisedLandRate)</div></div>
+    </div>
+</div>

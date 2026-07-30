@@ -17,5 +17,6 @@
         public int UnitNo { get; set; }
         public string FormType { get; set; } = "Residential";
         public bool HasSubmission { get; set; }
+        public string? SubmissionRef { get; set; }
     }
 }

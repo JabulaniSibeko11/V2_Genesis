@@ -1,4 +1,6 @@
-﻿namespace V2_Genesis.Models.ViewModels.Submissions
+﻿using V2_Genesis.Models.ViewModels.Attributes;
+
+namespace V2_Genesis.Models.ViewModels.Submissions
 {
     public sealed class SubmissionViewModel
     {
@@ -19,6 +21,10 @@
         public SubmissionReasonViewModel Reasons { get; set; } = new();
         public AppealSubmissionViewModel? Appeal { get; set; }
 
+        // Complete submitted Attributes form reconstructed from the
+        // Attributes database tables.
+        public AttributeSubmissionViewModel? Attribute { get; set; }
+
         public List<MultiPurposeLineViewModel> MultiPurposeLines { get; set; } = new();
         public List<SubmissionDocumentViewModel> Documents { get; set; } = new();
         public List<SubmissionSectionViewModel> Sections { get; set; } = new();
@@ -37,6 +43,9 @@
 
         public bool IsReview =>
             SubmissionType.Equals("Review", StringComparison.OrdinalIgnoreCase);
+
+        public bool IsAttribute =>
+            SubmissionType.Equals("Attribute", StringComparison.OrdinalIgnoreCase);
 
         public bool IsSection78 => IsQuery || IsReview;
 

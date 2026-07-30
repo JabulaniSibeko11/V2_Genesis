@@ -1,0 +1,31 @@
+@model V2_Genesis.Models.ViewModels.Attributes.AttributeSubmissionViewModel
+@{
+    string Show(object? value) => value is null || string.IsNullOrWhiteSpace(Convert.ToString(value))
+        ? "Not provided" : Convert.ToString(value)!;
+    var p = Model.PrimaryAttributes;
+    var s = Model.SecondaryAttributes;
+}
+<div class="municipal-form-section">
+    <partial name="Partials/Forms/_SectionHeading"
+             model='new V2_Genesis.Models.ViewModels.Submissions.SubmissionSectionHeadingViewModel { Number = "SECTION 4", Title = "RESIDENTIAL ATTRIBUTES" }' />
+    <div class="municipal-inner-heading">Primary attributes</div>
+    <div class="municipal-field-grid">
+        @foreach (var item in new[] {
+            ("TLA 1", Show(p.Tla1)), ("TLA 2", Show(p.Tla2)), ("TLA 3", Show(p.Tla3)),
+            ("Garage", Show(p.Garage)), ("Carport", Show(p.CarportCp)),
+            ("Granny flat", Show(p.GrannyFlatGf)), ("Staff quarters", Show(p.StaffQuartersSq)),
+            ("Storage", Show(p.Storage)), ("Adjustment factor", Show(p.AdjustmentFactor)),
+            ("Sectional-title main area", Show(p.STMain))
+        }) { <div class="municipal-readonly-field"><label>@item.Item1</label><div class="municipal-readonly-input">@item.Item2</div></div> }
+    </div>
+    <div class="municipal-inner-heading">Secondary attributes</div>
+    <div class="municipal-field-grid">
+        @foreach (var item in new[] {
+            ("Storeys", Show(s.Storeys)), ("Security", Show(s.Security)), ("Noise", Show(s.Noise)),
+            ("Topography", Show(s.Topography)), ("Quality", Show(s.Quality)),
+            ("Condition", Show(s.Condition)), ("Swimming pool", s.SwimmingPool.HasValue ? (s.SwimmingPool.Value ? "Yes" : "No") : "Not provided"),
+            ("Tennis court", s.TennisCourt.HasValue ? (s.TennisCourt.Value ? "Yes" : "No") : "Not provided"),
+            ("ST condition", Show(s.STCondition)), ("ST floor", Show(s.STFloor))
+        }) { <div class="municipal-readonly-field"><label>@item.Item1</label><div class="municipal-readonly-input">@item.Item2</div></div> }
+    </div>
+</div>

@@ -1,0 +1,14 @@
+@model V2_Genesis.Models.ViewModels.Attributes.AttributeSubmissionViewModel
+@{
+    string Show(object? value) => value is null || string.IsNullOrWhiteSpace(Convert.ToString(value))
+        ? "Not provided" : Convert.ToString(value)!;
+}
+<div class="municipal-form-section">
+    <partial name="Partials/Forms/_SectionHeading"
+             model='new V2_Genesis.Models.ViewModels.Submissions.SubmissionSectionHeadingViewModel { Number = "SECTION 3", Title = "PROPERTY ACCESS" }' />
+    <div class="municipal-field-grid">
+        <div class="municipal-readonly-field"><label>Access type</label><div class="municipal-readonly-input">@Show(Model.Access.AccessType)</div></div>
+        <div class="municipal-readonly-field"><label>Permission status</label><div class="municipal-readonly-input">@Show(Model.Access.PermissionStatus)</div></div>
+        <div class="municipal-readonly-field municipal-readonly-field--wide"><label>Comments</label><div class="municipal-readonly-textarea">@Show(Model.Access.Comments)</div></div>
+    </div>
+</div>

@@ -1,0 +1,114 @@
+@using V2_Genesis.Models.ViewModels.Submissions
+@using V2_Genesis.Models.ViewModels.Attributes
+@model SubmissionViewModel
+
+@{
+    var form = Model.Attribute!;
+    var isResidential = form.FormType == "Residential";
+    var isResidentialSt = form.FormType == "ResidentialST";
+    var isBusiness = form.FormType == "BusinessCommercial";
+    var isDrc = form.FormType == "DRCMethod";
+
+    var tabs = new List<(string Key, string Number, string Title)>
+    {
+        ("attr-property", "Section 1", "Property and valuation"),
+        ("attr-contact", "Section 2", "Applicant and representative"),
+        ("attr-access", "Section 3", "Property access")
+    };
+
+    if (isResidential || isResidentialSt)
+        tabs.Add(("attr-residential", "Section 4", isResidentialSt ? "Sectional-title attributes" : "Residential attributes"));
+
+    if (isBusiness)
+        tabs.Add(("attr-business", "Section 4", "Business and commercial attributes"));
+
+    if (isDrc)
+        tabs.Add(("attr-drc", "Section 4", "DRC attributes"));
+
+    tabs.Add(("attr-declaration", "Section 5", "Declaration and comments"));
+
+    string Show(object? value)
+    {
+        if (value is null) return "Not provided";
+        if (value is bool b) return b ? "Yes" : "No";
+        var text = Convert.ToString(value);
+        return string.IsNullOrWhiteSpace(text) ? "Not provided" : text;
+    }
+}
+
+<section class="submitted-form-body attribute-submitted-form"
+         data-submitted-form-tabs>
+    <div class="submitted-form-heading">
+        <div>
+            <span class="submitted-form-eyebrow">Submitted attribute form</span>
+            <h2>@Model.ReferenceNumber</h2>
+            <p>The information below is read-only and reflects the form submitted by the client.</p>
+        </div>
+        <span class="submitted-form-type">@form.FormType</span>
+    </div>
+
+    <div class="submitted-tabs-scroll">
+        <div class="submitted-tabs" role="tablist">
+            @for (var i = 0; i < tabs.Count; i++)
+            {
+                var tab = tabs[i];
+                <button type="button"
+                        id="tab-@tab.Key"
+                        class="submitted-tab @(i == 0 ? "active" : "")"
+                        role="tab"
+                        aria-selected="@(i == 0 ? "true" : "false")"
+                        aria-controls="panel-@tab.Key"
+                        data-section-key="@tab.Key">
+                    <strong>@tab.Number</strong>
+                    <span>@tab.Title</span>
+                </button>
+            }
+        </div>
+    </div>
+
+    <div class="submitted-panels">
+        @for (var i = 0; i < tabs.Count; i++)
+        {
+            var tab = tabs[i];
+            <section id="panel-@tab.Key"
+                     class="submitted-panel @(i == 0 ? "active" : "")"
+                     role="tabpanel"
+                     aria-labelledby="tab-@tab.Key"
+                     data-section-panel="@tab.Key"
+                     hidden="@(i == 0 ? null : "hidden")">
+
+                @switch (tab.Key)
+                {
+                    case "attr-property":
+                        <partial name="Partials/Attributes/_AttributeProperty"
+                                 model="form" />
+                        break;
+                    case "attr-contact":
+                        <partial name="Partials/Attributes/_AttributeContacts"
+                                 model="form" />
+                        break;
+                    case "attr-access":
+                        <partial name="Partials/Attributes/_AttributeAccess"
+                                 model="form" />
+                        break;
+                    case "attr-residential":
+                        <partial name="Partials/Attributes/_AttributeResidential"
+                                 model="form" />
+                        break;
+                    case "attr-business":
+                        <partial name="Partials/Attributes/_AttributeBusiness"
+                                 model="form" />
+                        break;
+                    case "attr-drc":
+                        <partial name="Partials/Attributes/_AttributeDrc"
+                                 model="form" />
+                        break;
+                    case "attr-declaration":
+                        <partial name="Partials/Attributes/_AttributeDeclaration"
+                                 model="form" />
+                        break;
+                }
+            </section>
+        }
+    </div>
+</section>

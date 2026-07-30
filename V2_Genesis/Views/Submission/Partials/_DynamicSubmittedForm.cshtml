@@ -1,8 +1,15 @@
 @using V2_Genesis.Models.ViewModels.Submissions
 @model SubmissionViewModel
 
-@{
-    var sections = Model.FormSections
+@if (Model.IsAttribute)
+{
+    <partial name="Partials/Attributes/_AttributeSubmittedForm"
+             model="Model" />
+}
+else
+{
+
+ var sections = Model.FormSections
         .Where(section => section.IsAvailable)
         .OrderBy(section => section.Order)
         .ToList();
@@ -22,7 +29,7 @@
         "section-7" => "Partials/Forms/_Section7Declaration",
         _ => string.Empty
     };
-}
+
 
 @if (sections.Any())
 {
@@ -92,4 +99,5 @@
             }
         </div>
     </section>
+}
 }

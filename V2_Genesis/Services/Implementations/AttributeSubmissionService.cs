@@ -1170,14 +1170,47 @@ namespace V2_Genesis.Services.Implementations
             };
 
         }
-        private async Task<AttributeSubmissionViewModel?> BuildSubmittedAttributeViewModelAsync(long attrId)
+        public async Task<AttributeSubmissionViewModel?> GetSubmittedViewAsync(
+            string attrNo,
+            string userId,
+            CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(attrNo)
+                || string.IsNullOrWhiteSpace(userId))
+            {
+                return null;
+            }
+
+            var submission = await _context.AttrPropertyInfo
+                .AsNoTracking()
+                .Where(x =>
+                    x.Attr_No == attrNo.Trim()
+                    && x.SubmittedByUserId == userId
+                    && x.IsActive)
+                .Select(x => new
+                {
+                    x.Attr_ID
+                })
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (submission is null)
+                return null;
+
+            return await BuildSubmittedAttributeViewModelAsync(
+                submission.Attr_ID,
+                cancellationToken);
+        }
+
+        private async Task<AttributeSubmissionViewModel?> BuildSubmittedAttributeViewModelAsync(
+            long attrId,
+            CancellationToken cancellationToken = default)
         {
             var info = await _context.AttrPropertyInfo
                 .Include(x => x.PropertyDetails)
                     .ThenInclude(x => x!.ValuationDetails)
                 .Include(x => x.PropertyDetails)
                     .ThenInclude(x => x!.Calculations)
-                .FirstOrDefaultAsync(x => x.Attr_ID == attrId);
+                .FirstOrDefaultAsync(x => x.Attr_ID == attrId, cancellationToken);
 
             if (info?.PropertyDetails == null)
                 return null;
@@ -1189,43 +1222,43 @@ namespace V2_Genesis.Services.Implementations
             var calculations = property.Calculations;
 
             var declaration = await _context.AttrDeclarations
-                .FirstOrDefaultAsync(x => x.Attr_ID == attrId);
+                .FirstOrDefaultAsync(x => x.Attr_ID == attrId, cancellationToken);
 
             var contacts = await _context.AttrContactInfo
                 .Where(x => x.PropertyDetailsId == propertyDetailsId)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
 
             var primary = await _context.AttrPrimaryAttributes
-                .FirstOrDefaultAsync(x => x.PropertyDetailsId == propertyDetailsId);
+                .FirstOrDefaultAsync(x => x.PropertyDetailsId == propertyDetailsId, cancellationToken);
 
             var secondary = await _context.AttrSecondaryAttributes
-                .FirstOrDefaultAsync(x => x.PropertyDetailsId == propertyDetailsId);
+                .FirstOrDefaultAsync(x => x.PropertyDetailsId == propertyDetailsId, cancellationToken);
 
             var businessBuildings = await _context.AttrBusinessBuildings
                 .Where(x => x.PropertyDetailsId == propertyDetailsId)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
 
             var businessSections = await _context.AttrBusinessSections
                 .Where(x => x.PropertyDetailsId == propertyDetailsId)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
 
             var businessGeneral = await _context.AttrBusinessGeneral
-                .FirstOrDefaultAsync(x => x.PropertyDetailsId == propertyDetailsId);
+                .FirstOrDefaultAsync(x => x.PropertyDetailsId == propertyDetailsId, cancellationToken);
 
             var drcBuildings = await _context.AttrDrcBuildings
                 .Where(x => x.PropertyDetailsId == propertyDetailsId)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
 
             var drcImprovements = await _context.AttrDrcImprovements
                 .Where(x => x.PropertyDetailsId == propertyDetailsId)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
 
             var drcVacantLands = await _context.AttrDrcVacantLand
                 .Where(x => x.PropertyDetailsId == propertyDetailsId)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
 
             var drcMarketValue = await _context.AttrDrcMarketValueDemolition
-                .FirstOrDefaultAsync(x => x.PropertyDetailsId == propertyDetailsId);
+                .FirstOrDefaultAsync(x => x.PropertyDetailsId == propertyDetailsId, cancellationToken);
 
             var model = new AttributeSubmissionViewModel
             {
@@ -1484,7 +1517,7 @@ namespace V2_Genesis.Services.Implementations
                     RoutedSector = x.RoutedSector,
                     SubmittedDate = x.SubmissionDateTime,
                     RoutedDate = x.RoutedToSectorDateTime,
-                    EvidenceCount = x.Evidence_Count 
+                    EvidenceCount = x.Evidence_Count
                 })
                 .ToListAsync();
         }

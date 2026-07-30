@@ -1,0 +1,28 @@
+@model V2_Genesis.Models.ViewModels.Attributes.AttributeSubmissionViewModel
+@{
+    string Show(object? value) => value is null || string.IsNullOrWhiteSpace(Convert.ToString(value))
+        ? "Not provided" : Convert.ToString(value)!;
+    var buildings=Model.DrcBuildings.ToList(); while(buildings.Count<5){buildings.Add(new V2_Genesis.Models.ViewModels.Attributes.AttributeDrcBuildingVm());}
+    var improvements=Model.DrcImprovements.ToList(); while(improvements.Count<5){improvements.Add(new V2_Genesis.Models.ViewModels.Attributes.AttributeDrcImprovementVm());}
+    var lands=Model.DrcVacantLands.ToList(); while(lands.Count<5){lands.Add(new V2_Genesis.Models.ViewModels.Attributes.AttributeDrcVacantLandVm());}
+}
+<div class="municipal-form-section">
+    <partial name="Partials/Forms/_SectionHeading" model='new V2_Genesis.Models.ViewModels.Submissions.SubmissionSectionHeadingViewModel { Number = "SECTION 4", Title = "DEPRECIATED REPLACEMENT COST ATTRIBUTES" }' />
+    <div class="municipal-inner-heading">Buildings</div>
+    <div class="municipal-comparison-table-wrap"><table class="municipal-comparison-table"><thead><tr><th>No.</th><th>Description</th><th>Quality</th><th>GBA</th><th>Condition</th><th>Depreciation %</th><th>Rate/m²</th><th>Depreciated rate</th><th>Replacement cost</th></tr></thead><tbody>
+    @for(var i=0;i<buildings.Count;i++){var b=buildings[i];<tr><td>@(i+1)</td><td>@Show(b.BuildingDescription)</td><td>@Show(b.Quality)</td><td>@Show(b.GrossBuildingArea)</td><td>@Show(b.Condition)</td><td>@Show(b.DepreciationPercentage)</td><td>@Show(b.RatePerSQM)</td><td>@Show(b.DepreciatedRate)</td><td>@Show(b.ReplacementCost)</td></tr>}
+    </tbody></table></div>
+    <div class="municipal-inner-heading">Improvements</div>
+    <div class="municipal-comparison-table-wrap"><table class="municipal-comparison-table"><thead><tr><th>No.</th><th>Description</th><th>Quality</th><th>Area/unit</th><th>Condition</th><th>Depreciation %</th><th>Rate/m²</th><th>Depreciated rate</th><th>Replacement cost</th></tr></thead><tbody>
+    @for(var i=0;i<improvements.Count;i++){var b=improvements[i];<tr><td>@(i+1)</td><td>@Show(b.ImprovementDescription)</td><td>@Show(b.Quality)</td><td>@Show(b.AreaUnit)</td><td>@Show(b.Condition)</td><td>@Show(b.DepreciationPercentage)</td><td>@Show(b.RatePerSQM)</td><td>@Show(b.DepreciatedRate)</td><td>@Show(b.ReplacementCost)</td></tr>}
+    </tbody></table></div>
+    <div class="municipal-inner-heading">Vacant land</div>
+    <div class="municipal-comparison-table-wrap"><table class="municipal-comparison-table"><thead><tr><th>No.</th><th>Region</th><th>Min rate</th><th>Mid rate</th><th>Max rate</th><th>Area</th><th>Rate</th><th>Cost</th></tr></thead><tbody>
+    @for(var i=0;i<lands.Count;i++){var b=lands[i];<tr><td>@(i+1)</td><td>@Show(b.Region)</td><td>@Show(b.MinRatePerSQM)</td><td>@Show(b.MidRatePerSQM)</td><td>@Show(b.MaxRatePerSQM)</td><td>@Show(b.Area)</td><td>@Show(b.Rate)</td><td>@Show(b.VacantLandCost)</td></tr>}
+    </tbody></table></div>
+    <div class="municipal-field-grid">
+        <div class="municipal-readonly-field"><label>Demolition rate</label><div class="municipal-readonly-input">@Show(Model.DrcMarketValueDemolition.DemolitionRate)</div></div>
+        <div class="municipal-readonly-field"><label>Market value</label><div class="municipal-readonly-input">@Show(Model.DrcMarketValueDemolition.MarketValue)</div></div>
+        <div class="municipal-readonly-field"><label>Market value after demolition</label><div class="municipal-readonly-input">@Show(Model.DrcMarketValueDemolition.MarketValueAfterDemolition)</div></div>
+    </div>
+</div>

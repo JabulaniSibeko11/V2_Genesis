@@ -407,6 +407,34 @@
     min-height: 70px;
 }
 
+/* ── "Postal address is the same as physical" toggle ────────────── */
+.attr-same-address-toggle {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--at-teal);
+    cursor: pointer;
+    margin: -4px 0 2px;
+}
+
+    .attr-same-address-toggle input[type="checkbox"] {
+        width: 17px;
+        height: 17px;
+        margin: 0;
+        accent-color: var(--at-gold);
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+
+.attr-textarea-synced {
+    background: var(--at-teal-pale);
+    color: #4a4a4a;
+    cursor: not-allowed;
+}
+
 .attr-select {
     cursor: pointer;
     appearance: auto;
@@ -638,6 +666,91 @@
     background: var(--at-teal-pale);
     flex: 1;
 }
+
+/* ── Live "files ready" summary badge (in the section title) ────── */
+.ev-summary-badge {
+    display: inline-flex;
+    align-items: center;
+    vertical-align: middle;
+    margin-left: 10px;
+    font-size: 11.5px;
+    font-weight: 700;
+    text-transform: none;
+    letter-spacing: 0;
+    padding: 4px 12px;
+    border-radius: 100px;
+    background: #f1f1f1;
+    color: #6b6b6b;
+    transition: background .15s, color .15s;
+}
+
+.ev-summary-badge--filled {
+    background: var(--at-teal-pale);
+    color: var(--at-teal);
+}
+
+/* ── Section intro copy ──────────────────────────────────────────── */
+.ev-section-intro {
+    font-size: 12.5px;
+    color: #6b6b6b;
+    line-height: 1.6;
+    margin: 0 0 16px;
+    padding: 0 14px;
+}
+
+.ev-section-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    color: var(--at-teal);
+    margin: 18px 0 10px;
+    padding: 0 14px;
+    font-family: 'Poppins', sans-serif;
+}
+
+    .ev-section-label i {
+        color: var(--at-gold);
+    }
+
+.ev-optional-tag {
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+    color: #9a9a9a;
+}
+
+/* ── Authorisation-letter file status ────────────────────────────── */
+.ev-rep-file-status {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-top: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #b45309;
+    font-family: 'Poppins', sans-serif;
+}
+
+    .ev-rep-file-status i {
+        color: #d97706;
+    }
+
+    .ev-rep-file-status small {
+        font-weight: 400;
+        color: #9a9a9a;
+    }
+
+.ev-rep-file-status--ok {
+    color: #15803d;
+}
+
+    .ev-rep-file-status--ok i {
+        color: #16a34a;
+    }
 
 .ev-dropzone {
     border: 2.5px dashed var(--at-teal);
@@ -1034,6 +1147,7 @@
         gap: 6px 10px;
     }
 }
+
 .attr-glossary {
     margin: 14px 0 18px;
     padding: 16px;

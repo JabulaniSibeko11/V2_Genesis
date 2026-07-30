@@ -6,7 +6,7 @@ namespace V2_Genesis.Services.Interfaces
     {
         AttributeSubmissionViewModel CreateNew(string formType);
 
-        Task<long> SubmitAsync(AttributeSubmissionViewModel model,string userId,string userName,string? userEmail,string? userPhone);
+        Task<long> SubmitAsync(AttributeSubmissionViewModel model, string userId, string userName, string? userEmail, string? userPhone);
 
         Task<AttributeSubmissionViewModel?> GetForReviewAsync(long attrId);
 
@@ -24,5 +24,7 @@ namespace V2_Genesis.Services.Interfaces
         Task RouteExpiredEvidenceSubmissionsAsync(string performedBy = "System");
 
         Task<List<AttributeSectorInboxItemVm>> GetSectorInboxAsync(string sector);
+
+        Task<AttributeSubmissionViewModel?> GetSubmittedViewAsync(string attrNo,string userId, CancellationToken cancellationToken = default);
     }
 }

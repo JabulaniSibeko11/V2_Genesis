@@ -3,19 +3,35 @@
 
 @foreach (var field in Model)
 {
+    var choiceOptions = SubmissionFieldReader.GetChoiceOptions(field.Value);
+
     <div class="municipal-readonly-field @(field.IsLongText ? "municipal-readonly-field--wide" : "")">
         <label>@field.Label</label>
 
-        @if (field.IsLongText)
+        @if (choiceOptions is not null)
+        {
+            <div class="municipal-choice-group" role="radiogroup" aria-label="@field.Label">
+                @foreach (var option in choiceOptions)
+                {
+                    var isSelected = option.Equals(field.Value?.Trim(), StringComparison.OrdinalIgnoreCase);
+
+                    <label class="municipal-choice @(isSelected ? "municipal-choice--selected" : "")">
+                        <input type="radio" disabled checked="@isSelected" />
+                        <span>@option</span>
+                    </label>
+                }
+            </div>
+        }
+        else if (field.IsLongText)
         {
             <div class="municipal-readonly-textarea">
-                @SubmissionFieldReader.Display(field.Value)
+                @SubmissionFieldReader.Display(field.Value,field.Name)
             </div>
         }
         else
         {
             <div class="municipal-readonly-input">
-                @SubmissionFieldReader.Display(field.Value)
+                @SubmissionFieldReader.Display(field.Value, field.Name)
             </div>
         }
     </div>
