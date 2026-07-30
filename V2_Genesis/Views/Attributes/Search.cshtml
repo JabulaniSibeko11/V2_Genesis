@@ -4,17 +4,17 @@
     Layout = "~/Views/Shared/_ClientLayout.cshtml";
 
     var townships = ViewBag.Townships as List<string> ?? new();
-    var schemes   = ViewBag.Schemes   as List<string> ?? new();
-    var results   = ViewBag.Results   as List<PropertySearchResult>;
-    var count     = ViewBag.ResultCount as int? ?? 0;
-    var p         = ViewBag.SearchParams as PropertySearchParams;
+    var schemes = ViewBag.Schemes as List<string> ?? new();
+    var results = ViewBag.Results as List<PropertySearchResult>;
+    var count = ViewBag.ResultCount as int? ?? 0;
+    var p = ViewBag.SearchParams as PropertySearchParams;
 }
 
 @section Styles {
-   
-
-    <link href="~/css/views/atrributes-search.css" rel="stylesheet" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css" />
     <link href="~/css/views/clientdashboardcss.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/views/atrributes-search.css" rel="stylesheet" asp-append-version="true" />
 }
 
 <div class="as-page">
@@ -115,8 +115,8 @@
                                 name="SearchScheme"
                                 class="as-input">
                             <option value="">— Select Scheme (optional) —</option>
-                          
 
+                          
                             @foreach (var s in schemes)
                             {
                                 var sel = p?.TownName == s ? "selected" : null;
@@ -196,27 +196,27 @@
                                 @foreach (var item in results)
                                 {
                                     <tr>
-                                        <td>@(item.TownNameDesc      ?? "–")</td>
-                                        <td>@(item.LisStreetAddress  ?? "–")</td>
+                                        <td>@(item.TownNameDesc ?? "–")</td>
+                                        <td>@(item.LisStreetAddress ?? "–")</td>
                                         <td>@item.Erf</td>
                                         <td>@item.Ptn</td>
-                                        <td>@(item.CatDesc           ?? "–")</td>
-                                        <td>@(item.RateableArea      ?? "–")</td>
+                                        <td>@(item.CatDesc ?? "–")</td>
+                                        <td>@(item.RateableArea ?? "–")</td>
                                         <td class="as-value">@item.MarketValue</td>
-                                        <td>@(item.SchemeName        ?? "–")</td>
+                                        <td>@(item.SchemeName ?? "–")</td>
                                         <td>@(item.UnitNo > 0 ? item.UnitNo.ToString() : "–")</td>
                                         <td>
                                             <div class="as-row-actions">
                                                 @* View full detail *@
                                                 @{
-                                                                                                 var viewUrl =
-                                                    $"/property/view?rollSource=Attributes" +
-                                                    $"&unitKey={item.UnitKey}" +
-                                                    $"&valuationKey={item.ValuationKey}" +
-                                                    $"&propertyFrom=Attributes";
+                                                    var viewUrl =
+       $"/property/view?rollSource=Attributes" +
+       $"&unitKey={item.UnitKey}" +
+       $"&valuationKey={item.ValuationKey}" +
+       $"&propertyFrom=Attributes";
                                                 }
                                                 <a href="@viewUrl"
-                                                   class="as-btn as-btn-view">
+                                                       class="as-btn as-btn-view">
                                                     <i class="fa-solid fa-eye"></i>
                                                     View
                                                 </a>
@@ -258,53 +258,56 @@
 </div>
 
 @section Scripts {
-<script>
-$(document).ready(function () {
-    if (!$.fn.DataTable.isDataTable('#attrResultsTable')) {
-        $('#attrResultsTable').DataTable({
-            responsive : false,
-            scrollX    : true,
-            autoWidth  : false,
-            destroy    : true,
-            dom        : '<"as-dt-top"lBf>rt<"as-dt-bottom"ip>',
-            lengthMenu : [[10, 25, 50, -1], [10, 25, 50, 'All']],
-            pageLength : 10,
-            buttons: [
-                { extend: 'excel', text: '<i class="fa-solid fa-file-excel"></i> Excel', className: 'as-dt-btn' },
-                { extend: 'pdf',   text: '<i class="fa-solid fa-file-pdf"></i> PDF',     className: 'as-dt-btn' }
-            ],
-            language: {
-                search           : '_INPUT_',
-                searchPlaceholder: 'Filter results…',
-                emptyTable       : 'No properties found',
-                info             : 'Showing _START_ to _END_ of _TOTAL_',
-                infoEmpty        : 'No properties found',
-                infoFiltered     : '(filtered from _MAX_ total)'
-            },
-            columnDefs: [
-                { width: '150px', targets: 0 },
-                { width: '180px', targets: 1 },
-                { width: '55px',  targets: [2,3] },
-                { width: '120px', targets: 4 },
-                { width: '120px', targets: 6 },
-                { orderable: false, targets: 9 }
-            ],
-            drawCallback : function () { formatAttrValues(); },
-            initComplete : function () { formatAttrValues(); }
-        });
-    }
-});
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
 
-function formatAttrValues() {
-    document.querySelectorAll('.as-value').forEach(function (el) {
-        var raw = parseFloat(el.textContent.replace(/[^0-9.-]+/g, ''));
-        if (!isNaN(raw) && raw > 0) {
-            el.textContent = raw.toLocaleString('en-ZA', {
-                style: 'currency', currency: 'ZAR',
-                minimumFractionDigits: 0, maximumFractionDigits: 0
+    <script>
+        $(document).ready(function () {
+            if (!$.fn.DataTable.isDataTable('#attrResultsTable')) {
+                $('#attrResultsTable').DataTable({
+                    responsive : false,
+                    scrollX    : true,
+                    autoWidth  : false,
+                    destroy    : true,
+                    dom        : '<"as-dt-top"lf>rt<"as-dt-bottom"ip>',
+                    lengthMenu : [[10, 25, 50, -1], [10, 25, 50, 'All']],
+                    pageLength : 10,
+                    language: {
+                        search           : '_INPUT_',
+                        searchPlaceholder: 'Filter results…',
+                        emptyTable       : 'No properties found',
+                        info             : 'Showing _START_ to _END_ of _TOTAL_',
+                        infoEmpty        : 'No properties found',
+                        infoFiltered     : '(filtered from _MAX_ total)'
+                    },
+                    columnDefs: [
+                        { width: '150px', targets: 0 },
+                        { width: '180px', targets: 1 },
+                        { width: '55px',  targets: [2,3] },
+                        { width: '120px', targets: 4 },
+                        { width: '120px', targets: 6 },
+                        { orderable: false, targets: 9 }
+                    ],
+                    drawCallback : function () { formatAttrValues(); },
+                    initComplete : function () { formatAttrValues(); }
+                });
+            }
+        });
+
+        function formatAttrValues() {
+            document.querySelectorAll('.as-value').forEach(function (el) {
+                var raw = parseFloat(el.textContent.replace(/[^0-9.-]+/g, ''));
+                if (!isNaN(raw) && raw > 0) {
+                    el.textContent = raw.toLocaleString('en-ZA', {
+                        style: 'currency', currency: 'ZAR',
+                        minimumFractionDigits: 0, maximumFractionDigits: 0
+                    });
+                }
             });
         }
-    });
-}
-</script>
+    </script>
 }

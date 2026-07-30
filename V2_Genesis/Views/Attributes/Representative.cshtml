@@ -76,9 +76,9 @@
             @if (!ViewData.ModelState.IsValid)
             {
                 <div style="padding:14px 18px; border-radius:10px;
-                            background:#fef2f2; border:1px solid #fca5a5;
-                            color:#b91c1c; font-size:13px; display:flex;
-                            align-items:center; gap:8px;">
+                    background:#fef2f2; border:1px solid #fca5a5;
+                    color:#b91c1c; font-size:13px; display:flex;
+                    align-items:center; gap:8px;">
                     <i class="fa-solid fa-circle-xmark"></i>
                     <div asp-validation-summary="ModelOnly"></div>
                 </div>
@@ -217,7 +217,7 @@
                     Continue to Attribute Form
                 </button>
                 <a href="/attributes/check?idProperty=@Model.IDProperty&formType=@Model.FormType"
-                   class="rep-btn-outline">
+                       class="rep-btn-outline">
                     <i class="fa-solid fa-arrow-left"></i> Back
                 </a>
             </div>
