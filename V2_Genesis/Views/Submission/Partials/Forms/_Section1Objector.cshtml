@@ -1,8 +1,16 @@
-@using V2_Genesis.Models.ViewModels.Submissions
+﻿@using V2_Genesis.Models.ViewModels.Submissions
 @model SubmissionViewModel
 
 @{
     var applicant = Model.Applicant;
+
+    var partyUpper = Model.IsAppeal ? "APPELLANT" : "OBJECTOR";
+    var partyTitle = Model.IsAppeal ? "Appellant" : "Objector";
+    var partyLower = Model.IsAppeal ? "appellant" : "objector";
+    var representativeTitle =
+        Model.IsAppeal
+            ? "Authorised representative of the appellant"
+            : "Authorised representative of the objector";
 
     var ownerFields = new[]
     {
@@ -74,7 +82,7 @@
              model='new SubmissionSectionHeadingViewModel
                  {
                      Number = "SECTION 1",
-                     Title = "OBJECTOR INFORMATION"
+                     Title = $"{partyUpper} INFORMATION"
                  }' />
 
 <div class="municipal-declaration-row">
@@ -86,7 +94,7 @@
             </label>
             <label class="municipal-choice @(showObjector ? "municipal-choice--selected" : "")">
                 <input type="radio" disabled checked="@showObjector" />
-                <span>Objector (not owner)</span>
+                <span>@partyTitle (not owner)</span>
             </label>
             <label class="municipal-choice @(showRepresentative ? "municipal-choice--selected" : "")">
                 <input type="radio" disabled checked="@showRepresentative" />
@@ -100,7 +108,7 @@
         <div class="municipal-subsection">
             <div class="municipal-subsection-bar">
                 <span>1.1</span>
-                <strong>OBJECTOR IS THE OWNER</strong>
+                <strong>@partyUpper IS THE OWNER</strong>
             </div>
 
             <div class="municipal-field-grid">
@@ -152,17 +160,17 @@
         <div class="municipal-subsection">
             <div class="municipal-subsection-bar">
                 <span>1.2</span>
-                <strong>OBJECTOR IS NOT THE OWNER</strong>
+                <strong>@partyUpper IS NOT THE OWNER</strong>
             </div>
 
             <div class="municipal-field-grid">
-                <div class="municipal-readonly-field municipal-readonly-field--wide"><label>Name of objector</label><div class="municipal-readonly-input">@SubmissionFieldReader.Display(applicant.ApplicantFullName)</div></div>
+                <div class="municipal-readonly-field municipal-readonly-field--wide"><label>Name of @partyLower</label><div class="municipal-readonly-input">@SubmissionFieldReader.Display(applicant.ApplicantFullName)</div></div>
                 <div class="municipal-readonly-field"><label>Identity / passport number</label><div class="municipal-readonly-input">@SubmissionFieldReader.Display(applicant.ApplicantIdNumber)</div></div>
                 <div class="municipal-readonly-field"><label>Company registration number</label><div class="municipal-readonly-input">@SubmissionFieldReader.Display(applicant.ApplicantCompanyRegistrationNumber)</div></div>
-                <div class="municipal-readonly-field municipal-readonly-field--wide"><label>Status / capacity of objector</label><div class="municipal-readonly-input">@SubmissionFieldReader.Display(applicant.Capacity)</div></div>
+                <div class="municipal-readonly-field municipal-readonly-field--wide"><label>Status / capacity of @partyLower</label><div class="municipal-readonly-input">@SubmissionFieldReader.Display(applicant.Capacity)</div></div>
             </div>
 
-            <div class="municipal-inner-heading">Postal address of objector</div>
+            <div class="municipal-inner-heading">Postal address of @partyLower</div>
             <div class="municipal-field-grid municipal-field-grid--address">
                 <div class="municipal-readonly-field"><label>Street number</label><div class="municipal-readonly-input">@SubmissionFieldReader.Display(applicant.ApplicantAddress1)</div></div>
                 <div class="municipal-readonly-field municipal-readonly-field--span-3"><label>Street name</label><div class="municipal-readonly-input">@SubmissionFieldReader.Display(applicant.ApplicantAddress2)</div></div>
@@ -187,7 +195,7 @@
         <div class="municipal-subsection">
             <div class="municipal-subsection-bar">
                 <span>1.3</span>
-                <strong>AUTHORISED REPRESENTATIVE OF THE OBJECTOR</strong>
+                <strong>@representativeTitle.ToUpperInvariant()</strong>
             </div>
 
             <div class="municipal-field-grid">
@@ -225,7 +233,7 @@
     @if (!showOwner && !showObjector && !showRepresentative)
     {
         <div class="municipal-empty-section">
-            No objector information was recorded for this submission.
+            No @partyLower information was recorded for this submission.
         </div>
     }
 </div>

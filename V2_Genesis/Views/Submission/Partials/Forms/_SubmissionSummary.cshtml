@@ -1,0 +1,69 @@
+﻿@model V2_Genesis.Models.ViewModels.Submissions.SubmissionViewModel
+@{
+    var submissionLabel =
+        Model.IsAppeal ? "Appeal"
+        : Model.IsObjection ? "Objection"
+        : Model.IsReview ? "Review"
+        : Model.IsQuery ? "Query"
+        : Model.IsAttribute ? "Attribute"
+        : "Submission";
+
+    var formDisplay =
+        Model.FormType.Equals("Multi", StringComparison.OrdinalIgnoreCase)
+        || Model.FormType.Equals("D", StringComparison.OrdinalIgnoreCase)
+            ? "Form D"
+            : string.IsNullOrWhiteSpace(Model.FormType)
+                ? "Not available"
+                : Model.FormType;
+}
+
+<section class="submission-summary"
+         aria-label="@submissionLabel summary">
+
+    <div class="submission-summary-item">
+        <i class="fa-solid fa-tag"></i>
+        <div>
+            <span>Submission type</span>
+            <strong>@submissionLabel</strong>
+        </div>
+    </div>
+
+    <div class="submission-summary-item">
+        <i class="fa-solid fa-scroll"></i>
+        <div>
+            <span>Roll</span>
+            <strong>@Model.RollDisplayName</strong>
+        </div>
+    </div>
+
+    <div class="submission-summary-item">
+        <i class="fa-solid fa-file-lines"></i>
+        <div>
+            <span>Form</span>
+            <strong>@formDisplay</strong>
+        </div>
+    </div>
+
+    <div class="submission-summary-item">
+        <i class="fa-solid fa-house"></i>
+        <div>
+            <span>Property</span>
+            <strong>
+                @(string.IsNullOrWhiteSpace(Model.PropertyDescription)
+                    ? Model.Property.PropertyDescription
+                    : Model.PropertyDescription)
+            </strong>
+        </div>
+    </div>
+
+    <div class="submission-summary-item">
+        <i class="fa-solid fa-calendar-check"></i>
+        <div>
+            <span>@submissionLabel date submitted</span>
+            <strong>
+                @(Model.SubmittedAt?.ToString("dd MMMM yyyy HH:mm")
+                    ?? "Not available")
+            </strong>
+        </div>
+    </div>
+</section>

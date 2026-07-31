@@ -65,10 +65,8 @@
             => "<span class='cd-pill cd-pill-inprogress'>Obj-InProgress</span>",
         "Obj-Lodging"
             => "<span class='cd-pill cd-pill-lodging'>Obj-Lodging</span>",
-        "App-Unallocated"
-            => "<span class='cd-pill cd-pill-pending'>Appeal Pending</span>",
-        "App-Lodging"
-            => "<span class='cd-pill cd-pill-lodging'>Appeal Lodged</span>",
+        "App-Unallocated" or "App-Lodging"
+            => "<span class='cd-pill cd-pill-pending'>@status</span>",
         "App-Finalized"
             => "<span class='cd-pill cd-pill-completed'>App-Finalized</span>",
         _ => $"<span class='cd-pill cd-pill-completed'>{status}</span>"
@@ -94,89 +92,7 @@
   
     <link href="~/css/views/client-dashboard.css" rel="stylesheet" asp-append-version="true" />
 
-
-<style>
-    .cd-action-menu {
-        min-width: 270px;
-        padding: 8px;
-        border: 1px solid #dce5e7;
-        border-radius: 12px;
-        box-shadow: 0 14px 35px rgba(18, 47, 54, .16);
-    }
-
-    .cd-action-menu .dropdown-item {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 10px 12px;
-        border-radius: 8px;
-        font-size: 12.5px;
-        font-weight: 700;
-        color: #263e44;
-    }
-
-    .cd-action-menu .dropdown-item:hover {
-        background: #eef5f6;
-        color: #173b43;
-    }
-
-    .cd-action-menu .dropdown-item i {
-        width: 17px;
-        color: #36626d;
-        text-align: center;
-    }
-
-    .cd-action-menu .cd-action-primary {
-        margin-top: 5px;
-        background: #173b43;
-        color: #fff;
-    }
-
-    .cd-action-menu .cd-action-primary:hover {
-        background: #0f2d33;
-        color: #fff;
-    }
-
-    .cd-action-menu .cd-action-primary i {
-        color: #e6b000;
-    }
-
-    .cd-action-menu .cd-action-danger {
-        margin-top: 5px;
-        color: #991b1b;
-    }
-
-    .cd-action-menu .cd-action-danger i {
-        color: #dc2626;
-    }
-
-    .appeal-modal-icon {
-        width: 52px;
-        height: 52px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: #fff4cc;
-        color: #b7791f;
-        font-size: 22px;
-        flex-shrink: 0;
-    }
-
-    .appeal-modal-date {
-        margin-top: 14px;
-        padding: 10px 12px;
-        border-radius: 8px;
-        background: #fff8dc;
-        border: 1px solid #f3d77d;
-        font-weight: 700;
-        color: #6b4f00;
-    }
-</style>
-
 }
-
-
 @if (TempData["DuplicateLodgementError"] != null)
 {
     <div class="alert alert-warning" style="border-left:5px solid #e6b000;">
@@ -200,78 +116,6 @@
         Please contact the Valuation team for assistance.
     </div>
 }
-
-@if (TempData["LodgementWindowError"] != null)
-{
-    <div class="modal fade"
-         id="appealBlockedModal"
-         tabindex="-1"
-         aria-labelledby="appealBlockedModalLabel"
-         aria-hidden="true">
-
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content"
-                 style="border-radius:16px; overflow:hidden; border:none;">
-
-                <div class="modal-header"
-                     style="background:#173b43; color:#fff; border-bottom:3px solid #e6b000;">
-                    <h5 class="modal-title"
-                        id="appealBlockedModalLabel">
-                        Appeal Cannot Be Lodged Online
-                    </h5>
-
-                    <button type="button"
-                            class="btn-close btn-close-white"
-                            data-bs-dismiss="modal"
-                            aria-label="Close">
-                    </button>
-                </div>
-
-                <div class="modal-body" style="padding:24px;">
-                    <div style="display:flex; gap:16px; align-items:flex-start;">
-                        <div class="appeal-modal-icon">
-                            <i class="fa-solid fa-calendar-xmark"></i>
-                        </div>
-
-                        <div>
-                            <p style="margin:0; color:#324b51; line-height:1.6;">
-                                @TempData["LodgementWindowError"]
-                            </p>
-
-                            @if (TempData["AppealCloseDate"] != null)
-                            {
-                                <div class="appeal-modal-date">
-                                    <i class="fa-solid fa-calendar-day"
-                                       style="margin-right:6px;"></i>
-
-                                    Appeal closing date:
-                                    @TempData["AppealCloseDate"]
-                                </div>
-                            }
-
-                            <p style="margin:14px 0 0; color:#5b6f74; line-height:1.6;">
-                                Please visit the City of Johannesburg Valuation
-                                Services office for assistance with the available
-                                late-appeal or condonation process.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="modal-footer"
-                     style="background:#f7fafb; border-top:1px solid #e3ecee;">
-                    <button type="button"
-                            class="btn"
-                            data-bs-dismiss="modal"
-                            style="background:#173b43; color:#fff; font-weight:700;">
-                        Close
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-}
-
 <!-- ══════════════════════════════════════════════════════════════
      ADMIN COMMAND BAR
      Deliberately distinct from Views/Dashboard/Index.cshtml (the
@@ -383,7 +227,149 @@
 </div>
 
 <!-- ── Per-roll sections ───────────────────────────────────────────── -->
-<div class="cd-body">
+
+@{
+    var adminFamilies = Model.Rolls.Where(r => !r.IsQuery)
+                                    .GroupBy(r => r.Main_Roll)
+                                    .ToList();
+    var adminQueryRolls = Model.Rolls.Where(r => r.IsQuery).ToList();
+
+    var adminFamilyLookup = adminFamilies.Select(fam =>
+    {
+        var head = fam.FirstOrDefault(r => r.IsGv) ?? fam.First();
+        var membersOrdered = fam.OrderBy(r => r.Source == head.Source ? 0 : 1)
+                                 .ThenBy(r => r.Source)
+                                 .Select(r => new { source = r.Source, name = r.Name, shortName = r.Short })
+                                 .ToList();
+        return new { headSource = head.Source, members = membersOrdered };
+    }).ToList();
+}
+
+<!-- ── Admin dashboard: family tiles + persistent tab strip ───────────── -->
+<div class="cd-body" id="cdTileBody">
+
+    <p class="cd-intro-note">
+        <i class="fa-solid fa-circle-info"></i>
+        Select a card below to review linked properties, objections and appeals for that roll.
+    </p>
+
+    <div class="cd-tile-grid" id="cdTileGrid">
+        @foreach (var fam in adminFamilies)
+        {
+            var head = fam.FirstOrDefault(r => r.IsGv) ?? fam.First();
+            var members = fam.OrderBy(r => r.Source == head.Source ? 0 : 1).ThenBy(r => r.Source).ToList();
+            var totalLinked = fam.Sum(r => Model.DataFor(r.Source).LinkedCount);
+            var totalObjected = fam.Sum(r => Model.DataFor(r.Source).ObjectedCount);
+            var totalAppeals = fam.Sum(r => Model.DataFor(r.Source).AppealsCount);
+            var dates = Model.DatesFor(head.Source);
+            var periodStatus = Model.GetPeriodStatus(head.Source);
+            var membersJson = System.Text.Json.JsonSerializer.Serialize(
+                members.Select(m => new { source = m.Source, name = m.Name, shortName = m.Short }));
+
+            <div class="cd-tile cd-tile-family"
+                 data-head-source="@head.Source"
+                 data-members="@membersJson"
+                 onclick="openAdminFamily(this)">
+
+                @if (members.Count > 1)
+                {
+                    <span class="cd-tile-family-count">
+                        <i class="fa-solid fa-layer-group"></i> @members.Count rolls
+                    </span>
+                }
+
+                <div class="cd-tile-icon"><i class="fa-solid fa-landmark"></i></div>
+                <h3 class="cd-tile-name">@head.Name</h3>
+
+                @if (members.Count > 1)
+                {
+                    <span class="cd-tile-cta">
+                        <i class="fa-solid fa-arrow-turn-down-right"></i>
+                        Click to open @head.Short and all @(members.Count - 1) supplementary rolls
+                    </span>
+                }
+                else
+                {
+                    <span class="cd-tile-short">@head.Short</span>
+                }
+
+                <div class="cd-tile-stats">
+                    <span title="Linked"><i class="fa-solid fa-link"></i> @totalLinked</span>
+                    <span title="Objections"><i class="fa-solid fa-file-pen"></i> @totalObjected</span>
+                    @if (totalAppeals > 0)
+                    {
+                        <span title="Appeals"><i class="fa-solid fa-gavel"></i> @totalAppeals</span>
+                    }
+                </div>
+
+                @if (dates is not null)
+                {
+                    <span class="cd-tile-badge cd-badge-@periodStatus">
+                        @(periodStatus == "active" ? "Objection Open" :
+                          periodStatus == "upcoming" ? "Opening Soon" :
+                          "Objection Closed")
+                    </span>
+                }
+
+                <span class="cd-tile-open-hint">
+                    View Details <i class="fa-solid fa-arrow-right"></i>
+                </span>
+            </div>
+        }
+
+        @foreach (var roll in adminQueryRolls)
+        {
+            var rollKey = roll.Source.Replace("_", "");
+            var rd = Model.DataFor(roll.Source);
+
+            <div class="cd-tile cd-tile-query"
+                 data-standalone-key="@rollKey"
+                 data-roll-name="@roll.Name"
+                 onclick="openAdminStandalone(this)">
+                <div class="cd-tile-icon"><i class="fa-solid fa-magnifying-glass-chart"></i></div>
+                <h3 class="cd-tile-name">@roll.Name</h3>
+                <span class="cd-tile-short">@roll.Short</span>
+                <div class="cd-tile-stats">
+                    <span title="Linked"><i class="fa-solid fa-link"></i> @rd.LinkedCount</span>
+                    <span title="Queries"><i class="fa-solid fa-file-magnifying-glass"></i> @rd.ObjectedCount</span>
+                </div>
+                <span class="cd-tile-badge cd-badge-open">OPEN</span>
+                <span class="cd-tile-open-hint">View Details <i class="fa-solid fa-arrow-right"></i></span>
+            </div>
+        }
+
+        <div class="cd-tile cd-tile-rebates" data-standalone-key="rebates" data-roll-name="Rebates" onclick="openAdminStandalone(this)">
+            <div class="cd-tile-icon"><i class="fa-solid fa-percent"></i></div>
+            <h3 class="cd-tile-name">Rebates</h3>
+            <span class="cd-tile-short">Review and process rebate applications</span>
+            <span class="cd-tile-badge cd-badge-open">OPEN</span>
+            <span class="cd-tile-open-hint">View Details <i class="fa-solid fa-arrow-right"></i></span>
+        </div>
+
+        <div class="cd-tile cd-tile-attributes" data-standalone-key="attributes" data-roll-name="Property Attributes" onclick="openAdminStandalone(this)">
+            <div class="cd-tile-icon"><i class="fa-solid fa-clipboard-list"></i></div>
+            <h3 class="cd-tile-name">Property Attributes</h3>
+            <span class="cd-tile-short">Review submitted property attribute changes</span>
+            <span class="cd-tile-badge cd-badge-open">NEW</span>
+            <span class="cd-tile-open-hint">View Details <i class="fa-solid fa-arrow-right"></i></span>
+        </div>
+    </div>
+</div>
+
+<script id="admFamilyLookupData" type="application/json">
+@Html.Raw(System.Text.Json.JsonSerializer.Serialize(adminFamilyLookup))
+</script>
+
+<!-- ── Per-roll sections (unchanged content — now hidden behind tiles) ── -->
+<div class="cd-body" id="cdDetailArea" style="display:none;">
+
+    <button type="button" class="cd-back-btn" onclick="closeAdminDetail()">
+        <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
+    </button>
+
+    <div id="cdFamilyContext" class="cd-family-context" style="display:none;"></div>
+
+    <div id="cdFamilyTabs" class="cd-family-tabs" style="display:none;"></div>
 
     @foreach (var roll in Model.Rolls)
     {
@@ -488,7 +474,7 @@
                                     <div class="dropdown">
                                         <button class="cd-action-btn dropdown-toggle"
                                                 data-bs-toggle="dropdown">Actions</button>
-                                        <ul class="dropdown-menu">
+                                        <ul class="dropdown-menu cd-action-menu">
                                             <li>
                                                 <a class="dropdown-item"
                                                    href="/objection/check?rollSource=@roll.Source&sourceTable=@item.PropertyFrom&unitKey=@item.UnitKey&valuationKey=@item.ValuationKey&appealStatus=False">
@@ -552,7 +538,7 @@
                                     <div class="dropdown">
                                         <button class="cd-action-btn dropdown-toggle"
                                                 data-bs-toggle="dropdown">Actions</button>
-                                        <ul class="dropdown-menu">
+                                        <ul class="dropdown-menu cd-action-menu">
                                             <li>
                                               @{
     var queryRefNo = !string.IsNullOrWhiteSpace(item.Query_No)
@@ -680,7 +666,7 @@
                                         <div class="dropdown">
                                             <button class="cd-action-btn dropdown-toggle"
                                                     data-bs-toggle="dropdown">Actions</button>
-                                            <ul class="dropdown-menu">
+                                            <ul class="dropdown-menu cd-action-menu">
                                                 <li>
                                                   @{
     var queryRefNo = !string.IsNullOrWhiteSpace(item.Query_No)
@@ -782,7 +768,7 @@
                                                                 data-bs-toggle="dropdown">
                                                             Actions
                                                         </button>
-                                                        <ul class="dropdown-menu">
+                                                        <ul class="dropdown-menu cd-action-menu">
                                                             @if (roll.HasObjection)
                                                             {
                                                                 <li>
@@ -860,91 +846,72 @@
                                                             <ul class="dropdown-menu cd-action-menu">
                                                                 <li>
                                                                     @{
-                                                                        var viewFormUrl =
-                                                                            "/admin/enquiry/form-view"
-                                                                            + "?referenceNo=" + Uri.EscapeDataString(item.Objection_No ?? "")
-                                                                            + "&rollSource=" + Uri.EscapeDataString(roll.Source ?? "")
-                                                                            + "&propertyType=" + Uri.EscapeDataString(item.Property_Type ?? "")
-                                                                            + "&appealStatus=False"
-                                                                            + "&isQuery=false";
-                                                                    }
+    var viewFormUrl =
+        "/admin/enquiry/form-view"
+        + "?referenceNo=" + Uri.EscapeDataString(item.Objection_No ?? "")
+        + "&rollSource=" + Uri.EscapeDataString(roll.Source ?? "")
+        + "&propertyType=" + Uri.EscapeDataString(item.Property_Type ?? "")
+        + "&appealStatus=False"
+        + "&isQuery=false";
+}
 
-                                                                    <a class="dropdown-item"
-                                                                       href="@viewFormUrl"
-                                                                       target="_blank">
-                                                                        <i class="fa-solid fa-eye"></i>
-                                                                        <span>View Submitted Objection</span>
-                                                                    </a>
+<a class="dropdown-item"
+   href="@viewFormUrl"
+   target="_blank">
+    <i class="fa-solid fa-eye"></i> View Form
+</a>
                                                                 </li>
-
                                                                 <li>
+                                                                  
+
                                                                     <a class="dropdown-item"
                                                                        href="/notice/acknowledgement/download?objectionNo=@item.Objection_No&rollSource=@roll.Source"
                                                                        onclick="logAction('DownloadAck', '@roll.Source', '@item.Objection_No')">
-                                                                        <i class="fa-solid fa-file-arrow-down"></i>
-                                                                        <span>Download Acknowledgement</span>
+                                                                        Acknowledgement
                                                                     </a>
                                                                 </li>
-
                                                                 @if (item.objection_Status == "Obj-Lodging")
                                                                 {
                                                                     <li>
-                                                                        <a class="dropdown-item"
-                                                                           href="/evidence/verify?objectionNo=@item.Objection_No&rollSource=@roll.Source">
-                                                                            <i class="fa-solid fa-upload"></i>
-                                                                            <span>Add Evidence</span>
-                                                                        </a>
+                                                                       @if (User.Identity?.IsAuthenticated == true)
+                                                                                            {
+                                                                                                <a class="btn btn-sm btn-primary"
+                                                                                                    href="/evidence/verify?objectionNo=@item.Objection_No&rollSource=@roll.Source">
+                                                                                                    <i class="fa-solid fa-upload"></i> Add Evidence
+                                                                                                </a>
+                                                                                            }
                                                                     </li>
                                                                 }
-
-                                                                @if (item.objection_Status == "Notice-Sent"
-                                                                    || item.objection_Status == "Appeal-Closed")
+                                                                @if (item.objection_Status == "Notice-Sent" || item.objection_Status == "Appeal-Closed")
                                                                 {
                                                                     <li>
                                                                         <a class="dropdown-item"
-                                                                           href="/@roll.ControllerName/DownloadSection53?ObjectionNum=@item.Objection_No"
-                                                                           onclick="logAction('DownloadDecision', '@roll.Source', '@item.Objection_No')">
-                                                                            <i class="fa-solid fa-file-pdf"></i>
-                                                                            <span>Download Section 53 Notice</span>
+                                                                               href="/@roll.ControllerName/DownloadSection53?ObjectionNum=@item.Objection_No"
+                                                                               onclick="logAction('DownloadDecision', '@roll.Source', '@item.Objection_No')">
+                                                                            Download Section 53 Notice
                                                                         </a>
                                                                     </li>
+                                                                    
                                                                 }
-
-                                                                @if (string.Equals(
-                                                                    item.objection_Status?.Trim(),
-                                                                    "Notice-Sent",
-                                                                    StringComparison.OrdinalIgnoreCase))
+                                                                @if ( item.objection_Status == "Notice-Sent")
                                                                 {
-                                                                    <li>
-                                                                        <a class="dropdown-item cd-action-primary"
-                                                                           href="@Url.Action(
-                                                                               "CheckProperty",
-                                                                               "Objection",
-                                                                               new
-                                                                               {
-                                                                                   rollSource = roll.Source,
-                                                                                   sourceTable = item.PropertyFrom,
-                                                                                   unitKey = item.Unit_key,
-                                                                                   valuationKey = item.Valuation_Key,
-                                                                                   objectionNo = item.Objection_No,
-                                                                                   appealStatus = "True",
-                                                                                   PropertyFrom = item.PropertyFrom
-                                                                               })"
+                                                             
+                                                                <li>
+                                                                    <a class="dropdown-item"
+                                                                           href="/objection/check?rollSource=@roll.Source&sourceTable=@item.PropertyFrom&unitKey=@item.Unit_key&valuationKey=@item.Valuation_Key&appealStatus=True&ObjectionNo=@item.Objection_No"
                                                                            onclick="logAction('Appeal', '@roll.Source', '@item.Unit_key')">
-                                                                            <i class="fa-solid fa-gavel"></i>
-                                                                            <span>Lodge Appeal</span>
-                                                                        </a>
-                                                                    </li>
+                                                                         Lodge Appeal
+                                                                    </a>
+                                                                </li>
+                                                              
+                                                                
                                                                 }
-
-                                                                @if (item.objection_Status == "Obj-Lodging"
-                                                                    || item.objection_Status == "Obj-Unallocated")
+                                                                @if (item.objection_Status == "Obj-Lodging" || item.objection_Status == "Obj-Unallocated")
                                                                 {
                                                                     <li>
-                                                                        <a class="dropdown-item cd-action-danger"
-                                                                           href="/objection/withdraw?objectionNo=@item.Objection_No&withdrawType=O&rollSource=@roll.Source&returnUrl=/admin">
-                                                                            <i class="fa-solid fa-ban"></i>
-                                                                            <span>Withdraw Objection</span>
+                                                                        <a class="dropdown-item"
+                                                                               href="/@roll.ControllerName/Withdrawal?ObjectionNum=@item.Objection_No&Withdraw=O">
+                                                                             Withdraw
                                                                         </a>
                                                                     </li>
                                                                 }
@@ -1008,119 +975,56 @@
                                                                 Actions
                                                             </button>
                                                             <ul class="dropdown-menu cd-action-menu">
-                                                                @{
-                                                                    var appealReference =
-                                                                        !string.IsNullOrWhiteSpace(item.Appeal_No)
-                                                                            ? item.Appeal_No
-                                                                            : item.Objection_No;
-
-                                                                    var viewAppealSubmissionUrl =
-                                                                        Url.RouteUrl(
-                                                                            "ViewSubmission",
-                                                                            new
-                                                                            {
-                                                                                submissionType = "Appeal",
-                                                                                referenceNumber = appealReference,
-                                                                                rollSource = roll.Source,
-                                                                                returnUrl = Url.Action(
-                                                                                    "Index",
-                                                                                    "Admin",
-                                                                                    new
-                                                                                    {
-                                                                                        openRoll = roll.Source
-                                                                                    })
-                                                                            });
-                                                                }
-
                                                                 <li>
-                                                                    <a class="dropdown-item"
-                                                                       href="@viewAppealSubmissionUrl">
-                                                                        <i class="fa-solid fa-eye"></i>
-                                                                        <span>View Submitted Appeal</span>
-                                                                    </a>
+                                                                   @{
+    var refNo = !string.IsNullOrWhiteSpace(item.Appeal_No)
+        ? item.Appeal_No
+        : item.Objection_No;
+
+    var viewAppealFormUrl =
+        "/admin/enquiry/form-view"
+        + "?referenceNo=" + Uri.EscapeDataString(refNo ?? "")
+        + "&rollSource=" + Uri.EscapeDataString(roll.Source ?? "")
+        + "&propertyType=" + Uri.EscapeDataString(item.Property_Type ?? "")
+        + "&appealStatus=True"
+        + "&isQuery=false";
+}
+
+<a class="dropdown-item"
+   href="@viewAppealFormUrl"
+   target="_blank">
+    <i class="fa-solid fa-eye"></i> View Appeal Form
+</a>
                                                                 </li>
 
-                                                                <li>
-                                                                    <a class="dropdown-item"
-                                                                       href="/notice/acknowledgement/download?objectionNo=@appealReference&rollSource=@roll.Source"
-                                                                       onclick="logAction(
-                                                                           'DownloadAck',
-                                                                           '@roll.Source',
-                                                                           '@appealReference')">
-                                                                        <i class="fa-solid fa-file-arrow-down"></i>
-                                                                        <span>Download Acknowledgement</span>
-                                                                    </a>
-                                                                </li>
-
-                                                                @if (item.IsEvidenceWindowOpen)
+                                                                 @if ( item.objection_Status == "App-Unallocated")
                                                                 {
-                                                                    <li>
-                                                                        <a class="dropdown-item cd-action-primary"
-                                                                           href="/evidence/verify?objectionNo=@appealReference&rollSource=@roll.Source">
-                                                                            <i class="fa-solid fa-upload"></i>
-                                                                            <span>Add Evidence</span>
-                                                                        </a>
-                                                                    </li>
-
-                                                                    @if (item.EvidenceExpiresAt.HasValue)
-                                                                    {
-                                                                        <li>
-                                                                            <span class="dropdown-item-text text-muted"
-                                                                                  style="font-size:11px;">
-                                                                                Evidence closes:
-                                                                                @item.EvidenceExpiresAt.Value.ToString(
-                                                                                    "dd MMM yyyy HH:mm")
-                                                                            </span>
-                                                                        </li>
-                                                                    }
+                                                                    @if (User.Identity?.IsAuthenticated == true)
+                                                                        {
+                                                                            <a class="btn btn-sm btn-primary"
+                                                                                   href="/evidence/verify?objectionNo=@item.Objection_No&rollSource=@roll.Source">
+                                                                                <i class="fa-solid fa-upload"></i> Add Evidence
+                                                                            </a>
+                                                                        }
+                                                                    
                                                                 }
-                                                                else if (item.objection_Status is
-                                                                    "App-Lodging" or "App-Unallocated")
-                                                                {
-                                                                    <li>
-                                                                        <span class="dropdown-item disabled"
-                                                                              aria-disabled="true">
-                                                                            <i class="fa-solid fa-lock"></i>
-                                                                            <span>Evidence Window Closed</span>
-                                                                        </span>
-                                                                    </li>
-
-                                                                    @if (item.EvidenceExpiresAt.HasValue)
-                                                                    {
-                                                                        <li>
-                                                                            <span class="dropdown-item-text text-muted"
-                                                                                  style="font-size:11px;">
-                                                                                Closed:
-                                                                                @item.EvidenceExpiresAt.Value.ToString(
-                                                                                    "dd MMM yyyy HH:mm")
-                                                                            </span>
-                                                                        </li>
-                                                                    }
-                                                                }
-
-                                                                @if (item.objection_Status == "App-Finalized")
+                                                                   @if (item.objection_Status == "App-Finalized" )
                                                                 {
                                                                     <li>
                                                                         <a class="dropdown-item"
-                                                                           href="/@roll.ControllerName/DownloadAppeal?ObjectionNum=@appealReference"
-                                                                           onclick="logAction(
-                                                                               'DownloadDecision',
-                                                                               '@roll.Source',
-                                                                               '@appealReference')">
-                                                                            <i class="fa-solid fa-file-pdf"></i>
-                                                                            <span>Download Appeal Notice</span>
+                                                                               href="/@roll.ControllerName/DownloadAppeal?ObjectionNum=@item.Objection_No"
+                                                                               onclick="logAction('DownloadDecision', '@roll.Source', '@item.Objection_No')">
+                                                                            Download Appeal Notice
                                                                         </a>
                                                                     </li>
+                     
                                                                 }
-
-                                                                @if (item.objection_Status is
-                                                                    "App-Lodging" or "App-Unallocated")
+                                                                @if (item.objection_Status == "App-Lodging" || item.objection_Status == "App-Unallocated")
                                                                 {
                                                                     <li>
-                                                                        <a class="dropdown-item cd-action-danger"
-                                                                           href="/objection/withdraw?objectionNo=@appealReference&withdrawType=Appeal&rollSource=@roll.Source&returnUrl=/admin">
-                                                                            <i class="fa-solid fa-ban"></i>
-                                                                            <span>Withdraw Appeal</span>
+                                                                        <a class="dropdown-item"
+                                                                               href="/@roll.ControllerName/Withdrawal?ObjectionNum=@item.Objection_No&Withdraw=AppealSup1">
+                                                                            Withdraw
                                                                         </a>
                                                                     </li>
                                                                 }
@@ -1259,7 +1163,7 @@
                                                             data-bs-toggle="dropdown">
                                                         Actions
                                                     </button>
-                                                    <ul class="dropdown-menu">
+                                                    <ul class="dropdown-menu cd-action-menu">
                                                         <li>
                                                             <a class="dropdown-item"
                                                                    asp-controller="Rebates"
@@ -1385,6 +1289,173 @@
             });
         }
 
+        // ── Main tiles: family (GV23 + Sup1-4) and standalone
+        //    (Query / Rebates / Attributes). Everything is already
+        //    rendered inline — no AJAX involved, just show/hide what's
+        //    already in the DOM, same as toggleRoll does for one section. ──
+        function openAdminFamily(tileEl) {
+            let members;
+            try {
+                members = JSON.parse(tileEl.dataset.members);
+            } catch (e) {
+                return;
+            }
+
+            const context = document.getElementById('cdFamilyContext');
+            if (context && members.length) {
+                context.style.display = 'flex';
+                context.innerHTML =
+                    '<i class="fa-solid fa-landmark"></i>' +
+                    '<div><strong>' + members[0].name + '</strong>' +
+                    '<span>' + members.length + ' roll' + (members.length === 1 ? '' : 's') + ' in this family &middot; pick one below</span></div>';
+            }
+
+            renderAdminFamilyTabs(members, tileEl.dataset.headSource);
+            showAdminDetailArea();
+            selectAdminFamilyTab(tileEl.dataset.headSource, members);
+        }
+
+        function renderAdminFamilyTabs(members, activeSource) {
+            const wrap = document.getElementById('cdFamilyTabs');
+            if (!wrap) return;
+
+            wrap.dataset.members = JSON.stringify(members);
+            wrap.style.display = 'flex';
+
+            wrap.innerHTML = members.map(function (m) {
+                const isActive = m.source === activeSource;
+                return '<button type="button" class="cd-fam-tab' + (isActive ? ' active' : '') + '" ' +
+                    'data-source="' + m.source + '" onclick="selectAdminFamilyTabFromEl(this)">' +
+                    '<span class="cd-fam-tab-name">' + m.shortName + '</span>' +
+                    (isActive ? '<span class="cd-fam-tab-current"><i class="fa-solid fa-circle-check"></i> Viewing</span>' : '') +
+                    '</button>';
+            }).join('');
+        }
+
+        function selectAdminFamilyTabFromEl(el) {
+            const wrap = document.getElementById('cdFamilyTabs');
+            let members = [];
+            try {
+                members = JSON.parse(wrap.dataset.members || '[]');
+            } catch (e) {}
+            selectAdminFamilyTab(el.dataset.source, members);
+        }
+
+        function selectAdminFamilyTab(source, members) {
+            const wrap = document.getElementById('cdFamilyTabs');
+
+            if (wrap) {
+                wrap.querySelectorAll('.cd-fam-tab').forEach(function (tab) {
+                    const isActive = tab.dataset.source === source;
+                    tab.classList.toggle('active', isActive);
+
+                    const marker = tab.querySelector('.cd-fam-tab-current');
+                    if (isActive && !marker) {
+                        const span = document.createElement('span');
+                        span.className = 'cd-fam-tab-current';
+                        span.innerHTML = '<i class="fa-solid fa-circle-check"></i> Viewing';
+                        tab.appendChild(span);
+                    } else if (!isActive && marker) {
+                        marker.remove();
+                    }
+                });
+            }
+
+            const targetKey = source.replace(/_/g, '');
+
+            // Only the selected family member's whole section (header +
+            // body) stays visible — every other roll section in the
+            // detail area is hidden, not just collapsed.
+            showOnlyAdminSection('adm-roll-' + targetKey);
+
+            members.forEach(function (m) {
+                const key  = m.source.replace(/_/g, '');
+                const body = document.getElementById('rollbody-' + key);
+                const chevron = document.getElementById('chevron-' + key);
+
+                if (!body) return;
+
+                const shouldOpen = key === targetKey;
+                body.classList.toggle('open', shouldOpen);
+                if (chevron) chevron.style.transform = shouldOpen ? 'rotate(180deg)' : '';
+            });
+
+            initTablesInSection(targetKey);
+
+            const section = document.getElementById('adm-roll-' + targetKey);
+            if (section) {
+                setTimeout(function () {
+                    section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 60);
+            }
+        }
+
+        // ── Hide every roll section in the detail area except the one
+        //    the client actually asked to see. ────────────────────────
+        function showOnlyAdminSection(sectionId) {
+            const detailArea = document.getElementById('cdDetailArea');
+            if (!detailArea) return;
+
+            detailArea.querySelectorAll('.cd-roll-section').forEach(function (section) {
+                section.style.display = section.id === sectionId ? '' : 'none';
+            });
+        }
+
+        function openAdminStandalone(tileEl) {
+            const wrap = document.getElementById('cdFamilyTabs');
+            if (wrap) {
+                wrap.style.display = 'none';
+                wrap.innerHTML = '';
+            }
+
+            const context = document.getElementById('cdFamilyContext');
+            if (context) {
+                context.style.display = 'none';
+                context.innerHTML = '';
+            }
+
+            showAdminDetailArea();
+
+            const key = tileEl.dataset.standaloneKey;
+            const body = document.getElementById('rollbody-' + key);
+            const chevron = document.getElementById('chevron-' + key);
+            const section = document.getElementById('adm-roll-' + key);
+
+            showOnlyAdminSection('adm-roll-' + key);
+
+            if (body && !body.classList.contains('open')) {
+                body.classList.add('open');
+                if (chevron) chevron.style.transform = 'rotate(180deg)';
+            }
+
+            if (key) initTablesInSection(key);
+
+            if (section) {
+                setTimeout(function () {
+                    section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 60);
+            }
+        }
+
+        function showAdminDetailArea() {
+            const tileBody = document.getElementById('cdTileBody');
+            const detailArea = document.getElementById('cdDetailArea');
+            if (!tileBody || !detailArea) return;
+
+            tileBody.style.display = 'none';
+            detailArea.style.display = '';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function closeAdminDetail() {
+            const tileBody = document.getElementById('cdTileBody');
+            const detailArea = document.getElementById('cdDetailArea');
+            if (!tileBody || !detailArea) return;
+
+            detailArea.style.display = 'none';
+            tileBody.style.display = '';
+        }
+
         function logAction(action, rollSource, entityRef) {
             fetch('/admin/log-action', {
                 method : 'POST',
@@ -1398,20 +1469,6 @@
         }
 
         document.addEventListener('DOMContentLoaded', function () {
-
-        const appealBlockedModalElement =
-            document.getElementById('appealBlockedModal');
-
-        if (appealBlockedModalElement) {
-            const appealBlockedModal =
-                new bootstrap.Modal(appealBlockedModalElement, {
-                    backdrop: 'static',
-                    keyboard: true
-                });
-
-            appealBlockedModal.show();
-        }
-
             // Auto-init first roll's tables
             document.querySelectorAll('.cd-roll-body.open').forEach(body => {
                 const key = body.id.replace('rollbody-', '');

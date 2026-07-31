@@ -1,0 +1,62 @@
+﻿@model V2_Genesis.Models.ViewModels.Submissions.SubmissionViewModel
+@{
+    var status =
+        string.IsNullOrWhiteSpace(Model.Status)
+            ? "Submitted"
+            : Model.Status.Trim();
+
+    var statusSlug =
+        status.ToLowerInvariant()
+            .Replace(" ", "-")
+            .Replace("_", "-");
+
+    var submissionLabel =
+        Model.IsAppeal ? "Appeal"
+        : Model.IsObjection ? "Objection"
+        : Model.IsReview ? "Review"
+        : Model.IsQuery ? "Query"
+        : Model.IsAttribute ? "Attribute"
+        : Model.SubmissionType;
+
+    var submissionIcon =
+        Model.IsAppeal ? "fa-gavel"
+        : Model.IsObjection ? "fa-file-pen"
+        : Model.IsReview ? "fa-magnifying-glass-chart"
+        : Model.IsQuery ? "fa-file-magnifying-glass"
+        : Model.IsAttribute ? "fa-clipboard-list"
+        : "fa-file-shield";
+
+    var referenceLabel =
+        Model.IsAppeal ? "Appeal reference"
+        : Model.IsObjection ? "Objection reference"
+        : Model.IsReview ? "Review reference"
+        : Model.IsQuery ? "Query reference"
+        : "Submission reference";
+}
+
+<header class="submission-hero submission-hero--@submissionLabel.ToLowerInvariant()">
+    <div class="submission-hero-icon">
+        <i class="fa-solid @submissionIcon"></i>
+    </div>
+
+    <div class="submission-hero-text">
+        <p class="submission-eyebrow">
+            City of Johannesburg &middot; Valuation Services
+        </p>
+
+        <h1>@submissionLabel Submission</h1>
+
+        <p class="submission-reference">
+            <i class="fa-solid fa-hashtag"></i>
+            <span class="visually-hidden">@referenceLabel:</span>
+            @Model.ReferenceNumber
+        </p>
+    </div>
+
+    <div class="submission-status-wrap">
+        <span class="submission-status submission-status--@statusSlug">
+            <span class="submission-status-dot"></span>
+            @status
+        </span>
+    </div>
+</header>

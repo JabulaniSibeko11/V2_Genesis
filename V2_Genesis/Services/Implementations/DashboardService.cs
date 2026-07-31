@@ -181,7 +181,7 @@ public class DashboardService : IDashboardService
         try
         {
             var appeals =
-                await conn.QueryAsync<AppealResult>(
+                (await conn.QueryAsync<AppealResult>(
                     SP_APPEALS,
                     new
                     {
@@ -189,10 +189,83 @@ public class DashboardService : IDashboardService
                     },
                     commandType:
                         CommandType.StoredProcedure,
-                    commandTimeout: 60);
+                    commandTimeout: 60))
+                .ToList();
 
-            rollData.Appeals =
-                appeals.ToList();
+            // DashboardAppeal does not currently return the Appeal evidence
+            // submission date. Hydrate the date and 48-hour window directly
+            // from Obj_Property_Info_Appeal for the Appeals returned by the SP.
+            var appealNumbers = appeals
+                .Select(x => x.Appeal_No?.Trim())
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+
+            if (appealNumbers.Length > 0)
+            {
+                const string evidenceWindowSql = @"
+SELECT
+    LTRIM(RTRIM(Appeal_No)) AS Appeal_No,
+    Appeal_Start_DateTime,
+    DATEADD(HOUR, 48, Appeal_Start_DateTime)
+        AS Evidence_Expires_At,
+    CAST(
+        CASE
+            WHEN Appeal_Start_DateTime IS NOT NULL
+             AND LTRIM(RTRIM(ISNULL(Appeal_Status, ''))) IN
+                 ('App-Lodging', 'App-Unallocated')
+             AND SYSDATETIME() <=
+                 DATEADD(HOUR, 48, Appeal_Start_DateTime)
+            THEN 1
+            ELSE 0
+        END
+        AS BIT
+    ) AS Evidence_Window_Open
+FROM dbo.Obj_Property_Info_Appeal
+WHERE LTRIM(RTRIM(Appeal_No)) IN @AppealNumbers;";
+
+                var windowRows =
+                    await conn.QueryAsync<AppealEvidenceWindowRow>(
+                        evidenceWindowSql,
+                        new
+                        {
+                            AppealNumbers = appealNumbers
+                        });
+
+                var windowByAppeal = windowRows
+                    .Where(x => !string.IsNullOrWhiteSpace(x.Appeal_No))
+                    .GroupBy(
+                        x => x.Appeal_No!.Trim(),
+                        StringComparer.OrdinalIgnoreCase)
+                    .ToDictionary(
+                        group => group.Key,
+                        group => group.First(),
+                        StringComparer.OrdinalIgnoreCase);
+
+                foreach (var appeal in appeals)
+                {
+                    var appealNo = appeal.Appeal_No?.Trim();
+
+                    if (string.IsNullOrWhiteSpace(appealNo)
+                        || !windowByAppeal.TryGetValue(
+                            appealNo,
+                            out var window))
+                    {
+                        continue;
+                    }
+
+                    appeal.Appeal_Start_DateTime =
+                        window.Appeal_Start_DateTime;
+
+                    appeal.Evidence_Expires_At =
+                        window.Evidence_Expires_At;
+
+                    appeal.Evidence_Window_Open =
+                        window.Evidence_Window_Open;
+                }
+            }
+
+            rollData.Appeals = appeals;
         }
         catch (Exception ex)
         {
@@ -431,7 +504,7 @@ ORDER BY ID DESC;",
 
                 if (int.TryParse(unitNoText, out int unitNo))
                     item.UnitNo = unitNo;
-               
+
 
                 results.Add(item);
             }
@@ -630,4 +703,12 @@ WHERE SubmittedByUserId = @UserId
 
 
 
+
+    private sealed class AppealEvidenceWindowRow
+    {
+        public string? Appeal_No { get; set; }
+        public DateTime? Appeal_Start_DateTime { get; set; }
+        public DateTime? Evidence_Expires_At { get; set; }
+        public bool Evidence_Window_Open { get; set; }
+    }
 }

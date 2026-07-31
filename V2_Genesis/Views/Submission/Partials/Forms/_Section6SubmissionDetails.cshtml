@@ -1,4 +1,4 @@
-@using V2_Genesis.Models.ViewModels.Submissions
+﻿@using V2_Genesis.Models.ViewModels.Submissions
 @model SubmissionViewModel
 
 @{
@@ -8,6 +8,11 @@
         : Model.IsQuery ? "QUERY DETAILS"
         : Model.IsAttribute ? "ATTRIBUTE DETAILS"
         : "OBJECTION DETAILS";
+
+    var requestedByLabel =
+        Model.IsAppeal ? "Requested by appellant"
+        : Model.IsObjection ? "Requested by objector"
+        : "Requested by client";
 }
 
 <div class="municipal-form-section">
@@ -30,7 +35,7 @@
                     <tr>
                         <th rowspan="2">Line</th>
                         <th colspan="3">Current valuation record</th>
-                        <th colspan="3">Requested by client</th>
+                        <th colspan="3">@requestedByLabel</th>
                     </tr>
                     <tr>
                         <th>Category</th>
@@ -139,7 +144,7 @@
             </article>
 
             <article class="municipal-comparison-requested">
-                <header>Requested by client</header>
+                <header>@requestedByLabel</header>
 
                 <dl>
                     <dt>Property description</dt>

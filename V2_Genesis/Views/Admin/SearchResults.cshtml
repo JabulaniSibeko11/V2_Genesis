@@ -216,7 +216,7 @@
                             <span class="res-value">@(m.Valuation_Key ?? "—")</span>
                         </div>
 
-                       @*  <div class="res-field">
+                        @*  <div class="res-field">
                             <span class="res-label">Premise ID</span>
                             <span class="res-value">@(m.PremiseId ?? "—")</span>
                         </div> *@
@@ -380,8 +380,8 @@
                                                 Actions
                                             </button>
 
-                                            <ul class="dropdown-menu">
-                                              @*   @if (!string.IsNullOrWhiteSpace(m.Unit_key) || !string.IsNullOrWhiteSpace(m.Valuation_Key))
+                                            <ul class="dropdown-menu cd-action-menu">
+                                                @*   @if (!string.IsNullOrWhiteSpace(m.Unit_key) || !string.IsNullOrWhiteSpace(m.Valuation_Key))
                                                 {
                                                     <li>
                                                         <a class="dropdown-item"

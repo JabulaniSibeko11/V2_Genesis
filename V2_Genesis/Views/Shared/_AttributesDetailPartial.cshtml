@@ -48,7 +48,7 @@
                             <td>@item.MarketValue</td>
                             <td>
                                 <span class="attr-form-pill attr-pill-@(item.FormType.ToLower()
-                                                                                                                                                                                                                                                        .Replace(" ", "").Replace("&", "").Replace("/", ""))">
+                                                                                                                                                                                                                                                                                                                                  .Replace(" ", "").Replace("&", "").Replace("/", ""))">
                                     @item.FormType
                                 </span>
                             </td>
@@ -58,7 +58,7 @@
                                             data-bs-toggle="dropdown">
                                         Actions
                                     </button>
-                                    <ul class="dropdown-menu">
+                                    <ul class="dropdown-menu cd-action-menu">
                                         @if (!item.HasSubmission)
                                         {
                                             @*     <li>
@@ -176,7 +176,7 @@
                                             data-bs-toggle="dropdown">
                                         Actions
                                     </button>
-                                    <ul class="dropdown-menu">
+                                    <ul class="dropdown-menu cd-action-menu">
                                         <li>
                                             <a class="dropdown-item"
                                                    asp-route="AttributeSubmissionById"

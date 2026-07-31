@@ -65,7 +65,7 @@
                                                 data-bs-toggle="dropdown">
                                             Actions
                                         </button>
-                                        <ul class="dropdown-menu">
+                                        <ul class="dropdown-menu cd-action-menu">
                                             <li>
                                                 <a class="dropdown-item"
                                                        href="/objection/check?rollSource=@Model.Roll.Source&sourceTable=@item.PropertyFrom&unitKey=@item.UnitKey&valuationKey=@item.ValuationKey&appealStatus=False">
@@ -75,16 +75,16 @@
                                             <li>
                                                 <a class="dropdown-item cd-action-danger"
                                                        href="@Url.RouteUrl(
-                                                                                                                                                                      "PropertyUnlink",
-                                                                                                                                                                      new
-                                                                                                                                                                      {
-                                                                                                                                                                          linkedId = item.Id,
-                                                                                                                                                                          rollSource = Model.Roll.Source,
-                                                                                                                                                                          returnUrl = Url.Action(
-                                                                                                                                                                              "Index",
-                                                                                                                                                                              "Dashboard",
-                                                                                                                                                                              new { openRoll = Model.Roll.Source })
-                                                                                                                                                                      })">
+                                                                                                                                                                                                                                                                                 "PropertyUnlink",
+                                                                                                                                                                                                                                                                                 new
+                                                                                                                                                                                                                                                                                 {
+                                                                                                                                                                                                                                                                                     linkedId = item.Id,
+                                                                                                                                                                                                                                                                                     rollSource = Model.Roll.Source,
+                                                                                                                                                                                                                                                                                     returnUrl = Url.Action(
+                                                                                                                                                                                                                                                                                         "Index",
+                                                                                                                                                                                                                                                                                         "Dashboard",
+                                                                                                                                                                                                                                                                                         new { openRoll = Model.Roll.Source })
+                                                                                                                                                                                                                                                                                 })">
                                                     <i class="fa-solid fa-link-slash"></i> Unlink Property
                                                 </a>
                                             </li>
@@ -141,7 +141,7 @@
                                                 data-bs-toggle="dropdown">
                                             Actions
                                         </button>
-                                        <ul class="dropdown-menu">
+                                        <ul class="dropdown-menu cd-action-menu">
                                             <li>
                                                 @{
                                                     var queryRefNo = !string.IsNullOrWhiteSpace(item.Query_No)
@@ -275,7 +275,7 @@
                                                     data-bs-toggle="dropdown">
                                                 Actions
                                             </button>
-                                            <ul class="dropdown-menu">
+                                            <ul class="dropdown-menu cd-action-menu">
                                                 <li>
                                                     <a class="dropdown-item"
                                                            href="/Home/FormData@(Model.Roll.ControllerName)?propertyID=@item.Property_Type&objectionNo=@item.Objection_No&AppealStatus=False">
@@ -366,7 +366,7 @@ else
                                                 data-bs-toggle="dropdown">
                                             Actions
                                         </button>
-                                        <ul class="dropdown-menu">
+                                        <ul class="dropdown-menu cd-action-menu">
                                             @if (Model.Roll.HasObjection && Model.CanLodgeObjectionForRoll)
                                             {
                                                 <li>
@@ -392,16 +392,16 @@ else
                                             <li>
                                                 <a class="dropdown-item cd-action-danger"
                                                        href="@Url.RouteUrl(
-                                                                                                                                                                      "PropertyUnlink",
-                                                                                                                                                                      new
-                                                                                                                                                                      {
-                                                                                                                                                                          linkedId = item.Id,
-                                                                                                                                                                          rollSource = Model.Roll.Source,
-                                                                                                                                                                          returnUrl = Url.Action(
-                                                                                                                                                                              "Index",
-                                                                                                                                                                              "Dashboard",
-                                                                                                                                                                              new { openRoll = Model.Roll.Source })
-                                                                                                                                                                      })">
+                                                                                                                                                                                                                                                                                 "PropertyUnlink",
+                                                                                                                                                                                                                                                                                 new
+                                                                                                                                                                                                                                                                                 {
+                                                                                                                                                                                                                                                                                     linkedId = item.Id,
+                                                                                                                                                                                                                                                                                     rollSource = Model.Roll.Source,
+                                                                                                                                                                                                                                                                                     returnUrl = Url.Action(
+                                                                                                                                                                                                                                                                                         "Index",
+                                                                                                                                                                                                                                                                                         "Dashboard",
+                                                                                                                                                                                                                                                                                         new { openRoll = Model.Roll.Source })
+                                                                                                                                                                                                                                                                                 })">
                                                     <i class="fa-solid fa-link-slash"></i> Unlink
                                                 </a>
                                             </li>
@@ -459,7 +459,7 @@ else
                                                     data-bs-toggle="dropdown">
                                                 Actions
                                             </button>
-                                            <ul class="dropdown-menu">
+                                            <ul class="dropdown-menu cd-action-menu">
                                                 <li>
                                                     @{
                                                         var viewFormUrl =
@@ -593,7 +593,7 @@ else
                                                     data-bs-toggle="dropdown">
                                                 Actions
                                             </button>
-                                            <ul class="dropdown-menu">
+                                            <ul class="dropdown-menu cd-action-menu">
                                                 @{
                                                     var appealAckRef = !string.IsNullOrWhiteSpace(item.Appeal_No)
                                                         ? item.Appeal_No

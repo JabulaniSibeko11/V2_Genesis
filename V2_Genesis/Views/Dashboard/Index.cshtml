@@ -273,6 +273,7 @@
 @section Styles {
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" />
     <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.dataTables.min.css" />
 
     @*   <link href="~/css/views/clientdashboardcss.css" rel="stylesheet" asp-append-version="true" /> *@
     <link href="~/css/site.css" rel="stylesheet" asp-append-version="true" />
@@ -476,19 +477,19 @@
 
     <div class="dash-link-alert
         @(string.Equals(
-                                                reviewStatus,
-                                                "Open",
-                                                StringComparison.OrdinalIgnoreCase)
-                                                ? "dash-link-success"
-                                                : "dash-link-error")">
+                                                         reviewStatus,
+                                                         "Open",
+                                                         StringComparison.OrdinalIgnoreCase)
+                                                         ? "dash-link-success"
+                                                         : "dash-link-error")">
 
         <i class="fa-solid
             @(string.Equals(
-                                                            reviewStatus,
-                                                            "Open",
-                                                            StringComparison.OrdinalIgnoreCase)
-                                                            ? "fa-unlock"
-                                                            : "fa-lock")">
+                                                                       reviewStatus,
+                                                                       "Open",
+                                                                       StringComparison.OrdinalIgnoreCase)
+                                                                       ? "fa-unlock"
+                                                                       : "fa-lock")">
         </i>
 
         <div>
@@ -508,77 +509,88 @@
     </div>
 }
 
-<!-- ── Tiles / List toggle (simple — no AJAX, everything below is already rendered) ── -->
-<div class="cd-body" style="padding-bottom:0;">
-    <div class="cd-view-toggle" role="tablist" aria-label="Dashboard view mode">
-        <button type="button" class="cd-view-btn active" data-view="tiles" id="viewBtnTiles">
-            <i class="fa-solid fa-grip"></i> Tiles
-        </button>
-        <button type="button" class="cd-view-btn" data-view="list" id="viewBtnList">
-            <i class="fa-solid fa-list"></i> List
-        </button>
-    </div>
+
+@{
+    var families = Model.Rolls.Where(r => !r.IsQuery)
+                               .GroupBy(r => r.Main_Roll)
+                               .ToList();
+    var queryRolls = Model.Rolls.Where(r => r.IsQuery).ToList();
+
+    var familyLookup = families.Select(fam =>
+    {
+        var head = fam.FirstOrDefault(r => r.IsGv) ?? fam.First();
+        var membersOrdered = fam.OrderBy(r => r.Source == head.Source ? 0 : 1)
+                                 .ThenBy(r => r.Source)
+                                 .Select(r => new { source = r.Source, name = r.Name, shortName = r.Short })
+                                 .ToList();
+        return new { headSource = head.Source, members = membersOrdered };
+    }).ToList();
+}
+
+<!-- ── Client dashboard: family tiles + persistent tab strip ──────────── -->
+<div class="cd-body" id="cdMainBody" style="padding-bottom:0;">
+
+    <p class="cd-intro-note">
+        <i class="fa-solid fa-circle-info"></i>
+        Tap a card below to see your properties, objections and appeals for that roll.
+    </p>
 
     <div class="cd-tile-grid" id="cdTileGrid">
-        @foreach (var roll in Model.Rolls)
+        @foreach (var fam in families)
         {
-            var rd = Model.RollData.GetValueOrDefault(roll.Source) ?? new();
-            var rollKey = roll.Source.Replace("_", "");
-            var dates = GetDates(roll.Source);
+            var head = fam.FirstOrDefault(r => r.IsGv) ?? fam.First();
+            var members = fam.OrderBy(r => r.Source == head.Source ? 0 : 1).ThenBy(r => r.Source).ToList();
+            var totalLinked = fam.Sum(r => (Model.RollData.GetValueOrDefault(r.Source) ?? new()).LinkedCount);
+            var totalObjected = fam.Sum(r => (Model.RollData.GetValueOrDefault(r.Source) ?? new()).ObjectedCount);
+            var totalAppeals = fam.Sum(r => (Model.RollData.GetValueOrDefault(r.Source) ?? new()).AppealsCount);
+            var dates = GetDates(head.Source);
             var periodStatus = PeriodStatus(dates);
+            var membersJson = System.Text.Json.JsonSerializer.Serialize(
+                members.Select(m => new { source = m.Source, name = m.Name, shortName = m.Short }));
 
-            <div class="cd-tile @(roll.IsQuery ? "cd-tile-query" : "")"
-                 data-roll-key="@rollKey"
-                 data-roll-source="@roll.Source"
-                 data-roll-name="@roll.Name"
-                 onclick="openRollDrawer(this)">
-                <div class="cd-tile-icon">
-                    @if (roll.IsQuery)
-                    {
-                        <i class="fa-solid fa-magnifying-glass-chart"></i>
-                    }
-                    else if (roll.IsGv)
-                    {
-                        <i class="fa-solid fa-landmark"></i>
-                    }
-                    else
-                    {
-                        <i class="fa-solid fa-scroll"></i>
-                    }
-                </div>
-                <h3 class="cd-tile-name">@roll.Name</h3>
-                <span class="cd-tile-short">@roll.Short</span>
+            <div class="cd-tile cd-tile-family"
+                 data-head-source="@head.Source"
+                 data-members="@membersJson"
+                 onclick="openFamily(this)">
+
+                @if (members.Count > 1)
+                {
+                    <span class="cd-tile-family-count">
+                        <i class="fa-solid fa-layer-group"></i> @members.Count rolls
+                    </span>
+                }
+
+                <div class="cd-tile-icon"><i class="fa-solid fa-landmark"></i></div>
+                <h3 class="cd-tile-name">@head.Name</h3>
+
+                @if (members.Count > 1)
+                {
+                    <span class="cd-tile-cta">
+                        <i class="fa-solid fa-arrow-turn-down-right"></i>
+                        Click to open @head.Short and all @(members.Count - 1) supplementary rolls
+                    </span>
+                }
+                else
+                {
+                    <span class="cd-tile-short">@head.Short</span>
+                }
 
                 <div class="cd-tile-stats">
-                    <span title="Linked"><i class="fa-solid fa-link"></i> @rd.LinkedCount</span>
-                    @if (roll.IsQuery)
+                    <span title="Linked"><i class="fa-solid fa-link"></i> @totalLinked</span>
+                    <span title="Objections"><i class="fa-solid fa-file-pen"></i> @totalObjected</span>
+                    @if (totalAppeals > 0)
                     {
-                        <span title="Queries"><i class="fa-solid fa-file-magnifying-glass"></i> @rd.ObjectedCount</span>
-                    }
-                    else
-                    {
-                        @if (roll.HasObjection)
-                        {
-                            <span title="Objections"><i class="fa-solid fa-file-pen"></i> @rd.ObjectedCount</span>
-                        }
-                        @if (roll.HasAppeal)
-                        {
-                            <span title="Appeals"><i class="fa-solid fa-gavel"></i> @rd.AppealsCount</span>
-                        }
+                        <span title="Appeals"><i class="fa-solid fa-gavel"></i> @totalAppeals</span>
                     }
                 </div>
 
-                @if (!roll.IsQuery && dates is not null)
+                @if (dates is not null)
                 {
                     <span class="cd-tile-badge cd-badge-@periodStatus">
                         @(periodStatus == "active" ? "Objection Open" :
                           periodStatus == "upcoming" ? "Opening Soon" :
                           "Objection Closed")
                     </span>
-                }
-                else
-                {
-                    <span class="cd-tile-badge cd-badge-open">OPEN</span>
                 }
 
                 <span class="cd-tile-open-hint">
@@ -587,7 +599,27 @@
             </div>
         }
 
-        <div class="cd-tile" data-drawer-url="/dashboard/rebates-detail" data-roll-name="Rebates" onclick="openRollDrawer(this)">
+        @foreach (var roll in queryRolls)
+        {
+            var rd = Model.RollData.GetValueOrDefault(roll.Source) ?? new();
+
+            <div class="cd-tile cd-tile-query"
+                 data-drawer-url="/dashboard/roll-detail/@roll.Source"
+                 data-roll-name="@roll.Name"
+                 onclick="openStandalone(this)">
+                <div class="cd-tile-icon"><i class="fa-solid fa-magnifying-glass-chart"></i></div>
+                <h3 class="cd-tile-name">@roll.Name</h3>
+                <span class="cd-tile-short">@roll.Short</span>
+                <div class="cd-tile-stats">
+                    <span title="Linked"><i class="fa-solid fa-link"></i> @rd.LinkedCount</span>
+                    <span title="Queries"><i class="fa-solid fa-file-magnifying-glass"></i> @rd.ObjectedCount</span>
+                </div>
+                <span class="cd-tile-badge cd-badge-open">OPEN</span>
+                <span class="cd-tile-open-hint">View Details <i class="fa-solid fa-arrow-right"></i></span>
+            </div>
+        }
+
+        <div class="cd-tile cd-tile-rebates" data-drawer-url="/dashboard/rebates-detail" data-roll-name="Rebates" onclick="openStandalone(this)">
             <div class="cd-tile-icon"><i class="fa-solid fa-percent"></i></div>
             <h3 class="cd-tile-name">Rebates</h3>
             <span class="cd-tile-short">Apply or track your property rate rebates</span>
@@ -598,7 +630,7 @@
             <span class="cd-tile-open-hint">View Details <i class="fa-solid fa-arrow-right"></i></span>
         </div>
 
-        <div class="cd-tile" data-drawer-url="/dashboard/attributes-detail" data-roll-name="Property Attributes" onclick="openRollDrawer(this)">
+        <div class="cd-tile cd-tile-attributes" data-drawer-url="/dashboard/attributes-detail" data-roll-name="Property Attributes" onclick="openStandalone(this)">
             <div class="cd-tile-icon"><i class="fa-solid fa-clipboard-list"></i></div>
             <h3 class="cd-tile-name">Property Attributes</h3>
             <span class="cd-tile-short">Submit updated property information</span>
@@ -610,1958 +642,29 @@
             <span class="cd-tile-open-hint">View Details <i class="fa-solid fa-arrow-right"></i></span>
         </div>
     </div>
-</div>
 
-<!-- ══════════════ Slide-over drawer (Tiles view detail) ══════════════ -->
-<div class="cd-drawer-backdrop" id="cdDrawerBackdrop" onclick="closeRollDrawer()"></div>
-<div class="cd-drawer" id="cdDrawer" role="dialog" aria-modal="true">
-    <div class="cd-drawer-header">
-        <h2 id="cdDrawerTitle">Roll Details</h2>
-        <button type="button" class="cd-drawer-close" onclick="closeRollDrawer()" aria-label="Close">
-            <i class="fa-solid fa-xmark"></i>
+    <!-- ── Detail area — shown after a tile is clicked ────────────────── -->
+    <div id="cdDetailArea" style="display:none;">
+        <button type="button" class="cd-back-btn" onclick="closeDetail()">
+            <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
         </button>
-    </div>
-    <div class="cd-drawer-body" id="cdDrawerBody">
-        <div class="cd-roll-loading">
-            <i class="fa-solid fa-circle-notch fa-spin"></i> Loading…
+
+        <div id="cdFamilyContext" class="cd-family-context" style="display:none;"></div>
+
+        <div id="cdFamilyTabs" class="cd-family-tabs" style="display:none;"></div>
+
+        <div id="cdDetailBody">
+            <div class="cd-roll-loading">
+                <i class="fa-solid fa-circle-notch fa-spin"></i> Loading…
+            </div>
         </div>
     </div>
 </div>
 
+<script id="cdFamilyLookupData" type="application/json">
+    @Html.Raw(System.Text.Json.JsonSerializer.Serialize(familyLookup))
+</script>
 
-<!-- ── Per-roll collapsible sections ──────────────────────────────────── -->
-<div class="cd-body">
-
-    @foreach (var roll in Model.Rolls)
-    {
-        var rd = Model.RollData.GetValueOrDefault(roll.Source) ?? new();
-        var rollKey = roll.Source.Replace("_", "");
-        var isActive = roll == Model.Rolls.First();
-
-        var dates = GetDates(roll.Source);
-        var periodStatus = PeriodStatus(dates);
-        var canLodgeObjectionForRoll = !roll.IsQuery && periodStatus == "active";
-
-        <div class="cd-roll-section"
-             id="roll-@rollKey"
-             data-roll-source="@roll.Source">
-
-            <!-- Roll header (click to collapse the whole roll) -->
-            <div class="cd-roll-header @(roll.IsQuery ? "cd-roll-query" : "") @(roll.HasObjection == false && !roll.IsQuery ? "cd-roll-inactive" : "")"
-                 onclick="toggleRoll('@rollKey')">
-                <div class="cd-roll-header-left">
-                    <div class="cd-roll-icon">
-                        @if (roll.IsQuery)
-                        {
-                            <i class="fa-solid fa-magnifying-glass-chart"></i>
-                        }
-                        else if (roll.IsGv)
-                        {
-
-                            <i class="fa-solid fa-landmark"></i>
-                        }
-                        else
-                        {
-
-                            <i class="fa-solid fa-scroll"></i>
-                        }
-               
-                    </div>
-                    <div>
-                        <h2 class="cd-roll-name">@roll.Name</h2>
-                        <span class="cd-roll-short">@roll.Short &nbsp;·&nbsp; @roll.Main_Roll</span>
-                    </div>
-                </div>
-                <div class="cd-roll-header-right">
-                    @if (!roll.IsQuery)
-                    {
-                        @* Change this line in the roll header (was: /@roll.ControllerName/PropertyIndex) *@
-                        <a href="/search/@roll.Source"
-                               class="cd-roll-search-btn"
-                               onclick="event.stopPropagation()">
-                            <i class="fa-solid fa-magnifying-glass"></i> Search Property
-                        </a>
-                    }
-                    @if (!roll.IsQuery && dates is not null)
-                    {
-                        <div class="cd-period-wrap">
-                            <span class="cd-period-dates">
-                                <i class="fa-solid fa-calendar-range"></i>
-                                @dates.OpenDate.ToString("dd MMM yyyy")
-                                –
-                                @dates.VisibleUntil.ToString("dd MMM yyyy")
-                            </span>
-                            <span class="cd-roll-badge cd-badge-@periodStatus">
-                                @(periodStatus == "active" ? "Objection Open" :
-                                  periodStatus == "upcoming" ? "Opening Soon" :
-                                  "Objection Closed")
-                            </span>
-                        </div>
-                    }
-                    else if (roll.IsQuery)
-                    {
-                        <a href="/search/@roll.Source"
-                               class="cd-roll-search-btn"
-                               onclick="event.stopPropagation()">
-                            <i class="fa-solid fa-magnifying-glass"></i>
-                            @(roll.IsQuery ? "Search Property" : "Search Property")
-                        </a>
-                        <span class="cd-roll-badge cd-badge-open">OPEN</span>
-                    }
-
-
-                    <i class="fa-solid fa-chevron-down cd-roll-chevron" id="chevron-@rollKey"></i>
-                </div>
-            </div>
-
-            <!-- Roll body (collapsible) -->
-            <div class="cd-roll-body @(isActive ? "open" : "")" id="rollbody-@rollKey">
-
-                @if (roll.IsQuery)
-                {
-                    @* Split Queries (Sub_typ=0) from Reviews (Sub_typ=1) *@
-                    var queries = rd.ObjectedProperties.Where(x => x.Sub_typ == 0).ToList();
-                    var reviews = rd.ObjectedProperties.Where(x => x.Sub_typ == 1).ToList();
-
-                    <!-- ── 1. Linked Properties ──────────────────────────────── -->
-                    <div class="cd-widget">
-                        <div class="cd-widget-toggle" onclick="toggleWidget('@rollKey-linked')">
-                            <div class="cd-widget-toggle-left">
-                                <i class="fa-solid fa-link"></i>
-                                <h3>Linked Properties</h3>
-                                <span class="cd-count-badge">@rd.LinkedCount</span>
-                            </div>
-                            <i class="fa-solid fa-chevron-down cd-widget-chevron"
-                               id="wchev-@rollKey-linked"></i>
-                        </div>
-                        <div class="cd-widget-body" id="widget-@rollKey-linked">
-                            @*  <div class="cd-widget-toolbar">
-                <a href="/search/@roll.Source" class="cd-add-btn">
-                    <i class="fa-solid fa-plus"></i> Link New Property
-                </a>
-            </div> *@
-                            <div class="table-responsive">
-                                <table class="cd-table table table-bordered"
-                                       id="tbl-@rollKey-linked">
-                                    <thead>
-                                        <tr>
-                                            <th>Property Description</th>
-                                            <th>Category</th>
-                                            <th>Town</th>
-                                            <th>Market Value</th>
-                                            <th>Effective Date</th>
-                                            <th>Review Status</th>
-                                            <th>Review Close Date</th>
-                                            <th>Options</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach (var item in rd.LinkedProperties)
-                                        {
-                                            <tr>
-                                                <td>@item.PropertyDesc</td>
-
-                                                <td>@item.CatDesc</td>
-
-                                                <td>@item.TownNameDesc</td>
-
-                                                <td>@FormatZAR(item.MarketValue)</td>
-
-                                                <td>
-                                                    @(DateTime.TryParse(
-                                                        item.WefDate,
-                                                        out var wefDate)
-                                                            ? wefDate.ToString("dd MMM yyyy")
-                                                            : item.WefDate)
-                                                </td>
-
-                                                <td>
-                                                    @Html.Raw(
-                                                        GetReviewStatusPill(
-                                                            item.Review_Status))
-                                                </td>
-
-                                                <td>
-                                                    @if (item.Review_Close_Date.HasValue)
-                                                    {
-                                                        <span>
-                                                            <i class="fa-solid fa-calendar-day"></i>
-                                                            @FormatReviewCloseDate(
-                                                                item.Review_Close_Date)
-                                                        </span>
-                                                    }
-                                                    else
-                                                    {
-                                                        <span class="text-muted">
-                                                            No review closing date
-                                                        </span>
-                                                    }
-                                                </td>
-
-                                                
-                                                <td>
-                                                    <div class="dropdown">
-                                                        <button class="cd-action-btn dropdown-toggle"
-                                                                data-bs-toggle="dropdown">
-                                                            Actions
-                                                        </button>
-                                                        <ul class="dropdown-menu cd-action-menu">
-                                                            @{
-                                                                var reviewIsOpen =
-                                                                    string.Equals(
-                                                                        item.Review_Status,
-                                                                        "Open",
-                                                                        StringComparison.OrdinalIgnoreCase);
-
-                                                                var reviewIsClosed =
-                                                                    string.Equals(
-                                                                        item.Review_Status,
-                                                                        "Closed",
-                                                                        StringComparison.OrdinalIgnoreCase);
-
-  
-                                                                var canLodgeQuery =
-                                                                    reviewIsOpen &&
-                                                                    !item.Review_Close_Date.HasValue;
-
-                                                                var canLodgeReview =
-                                                                    reviewIsOpen &&
-                                                                    item.Review_Close_Date.HasValue;
-                                                            }
-
-                                                            @if (canLodgeQuery)
-                                                            {
-                                                                <li>
-                                                                    @{
-                                                                        var querySourceTable =
-                                                                            string.IsNullOrWhiteSpace(item.PropertyFrom)
-                                                                                ? "Objection_Query"
-                                                                                : item.PropertyFrom;
-                                                                    }
-
-                                                                    <a class="dropdown-item cd-action-primary"
-                                                                           href="/objection/check?rollSource=@roll.Source&sourceTable=@querySourceTable&unitKey=@item.UnitKey&valuationKey=@item.ValuationKey&appealStatus=False&qtype=Query">
-
-                                                                        <i class="fa-solid fa-file-circle-question"></i>
-                                                                        <span>Lodge Query</span>
-                                                                    </a>
-                                                                </li>
-                                                            }
-                                                            else if (canLodgeReview)
-                                                            {
-    
-                                                                var linkedReviewUrl =
-                                                            "/objection/check"
-                                                            + "?rollSource=" + Uri.EscapeDataString(roll.Source ?? "Query")
-                                                            + "&sourceTable=Objection_Query"
-                                                            + "&unitKey=" + Uri.EscapeDataString(item.UnitKey ?? "")
-                                                            + "&valuationKey=" + Uri.EscapeDataString(item.ValuationKey ?? "")
-                                                            + "&appealStatus=False"
-                                                            + "&PropertyFrom=Objection_Query"
-                                                            + "&qtype=Review";
-
-    
-                                                                <li>
-                                                                    <a class="dropdown-item cd-action-primary"
-                                                                           href="@linkedReviewUrl">
-
-                                                                        <i class="fa-solid fa-magnifying-glass-chart"></i>
-                                                                        <span>Lodge Review</span>
-                                                                    </a>
-                                                                </li>
-                                                            }
-                                                            else if (reviewIsClosed)
-                                                            {
-                                                                <li>
-                                                                    <span class="dropdown-item disabled"
-                                                                          aria-disabled="true">
-
-                                                                        <i class="fa-solid fa-lock"></i>
-                                                                        Review Closed
-                                                                    </span>
-                                                                </li>
-
-                                                                @if (item.Review_Close_Date.HasValue)
-                                                                {
-                                                                    <li>
-                                                                        <span class="dropdown-item-text text-muted">
-                                                                            Closed on
-                                                                            @item.Review_Close_Date.Value
-                                                                            .ToString("dd MMM yyyy")
-                                                                        </span>
-                                                                    </li>
-                                                                }
-                                                            }
-                                                            else
-                                                            {
-                                                                <li>
-                                                                    <span class="dropdown-item disabled"
-                                                                          aria-disabled="true">
-
-                                                                        <i class="fa-solid fa-triangle-exclamation"></i>
-                                                                        Section 78 status unavailable
-                                                                    </span>
-                                                                </li>
-                                                            }
-
-                                                            
-                                                            <li>
-                                                                <a href="@Url.RouteUrl(
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    "PropertyUnlink",
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    new
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    {
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        linkedId = item.Id,
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        rollSource = roll.Source,
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        returnUrl = Url.Action(
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            "Index",
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            "Dashboard",
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            new { openRoll = roll.Source })
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    })"
-                                                                       class="dropdown-item cd-action-danger">
-
-                                                                    <i class="fa-solid fa-link-slash"></i>
-                                                                    <span>Unlink Property</span>
-                                                                </a>
-                                                            </li>
-                                                        </ul>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        }
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- ── 2. My Queries ─────────────────────────────────────── -->
-                    <div class="cd-widget">
-                        <div class="cd-widget-toggle" onclick="toggleWidget('@rollKey-queries')">
-                            <div class="cd-widget-toggle-left">
-                                <i class="fa-solid fa-magnifying-glass-chart"></i>
-                                <h3>My Queries</h3>
-                                <span class="cd-count-badge cd-count-orange">@queries.Count</span>
-                            </div>
-                            <i class="fa-solid fa-chevron-down cd-widget-chevron"
-                               id="wchev-@rollKey-queries"></i>
-                        </div>
-                        <div class="cd-widget-body" id="widget-@rollKey-queries">
-                            <div class="table-responsive">
-                                <table class="cd-table table table-bordered table-hover"
-                                       id="tbl-@rollKey-queries">
-                                    <thead>
-                                        <tr>
-                                            <th>Query No.</th>
-                                            <th>Property Description</th>
-                                            <th>Category</th>
-                                            <th>Town</th>
-                                            <th>Market Value</th>
-                                            <th>Query Status</th>
-                                            <th>Review Status</th>
-                                            <th>Review Close Date</th>
-                                            <th>Options</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach (var item in queries)
-                                        {
-                                            <tr>
-                                                <td><strong>@item.Objection_No</strong></td>
-                                                <td>@item.Property_Desc</td>
-                                                <td>@item.Old_Category</td>
-                                                <td>@item.Town_Name</td>
-                                                <td>@FormatZAR(item.Old_Market_Value)</td>
-                                                <td>
-                                                    @Html.Raw(
-                                                        GetStatusPill(
-                                                            item.objection_Status))
-                                                </td>
-
-                                                <td>
-                                                    @Html.Raw(
-                                                        GetReviewStatusPill(
-                                                            item.Review_Status))
-                                                </td>
-
-                                                <td>
-                                                    @if (item.Review_Close_Date.HasValue)
-                                                    {
-                                                        @item.Review_Close_Date.Value.ToString("dd MMM yyyy")
-                                                    }
-                                                    else
-                                                    {
-                                                        <span class="text-muted">
-                                                            Not set
-                                                        </span>
-                                                    }
-                                                </td>
-
-                                                <td>
-                                                    <div class="dropdown">
-                                                        <button class="cd-action-btn dropdown-toggle"
-                                                                data-bs-toggle="dropdown">
-                                                            Actions
-                                                        </button>
-                                                        <ul class="dropdown-menu cd-action-menu">
-                                                            <li>
-                                                                @{
-                                                                    var queryRefNo =
-                                                                        !string.IsNullOrWhiteSpace(item.Query_No)
-                                                                            ? item.Query_No
-                                                                            : item.Objection_No;
-
-                                                                    var viewQuerySubmissionUrl =
-                                                                        Url.RouteUrl(
-                                                                            "ViewSubmission",
-                                                                            new
-                                                                            {
-                                                                                submissionType = "Query",
-                                                                                referenceNumber = queryRefNo,
-                                                                                rollSource = "Objection_Query",
-                                                                                returnUrl = Url.Action(
-                                                                                    "Index",
-                                                                                    "Dashboard",
-                                                                                    new { openRoll = roll.Source })
-                                                                            });
-                                                                }
-
-                                                                <a class="dropdown-item"
-                                                                       href="@viewQuerySubmissionUrl">
-                                                                    <i class="fa-solid fa-eye"></i>
-                                                                    <span>View Submitted Query</span>
-                                                                </a>
-                                                            </li>
-                                                            <li>
-                                                                <a class="dropdown-item"
-                                                                       asp-controller="Notice"
-                                                                       asp-action="DownloadAcknowledgement"
-                                                                       asp-route-objectionNo="@item.Objection_No"
-                                                                       asp-route-rollSource="Query">
-
-                                                                    <i class="fa-solid fa-file-arrow-down"></i>
-                                                                    <span>Download Acknowledgement</span>
-                                                                </a>
-                                                            </li>
-                                                            @if (item.objection_Status == "Query-Lodging")
-                                                            {
-                                                                <li>
-                                                                    <a class="dropdown-item"
-                                                                           href="/section78/verify?queryNo=@item.Objection_No">
-                                                                        <i class="fa-solid fa-paperclip"></i> Add Evidence
-                                                                    </a>
-                                                                </li>
-                                                            }
-                                                            @if (item.objection_Status is "Query-Lodging" or "Query-Unallocated")
-                                                            {
-                                                                <li>
-                                                                    <a class="dropdown-item"
-                                                                           href="/objection/withdraw?objectionNo=@item.Query_No&withdrawType=Query&rollSource=Query&returnUrl=/dashboard">
-                                                                        <i class="fa-solid fa-ban"></i> Withdraw Query
-                                                                    </a>
-                                                                </li>
-                                                            }
-                                                            @* ── Review button — only when Query-Finalized ── *@
-                                                            @if (item.CanLodgeReview)
-                                                            {
-                                                                var reviewUrl =
-                                                                    "/Section78/Section78Query"
-                                                                    + "?qtype=Review"
-                                                                    + "&UKey=" + Uri.EscapeDataString(
-                                                                        item.Unit_key ?? "")
-                                                                    + "&VKey=" + Uri.EscapeDataString(
-                                                                        item.Valuation_Key ?? "")
-                                                                    + "&PropDesc=" + Uri.EscapeDataString(
-                                                                        item.Property_Desc ?? "")
-                                                                    + "&addr="
-                                                                    + "&cat=" + Uri.EscapeDataString(
-                                                                        item.Old_Category ?? "")
-                                                                    + "&queryNo=" + Uri.EscapeDataString(
-                                                                        item.Objection_No ?? "");
-
-                                                                <li>
-                                                                    <hr class="dropdown-divider" />
-                                                                </li>
-
-                                                                <li>
-                                                                    <a class="dropdown-item"
-                                                                           href="@reviewUrl">
-                                                                        <i class="fa-solid fa-magnifying-glass-chart"
-                                                                           style="color:#b88700;"></i>
-
-                                                                        <strong>Lodge Review</strong>
-                                                                    </a>
-                                                                </li>
-                                                            }
-                                                            else if (
-                                                                string.Equals(
-                                                                    item.objection_Status,
-                                                                    "Query-Finalized",
-                                                                    StringComparison.OrdinalIgnoreCase)
-                                                                &&
-                                                                string.Equals(
-                                                                    item.Review_Status,
-                                                                    "Closed",
-                                                                    StringComparison.OrdinalIgnoreCase))
-                                                            {
-                                                                <li>
-                                                                    <hr class="dropdown-divider" />
-                                                                </li>
-
-                                                                <li>
-                                                                    <span class="dropdown-item disabled"
-                                                                          aria-disabled="true">
-                                                                        <i class="fa-solid fa-lock"></i>
-                                                                        Review Closed
-                                                                    </span>
-                                                                </li>
-
-                                                                @if (item.Review_Close_Date.HasValue)
-                                                                {
-                                                                    <li>
-                                                                        <span class="dropdown-item-text text-muted">
-                                                                            The review period closed on
-                                                                            @item.Review_Close_Date.Value
-                                                                            .ToString("dd MMM yyyy").
-                                                                        </span>
-                                                                    </li>
-                                                                }
-                                                            }
-                                                        </ul>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        }
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- ── 3. My Reviews ─────────────────────────────────────── -->
-                    <div class="cd-widget">
-                        <div class="cd-widget-toggle" onclick="toggleWidget('@rollKey-reviews')">
-                            <div class="cd-widget-toggle-left">
-                                <i class="fa-solid fa-magnifying-glass"></i>
-                                <h3>My Reviews</h3>
-                                <span class="cd-count-badge" style="background:#e6b000;color:#1a1a1a;">
-                                    @reviews.Count
-                                </span>
-                            </div>
-                            <i class="fa-solid fa-chevron-down cd-widget-chevron"
-                               id="wchev-@rollKey-reviews"></i>
-                        </div>
-                        <div class="cd-widget-body" id="widget-@rollKey-reviews">
-                            @if (!reviews.Any())
-                            {
-                                <div style="padding:20px 24px; font-size:13.5px; color:#888;">
-                                    <i class="fa-solid fa-circle-info" style="color:#89b7b2; margin-right:6px;"></i>
-                                    No reviews lodged yet. A <strong>Lodge Review</strong>
-                                    button will appear when the Query has been finalised and
-                                    the property’s Section 78 review period is still open.
-                                </div>
-                            }
-                            else
-                            {
-                                <div class="table-responsive">
-                                    <table class="cd-table table table-bordered table-hover"
-                                           id="tbl-@rollKey-reviews">
-                                        <thead>
-                                            <tr>
-                                                <th>Review No.</th>
-                                                <th>Property Description</th>
-                                                <th>Category</th>
-                                                <th>Town</th>
-                                                <th>Market Value</th>
-                                                <th>Status</th>
-                                                <th>Options</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @foreach (var item in reviews)
-                                            {
-                                                <tr>
-                                                    <td>
-                                                        <strong>@item.Objection_No</strong>
-                                                        <span class="cd-pill cd-pill-lodging"
-                                                              style="font-size:10px; margin-left:4px;">
-                                                            Review
-                                                        </span>
-                                                    </td>
-                                                    <td>@item.Property_Desc</td>
-                                                    <td>@item.Old_Category</td>
-                                                    <td>@item.Town_Name</td>
-                                                    <td>@FormatZAR(item.Old_Market_Value)</td>
-                                                    <td>@Html.Raw(GetStatusPill(item.objection_Status))</td>
-                                                    <td>
-                                                        <div class="dropdown">
-                                                            <button class="cd-action-btn dropdown-toggle"
-                                                                    data-bs-toggle="dropdown">
-                                                                Actions
-                                                            </button>
-                                                            <ul class="dropdown-menu cd-action-menu">
-                                                                <li>
-                                                                    @{
-                                                                        var reviewRefNo =
-                                                                            !string.IsNullOrWhiteSpace(item.Query_No)
-                                                                                ? item.Query_No
-                                                                                : item.Objection_No;
-
-                                                                        var viewReviewSubmissionUrl =
-                                                                            Url.RouteUrl(
-                                                                                "ViewSubmission",
-                                                                                new
-                                                                                {
-                                                                                    submissionType = "Review",
-                                                                                    referenceNumber = reviewRefNo,
-                                                                                    rollSource = "Objection_Query",
-                                                                                    returnUrl = Url.Action(
-                                                                                        "Index",
-                                                                                        "Dashboard",
-                                                                                        new { openRoll = roll.Source })
-                                                                                });
-                                                                    }
-
-                                                                    <a class="dropdown-item"
-                                                                           href="@viewReviewSubmissionUrl">
-                                                                        <i class="fa-solid fa-eye"></i>
-                                                                        <span>View Submitted Review</span>
-                                                                    </a>
-                                                                </li>
-                                                                <li>
-                                                                    <a class="dropdown-item"
-                                                                           asp-controller="Notice"
-                                                                           asp-action="DownloadAcknowledgement"
-                                                                           asp-route-objectionNo="@item.Objection_No"
-                                                                           asp-route-rollSource="Query">
-
-                                                                        <i class="fa-solid fa-file-arrow-down"></i>
-                                                                        <span>Download Acknowledgement</span>
-                                                                    </a>
-                                                                </li>
-                                                                @if (item.objection_Status is "Query-Lodging" or "Query-Unallocated")
-                                                                {
-                                                                    <li>
-                                                                        <a class="dropdown-item"
-                                                                               href="/section78/verify?queryNo=@item.Objection_No">
-                                                                            <i class="fa-solid fa-paperclip"></i> Add Evidence
-                                                                        </a>
-                                                                    </li>
-                                                                    <li>
-                                                                        <a class="dropdown-item"
-                                                                               href="/@roll.ControllerName/Withdrawal?ObjectionNum=@item.Objection_No&Withdraw=O">
-                                                                            <i class="fa-solid fa-ban"></i> Withdraw
-                                                                        </a>
-                                                                    </li>
-                                                                }
-                                                            </ul>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            }
-                                        </tbody>
-                                    </table>
-                                </div>
-                            }
-                        </div>
-                    </div>
-                }
-                else
-                {
-                    @* ── Linked Properties ─────────────────────────── *@
-                    <div class="cd-widget">
-                        <div class="cd-widget-toggle" onclick="toggleWidget('@rollKey-linked')">
-                            <div class="cd-widget-toggle-left">
-                                <i class="fa-solid fa-link"></i>
-                                <h3>Linked Properties</h3>
-                                <span class="cd-count-badge">@rd.LinkedCount</span>
-                            </div>
-                            <i class="fa-solid fa-chevron-down cd-widget-chevron"
-                               id="wchev-@rollKey-linked"></i>
-                        </div>
-                        <div class="cd-widget-body" id="widget-@rollKey-linked">
-                            @*  <div class="cd-widget-toolbar">
-                    <a href="/search/@roll.Source" class="cd-add-btn">
-                        <i class="fa-solid fa-plus"></i> Link New Property
-                    </a>
-                </div> *@
-                            <div class="table-responsive">
-                                <table class="cd-table table table-bordered"
-                                       id="tbl-@rollKey-linked">
-                                    <thead>
-                                        <tr>
-                                            <th>Property Description</th>
-                                            <th>Category</th>
-                                            <th>Town</th>
-                                            <th>Market Value</th>
-                                            <th>With Effective Date</th>
-                                            <th>Options</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach (var item in rd.LinkedProperties)
-                                        {
-                                            <tr>
-                                                <td>@item.PropertyDesc</td>
-                                                <td>@item.CatDesc</td>
-                                                <td>@item.TownNameDesc</td>
-                                                <td>@FormatZAR(item.MarketValue)</td>
-                                                <td>
-                                                    @(DateTime.TryParse(item.WefDate, out var wefDate)
-                                                        ? wefDate.ToString("dd MMMM yyyy")
-                                                        : item.WefDate)
-                                                </td>
-                                                <td>
-                                                    <div class="dropdown">
-                                                        <button class="cd-action-btn dropdown-toggle"
-                                                                data-bs-toggle="dropdown">
-                                                            Actions
-                                                        </button>
-                                                        <ul class="dropdown-menu cd-action-menu">
-                                                            @if (roll.HasObjection && canLodgeObjectionForRoll)
-                                                            {
-                                                                <li>
-                                                                    @{
-                                                                        var propertyFrom = item.PropertyFrom?.Trim();
-
-                                                                        var checkSourceTable = propertyFrom?.Equals("LIS", StringComparison.OrdinalIgnoreCase) == true
-                                                                            ? ObjectionService.RollSourceToSourceTable.GetValueOrDefault(roll.Source, roll.Source)
-                                                                            : propertyFrom;
-
-                                                                        var checkPropertyFrom = propertyFrom?.Equals("LIS", StringComparison.OrdinalIgnoreCase) == true
-                                                                            ? "LIS"
-                                                                            : checkSourceTable;
-                                                                    }
-
-                                                                    <a class="dropdown-item cd-action-primary"
-                                                                           href="/objection/check?rollSource=@roll.Source&sourceTable=@checkSourceTable&unitKey=@item.UnitKey&valuationKey=@item.ValuationKey&appealStatus=False&PropertyFrom=@checkPropertyFrom">
-
-                                                                        <i class="fa-solid fa-file-pen"></i>
-                                                                        <span>Lodge Objection</span>
-                                                                    </a>
-                                                                </li>
-                                                            }
-                                                
-                                                            <li>
-                                                                <a href="@Url.RouteUrl(
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    "PropertyUnlink",
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    new
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    {
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        linkedId = item.Id,
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        rollSource = roll.Source,
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        returnUrl = Url.Action(
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            "Index",
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            "Dashboard",
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            new { openRoll = roll.Source })
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    })"
-                                                                       class="dropdown-item cd-action-danger">
-
-                                                                    <i class="fa-solid fa-link-slash"></i>
-                                                                    <span>Unlink Property</span>
-                                                                </a>
-                                                            </li>
-                                                        </ul>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        }
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-
-                    @* ── My Objections ──────────────────────────────── *@
-                    @if (roll.HasObjection)
-                    {
-                        var objections = rd.ObjectedProperties.Where(x => x.Sub_typ == 0).ToList();
-                        <div class="cd-widget">
-                            <div class="cd-widget-toggle" onclick="toggleWidget('@rollKey-objections')">
-                                <div class="cd-widget-toggle-left">
-                                    <i class="fa-solid fa-file-pen"></i>
-                                    <h3>My Objections</h3>
-                                    <span class="cd-count-badge cd-count-orange">@objections.Count</span>
-                                </div>
-                                <i class="fa-solid fa-chevron-down cd-widget-chevron"
-                                   id="wchev-@rollKey-objections"></i>
-                            </div>
-                            <div class="cd-widget-body" id="widget-@rollKey-objections">
-                                <div class="table-responsive">
-                                    <table class="cd-table table table-bordered table-hover"
-                                           id="tbl-@rollKey-objections">
-                                        <thead>
-                                            <tr>
-                                                <th>Objection No.</th>
-                                                <th>Property Description</th>
-                                                <th>Category</th>
-                                                <th>Market Value</th>
-                                                <th>Status</th>
-                                                <th>Options</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @foreach (var item in objections)
-                                            {
-                                                <tr>
-                                                    <td><strong>@item.Objection_No</strong></td>
-                                                    <td>@item.Property_Desc</td>
-                                                    <td>@item.Old_Category</td>
-                                                    <td>@FormatZAR(item.Old_Market_Value)</td>
-                                                    <td>@Html.Raw(GetStatusPill(item.objection_Status))</td>
-                                                    <td>
-                                                        <div class="dropdown">
-                                                            <button class="cd-action-btn dropdown-toggle"
-                                                                    data-bs-toggle="dropdown">
-                                                                Actions
-                                                            </button>
-                                                            <ul class="dropdown-menu cd-action-menu">
-                                                                <li>
-                                                                    @{
-                                                                        var viewObjectionSubmissionUrl =
-                                                                            Url.RouteUrl(
-                                                                                "ViewSubmission",
-                                                                                new
-                                                                                {
-                                                                                    submissionType = "Objection",
-                                                                                    referenceNumber = item.Objection_No,
-                                                                                    rollSource = roll.Source,
-                                                                                    returnUrl = Url.Action(
-                                                                                        "Index",
-                                                                                        "Dashboard",
-                                                                                        new { openRoll = roll.Source })
-                                                                                });
-                                                                    }
-
-                                                                    <a class="dropdown-item"
-                                                                           href="@viewObjectionSubmissionUrl">
-                                                                        <i class="fa-solid fa-eye"></i>
-                                                                        <span>View Submitted Objection</span>
-                                                                    </a>
-                                                                </li>
-                                                                <li>
-
-                                                                    <a class="dropdown-item"
-                                                                           asp-controller="Notice"
-                                                                           asp-action="DownloadAcknowledgement"
-                                                                           asp-route-objectionNo="@item.Objection_No"
-                                                                           asp-route-rollSource="@roll.Source">
-
-                                                                        <i class="fa-solid fa-file-arrow-down"></i>
-                                                                        <span>Download Acknowledgement</span>
-                                                                    </a>
-                                                                </li>
-                                                                @if (item.objection_Status == "Obj-Lodging")
-                                                                {
-                                                                    <li>
-                                                                        @if (User.Identity?.IsAuthenticated == true)
-                                                                        {
-                                                                            <a class="dropdown-item"
-                                                                                   href="/evidence/verify?objectionNo=@item.Objection_No&rollSource=@roll.Source">
-                                                                                <i class="fa-solid fa-upload"></i> Add Evidence
-                                                                            </a>
-                                                                        }
-                                                                    </li>
-                                                                }
-                                                              
-                                                                @if (item.objection_Status == "Notice-Sent" || item.objection_Status == "Appeal-Closed")
-                                                                {
-                                                                    <li>
-                                                                        <a class="dropdown-item"
-                                                                               href="/@roll.ControllerName/DownloadSection53?ObjectionNum=@item.Objection_No"
-                                                                               onclick="logAction('DownloadDecision', '@roll.Source', '@item.Objection_No')">
-                                                                            Download Section 53 Notice
-                                                                        </a>
-                                                                    </li>
-                     
-                                                                }
-                                                                @{
-                                                                    var appealWindow = await ObjectionRules.CheckAppealWindowAsync(
-                                                                        rollSource: roll.Source,
-                                                                        objectionNo: item.Objection_No,
-                                                                        unitKey: item.Unit_key,
-                                                                        valuationKey: item.Valuation_Key,
-                                                                        propertyDesc: item.Property_Desc);
-
-                                                                    var canLodgeAppealForItem = item.objection_Status == "Notice-Sent" && appealWindow.IsOpen;
-                                                                }
-
-                                                                @if (canLodgeAppealForItem)
-                                                                {
-                                                                    <li>
-                                                                        <a class="dropdown-item cd-action-primary"
-                                                                               href="/objection/check?rollSource=@roll.Source&sourceTable=@item.PropertyFrom&unitKey=@item.Unit_key&valuationKey=@item.Valuation_Key&appealStatus=True&ObjectionNo=@item.Objection_No"
-                                                                               onclick="logAction('Appeal', '@roll.Source', '@item.Unit_key')">
-
-                                                                            <i class="fa-solid fa-gavel"></i>
-                                                                            <span>Lodge Appeal</span>
-                                                                        </a>
-                                                                    </li>
-                                                                }
-                                                                @if (item.objection_Status == "Obj-Lodging" || item.objection_Status == "Obj-Unallocated")
-                                                                {
-                                                                    <li>
-                                                                        <a class="dropdown-item cd-action-danger"
-                                                                               href="/objection/withdraw?objectionNo=@item.Objection_No&withdrawType=O&rollSource=@roll.Source&returnUrl=/dashboard">
-
-                                                                            <i class="fa-solid fa-ban"></i>
-                                                                            <span>Withdraw Objection</span>
-                                                                        </a>
-                                                                    </li>
-                                                                }
-                                                            </ul>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            }
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    }
-
-                    @* ── My Appeals ─────────────────────────────────── *@
-                    @if (roll.HasAppeal)
-                    {
-                        var appeals = rd.ObjectedProperties.Where(x => x.Sub_typ == 1).ToList();
-                        <div class="cd-widget">
-                            <div class="cd-widget-toggle" onclick="toggleWidget('@rollKey-appeals')">
-                                <div class="cd-widget-toggle-left">
-                                    <i class="fa-solid fa-gavel"></i>
-                                    <h3>My Appeals</h3>
-                                    <span class="cd-count-badge">@appeals.Count</span>
-                                </div>
-                                <i class="fa-solid fa-chevron-down cd-widget-chevron"
-                                   id="wchev-@rollKey-appeals"></i>
-                            </div>
-                            <div class="cd-widget-body" id="widget-@rollKey-appeals">
-                                <div class="table-responsive">
-                                    <table class="cd-table table table-bordered table-hover"
-                                           id="tbl-@rollKey-appeals">
-                                        <thead>
-                                            <tr>
-                                                <th>Appeal No.</th>
-                                                <th>Property Description</th>
-                                                <th>Category</th>
-                                                <th>Market Value</th>
-                                                <th>Status</th>
-                                                <th>Options</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @foreach (var item in appeals)
-                                            {
-                                                <tr>
-                                                    <td><strong>@item.Objection_No</strong></td>
-                                                    <td>@item.Property_Desc</td>
-                                                    <td>@item.Old_Category</td>
-                                                    <td>@FormatZAR(item.Old_Market_Value)</td>
-                                                    <td>@Html.Raw(GetStatusPill(item.objection_Status))</td>
-                                                    <td>
-                                                        <div class="dropdown">
-                                                            <button class="cd-action-btn dropdown-toggle"
-                                                                    data-bs-toggle="dropdown">
-                                                                Actions
-                                                            </button>
-                                                            <ul class="dropdown-menu cd-action-menu">
-                                                                @{
-                                                                    var appealAckRef = !string.IsNullOrWhiteSpace(item.Appeal_No)
-                                                                        ? item.Appeal_No
-                                                                        : item.Objection_No;
-                                                                }
-
-                                                                <li>
-                                                                    <a class="dropdown-item"
-                                                                           asp-controller="Notice"
-                                                                           asp-action="DownloadAcknowledgement"
-                                                                           asp-route-objectionNo="@appealAckRef"
-                                                                           asp-route-rollSource="@roll.Source">
-
-                                                                        <i class="fa-solid fa-file-arrow-down"></i>
-                                                                        <span>Download Acknowledgement</span>
-                                                                    </a>
-                                                                </li>
-                                                                <li>
-                                                                    @{
-                                                                        var appealRefNo =
-                                                                            !string.IsNullOrWhiteSpace(item.Appeal_No)
-                                                                                ? item.Appeal_No
-                                                                                : item.Objection_No;
-
-                                                                        var viewAppealSubmissionUrl =
-                                                                            Url.RouteUrl(
-                                                                                "ViewSubmission",
-                                                                                new
-                                                                                {
-                                                                                    submissionType = "Appeal",
-                                                                                    referenceNumber = appealRefNo,
-                                                                                    rollSource = roll.Source,
-                                                                                    returnUrl = Url.Action(
-                                                                                        "Index",
-                                                                                        "Dashboard",
-                                                                                        new { openRoll = roll.Source })
-                                                                                });
-                                                                    }
-
-                                                                    <a class="dropdown-item"
-                                                                           href="@viewAppealSubmissionUrl">
-                                                                        <i class="fa-solid fa-eye"></i>
-                                                                        <span>View Submitted Appeal</span>
-                                                                    </a>
-                                                                </li>
-
-                                                                @if (item.objection_Status == "App-Unallocated")
-                                                                {
-                                                                    @if (User.Identity?.IsAuthenticated == true)
-                                                                    {
-                                                                        <a class="btn btn-sm btn-primary"
-                                                                               href="/evidence/verify?objectionNo=@item.Objection_No&rollSource=@roll.Source">
-                                                                            <i class="fa-solid fa-upload"></i> Add Evidence
-                                                                        </a>
-                                                                    }
-                  
-                                                                }
-                                                                @if (item.objection_Status == "App-Finalized")
-                                                                {
-                                                                    <li>
-                                                                        <a class="dropdown-item"
-                                                                               href="/@roll.ControllerName/DownloadAppeal?ObjectionNum=@item.Objection_No"
-                                                                               onclick="logAction('DownloadDecision', '@roll.Source', '@item.Objection_No')">
-                                                                            Download Appeal Notice
-                                                                        </a>
-                                                                    </li>
-                     
-                                                                }
-                                                                @if (item.objection_Status == "App-Lodging" || item.objection_Status == "App-Unallocated")
-                                                                {
-                                                                    <li>
-                                                                        <a class="dropdown-item"
-                                                                               href="/objection/withdraw?objectionNo=@item.Appeal_No&withdrawType=Appeal&rollSource=@roll.Source&returnUrl=/dashboard">
-                                                                            <i class="fa-solid fa-ban"></i> Withdraw Appeal
-                                                                        </a>
-                                                                    </li>
-                                                                }
-                                                            </ul>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            }
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    }
-                }
-
-            </div>
-
-      
-        </div>
-
-        
-    }
-    @* ── Rebates ──────────────────────────────────────────────────────────── *@
-    @{
-        var rebateCount = Model.Rebates?.Count ?? 0;
-    }
-
-    <div class="cd-roll-section" id="roll-rebates" data-roll-source="rebates">
-
-   
-        <div class="cd-roll-header cd-roll-rebates" onclick="toggleRoll('rebates')">
-            <div class="cd-roll-header-left">
-                <div class="cd-roll-icon">
-                    <i class="fa-solid fa-percent"></i>
-                </div>
-                <div>
-                    <h2 class="cd-roll-name">Rebates</h2>
-                    <span class="cd-roll-short">Apply or track your property rate rebates</span>
-                </div>
-            </div>
-            <div class="cd-roll-header-right">
-                <a href="/Rebates/Index"
-                       class="cd-roll-search-btn"
-                       onclick="event.stopPropagation()">
-                    <i class="fa-solid fa-file-pen"></i> Apply
-                </a>
-                <span class="cd-roll-badge cd-badge-open">OPEN</span>
-                <i class="fa-solid fa-chevron-down cd-roll-chevron" id="chevron-rebates"></i>
-            </div>
-        </div>
-
-        
-        <div class="cd-roll-body" id="rollbody-rebates">
-
-            @if (rebateCount == 0)
-            {
-    
-                <div class="cd-cta-card">
-                    <div class="cd-cta-icon cd-cta-icon-gold">
-                        <i class="fa-solid fa-percent"></i>
-                    </div>
-                    <div class="cd-cta-body">
-                        <h3>Apply for Property Rebates</h3>
-                        <p>
-                            The City of Johannesburg offers rebate benefits to qualifying property
-                            owners — including pensioners, disabled persons, child-headed households
-                            and public benefit organisations.
-                        </p>
-                        <div class="cd-cta-actions">
-                            <a href="/Rebates/Index" class="cd-cta-btn cd-cta-btn-primary">
-                                <i class="fa-solid fa-file-pen"></i> Apply for Rebates
-                            </a>
-                        </div>
-                    </div>
-                    <div class="cd-cta-chips">
-                        <span class="cd-chip"><i class="fa-solid fa-person-cane"></i> Pensioner</span>
-                        <span class="cd-chip"><i class="fa-solid fa-wheelchair"></i> Disability</span>
-                        <span class="cd-chip"><i class="fa-solid fa-children"></i> Child-Headed</span>
-                        <span class="cd-chip"><i class="fa-solid fa-hand-holding-heart"></i> PBO</span>
-                    </div>
-                </div>
-            }
-            else
-            {
-                
-                <div style="padding:14px 22px; background:#f7f5f2;
-                    border-bottom:1px solid #ede9e3;
-                    display:flex; align-items:center;
-                    justify-content:space-between; flex-wrap:wrap; gap:12px;">
-                    <span style="font-size:13px; color:#645a50;">
-                        <i class="fa-solid fa-circle-info" style="color:#89b7b2; margin-right:6px;"></i>
-                        You have <strong>@rebateCount</strong>
-                        rebate application@(rebateCount == 1 ? "" : "s") on record.
-                    </span>
-                    <a href="/Rebates/Index" class="cd-add-btn">
-                        <i class="fa-solid fa-plus"></i> New Application
-                    </a>
-                </div>
-
-                <div class="cd-widget">
-                    <div class="cd-widget-toggle"
-                         onclick="toggleWidget('rebates-applications')">
-                        <div class="cd-widget-toggle-left">
-                            <i class="fa-solid fa-file-pen"></i>
-                            <h3>My Applications</h3>
-                            <span class="cd-count-badge cd-count-orange">@rebateCount</span>
-                        </div>
-                        <i class="fa-solid fa-chevron-down cd-widget-chevron"
-                           id="wchev-rebates-applications"></i>
-                    </div>
-
-                    <div class="cd-widget-body" id="widget-rebates-applications">
-                        <div class="table-responsive">
-                            <table class="cd-table table table-bordered table-hover"
-                                   id="tbl-rebates-applications">
-                                <thead>
-                                    <tr>
-                                        <th>Application No.</th>
-                                        <th>Account Number</th>
-                                        <th>Full Name</th>
-                                        <th>Rebate Type</th>
-                                        <th>Status</th>
-                                        <th>Options</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var item in Model.Rebates)
-                                    {
-                                        <tr>
-                                            <td><strong>@item.Rebate_No</strong></td>
-                                            <td>@item.AccountNumber</td>
-                                            <td>@item.FirstNames @item.Surname</td>
-                                            <td>@item.Rebate_Type</td>
-                                            <td>@Html.Raw(GetRebateStatusPill(item.Status))</td>
-                                            <td>
-                                                <div class="dropdown">
-                                                    <button class="cd-action-btn dropdown-toggle"
-                                                            data-bs-toggle="dropdown">
-                                                        Actions
-                                                    </button>
-                                                    <ul class="dropdown-menu cd-action-menu">
-                                                        <li>
-                                                            <a class="dropdown-item"
-                                                                   asp-controller="Rebates"
-                                                                   asp-action="ViewData"
-                                                                   asp-route-RebateType="@item.Rebate_Type"
-                                                                   asp-route-RebateNo="@item.Rebate_No">
-                                                                <i class="fa-solid fa-eye"></i>
-                                                                View Form
-                                                            </a>
-                                                        </li>
-                                                        <li>
-                                                            <a class="dropdown-item"
-                                                                   asp-controller="Rebates"
-                                                                   asp-action="Download"
-                                                                   asp-route-rebateNo="@item.Rebate_No">
-                                                                <i class="fa-solid fa-file-pdf"
-                                                                   style="color:#dc2626;"></i>
-                                                                Download Acknowledgement
-                                                            </a>
-                                                        </li>
-                                                    </ul>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            }
-
-        </div>
-    </div>
-
-
-    @* ── Property Attributes ───────────────────────────────────────────────── *@
-    <div class="cd-roll-section" id="roll-attributes" data-roll-source="attributes">
-        <div class="cd-roll-header cd-roll-attributes" onclick="toggleRoll('attributes')">
-            <div class="cd-roll-header-left">
-                <div class="cd-roll-icon">
-                    <i class="fa-solid fa-clipboard-list"></i>
-                </div>
-                <div>
-                    <h2 class="cd-roll-name">Property Attributes</h2>
-                    <span class="cd-roll-short">
-                        Submit updated property information for valuation roll preparation
-                    </span>
-                </div>
-            </div>
-            <div class="cd-roll-header-right">
-                <a href="/attributes/about"
-                       class="cd-roll-search-btn cd-roll-learn-btn"
-                       onclick="event.stopPropagation()">
-                    <i class="fa-solid fa-circle-info"></i> Learn How It Works
-                </a>
-                <a href="/attributes/search"
-                       class="cd-roll-search-btn"
-                       onclick="event.stopPropagation()">
-                    <i class="fa-solid fa-magnifying-glass"></i> Search Property
-                </a>
-                <span class="cd-roll-badge cd-badge-open">NEW</span>
-                <i class="fa-solid fa-chevron-down cd-roll-chevron"
-                   id="chevron-attributes"></i>
-            </div>
-        </div>
-
-        <div class="cd-roll-body" id="rollbody-attributes">
-
-            @{
-                var attrData = Model.AttributesData;
-            }
-
-            <!-- ── 1. Linked Properties ──────────────────────────── -->
-            <div class="cd-widget">
-                <div class="cd-widget-toggle"
-                     onclick="toggleWidget('attr-linked')">
-                    <div class="cd-widget-toggle-left">
-                        <i class="fa-solid fa-link"></i>
-                        <h3>Linked Properties</h3>
-                        <span class="cd-count-badge">@Model.AttributesLinked.Count</span>
-                    </div>
-                    <i class="fa-solid fa-chevron-down cd-widget-chevron"
-                       id="wchev-attr-linked"></i>
-                </div>
-                <div class="cd-widget-body" id="widget-attr-linked">
-                    @*  <div class="cd-widget-toolbar">
-                        <a href="/attributes/search" class="cd-add-btn">
-                            <i class="fa-solid fa-plus"></i> Link New Property
-                        </a>
-                    </div> *@
-                    <div class="table-responsive">
-                        <table class="cd-table table table-bordered"
-                               id="tbl-attr-linked">
-                            <thead>
-                                <tr>
-                                    <th>Property Description</th>
-                                    <th>Category</th>
-                                    <th>Town</th>
-                                    <th>Market Value</th>
-                                    <th>Form Type</th>
-                                    <th>Options</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @* Replace attrData.LinkedProperties with Model.AttributesLinked *@
-                                @foreach (var item in Model.AttributesLinked)
-                                {
-                                    <tr>
-                                        <td>@item.PropertyDesc</td>
-                                        <td>@item.CatDesc</td>
-                                        <td>@item.TownNameDesc</td>
-                                        <td>@item.MarketValue</td>
-                                        <td>
-                                            <span class="attr-form-pill attr-pill-@(item.FormType.ToLower()
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                .Replace(" ", "").Replace("&", "").Replace("/", ""))">
-                                                @item.FormType
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <div class="dropdown">
-                                                <button class="cd-action-btn dropdown-toggle"
-                                                        data-bs-toggle="dropdown">
-                                                    Actions
-                                                </button>
-                                                <ul class="dropdown-menu cd-action-menu">
-                                                    @if (!item.HasSubmission)
-                                                    {
-                                                        @*     <li>
-                                                            <a class="dropdown-item"
-                                                                   href="/attributes/form?id=@item.IDProperty&formType=@item.FormType">
-                                                                Submit Attributes
-                                                            </a>
-                                                        </li> *@
-
-
-                                                        <li>
-                                                            @*  <a class="dropdown-item"
-                                                                           asp-controller="Attributes"
-                                                                   asp-action="Check"
-                                                                   asp-route-idProperty="@item.IDProperty"
-                                                                           asp-route-formType="@item.FormType">
-                                                                            Submit Attributes
-                                                                        </a> *@
-                                                            <a class="dropdown-item"
-                                                                   asp-controller="Attributes"
-                                                                   asp-action="SelectForm"
-                                                                   asp-route-idProperty="@item.IDProperty"
-                                                                   asp-route-formType="@item.FormType">
-
-                                                                <i class="fa-solid fa-file-pen"></i>
-                                                                <span>Submit Attributes</span>
-                                                            </a>
-
-                                                        </li>
-                                                    }
-                                                    else
-                                                    {
-                                                        <li>
-                                                            <a class="dropdown-item"
-                                                                   href="/attributes/submission?propertyId=@item.IDProperty">
-                                                                View Submission
-                                                            </a>
-                                                        </li>
-                                                    }
-                                                    <li>
-                                                        <a class="dropdown-item"
-                                                               href="/attributes/unlink?id=@item.Id">
-                                                            Unlink
-                                                        </a>
-                                                    </li>
-                                                </ul>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ── 2. My Submissions ──────────────────────────────── -->
-            <div class="cd-widget">
-                <div class="cd-widget-toggle"
-                     onclick="toggleWidget('attr-submissions')">
-                    <div class="cd-widget-toggle-left">
-                        <i class="fa-solid fa-file-pen"></i>
-                        <h3>My Submissions</h3>
-                        <span class="cd-count-badge cd-count-orange">
-                            @attrData.SubmissionCount
-                        </span>
-                        @if (attrData.PendingCount > 0)
-                        {
-                            <span class="cd-count-badge cd-count-amber">
-                                @attrData.PendingCount pending
-                            </span>
-                        }
-                    </div>
-                    <i class="fa-solid fa-chevron-down cd-widget-chevron"
-                       id="wchev-attr-submissions"></i>
-                </div>
-                <div class="cd-widget-body" id="widget-attr-submissions">
-                    <div class="table-responsive">
-                        <table class="cd-table table table-bordered"
-                               id="tbl-attr-submissions">
-                            <thead>
-                                <tr>
-                                    <th> Reference</th>
-                                    <th>Property Description</th>
-                                    <th>Form Type</th>
-                                    <th> Submitted</th>
-                                    <th>Edit Window</th>
-                                    <th> Status</th>
-                                    <th> Options</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var item in attrData.Submissions)
-                                {
-                                    <tr>
-                                        <td><strong>@item.SubmissionRef</strong></td>
-                                        <td>@item.PropertyDesc</td>
-                                        <td>@item.FormType</td>
-                                        <td>@item.SubmittedAt.ToString("dd MMM yyyy HH:mm")</td>
-                                        <td>
-                                            @if (item.IsEditable && item.EditTimeLeft.HasValue)
-                                            {
-                                                var tl = item.EditTimeLeft.Value;
-                                                <span class="attr-edit-window attr-edit-open"
-                                                      data-deadline="@item.SubmittedAt.AddHours(48).ToString("o")">
-                                                    <i class="fa-solid fa-clock"></i>
-                                                    @tl.Hours h @tl.Minutes m left
-                                                </span>
-                                            }
-                                            else
-                                            {
-                                                <span class="attr-edit-window attr-edit-locked">
-                                                    <i class="fa-solid fa-lock"></i> Locked
-                                                </span>
-                                            }
-                                        </td>
-                                        <td>@Html.Raw(GetAttrStatusPill(item.Status))</td>
-                                        <td>
-                                            <div class="dropdown">
-                                                <button class="cd-action-btn dropdown-toggle"
-                                                        data-bs-toggle="dropdown">
-                                                    Actions
-                                                </button>
-                                                <ul class="dropdown-menu cd-action-menu">
-                                                    <li>
-                                                        <a class="dropdown-item"
-                                                               asp-route="AttributeSubmissionById"
-                                                               asp-route-id="@item.Id"
-                                                               asp-route-returnUrl="@Url.Action("Index", "Dashboard", new { openRoll = "attributes" })">
-                                                            👁️ View Submission
-                                                        </a>
-                                                    </li>
-                                                    <li>
-                                                        <a class="dropdown-item"
-                                                               href="/attributes/acknowledgement/download?attrNo=@item.SubmissionRef"
-                                                               target="_blank">
-                                                            <i class="fa-solid fa-file-pdf" style="color:#dc2626;"></i>
-                                                            Download Acknowledgement
-                                                        </a>
-                                                    </li>
-                                                    @if (item.IsEditable)
-                                                    {
-                                                        @*  <li>
-                                                            <a class="dropdown-item"
-                                                                   href="/attributes/edit/@item.Id">
-                                                                ✏️ Edit Submission
-                                                            </a>
-                                                        </li> *@
-                                                        <li>
-                                                            <a class="dropdown-item"
-                                                                   href="/attributes/evidence?attrNo=@item.SubmissionRef">
-                                                                📎 Add Evidence
-                                                            </a>
-                                                        </li>
-                                                    }
-                                                    @if (item.Status == "ReturnedToClient")
-                                                    {
-                                                        <li>
-                                                            <button type="button"
-                                                                    class="dropdown-item"
-                                                                    onclick="openReturnedCorrectionModal('@item.Id')">
-                                                                <i class="fa-solid fa-rotate-right"></i>
-                                                                Correct / Resubmit
-                                                            </button>
-                                                        </li>
-                                                    }
-                                                </ul>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-
-            @* ── Returned Attribute Correction / Resubmission Modals ─────────────────── *@
-            @foreach (var item in attrData.Submissions.Where(x => x.Status == "ReturnedToClient"))
-            {
-                <div id="returnedCorrectionModal_@item.Id"
-                     class="attr-insp-modal-backdrop"
-                     style="display:none;">
-
-                    <div class="attr-insp-modal">
-                        <div class="attr-insp-modal-head">
-                            <div>
-                                Correct Returned Submission - @item.SubmissionRef
-                            </div>
-
-                            <button type="button"
-                                    onclick="closeReturnedCorrectionModal('@item.Id')">
-                                ×
-                            </button>
-                        </div>
-
-                        <form asp-controller="Dashboard"
-                              asp-action="ResubmitReturnedAttribute"
-                              method="post">
-
-                            @Html.AntiForgeryToken()
-
-                            <input type="hidden"
-                                   name="AttrId"
-                                   value="@item.Id" />
-
-                            <input type="hidden"
-                                   name="AttrNo"
-                                   value="@item.SubmissionRef" />
-
-                            <input type="hidden"
-                                   name="PropertyDescription"
-                                   value="@item.PropertyDesc" />
-
-                            <div class="attr-insp-modal-body">
-                                <p>
-                                    Your attribute submission was returned for correction.
-                                    Please review the reason below, upload any required evidence,
-                                    and resubmit your corrections.
-                                </p>
-
-                                @if (!string.IsNullOrWhiteSpace(item.RevisionReason))
-                                {
-                                    <div class="alert alert-warning">
-                                        <strong>Reason returned:</strong><br />
-                                        @item.RevisionReason
-                                    </div>
-                                }
-                                else
-                                {
-                                    <div class="alert alert-warning">
-                                        <strong>Reason returned:</strong><br />
-                                        The valuer requested corrections to this attribute submission.
-                                    </div>
-                                }
-
-                                <div class="alert alert-info">
-                                    <strong>Evidence:</strong>
-                                    If the valuer requested updated evidence, upload it before resubmitting.
-                                    <br />
-
-                                    <a href="/attributes/evidence?attrNo=@item.SubmissionRef"
-                                           target="_blank"
-                                           class="btn btn-sm btn-dark mt-2">
-                                        <i class="fa-solid fa-paperclip"></i>
-                                        Upload Evidence
-                                    </a>
-                                </div>
-
-                                <label class="fw-bold">Correction Comment</label>
-
-                                <textarea name="RevisionComment"
-                                          class="form-control"
-                                          rows="4"
-                                          placeholder="Explain what you corrected..."
-                                          required></textarea>
-                            </div>
-
-                            <div class="attr-insp-modal-footer">
-                                <button type="button"
-                                        class="btn btn-light"
-                                        onclick="closeReturnedCorrectionModal('@item.Id')">
-                                    Cancel
-                                </button>
-
-                                <button type="submit"
-                                        class="btn btn-warning fw-bold">
-                                    Resubmit Corrections
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            }
-          
-            @* ── 3. My Appointments with Valuer ─────────────────── *@
-            <div class="cd-widget">
-                <div class="cd-widget-toggle"
-                     onclick="toggleWidget('attr-appointments')">
-                    <div class="cd-widget-toggle-left">
-                        <i class="fa-solid fa-calendar-check"></i>
-                        <h3>My Appointments with Valuer</h3>
-                        <span class="cd-count-badge cd-count-blue">
-                            @attrData.AppointmentCount
-                        </span>
-                    </div>
-
-                    <i class="fa-solid fa-chevron-down cd-widget-chevron"
-                       id="wchev-attr-appointments"></i>
-                </div>
-
-                <div class="cd-widget-body" id="widget-attr-appointments">
-                    <div class="table-responsive">
-                        <table class="cd-table table table-bordered"
-                               id="tbl-attr-appointments">
-                            <thead>
-                                <tr>
-                                    <th>Reference</th>
-                                    <th>Property</th>
-                                    <th>Date Options</th>
-                                    <th>Status</th>
-                                    <th>Options</th>
-                                </tr>
-                            </thead>
-
-                            <tbody>
-                                @if (attrData.Appointments == null || !attrData.Appointments.Any())
-                                {
-                                    <tr>
-                                        <td colspan="5"
-                                            style="text-align:center;font-weight:700;color:#777;">
-                                            No inspection appointment requests found.
-                                        </td>
-                                    </tr>
-                                }
-                                else
-                                {
-                                    @foreach (var item in attrData.Appointments)
-                                    {
-                                        <tr>
-                                            <td>
-                                                <strong>@item.AppointmentRef</strong>
-                                            </td>
-
-                                            <td>
-                                                @item.PropertyDesc
-                                            </td>
-
-                                            <td>
-                                                @if ((item.Status == "Confirmed" || item.Status == "InspectionDetailsSent")
-                                                     && item.ConfirmedDateTime != null)
-                                                {
-                                                    <strong>
-                                                        Confirmed:
-                                                        @item.ConfirmedDateTime.Value.ToString("dd MMM yyyy HH:mm")
-                                                    </strong>
-                                                }
-                                                else if (item.Status == "Expired")
-                                                {
-                                                    <span style="font-weight:700;color:#b91c1c;">
-                                                        Date options expired
-                                                    </span>
-                                                }
-                                                else if (item.Slots != null && item.Slots.Any())
-                                                {
-                                                    <ul style="margin:0;padding-left:18px;">
-                                                        @foreach (var slot in item.Slots)
-                                                        {
-                                                            <li>
-                                                                Option @slot.SlotNo:
-                                                                @slot.ProposedDateTime.ToString("dd MMM yyyy HH:mm")
-                                                            </li>
-                                                        }
-                                                    </ul>
-                                                }
-                                                else
-                                                {
-                                                    <span>–</span>
-                                                }
-                                            </td>
-
-                                            <td>
-                                                @Html.Raw(GetApptStatusPill(item.Status))
-                                            </td>
-
-                                            <td>
-                                                @if (item.Status == "PendingClientResponse")
-                                                {
-                                                    <button type="button"
-                                                            class="cd-action-btn"
-                                                            onclick="openInspectionResponseModal('@item.Id')">
-                                                        Select Date
-                                                    </button>
-                                                }
-                                                else if (item.Status == "InspectionDetailsSent")
-                                                {
-                                                    <button type="button"
-                                                            class="cd-action-btn"
-                                                            onclick="openPinModal('@item.Id')">
-                                                        Enter PIN
-                                                    </button>
-                                                }
-                                                else if (item.Status == "Confirmed")
-                                                {
-                                                    <span style="font-weight:700;color:#64748b;">
-                                                        Waiting for PIN
-                                                    </span>
-                                                }
-                                                else if (item.Status == "Expired")
-                                                {
-                                                    <span style="font-weight:700;color:#b91c1c;">
-                                                        No action
-                                                    </span>
-                                                }
-                                                else
-                                                {
-                                                    <span style="font-weight:700;color:#64748b;">
-                                                        No action
-                                                    </span>
-                                                }
-                                            </td>
-                                        </tr>
-                                    }
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-
-                    @* Date selection modals *@
-                    @foreach (var appointment in attrData.Appointments.Where(x => x.Status == "PendingClientResponse"))
-                    {
-                        <div id="inspectionModal_@appointment.Id"
-                             class="attr-insp-modal-backdrop"
-                             style="display:none;">
-
-                            <div class="attr-insp-modal">
-                                <div class="attr-insp-modal-head">
-                                    <div>
-                                        Choose Inspection Date - @appointment.AppointmentRef
-                                    </div>
-
-                                    <button type="button"
-                                            onclick="closeInspectionResponseModal('@appointment.Id')">
-                                        ×
-                                    </button>
-                                </div>
-
-                                <form asp-controller="Dashboard"
-                                      asp-action="RespondToInspectionAppointment"
-                                      method="post">
-
-                                    @Html.AntiForgeryToken()
-
-                                    <input type="hidden"
-                                           name="InspectionRequestId"
-                                           value="@appointment.Id" />
-
-                                    <div class="attr-insp-modal-body">
-                                        <p>
-                                            The valuer has requested a physical inspection.
-                                            Please choose one of the proposed dates below.
-                                        </p>
-
-                                        @if (!string.IsNullOrWhiteSpace(appointment.RequestComment))
-                                        {
-                                            <div class="alert alert-info">
-                                                @appointment.RequestComment
-                                            </div>
-                                        }
-
-                                        @if (appointment.Slots != null && appointment.Slots.Any())
-                                        {
-                                            @foreach (var slot in appointment.Slots)
-                                            {
-                                                <label class="attr-insp-option">
-                                                    <input type="radio"
-                                                           name="SelectedSlotId"
-                                                           value="@slot.Id"
-                                                           required />
-
-                                                    <span>
-                                                        Option @slot.SlotNo:
-                                                        <strong>@slot.ProposedDateTime.ToString("dd MMM yyyy HH:mm")</strong>
-                                                    </span>
-                                                </label>
-                                            }
-                                        }
-                                        else
-                                        {
-                                            <div class="alert alert-warning">
-                                                No proposed inspection date options were found.
-                                            </div>
-                                        }
-
-                                        <label class="fw-bold">Comment</label>
-
-                                        <textarea name="ClientResponseComment"
-                                                  class="form-control"
-                                                  placeholder="Optional comment..."></textarea>
-                                    </div>
-
-                                    <div class="attr-insp-modal-footer">
-                                        <button type="button"
-                                                class="btn btn-light"
-                                                onclick="closeInspectionResponseModal('@appointment.Id')">
-                                            Cancel
-                                        </button>
-
-                                        <button type="submit"
-                                                class="btn btn-warning fw-bold">
-                                            Confirm Selected Date
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    }
-
-                    @* PIN verification modals - full backend verification comes next *@
-                    @* PIN verification modals *@
-                    @foreach (var appointment in attrData.Appointments
-                        .Where(x => x.Status == "InspectionDetailsSent"))
-                    {
-                        var modalId = $"pinModal_{appointment.Id}";
-                        var inputId = $"pinHiddenInput_{appointment.Id}";
-                        var formId = $"pinForm_{appointment.Id}";
-                        var submitId = $"pinSubmitBtn_{appointment.Id}";
-                        var errorId = $"pinError_{appointment.Id}";
-                        var errorMsgId = $"pinErrorMsg_{appointment.Id}";
-                        var contextTitleId = $"pinContextTitle_{appointment.Id}";
-
-                        <div class="pin-backdrop" id="@modalId" style="display:none;">
-                            <div class="pin-modal" role="dialog" aria-modal="true" aria-labelledby="@contextTitleId">
-
-                                <div class="pin-handle"></div>
-
-                                <div class="pin-head">
-                                    <div class="pin-head-icon">
-                                        <i class="fa-solid fa-lock"></i>
-                                    </div>
-                                    <div class="pin-head-text">
-                                        <div class="pin-head-title">Enter Inspection PIN</div>
-                                        <div class="pin-head-sub">@appointment.AppointmentRef</div>
-                                    </div>
-                                    <button type="button" class="pin-head-close"
-                                            onclick="closePinModal('@appointment.Id')" aria-label="Close">
-                                        <i class="fa-solid fa-xmark"></i>
-                                    </button>
-                                </div>
-
-                                <form asp-controller="Dashboard"
-                                      asp-action="VerifyInspectionPin"
-                                      method="post"
-                                      id="@formId"
-                                      autocomplete="off">
-
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="InspectionRequestId" value="@appointment.Id" />
-
-                                    <div class="pin-body">
-                                        <div class="pin-lock-ring">
-                                            <i class="fa-solid fa-shield-halved"></i>
-                                        </div>
-
-                                        <div class="pin-context">
-                                            <div class="pin-context-title" id="@contextTitleId">
-                                                Verify your inspection appointment
-                                            </div>
-                                            <div class="pin-context-sub">
-                                                Enter the PIN sent to you by email.
-                                            </div>
-                                        </div>
-
-                                        @if (appointment.ConfirmedDateTime != null)
-                                        {
-                                            <div class="pin-confirmed-date">
-                                                <i class="fa-solid fa-calendar-check"></i>
-                                                <div>
-                                                    <span class="pin-confirmed-label">Confirmed inspection date</span>
-                                                    <span class="pin-confirmed-value">
-                                                        @appointment.ConfirmedDateTime.Value.ToString("dd MMM yyyy HH:mm")
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        }
-
-                                        @* ── Dot display — BUG FIXED: @(appointment.Id) wrapped in parens ── *@
-                                        <div class="pin-dots">
-                                            <div class="pin-dot" id="dot_@(appointment.Id)_0"></div>
-                                            <div class="pin-dot" id="dot_@(appointment.Id)_1"></div>
-                                            <div class="pin-dot" id="dot_@(appointment.Id)_2"></div>
-                                            <div class="pin-dot" id="dot_@(appointment.Id)_3"></div>
-                                        </div>
-
-                                        <input type="password"
-                                               id="@inputId"
-                                               name="Pin"
-                                               class="pin-input-hidden"
-                                               maxlength="4"
-                                               inputmode="numeric"
-                                               pattern="[0-9]{4}"
-                                               autocomplete="off"
-                                               required />
-
-                                        <div class="pin-error" id="@errorId">
-                                            <i class="fa-solid fa-circle-exclamation"></i>
-                                            <span id="@errorMsgId">Incorrect PIN. Please try again.</span>
-                                        </div>
-
-                                        <div class="pin-keypad">
-                                            <button type="button" class="pin-key" onclick="pinKey('@appointment.Id', '1')">
-                                                <span class="pin-key-num">1</span>
-                                            </button>
-                                            <button type="button" class="pin-key" onclick="pinKey('@appointment.Id', '2')">
-                                                <span class="pin-key-num">2</span>
-                                                <span class="pin-key-alpha">ABC</span>
-                                            </button>
-                                            <button type="button" class="pin-key" onclick="pinKey('@appointment.Id', '3')">
-                                                <span class="pin-key-num">3</span>
-                                                <span class="pin-key-alpha">DEF</span>
-                                            </button>
-                                            <button type="button" class="pin-key" onclick="pinKey('@appointment.Id', '4')">
-                                                <span class="pin-key-num">4</span>
-                                                <span class="pin-key-alpha">GHI</span>
-                                            </button>
-                                            <button type="button" class="pin-key" onclick="pinKey('@appointment.Id', '5')">
-                                                <span class="pin-key-num">5</span>
-                                                <span class="pin-key-alpha">JKL</span>
-                                            </button>
-                                            <button type="button" class="pin-key" onclick="pinKey('@appointment.Id', '6')">
-                                                <span class="pin-key-num">6</span>
-                                                <span class="pin-key-alpha">MNO</span>
-                                            </button>
-                                            <button type="button" class="pin-key" onclick="pinKey('@appointment.Id', '7')">
-                                                <span class="pin-key-num">7</span>
-                                                <span class="pin-key-alpha">PQRS</span>
-                                            </button>
-                                            <button type="button" class="pin-key" onclick="pinKey('@appointment.Id', '8')">
-                                                <span class="pin-key-num">8</span>
-                                                <span class="pin-key-alpha">TUV</span>
-                                            </button>
-                                            <button type="button" class="pin-key" onclick="pinKey('@appointment.Id', '9')">
-                                                <span class="pin-key-num">9</span>
-                                                <span class="pin-key-alpha">WXYZ</span>
-                                            </button>
-                                            <button type="button" class="pin-key" style="border:none;background:none;box-shadow:none;cursor:default;" disabled></button>
-                                            <button type="button" class="pin-key pin-key-zero" onclick="pinKey('@appointment.Id', '0')">
-                                                <span class="pin-key-num">0</span>
-                                            </button>
-                                            <button type="button" class="pin-key pin-key-del" onclick="pinDelete('@appointment.Id')" aria-label="Delete">
-                                                <i class="fa-solid fa-delete-left pin-key-icon"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <div class="pin-foot">
-                                        <button type="submit" class="pin-submit-btn" id="@submitId" disabled>
-                                            <i class="fa-solid fa-unlock"></i> Confirm
-                                        </button>
-                                        <div class="pin-forgot">
-                                            PIN only works during the inspection security window.
-                                        </div>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    }
-
-                
-                </div>
-            </div>
-
-        </div>
-    </div>
-
-</div>
 <div id="statusExplainModal" class="status-modal-backdrop" style="display:none;">
     <div class="status-modal">
         <div class="status-modal-header">
@@ -2635,6 +738,7 @@
 
 @section Scripts {
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
@@ -2646,48 +750,132 @@
         // Dashboard JS - Combined
         // ============================================================
 
-        // ── Roll section toggle ─────────────────────────────────────
-        function toggleRoll(key) {
-        const body = document.getElementById('rollbody-' + key);
-        const chevron = document.getElementById('chevron-' + key);
+        // ── Family tiles + persistent tab strip ──────────────────────
+        const detailCache = {};
+        let familyLookup = [];
 
-        if (!body) return;
-
-        const isOpen = body.classList.toggle('open');
-
-        if (chevron) {
-        chevron.style.transform = isOpen ? 'rotate(180deg)' : 'rotate(0deg)';
-        }
+        try {
+        familyLookup = JSON.parse(document.getElementById('cdFamilyLookupData').textContent);
+        } catch (e) {
+        familyLookup = [];
         }
 
-        // ── Tiles view: AJAX slide-over drawer (GV/Supp/Query rolls) ──
-        //    Rebates/Attributes tiles use data-drawer-url directly since
-        //    they don't map to a GvList roll source.
-        const rollDetailCache = {};
+        function openFamily(tileEl) {
+        let members;
+        try {
+        members = JSON.parse(tileEl.dataset.members);
+        } catch (e) {
+        return;
+        }
 
-        function openRollDrawer(tileEl) {
-        const rollSource = tileEl.dataset.rollSource;
-        const rollName = tileEl.dataset.rollName;
-        const url = tileEl.dataset.drawerUrl ||
-        (rollSource ? '/dashboard/roll-detail/' + encodeURIComponent(rollSource) : null);
+        const context = document.getElementById('cdFamilyContext');
+        if (context && members.length) {
+        context.style.display = 'flex';
+        context.innerHTML =
+        '<i class="fa-solid fa-landmark"></i>' +
+        '<div><strong>' + members[0].name + '</strong>' +
+        '<span>' + members.length + ' roll' + (members.length === 1 ? '' : 's') + ' in this family &middot; pick one below</span></div>';
+        }
 
-        const drawer = document.getElementById('cdDrawer');
-        const backdrop = document.getElementById('cdDrawerBackdrop');
-        const title = document.getElementById('cdDrawerTitle');
-        const body = document.getElementById('cdDrawerBody');
+        renderFamilyTabs(members, tileEl.dataset.headSource);
+        showDetailArea();
+        selectFamilyTab(tileEl.dataset.headSource, members);
+        }
 
-        if (!drawer || !backdrop || !body || !url) return;
+        function renderFamilyTabs(members, activeSource) {
+        const wrap = document.getElementById('cdFamilyTabs');
+        if (!wrap) return;
 
-        title.textContent = rollName || 'Details';
+        wrap.dataset.members = JSON.stringify(members);
+        wrap.style.display = 'flex';
+
+        wrap.innerHTML = members.map(function (m) {
+        const isActive = m.source === activeSource;
+        return '<button type="button" class="cd-fam-tab' + (isActive ? ' active' : '') + '" ' +
+        'data-source="' + m.source + '" onclick="selectFamilyTabFromEl(this)">' +
+        '<span class="cd-fam-tab-name">' + m.shortName + '</span>' +
+        (isActive ? '<span class="cd-fam-tab-current"><i class="fa-solid fa-circle-check"></i> Viewing</span>' : '') +
+        '</button>';
+        }).join('');
+        }
+
+        function selectFamilyTabFromEl(el) {
+        const wrap = document.getElementById('cdFamilyTabs');
+        let members = [];
+        try {
+        members = JSON.parse(wrap.dataset.members || '[]');
+        } catch (e) {}
+        selectFamilyTab(el.dataset.source, members);
+        }
+
+        function selectFamilyTab(source, members) {
+        const wrap = document.getElementById('cdFamilyTabs');
+
+        if (wrap) {
+        wrap.querySelectorAll('.cd-fam-tab').forEach(function (tab) {
+        const isActive = tab.dataset.source === source;
+        tab.classList.toggle('active', isActive);
+
+        const marker = tab.querySelector('.cd-fam-tab-current');
+        if (isActive && !marker) {
+        const span = document.createElement('span');
+        span.className = 'cd-fam-tab-current';
+        span.innerHTML = '<i class="fa-solid fa-circle-check"></i> Viewing';
+        tab.appendChild(span);
+        } else if (!isActive && marker) {
+        marker.remove();
+        }
+        });
+        }
+
+        loadIntoDetail('/dashboard/roll-detail/' + encodeURIComponent(source));
+        }
+
+        function openStandalone(tileEl) {
+        const wrap = document.getElementById('cdFamilyTabs');
+        if (wrap) {
+        wrap.style.display = 'none';
+        wrap.innerHTML = '';
+        }
+
+        const context = document.getElementById('cdFamilyContext');
+        if (context) {
+        context.style.display = 'none';
+        context.innerHTML = '';
+        }
+
+        showDetailArea();
+        loadIntoDetail(tileEl.dataset.drawerUrl);
+        }
+
+        function showDetailArea() {
+        const tileGrid = document.getElementById('cdTileGrid');
+        const detailArea = document.getElementById('cdDetailArea');
+        if (!tileGrid || !detailArea) return;
+
+        tileGrid.style.display = 'none';
+        detailArea.style.display = '';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function closeDetail() {
+        const tileGrid = document.getElementById('cdTileGrid');
+        const detailArea = document.getElementById('cdDetailArea');
+        if (!tileGrid || !detailArea) return;
+
+        detailArea.style.display = 'none';
+        tileGrid.style.display = '';
+        }
+
+        function loadIntoDetail(url) {
+        const body = document.getElementById('cdDetailBody');
+        if (!body || !url) return;
+
         body.innerHTML =
         '<div class="cd-roll-loading"><i class="fa-solid fa-circle-notch fa-spin"></i> Loading…</div>';
 
-        drawer.classList.add('open');
-        backdrop.classList.add('open');
-        document.body.style.overflow = 'hidden';
-
-        if (rollDetailCache[url]) {
-        body.innerHTML = rollDetailCache[url];
+        if (detailCache[url]) {
+        body.innerHTML = detailCache[url];
         initTablesWithin(body);
         reparentFixedModals(body);
         return;
@@ -2699,7 +887,7 @@
         return res.text();
         })
         .then(function (html) {
-        rollDetailCache[url] = html;
+        detailCache[url] = html;
         body.innerHTML = html;
         initTablesWithin(body);
         reparentFixedModals(body);
@@ -2710,17 +898,8 @@
         '<i class="fa-solid fa-triangle-exclamation"></i> ' +
         'Could not load these details. Please try again.' +
         '</div>';
-        console.error('[Dashboard] drawer fetch failed:', err);
+        console.error('[Dashboard] detail fetch failed:', err);
         });
-        }
-
-        function closeRollDrawer() {
-        const drawer = document.getElementById('cdDrawer');
-        const backdrop = document.getElementById('cdDrawerBackdrop');
-
-        drawer?.classList.remove('open');
-        backdrop?.classList.remove('open');
-        document.body.style.overflow = '';
         }
 
         function initTablesWithin(container) {
@@ -2729,87 +908,16 @@
         });
         }
 
-        // ── Move full-screen modals out of the drawer ───────────────
-        //    .cd-drawer slides via CSS transform, which creates a new
-        //    containing block for position:fixed descendants — so any
-        //    fixed-position modal (PIN pad, inspection date picker,
-        //    correction form) loaded inside it would get squeezed into
-        //    the drawer's own box instead of covering the full screen.
-        //    Re-parenting to <body> keeps them truly full-screen.
+        // ── Move full-screen modals out of the detail area ───────────
+        //    Same reasoning as before: if the detail area ever gets a
+        //    CSS transform applied to it, position:fixed children would
+        //    be constrained to its box instead of the full screen.
         function reparentFixedModals(container) {
         container
         .querySelectorAll('.pin-backdrop, .attr-insp-modal-backdrop')
         .forEach(function (modal) {
         document.body.appendChild(modal);
         });
-        }
-
-        // ── Tile click (used only where no drawer endpoint exists) ────
-        //    Switches to List view, opens the matching section, and
-        //    scrolls to it. Everything there is already rendered. ─────
-        function openTileRoll(key) {
-        setViewMode('list');
-
-        const section = document.getElementById('roll-' + key);
-        const body = document.getElementById('rollbody-' + key);
-        const chevron = document.getElementById('chevron-' + key);
-
-        if (!section || !body) return;
-
-        document.querySelectorAll('.cd-roll-body.open').forEach(b => {
-        if (b.id !== 'rollbody-' + key) b.classList.remove('open');
-        });
-        document.querySelectorAll('.cd-roll-chevron').forEach(icon => {
-        icon.style.transform = 'rotate(0deg)';
-        });
-
-        body.classList.add('open');
-        if (chevron) chevron.style.transform = 'rotate(180deg)';
-
-        setTimeout(() => {
-        section.querySelectorAll('.cd-widget-body.open .cd-table').forEach(t => {
-        if (t.id) initDataTable('#' + t.id);
-        });
-        section.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 100);
-        }
-
-        // ── View mode toggle (Tiles / List) — remembered via localStorage ──
-        const VIEW_MODE_KEY = 'cd_view_mode';
-
-        function setViewMode(mode) {
-        const tileGrid = document.getElementById('cdTileGrid');
-        const btnTiles = document.getElementById('viewBtnTiles');
-        const btnList = document.getElementById('viewBtnList');
-        const rollSections = document.querySelectorAll('.cd-roll-section');
-
-        if (!tileGrid) return;
-
-        if (mode === 'list') {
-        tileGrid.style.display = 'none';
-        rollSections.forEach(s => s.style.display = '');
-        btnList?.classList.add('active');
-        btnTiles?.classList.remove('active');
-        } else {
-        mode = 'tiles';
-        tileGrid.style.display = '';
-        rollSections.forEach(s => s.style.display = 'none');
-        btnTiles?.classList.add('active');
-        btnList?.classList.remove('active');
-        }
-
-        localStorage.setItem(VIEW_MODE_KEY, mode);
-        }
-
-        function initViewToggle() {
-        const saved = localStorage.getItem(VIEW_MODE_KEY) || 'tiles';
-        setViewMode(saved);
-
-        document.getElementById('viewBtnTiles')
-        ?.addEventListener('click', function () { setViewMode('tiles'); });
-
-        document.getElementById('viewBtnList')
-        ?.addEventListener('click', function () { setViewMode('list'); });
         }
 
         // ── Widget sub-section toggle ───────────────────────────────
@@ -2831,22 +939,28 @@
         if (!selector || !$(selector).length) return;
         if ($.fn.DataTable.isDataTable(selector)) return;
 
+        const colCount = $(selector + ' thead th').length;
+
         $(selector).DataTable({
-        responsive: true,
-        dom: '\u003C"cd-dt-top"lBf\u003Ert\u003C"cd-dt-bottom"ip\u003E',
-        lengthMenu: [[5, 10, 25, -1], [5, 10, 25, 'All']],
-        buttons: [
-        {
-        extend: 'excel',
-        text: '<i class="fa-solid fa-file-excel"></i> Excel',
-        className: 'cd-dt-btn'
+        responsive: {
+        // Default breakpoints start collapsing columns below
+        // 1024px, which also catches ordinary desktop/laptop
+        // windows that just aren't maximised. Only a true
+        // smartphone width should get the "+" expander.
+        breakpoints: [
+        { name: 'desktop', width: Infinity },
+        { name: 'phone', width: 640 }
+        ]
         },
-        {
-        extend: 'pdf',
-        text: '<i class="fa-solid fa-file-pdf"></i> PDF',
-        className: 'cd-dt-btn'
-        }
-        ],
+        dom: '\u003C"cd-dt-top"lf\u003Ert\u003C"cd-dt-bottom"ip\u003E',
+        lengthMenu: [[5, 10, 25, -1], [5, 10, 25, 'All']],
+        // The Options/Actions column is always last and must
+        // never collapse behind the "+" expander — that's the
+        // whole reason someone opens the row on a phone.
+        columnDefs: colCount ? [
+        { targets: -1, className: 'all' },
+        { targets: 0, className: 'all' }
+        ] : [],
         language: {
         search: '_INPUT_',
         searchPlaceholder: 'Search...',
@@ -2862,77 +976,41 @@
 
         if (!openRoll) return;
 
-        let rollSection = document.querySelector(
-        `.cd-roll-section[data-roll-source="${openRoll}"]`
+        const lower = openRoll.toLowerCase();
+
+        if (lower === 'attributes' || lower === 'rebates') {
+        const tile = document.querySelector(
+        '.cd-tile[data-drawer-url="/dashboard/' + lower + '-detail"]'
         );
-
-        if (!rollSection && openRoll.toLowerCase() === "attributes") {
-        rollSection = document.getElementById("roll-attributes");
-        }
-
-        if (!rollSection && openRoll.toLowerCase() === "rebates") {
-        rollSection = document.getElementById("roll-rebates");
-        }
-
-        if (!rollSection) {
-        console.warn('Roll section not found for:', openRoll);
+        if (tile) openStandalone(tile);
+        window.history.replaceState({}, document.title, window.location.pathname);
         return;
         }
 
-        setViewMode('list');
-
-        const rollKey = rollSection.id.replace('roll-', '');
-
-        document.querySelectorAll('.cd-roll-body.open').forEach(body => {
-        if (body.id !== 'rollbody-' + rollKey) {
-        body.classList.remove('open');
-        }
+        const family = familyLookup.find(function (f) {
+        return f.members.some(function (m) { return m.source === openRoll; });
         });
 
-        document.querySelectorAll('.cd-roll-chevron').forEach(icon => {
-        icon.style.transform = 'rotate(0deg)';
-        });
-
-        const rollBody = document.getElementById('rollbody-' + rollKey);
-        const rollChevron = document.getElementById('chevron-' + rollKey);
-
-        if (rollBody) {
-        rollBody.classList.add('open');
-        }
-
-        if (rollChevron) {
-        rollChevron.style.transform = 'rotate(180deg)';
-        }
-
-        const linkedWidget = document.getElementById('widget-' + rollKey + '-linked');
-        const linkedChevron = document.getElementById('wchev-' + rollKey + '-linked');
-
-        if (linkedWidget) {
-        linkedWidget.classList.add('open');
-        }
-
-        if (linkedChevron) {
-        linkedChevron.style.transform = 'rotate(180deg)';
-        }
-
-        setTimeout(function () {
-        const linkedTable = document.querySelector(
-        '#widget-' + rollKey + '-linked .cd-table'
+        if (family) {
+        const tile = document.querySelector(
+        '.cd-tile-family[data-head-source="' + family.headSource + '"]'
         );
-
-        if (linkedTable && linkedTable.id) {
-        initDataTable('#' + linkedTable.id);
+        if (tile) {
+        openFamily(tile);
+        selectFamilyTab(openRoll, family.members);
         }
-        }, 150);
+        window.history.replaceState({}, document.title, window.location.pathname);
+        return;
+        }
 
-        rollSection.classList.add('linked-roll-active');
-
-        setTimeout(function () {
-        rollSection.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start'
-        });
-        }, 250);
+        const queryTile = document.querySelector(
+        '.cd-tile-query[data-drawer-url="/dashboard/roll-detail/' + openRoll + '"]'
+        );
+        if (queryTile) {
+        openStandalone(queryTile);
+        } else {
+        console.warn('Roll not found for openRoll:', openRoll);
+        }
 
         window.history.replaceState({}, document.title, window.location.pathname);
         }
@@ -3207,9 +1285,9 @@
         }
         });
 
-        const drawer = document.getElementById('cdDrawer');
-        if (drawer?.classList.contains('open')) {
-        closeRollDrawer();
+        const detailArea = document.getElementById('cdDetailArea');
+        if (detailArea && detailArea.style.display !== 'none') {
+        closeDetail();
         }
         });
 
@@ -3240,30 +1318,10 @@
         });
 
         // ── Init everything once page loads ────────────────────────
+        // Tables are initialised right after each AJAX fetch completes
+        // (see initTablesWithin), so nothing needs eager wiring here —
+        // the tile grid has no tables in the DOM until a tile is clicked.
         $(document).ready(function () {
-        document.querySelectorAll('.cd-widget-body.open .cd-table').forEach(t => {
-        if (t.id) {
-        initDataTable('#' + t.id);
-        }
-        });
-
-        document.querySelectorAll('.cd-widget-toggle').forEach(toggle => {
-        toggle.addEventListener('click', function () {
-        const bodyId = this.nextElementSibling?.id;
-
-        if (!bodyId) return;
-
-        setTimeout(() => {
-        const table = document.querySelector('#' + bodyId + ' .cd-table');
-
-        if (table && table.id) {
-        initDataTable('#' + table.id);
-        }
-        }, 100);
-        });
-        });
-
-        initViewToggle();
         openLinkedRollFromQueryString();
         initNotificationBell();
         initStatusExplanationModal();
