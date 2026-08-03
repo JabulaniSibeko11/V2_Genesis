@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using System.Data;
 using System.Net.Mime;
+using System.Security.Cryptography;
 using V2_Genesis.Data;
 using V2_Genesis.Models;
 using V2_Genesis.Helpers;
@@ -975,7 +976,29 @@ public class ObjectionFormService : IObjectionFormService
     }
     // ── Helpers ───────────────────────────────────────────────────────
     private static string GeneratePin()
-        => new Random().Next(100000, 999999).ToString();
+    {
+        const string letters = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+        const string digits = "23456789";
+
+        // Always include letters and numbers. Ambiguous characters such as
+        // I, O, 0 and 1 are excluded so the client can enter the PIN easily.
+        var pin = new[]
+        {
+            letters[RandomNumberGenerator.GetInt32(letters.Length)],
+            letters[RandomNumberGenerator.GetInt32(letters.Length)],
+            letters[RandomNumberGenerator.GetInt32(letters.Length)],
+            digits[RandomNumberGenerator.GetInt32(digits.Length)],
+            digits[RandomNumberGenerator.GetInt32(digits.Length)],
+            digits[RandomNumberGenerator.GetInt32(digits.Length)]
+        };
+
+        for (var index = pin.Length - 1; index > 0; index--)
+        {
+            var swapIndex = RandomNumberGenerator.GetInt32(index + 1);
+            (pin[index], pin[swapIndex]) = (pin[swapIndex], pin[index]);
+        }
+        return new string(pin);
+    }
 
     private static async Task<int> SaveFilesAsync(
         string rootPath,

@@ -33,6 +33,16 @@ namespace V2_Genesis.Models.Results
 
         public string? Appeal_No { get; set; }
 
+        // Populated from Appeal_Decision for finalised appeal rows.
+        // System_Generated means the outcome is a Section 52 review.
+        public string? AppealDecisionUserId { get; set; }
+
+        public bool IsSection52ReviewOutcome =>
+            string.Equals(
+                AppealDecisionUserId?.Trim(),
+                "System_Generated",
+                StringComparison.OrdinalIgnoreCase);
+
         public string? Query_No { get; set; }
 
         // Section 78 Review period and eligibility.

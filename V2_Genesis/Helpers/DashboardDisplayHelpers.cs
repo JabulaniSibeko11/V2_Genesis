@@ -47,6 +47,9 @@ public static class DashboardDisplayHelpers
         "Query-Unallocated" => "Query-Pending",
         "Query-Inprogress" => "Query-InProgress",
         "Query-Finalized" or "Notice-Sent" => "Finalised",
+        "Notice-Sent-Dear-Johnny" => "Outcome Available",
+        "Notice-Sent-Invalid-Objection" => "Objection Not Valid",
+        "Notice-Sent-Invalid-Omission" => "Omission Objection Not Valid",
         "Query-Withdrawn" => "Withdrawn",
 
         null or "" => "Pending",

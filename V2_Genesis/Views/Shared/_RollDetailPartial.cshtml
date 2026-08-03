@@ -558,16 +558,54 @@ else
                                                     </li>
                                                 }
                                                               
-                                                @if (item.objection_Status == "Notice-Sent" || item.objection_Status == "Appeal-Closed")
+                                              @if (item.objection_Status == "Notice-Sent" ||
+    item.objection_Status == "Appeal-Closed")
+{
+    <li>
+        <a class="dropdown-item"
+           asp-controller="Notice"
+           asp-action="DownloadSection53"
+           asp-route-rollSource="@Model.Roll.Source"
+           asp-route-objectionNo="@item.Objection_No"
+           onclick="logAction('DownloadDecision', '@Model.Roll.Source', '@item.Objection_No')">
+            <i class="fa-solid fa-file-pdf"></i>
+            Download Section 53 – Valuer Decision
+        </a>
+    </li>
+}
+                                                @if (item.objection_Status == "Notice-Sent-Dear-Johnny")
                                                 {
                                                     <li>
                                                         <a class="dropdown-item"
-                                                               href="/@Model.Roll.ControllerName/DownloadSection53?ObjectionNum=@item.Objection_No"
-                                                               onclick="logAction('DownloadDecision', '@Model.Roll.Source', '@item.Objection_No')">
-                                                            Download Section 53 Notice
+                                                               asp-controller="Notice"
+                                                               asp-action="DownloadPreviousProcessOutcome"
+                                                               asp-route-rollSource="@Model.Roll.Source"
+                                                               asp-route-objectionNo="@item.Objection_No"
+                                                               onclick="logAction('DownloadOutcomeNotice', '@Model.Roll.Source', '@item.Objection_No')">
+                                                            <i class="fa-solid fa-file-circle-exclamation"></i>
+                                                            Download Objection Outcome Notice
                                                         </a>
                                                     </li>
-                     
+                                                }
+                                                @if (item.objection_Status == "Notice-Sent-Invalid-Objection" ||
+                                                    item.objection_Status == "Notice-Sent-Invalid-Omission")
+                                                {
+                                                    var invalidNoticeLabel =
+                                                        item.objection_Status == "Notice-Sent-Invalid-Omission"
+                                                            ? "Download Invalid Omission Notice"
+                                                            : "Download Invalid Objection Notice";
+
+                                                    <li>
+                                                        <a class="dropdown-item"
+                                                               asp-controller="Notice"
+                                                               asp-action="DownloadInvalidOutcome"
+                                                               asp-route-rollSource="@Model.Roll.Source"
+                                                               asp-route-objectionNo="@item.Objection_No"
+                                                               onclick="logAction('DownloadInvalidNotice', '@Model.Roll.Source', '@item.Objection_No')">
+                                                            <i class="fa-solid fa-triangle-exclamation"></i>
+                                                            @invalidNoticeLabel
+                                                        </a>
+                                                    </li>
                                                 }
                                                 @{
                                                     var appealWindow = await ObjectionRules.CheckAppealWindowAsync(
@@ -700,13 +738,26 @@ else
                                                     }
                   
                                                 }
+
                                                 @if (item.objection_Status == "App-Finalized")
                                                 {
+                                                    var finalAppealReference =
+                                                        !string.IsNullOrWhiteSpace(item.Appeal_No)
+                                                            ? item.Appeal_No
+                                                            : item.Objection_No;
+                                                    var finalAppealNoticeLabel = item.IsSection52ReviewOutcome
+                                                        ? "Download Section 52 Review Outcome"
+                                                        : "Download Appeal Decision";
+
                                                     <li>
                                                         <a class="dropdown-item"
-                                                               href="/@Model.Roll.ControllerName/DownloadAppeal?ObjectionNum=@item.Objection_No"
-                                                               onclick="logAction('DownloadDecision', '@Model.Roll.Source', '@item.Objection_No')">
-                                                            Download Appeal Notice
+                                                               asp-controller="Notice"
+                                                               asp-action="DownloadAppealOutcome"
+                                                               asp-route-rollSource="@Model.Roll.Source"
+                                                               asp-route-referenceNumber="@finalAppealReference"
+                                                               onclick="logAction('DownloadAppealOutcome', '@Model.Roll.Source', '@finalAppealReference')">
+                                                            <i class="fa-solid fa-scale-balanced"></i>
+                                                            @finalAppealNoticeLabel
                                                         </a>
                                                     </li>
                      

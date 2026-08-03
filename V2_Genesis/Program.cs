@@ -134,6 +134,12 @@ builder.Services.AddScoped<IAcknowledgementDownloadService,AcknowledgementDownlo
 builder.Services.AddScoped<ISubmissionViewService, SubmissionViewService>();
 builder.Services.AddScoped<IAdminClientAccountService, AdminClientAccountService>();
 builder.Services.AddScoped<IAdminPropertyEnquiryService, AdminPropertyEnquiryService>();
+builder.Services.AddScoped<INoticeService, NoticeService>();
+builder.Services.AddScoped<ISection53NoticeService, Section53NoticeService>();
+builder.Services.AddScoped<IDearJohnnyNoticeService, DearJohnnyNoticeService>();
+builder.Services.AddScoped<IInvalidNoticeService, InvalidNoticeService>();
+builder.Services.AddScoped<IAppealDecisionNoticeService, AppealDecisionNoticeService>();
+
 builder.Services.AddDataProtection();
 
 // ── App Pipeline ──────────────────────────────────────────────────────────────

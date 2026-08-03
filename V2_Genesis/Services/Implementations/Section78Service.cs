@@ -5,6 +5,7 @@ using QuestPDF.Infrastructure;
 using System.Data;
 using System.Data.SqlClient;
 using System.Net.Mime;
+using System.Security.Cryptography;
 using V2_Genesis.Data;
 using V2_Genesis.Models;
 using V2_Genesis.Models.Emails;
@@ -221,7 +222,7 @@ namespace V2_Genesis.Services.Implementations
                 RandomPin = obj7.RandomPin,
                 IsReview = isReview,
                 IsMulti = propertyType == "Multi",
-                ValuationKey= que.Valuation_Key,
+                ValuationKey = que.Valuation_Key,
                 FileCount = count,
                 Files = new[]
                 {
@@ -712,7 +713,27 @@ namespace V2_Genesis.Services.Implementations
         }
         // ── Pin generator ─────────────────────────────────────────────
         private static string GeneratePin()
-            => new Random().Next(100000, 999999).ToString();
+        {
+            const string letters = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+            const string digits = "23456789";
+            var pin = new[]
+            {
+                letters[RandomNumberGenerator.GetInt32(letters.Length)],
+                letters[RandomNumberGenerator.GetInt32(letters.Length)],
+                letters[RandomNumberGenerator.GetInt32(letters.Length)],
+                digits[RandomNumberGenerator.GetInt32(digits.Length)],
+                digits[RandomNumberGenerator.GetInt32(digits.Length)],
+                digits[RandomNumberGenerator.GetInt32(digits.Length)]
+            };
+
+            for (var index = pin.Length - 1; index > 0; index--)
+            {
+                var swapIndex = RandomNumberGenerator.GetInt32(index + 1);
+                (pin[index], pin[swapIndex]) = (pin[swapIndex], pin[index]);
+            }
+
+            return new string(pin);
+        }
 
         private static void SetFileSlot(Obj_Files f, int n, string name)
         {
@@ -1677,7 +1698,7 @@ namespace V2_Genesis.Services.Implementations
                 ? "Section78"
                 : cleaned;
         }
-  
+
         private sealed class Section78AcknowledgementDbRow
         {
             public long Query_ID { get; set; }

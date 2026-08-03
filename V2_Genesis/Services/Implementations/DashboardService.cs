@@ -160,6 +160,24 @@ public class DashboardService : IDashboardService
                 NormaliseSubmittedQueryProperties(
                     objectedProperties);
             }
+            else
+            {
+                try
+                {
+                    await PopulateAppealDecisionTypesAsync(
+                        conn,
+                        objectedProperties);
+                }
+                catch (Exception ex)
+                {
+                    // Keep the dashboard available if an older roll database
+                    // does not yet contain the Appeal_Decision table.
+                    _logger.LogWarning(
+                        ex,
+                        "Could not resolve appeal decision labels for roll {RollSource}",
+                        rollSource);
+                }
+            }
 
             rollData.ObjectedProperties =
                 objectedProperties;
@@ -311,6 +329,81 @@ WHERE LTRIM(RTRIM(Appeal_No)) IN @AppealNumbers;";
         }
 
         return rollData;
+    }
+
+    private static async Task PopulateAppealDecisionTypesAsync(
+        SqlConnection connection,
+        List<ObjectedPropertyResult> properties)
+    {
+        var finalisedAppeals = properties
+            .Where(property =>
+                property.Sub_typ == 1 &&
+                string.Equals(
+                    property.objection_Status?.Trim(),
+                    "App-Finalized",
+                    StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        var references = finalisedAppeals
+            .SelectMany(property => new[]
+            {
+                property.Appeal_No?.Trim(),
+                property.Objection_No?.Trim()
+            })
+            .Where(reference => !string.IsNullOrWhiteSpace(reference))
+            .Select(reference => reference!)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        if (references.Length == 0)
+            return;
+
+        const string sql = """
+            SELECT
+                LTRIM(RTRIM(Appeal_No)) AS AppealNo,
+                LTRIM(RTRIM(Objection_No)) AS ObjectionNo,
+                A_UserID AS DecisionUserId
+            FROM dbo.Appeal_Decision
+            WHERE LTRIM(RTRIM(Appeal_No)) IN @References
+               OR LTRIM(RTRIM(Objection_No)) IN @References;
+            """;
+
+        var decisions = (await connection.QueryAsync<AppealDecisionTypeRow>(
+            sql,
+            new { References = references },
+            commandTimeout: 60)).ToList();
+
+        var decisionByReference = new Dictionary<string, string?>(
+            StringComparer.OrdinalIgnoreCase);
+
+        foreach (var decision in decisions)
+        {
+            if (!string.IsNullOrWhiteSpace(decision.AppealNo))
+                decisionByReference[decision.AppealNo.Trim()] = decision.DecisionUserId;
+
+            if (!string.IsNullOrWhiteSpace(decision.ObjectionNo))
+                decisionByReference[decision.ObjectionNo.Trim()] = decision.DecisionUserId;
+        }
+
+        foreach (var appeal in finalisedAppeals)
+        {
+            var reference = !string.IsNullOrWhiteSpace(appeal.Appeal_No)
+                ? appeal.Appeal_No.Trim()
+                : appeal.Objection_No?.Trim();
+
+            if (!string.IsNullOrWhiteSpace(reference) &&
+                decisionByReference.TryGetValue(reference, out var decisionUserId))
+            {
+                appeal.AppealDecisionUserId = decisionUserId;
+            }
+        }
+    }
+
+    private sealed class AppealDecisionTypeRow
+    {
+        public string? AppealNo { get; set; }
+        public string? ObjectionNo { get; set; }
+        public string? DecisionUserId { get; set; }
     }
 
     // ─────────────────────────────────────────────────────────────

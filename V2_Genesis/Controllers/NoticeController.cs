@@ -19,6 +19,10 @@ public class NoticeController : Controller
     private readonly ApplicationDbContext _db;
     private readonly RollDatesSettings _rollDates;
     private readonly IAcknowledgementDownloadService _acknowledgementDownloadService;
+    private readonly ISection53NoticeService _section53NoticeService;
+    private readonly IDearJohnnyNoticeService _dearJohnnyNoticeService;
+    private readonly IInvalidNoticeService _invalidNoticeService;
+    private readonly IAppealDecisionNoticeService _appealDecisionNoticeService;
     private readonly ILogger<NoticeController> _logger;
     public NoticeController(
         INoticeService notice,
@@ -26,6 +30,10 @@ public class NoticeController : Controller
         IPropertySearchService search,
         ApplicationDbContext db, IOptions<RollDatesSettings> rollDatesOpts,
         IAcknowledgementDownloadService acknowledgementDownloadService,
+        ISection53NoticeService section53NoticeService,
+        IDearJohnnyNoticeService dearJohnnyNoticeService,
+        IInvalidNoticeService invalidNoticeService,
+        IAppealDecisionNoticeService appealDecisionNoticeService,
         ILogger<NoticeController> logger)
     {
         _notice = notice;
@@ -34,7 +42,194 @@ public class NoticeController : Controller
         _db = db;
         _rollDates = rollDatesOpts.Value;
         _acknowledgementDownloadService = acknowledgementDownloadService;
+        _section53NoticeService = section53NoticeService;
+        _dearJohnnyNoticeService = dearJohnnyNoticeService;
+        _invalidNoticeService = invalidNoticeService;
+        _appealDecisionNoticeService = appealDecisionNoticeService;
         _logger = logger;
+    }
+
+    [HttpGet]
+    [Authorize(Roles = "Client")]
+    [Route("notice/appeal-outcome/download")]
+    public async Task<IActionResult> DownloadAppealOutcome(
+        string rollSource,
+        string referenceNumber,
+        CancellationToken cancellationToken)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrWhiteSpace(userId))
+            return Challenge();
+
+        try
+        {
+            var generated = await _appealDecisionNoticeService.GenerateAsync(
+                rollSource,
+                referenceNumber,
+                userId,
+                cancellationToken);
+
+            return File(generated.Pdf, "application/pdf", generated.FileName);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            _logger.LogWarning(ex,
+                "Final appeal outcome not found. Roll={RollSource}, Reference={ReferenceNumber}",
+                rollSource,
+                referenceNumber);
+            return NotFound("The final appeal outcome could not be found for your account.");
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,
+                "Final appeal outcome generation failed. Roll={RollSource}, Reference={ReferenceNumber}",
+                rollSource,
+                referenceNumber);
+            TempData["NoticeError"] =
+                "The final appeal outcome could not be generated. Please try again.";
+            return RedirectToAction("Index", "Dashboard");
+        }
+    }
+
+    [HttpGet]
+    [Authorize(Roles = "Client")]
+    [Route("notice/invalid-outcome/download")]
+    public async Task<IActionResult> DownloadInvalidOutcome(
+        string rollSource,
+        string objectionNo,
+        CancellationToken cancellationToken)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrWhiteSpace(userId))
+            return Challenge();
+
+        try
+        {
+            var generated = await _invalidNoticeService.GenerateAsync(
+                rollSource,
+                objectionNo,
+                userId,
+                cancellationToken);
+
+            return File(generated.Pdf, "application/pdf", generated.FileName);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            _logger.LogWarning(ex,
+                "Invalid outcome notice not found. Roll={RollSource}, Objection={ObjectionNo}",
+                rollSource,
+                objectionNo);
+            return NotFound("The objection outcome notice could not be found for your account.");
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,
+                "Invalid outcome generation failed. Roll={RollSource}, Objection={ObjectionNo}",
+                rollSource,
+                objectionNo);
+            TempData["NoticeError"] =
+                "The objection outcome notice could not be generated. Please try again.";
+            return RedirectToAction("Index", "Dashboard");
+        }
+    }
+
+    [HttpGet]
+    [Authorize(Roles = "Client")]
+    [Route("notice/objection-outcome/download")]
+    public async Task<IActionResult> DownloadPreviousProcessOutcome(
+        string rollSource,
+        string objectionNo,
+        CancellationToken cancellationToken)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrWhiteSpace(userId))
+            return Challenge();
+
+        try
+        {
+            var generated = await _dearJohnnyNoticeService.GenerateAsync(
+                rollSource,
+                objectionNo,
+                userId,
+                cancellationToken);
+
+            return File(generated.Pdf, "application/pdf", generated.FileName);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            _logger.LogWarning(ex,
+                "Objection outcome notice not found. Roll={RollSource}, Objection={ObjectionNo}",
+                rollSource,
+                objectionNo);
+            return NotFound("The objection outcome notice could not be found for your account.");
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,
+                "Objection outcome generation failed. Roll={RollSource}, Objection={ObjectionNo}",
+                rollSource,
+                objectionNo);
+            TempData["NoticeError"] =
+                "The objection outcome notice could not be generated. Please try again.";
+            return RedirectToAction("Index", "Dashboard");
+        }
+    }
+
+    [HttpGet]
+    [Authorize(Roles = "Client")]
+    [Route("notice/section53/download")]
+    public async Task<IActionResult> DownloadSection53(
+        string rollSource,
+        string objectionNo,
+        CancellationToken cancellationToken)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrWhiteSpace(userId))
+            return Challenge();
+
+        try
+        {
+            var generated = await _section53NoticeService.GenerateAsync(
+                rollSource,
+                objectionNo,
+                userId,
+                cancellationToken);
+
+            return File(generated.Pdf, "application/pdf", generated.FileName);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            _logger.LogWarning(ex,
+                "Section 53 notice not found. Roll={RollSource}, Objection={ObjectionNo}",
+                rollSource,
+                objectionNo);
+            return NotFound("The Section 53 notice could not be found for your account.");
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,
+                "Section 53 generation failed. Roll={RollSource}, Objection={ObjectionNo}",
+                rollSource,
+                objectionNo);
+            TempData["NoticeError"] = ex.Message;
+            return RedirectToAction("Index", "Dashboard");
+        }
     }
 
     // ── GET /notice/section49 — display view ─────────────────────────

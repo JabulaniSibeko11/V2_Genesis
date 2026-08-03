@@ -11,7 +11,10 @@
                 "obj-lodging" => "Objection Lodged",
                 "obj-inprogress" => "Objection In Progress",
                 "obj-finalized" => "Objection Finalised",
-                "notice-sent" => "Notice Sent",
+                "notice-sent" => "Objection Finalised",
+                "notice-sent-dear-johnny" => "Objection Outcome Available",
+                "notice-sent-invalid-objection" => "Objection Not Valid",
+                "notice-sent-invalid-omission" => "Omission Objection Not Valid",
                 "app-lodging" => "Appeal Lodged",
                 "app-scheduling" => "Appeal Being Scheduled",
                 "app-scheduled" => "Appeal Scheduled",
@@ -40,7 +43,13 @@
                     "Your objection has been finalised. Please check your notices or outcome documents for the decision.",
 
                 "notice-sent" =>
-                    "A notice has been generated and sent for this case. You can preview or download the notice from your dashboard where available.",
+                    "Your objection has been finalised. You can download the Section 53 Valuer Decision from your dashboard.",
+                "notice-sent-dear-johnny" =>
+                    "An outcome notice is available for this objection. Download it from the dashboard for the full explanation and available next steps.",
+                "notice-sent-invalid-objection" =>
+                    "This objection could not be considered because the property was not found on the applicable official property register. Download the outcome notice for details.",
+                "notice-sent-invalid-omission" =>
+                    "This omission objection could not be considered because it used an incorrect property description. Download the outcome notice for details.",
 
                 "app-lodging" =>
                     "Your appeal has been received. The appeal process has started and the matter will be prepared for further handling.",
@@ -80,7 +89,8 @@
                 "obj-lodging" => "status-info",
                 "obj-inprogress" => "status-warning",
                 "obj-finalized" => "status-success",
-                "notice-sent" => "status-success",
+                "notice-sent" or "notice-sent-dear-johnny" => "status-success",
+                "notice-sent-invalid-objection" or "notice-sent-invalid-omission" => "status-danger",
 
                 "app-lodging" => "status-info",
                 "app-scheduling" => "status-warning",
