@@ -780,6 +780,36 @@
         renderFamilyTabs(members, tileEl.dataset.headSource);
         showDetailArea();
         selectFamilyTab(tileEl.dataset.headSource, members);
+        prefetchFamilyMembers(members, tileEl.dataset.headSource);
+        }
+
+        // ── Warm the cache for every OTHER roll in this family right
+        //    away, quietly, in the background (the head roll is already
+        //    being fetched by selectFamilyTab above, so it's skipped
+        //    here to avoid a duplicate request). By the time the client
+        //    clicks a Sup tab, it's already sitting in detailCache —
+        //    instant switch, no spinner, same feel as the Admin
+        //    dashboard. ───────────────────────────────────────────────
+        function prefetchFamilyMembers(members, skipSource) {
+        members.forEach(function (m) {
+        if (m.source === skipSource) return;
+
+        const url = '/dashboard/roll-detail/' + encodeURIComponent(m.source);
+        if (detailCache[url]) return;
+
+        fetch(url)
+        .then(function (res) {
+        if (!res.ok) throw new Error('prefetch failed');
+        return res.text();
+        })
+        .then(function (html) {
+        detailCache[url] = html;
+        })
+        .catch(function () {
+        // Silent — a failed prefetch just means that tab
+        // falls back to the normal fetch-on-click path.
+        });
+        });
         }
 
         function renderFamilyTabs(members, activeSource) {
