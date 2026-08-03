@@ -12,7 +12,9 @@ public class EvidenceController : Controller
 {
     private readonly IEvidenceService _evidenceService;
     private readonly INoticeService _noticeService;
+    private readonly IEmailService _emailService;
     private readonly ApplicationDbContext _db;
+    private readonly ILogger<EvidenceController> _logger;
 
     private const string SESSION_VALIDATED = "ev_validated";
     private const string SESSION_ROLL = "ev_roll";
@@ -23,11 +25,15 @@ public class EvidenceController : Controller
     public EvidenceController(
         IEvidenceService evidenceService,
         INoticeService noticeService,
-        ApplicationDbContext db)
+        IEmailService emailService,
+        ApplicationDbContext db,
+        ILogger<EvidenceController> logger)
     {
         _evidenceService = evidenceService;
         _noticeService = noticeService;
+        _emailService = emailService;
         _db = db;
+        _logger = logger;
     }
 
     // ── GET /evidence/verify ──────────────────────────────────────────
@@ -70,7 +76,7 @@ public class EvidenceController : Controller
             ViewBag.Error = "Please enter both the reference number and PIN.";
             ViewBag.PrefilledRef = refNo;
             ViewBag.PrefilledRoll = null;
-            return View();
+            return View(nameof(VerifyObj));
         }
 
         var rollSource = DetectRollSource(refNo);
@@ -86,7 +92,7 @@ public class EvidenceController : Controller
             ViewBag.PrefilledRoll = rollSource;
             ViewBag.IsAuthenticated = User.Identity?.IsAuthenticated == true;
             ViewBag.IsAppeal = refNo.Trim().ToUpperInvariant().StartsWith("APP");
-            return View();
+            return View(nameof(VerifyObj));
         }
 
         HttpContext.Session.SetString(SESSION_VALIDATED, "true");
@@ -105,7 +111,7 @@ public class EvidenceController : Controller
     public async Task<IActionResult> Upload()
     {
         if (HttpContext.Session.GetString(SESSION_VALIDATED) != "true")
-            return RedirectToAction(nameof(Verify));
+            return RedirectToAction(nameof(VerifyObj));
 
         ViewBag.GvList = await _db.GvList.OrderBy(r => r.ID).ToListAsync();
         ViewBag.ObjectionNo = HttpContext.Session.GetString(SESSION_OBJ);
@@ -126,7 +132,7 @@ public class EvidenceController : Controller
     public async Task<IActionResult> Upload(List<IFormFile> files)
     {
         if (HttpContext.Session.GetString(SESSION_VALIDATED) != "true")
-            return RedirectToAction(nameof(Verify));
+            return RedirectToAction(nameof(VerifyObj));
 
         var objNo = HttpContext.Session.GetString(SESSION_OBJ)!;
         var roll = HttpContext.Session.GetString(SESSION_ROLL)!;
@@ -160,6 +166,33 @@ public class EvidenceController : Controller
 
         HttpContext.Session.SetInt32(SESSION_COUNT, newCount);
 
+        var uploadedAt = DateTime.Now;
+        var remainingSlots = Math.Max(0, 10 - newCount);
+
+        try
+        {
+            await _emailService.SendEvidenceUploadConfirmationAsync(
+                objNo,
+                roll,
+                appeal,
+                fileNames,
+                uploadedAt,
+                remainingSlots);
+        }
+        catch (Exception ex)
+        {
+            // Evidence has already been uploaded. An email failure must not
+            // roll back the saved files or the database evidence count.
+            _logger.LogError(
+                ex,
+                "[Evidence Email] Upload succeeded but confirmation email failed for {ReferenceNo} on {RollSource}",
+                objNo,
+                roll);
+
+            TempData["ev_emailWarning"] =
+                "Your evidence was uploaded successfully, but the confirmation email could not be sent.";
+        }
+
         TempData["ev_objNo"] = objNo;
         TempData["ev_roll"] = roll;
         TempData["ev_newCount"] = newCount;
@@ -176,7 +209,7 @@ public class EvidenceController : Controller
     {
         var objNo = TempData["ev_objNo"]?.ToString();
         if (string.IsNullOrEmpty(objNo))
-            return RedirectToAction(nameof(Verify));
+            return RedirectToAction(nameof(VerifyObj));
 
         var fileNamesJson = TempData["ev_fileNames"]?.ToString() ?? "[]";
         var fileNames = System.Text.Json.JsonSerializer
@@ -187,6 +220,7 @@ public class EvidenceController : Controller
         ViewBag.RollSource = TempData["ev_roll"]?.ToString();
         ViewBag.NewCount = TempData["ev_newCount"];
         ViewBag.FileNames = fileNames;
+        ViewBag.EmailWarning = TempData["ev_emailWarning"]?.ToString();
 
         TempData.Keep();
         return View();
@@ -206,7 +240,7 @@ public class EvidenceController : Controller
                 TempData["ev_fileNames"]?.ToString() ?? "[]") ?? new();
 
         if (string.IsNullOrEmpty(objNo))
-            return RedirectToAction(nameof(Verify));
+            return RedirectToAction(nameof(VerifyObj));
 
         TempData.Keep();
 

@@ -4,6 +4,7 @@
     ViewData["Title"] = "Property Details";
 
     bool isAuth = User?.Identity?.IsAuthenticated == true;
+    bool isUniversalSearch = Model?.IsUniversalSearch == true;
     Layout = isAuth
         ? "~/Views/Shared/_ClientLayout.cshtml"
         : "~/Views/Shared/_Layout.cshtml";
@@ -166,22 +167,25 @@ string.Equals(Context?.Session?.GetString("PropertyFrom"), "LIS", StringComparis
                     <input class="ppd-val" disabled value="@(d.LeaseDesc ?? "–")" />
                 </div>
 
-                <div class="ppd-row">
-                    <span class="ppd-label"><i class="fa-solid fa-user"></i> Owner</span>
-                    @if (isAuth)
-                    {
-                        <input class="ppd-val" disabled value="@(d.OwnerName ?? "–")" />
-                    }
-                    else
-                    {
-                        <div class="ppd-locked">
-                            <i class="fa-solid fa-lock"></i>
-                            <span>Sign in to view owner details</span>
-                            <a href="/account/login?returnUrl=@Context.Request.Path@Context.Request.QueryString"
-                               class="ppd-locked-link">Sign In</a>
-                        </div>
-                    }
-                </div>
+                @if (!isUniversalSearch)
+                {
+                    <div class="ppd-row">
+                        <span class="ppd-label"><i class="fa-solid fa-user"></i> Owner</span>
+                        @if (isAuth)
+                        {
+                            <input class="ppd-val" disabled value="@(d.OwnerName ?? "–")" />
+                        }
+                        else
+                        {
+                            <div class="ppd-locked">
+                                <i class="fa-solid fa-lock"></i>
+                                <span>Sign in to view owner details</span>
+                                <a href="/account/login?returnUrl=@Context.Request.Path@Context.Request.QueryString"
+                                   class="ppd-locked-link">Sign In</a>
+                            </div>
+                        }
+                    </div>
+                }
 
             </div>
         </div>
@@ -300,7 +304,17 @@ string.Equals(Context?.Session?.GetString("PropertyFrom"), "LIS", StringComparis
 
       
         <div class="ppd-actions">
-            @if (!isAuth)
+            @if (isUniversalSearch)
+            {
+                <div class="ppd-anon-action-notice">
+                    <i class="fa-solid fa-eye"></i>
+                    This is a public, read-only property view.
+                </div>
+                <button type="button" class="ppd-btn ppd-btn-outline" onclick="history.back()">
+                    <i class="fa-solid fa-arrow-left"></i> Back to Global Search
+                </button>
+            }
+            else if (!isAuth)
             {
                 <div class="ppd-anon-action-notice">
                     <i class="fa-solid fa-lock"></i>
@@ -350,22 +364,22 @@ string.Equals(Context?.Session?.GetString("PropertyFrom"), "LIS", StringComparis
                 @if (!string.IsNullOrWhiteSpace(rollSource))
                 {
                                             
-                            var linkKey = isLis
-                                ? (!string.IsNullOrWhiteSpace(d.PropertyId)
-                                    ? d.PropertyId
-                                    : !string.IsNullOrWhiteSpace(d.UnitKey)
-                                        ? d.UnitKey
-                                        : d.ValuationKey)
-                                : d.Id.ToString();
+                    var linkKey = isLis
+                        ? (!string.IsNullOrWhiteSpace(d.PropertyId)
+                            ? d.PropertyId
+                            : !string.IsNullOrWhiteSpace(d.UnitKey)
+                                ? d.UnitKey
+                                : d.ValuationKey)
+                        : d.Id.ToString();
 
-                            var linkPropertyFrom = isLis ? "LIS" : sourceTableCode;
+                    var linkPropertyFrom = isLis ? "LIS" : sourceTableCode;
+
                         
-
-                        <a class="ppd-btn ppd-btn-primary"
+                    <a class="ppd-btn ppd-btn-primary"
                            href="/property/save?rollSource=@rollSource&key=@linkKey&sourceTable=@sourceTableCode&propertyFrom=@linkPropertyFrom&unitKey=@d.UnitKey&valuationKey=@d.ValuationKey&propertyId=@d.PropertyId">
-                            <i class="fa-solid fa-link"></i> Link Property
-                        </a>
-                   @*  <a class="ppd-btn ppd-btn-primary"
+                        <i class="fa-solid fa-link"></i> Link Property
+                    </a>
+                    @*  <a class="ppd-btn ppd-btn-primary"
                            href="/property/save?rollSource=@rollSource&key=@d.Id&sourceTable=@sourceTableCode&propertyFrom=@(isLis ? "LIS" : rollSource)">
                         <i class="fa-solid fa-link"></i> Link Property
                     </a> *@
@@ -407,7 +421,7 @@ string.Equals(Context?.Session?.GetString("PropertyFrom"), "LIS", StringComparis
                            href="/property/save?rollSource=@rollSource&key=@linkKey&sourceTable=@sourceTableCode&propertyFrom=@linkPropertyFrom&unitKey=@d.UnitKey&valuationKey=@d.ValuationKey&propertyId=@d.PropertyId">
                         <i class="fa-solid fa-link"></i> Link Property
                     </a>
-                 @*    <a class="ppd-btn ppd-btn-primary"
+                    @*    <a class="ppd-btn ppd-btn-primary"
                            href="/property/save?rollSource=@rollSource&key=@d.Id&sourceTable=@sourceTableCode&propertyFrom=@(isLis ? "LIS" : rollSource)">
                         <i class="fa-solid fa-link"></i> Link Property
                     </a> *@
@@ -470,4 +484,4 @@ string.Equals(Context?.Session?.GetString("PropertyFrom"), "LIS", StringComparis
             });
         });
     </script>
-}
+    }

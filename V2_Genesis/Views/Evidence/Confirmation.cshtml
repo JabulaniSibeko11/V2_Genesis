@@ -14,6 +14,14 @@
 <div class="ev-page">
     <div class="ev-card ev-card-wide">
 
+        @if (!string.IsNullOrWhiteSpace(ViewBag.EmailWarning as string))
+        {
+            <div class="alert alert-warning" role="alert">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                @ViewBag.EmailWarning
+            </div>
+        }
+
         <!-- Success header -->
         <div class="ev-success-header">
             <div class="ev-success-icon">

@@ -581,7 +581,8 @@ namespace V2_Genesis.Services.Implementations
                 _logger.LogWarning(
                     "[Evidence Email] No recipient found for {ReferenceNo} on {RollSource}",
                     referenceNo, rollSource);
-                return;
+                throw new InvalidOperationException(
+                    $"No client email address was found in the submission for '{referenceNo}'.");
             }
 
             var submissionType = isAppeal ? "Appeal" : "Objection";
@@ -613,7 +614,8 @@ namespace V2_Genesis.Services.Implementations
                 _logger.LogWarning(
                     "[Attribute Evidence Email] No recipient found for {AttributeNo}",
                     attributeNo);
-                return;
+                throw new InvalidOperationException(
+                    $"No client email address was found in the attribute submission for '{attributeNo}'.");
             }
 
             var subject = $"City of Johannesburg — Evidence Upload Confirmation: {attributeNo}";

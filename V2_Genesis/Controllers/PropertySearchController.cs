@@ -166,15 +166,22 @@ public class PropertySearchController : Controller
         if (string.IsNullOrWhiteSpace(rollSource))
             return BadRequest("Roll source is required.");
 
-        if (string.IsNullOrWhiteSpace(unitKey))
-            return BadRequest("Unit key is required.");
-
         propertyFrom = string.IsNullOrWhiteSpace(propertyFrom)
             ? rollSource
             : propertyFrom.Trim();
 
         unitKey = NormalizeKey(unitKey) ?? string.Empty;
         valuationKey = NormalizeKey(valuationKey) ?? string.Empty;
+
+        if (string.IsNullOrWhiteSpace(unitKey) &&
+            string.IsNullOrWhiteSpace(valuationKey))
+        {
+            return BadRequest("A unit key or valuation key is required.");
+        }
+
+        var isUniversalSearch = propertyFrom.Equals(
+            "UniversalSearch",
+            StringComparison.OrdinalIgnoreCase);
 
         // ============================================================
         // ATTRIBUTES FLOW
@@ -331,7 +338,19 @@ public class PropertySearchController : Controller
         HttpContext.Session.SetString("UnitKey", unitKey);
         HttpContext.Session.SetString("ValuationKey", valuationKey);
         HttpContext.Session.SetString("RollSource", rollSource);
-        HttpContext.Session.SetString("PropertyFrom", rollSource);
+        HttpContext.Session.SetString(
+            "PropertyFrom",
+            isUniversalSearch ? "UniversalSearch" : rollSource);
+
+        if (isUniversalSearch)
+        {
+            // Global Search is a public, read-only property lookup.
+            // Do not pass owner information to its view model.
+            foreach (var item in items)
+            {
+                item.OwnerName = null;
+            }
+        }
 
         ViewBag.GvList = await _db.GvList
             .OrderBy(r => r.ID)
@@ -350,7 +369,10 @@ public class PropertySearchController : Controller
                 ? null
                 : rollDates?.VisibleUntil,
             IsAttributes = false,
-            IsLis = false
+            IsLis = false,
+            IsUniversalSearch = isUniversalSearch,
+            CanViewOwnerDetails = !isUniversalSearch &&
+                User.Identity?.IsAuthenticated == true
         };
 
         return View(vm);
@@ -670,7 +692,7 @@ public class PropertySearchController : Controller
                     result.ErrorMessage
                     ?? "The property could not be linked.";
             }
-           
+
         }
         catch (Exception ex)
         {
@@ -702,15 +724,15 @@ public class PropertySearchController : Controller
         });
     }
     private static string? FirstNotEmpty(params string?[] values)
-{
-    foreach (var value in values)
     {
-        if (!string.IsNullOrWhiteSpace(value))
-            return value.Trim();
-    }
+        foreach (var value in values)
+        {
+            if (!string.IsNullOrWhiteSpace(value))
+                return value.Trim();
+        }
 
-    return null;
-}
+        return null;
+    }
     [HttpPost]
     [Authorize]
     [Route("search/{rollSource}/lis")]

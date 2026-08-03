@@ -16,9 +16,7 @@
         <span>
             Found <strong>@Model.Count</strong>
             propert@(Model.Count == 1 ? "y" : "ies").
-
-            <a href="/account/login">Sign in</a> to view full details,
-            link to your profile and download Section 49.
+            Select <strong>View</strong> to see the public valuation details.
         </span>
     </div>
 }
@@ -48,12 +46,16 @@
 
             @foreach (var item in Model)
             {
-                var propertyUrl =
-                    $"/property/view" +
-                    $"?rollSource={Uri.EscapeDataString(item.RollSource ?? string.Empty)}" +
-                    $"&unitKey={Uri.EscapeDataString(item.UnitKey ?? string.Empty)}" +
-                    $"&valuationKey={Uri.EscapeDataString(item.ValuationKey ?? string.Empty)}" +
-                    $"&propertyFrom={Uri.EscapeDataString(item.RollSource ?? string.Empty)}";
+                var propertyUrl = Url.Action(
+                    "ViewProperty",
+                    "PropertySearch",
+                    new
+                    {
+                        rollSource = item.RollSource,
+                        unitKey = item.UnitKey,
+                        valuationKey = item.ValuationKey,
+                        propertyFrom = "UniversalSearch"
+                    });
 
                 <tr>
 

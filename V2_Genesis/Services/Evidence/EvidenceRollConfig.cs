@@ -55,11 +55,11 @@
                     ConnectionKey: "Sup2Connection"),
 
                 ["Objection_Supp3"] = new(
-                    ValidateSp: "userDocuments_Sup3",
-                    EvidenceCountSp: "userDocumentsEvidence_Sup3",
-                    UpdateFileSp: "UpdateObjFiles_Sup3",
-                    UpdateCountSp: "UpdateEvidenceCount_Sup3",
-                    EvidenceSp: "Evidence_Sup3",
+                    ValidateSp: "userDocuments",
+                    EvidenceCountSp: "userDocumentsEvidence",
+                    UpdateFileSp: "UpdateObjFiles",
+                    UpdateCountSp: "UpdateEvidenceCount",
+                    EvidenceSp: "Evidence",
                     FileRootPath: ObjPath("Objection_Supp3"),
                     AppealRootPath: AppPath("Objection_Supp3"),
                     ConnectionKey: "Sup3Connection"),
