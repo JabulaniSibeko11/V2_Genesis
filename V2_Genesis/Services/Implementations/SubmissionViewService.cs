@@ -18,6 +18,7 @@ namespace V2_Genesis.Services.Implementations
         private readonly IConfiguration _config;
         private readonly ILogger<SubmissionViewService> _logger;
         private readonly AttributesDbContext _attributesDb;
+        private readonly RebateDBContext _rebateDb;
         private readonly IAttributeSubmissionService _attributeSubmissionService;
 
         private static readonly HashSet<string> HiddenFields = new(StringComparer.OrdinalIgnoreCase)
@@ -66,11 +67,15 @@ namespace V2_Genesis.Services.Implementations
 
         public SubmissionViewService(
             IConfiguration config,
-            ILogger<SubmissionViewService> logger, AttributesDbContext attributesDb, IAttributeSubmissionService attributeSubmissionService)
+            ILogger<SubmissionViewService> logger,
+            AttributesDbContext attributesDb,
+            RebateDBContext rebateDb,
+            IAttributeSubmissionService attributeSubmissionService)
         {
             _config = config;
             _logger = logger;
             _attributesDb = attributesDb;
+            _rebateDb = rebateDb;
             _attributeSubmissionService = attributeSubmissionService;
         }
 
@@ -98,6 +103,12 @@ namespace V2_Genesis.Services.Implementations
                 {
                     "Attribute" =>
                         await LoadAttributeAsync(
+                            cleanReference,
+                            userId,
+                            cancellationToken),
+
+                    "Rebate" =>
+                        await LoadRebateAsync(
                             cleanReference,
                             userId,
                             cancellationToken),
@@ -132,11 +143,159 @@ namespace V2_Genesis.Services.Implementations
                     referenceNumber,
                     type == "Attribute"
                         ? "Attributes"
-                        : rollSource);
+                        : type == "Rebate" ? "Rebates" : rollSource);
 
                 return SubmissionViewResult.Fail(
                     "The submitted form could not be loaded. Please try again or contact Valuation Services.");
             }
+        }
+
+        private async Task<SubmissionViewResult> LoadRebateAsync(
+            string referenceNumber,
+            string userId,
+            CancellationToken cancellationToken)
+        {
+            referenceNumber = referenceNumber.Trim();
+            userId = userId.Trim();
+
+            var info = await _rebateDb.Rebate_Infos
+                .AsNoTracking()
+                .FirstOrDefaultAsync(
+                    x => x.Rebate_No != null
+                         && x.Rebate_No.Trim() == referenceNumber
+                         && x.UserID != null
+                         && x.UserID.Trim() == userId,
+                    cancellationToken);
+
+            if (info is null)
+            {
+                return SubmissionViewResult.Fail(
+                    $"Rebate application {referenceNumber} was not found " +
+                    "or does not belong to your account.");
+            }
+
+            var rebateId = info.Rebate_ID;
+
+            var s1 = await _rebateDb.Rebate_Section1_PersonalDetails.AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Ref == rebateId, cancellationToken) ?? new();
+            var s2 = await _rebateDb.Rebate_Section2_Addresses.AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Ref == rebateId, cancellationToken) ?? new();
+            var s3 = await _rebateDb.Rebate_Section3_ContactDetails.AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Ref == rebateId, cancellationToken) ?? new();
+            var s4 = await _rebateDb.Rebate_Section4_Ownerships.AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Ref == rebateId, cancellationToken) ?? new();
+            var s5 = await _rebateDb.Rebate_Section5_Declarations.AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Ref == rebateId, cancellationToken) ?? new();
+            var s6 = await _rebateDb.Rebate_Section6_FIs.AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Ref == rebateId, cancellationToken) ?? new();
+            var s7 = await _rebateDb.Rebate_Section7_MinorOccupants.AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Ref == rebateId, cancellationToken) ?? new();
+            var s8 = await _rebateDb.Rebate_Section8_ACSs.AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Ref == rebateId, cancellationToken) ?? new();
+            var s9 = await _rebateDb.Rebate_Section9_HeritageDetails.AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Ref == rebateId, cancellationToken) ?? new();
+            var s10 = await _rebateDb.Rebate_Section10_Organisations.AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Ref == rebateId, cancellationToken) ?? new();
+            var s11 = await _rebateDb.Rebate_Section11_Summaries.AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Ref == rebateId, cancellationToken) ?? new();
+            var files = await _rebateDb.Rebates_Files.AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Ref == rebateId, cancellationToken) ?? new();
+
+            var documents = new List<SubmissionDocumentViewModel>();
+            AddRebateDocument(documents, files.Files1);
+            AddRebateDocument(documents, files.Files2);
+            AddRebateDocument(documents, files.Files3);
+            AddRebateDocument(documents, files.Files4);
+            AddRebateDocument(documents, files.Files5);
+            AddRebateDocument(documents, files.Files6);
+            AddRebateDocument(documents, files.Files7);
+            AddRebateDocument(documents, files.Files8);
+            AddRebateDocument(documents, files.Files9);
+            AddRebateDocument(documents, files.Files10);
+            AddRebateDocument(documents, files.Rep_letter, "Representative letter");
+
+            var fullName = string.Join(" ", new[] { s1.FirstNames, s1.Surname }
+                .Where(x => !string.IsNullOrWhiteSpace(x)));
+            var propertyDescription = string.Join(", ", new[]
+            {
+                s4.UnitNumberDoorNumber,
+                s4.StandNumber,
+                s4.PortionNumber,
+                s4.Suburb
+            }.Where(x => !string.IsNullOrWhiteSpace(x)));
+
+            var rebate = new V2_Genesis.Models.Rebates.RebateFormBinding
+            {
+                Info = info,
+                S1 = s1,
+                S2 = s2,
+                S3 = s3,
+                S4 = s4,
+                S5 = s5,
+                S6 = s6,
+                S7 = s7,
+                S8 = s8,
+                S9 = s9,
+                S10 = s10,
+                S11 = s11,
+                Files = files
+            };
+
+            return SubmissionViewResult.Ok(new SubmissionViewModel
+            {
+                SubmissionType = "Rebate",
+                ReferenceNumber = referenceNumber,
+                Status = info.Status ?? "Submitted",
+                RollSource = "Rebates",
+                RollDisplayName = "Property Rates Rebates",
+                FormType = info.Rebate_Type ?? "Rebate",
+                PropertyDescription = propertyDescription,
+                PropertyKey = s1.AccountNumber ?? string.Empty,
+                SubmittedAt = s5.DateOfSubmission,
+                Rebate = rebate,
+                Documents = documents,
+                Applicant = new SubmissionApplicantViewModel
+                {
+                    ApplicantName = s1.FirstNames ?? string.Empty,
+                    ApplicantSurname = s1.Surname ?? string.Empty,
+                    ApplicantIdNumber = s1.IDNumber ?? string.Empty,
+                    ApplicantEmail = s3.Email ?? string.Empty,
+                    ApplicantTelephone = s3.HomeTel ?? string.Empty,
+                    ApplicantCellphone = s3.CellNo ?? string.Empty
+                },
+                Property = new SubmissionPropertyViewModel
+                {
+                    PropertyDescription = propertyDescription,
+                    PropertyType = info.Rebate_Type ?? string.Empty,
+                    PropertyId = s1.AccountNumber ?? string.Empty,
+                    Address = string.Join(", ", new[]
+                    {
+                        s2.StreetAddress,
+                        s2.CitySuburb,
+                        s2.PostalCode
+                    }.Where(x => !string.IsNullOrWhiteSpace(x))),
+                    Township = s4.Suburb ?? string.Empty,
+                    Erf = s4.StandNumber ?? string.Empty,
+                    OwnerName = fullName
+                }
+            });
+        }
+
+        private static void AddRebateDocument(
+            ICollection<SubmissionDocumentViewModel> documents,
+            string? fileName,
+            string documentType = "Supporting evidence")
+        {
+            if (string.IsNullOrWhiteSpace(fileName)) return;
+
+            documents.Add(new SubmissionDocumentViewModel
+            {
+                FileName = Path.GetFileName(fileName),
+                DisplayName = Path.GetFileName(fileName),
+                FileExtension = Path.GetExtension(fileName),
+                DocumentType = documentType,
+                Exists = true
+            });
         }
 
         private async Task<SubmissionViewResult> LoadAttributeAsync(
@@ -2331,6 +2490,9 @@ namespace V2_Genesis.Services.Implementations
             if (model.IsAttribute)
                 return "Attribute Details";
 
+            if (model.IsRebate)
+                return "Rebate Application Details";
+
             return "Objection Details";
         }
 
@@ -2426,6 +2588,13 @@ namespace V2_Genesis.Services.Implementations
                 return "Attribute";
             }
 
+            if (requestedType.Equals("Rebate", StringComparison.OrdinalIgnoreCase)
+                || requestedType.Equals("Rebates", StringComparison.OrdinalIgnoreCase)
+                || reference.StartsWith("REB-", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Rebate";
+            }
+
             if (reference.EndsWith(
                     "-R",
                     StringComparison.OrdinalIgnoreCase))
@@ -2455,6 +2624,9 @@ namespace V2_Genesis.Services.Implementations
             {
                 "attribute" or "attributes" =>
                     "Attribute",
+
+                "rebate" or "rebates" =>
+                    "Rebate",
 
                 "appeal" =>
                     "Appeal",

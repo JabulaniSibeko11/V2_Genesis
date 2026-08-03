@@ -1,7 +1,6 @@
 ﻿using Dapper;
 using Microsoft.Data.SqlClient;
 using System.Data;
-using System.Globalization;
 using V2_Genesis.Data;
 using V2_Genesis.Models.Results.Atrributes;
 using V2_Genesis.Models.Results.Evidence;
@@ -44,6 +43,7 @@ public class EvidenceService : IEvidenceService
         {
             var connStr = _config.GetConnectionString(cfg.ConnectionKey)!;
             await using var conn = new SqlConnection(connStr);
+            await using var evidenceDb = new EvidenceReadDbContext(connStr);
 
             // Step 1: validate objection + PIN via SP
             var rows = await conn.QueryAsync(
@@ -65,30 +65,33 @@ public class EvidenceService : IEvidenceService
                     "Incorrect PIN. Please check and try again.");
 
             // Step 2: check the correct submission table and 48-hour window.
-            dynamic? statusRow;
+            SubmissionStatusRow? statusRow;
 
             if (isAppeal)
             {
-                statusRow = await conn.QueryFirstOrDefaultAsync(
-                    @"SELECT TOP 1
-                          Appeal_Status AS Submission_Status,
-                          Appeal_Start_DateTime AS Date_Submitted
-                      FROM dbo.Obj_Property_Info_Appeal
-                      WHERE LTRIM(RTRIM(Appeal_No)) =
-                            LTRIM(RTRIM(@RefNo))",
-                    new { RefNo = objectionNo.Trim() });
+                statusRow = await evidenceDb.Appeals
+                    .AsNoTracking()
+                    .Where(x =>
+                        (x.AppealNo ?? string.Empty).Trim() == objectionNo.Trim())
+                    .Select(x => new SubmissionStatusRow
+                    {
+                        SubmissionStatus = x.AppealStatus,
+                        DateSubmitted = x.AppealStartDateTime
+                    })
+                    .FirstOrDefaultAsync();
             }
             else
             {
-                statusRow = await conn.QueryFirstOrDefaultAsync(
-                    @"SELECT TOP 1
-                          objection_Status AS Submission_Status,
-                          COALESCE(Date_Submitted, Objection_Start_DateTime)
-                              AS Date_Submitted
-                      FROM dbo.Obj_Property_Info
-                      WHERE LTRIM(RTRIM(Objection_No)) =
-                            LTRIM(RTRIM(@RefNo))",
-                    new { RefNo = objectionNo.Trim() });
+                statusRow = await evidenceDb.Objections
+                    .AsNoTracking()
+                    .Where(x =>
+                        (x.ObjectionNo ?? string.Empty).Trim() == objectionNo.Trim())
+                    .Select(x => new SubmissionStatusRow
+                    {
+                        SubmissionStatus = x.ObjectionStatus,
+                        DateSubmitted = x.DateSubmitted ?? x.ObjectionStartDateTime
+                    })
+                    .FirstOrDefaultAsync();
             }
 
             if (statusRow is null)
@@ -99,39 +102,10 @@ public class EvidenceService : IEvidenceService
                         : "Objection record not found.");
             }
 
-            string status =
-                statusRow.Submission_Status?.ToString()?.Trim()
+            string status = statusRow.SubmissionStatus?.Trim()
                 ?? string.Empty;
 
-            DateTime? submitted = null;
-
-            object? submittedValue =
-                statusRow.Date_Submitted;
-
-            if (submittedValue is DateTime submittedDate)
-            {
-                submitted = submittedDate;
-            }
-            else
-            {
-                var submittedText =
-                    Convert.ToString(
-                        submittedValue,
-                        CultureInfo.InvariantCulture);
-
-                DateTime parsedDate = default;
-
-                var parsedSuccessfully =
-                    !string.IsNullOrWhiteSpace(submittedText)
-                    && DateTime.TryParse(
-                        submittedText,
-                        CultureInfo.InvariantCulture,
-                        DateTimeStyles.AllowWhiteSpaces,
-                        out parsedDate);
-
-                if (parsedSuccessfully)
-                    submitted = parsedDate;
-            }
+            DateTime? submitted = statusRow.DateSubmitted;
 
             var statusAllowsEvidence = isAppeal
                 ? status.Equals(
@@ -382,6 +356,78 @@ public class EvidenceService : IEvidenceService
         await _attrDb.SaveChangesAsync();
 
         return (true, null, newTotal, savedNames);
+    }
+
+    private sealed class EvidenceReadDbContext : DbContext
+    {
+        private readonly string _connectionString;
+
+        public EvidenceReadDbContext(string connectionString)
+        {
+            _connectionString = connectionString;
+        }
+
+        public DbSet<EvidenceAppealEntity> Appeals =>
+            Set<EvidenceAppealEntity>();
+
+        public DbSet<EvidenceObjectionEntity> Objections =>
+            Set<EvidenceObjectionEntity>();
+
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            optionsBuilder.UseSqlServer(
+                _connectionString,
+                sqlServer => sqlServer.CommandTimeout(60));
+        }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<EvidenceAppealEntity>(entity =>
+            {
+                entity.HasKey(x => x.AppealId);
+                entity.ToTable("Obj_Property_Info_Appeal", "dbo");
+                entity.Property(x => x.AppealId).HasColumnName("Appeal_ID");
+                entity.Property(x => x.AppealNo).HasColumnName("Appeal_No");
+                entity.Property(x => x.AppealStatus).HasColumnName("Appeal_Status");
+                entity.Property(x => x.AppealStartDateTime)
+                    .HasColumnName("Appeal_Start_DateTime");
+            });
+
+            modelBuilder.Entity<EvidenceObjectionEntity>(entity =>
+            {
+                entity.HasKey(x => x.ObjectionId);
+                entity.ToTable("Obj_Property_Info", "dbo");
+                entity.Property(x => x.ObjectionId).HasColumnName("Objection_ID");
+                entity.Property(x => x.ObjectionNo).HasColumnName("Objection_No");
+                entity.Property(x => x.ObjectionStatus).HasColumnName("objection_Status");
+                entity.Property(x => x.DateSubmitted).HasColumnName("Date_Submitted");
+                entity.Property(x => x.ObjectionStartDateTime)
+                    .HasColumnName("Objection_Start_DateTime");
+            });
+        }
+    }
+
+    private sealed class EvidenceAppealEntity
+    {
+        public long AppealId { get; set; }
+        public string? AppealNo { get; set; }
+        public string? AppealStatus { get; set; }
+        public DateTime? AppealStartDateTime { get; set; }
+    }
+
+    private sealed class EvidenceObjectionEntity
+    {
+        public long ObjectionId { get; set; }
+        public string? ObjectionNo { get; set; }
+        public string? ObjectionStatus { get; set; }
+        public DateTime? DateSubmitted { get; set; }
+        public DateTime? ObjectionStartDateTime { get; set; }
+    }
+
+    private sealed class SubmissionStatusRow
+    {
+        public string? SubmissionStatus { get; set; }
+        public DateTime? DateSubmitted { get; set; }
     }
 
     private static void FillFileSlots(AttrFiles f, List<string> names, int startIndex)

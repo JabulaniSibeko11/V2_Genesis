@@ -1,0 +1,148 @@
+@using System.ComponentModel
+@using System.ComponentModel.DataAnnotations
+@using System.Reflection
+@using V2_Genesis.Models.ViewModels.Submissions
+@model SubmissionViewModel
+
+@functions {
+    private static IReadOnlyList<(string Label, string Value)> RebateFields(object source)
+    {
+        var hidden = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "ID", "Ref", "Rebate_ID", "UserID", "Rebate_No", "Rebate_Type",
+            "Status", "Rebate_Ref_S1", "Rebate_Ref_S2", "Rebate_Ref_S3",
+            "Rebate_Ref_S4", "Rebate_Ref_S5", "Rebate_Ref_S6",
+            "Rebate_Ref_S7", "Rebate_Ref_S8", "Rebate_Ref_S9",
+            "Rebate_Ref_S10", "Rebate_Ref_S11", "Rebate_Ref_files"
+        };
+
+        return source.GetType()
+            .GetProperties(BindingFlags.Instance | BindingFlags.Public)
+            .Where(property => property.GetIndexParameters().Length == 0
+                               && !hidden.Contains(property.Name))
+            .Select(property =>
+            {
+                var display = property.GetCustomAttribute<DisplayAttribute>()?.GetName()
+                              ?? property.GetCustomAttribute<DisplayNameAttribute>()?.DisplayName
+                              ?? SplitName(property.Name);
+                var raw = property.GetValue(source);
+                var value = raw switch
+                {
+                    null => "Not provided",
+                    DateTime date => date.ToString("dd MMMM yyyy HH:mm"),
+                    bool flag => flag ? "Yes" : "No",
+                    _ => Convert.ToString(raw)?.Trim() is { Length: > 0 } text
+                        ? text
+                        : "Not provided"
+                };
+                return (display, value);
+            })
+            .ToList();
+    }
+
+    private static string SplitName(string value) =>
+        System.Text.RegularExpressions.Regex.Replace(value, "([a-z0-9])([A-Z])", "$1 $2")
+            .Replace("_", " ");
+}
+
+@{
+    var rebate = Model.Rebate!;
+    var sections = new List<(string Key, string Number, string Title, object Data)>
+    {
+        ("rebate-personal", "Section 1", "Personal details", rebate.S1),
+        ("rebate-address", "Section 2", "Addresses", rebate.S2),
+        ("rebate-contact", "Section 3", "Contact details", rebate.S3)
+    };
+
+    var rebateType = rebate.Info.Rebate_Type ?? string.Empty;
+
+    if (rebateType.Contains("Pensioner", StringComparison.OrdinalIgnoreCase)
+        || rebateType.Contains("Child Headed", StringComparison.OrdinalIgnoreCase))
+        sections.Add(("rebate-property", "Section 4", "Property and ownership", rebate.S4));
+
+    if (rebateType.Contains("Pensioner Rebate 60", StringComparison.OrdinalIgnoreCase))
+        sections.Add(("rebate-financial", "Section 6", "Financial information", rebate.S6));
+
+    if (rebateType.Contains("Child", StringComparison.OrdinalIgnoreCase))
+        sections.Add(("rebate-occupants", "Section 7", "Household occupants", rebate.S7));
+
+    if (rebateType.Contains("High Density", StringComparison.OrdinalIgnoreCase)
+        || rebateType.Contains("Life Rights", StringComparison.OrdinalIgnoreCase)
+        || rebateType.Contains("Disaster", StringComparison.OrdinalIgnoreCase)
+        || rebateType.Contains("Public Benefit", StringComparison.OrdinalIgnoreCase))
+        sections.Add(("rebate-scheme", "Section 8", "Accounts and scheme details", rebate.S8));
+
+    if (rebateType.Contains("Heritage", StringComparison.OrdinalIgnoreCase)
+        || rebateType.Contains("Sports", StringComparison.OrdinalIgnoreCase)
+        || rebateType.Contains("Protection", StringComparison.OrdinalIgnoreCase))
+        sections.Add(("rebate-heritage", "Section 9", "Heritage details", rebate.S9));
+
+    if (rebateType.Contains("Education", StringComparison.OrdinalIgnoreCase)
+        || rebateType.Contains("Sports", StringComparison.OrdinalIgnoreCase)
+        || rebateType.Contains("Protection", StringComparison.OrdinalIgnoreCase)
+        || rebateType.Contains("Public Benefit", StringComparison.OrdinalIgnoreCase)
+        || rebateType.Equals("PBO", StringComparison.OrdinalIgnoreCase))
+    {
+        sections.Add(("rebate-organisation", "Section 10", "Organisation details", rebate.S10));
+    }
+
+}
+
+<section class="submitted-form-body rebate-submitted-form" data-submitted-form-tabs>
+    <div class="submitted-form-heading">
+        <div>
+            <span class="submitted-form-eyebrow">Submitted rebate application</span>
+            <h2>@Model.ReferenceNumber</h2>
+            <p>The information below is read-only and reflects the rebate form submitted by the client.</p>
+        </div>
+        <span class="submitted-form-type">@Model.FormType</span>
+    </div>
+
+    <div class="submitted-tabs-scroll">
+        <div class="submitted-tabs" role="tablist" aria-label="Submitted rebate sections">
+            @for (var index = 0; index < sections.Count; index++)
+            {
+                var sec = sections[index];
+                <button type="button"
+                        id="tab-@sec.Key"
+                        class="submitted-tab @(index == 0 ? "active" : "")"
+                        role="tab"
+                        aria-selected="@(index == 0 ? "true" : "false")"
+                        aria-controls="panel-@sec.Key"
+                        data-section-key="@sec.Key">
+                    <strong>@sec.Number</strong>
+                    <span>@sec.Title</span>
+                </button>
+            }
+        </div>
+    </div>
+
+    <div class="submitted-panels">
+        @for (var index = 0; index < sections.Count; index++)
+        {
+            var sec = sections[index];
+            var fields = RebateFields(sec.Data);
+
+            <section id="panel-@sec.Key"
+                     class="submitted-panel @(index == 0 ? "active" : "")"
+                     role="tabpanel"
+                     aria-labelledby="tab-@sec.Key"
+                     data-section-panel="@sec.Key"
+                     hidden="@(index == 0 ? null : "hidden")">
+                <div class="municipal-form-section">
+                    <partial name="Partials/Forms/_SectionHeading"
+                             model='new SubmissionSectionHeadingViewModel { Number = sec.Number.ToUpperInvariant(), Title = sec.Title.ToUpperInvariant() }' />
+                    <div class="municipal-field-grid">
+                        @foreach (var field in fields)
+                        {
+                            <div class="municipal-readonly-field">
+                                <label>@field.Label</label>
+                                <div class="municipal-readonly-input">@field.Value</div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </section>
+        }
+    </div>
+</section>

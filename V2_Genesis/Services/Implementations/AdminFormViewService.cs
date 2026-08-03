@@ -1,6 +1,8 @@
 ﻿using Dapper;
 using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 using System.Data;
+using V2_Genesis.Data;
 using V2_Genesis.Models;
 using V2_Genesis.Models.Results;
 using V2_Genesis.Models.ViewModels;
@@ -12,13 +14,16 @@ namespace V2_Genesis.Services.Implementations
     {
         private readonly IConfiguration _config;
         private readonly ILogger<AdminFormViewService> _logger;
+        private readonly QueryDbContext _queryDb;
 
         public AdminFormViewService(
             IConfiguration config,
-            ILogger<AdminFormViewService> logger)
+            ILogger<AdminFormViewService> logger,
+            QueryDbContext queryDb)
         {
             _config = config;
             _logger = logger;
+            _queryDb = queryDb;
 
             // Allows DB column Owner_Name to map to C# property OwnerName
             DefaultTypeMap.MatchNamesWithUnderscores = true;
@@ -122,58 +127,56 @@ namespace V2_Genesis.Services.Implementations
 
         private async Task<AdminFormViewResult> GetQueryFormViewAsync(string referenceNo)
         {
-            var connectionString =
-                _config.GetConnectionString("QueryConnection")
-                ?? _config.GetConnectionString("DefaultConnection");
-
-            if (string.IsNullOrWhiteSpace(connectionString))
-            {
-                return new AdminFormViewResult
-                {
-                    Success = false,
-                    Error = "Query connection string was not found."
-                };
-            }
-
             try
             {
-                await using var conn = new SqlConnection(connectionString);
+                var queryRow = await _queryDb.Que_Property_Info
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(x =>
+                        x.Query_No == referenceNo ||
+                        x.Review_No == referenceNo);
 
-                /*
-                 Adjust table/columns here if your Section 78 table names are different.
-                 This is intentionally separate from objection/appeal form view.
-                */
-                var section78 = await conn.QueryFirstOrDefaultAsync<Section78FormViewModel>(
-                    """
-                    SELECT TOP 1
-                      [ID]
-                        ,[Ref]
-                        ,[Objection_Ref_SQ]
-                        ,[Option_A]
-                        ,[Option_B]
-                        ,[Option_C]
-                        ,[Option_D]
-                        ,[Option_E]
-                        ,[Option_F]
-                        ,[Option_G]
-                        ,[Option_H]
-                        ,[Motivation_for_Supp_Request]
-                    FROM [Objection_Query].[dbo].[Obj_Section2Query]
-                    WHERE Objection_Ref_SQ = @ReferenceNo
-                       OR Review_No = @ReferenceNo
-                    """,
-                    new { ReferenceNo = referenceNo },
-                    commandTimeout: 120);
+                var section78Row = await _queryDb.Obj_Section2Query
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(x =>
+                        x.Objection_Ref_SQ == referenceNo ||
+                        x.Review_No == referenceNo);
 
-                var rows = (await conn.QueryAsync<ObjectionTB>(
-                    """
-                    SELECT TOP 1 *
-                    FROM dbo.Que_Property_Info
-                    WHERE Query_No = @ReferenceNo
-                       OR Review_No = @ReferenceNo
-                    """,
-                    new { ReferenceNo = referenceNo },
-                    commandTimeout: 120)).ToList();
+                var rows = queryRow == null
+                    ? new List<ObjectionTB>()
+                    : new List<ObjectionTB>
+                    {
+                        new()
+                        {
+                            ObjectionId = queryRow.Query_ID,
+                            ObjectionNo = queryRow.Query_No ?? queryRow.Review_No,
+                            ObjectorType = queryRow.Query_Type,
+                            PropertyType = queryRow.Property_Type,
+                            PropertyDesc = queryRow.Property_Desc,
+                            PremiseId = queryRow.Premise_id,
+                            UnitKey = queryRow.Unit_key,
+                            PropertyId = queryRow.Property_id,
+                            ValuationKey = queryRow.Valuation_Key,
+                            Sector = queryRow.Sector,
+                            objectionStatus = queryRow.Query_Status
+                        }
+                    };
+
+                var section78 = section78Row == null
+                    ? null
+                    : new Section78FormViewModel
+                    {
+                        QueryNo = section78Row.Objection_Ref_SQ,
+                        ReviewNo = section78Row.Review_No,
+                        Option_A = IsSelected(section78Row.Option_A),
+                        Option_B = IsSelected(section78Row.Option_B),
+                        Option_C = IsSelected(section78Row.Option_C),
+                        Option_D = IsSelected(section78Row.Option_D),
+                        Option_E = IsSelected(section78Row.Option_E),
+                        Option_F = IsSelected(section78Row.Option_F),
+                        Option_G = IsSelected(section78Row.Option_G),
+                        Option_H = IsSelected(section78Row.Option_H),
+                        Motivation_for_Supp_Request = section78Row.Motivation_for_Supp_Request
+                    };
 
                 if (!rows.Any() && section78 == null)
                 {
@@ -208,6 +211,20 @@ namespace V2_Genesis.Services.Implementations
                     Error = "Could not load Section 78 form details."
                 };
             }
+        }
+
+        private static bool IsSelected(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return false;
+
+            var normalized = value.Trim();
+
+            return normalized.Equals("true", StringComparison.OrdinalIgnoreCase)
+                || normalized.Equals("yes", StringComparison.OrdinalIgnoreCase)
+                || normalized.Equals("y", StringComparison.OrdinalIgnoreCase)
+                || normalized == "1"
+                || normalized.Equals("on", StringComparison.OrdinalIgnoreCase);
         }
 
         private static string NormalizePropertyType(string? propertyType)

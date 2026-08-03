@@ -56,7 +56,7 @@ namespace V2_Genesis.Services.Attributes
             var acknowledgementFileName = $"{safeAttrNo}_{safePropertyDesc}_{timestamp}_Acknowledgement.pdf";
             var acknowledgementPath = Path.Combine(attrFolder, acknowledgementFileName);
 
-            GenerateAcknowledgementReplicaPdf(model,propertyInfo,acknowledgementPath);
+            GenerateAcknowledgementReplicaPdf(model, propertyInfo, acknowledgementPath);
 
             var result = new AttributeDocumentSaveResult
             {
@@ -344,7 +344,7 @@ namespace V2_Genesis.Services.Attributes
                     ("Company Name", c.CompanyName),
                     ("Company Registration Number", c.CompanyRegistrationNumber),
                     ("First Names", c.FirstNames),
-                    ("Last Name", c.LastName),
+                    ("Surname", c.LastName),
                     ("ID Number", c.IDNumber),
                     ("Date of Birth", c.DateOfBirth?.ToString("yyyy-MM-dd")),
                     ("Gender", c.Gender),
@@ -821,7 +821,7 @@ namespace V2_Genesis.Services.Attributes
                     }
                     else
                     {
-                        AddTwoColumnRow(table, "First Names", c.FirstNames, "Last Name", c.LastName);
+                        AddTwoColumnRow(table, "First Names", c.FirstNames, "Surname", c.LastName);
                     }
 
                     AddFullRow(table, "Physical Address", c.PhysicalAddress);
@@ -871,7 +871,7 @@ namespace V2_Genesis.Services.Attributes
                     columns.RelativeColumn(2f);
                 });
 
-                AddTwoColumnRow(table,"TLA 1",p?.Tla1?.ToString(),"TLA 2",p?.Tla2?.ToString());
+                AddTwoColumnRow(table, "TLA 1", p?.Tla1?.ToString(), "TLA 2", p?.Tla2?.ToString());
                 AddTwoColumnRow(table, "TLA 3", p?.Tla3?.ToString(), "Garage", p?.Garage?.ToString());
                 AddTwoColumnRow(table, "Carport CP", p?.CarportCp?.ToString(), "Granny Flat GF", p?.GrannyFlatGf?.ToString());
                 AddTwoColumnRow(table, "Staff Quarters SQ", p?.StaffQuartersSq?.ToString(), "Storage", p?.Storage?.ToString());
@@ -1163,7 +1163,7 @@ namespace V2_Genesis.Services.Attributes
             }
         }
 
-       
+
         private static bool HasAnyValue(object? row)
         {
             if (row == null) return false;
@@ -1358,7 +1358,7 @@ namespace V2_Genesis.Services.Attributes
             };
         }
 
-        
+
 
         private static void AddTwoColumnRow(TableDescriptor table, string label1, string? value1, string label2, string? value2)
         {
@@ -1392,45 +1392,8 @@ namespace V2_Genesis.Services.Attributes
                 .Padding(4);
         }
 
-        private static void AddAckRow(TableDescriptor table, string label, string? value, string background)
-        {
-            table.Cell().Border(1).Background(background).Padding(7).Text(label).Bold();
-            table.Cell().Border(1).Background(background).Padding(7).Text(value ?? "");
-        }
+        
 
-        private static void AddAckSectionTitle(ColumnDescriptor col, string title, string background)
-        {
-            col.Item()
-                .PaddingTop(18)
-                .Background(background)
-                .Border(1)
-                .Padding(7)
-                .AlignCenter()
-                .Text(title)
-                .FontColor(Colors.White)
-                .Bold()
-                .FontSize(11);
-        }
-
-        private static void AddHeaderCell(TableDescriptor table, string text)
-        {
-            table.Cell()
-                .Border(1)
-                .Background(Colors.Grey.Lighten3)
-                .Padding(5)
-                .AlignCenter()
-                .Text(text)
-                .Bold()
-                .FontSize(8);
-        }
-
-        private static void AddBodyCell(TableDescriptor table, string? text)
-        {
-            table.Cell()
-                .Border(1)
-                .Padding(5)
-                .Text(text ?? "")
-                .FontSize(8);
-        }
+        
     }
-    }
+}

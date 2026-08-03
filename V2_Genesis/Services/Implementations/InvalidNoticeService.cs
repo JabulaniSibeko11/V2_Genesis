@@ -1,9 +1,7 @@
-﻿using Dapper;
-using Microsoft.Data.SqlClient;
+﻿using Microsoft.EntityFrameworkCore;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
-using System.Data;
 using V2_Genesis.Services.Admin;
 using V2_Genesis.Services.Interfaces;
 
@@ -49,61 +47,56 @@ public sealed class InvalidNoticeService : IInvalidNoticeService
             ?? throw new InvalidOperationException(
                 $"Connection string '{roll.ConnectionKey}' was not found.");
 
-        const string sql = """
-            SELECT TOP (1)
-                n.ID                         AS Id,
-                n.OBJECTION_NO               AS ObjectionNo,
-                n.PREMISE_ID                 AS PremiseId,
-                n.VALUATION_KEY              AS ValuationKey,
-                n.PROPETY_DESC               AS PropertyDescription,
-                n.OWNER_NAME                 AS OwnerName,
-                n.OWNER_ADDR1                AS OwnerAddr1,
-                n.OWNER_ADDR2                AS OwnerAddr2,
-                n.OWNER_ADDR3                AS OwnerAddr3,
-                n.OWNER_ADDR4                AS OwnerAddr4,
-                n.OWNER_ADDR5                AS OwnerAddr5,
-                n.OWNER_EMAIL                AS OwnerEmail,
-                n.OBJECTOR_NAME              AS ObjectorName,
-                n.OBJECTOR_ADDR1             AS ObjectorAddr1,
-                n.OBJECTOR_ADDR2             AS ObjectorAddr2,
-                n.OBJECTOR_ADDR3             AS ObjectorAddr3,
-                n.OBJECTOR_ADDR4             AS ObjectorAddr4,
-                n.OBJECTOR_ADDR5             AS ObjectorAddr5,
-                n.OBJECTOR_EMAIL             AS ObjectorEmail,
-                n.REP_NAME                   AS RepresentativeName,
-                n.REP_ADDR1                  AS RepresentativeAddr1,
-                n.REP_ADDR2                  AS RepresentativeAddr2,
-                n.REP_ADDR3                  AS RepresentativeAddr3,
-                n.REP_ADDR4                  AS RepresentativeAddr4,
-                n.REP_ADDR5                  AS RepresentativeAddr5,
-                n.REP_EMAIL                  AS RepresentativeEmail,
-                n.BATCH_NAME                 AS BatchName,
-                n.BATCH_DATE                 AS BatchDate,
-                n.LETTER_DATE                AS LetterDate,
-                n.SENT_STATUS                AS SentStatus,
-                n.SENT_DATE                  AS SentDate,
-                n.NOTICE_KIND                AS NoticeKind,
-                p.Objector_Type              AS ObjectorType,
-                LTRIM(RTRIM(p.objection_Status)) AS ObjectionStatus
-            FROM dbo.InvalidNoticeTable AS n
-            INNER JOIN dbo.Obj_Property_Info AS p
-                ON LTRIM(RTRIM(p.Objection_No)) = LTRIM(RTRIM(n.OBJECTION_NO))
-            WHERE LTRIM(RTRIM(n.OBJECTION_NO)) = @ObjectionNo
-              AND p.UserID = @UserId
-              AND LTRIM(RTRIM(p.objection_Status)) IN
-                  ('Notice-Sent-Invalid-Objection', 'Notice-Sent-Invalid-Omission')
-            ORDER BY n.ID DESC;
-            """;
+        await using var db = new InvalidNoticeReadDbContext(connectionString);
 
-        await using var connection = new SqlConnection(connectionString);
-        var command = new CommandDefinition(
-            sql,
-            new { ObjectionNo = objectionNo, UserId = userId },
-            commandType: CommandType.Text,
-            commandTimeout: 60,
-            cancellationToken: cancellationToken);
-
-        var row = await connection.QueryFirstOrDefaultAsync<InvalidNoticeRow>(command);
+        var row = await (
+            from notice in db.InvalidNotices.AsNoTracking()
+            join objection in db.Objections.AsNoTracking()
+                on (notice.ObjectionNo ?? string.Empty).Trim()
+                equals (objection.ObjectionNo ?? string.Empty).Trim()
+            where (notice.ObjectionNo ?? string.Empty).Trim() == objectionNo
+                && (objection.UserId ?? string.Empty).Trim() == userId
+                && ((objection.ObjectionStatus ?? string.Empty).Trim() == InvalidObjectionStatus
+                    || (objection.ObjectionStatus ?? string.Empty).Trim() == InvalidOmissionStatus)
+            orderby notice.Id descending
+            select new InvalidNoticeRow
+            {
+                Id = notice.Id,
+                ObjectionNo = notice.ObjectionNo,
+                PremiseId = notice.PremiseId,
+                ValuationKey = notice.ValuationKey,
+                PropertyDescription = notice.PropertyDescription,
+                OwnerName = notice.OwnerName,
+                OwnerAddr1 = notice.OwnerAddr1,
+                OwnerAddr2 = notice.OwnerAddr2,
+                OwnerAddr3 = notice.OwnerAddr3,
+                OwnerAddr4 = notice.OwnerAddr4,
+                OwnerAddr5 = notice.OwnerAddr5,
+                OwnerEmail = notice.OwnerEmail,
+                ObjectorName = notice.ObjectorName,
+                ObjectorAddr1 = notice.ObjectorAddr1,
+                ObjectorAddr2 = notice.ObjectorAddr2,
+                ObjectorAddr3 = notice.ObjectorAddr3,
+                ObjectorAddr4 = notice.ObjectorAddr4,
+                ObjectorAddr5 = notice.ObjectorAddr5,
+                ObjectorEmail = notice.ObjectorEmail,
+                RepresentativeName = notice.RepresentativeName,
+                RepresentativeAddr1 = notice.RepresentativeAddr1,
+                RepresentativeAddr2 = notice.RepresentativeAddr2,
+                RepresentativeAddr3 = notice.RepresentativeAddr3,
+                RepresentativeAddr4 = notice.RepresentativeAddr4,
+                RepresentativeAddr5 = notice.RepresentativeAddr5,
+                RepresentativeEmail = notice.RepresentativeEmail,
+                BatchName = notice.BatchName,
+                BatchDate = notice.BatchDate,
+                LetterDate = notice.LetterDate,
+                SentStatus = notice.SentStatus,
+                SentDate = notice.SentDate,
+                NoticeKind = notice.NoticeKind,
+                ObjectorType = objection.ObjectorType,
+                ObjectionStatus = objection.ObjectionStatus
+            })
+            .FirstOrDefaultAsync(cancellationToken);
         if (row is null)
             throw new KeyNotFoundException(
                 "The invalid objection notice was not found for this account.");
@@ -323,6 +316,126 @@ public sealed class InvalidNoticeService : IInvalidNoticeService
         var invalid = Path.GetInvalidFileNameChars();
         return new string((value ?? "Objection")
             .Where(character => !invalid.Contains(character)).ToArray());
+    }
+
+    private sealed class InvalidNoticeReadDbContext : DbContext
+    {
+        private readonly string _connectionString;
+
+        public InvalidNoticeReadDbContext(string connectionString)
+        {
+            _connectionString = connectionString;
+        }
+
+        public DbSet<InvalidNoticeEntity> InvalidNotices =>
+            Set<InvalidNoticeEntity>();
+
+        public DbSet<InvalidNoticeObjectionEntity> Objections =>
+            Set<InvalidNoticeObjectionEntity>();
+
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            optionsBuilder.UseSqlServer(
+                _connectionString,
+                sqlServer => sqlServer.CommandTimeout(60));
+        }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<InvalidNoticeEntity>(entity =>
+            {
+                entity.HasKey(x => x.Id);
+                entity.ToTable("InvalidNoticeTable", "dbo");
+                entity.Property(x => x.Id).HasColumnName("ID");
+                entity.Property(x => x.ObjectionNo).HasColumnName("OBJECTION_NO");
+                entity.Property(x => x.PremiseId).HasColumnName("PREMISE_ID");
+                entity.Property(x => x.ValuationKey).HasColumnName("VALUATION_KEY");
+                entity.Property(x => x.PropertyDescription).HasColumnName("PROPETY_DESC");
+                entity.Property(x => x.OwnerName).HasColumnName("OWNER_NAME");
+                entity.Property(x => x.OwnerAddr1).HasColumnName("OWNER_ADDR1");
+                entity.Property(x => x.OwnerAddr2).HasColumnName("OWNER_ADDR2");
+                entity.Property(x => x.OwnerAddr3).HasColumnName("OWNER_ADDR3");
+                entity.Property(x => x.OwnerAddr4).HasColumnName("OWNER_ADDR4");
+                entity.Property(x => x.OwnerAddr5).HasColumnName("OWNER_ADDR5");
+                entity.Property(x => x.OwnerEmail).HasColumnName("OWNER_EMAIL");
+                entity.Property(x => x.ObjectorName).HasColumnName("OBJECTOR_NAME");
+                entity.Property(x => x.ObjectorAddr1).HasColumnName("OBJECTOR_ADDR1");
+                entity.Property(x => x.ObjectorAddr2).HasColumnName("OBJECTOR_ADDR2");
+                entity.Property(x => x.ObjectorAddr3).HasColumnName("OBJECTOR_ADDR3");
+                entity.Property(x => x.ObjectorAddr4).HasColumnName("OBJECTOR_ADDR4");
+                entity.Property(x => x.ObjectorAddr5).HasColumnName("OBJECTOR_ADDR5");
+                entity.Property(x => x.ObjectorEmail).HasColumnName("OBJECTOR_EMAIL");
+                entity.Property(x => x.RepresentativeName).HasColumnName("REP_NAME");
+                entity.Property(x => x.RepresentativeAddr1).HasColumnName("REP_ADDR1");
+                entity.Property(x => x.RepresentativeAddr2).HasColumnName("REP_ADDR2");
+                entity.Property(x => x.RepresentativeAddr3).HasColumnName("REP_ADDR3");
+                entity.Property(x => x.RepresentativeAddr4).HasColumnName("REP_ADDR4");
+                entity.Property(x => x.RepresentativeAddr5).HasColumnName("REP_ADDR5");
+                entity.Property(x => x.RepresentativeEmail).HasColumnName("REP_EMAIL");
+                entity.Property(x => x.BatchName).HasColumnName("BATCH_NAME");
+                entity.Property(x => x.BatchDate).HasColumnName("BATCH_DATE");
+                entity.Property(x => x.LetterDate).HasColumnName("LETTER_DATE");
+                entity.Property(x => x.SentStatus).HasColumnName("SENT_STATUS");
+                entity.Property(x => x.SentDate).HasColumnName("SENT_DATE");
+                entity.Property(x => x.NoticeKind).HasColumnName("NOTICE_KIND");
+            });
+
+            modelBuilder.Entity<InvalidNoticeObjectionEntity>(entity =>
+            {
+                entity.HasKey(x => x.ObjectionId);
+                entity.ToTable("Obj_Property_Info", "dbo");
+                entity.Property(x => x.ObjectionId).HasColumnName("Objection_ID");
+                entity.Property(x => x.ObjectionNo).HasColumnName("Objection_No");
+                entity.Property(x => x.UserId).HasColumnName("UserID");
+                entity.Property(x => x.ObjectorType).HasColumnName("Objector_Type");
+                entity.Property(x => x.ObjectionStatus).HasColumnName("objection_Status");
+            });
+        }
+    }
+
+    private sealed class InvalidNoticeEntity
+    {
+        public long Id { get; set; }
+        public string? ObjectionNo { get; set; }
+        public string? PremiseId { get; set; }
+        public string? ValuationKey { get; set; }
+        public string? PropertyDescription { get; set; }
+        public string? OwnerName { get; set; }
+        public string? OwnerAddr1 { get; set; }
+        public string? OwnerAddr2 { get; set; }
+        public string? OwnerAddr3 { get; set; }
+        public string? OwnerAddr4 { get; set; }
+        public string? OwnerAddr5 { get; set; }
+        public string? OwnerEmail { get; set; }
+        public string? ObjectorName { get; set; }
+        public string? ObjectorAddr1 { get; set; }
+        public string? ObjectorAddr2 { get; set; }
+        public string? ObjectorAddr3 { get; set; }
+        public string? ObjectorAddr4 { get; set; }
+        public string? ObjectorAddr5 { get; set; }
+        public string? ObjectorEmail { get; set; }
+        public string? RepresentativeName { get; set; }
+        public string? RepresentativeAddr1 { get; set; }
+        public string? RepresentativeAddr2 { get; set; }
+        public string? RepresentativeAddr3 { get; set; }
+        public string? RepresentativeAddr4 { get; set; }
+        public string? RepresentativeAddr5 { get; set; }
+        public string? RepresentativeEmail { get; set; }
+        public string? BatchName { get; set; }
+        public DateTime? BatchDate { get; set; }
+        public DateTime? LetterDate { get; set; }
+        public string? SentStatus { get; set; }
+        public DateTime? SentDate { get; set; }
+        public string? NoticeKind { get; set; }
+    }
+
+    private sealed class InvalidNoticeObjectionEntity
+    {
+        public long ObjectionId { get; set; }
+        public string? ObjectionNo { get; set; }
+        public string? UserId { get; set; }
+        public string? ObjectorType { get; set; }
+        public string? ObjectionStatus { get; set; }
     }
 
     private enum InvalidNoticeKind

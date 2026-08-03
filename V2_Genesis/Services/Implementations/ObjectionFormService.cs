@@ -1269,6 +1269,7 @@ public class ObjectionFormService : IObjectionFormService
         try
         {
             await using var conn = new SqlConnection(connStr);
+            await using var withdrawalDb = new WithdrawalReadDbContext(connStr);
 
             // 1. Execute withdrawal stored procedure
             await conn.ExecuteAsync(
@@ -1300,7 +1301,7 @@ public class ObjectionFormService : IObjectionFormService
             try
             {
                 var recipients = await ResolveWithdrawalRecipientsAsync(
-                    connStr,
+                    withdrawalDb,
                     objectionNo,
                     isAppeal,
                     isQuery);
@@ -1350,7 +1351,7 @@ public class ObjectionFormService : IObjectionFormService
             }
 
             await ReleaseLinkedPropertyAfterWithdrawalAsync(
-                conn, objectionNo, isAppeal, isQuery, userId);
+                withdrawalDb, objectionNo, isAppeal, isQuery, userId);
 
             _logger.LogInformation(
                 "Withdrew {Type} {Ref} (roll: {Roll}) for user {User}.",
@@ -1374,67 +1375,25 @@ public class ObjectionFormService : IObjectionFormService
         }
     }
     private async Task<List<EmailRecipient>> ResolveWithdrawalRecipientsAsync(
-    string connStr,
+    WithdrawalReadDbContext db,
     string referenceNo,
     bool isAppeal,
     bool isQuery)
     {
-        await using var conn = new SqlConnection(connStr);
-
-        string sql;
-
-        if (isQuery)
-        {
-            sql = @"
-            SELECT TOP 1
-                s1.Owner_Name,
-                s1.Owner_Email,
-                s1.Objector_Name,
-                s1.Objector_Email,
-                s1.Representative_name,
-                s1.Rep_Email,
-                COALESCE(q.Objector_Type, q.Query_Type, q.Submission_Type, '') AS Objector_Type
-            FROM dbo.Obj_Section1 s1
-            LEFT JOIN dbo.QUE_Property_Info q
-                   ON LTRIM(RTRIM(q.Query_No)) = LTRIM(RTRIM(@Ref))
-            WHERE LTRIM(RTRIM(s1.Objection_Ref_S1)) = LTRIM(RTRIM(@Ref));";
-        }
-        else if (isAppeal)
-        {
-            sql = @"
-            SELECT TOP 1
-                s1.Owner_Name,
-                s1.Owner_Email,
-                s1.Objector_Name,
-                s1.Objector_Email,
-                s1.Representative_name,
-                s1.Rep_Email,
-                COALESCE(opi.Objector_Type, opia.Appeal_Type, '') AS Objector_Type
-            FROM dbo.Obj_Section1 s1
-            LEFT JOIN dbo.Obj_Property_Info_Appeal opia
-                   ON LTRIM(RTRIM(opia.Appeal_No)) = LTRIM(RTRIM(@Ref))
-            LEFT JOIN dbo.Obj_Property_Info opi
-                   ON LTRIM(RTRIM(opi.Objection_No)) = LTRIM(RTRIM(opia.Obj_Ref))
-            WHERE LTRIM(RTRIM(s1.Objection_Ref_S1)) = LTRIM(RTRIM(@Ref));";
-        }
-        else
-        {
-            sql = @"
-            SELECT TOP 1
-                s1.Owner_Name,
-                s1.Owner_Email,
-                s1.Objector_Name,
-                s1.Objector_Email,
-                s1.Representative_name,
-                s1.Rep_Email,
-                COALESCE(opi.Objector_Type, '') AS Objector_Type
-            FROM dbo.Obj_Section1 s1
-            LEFT JOIN dbo.Obj_Property_Info opi
-                   ON LTRIM(RTRIM(opi.Objection_No)) = LTRIM(RTRIM(@Ref))
-            WHERE LTRIM(RTRIM(s1.Objection_Ref_S1)) = LTRIM(RTRIM(@Ref));";
-        }
-
-        var row = await conn.QueryFirstOrDefaultAsync(sql, new { Ref = referenceNo });
+        var row = await db.Section1
+            .AsNoTracking()
+            .Where(x =>
+                (x.ObjectionReference ?? string.Empty).Trim() == referenceNo)
+            .Select(x => new WithdrawalRecipientRow
+            {
+                OwnerName = x.OwnerName,
+                OwnerEmail = x.OwnerEmail,
+                ObjectorName = x.ObjectorName,
+                ObjectorEmail = x.ObjectorEmail,
+                RepresentativeName = x.RepresentativeName,
+                RepresentativeEmail = x.RepresentativeEmail
+            })
+            .FirstOrDefaultAsync();
 
         if (row is null)
         {
@@ -1445,29 +1404,73 @@ public class ObjectionFormService : IObjectionFormService
             return new List<EmailRecipient>();
         }
 
-        var objectorType = row.Objector_Type?.ToString()?.Trim() ?? string.Empty;
+        if (isQuery)
+        {
+            var query = await db.Queries
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x =>
+                    (x.QueryNo ?? string.Empty).Trim() == referenceNo ||
+                    (x.ReviewNo ?? string.Empty).Trim() == referenceNo);
+
+            row.ObjectorType = FirstNotEmpty(
+                query?.ObjectorType,
+                query?.QueryType,
+                query?.SubmissionType);
+        }
+        else if (isAppeal)
+        {
+            var appeal = await db.Appeals
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x =>
+                    (x.AppealNo ?? string.Empty).Trim() == referenceNo);
+
+            var objectionType = string.IsNullOrWhiteSpace(appeal?.ObjectReference)
+                ? null
+                : await db.Objections
+                    .AsNoTracking()
+                    .Where(x =>
+                        (x.ObjectionNo ?? string.Empty).Trim() ==
+                        appeal.ObjectReference.Trim())
+                    .Select(x => x.ObjectorType)
+                    .FirstOrDefaultAsync();
+
+            row.ObjectorType = FirstNotEmpty(
+                objectionType,
+                appeal?.AppealType);
+        }
+        else
+        {
+            row.ObjectorType = await db.Objections
+                .AsNoTracking()
+                .Where(x =>
+                    (x.ObjectionNo ?? string.Empty).Trim() == referenceNo)
+                .Select(x => x.ObjectorType)
+                .FirstOrDefaultAsync();
+        }
+
+        var objectorType = row.ObjectorType?.Trim() ?? string.Empty;
         var recipients = new List<EmailRecipient>();
 
         if (objectorType.Equals("Owner", StringComparison.OrdinalIgnoreCase))
         {
             TryAddEmailRecipient(
                 recipients,
-                row.Owner_Name?.ToString(),
-                row.Owner_Email?.ToString(),
+                row.OwnerName,
+                row.OwnerEmail,
                 "Owner");
         }
         else if (objectorType.Equals("Representative", StringComparison.OrdinalIgnoreCase))
         {
             TryAddEmailRecipient(
                 recipients,
-                row.Owner_Name?.ToString(),
-                row.Owner_Email?.ToString(),
+                row.OwnerName,
+                row.OwnerEmail,
                 "Owner");
 
             TryAddEmailRecipient(
                 recipients,
-                row.Representative_name?.ToString(),
-                row.Rep_Email?.ToString(),
+                row.RepresentativeName,
+                row.RepresentativeEmail,
                 "Representative");
         }
         else if (
@@ -1476,8 +1479,8 @@ public class ObjectionFormService : IObjectionFormService
         {
             TryAddEmailRecipient(
                 recipients,
-                row.Objector_Name?.ToString(),
-                row.Objector_Email?.ToString(),
+                row.ObjectorName,
+                row.ObjectorEmail,
                 "Third Party");
         }
         else
@@ -1485,16 +1488,16 @@ public class ObjectionFormService : IObjectionFormService
             // Safe fallback
             TryAddEmailRecipient(
                 recipients,
-                row.Owner_Name?.ToString(),
-                row.Owner_Email?.ToString(),
+                row.OwnerName,
+                row.OwnerEmail,
                 "Owner");
 
             if (!recipients.Any())
             {
                 TryAddEmailRecipient(
                     recipients,
-                    row.Objector_Name?.ToString(),
-                    row.Objector_Email?.ToString(),
+                    row.ObjectorName,
+                    row.ObjectorEmail,
                     "Client");
             }
         }
@@ -1617,7 +1620,7 @@ public class ObjectionFormService : IObjectionFormService
     }
 
     private async Task ReleaseLinkedPropertyAfterWithdrawalAsync(
-        SqlConnection submissionConnection,
+        WithdrawalReadDbContext db,
         string referenceNo,
         bool isAppeal,
         bool isQuery,
@@ -1625,20 +1628,36 @@ public class ObjectionFormService : IObjectionFormService
     {
         try
         {
-            string sql = isAppeal
-                ? @"SELECT TOP 1 A_Premise_id
-                    FROM dbo.Obj_Property_Info_Appeal
-                    WHERE LTRIM(RTRIM(Appeal_No)) = LTRIM(RTRIM(@Ref));"
-                : isQuery
-                    ? @"SELECT TOP 1 Premise_id
-                        FROM dbo.QUE_Property_Info
-                        WHERE LTRIM(RTRIM(Query_No)) = LTRIM(RTRIM(@Ref));"
-                    : @"SELECT TOP 1 Premise_id
-                        FROM dbo.Obj_Property_Info
-                        WHERE LTRIM(RTRIM(Objection_No)) = LTRIM(RTRIM(@Ref));";
+            string? premiseId;
 
-            var premiseId = await submissionConnection.QueryFirstOrDefaultAsync<string?>(
-                sql, new { Ref = referenceNo });
+            if (isAppeal)
+            {
+                premiseId = await db.Appeals
+                    .AsNoTracking()
+                    .Where(x =>
+                        (x.AppealNo ?? string.Empty).Trim() == referenceNo)
+                    .Select(x => x.PremiseId)
+                    .FirstOrDefaultAsync();
+            }
+            else if (isQuery)
+            {
+                premiseId = await db.Queries
+                    .AsNoTracking()
+                    .Where(x =>
+                        (x.QueryNo ?? string.Empty).Trim() == referenceNo ||
+                        (x.ReviewNo ?? string.Empty).Trim() == referenceNo)
+                    .Select(x => x.PremiseId)
+                    .FirstOrDefaultAsync();
+            }
+            else
+            {
+                premiseId = await db.Objections
+                    .AsNoTracking()
+                    .Where(x =>
+                        (x.ObjectionNo ?? string.Empty).Trim() == referenceNo)
+                    .Select(x => x.PremiseId)
+                    .FirstOrDefaultAsync();
+            }
 
             if (string.IsNullOrWhiteSpace(premiseId))
             {
@@ -1727,6 +1746,138 @@ public class ObjectionFormService : IObjectionFormService
             return (false,
                 "An error occurred while unlinking the property. Please try again.");
         }
+    }
+
+    private static string? FirstNotEmpty(params string?[] values) =>
+        values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value))?.Trim();
+
+    private sealed class WithdrawalReadDbContext : DbContext
+    {
+        private readonly string _connectionString;
+
+        public WithdrawalReadDbContext(string connectionString)
+        {
+            _connectionString = connectionString;
+        }
+
+        public DbSet<WithdrawalSection1Entity> Section1 =>
+            Set<WithdrawalSection1Entity>();
+
+        public DbSet<WithdrawalObjectionEntity> Objections =>
+            Set<WithdrawalObjectionEntity>();
+
+        public DbSet<WithdrawalAppealEntity> Appeals =>
+            Set<WithdrawalAppealEntity>();
+
+        public DbSet<WithdrawalQueryEntity> Queries =>
+            Set<WithdrawalQueryEntity>();
+
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            optionsBuilder.UseSqlServer(
+                _connectionString,
+                sqlServer => sqlServer.CommandTimeout(60));
+        }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<WithdrawalSection1Entity>(entity =>
+            {
+                entity.HasNoKey();
+                entity.ToTable("Obj_Section1", "dbo");
+                entity.Property(x => x.ObjectionReference).HasColumnName("Objection_Ref_S1");
+                entity.Property(x => x.OwnerName).HasColumnName("Owner_Name");
+                entity.Property(x => x.OwnerEmail).HasColumnName("Owner_Email");
+                entity.Property(x => x.ObjectorName).HasColumnName("Objector_Name");
+                entity.Property(x => x.ObjectorEmail).HasColumnName("Objector_Email");
+                entity.Property(x => x.RepresentativeName).HasColumnName("Representative_name");
+                entity.Property(x => x.RepresentativeEmail).HasColumnName("Rep_Email");
+            });
+
+            modelBuilder.Entity<WithdrawalObjectionEntity>(entity =>
+            {
+                entity.HasKey(x => x.ObjectionId);
+                entity.ToTable("Obj_Property_Info", "dbo");
+                entity.Property(x => x.ObjectionId).HasColumnName("Objection_ID");
+                entity.Property(x => x.ObjectionNo).HasColumnName("Objection_No");
+                entity.Property(x => x.ObjectorType).HasColumnName("Objector_Type");
+                entity.Property(x => x.PremiseId).HasColumnName("Premise_id");
+            });
+
+            modelBuilder.Entity<WithdrawalAppealEntity>(entity =>
+            {
+                entity.HasKey(x => x.AppealId);
+                entity.ToTable("Obj_Property_Info_Appeal", "dbo");
+                entity.Property(x => x.AppealId).HasColumnName("Appeal_ID");
+                entity.Property(x => x.AppealNo).HasColumnName("Appeal_No");
+                entity.Property(x => x.ObjectReference).HasColumnName("Obj_Ref");
+                entity.Property(x => x.AppealType).HasColumnName("Appeal_Type");
+                entity.Property(x => x.PremiseId).HasColumnName("A_Premise_id");
+            });
+
+            modelBuilder.Entity<WithdrawalQueryEntity>(entity =>
+            {
+                entity.HasKey(x => x.QueryId);
+                entity.ToTable("QUE_Property_Info", "dbo");
+                entity.Property(x => x.QueryId).HasColumnName("Query_ID");
+                entity.Property(x => x.QueryNo).HasColumnName("Query_No");
+                entity.Property(x => x.ReviewNo).HasColumnName("Review_No");
+                entity.Property(x => x.ObjectorType).HasColumnName("Objector_Type");
+                entity.Property(x => x.QueryType).HasColumnName("Query_Type");
+                entity.Property(x => x.SubmissionType).HasColumnName("Submission_Type");
+                entity.Property(x => x.PremiseId).HasColumnName("Premise_id");
+            });
+        }
+    }
+
+    private sealed class WithdrawalSection1Entity
+    {
+        public string? ObjectionReference { get; set; }
+        public string? OwnerName { get; set; }
+        public string? OwnerEmail { get; set; }
+        public string? ObjectorName { get; set; }
+        public string? ObjectorEmail { get; set; }
+        public string? RepresentativeName { get; set; }
+        public string? RepresentativeEmail { get; set; }
+    }
+
+    private sealed class WithdrawalObjectionEntity
+    {
+        public long ObjectionId { get; set; }
+        public string? ObjectionNo { get; set; }
+        public string? ObjectorType { get; set; }
+        public string? PremiseId { get; set; }
+    }
+
+    private sealed class WithdrawalAppealEntity
+    {
+        public long AppealId { get; set; }
+        public string? AppealNo { get; set; }
+        public string? ObjectReference { get; set; }
+        public string? AppealType { get; set; }
+        public string? PremiseId { get; set; }
+    }
+
+    private sealed class WithdrawalQueryEntity
+    {
+        public long QueryId { get; set; }
+        public string? QueryNo { get; set; }
+        public string? ReviewNo { get; set; }
+        public string? ObjectorType { get; set; }
+        public string? QueryType { get; set; }
+        public string? SubmissionType { get; set; }
+        public string? PremiseId { get; set; }
+    }
+
+    private sealed class WithdrawalRecipientRow
+    {
+        public string? OwnerName { get; set; }
+        public string? OwnerEmail { get; set; }
+        public string? ObjectorName { get; set; }
+        public string? ObjectorEmail { get; set; }
+        public string? RepresentativeName { get; set; }
+        public string? RepresentativeEmail { get; set; }
+        public string? ObjectorType { get; set; }
     }
 
     private static List<string> GetUploadedDocumentNames(Obj_Files objFile)

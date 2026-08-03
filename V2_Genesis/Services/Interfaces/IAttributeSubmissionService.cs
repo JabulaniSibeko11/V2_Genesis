@@ -25,6 +25,17 @@ namespace V2_Genesis.Services.Interfaces
 
         Task<List<AttributeSectorInboxItemVm>> GetSectorInboxAsync(string sector);
 
-        Task<AttributeSubmissionViewModel?> GetSubmittedViewAsync(string attrNo,string userId, CancellationToken cancellationToken = default);
+        Task<AttributeSubmissionViewModel?> GetSubmittedViewAsync(string attrNo, string userId, CancellationToken cancellationToken = default);
+
+        Task<ReturnedAttributeCorrectionViewModel?> GetReturnedCorrectionAsync(
+            long attrId,
+            string userId,
+            CancellationToken cancellationToken = default);
+
+        Task ResubmitReturnedCorrectionAsync(
+            ReturnedAttributeCorrectionViewModel model,
+            string userId,
+            string userName,
+            CancellationToken cancellationToken = default);
     }
 }

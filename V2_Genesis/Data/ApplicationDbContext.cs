@@ -19,6 +19,7 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using V2_Genesis.Models;
+using V2_Genesis.Models.Admin;
 using V2_Genesis.Models.Entities;
 using V2_Genesis.Models.Notifications;
 using V2_Genesis.Models.Rates;
@@ -49,10 +50,11 @@ namespace V2_Genesis.Data
         public DbSet<Obj_WithdrawalsModel> Obj_Withdrawals { get; set; }
         public DbSet<Que_WithdrawalsModel> Que_Withdrawals { get; set; }
         public DbSet<Notifications> Notifications { get; set; }
+        public DbSet<AdminAuditLog> AdminAuditLogs { get; set; }
 
-        public DbSet<RateFinancialYear> RateFinancialYears =>Set<RateFinancialYear>();
+        public DbSet<RateFinancialYear> RateFinancialYears => Set<RateFinancialYear>();
 
-        public DbSet<PropertyRateTariff> PropertyRateTariffs =>Set<PropertyRateTariff>();
+        public DbSet<PropertyRateTariff> PropertyRateTariffs => Set<PropertyRateTariff>();
 
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options) { }
@@ -71,6 +73,13 @@ namespace V2_Genesis.Data
                 entity.Property(u => u.CompanyName).HasMaxLength(255);
                 entity.Property(u => u.CompanyRegistration).HasMaxLength(100);
                 entity.Property(u => u.SAPNumber).HasMaxLength(50);
+            });
+
+            builder.Entity<AdminAuditLog>(entity =>
+            {
+                entity.ToTable("AdminAuditLog", "dbo");
+                entity.HasKey(x => x.Id);
+                entity.Property(x => x.Id).ValueGeneratedOnAdd();
             });
 
             // ── FIX: Section tables — 'ID' does not exist in DB ───

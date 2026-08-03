@@ -94,10 +94,11 @@ else
                                         <ul class="dropdown-menu cd-action-menu">
                                             <li>
                                                 <a class="dropdown-item"
-                                                       asp-controller="Rebates"
-                                                       asp-action="ViewData"
-                                                       asp-route-RebateType="@item.Rebate_Type"
-                                                       asp-route-RebateNo="@item.Rebate_No">
+                                                       asp-route="ViewSubmission"
+                                                       asp-route-submissionType="Rebate"
+                                                       asp-route-referenceNumber="@item.Rebate_No"
+                                                       asp-route-rollSource="Rebates"
+                                                       asp-route-returnUrl="/Dashboard?openRoll=Rebates">
                                                     <i class="fa-solid fa-eye"></i>
                                                     View Form
                                                 </a>

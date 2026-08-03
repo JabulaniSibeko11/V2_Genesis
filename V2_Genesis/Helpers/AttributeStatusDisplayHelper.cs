@@ -8,26 +8,33 @@
 
             return status switch
             {
-                "EVIDENCEOPEN" => "Evidence Upload Open",
-                "EVIDENCELOCKED" => "Evidence Locked",
-                "SECTORINBOX" => "Submitted to Sector",
-                "SECTORROUTINGEXCEPTION" => "Routing Issue",
+                "SUBMITTED" => "Submitted",
+                "PENDING" => "Submission Being Processed",
+                "EVIDENCEOPEN" => "Submitted – Evidence Upload Open",
+                "EVIDENCELOCKED" => "Submitted – Evidence Upload Closed",
+                "SECTORINBOX" => "Awaiting Valuer Assignment",
+                "SECTORROUTINGEXCEPTION" or "ROUTINGEXCEPTION" => "Processing Delay",
 
-                "CLAIMED" => "Assigned to Valuer",
+                "ASSIGNED" or "CLAIMED" or "MANAGERASSIGNED" => "Assigned to Valuer",
                 "VALUERREVIEW" => "Under Valuer Review",
 
                 "INSPECTIONREQUIRED" => "Inspection Required",
-                "PENDINGCLIENTRESPONSE" => "Select Inspection Date",
+                "PENDINGCLIENTRESPONSE" or "INSPECTIONDATEOPTIONSSENT" => "Select Inspection Date",
                 "CONFIRMED" => "Inspection Date Confirmed",
                 "INSPECTIONCONFIRMED" => "Inspection Date Confirmed",
                 "INSPECTIONDETAILSSENT" => "Enter PIN to View Valuer Details",
                 "INSPECTIONEXPIRED" => "Inspection Date Options Expired",
                 "EXPIRED" => "Inspection Date Options Expired",
+                "INSPECTIONCOMPLETED" => "Inspection Completed – Under Review",
 
-                "RETURNEDTOCLIENT" => "Returned for Correction",
-                "RESUBMITTED" => "Resubmitted",
+                "RETURNEDTOCLIENT" => "Action Required – Correct Submission",
+                "RESUBMITTED" => "Corrections Resubmitted",
+                "RETURNEDTOVALUER" => "Under Valuer Rework",
+                "SECTORMANAGERQA" or "SUBMITTEDFORSECTORMANAGERQA" => "Quality Assurance Review",
 
-                "READYFOROVVIOEXTRACT" => "Accepted / Processing",
+                "READYFOROVVIOEXTRACT" => "Accepted – Final Processing",
+                "OVVIOEXTRACTED" or "COMPLETED" or "APPROVED" => "Completed",
+                "ACCEPTED" => "Accepted",
                 "REJECTED" => "Rejected",
                 "WITHDRAWN" => "Withdrawn",
 
@@ -43,26 +50,30 @@
 
             return status switch
             {
+                "SUBMITTED" or "PENDING" => "status-submitted",
                 "EVIDENCEOPEN" => "status-open",
                 "EVIDENCELOCKED" => "status-locked",
                 "SECTORINBOX" => "status-submitted",
-                "SECTORROUTINGEXCEPTION" => "status-error",
+                "SECTORROUTINGEXCEPTION" or "ROUTINGEXCEPTION" => "status-error",
 
-                "CLAIMED" => "status-assigned",
-                "VALUERREVIEW" => "status-review",
+                "ASSIGNED" or "CLAIMED" or "MANAGERASSIGNED" => "status-assigned",
+                "VALUERREVIEW" or "RETURNEDTOVALUER" => "status-review",
 
                 "INSPECTIONREQUIRED" => "status-inspection",
-                "PENDINGCLIENTRESPONSE" => "status-action",
+                "PENDINGCLIENTRESPONSE" or "INSPECTIONDATEOPTIONSSENT" => "status-action",
                 "CONFIRMED" => "status-confirmed",
                 "INSPECTIONCONFIRMED" => "status-confirmed",
                 "INSPECTIONDETAILSSENT" => "status-pin",
                 "INSPECTIONEXPIRED" => "status-expired",
                 "EXPIRED" => "status-expired",
+                "INSPECTIONCOMPLETED" => "status-review",
 
                 "RETURNEDTOCLIENT" => "status-returned",
                 "RESUBMITTED" => "status-resubmitted",
+                "SECTORMANAGERQA" or "SUBMITTEDFORSECTORMANAGERQA" => "status-qa",
 
                 "READYFOROVVIOEXTRACT" => "status-accepted",
+                "OVVIOEXTRACTED" or "COMPLETED" or "APPROVED" or "ACCEPTED" => "status-completed",
                 "REJECTED" => "status-rejected",
                 "WITHDRAWN" => "status-withdrawn",
 
@@ -76,10 +87,10 @@
 
             return status switch
             {
-                "PENDINGCLIENTRESPONSE" => "Select Date",
-                "CONFIRMED" => "Date Confirmed",
+                "PENDINGCLIENTRESPONSE" or "INSPECTIONDATEOPTIONSSENT" => "Select Date",
+                "CONFIRMED" or "INSPECTIONCONFIRMED" => "Date Confirmed",
                 "INSPECTIONDETAILSSENT" => "Enter PIN",
-                "EXPIRED" => "Expired",
+                "EXPIRED" or "INSPECTIONEXPIRED" => "Expired",
                 _ => GetDisplayStatus(backendStatus)
             };
         }

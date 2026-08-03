@@ -36,6 +36,8 @@ namespace V2_Genesis.Data
         public DbSet<AttrPropertyInfoAuditTrail> AttrPropertyInfoAuditTrail { get; set; } = null!;
         public DbSet<AttrWithdrawals> AttrWithdrawals { get; set; } = null!;
         public DbSet<AttrFiles> AttrFiles { get; set; } = null!;
+        public DbSet<AttrValuerReview> AttrValuerReviews { get; set; } = null!;
+        public DbSet<AttrValuerReviewSection> AttrValuerReviewSections { get; set; } = null!;
 
         public DbSet<Sector> Sectors { get; set; } = null!;
 

@@ -39,6 +39,105 @@ public class AttributesController : Controller
         _emailService = emailService;
     }
 
+    [HttpGet("attributes/correct/{attrId:long}")]
+    public async Task<IActionResult> CorrectReturned(
+        long attrId,
+        CancellationToken cancellationToken)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrWhiteSpace(userId)) return Challenge();
+
+        var model = await _attributeService.GetReturnedCorrectionAsync(
+            attrId,
+            userId,
+            cancellationToken);
+
+        if (model is null)
+        {
+            TempData["AttributeError"] =
+                "This submission is not available for correction or does not belong to your account.";
+            return RedirectToAction("Index", "Dashboard", new { openRoll = "attributes" });
+        }
+
+        return View("CorrectReturned", model);
+    }
+
+    [HttpPost("attributes/correct/{attrId:long}")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CorrectReturned(
+        long attrId,
+        ReturnedAttributeCorrectionViewModel model,
+        CancellationToken cancellationToken)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrWhiteSpace(userId)) return Challenge();
+
+        model.AttrId = attrId;
+
+        if (!ModelState.IsValid)
+        {
+            var current = await _attributeService.GetReturnedCorrectionAsync(
+                attrId,
+                userId,
+                cancellationToken);
+
+            if (current is null) return NotFound();
+
+            current.Submission = model.Submission;
+            current.RevisionComment = model.RevisionComment;
+            return View("CorrectReturned", current);
+        }
+
+        try
+        {
+            await _attributeService.ResubmitReturnedCorrectionAsync(
+                model,
+                userId,
+                User.Identity?.Name ?? userId,
+                cancellationToken);
+
+            TempData["AttributeSuccess"] =
+                "Your corrected attribute submission was resubmitted to the valuer successfully.";
+
+            return RedirectToAction("Index", "Dashboard", new { openRoll = "attributes" });
+        }
+        catch (InvalidOperationException ex)
+        {
+            ModelState.AddModelError(string.Empty, ex.Message);
+            var current = await _attributeService.GetReturnedCorrectionAsync(
+                attrId,
+                userId,
+                cancellationToken);
+
+            if (current is null) return NotFound();
+            current.Submission = model.Submission;
+            current.RevisionComment = model.RevisionComment;
+            return View("CorrectReturned", current);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Failed to resubmit returned attribute {AttrId} for user {UserId}.",
+                attrId,
+                userId);
+
+            ModelState.AddModelError(
+                string.Empty,
+                "The corrections could not be saved. Please try again or contact Valuation Services.");
+
+            var current = await _attributeService.GetReturnedCorrectionAsync(
+                attrId,
+                userId,
+                cancellationToken);
+
+            if (current is null) return NotFound();
+            current.Submission = model.Submission;
+            current.RevisionComment = model.RevisionComment;
+            return View("CorrectReturned", current);
+        }
+    }
+
     [HttpGet]
     [AllowAnonymous]
     [Route("attributes/about")]

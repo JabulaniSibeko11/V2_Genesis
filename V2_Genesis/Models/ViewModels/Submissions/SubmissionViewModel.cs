@@ -1,4 +1,5 @@
 ﻿using V2_Genesis.Models.ViewModels.Attributes;
+using V2_Genesis.Models.Rebates;
 
 namespace V2_Genesis.Models.ViewModels.Submissions
 {
@@ -25,6 +26,10 @@ namespace V2_Genesis.Models.ViewModels.Submissions
         // Attributes database tables.
         public AttributeSubmissionViewModel? Attribute { get; set; }
 
+        // Complete rebate application reconstructed from Rebate_Info and
+        // its eleven submitted form-section tables.
+        public RebateFormBinding? Rebate { get; set; }
+
         public List<MultiPurposeLineViewModel> MultiPurposeLines { get; set; } = new();
         public List<SubmissionDocumentViewModel> Documents { get; set; } = new();
         public List<SubmissionSectionViewModel> Sections { get; set; } = new();
@@ -46,6 +51,9 @@ namespace V2_Genesis.Models.ViewModels.Submissions
 
         public bool IsAttribute =>
             SubmissionType.Equals("Attribute", StringComparison.OrdinalIgnoreCase);
+
+        public bool IsRebate =>
+            SubmissionType.Equals("Rebate", StringComparison.OrdinalIgnoreCase);
 
         public bool IsSection78 => IsQuery || IsReview;
 

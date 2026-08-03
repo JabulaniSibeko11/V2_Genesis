@@ -418,7 +418,7 @@
                             <span asp-validation-for="ContactInfos[i].FirstNames" class="attr-field-error"></span>
                         </td>
 
-                        <td class="attr-label">Last Name</td>
+                        <td class="attr-label">Surname</td>
                         <td>
                             <input asp-for="ContactInfos[i].LastName"
                                    class="attr-input"
@@ -1331,17 +1331,33 @@
                     hiddenContactType.value = isCompany ? 'Company' : 'Owner';
                 }
 
-                // Toggle required-ness and clear whichever side is now hidden,
-                // so hidden fields never block submit or post stale values.
+                // Toggle required-ness without clearing either set of values.
+                // A client may switch between Owner and Company while completing
+                // the form, so all captured names must be preserved.
                 const firstNames = document.querySelector('[name="ContactInfos[' + index + '].FirstNames"]');
-                const lastName = document.querySelector('[name="ContactInfos[' + index + '].LastName"]');
+                const surname = document.querySelector('[name="ContactInfos[' + index + '].LastName"]');
                 const companyName = document.querySelector('[name="ContactInfos[' + index + '].CompanyName"]');
                 const companyReg = document.querySelector('[name="ContactInfos[' + index + '].CompanyRegistrationNumber"]');
 
-                if (firstNames) { firstNames.required = !isCompany; if (isCompany) firstNames.value = ''; }
-                if (lastName) { lastName.required = !isCompany; if (isCompany) lastName.value = ''; }
-                if (companyName) { companyName.required = isCompany; if (!isCompany) companyName.value = ''; }
-                if (companyReg) { if (!isCompany) companyReg.value = ''; }
+                if (firstNames) firstNames.required = !isCompany;
+                if (surname) surname.required = !isCompany;
+
+                if (companyName) {
+                    if (isCompany && !companyName.value.trim()) {
+                        const combinedName = [
+                            firstNames ? firstNames.value.trim() : '',
+                            surname ? surname.value.trim() : ''
+                        ].filter(Boolean).join(' ');
+
+                        companyName.value = combinedName;
+                    }
+
+                    companyName.required = isCompany;
+                }
+
+                // Company registration and personal names are intentionally
+                // retained when the contact type changes.
+                if (companyReg) companyReg.required = false;
             }
 
             // ─────────────────────────────────────────────

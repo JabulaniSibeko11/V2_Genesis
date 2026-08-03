@@ -1,18 +1,19 @@
-﻿using Dapper;
-using Microsoft.Data.SqlClient;
-using System.Data;
+﻿using V2_Genesis.Data;
+using V2_Genesis.Models.Admin;
 using V2_Genesis.Services.Interfaces;
 
 namespace V2_Genesis.Services.Implementations;
 
 public class AuditService : IAuditService
 {
-    private readonly string _connString;
+    private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<AuditService> _logger;
 
-    public AuditService(IConfiguration config, ILogger<AuditService> logger)
+    public AuditService(
+        IServiceScopeFactory scopeFactory,
+        ILogger<AuditService> logger)
     {
-        _connString = config.GetConnectionString("DefaultConnection")!;
+        _scopeFactory = scopeFactory;
         _logger = logger;
     }
 
@@ -28,25 +29,24 @@ public class AuditService : IAuditService
     {
         try
         {
-            await using var conn = new SqlConnection(_connString);
-            await conn.ExecuteAsync(
-                @"INSERT INTO [dbo].[AdminAuditLog]
-                    (AdminEmail, SapNumber, Action, RollSource,
-                     SearchValue, EntityRef, Details, IpAddress)
-                  VALUES
-                    (@AdminEmail, @SapNumber, @Action, @RollSource,
-                     @SearchValue, @EntityRef, @Details, @IpAddress)",
-                new
-                {
-                    AdminEmail = adminEmail,
-                    SapNumber = sapNumber,
-                    Action = action,
-                    RollSource = rollSource,
-                    SearchValue = searchValue,
-                    EntityRef = entityRef,
-                    Details = details,
-                    IpAddress = ipAddress
-                });
+            await using var scope = _scopeFactory.CreateAsyncScope();
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+            var auditEntry = new AdminAuditLog
+            {
+                AdminEmail = adminEmail?.Trim() ?? string.Empty,
+                SapNumber = sapNumber?.Trim(),
+                Action = action?.Trim() ?? string.Empty,
+                RollSource = rollSource?.Trim(),
+                SearchValue = searchValue?.Trim(),
+                EntityRef = entityRef?.Trim(),
+                Details = details,
+                IpAddress = ipAddress?.Trim(),
+                Timestamp = DateTime.Now
+            };
+
+            await db.AdminAuditLogs.AddAsync(auditEntry);
+            await db.SaveChangesAsync();
         }
         catch (Exception ex)
         {

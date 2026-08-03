@@ -13,6 +13,9 @@ namespace V2_Genesis.Models
         public string? Query_No { get; set; }
 
         [StringLength(100)]
+        public string? Review_No { get; set; }
+
+        [StringLength(100)]
         public string? Query_Type { get; set; }
         [StringLength(100)]
         public string? Property_Type { get; set; }

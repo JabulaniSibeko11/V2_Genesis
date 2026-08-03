@@ -8,14 +8,17 @@ namespace V2_Genesis.Models
         [Key]
         public long ID { get; set; }
         [ForeignKey("Obj_Property_Info")]
-        
-        public long? Ref { get; set; }
-		[StringLength(100)]
-		public string? Objection_Ref_SQ { get; set; }
 
-        
+        public long? Ref { get; set; }
+        [StringLength(100)]
+        public string? Objection_Ref_SQ { get; set; }
+
+        [StringLength(100)]
+        public string? Review_No { get; set; }
+
+
         //Details
-        
+
 
         [StringLength(5)]
         public string? Option_A { get; set; }

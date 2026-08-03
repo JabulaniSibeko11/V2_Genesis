@@ -1,9 +1,7 @@
-﻿using Dapper;
-using Microsoft.Data.SqlClient;
+﻿using Microsoft.EntityFrameworkCore;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
-using System.Data;
 using V2_Genesis.Services.Admin;
 using V2_Genesis.Services.Interfaces;
 
@@ -46,42 +44,38 @@ public sealed class DearJohnnyNoticeService : IDearJohnnyNoticeService
             ?? throw new InvalidOperationException(
                 $"Connection string '{roll.ConnectionKey}' was not found.");
 
-        const string sql = """
-            SELECT TOP (1)
-                dj.Id                         AS Id,
-                dj.Objection_No               AS ObjectionNo,
-                dj.Objector_Type              AS ObjectorType,
-                dj.Property_Desc              AS PropertyDescription,
-                dj.Objector_Name              AS ObjectorName,
-                dj.Objector_Surname           AS ObjectorSurname,
-                dj.Objector_Address           AS ObjectorAddress,
-                dj.Objector_Email             AS ObjectorEmail,
-                dj.Objector_Phone             AS ObjectorPhone,
-                dj.Letter_Date                AS LetterDate,
-                dj.Generated_Date             AS GeneratedDate,
-                dj.Valuation_Key              AS ValuationKey,
-                dj.Batch_Name                 AS BatchName,
-                dj.Batch_Date                 AS BatchDate,
-                dj.SentStatus                 AS SentStatus,
-                LTRIM(RTRIM(p.objection_Status)) AS ObjectionStatus
-            FROM dbo.DearJohnnyTable AS dj
-            INNER JOIN dbo.Obj_Property_Info AS p
-                ON LTRIM(RTRIM(p.Objection_No)) = LTRIM(RTRIM(dj.Objection_No))
-            WHERE LTRIM(RTRIM(dj.Objection_No)) = @ObjectionNo
-              AND p.UserID = @UserId
-              AND LTRIM(RTRIM(p.objection_Status)) = 'Notice-Sent-Dear-Johnny'
-            ORDER BY dj.Id DESC;
-            """;
+        await using var db = new DearJohnnyReadDbContext(connectionString);
 
-        await using var connection = new SqlConnection(connectionString);
-        var command = new CommandDefinition(
-            sql,
-            new { ObjectionNo = objectionNo, UserId = userId },
-            commandType: CommandType.Text,
-            commandTimeout: 60,
-            cancellationToken: cancellationToken);
-
-        var row = await connection.QueryFirstOrDefaultAsync<DearJohnnyRow>(command);
+        var row = await (
+            from notice in db.DearJohnnyNotices.AsNoTracking()
+            join objection in db.Objections.AsNoTracking()
+                on (notice.ObjectionNo ?? string.Empty).Trim()
+                equals (objection.ObjectionNo ?? string.Empty).Trim()
+            where (notice.ObjectionNo ?? string.Empty).Trim() == objectionNo
+                && (objection.UserId ?? string.Empty).Trim() == userId
+                && (objection.ObjectionStatus ?? string.Empty).Trim() ==
+                    "Notice-Sent-Dear-Johnny"
+            orderby notice.Id descending
+            select new DearJohnnyRow
+            {
+                Id = notice.Id,
+                ObjectionNo = notice.ObjectionNo,
+                ObjectorType = notice.ObjectorType,
+                PropertyDescription = notice.PropertyDescription,
+                ObjectorName = notice.ObjectorName,
+                ObjectorSurname = notice.ObjectorSurname,
+                ObjectorAddress = notice.ObjectorAddress,
+                ObjectorEmail = notice.ObjectorEmail,
+                ObjectorPhone = notice.ObjectorPhone,
+                LetterDate = notice.LetterDate,
+                GeneratedDate = notice.GeneratedDate,
+                ValuationKey = notice.ValuationKey,
+                BatchName = notice.BatchName,
+                BatchDate = notice.BatchDate,
+                SentStatus = notice.SentStatus,
+                ObjectionStatus = objection.ObjectionStatus
+            })
+            .FirstOrDefaultAsync(cancellationToken);
         if (row is null)
             throw new KeyNotFoundException(
                 "The objection outcome notice was not found for this account.");
@@ -233,6 +227,90 @@ public sealed class DearJohnnyNoticeService : IDearJohnnyNoticeService
         return new string((value ?? "Objection")
             .Where(character => !invalid.Contains(character))
             .ToArray());
+    }
+
+    private sealed class DearJohnnyReadDbContext : DbContext
+    {
+        private readonly string _connectionString;
+
+        public DearJohnnyReadDbContext(string connectionString)
+        {
+            _connectionString = connectionString;
+        }
+
+        public DbSet<DearJohnnyEntity> DearJohnnyNotices =>
+            Set<DearJohnnyEntity>();
+
+        public DbSet<DearJohnnyObjectionEntity> Objections =>
+            Set<DearJohnnyObjectionEntity>();
+
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            optionsBuilder.UseSqlServer(
+                _connectionString,
+                sqlServer => sqlServer.CommandTimeout(60));
+        }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<DearJohnnyEntity>(entity =>
+            {
+                entity.HasKey(x => x.Id);
+                entity.ToTable("DearJohnnyTable", "dbo");
+                entity.Property(x => x.Id).HasColumnName("Id");
+                entity.Property(x => x.ObjectionNo).HasColumnName("Objection_No");
+                entity.Property(x => x.ObjectorType).HasColumnName("Objector_Type");
+                entity.Property(x => x.PropertyDescription).HasColumnName("Property_Desc");
+                entity.Property(x => x.ObjectorName).HasColumnName("Objector_Name");
+                entity.Property(x => x.ObjectorSurname).HasColumnName("Objector_Surname");
+                entity.Property(x => x.ObjectorAddress).HasColumnName("Objector_Address");
+                entity.Property(x => x.ObjectorEmail).HasColumnName("Objector_Email");
+                entity.Property(x => x.ObjectorPhone).HasColumnName("Objector_Phone");
+                entity.Property(x => x.LetterDate).HasColumnName("Letter_Date");
+                entity.Property(x => x.GeneratedDate).HasColumnName("Generated_Date");
+                entity.Property(x => x.ValuationKey).HasColumnName("Valuation_Key");
+                entity.Property(x => x.BatchName).HasColumnName("Batch_Name");
+                entity.Property(x => x.BatchDate).HasColumnName("Batch_Date");
+                entity.Property(x => x.SentStatus).HasColumnName("SentStatus");
+            });
+
+            modelBuilder.Entity<DearJohnnyObjectionEntity>(entity =>
+            {
+                entity.HasKey(x => x.ObjectionId);
+                entity.ToTable("Obj_Property_Info", "dbo");
+                entity.Property(x => x.ObjectionId).HasColumnName("Objection_ID");
+                entity.Property(x => x.ObjectionNo).HasColumnName("Objection_No");
+                entity.Property(x => x.UserId).HasColumnName("UserID");
+                entity.Property(x => x.ObjectionStatus).HasColumnName("objection_Status");
+            });
+        }
+    }
+
+    private sealed class DearJohnnyEntity
+    {
+        public long Id { get; set; }
+        public string? ObjectionNo { get; set; }
+        public string? ObjectorType { get; set; }
+        public string? PropertyDescription { get; set; }
+        public string? ObjectorName { get; set; }
+        public string? ObjectorSurname { get; set; }
+        public string? ObjectorAddress { get; set; }
+        public string? ObjectorEmail { get; set; }
+        public string? ObjectorPhone { get; set; }
+        public DateTime? LetterDate { get; set; }
+        public DateTime? GeneratedDate { get; set; }
+        public string? ValuationKey { get; set; }
+        public string? BatchName { get; set; }
+        public DateTime? BatchDate { get; set; }
+        public string? SentStatus { get; set; }
+    }
+
+    private sealed class DearJohnnyObjectionEntity
+    {
+        public long ObjectionId { get; set; }
+        public string? ObjectionNo { get; set; }
+        public string? UserId { get; set; }
+        public string? ObjectionStatus { get; set; }
     }
 
     private sealed class DearJohnnyRow

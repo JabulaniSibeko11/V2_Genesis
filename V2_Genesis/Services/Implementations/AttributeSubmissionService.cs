@@ -1221,6 +1221,9 @@ namespace V2_Genesis.Services.Implementations
             var valuation = property.ValuationDetails;
             var calculations = property.Calculations;
 
+            var access = await _context.AttrAccess
+                .FirstOrDefaultAsync(x => x.PropertyDetailsId == propertyDetailsId, cancellationToken);
+
             var declaration = await _context.AttrDeclarations
                 .FirstOrDefaultAsync(x => x.Attr_ID == attrId, cancellationToken);
 
@@ -1312,9 +1315,9 @@ namespace V2_Genesis.Services.Implementations
 
                 Access = new AttributeAccessVm
                 {
-                    AccessType = null,
-                    PermissionStatus = null,
-                    Comments = null
+                    AccessType = access?.AccessType,
+                    PermissionStatus = access?.PermissionStatus,
+                    Comments = access?.Comments
                 },
 
                 PrimaryAttributes = new AttributePrimaryAttributesVm
@@ -1386,12 +1389,21 @@ namespace V2_Genesis.Services.Implementations
                     CompanyRegistrationNumber = c.CompanyRegistrationNumber,
                     FirstNames = c.FirstNames,
                     LastName = c.LastName,
+                    MaidenName = c.MaidenName,
+                    IDNumber = c.IDNumber,
+                    DateOfBirth = c.DateOfBirth,
+                    Gender = c.Gender,
+                    MaritalStatus = c.MaritalStatus,
+                    Citizenship = c.Citizenship,
                     PhysicalAddress = c.PhysicalAddress,
                     PostalAddress = c.PostalAddress,
                     Email = c.Email,
                     HomePhoneNo = c.HomePhoneNo,
                     WorkPhoneNo = c.WorkPhoneNo,
-                    CellNo = c.CellNo
+                    CellNo = c.CellNo,
+                    FaxNo = c.FaxNo,
+                    Interviewed = c.Interviewed,
+                    Comments = c.Comments
                 }).ToList(),
 
                 BusinessBuildings = businessBuildings.Select(b => new AttributeBusinessBuildingVm
@@ -1401,16 +1413,30 @@ namespace V2_Genesis.Services.Implementations
                     Condition = b.Condition,
                     YearBuilt = b.YearBuilt,
                     Storeys = b.Storeys,
-                    GBA = b.GBA
+                    Depreciation = b.Depreciation,
+                    GBA = b.GBA,
+                    Cost = b.Cost,
+                    DRC = b.DRC
                 }).ToList(),
 
                 BusinessSections = businessSections.Select(s => new AttributeBusinessSectionVm
                 {
                     BuildingNr = s.BuildingNr,
                     Usage = s.Usage,
+                    MarketGroup = s.MarketGroup,
+                    Quality = s.Quality,
                     GBA = s.GBA,
                     NLA = s.NLA,
-                    Rental = s.Rental
+                    CostRate = s.CostRate,
+                    Cost = s.Cost,
+                    Rental = s.Rental,
+                    Vac = s.Vac,
+                    Exp = s.Exp,
+                    Cap = s.Cap,
+                    Gross = s.Gross,
+                    Normalised = s.Normalised,
+                    Nett = s.Nett,
+                    Value = s.Value
                 }).ToList(),
 
                 DrcBuildings = drcBuildings.Select(b => new AttributeDrcBuildingVm
@@ -1418,7 +1444,11 @@ namespace V2_Genesis.Services.Implementations
                     BuildingDescription = b.BuildingDescription,
                     Quality = b.Quality,
                     GrossBuildingArea = b.GrossBuildingArea,
-                    Condition = b.Condition
+                    Condition = b.Condition,
+                    DepreciationPercentage = b.DepreciationPercentage,
+                    RatePerSQM = b.RatePerSQM,
+                    DepreciatedRate = b.DepreciatedRate,
+                    ReplacementCost = b.ReplacementCost
                 }).ToList(),
 
                 DrcImprovements = drcImprovements.Select(i => new AttributeDrcImprovementVm
@@ -1426,17 +1456,338 @@ namespace V2_Genesis.Services.Implementations
                     ImprovementDescription = i.ImprovementDescription,
                     Quality = i.Quality,
                     AreaUnit = i.AreaUnit,
-                    Condition = i.Condition
+                    Condition = i.Condition,
+                    DepreciationPercentage = i.DepreciationPercentage,
+                    RatePerSQM = i.RatePerSQM,
+                    DepreciatedRate = i.DepreciatedRate,
+                    ReplacementCost = i.ReplacementCost
                 }).ToList(),
 
                 DrcVacantLands = drcVacantLands.Select(v => new AttributeDrcVacantLandVm
                 {
                     Region = v.Region,
-                    Area = v.Area
+                    MinRatePerSQM = v.MinRatePerSQM,
+                    MidRatePerSQM = v.MidRatePerSQM,
+                    MaxRatePerSQM = v.MaxRatePerSQM,
+                    Area = v.Area,
+                    Rate = v.Rate,
+                    VacantLandCost = v.VacantLandCost
                 }).ToList()
             };
 
             return model;
+        }
+
+        public async Task<ReturnedAttributeCorrectionViewModel?> GetReturnedCorrectionAsync(
+            long attrId,
+            string userId,
+            CancellationToken cancellationToken = default)
+        {
+            if (attrId <= 0 || string.IsNullOrWhiteSpace(userId)) return null;
+
+            var info = await _context.AttrPropertyInfo
+                .AsNoTracking()
+                .FirstOrDefaultAsync(
+                    x => x.Attr_ID == attrId
+                         && x.SubmittedByUserId == userId
+                         && x.IsActive
+                         && x.Attr_Status == "ReturnedToClient"
+                         && x.RevisionRequired,
+                    cancellationToken);
+
+            if (info is null) return null;
+
+            var review = await _context.AttrValuerReviews
+                .AsNoTracking()
+                .Where(x => x.Attr_ID == attrId && x.ReviewStatus == "ReturnedToClient")
+                .OrderByDescending(x => x.CompletedAt ?? x.StartedAt)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (review is null) return null;
+
+            var sections = await _context.AttrValuerReviewSections
+                .AsNoTracking()
+                .Where(x => x.ReviewId == review.Id
+                            && (x.RequiresCorrection || x.SectionDecision == "Needs correction"))
+                .OrderBy(x => x.Id)
+                .Select(x => new ReturnedAttributeCorrectionSectionVm
+                {
+                    Code = x.SectionCode,
+                    Name = x.SectionName,
+                    Comment = x.SectionComment ?? string.Empty
+                })
+                .ToListAsync(cancellationToken);
+
+            // A returned submission without a marked correction section is incomplete
+            // on the valuer side and must not expose the entire form for editing.
+            if (sections.Count == 0) return null;
+
+            var submission = await BuildSubmittedAttributeViewModelAsync(attrId, cancellationToken);
+            if (submission is null) return null;
+
+            return new ReturnedAttributeCorrectionViewModel
+            {
+                AttrId = info.Attr_ID,
+                AttrNo = info.Attr_No ?? string.Empty,
+                PropertyDescription = info.Property_Desc ?? string.Empty,
+                FormType = info.Property_Type,
+                RevisionReason = info.RevisionReason ?? review.FinalComment ?? string.Empty,
+                RequestedAt = info.RevisionRequestedDateTime,
+                RequestedBy = info.RevisionRequestedBy ?? string.Empty,
+                Submission = submission,
+                Sections = sections
+            };
+        }
+
+        public async Task ResubmitReturnedCorrectionAsync(
+            ReturnedAttributeCorrectionViewModel model,
+            string userId,
+            string userName,
+            CancellationToken cancellationToken = default)
+        {
+            if (model.AttrId <= 0)
+                throw new InvalidOperationException("Invalid attribute submission.");
+
+            if (string.IsNullOrWhiteSpace(model.RevisionComment))
+                throw new InvalidOperationException("Please explain what you corrected.");
+
+            await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+
+            var info = await _context.AttrPropertyInfo
+                .Include(x => x.PropertyDetails)
+                .FirstOrDefaultAsync(
+                    x => x.Attr_ID == model.AttrId
+                         && x.SubmittedByUserId == userId
+                         && x.IsActive,
+                    cancellationToken);
+
+            if (info?.PropertyDetails is null)
+                throw new InvalidOperationException("The attribute submission could not be found.");
+
+            if (!string.Equals(info.Attr_Status, "ReturnedToClient", StringComparison.OrdinalIgnoreCase)
+                || !info.RevisionRequired)
+            {
+                throw new InvalidOperationException("This submission is no longer available for correction.");
+            }
+
+            var review = await _context.AttrValuerReviews
+                .Where(x => x.Attr_ID == info.Attr_ID && x.ReviewStatus == "ReturnedToClient")
+                .OrderByDescending(x => x.CompletedAt ?? x.StartedAt)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (review is null)
+                throw new InvalidOperationException("The valuer correction request could not be found.");
+
+            var allowedCodeRows = await _context.AttrValuerReviewSections
+                .Where(x => x.ReviewId == review.Id
+                            && (x.RequiresCorrection || x.SectionDecision == "Needs correction"))
+                .Select(x => x.SectionCode)
+                .ToListAsync(cancellationToken);
+
+            var allowedCodes = allowedCodeRows.ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            if (allowedCodes.Count == 0)
+                throw new InvalidOperationException("The valuer did not identify any form section for correction.");
+
+            var propertyId = info.PropertyDetails.Id;
+            var posted = model.Submission ?? new AttributeSubmissionViewModel();
+            posted.FormType = info.Property_Type;
+            CleanSubmission(posted);
+
+            if (posted.ContactInfos.Count > 10
+                || posted.BusinessBuildings.Count > 50
+                || posted.BusinessSections.Count > 100
+                || posted.DrcBuildings.Count > 50
+                || posted.DrcImprovements.Count > 50
+                || posted.DrcVacantLands.Count > 50)
+            {
+                throw new InvalidOperationException("The correction contains too many form rows.");
+            }
+
+            var now = DateTime.Now;
+
+            if (allowedCodes.Contains("PROPERTY_DETAILS"))
+            {
+                CopyMatchingValues(posted.PropertyDetails, info.PropertyDetails);
+                info.Property_Desc = posted.PropertyDetails.PropertyDesc ?? info.Property_Desc;
+                StampUpdated(info.PropertyDetails, userId, now);
+            }
+
+            if (allowedCodes.Contains("VALUATION_DETAILS"))
+            {
+                var row = await _context.AttrValuationDetails
+                    .FirstOrDefaultAsync(x => x.PropertyDetailsId == propertyId, cancellationToken);
+                if (row is null)
+                {
+                    row = new AttrValuationDetails { PropertyDetailsId = propertyId, CreatedBy = userId, CreatedDate = now };
+                    _context.AttrValuationDetails.Add(row);
+                }
+                CopyMatchingValues(posted.ValuationDetails, row);
+                StampUpdated(row, userId, now);
+            }
+
+            if (allowedCodes.Contains("CONTACT_INFORMATION"))
+                await ReplaceRowsAsync(_context.AttrContactInfo, propertyId, posted.ContactInfos, userId, now, cancellationToken);
+
+            if (allowedCodes.Contains("ACCESS_INFORMATION"))
+            {
+                var row = await _context.AttrAccess
+                    .FirstOrDefaultAsync(x => x.PropertyDetailsId == propertyId, cancellationToken);
+                if (row is null)
+                {
+                    row = new AttrAccess { PropertyDetailsId = propertyId, CreatedBy = userId, CreatedDate = now };
+                    _context.AttrAccess.Add(row);
+                }
+                CopyMatchingValues(posted.Access, row);
+                StampUpdated(row, userId, now);
+            }
+
+            if (allowedCodes.Contains("PRIMARY_ATTRIBUTES"))
+                await UpdateSingleAsync(_context.AttrPrimaryAttributes, propertyId, posted.PrimaryAttributes, userId, now, cancellationToken);
+
+            if (allowedCodes.Contains("SECONDARY_ATTRIBUTES"))
+                await UpdateSingleAsync(_context.AttrSecondaryAttributes, propertyId, posted.SecondaryAttributes, userId, now, cancellationToken);
+
+            if (allowedCodes.Contains("BUSINESS_BUILDINGS"))
+                await ReplaceRowsAsync(_context.AttrBusinessBuildings, propertyId, posted.BusinessBuildings, userId, now, cancellationToken);
+
+            if (allowedCodes.Contains("BUSINESS_SECTIONS"))
+                await ReplaceRowsAsync(_context.AttrBusinessSections, propertyId, posted.BusinessSections, userId, now, cancellationToken);
+
+            if (allowedCodes.Contains("BUSINESS_GENERAL"))
+                await UpdateSingleAsync(_context.AttrBusinessGeneral, propertyId, posted.BusinessGeneral, userId, now, cancellationToken);
+
+            if (allowedCodes.Contains("DRC_BUILDINGS"))
+                await ReplaceRowsAsync(_context.AttrDrcBuildings, propertyId, posted.DrcBuildings, userId, now, cancellationToken);
+
+            if (allowedCodes.Contains("DRC_IMPROVEMENTS"))
+                await ReplaceRowsAsync(_context.AttrDrcImprovements, propertyId, posted.DrcImprovements, userId, now, cancellationToken);
+
+            if (allowedCodes.Contains("DRC_VACANT_LAND"))
+                await ReplaceRowsAsync(_context.AttrDrcVacantLand, propertyId, posted.DrcVacantLands, userId, now, cancellationToken);
+
+            if (allowedCodes.Contains("DRC_MARKET_VALUE"))
+                await UpdateSingleAsync(_context.AttrDrcMarketValueDemolition, propertyId, posted.DrcMarketValueDemolition, userId, now, cancellationToken);
+
+            if (allowedCodes.Contains("CALCULATIONS"))
+                await UpdateSingleAsync(_context.AttrCalculations, propertyId, posted.Calculations, userId, now, cancellationToken);
+
+            if (allowedCodes.Contains("DECLARATION"))
+            {
+                var declaration = await _context.AttrDeclarations
+                    .FirstOrDefaultAsync(x => x.Attr_ID == info.Attr_ID, cancellationToken);
+                if (declaration is not null)
+                {
+                    declaration.Declaration_Accepted = posted.Declaration.DeclarationAccepted;
+                    declaration.Declaration_Text = posted.Declaration.DeclarationText;
+                    declaration.Signature_Name = posted.Declaration.SignatureName;
+                    if (!string.IsNullOrWhiteSpace(posted.Declaration.SignaturePicture))
+                        declaration.Signature_Picture = posted.Declaration.SignaturePicture;
+                    declaration.Declaration_Date = now;
+                    declaration.UpdatedBy = userId;
+                    declaration.UpdatedDate = now;
+                }
+            }
+
+            var oldStatus = info.Attr_Status;
+            info.Attr_Status = "Resubmitted";
+            info.RevisionRequired = false;
+            info.RevisedBy = userName;
+            info.RevisedDateTime = now;
+            info.RevisionComment = model.RevisionComment.Trim();
+            info.UpdatedBy = userId;
+            info.UpdatedDate = now;
+
+            _context.AttrPropertyInfoAuditTrail.Add(new AttrPropertyInfoAuditTrail
+            {
+                Attr_ID = info.Attr_ID,
+                Attr_No = info.Attr_No,
+                Action = "Client Resubmitted Corrections",
+                OldStatus = oldStatus,
+                NewStatus = "Resubmitted",
+                ActionByUserId = userId,
+                ActionByName = userName,
+                ActionRole = "Client",
+                Comment = model.RevisionComment.Trim(),
+                ActionDateTime = now
+            });
+
+            await _context.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+        }
+
+        private static void CopyMatchingValues<TSource, TTarget>(TSource source, TTarget target)
+        {
+            if (source is null || target is null) return;
+
+            var targetProperties = typeof(TTarget).GetProperties()
+                .Where(x => x.CanWrite && x.Name is not ("Id" or "PropertyDetailsId" or "CreatedBy" or "CreatedDate" or "UpdatedBy" or "UpdatedDate"))
+                .ToDictionary(x => x.Name, StringComparer.OrdinalIgnoreCase);
+
+            foreach (var sourceProperty in typeof(TSource).GetProperties().Where(x => x.CanRead))
+            {
+                if (!targetProperties.TryGetValue(sourceProperty.Name, out var targetProperty)) continue;
+                if (!targetProperty.PropertyType.IsAssignableFrom(sourceProperty.PropertyType)) continue;
+                targetProperty.SetValue(target, sourceProperty.GetValue(source));
+            }
+        }
+
+        private static void StampUpdated(object row, string userId, DateTime now)
+        {
+            row.GetType().GetProperty("UpdatedBy")?.SetValue(row, userId);
+            row.GetType().GetProperty("UpdatedDate")?.SetValue(row, now);
+        }
+
+        private async Task UpdateSingleAsync<TEntity, TModel>(
+            DbSet<TEntity> set,
+            int propertyDetailsId,
+            TModel source,
+            string userId,
+            DateTime now,
+            CancellationToken cancellationToken)
+            where TEntity : class, new()
+        {
+            var row = await set.FirstOrDefaultAsync(
+                x => EF.Property<int>(x, "PropertyDetailsId") == propertyDetailsId,
+                cancellationToken);
+
+            if (row is null)
+            {
+                row = new TEntity();
+                typeof(TEntity).GetProperty("PropertyDetailsId")?.SetValue(row, propertyDetailsId);
+                typeof(TEntity).GetProperty("CreatedBy")?.SetValue(row, userId);
+                typeof(TEntity).GetProperty("CreatedDate")?.SetValue(row, now);
+                set.Add(row);
+            }
+
+            CopyMatchingValues(source, row);
+            StampUpdated(row, userId, now);
+        }
+
+        private async Task ReplaceRowsAsync<TEntity, TModel>(
+            DbSet<TEntity> set,
+            int propertyDetailsId,
+            IEnumerable<TModel>? sources,
+            string userId,
+            DateTime now,
+            CancellationToken cancellationToken)
+            where TEntity : class, new()
+        {
+            var existing = await set
+                .Where(x => EF.Property<int>(x, "PropertyDetailsId") == propertyDetailsId)
+                .ToListAsync(cancellationToken);
+            set.RemoveRange(existing);
+
+            foreach (var source in sources ?? Enumerable.Empty<TModel>())
+            {
+                var row = new TEntity();
+                typeof(TEntity).GetProperty("PropertyDetailsId")?.SetValue(row, propertyDetailsId);
+                typeof(TEntity).GetProperty("CreatedBy")?.SetValue(row, userId);
+                typeof(TEntity).GetProperty("CreatedDate")?.SetValue(row, now);
+                CopyMatchingValues(source, row);
+                StampUpdated(row, userId, now);
+                set.Add(row);
+            }
         }
         public async Task<(byte[] Pdf, string FileName)?> GenerateAcknowledgementPdfAsync(long attrId)
         {
@@ -1639,10 +1990,17 @@ namespace V2_Genesis.Services.Implementations
                 if (contact.IsCompany)
                 {
                     if (IsBlank(contact.CompanyName))
-                        errors.Add($"{label}: Company name is required.");
+                    {
+                        contact.CompanyName = string.Join(
+                            " ",
+                            new[] { contact.FirstNames, contact.LastName }
+                                .Where(x => !string.IsNullOrWhiteSpace(x)))
+                            .Trim();
+                    }
 
-                    contact.FirstNames = null;
-                    contact.LastName = null;
+                    if (IsBlank(contact.CompanyName))
+                        errors.Add($"{label}: Company name or the contact person's first names and surname are required.");
+
                     contact.ContactType = "Company";
                 }
                 else
@@ -1651,10 +2009,7 @@ namespace V2_Genesis.Services.Implementations
                         errors.Add($"{label}: First name is required.");
 
                     if (IsBlank(contact.LastName))
-                        errors.Add($"{label}: Last name is required.");
-
-                    contact.CompanyName = null;
-                    contact.CompanyRegistrationNumber = null;
+                        errors.Add($"{label}: Surname is required.");
 
                     if (IsBlank(contact.ContactType))
                         contact.ContactType = "Owner";

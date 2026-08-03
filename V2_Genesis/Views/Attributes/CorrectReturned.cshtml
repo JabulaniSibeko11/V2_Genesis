@@ -1,0 +1,283 @@
+﻿@using System.ComponentModel
+@using System.ComponentModel.DataAnnotations
+@using System.Reflection
+@using System.Collections
+@model V2_Genesis.Models.ViewModels.Attributes.ReturnedAttributeCorrectionViewModel
+@{
+    ViewData["Title"] = "Correct Attribute Submission";
+    Layout = "~/Views/Shared/_ClientLayout.cshtml";
+
+    var excluded = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+    {
+        "AttrId", "AttrNo", "FormType", "PropertyId", "PremiseId", "UnitKey",
+        "ValuationKey", "Sector", "RollType", "RollDescription", "SignaturePicture"
+    };
+
+    IEnumerable<PropertyInfo> EditableProperties(object source) => source.GetType()
+        .GetProperties(BindingFlags.Instance | BindingFlags.Public)
+        .Where(property => property.CanRead && property.CanWrite
+                           && property.GetIndexParameters().Length == 0
+                           && !excluded.Contains(property.Name)
+                           && (property.PropertyType == typeof(string)
+                               || property.PropertyType == typeof(bool)
+                               || property.PropertyType == typeof(bool?)
+                               || property.PropertyType == typeof(int)
+                               || property.PropertyType == typeof(int?)
+                               || property.PropertyType == typeof(decimal)
+                               || property.PropertyType == typeof(decimal?)
+                               || property.PropertyType == typeof(DateTime)
+                               || property.PropertyType == typeof(DateTime?)));
+
+    string Label(PropertyInfo property)
+    {
+        if (property.Name.Equals("LastName", StringComparison.OrdinalIgnoreCase))
+            return "Surname";
+
+        return property.GetCustomAttribute<DisplayAttribute>()?.GetName()
+            ?? property.GetCustomAttribute<DisplayNameAttribute>()?.DisplayName
+            ?? System.Text.RegularExpressions.Regex
+                .Replace(property.Name, "([a-z0-9])([A-Z])", "$1 $2")
+                .Replace("_", " ");
+    }
+
+    string InputType(PropertyInfo property)
+    {
+        var type = Nullable.GetUnderlyingType(property.PropertyType) ?? property.PropertyType;
+        if (type == typeof(decimal) || type == typeof(int)) return "number";
+        if (type == typeof(DateTime)) return "date";
+        if (property.Name.Contains("Email", StringComparison.OrdinalIgnoreCase)) return "email";
+        if (property.Name.Contains("Phone", StringComparison.OrdinalIgnoreCase)
+            || property.Name.Contains("Cell", StringComparison.OrdinalIgnoreCase)) return "tel";
+        return "text";
+    }
+
+    bool IsLongText(PropertyInfo property) =>
+        property.Name.Contains("Address", StringComparison.OrdinalIgnoreCase)
+        || property.Name.Contains("Comment", StringComparison.OrdinalIgnoreCase)
+        || property.Name.Contains("Text", StringComparison.OrdinalIgnoreCase)
+        || property.Name.Contains("Sources", StringComparison.OrdinalIgnoreCase)
+        || property.Name.Contains("Financials", StringComparison.OrdinalIgnoreCase);
+
+    bool CanClientEdit(string prefix, string propertyName)
+    {
+        if (prefix == "PropertyDetails" || prefix == "Access"
+            || prefix == "Calculations" || prefix == "DrcMarketValueDemolition")
+            return false;
+
+        if (prefix == "ValuationDetails")
+            return propertyName is not ("OwnersTitleDeeds" or "OwnersFinancials");
+
+        if (prefix.StartsWith("ContactInfos", StringComparison.Ordinal))
+            return propertyName is not ("MaidenName" or "IDNumber" or "DateOfBirth"
+                or "Gender" or "MaritalStatus" or "Citizenship" or "FaxNo"
+                or "Interviewed" or "Comments");
+
+        if (prefix == "PrimaryAttributes") return propertyName != "AdjustmentFactor";
+
+        if (prefix.StartsWith("BusinessBuildings", StringComparison.Ordinal))
+            return propertyName is "BuildingNr" or "Quality" or "Condition"
+                or "YearBuilt" or "Storeys" or "GBA";
+
+        if (prefix.StartsWith("BusinessSections", StringComparison.Ordinal))
+            return propertyName is "BuildingNr" or "Usage" or "GBA" or "NLA" or "Rental";
+
+        if (prefix == "BusinessGeneral") return propertyName == "UnutilisedLandExtent";
+
+        if (prefix.StartsWith("DrcBuildings", StringComparison.Ordinal))
+            return propertyName is "BuildingDescription" or "Quality"
+                or "GrossBuildingArea" or "Condition";
+
+        if (prefix.StartsWith("DrcImprovements", StringComparison.Ordinal))
+            return propertyName is "ImprovementDescription" or "Quality"
+                or "AreaUnit" or "Condition";
+
+        if (prefix.StartsWith("DrcVacantLands", StringComparison.Ordinal))
+            return propertyName is "Region" or "Area";
+
+        if (prefix == "Declaration")
+            return propertyName is "DeclarationAccepted" or "SignatureName";
+
+        return true;
+    }
+
+    string FormatValue(object? value) => value switch
+    {
+        null => string.Empty,
+        DateTime date => date.ToString("yyyy-MM-dd"),
+        bool flag => flag ? "true" : "false",
+        decimal number => number.ToString(System.Globalization.CultureInfo.InvariantCulture),
+        _ => Convert.ToString(value, System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty
+    };
+
+    List<(string Prefix, object Data)> SourcesFor(string code)
+    {
+        var submission = Model.Submission;
+        return code.ToUpperInvariant() switch
+        {
+            "PROPERTY_DETAILS" => new() { ("PropertyDetails", submission.PropertyDetails) },
+            "VALUATION_DETAILS" => new() { ("ValuationDetails", submission.ValuationDetails) },
+            "CONTACT_INFORMATION" => submission.ContactInfos
+                .Select((item, index) => ($"ContactInfos[{index}]", (object)item)).ToList(),
+            "ACCESS_INFORMATION" => new() { ("Access", submission.Access) },
+            "PRIMARY_ATTRIBUTES" => new() { ("PrimaryAttributes", submission.PrimaryAttributes) },
+            "SECONDARY_ATTRIBUTES" => new() { ("SecondaryAttributes", submission.SecondaryAttributes) },
+            "BUSINESS_BUILDINGS" => submission.BusinessBuildings
+                .Select((item, index) => ($"BusinessBuildings[{index}]", (object)item)).ToList(),
+            "BUSINESS_SECTIONS" => submission.BusinessSections
+                .Select((item, index) => ($"BusinessSections[{index}]", (object)item)).ToList(),
+            "BUSINESS_GENERAL" => new() { ("BusinessGeneral", submission.BusinessGeneral) },
+            "DRC_BUILDINGS" => submission.DrcBuildings
+                .Select((item, index) => ($"DrcBuildings[{index}]", (object)item)).ToList(),
+            "DRC_IMPROVEMENTS" => submission.DrcImprovements
+                .Select((item, index) => ($"DrcImprovements[{index}]", (object)item)).ToList(),
+            "DRC_VACANT_LAND" => submission.DrcVacantLands
+                .Select((item, index) => ($"DrcVacantLands[{index}]", (object)item)).ToList(),
+            "DRC_MARKET_VALUE" => new() { ("DrcMarketValueDemolition", submission.DrcMarketValueDemolition) },
+            "CALCULATIONS" => new() { ("Calculations", submission.Calculations) },
+            "DECLARATION" => new() { ("Declaration", submission.Declaration) },
+            _ => new()
+        };
+    }
+}
+
+<link href="~/css/views/attribute-create.css" rel="stylesheet" asp-append-version="true" />
+
+<div class="attr-hero">
+    <div class="attr-hero-inner">
+        <div class="attr-hero-left">
+            <div class="attr-hero-logo"><img src="~/images/joburg_logo.png" alt="City of Johannesburg" /></div>
+            <div>
+                <div class="attr-hero-org">City of Johannesburg · Valuation Services</div>
+                <div class="attr-hero-eyebrow"><span></span>Returned attribute submission</div>
+                <h1 class="attr-hero-title">Correct and <em>Resubmit</em></h1>
+                <p class="attr-hero-sub">Only the sections identified by the valuer are editable.</p>
+            </div>
+        </div>
+        <div class="attr-hero-right">
+            <span class="attr-hero-badge"><i class="fa-solid fa-rotate-right"></i> @Model.AttrNo</span>
+            <div class="attr-hero-prop">
+                <div class="attr-hero-prop-icon"><i class="fa-solid fa-location-dot"></i></div>
+                <div><span class="attr-hero-prop-label">Property</span><span class="attr-hero-prop-value">@Model.PropertyDescription</span></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="attr-page">
+    <form asp-controller="Attributes"
+          asp-action="CorrectReturned"
+          asp-route-attrId="@Model.AttrId"
+          method="post">
+        @Html.AntiForgeryToken()
+
+        <input asp-for="AttrId" type="hidden" />
+        <input asp-for="AttrNo" type="hidden" />
+        <input asp-for="FormType" type="hidden" />
+        <input asp-for="PropertyDescription" type="hidden" />
+        <input asp-for="Submission.FormType" type="hidden" />
+        <input asp-for="Submission.AttrId" type="hidden" />
+        <input asp-for="Submission.AttrNo" type="hidden" />
+
+        <div asp-validation-summary="All" class="attr-validation-list"></div>
+
+        <div class="attr-card" style="border-left:4px solid #e6b000;">
+            <div class="attr-title"><i class="fa-solid fa-message"></i> Valuer correction request</div>
+            <p><strong>Reason:</strong> @(string.IsNullOrWhiteSpace(Model.RevisionReason) ? "Correction requested by the valuer." : Model.RevisionReason)</p>
+            @if (Model.RequestedAt.HasValue)
+            {
+                <p class="text-muted mb-0">Requested @Model.RequestedAt.Value.ToString("dd MMMM yyyy HH:mm") @(!string.IsNullOrWhiteSpace(Model.RequestedBy) ? $"by {Model.RequestedBy}" : "")</p>
+            }
+        </div>
+
+        @foreach (var sec in Model.Sections)
+        {
+            var sources = SourcesFor(sec.Code);
+            <div class="attr-card">
+                <div class="attr-title"><i class="fa-solid fa-pen-to-square"></i> @sec.Name</div>
+                @if (!string.IsNullOrWhiteSpace(sec.Comment))
+                {
+                    <div class="alert alert-warning"><strong>Valuer comment:</strong><br />@sec.Comment</div>
+                }
+
+                @if (sec.Code.Equals("EVIDENCE", StringComparison.OrdinalIgnoreCase))
+                {
+                    <div class="alert alert-info">
+                        Upload the corrected supporting evidence, then return to this page to resubmit.
+                        <a href="/attributes/evidence?attrNo=@Model.AttrNo" target="_blank" class="btn btn-sm btn-dark ms-2">
+                            <i class="fa-solid fa-paperclip"></i> Upload evidence
+                        </a>
+                    </div>
+                }
+                else if (sources.Count == 0)
+                {
+                    <div class="alert alert-info">This section is updated through its related form information.</div>
+                }
+                else
+                {
+                    @for (var sourceIndex = 0; sourceIndex < sources.Count; sourceIndex++)
+                    {
+                        var source = sources[sourceIndex];
+                        if (sources.Count > 1)
+                        {
+                            <div class="attr-section-title"><span class="num">@(sourceIndex + 1)</span> Entry @(sourceIndex + 1)</div>
+                        }
+                        <div class="row g-3">
+                            @foreach (var property in EditableProperties(source.Data))
+                            {
+                                var name = $"Submission.{source.Prefix}.{property.Name}";
+                                var value = property.GetValue(source.Data);
+                                var type = Nullable.GetUnderlyingType(property.PropertyType) ?? property.PropertyType;
+                                if (!CanClientEdit(source.Prefix, property.Name))
+                                {
+                                    <input type="hidden" name="@name" value="@FormatValue(value)" />
+                                    continue;
+                                }
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold" for="@name">@Label(property)</label>
+                                    @if (type == typeof(bool))
+                                    {
+                                        <select class="form-select" id="@name" name="@name">
+                                            @if (string.Equals(FormatValue(value), "true", StringComparison.OrdinalIgnoreCase))
+                                            {
+                                                <option value="true" selected>Yes</option><option value="false">No</option>
+                                            }
+                                            else
+                                            {
+                                                <option value="true">Yes</option><option value="false" selected>No</option>
+                                            }
+                                        </select>
+                                    }
+                                    else if (IsLongText(property))
+                                    {
+                                        <textarea class="form-control" id="@name" name="@name" rows="3">@FormatValue(value)</textarea>
+                                    }
+                                    else
+                                    {
+                                        <input class="form-control"
+                                               id="@name"
+                                               name="@name"
+                                               type="@InputType(property)"
+                                               step="@(InputType(property) == "number" ? "any" : null)"
+                                               value="@FormatValue(value)" />
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+                }
+            </div>
+        }
+
+        <div class="attr-card">
+            <div class="attr-title"><i class="fa-solid fa-comment-dots"></i> Correction summary</div>
+            <label asp-for="RevisionComment" class="form-label fw-bold">Explain what you corrected <span class="text-danger">*</span></label>
+            <textarea asp-for="RevisionComment" class="form-control" rows="4" maxlength="2000" required></textarea>
+            <span asp-validation-for="RevisionComment" class="text-danger"></span>
+        </div>
+
+        <div class="d-flex justify-content-between gap-3 mb-5">
+            <a href="/Dashboard?openRoll=attributes" class="btn btn-light"><i class="fa-solid fa-arrow-left"></i> Cancel</a>
+            <button type="submit" class="btn btn-warning fw-bold"><i class="fa-solid fa-paper-plane"></i> Resubmit corrections</button>
+        </div>
+    </form>
+</div>

@@ -1,5 +1,6 @@
 ﻿using Dapper;
 using GenesisV2.Services.PropertySearch;
+using Microsoft.EntityFrameworkCore;
 using System.Data;
 using System.Data.SqlClient;
 using V2_Genesis.Data;
@@ -94,6 +95,9 @@ public class DashboardService : IDashboardService
         await using var conn =
             new SqlConnection(connectionString);
 
+        await using var rollDb =
+            new DashboardReadDbContext(connectionString);
+
         await conn.OpenAsync();
 
         // ─────────────────────────────────────────────────────────
@@ -165,7 +169,7 @@ public class DashboardService : IDashboardService
                 try
                 {
                     await PopulateAppealDecisionTypesAsync(
-                        conn,
+                        rollDb,
                         objectedProperties);
                 }
                 catch (Exception ex)
@@ -221,34 +225,36 @@ public class DashboardService : IDashboardService
 
             if (appealNumbers.Length > 0)
             {
-                const string evidenceWindowSql = @"
-SELECT
-    LTRIM(RTRIM(Appeal_No)) AS Appeal_No,
-    Appeal_Start_DateTime,
-    DATEADD(HOUR, 48, Appeal_Start_DateTime)
-        AS Evidence_Expires_At,
-    CAST(
-        CASE
-            WHEN Appeal_Start_DateTime IS NOT NULL
-             AND LTRIM(RTRIM(ISNULL(Appeal_Status, ''))) IN
-                 ('App-Lodging', 'App-Unallocated')
-             AND SYSDATETIME() <=
-                 DATEADD(HOUR, 48, Appeal_Start_DateTime)
-            THEN 1
-            ELSE 0
-        END
-        AS BIT
-    ) AS Evidence_Window_Open
-FROM dbo.Obj_Property_Info_Appeal
-WHERE LTRIM(RTRIM(Appeal_No)) IN @AppealNumbers;";
+                var appealRows = await rollDb.Appeals
+                    .AsNoTracking()
+                    .Where(x => appealNumbers.Contains(
+                        (x.AppealNo ?? string.Empty).Trim()))
+                    .Select(x => new
+                    {
+                        x.AppealNo,
+                        x.AppealStartDateTime,
+                        x.AppealStatus
+                    })
+                    .ToListAsync();
 
-                var windowRows =
-                    await conn.QueryAsync<AppealEvidenceWindowRow>(
-                        evidenceWindowSql,
-                        new
-                        {
-                            AppealNumbers = appealNumbers
-                        });
+                var now = DateTime.Now;
+                var windowRows = appealRows.Select(x =>
+                {
+                    var expiresAt = x.AppealStartDateTime?.AddHours(48);
+                    var status = x.AppealStatus?.Trim();
+
+                    return new AppealEvidenceWindowRow
+                    {
+                        Appeal_No = x.AppealNo?.Trim(),
+                        Appeal_Start_DateTime = x.AppealStartDateTime,
+                        Evidence_Expires_At = expiresAt,
+                        Evidence_Window_Open =
+                            expiresAt.HasValue &&
+                            now <= expiresAt.Value &&
+                            (string.Equals(status, "App-Lodging", StringComparison.OrdinalIgnoreCase) ||
+                             string.Equals(status, "App-Unallocated", StringComparison.OrdinalIgnoreCase))
+                    };
+                });
 
                 var windowByAppeal = windowRows
                     .Where(x => !string.IsNullOrWhiteSpace(x.Appeal_No))
@@ -332,7 +338,7 @@ WHERE LTRIM(RTRIM(Appeal_No)) IN @AppealNumbers;";
     }
 
     private static async Task PopulateAppealDecisionTypesAsync(
-        SqlConnection connection,
+        DashboardReadDbContext db,
         List<ObjectedPropertyResult> properties)
     {
         var finalisedAppeals = properties
@@ -358,20 +364,18 @@ WHERE LTRIM(RTRIM(Appeal_No)) IN @AppealNumbers;";
         if (references.Length == 0)
             return;
 
-        const string sql = """
-            SELECT
-                LTRIM(RTRIM(Appeal_No)) AS AppealNo,
-                LTRIM(RTRIM(Objection_No)) AS ObjectionNo,
-                A_UserID AS DecisionUserId
-            FROM dbo.Appeal_Decision
-            WHERE LTRIM(RTRIM(Appeal_No)) IN @References
-               OR LTRIM(RTRIM(Objection_No)) IN @References;
-            """;
-
-        var decisions = (await connection.QueryAsync<AppealDecisionTypeRow>(
-            sql,
-            new { References = references },
-            commandTimeout: 60)).ToList();
+        var decisions = await db.AppealDecisions
+            .AsNoTracking()
+            .Where(x =>
+                references.Contains((x.AppealNo ?? string.Empty).Trim()) ||
+                references.Contains((x.ObjectionNo ?? string.Empty).Trim()))
+            .Select(x => new AppealDecisionTypeRow
+            {
+                AppealNo = x.AppealNo,
+                ObjectionNo = x.ObjectionNo,
+                DecisionUserId = x.DecisionUserId
+            })
+            .ToListAsync();
 
         var decisionByReference = new Dictionary<string, string?>(
             StringComparer.OrdinalIgnoreCase);
@@ -532,17 +536,30 @@ WHERE LTRIM(RTRIM(Appeal_No)) IN @AppealNumbers;";
             await using var conn = new SqlConnection(connString);
             await conn.OpenAsync();
 
-            // 1. Get only the linked properties for this user
-            var linkedRows = await conn.QueryAsync<AttrLinkedPropertyResult>(@"
-SELECT
-    ID AS Id,
-    IDProperty,
-    ISNULL(PropertyFrom, 'Attributes') AS PropertyFrom
-FROM dbo.LinkedProperties_Attr
-WHERE UserID = @UserId
-ORDER BY ID DESC;",
-                new { UserId = userId },
-                commandTimeout: 60);
+            // 1. Get only the linked properties for this user.
+            var linkedRows = await _attrDb.LinkedProperties
+                .AsNoTracking()
+                .Where(x => x.UserID == userId)
+                .OrderByDescending(x => x.ID)
+                .Select(x => new AttrLinkedPropertyResult
+                {
+                    Id = x.ID,
+                    IDProperty = x.IDProperty,
+                    PropertyFrom = x.PropertyFrom ?? "Attributes"
+                })
+                .ToListAsync();
+
+            // Load all active submissions once to avoid one COUNT query per row.
+            var submittedUnitKeys = (await _attrDb.AttrPropertyInfo
+                    .AsNoTracking()
+                    .Where(x =>
+                        x.SubmittedByUserId == userId &&
+                        x.IsActive)
+                    .Select(x => x.Unit_key)
+                    .ToListAsync())
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Select(x => x!.Trim())
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
             foreach (var linked in linkedRows)
             {
@@ -562,7 +579,7 @@ ORDER BY ID DESC;",
                         PropertyFrom = linked.PropertyFrom,
                         PropertyDesc = linked.IDProperty,
                         FormType = "Residential",
-                        HasSubmission = await HasAttributeSubmissionAsync(conn, userId, linked.IDProperty)
+                        HasSubmission = submittedUnitKeys.Contains(linked.IDProperty.Trim())
                     });
 
                     continue;
@@ -587,7 +604,7 @@ ORDER BY ID DESC;",
                     SchemeName = schemeName,
 
                     FormType = ResolveAttributeFormType(catDesc, schemeName, unitNoText),
-                    HasSubmission = await HasAttributeSubmissionAsync(conn, userId, linked.IDProperty)
+                    HasSubmission = submittedUnitKeys.Contains(linked.IDProperty.Trim())
                 };
 
                 var erfText = GetValue(detail, "Erf");
@@ -609,27 +626,6 @@ ORDER BY ID DESC;",
         }
 
         return results;
-    }
-
-    private static async Task<bool> HasAttributeSubmissionAsync(
-    SqlConnection conn,
-    string userId,
-    string unitKey)
-    {
-        var count = await conn.ExecuteScalarAsync<int>(@"
-SELECT COUNT(1)
-FROM dbo.Attr_Property_Info
-WHERE SubmittedByUserId = @UserId
-  AND Unit_key = @UnitKey
-  AND ISNULL(IsActive, 1) = 1;",
-            new
-            {
-                UserId = userId,
-                UnitKey = unitKey
-            },
-            commandTimeout: 60);
-
-        return count > 0;
     }
 
     private static string GetValue(dynamic row, string name)
@@ -796,6 +792,67 @@ WHERE SubmittedByUserId = @UserId
 
 
 
+
+    private sealed class DashboardReadDbContext : DbContext
+    {
+        private readonly string _connectionString;
+
+        public DashboardReadDbContext(string connectionString)
+        {
+            _connectionString = connectionString;
+        }
+
+        public DbSet<DashboardAppealEntity> Appeals =>
+            Set<DashboardAppealEntity>();
+
+        public DbSet<DashboardAppealDecisionEntity> AppealDecisions =>
+            Set<DashboardAppealDecisionEntity>();
+
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            optionsBuilder.UseSqlServer(
+                _connectionString,
+                sqlServer => sqlServer.CommandTimeout(60));
+        }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<DashboardAppealEntity>(entity =>
+            {
+                entity.HasKey(x => x.AppealId);
+                entity.ToTable("Obj_Property_Info_Appeal", "dbo");
+                entity.Property(x => x.AppealId).HasColumnName("Appeal_ID");
+                entity.Property(x => x.AppealNo).HasColumnName("Appeal_No");
+                entity.Property(x => x.AppealStartDateTime)
+                    .HasColumnName("Appeal_Start_DateTime");
+                entity.Property(x => x.AppealStatus).HasColumnName("Appeal_Status");
+            });
+
+            modelBuilder.Entity<DashboardAppealDecisionEntity>(entity =>
+            {
+                entity.HasNoKey();
+                entity.ToTable("Appeal_Decision", "dbo");
+                entity.Property(x => x.AppealNo).HasColumnName("Appeal_No");
+                entity.Property(x => x.ObjectionNo).HasColumnName("Objection_No");
+                entity.Property(x => x.DecisionUserId).HasColumnName("A_UserID");
+            });
+        }
+    }
+
+    private sealed class DashboardAppealEntity
+    {
+        public long AppealId { get; set; }
+        public string? AppealNo { get; set; }
+        public DateTime? AppealStartDateTime { get; set; }
+        public string? AppealStatus { get; set; }
+    }
+
+    private sealed class DashboardAppealDecisionEntity
+    {
+        public string? AppealNo { get; set; }
+        public string? ObjectionNo { get; set; }
+        public string? DecisionUserId { get; set; }
+    }
 
     private sealed class AppealEvidenceWindowRow
     {

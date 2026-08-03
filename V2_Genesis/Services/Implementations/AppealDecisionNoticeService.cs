@@ -1,9 +1,7 @@
-﻿using Dapper;
-using Microsoft.Data.SqlClient;
+﻿using Microsoft.EntityFrameworkCore;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
-using System.Data;
 using System.Globalization;
 using V2_Genesis.Services.Admin;
 using V2_Genesis.Services.Interfaces;
@@ -47,64 +45,59 @@ public sealed class AppealDecisionNoticeService : IAppealDecisionNoticeService
             ?? throw new InvalidOperationException(
                 $"Connection string '{roll.ConnectionKey}' was not found.");
 
-        const string sql = """
-            SELECT TOP (1)
-                d.Objection_No                AS ObjectionNo,
-                d.Appeal_No                   AS AppealNo,
-                d.ADDR1                       AS Addr1,
-                d.ADDR2                       AS Addr2,
-                d.ADDR3                       AS Addr3,
-                d.ADDR4                       AS Addr4,
-                d.ADDR5                       AS Addr5,
-                d.Appeal_Type                 AS AppealType,
-                d.Premise_iD                  AS PremiseId,
-                d.Unit_Key                    AS UnitKey,
-                d.valuation_Key               AS ValuationKey,
-                d.Property_desc               AS PropertyDescription,
-                d.Email                       AS Email,
-                d.Batch_Date                  AS BatchDate,
-                d.App_Market_Value            AS MarketValue,
-                d.App_Market_Value2           AS MarketValue2,
-                d.App_Market_Value3           AS MarketValue3,
-                d.App_Extent                  AS Extent,
-                d.App_Extent2                 AS Extent2,
-                d.App_Extent3                 AS Extent3,
-                d.App_Category                AS Category,
-                d.App_Category2               AS Category2,
-                d.App_Category3               AS Category3,
-                d.Email_date                  AS EmailDate,
-                d.ERF                         AS Erf,
-                d.PTN                         AS Portion,
-                d.RE                          AS Remainder,
-                d.Town                        AS Town,
-                d.A_UserID                    AS DecisionUserId,
-                d.Notice_Status               AS NoticeStatus,
-                LTRIM(RTRIM(a.Appeal_Status)) AS AppealStatus
-            FROM dbo.Appeal_Decision AS d
-            INNER JOIN dbo.Obj_Property_Info_Appeal AS a
-                ON (
-                    LTRIM(RTRIM(a.Appeal_No)) = LTRIM(RTRIM(d.Appeal_No))
-                    OR LTRIM(RTRIM(a.Obj_Ref)) = LTRIM(RTRIM(d.Objection_No))
-                    OR LTRIM(RTRIM(a.Objection_No)) = LTRIM(RTRIM(d.Objection_No))
-                )
-            WHERE (
-                    LTRIM(RTRIM(d.Appeal_No)) = @ReferenceNumber
-                    OR LTRIM(RTRIM(d.Objection_No)) = @ReferenceNumber
-                  )
-              AND a.A_UserID = @UserId
-              AND LTRIM(RTRIM(a.Appeal_Status)) = 'App-Finalized'
-            ORDER BY COALESCE(d.Email_date, d.Batch_Date) DESC;
-            """;
+        await using var db = new AppealDecisionReadDbContext(connectionString);
 
-        await using var connection = new SqlConnection(connectionString);
-        var command = new CommandDefinition(
-            sql,
-            new { ReferenceNumber = referenceNumber, UserId = userId },
-            commandType: CommandType.Text,
-            commandTimeout: 60,
-            cancellationToken: cancellationToken);
-
-        var row = await connection.QueryFirstOrDefaultAsync<AppealDecisionRow>(command);
+        var row = await (
+            from decision in db.AppealDecisions.AsNoTracking()
+            from appeal in db.Appeals.AsNoTracking()
+            where
+                ((decision.AppealNo ?? string.Empty).Trim() == referenceNumber ||
+                 (decision.ObjectionNo ?? string.Empty).Trim() == referenceNumber)
+                && (appeal.UserId ?? string.Empty).Trim() == userId
+                && (appeal.AppealStatus ?? string.Empty).Trim() == "App-Finalized"
+                && (
+                    (appeal.AppealNo ?? string.Empty).Trim() ==
+                        (decision.AppealNo ?? string.Empty).Trim()
+                    || (appeal.ObjectReference ?? string.Empty).Trim() ==
+                        (decision.ObjectionNo ?? string.Empty).Trim()
+                    || (appeal.ObjectionNo ?? string.Empty).Trim() ==
+                        (decision.ObjectionNo ?? string.Empty).Trim())
+            orderby (decision.EmailDate ?? decision.BatchDate) descending
+            select new AppealDecisionRow
+            {
+                ObjectionNo = decision.ObjectionNo,
+                AppealNo = decision.AppealNo,
+                Addr1 = decision.Addr1,
+                Addr2 = decision.Addr2,
+                Addr3 = decision.Addr3,
+                Addr4 = decision.Addr4,
+                Addr5 = decision.Addr5,
+                AppealType = decision.AppealType,
+                PremiseId = decision.PremiseId,
+                UnitKey = decision.UnitKey,
+                ValuationKey = decision.ValuationKey,
+                PropertyDescription = decision.PropertyDescription,
+                Email = decision.Email,
+                BatchDate = decision.BatchDate,
+                MarketValue = decision.MarketValue,
+                MarketValue2 = decision.MarketValue2,
+                MarketValue3 = decision.MarketValue3,
+                Extent = decision.Extent,
+                Extent2 = decision.Extent2,
+                Extent3 = decision.Extent3,
+                Category = decision.Category,
+                Category2 = decision.Category2,
+                Category3 = decision.Category3,
+                EmailDate = decision.EmailDate,
+                Erf = decision.Erf,
+                Portion = decision.Portion,
+                Remainder = decision.Remainder,
+                Town = decision.Town,
+                DecisionUserId = decision.DecisionUserId,
+                NoticeStatus = decision.NoticeStatus,
+                AppealStatus = appeal.AppealStatus
+            })
+            .FirstOrDefaultAsync(cancellationToken);
         if (row is null)
             throw new KeyNotFoundException(
                 "The final appeal outcome was not found for this account.");
@@ -359,6 +352,124 @@ public sealed class AppealDecisionNoticeService : IAppealDecisionNoticeService
         var invalid = Path.GetInvalidFileNameChars();
         return new string((value ?? "Appeal")
             .Where(character => !invalid.Contains(character)).ToArray());
+    }
+
+    private sealed class AppealDecisionReadDbContext : DbContext
+    {
+        private readonly string _connectionString;
+
+        public AppealDecisionReadDbContext(string connectionString)
+        {
+            _connectionString = connectionString;
+        }
+
+        public DbSet<AppealDecisionEntity> AppealDecisions =>
+            Set<AppealDecisionEntity>();
+
+        public DbSet<AppealLinkEntity> Appeals =>
+            Set<AppealLinkEntity>();
+
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            optionsBuilder.UseSqlServer(
+                _connectionString,
+                sqlServer => sqlServer.CommandTimeout(60));
+        }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<AppealDecisionEntity>(entity =>
+            {
+                entity.HasNoKey();
+                entity.ToTable("Appeal_Decision", "dbo");
+                entity.Property(x => x.ObjectionNo).HasColumnName("Objection_No");
+                entity.Property(x => x.AppealNo).HasColumnName("Appeal_No");
+                entity.Property(x => x.Addr1).HasColumnName("ADDR1");
+                entity.Property(x => x.Addr2).HasColumnName("ADDR2");
+                entity.Property(x => x.Addr3).HasColumnName("ADDR3");
+                entity.Property(x => x.Addr4).HasColumnName("ADDR4");
+                entity.Property(x => x.Addr5).HasColumnName("ADDR5");
+                entity.Property(x => x.AppealType).HasColumnName("Appeal_Type");
+                entity.Property(x => x.PremiseId).HasColumnName("Premise_iD");
+                entity.Property(x => x.UnitKey).HasColumnName("Unit_Key");
+                entity.Property(x => x.ValuationKey).HasColumnName("valuation_Key");
+                entity.Property(x => x.PropertyDescription).HasColumnName("Property_desc");
+                entity.Property(x => x.Email).HasColumnName("Email");
+                entity.Property(x => x.BatchDate).HasColumnName("Batch_Date");
+                entity.Property(x => x.MarketValue).HasColumnName("App_Market_Value");
+                entity.Property(x => x.MarketValue2).HasColumnName("App_Market_Value2");
+                entity.Property(x => x.MarketValue3).HasColumnName("App_Market_Value3");
+                entity.Property(x => x.Extent).HasColumnName("App_Extent");
+                entity.Property(x => x.Extent2).HasColumnName("App_Extent2");
+                entity.Property(x => x.Extent3).HasColumnName("App_Extent3");
+                entity.Property(x => x.Category).HasColumnName("App_Category");
+                entity.Property(x => x.Category2).HasColumnName("App_Category2");
+                entity.Property(x => x.Category3).HasColumnName("App_Category3");
+                entity.Property(x => x.EmailDate).HasColumnName("Email_date");
+                entity.Property(x => x.Erf).HasColumnName("ERF");
+                entity.Property(x => x.Portion).HasColumnName("PTN");
+                entity.Property(x => x.Remainder).HasColumnName("RE");
+                entity.Property(x => x.Town).HasColumnName("Town");
+                entity.Property(x => x.DecisionUserId).HasColumnName("A_UserID");
+                entity.Property(x => x.NoticeStatus).HasColumnName("Notice_Status");
+            });
+
+            modelBuilder.Entity<AppealLinkEntity>(entity =>
+            {
+                entity.HasKey(x => x.AppealId);
+                entity.ToTable("Obj_Property_Info_Appeal", "dbo");
+                entity.Property(x => x.AppealId).HasColumnName("Appeal_ID");
+                entity.Property(x => x.AppealNo).HasColumnName("Appeal_No");
+                entity.Property(x => x.ObjectReference).HasColumnName("Obj_Ref");
+                entity.Property(x => x.ObjectionNo).HasColumnName("Objection_No");
+                entity.Property(x => x.UserId).HasColumnName("A_UserID");
+                entity.Property(x => x.AppealStatus).HasColumnName("Appeal_Status");
+            });
+        }
+    }
+
+    private sealed class AppealDecisionEntity
+    {
+        public string? ObjectionNo { get; set; }
+        public string? AppealNo { get; set; }
+        public string? Addr1 { get; set; }
+        public string? Addr2 { get; set; }
+        public string? Addr3 { get; set; }
+        public string? Addr4 { get; set; }
+        public string? Addr5 { get; set; }
+        public string? AppealType { get; set; }
+        public string? PremiseId { get; set; }
+        public string? UnitKey { get; set; }
+        public string? ValuationKey { get; set; }
+        public string? PropertyDescription { get; set; }
+        public string? Email { get; set; }
+        public DateTime? BatchDate { get; set; }
+        public string? MarketValue { get; set; }
+        public string? MarketValue2 { get; set; }
+        public string? MarketValue3 { get; set; }
+        public string? Extent { get; set; }
+        public string? Extent2 { get; set; }
+        public string? Extent3 { get; set; }
+        public string? Category { get; set; }
+        public string? Category2 { get; set; }
+        public string? Category3 { get; set; }
+        public DateTime? EmailDate { get; set; }
+        public string? Erf { get; set; }
+        public string? Portion { get; set; }
+        public string? Remainder { get; set; }
+        public string? Town { get; set; }
+        public string? DecisionUserId { get; set; }
+        public string? NoticeStatus { get; set; }
+    }
+
+    private sealed class AppealLinkEntity
+    {
+        public long AppealId { get; set; }
+        public string? AppealNo { get; set; }
+        public string? ObjectReference { get; set; }
+        public string? ObjectionNo { get; set; }
+        public string? UserId { get; set; }
+        public string? AppealStatus { get; set; }
     }
 
     private sealed class AppealDecisionRow
