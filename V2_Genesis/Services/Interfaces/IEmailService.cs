@@ -19,6 +19,13 @@ namespace V2_Genesis.Services.Interfaces
             string displayName,
             string resetLink);
 
+        Task SendAccountDetailsChangedAsync(
+            string toEmail,
+            string displayName,
+            IReadOnlyCollection<string> changedFields,
+            DateTime changedAt,
+            string profileUrl);
+
         Task SendObjectionAcknowledgementAsync(
             string objectionRef,
             string rollSource,

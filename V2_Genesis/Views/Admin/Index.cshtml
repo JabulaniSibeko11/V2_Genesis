@@ -184,48 +184,6 @@
     </div>
 </div>
 
-<!-- ── Quick stats row ────────────────────────────────────────────── -->
-<div class="adm-kpi-strip">
-    @foreach (var roll in Model.Rolls.Where(r => !r.IsQuery))
-    {
-        var rd = Model.DataFor(roll.Source);
-        <div class="adm-kpi">
-            <div class="adm-kpi-label">@roll.Short</div>
-            <div class="adm-kpi-value">@rd.LinkedCount</div>
-            <div class="adm-kpi-sub">
-                @if (roll.HasObjection)
-                {
-                    <i class="fa-solid fa-file-pen"></i>
-                    <span>@rd.ObjectedCount obj</span>
-                }
-                @if (roll.HasAppeal)
-                {
-                    <span style="margin-left:4px;">·</span>
-                    <i class="fa-solid fa-gavel"></i>
-                    <span>@rd.AppealsCount app</span>
-                }
-            </div>
-            <div class="adm-kpi-accent"></div>
-        </div>
-    }
-    @foreach (var roll in Model.Rolls.Where(r => r.IsQuery))
-    {
-        var rd = Model.DataFor(roll.Source);
-        <div class="adm-kpi">
-            <div class="adm-kpi-label">
-                <i class="fa-solid fa-magnifying-glass-chart" style="margin-right:4px;"></i>
-                @roll.Short
-            </div>
-            <div class="adm-kpi-value">@rd.LinkedCount</div>
-            <div class="adm-kpi-sub">
-                <i class="fa-solid fa-file-magnifying-glass"></i>
-                <span>@rd.ObjectedCount queries</span>
-            </div>
-            <div class="adm-kpi-accent"></div>
-        </div>
-    }
-</div>
-
 <!-- ── Per-roll sections ───────────────────────────────────────────── -->
 
 @{

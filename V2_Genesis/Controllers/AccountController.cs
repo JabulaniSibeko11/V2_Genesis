@@ -32,6 +32,7 @@ namespace V2_Genesis.Controllers
         private readonly SessionSettings _session;
         private readonly string _captchaSiteKey;
         private readonly ILogger<AccountController> _logger;
+        private readonly INotificationService _notifications;
 
         private readonly IDataProtector _sapProtector;
         private const string SAP_COOKIE = "adm_sap_ok";          // cookie name
@@ -47,7 +48,9 @@ namespace V2_Genesis.Controllers
             IOptions<AppSettings> appOpts,
             IOptions<SessionSettings> sessionOpts,
             IOptions<ReCaptchaSettings> captchaOpts,
-            ILogger<AccountController> logger, IDataProtectionProvider dataProtection)
+            ILogger<AccountController> logger,
+            IDataProtectionProvider dataProtection,
+            INotificationService notifications)
         {
             _userManager = userManager;
             _signInManager = signInManager;
@@ -59,7 +62,236 @@ namespace V2_Genesis.Controllers
             _session = sessionOpts.Value;
             _captchaSiteKey = captchaOpts.Value.SiteKey;
             _logger = logger;
+            _notifications = notifications;
             _sapProtector = dataProtection.CreateProtector("SapRemember.v1");
+        }
+
+        // ══════════════════════════════════════════════════════════════════════
+        //  CLIENT PROFILE
+        // ══════════════════════════════════════════════════════════════════════
+
+        [HttpGet]
+        [Authorize(Roles = "Client")]
+        [Route("my-profile")]
+        public async Task<IActionResult> Profile()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user is null)
+                return Challenge();
+
+            return View(BuildProfilePage(user));
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Client")]
+        [ValidateAntiForgeryToken]
+        [Route("my-profile/contact")]
+        public async Task<IActionResult> UpdateProfileContact(
+            UpdateProfileContactViewModel model)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user is null)
+                return Challenge();
+
+            if (!ModelState.IsValid)
+                return ProfileValidationView(user, "contactModal");
+
+            if (!await _userManager.CheckPasswordAsync(user, model.CurrentPassword))
+            {
+                ModelState.AddModelError(nameof(model.CurrentPassword),
+                    "The current password is incorrect.");
+                return ProfileValidationView(user, "contactModal");
+            }
+
+            var newEmail = model.Email.Trim();
+            var newPhone = string.IsNullOrWhiteSpace(model.PhoneNumber)
+                ? null
+                : model.PhoneNumber.Trim();
+
+            var emailChanged = !string.Equals(
+                user.Email,
+                newEmail,
+                StringComparison.OrdinalIgnoreCase);
+            var phoneChanged = !string.Equals(
+                user.PhoneNumber?.Trim(),
+                newPhone,
+                StringComparison.OrdinalIgnoreCase);
+
+            if (!emailChanged && !phoneChanged)
+            {
+                TempData["ProfileInfo"] = "No account details were changed.";
+                return RedirectToAction(nameof(Profile));
+            }
+
+            if (emailChanged)
+            {
+                var existingUser = await _userManager.FindByEmailAsync(newEmail);
+                if (existingUser is not null && existingUser.Id != user.Id)
+                {
+                    ModelState.AddModelError(nameof(model.Email),
+                        "That email address is already registered.");
+                    return ProfileValidationView(user, "contactModal");
+                }
+            }
+
+            var oldEmail = user.Email;
+            user.Email = newEmail;
+            user.UserName = newEmail;
+            user.NormalizedEmail = _userManager.NormalizeEmail(newEmail);
+            user.NormalizedUserName = _userManager.NormalizeName(newEmail);
+            user.EmailConfirmed = true;
+            user.PhoneNumber = newPhone;
+
+            var updateResult = await _userManager.UpdateAsync(user);
+            if (!updateResult.Succeeded)
+            {
+                foreach (var error in updateResult.Errors)
+                    ModelState.AddModelError(string.Empty, error.Description);
+
+                return ProfileValidationView(user, "contactModal");
+            }
+
+            await _userManager.UpdateSecurityStampAsync(user);
+            await _signInManager.RefreshSignInAsync(user);
+
+            var changedFields = new List<string>();
+            if (emailChanged) changedFields.Add("Email address");
+            if (phoneChanged) changedFields.Add("Phone number");
+
+            await RecordAccountChangeAsync(
+                user,
+                "Account details updated",
+                $"Your {string.Join(" and ", changedFields).ToLowerInvariant()} was changed successfully.",
+                changedFields,
+                oldEmail);
+
+            TempData["ProfileSuccess"] = "Your contact details were updated successfully.";
+            return RedirectToAction(nameof(Profile));
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Client")]
+        [ValidateAntiForgeryToken]
+        [Route("my-profile/password")]
+        public async Task<IActionResult> ChangeProfilePassword(
+            ChangeProfilePasswordViewModel model)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user is null)
+                return Challenge();
+
+            if (!ModelState.IsValid)
+                return ProfileValidationView(user, "passwordModal");
+
+            var result = await _userManager.ChangePasswordAsync(
+                user,
+                model.CurrentPassword,
+                model.NewPassword);
+
+            if (!result.Succeeded)
+            {
+                foreach (var error in result.Errors)
+                    ModelState.AddModelError(string.Empty, error.Description);
+
+                return ProfileValidationView(user, "passwordModal");
+            }
+
+            await _signInManager.RefreshSignInAsync(user);
+
+            await RecordAccountChangeAsync(
+                user,
+                "Password changed",
+                "Your account password was changed successfully.",
+                new[] { "Password" },
+                user.Email);
+
+            TempData["ProfileSuccess"] = "Your password was changed successfully.";
+            return RedirectToAction(nameof(Profile));
+        }
+
+        private IActionResult ProfileValidationView(ApplicationUser user, string modalId)
+        {
+            ViewBag.OpenProfileModal = modalId;
+
+            if (modalId == "contactModal" && Request.HasFormContentType)
+            {
+                ViewBag.ContactEmail = Request.Form["Email"].ToString();
+                ViewBag.ContactPhone = Request.Form["PhoneNumber"].ToString();
+            }
+
+            return View("Profile", BuildProfilePage(user));
+        }
+
+        private static ProfilePageViewModel BuildProfilePage(ApplicationUser user) => new()
+        {
+            DisplayName = user.DisplayName,
+            AccountType = user.IsCompany ? "Company Account" : "Individual Account",
+            Email = user.Email ?? string.Empty,
+            PhoneNumber = user.PhoneNumber,
+            CreationDate = user.CreationDate
+        };
+
+        private async Task RecordAccountChangeAsync(
+            ApplicationUser user,
+            string notificationTitle,
+            string notificationMessage,
+            IReadOnlyCollection<string> changedFields,
+            string? previousEmail)
+        {
+            try
+            {
+                await _notifications.CreateClientNotificationAsync(
+                    user.Id,
+                    user.Email,
+                    notificationTitle,
+                    notificationMessage,
+                    null,
+                    null,
+                    null,
+                    "AspNetUsers",
+                    "/my-profile",
+                    user.Email);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex,
+                    "Profile updated but notification creation failed for {UserId}",
+                    user.Id);
+            }
+
+            var profileUrl = Url.Action(
+                nameof(Profile),
+                "Account",
+                values: null,
+                protocol: Request.Scheme) ?? "/my-profile";
+
+            var notificationEmails = new[] { user.Email, previousEmail }
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Select(x => x!.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            foreach (var emailAddress in notificationEmails)
+            {
+                try
+                {
+                    await _email.SendAccountDetailsChangedAsync(
+                        emailAddress,
+                        user.DisplayName,
+                        changedFields,
+                        DateTime.Now,
+                        profileUrl);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex,
+                        "Profile updated but account-change email failed for {UserId} to {Email}",
+                        user.Id,
+                        emailAddress);
+                    TempData["ProfileWarning"] =
+                        "Your account was updated, but one or more confirmation emails could not be sent.";
+                }
+            }
         }
 
         // ══════════════════════════════════════════════════════════════════════
@@ -82,7 +314,7 @@ namespace V2_Genesis.Controllers
                 "AdministrationEnquiries@Joburg.org.za",
                 StringComparison.OrdinalIgnoreCase);
         }
-      
+
         [HttpGet]
         [Route("register")]
         [AllowAnonymous]

@@ -71,7 +71,6 @@
 
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/views/client-dashboard.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/views/client-dashboard-light.css" asp-append-version="true" />
 
     <style>
             .nav-brand {
@@ -133,6 +132,15 @@
                 letter-spacing: 1.5px;
                 color: #999;
                 text-transform: uppercase;
+            }
+
+            /* Nav links must always start at the left corner, right
+                           after the logo — never centered. Kept here too (in
+                           addition to site.css) since this is the layout that
+                           every page shares, so the fix is visible right where
+                           the nav itself is defined. */
+            .cl-nav-links {
+                justify-content: flex-start !important;
             }
     </style>
 

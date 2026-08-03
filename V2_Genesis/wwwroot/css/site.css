@@ -1306,3 +1306,16 @@ img {
         padding: 18px 32px;
     }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   NAV LINKS — always start at the left corner, right after the
+   logo. This lives in site.css because it's the one stylesheet
+   guaranteed to load on every page using _ClientLayout.cshtml
+   (loaded directly by the layout, not per-page) — several pages
+   load different combinations of view-specific stylesheets, which
+   was causing the nav to render centered on some pages and left-
+   aligned on others depending on load order/specificity.
+═══════════════════════════════════════════════════════════════ */
+.cl-nav-links {
+    justify-content: flex-start !important;
+}

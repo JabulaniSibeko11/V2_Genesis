@@ -1,0 +1,151 @@
+﻿@model V2_Genesis.Models.ViewModels.Account.ProfilePageViewModel
+@{
+    ViewData["Title"] = "My Profile";
+    Layout = "~/Views/Shared/_ClientLayout.cshtml";
+}
+
+@section Styles {
+    <link href="~/css/views/profile.css" rel="stylesheet" asp-append-version="true" />
+}
+
+<main class="profile-page">
+    <section class="profile-shell">
+        <header class="profile-hero">
+            <div class="profile-avatar"><i class="fa-solid fa-user"></i></div>
+            <div>
+                <span class="profile-eyebrow">Client account</span>
+                <h1>@Model.DisplayName</h1>
+                <p>@Model.AccountType</p>
+            </div>
+        </header>
+
+        @if (TempData["ProfileSuccess"] is string success)
+        {
+            <div class="alert alert-success">@success</div>
+        }
+        @if (TempData["ProfileInfo"] is string info)
+        {
+            <div class="alert alert-info">@info</div>
+        }
+        @if (TempData["ProfileWarning"] is string warning)
+        {
+            <div class="alert alert-warning">@warning</div>
+        }
+
+        <div asp-validation-summary="ModelOnly" class="text-danger profile-validation"></div>
+
+        <section class="profile-card">
+            <div class="profile-card-heading">
+                <div>
+                    <h2>Contact details</h2>
+                    <p>Information used for portal communication and login.</p>
+                </div>
+                <button type="button" class="profile-btn profile-btn-primary"
+                        data-bs-toggle="modal" data-bs-target="#contactModal">
+                    <i class="fa-solid fa-pen"></i> Edit details
+                </button>
+            </div>
+
+            <dl class="profile-details">
+                <div><dt>Email address</dt><dd>@Model.Email</dd></div>
+                <div><dt>Phone number</dt><dd>@(Model.PhoneNumber ?? "Not provided")</dd></div>
+                <div><dt>Account created</dt><dd>@Model.CreationDate.ToLocalTime().ToString("dd MMMM yyyy")</dd></div>
+            </dl>
+        </section>
+
+        <section class="profile-card profile-security-card">
+            <div class="profile-card-heading">
+                <div>
+                    <h2>Account security</h2>
+                    <p>Use a strong password that you do not use elsewhere.</p>
+                </div>
+                <button type="button" class="profile-btn profile-btn-dark"
+                        data-bs-toggle="modal" data-bs-target="#passwordModal">
+                    <i class="fa-solid fa-key"></i> Change password
+                </button>
+            </div>
+        </section>
+    </section>
+</main>
+
+<div class="modal fade" id="contactModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content profile-modal">
+            <form method="post" action="/my-profile/contact">
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h2 class="modal-title fs-5">Edit contact details</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <label class="form-label" for="Email">Email address</label>
+                    <input class="form-control" id="Email" name="Email" type="email"
+                           value="@(ViewBag.ContactEmail as string ?? Model.Email)" required />
+                    <span class="text-danger field-validation-valid" data-valmsg-for="Email"></span>
+
+                    <label class="form-label mt-3" for="PhoneNumber">Phone number</label>
+                    <input class="form-control" id="PhoneNumber" name="PhoneNumber" type="tel"
+                           value="@(ViewBag.ContactPhone as string ?? Model.PhoneNumber)" />
+                    <span class="text-danger field-validation-valid" data-valmsg-for="PhoneNumber"></span>
+
+                    <label class="form-label mt-3" for="ContactCurrentPassword">Current password</label>
+                    <input class="form-control" id="ContactCurrentPassword" name="CurrentPassword"
+                           type="password" autocomplete="current-password" required />
+                    <span class="text-danger field-validation-valid" data-valmsg-for="CurrentPassword"></span>
+                    <p class="profile-help">Your current password is required before changing contact details.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="profile-btn profile-btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="profile-btn profile-btn-primary">Save changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="passwordModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content profile-modal">
+            <form method="post" action="/my-profile/password">
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h2 class="modal-title fs-5">Change password</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <label class="form-label" for="PasswordCurrentPassword">Current password</label>
+                    <input class="form-control" id="PasswordCurrentPassword" name="CurrentPassword"
+                           type="password" autocomplete="current-password" required />
+
+                    <label class="form-label mt-3" for="NewPassword">New password</label>
+                    <input class="form-control" id="NewPassword" name="NewPassword"
+                           type="password" autocomplete="new-password" minlength="6" required />
+
+                    <label class="form-label mt-3" for="ConfirmPassword">Confirm new password</label>
+                    <input class="form-control" id="ConfirmPassword" name="ConfirmPassword"
+                           type="password" autocomplete="new-password" minlength="6" required />
+                    <div asp-validation-summary="All" class="text-danger mt-3"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="profile-btn profile-btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="profile-btn profile-btn-dark">Change password</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    @if (ViewBag.OpenProfileModal is string modalId)
+    {
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                var modalElement = document.getElementById('@modalId');
+                if (modalElement && window.bootstrap) {
+                    bootstrap.Modal.getOrCreateInstance(modalElement).show();
+                }
+            });
+        </script>
+    }
+}

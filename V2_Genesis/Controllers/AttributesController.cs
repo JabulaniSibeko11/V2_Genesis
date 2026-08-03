@@ -1073,13 +1073,22 @@ public class AttributesController : Controller
     [HttpGet]
     [Authorize(Roles = "Client")]
     [Route("attributes/unlink")]
-    public async Task<IActionResult> Unlink(string id)
+    public async Task<IActionResult> Unlink(long id)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        // Load the linked record — only the owner can unlink
+        if (string.IsNullOrWhiteSpace(userId) || id <= 0)
+        {
+            TempData["AttrLinkError"] = "The linked property could not be identified.";
+            return RedirectToAction("Index", "Dashboard");
+        }
+
+        // The dashboard passes LinkedProperties_Attr.ID, not IDProperty.
+        // Keep the UserID condition so one client cannot unlink another
+        // client's property by changing the URL value.
         var linked = await _attrDb.LinkedProperties
-            .FirstOrDefaultAsync(p => p.IDProperty == id && p.UserID == userId);
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p => p.ID == id && p.UserID == userId);
 
         if (linked is null)
         {
@@ -1111,7 +1120,13 @@ public class AttributesController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> UnlinkConfirm(long id)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (string.IsNullOrWhiteSpace(userId) || id <= 0)
+        {
+            TempData["AttrLinkError"] = "The linked property could not be identified.";
+            return RedirectToAction("Index", "Dashboard");
+        }
 
         var linked = await _attrDb.LinkedProperties
             .FirstOrDefaultAsync(p => p.ID == id && p.UserID == userId);

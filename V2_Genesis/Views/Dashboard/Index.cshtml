@@ -395,53 +395,6 @@
             </div>
         </div>
     </div>
-    <!-- ── Quick stats row ────────────────────────────────────────────────── -->
-    <div class="cd-stats-strip">
-        @foreach (var roll in Model.Rolls.Where(r => !r.IsQuery))
-        {
-            var rd = Model.RollData.GetValueOrDefault(roll.Source) ?? new();
-            <div class="cd-stat-card">
-                <div class="cd-stat-label">@roll.Short</div>
-                <div class="cd-stat-nums">
-                    <span title="Linked">
-                        <i class="fa-solid fa-link"></i> @rd.LinkedCount
-                    </span>
-                    @if (roll.HasObjection)
-                    {
-                        <span title="Objections">
-                            <i class="fa-solid fa-file-pen"></i> @rd.ObjectedCount
-                        </span>
-                    }
-                    @if (roll.HasAppeal)
-                    {
-                        <span title="Appeals">
-                            <i class="fa-solid fa-gavel"></i> @rd.AppealsCount
-                        </span>
-                    }
-                </div>
-            </div>
-        }
-
-        @foreach (var roll in Model.Rolls.Where(r => r.IsQuery))
-        {
-            var rd = Model.RollData.GetValueOrDefault(roll.Source) ?? new();
-            <div class="cd-stat-card">
-                <div class="cd-stat-label">
-                    <i class="fa-solid fa-magnifying-glass-chart" style="margin-right:4px;color:var(--p-gold);"></i>
-                    @roll.Short
-                </div>
-                <div class="cd-stat-nums">
-                    <span title="Linked Properties">
-                        <i class="fa-solid fa-link"></i> @rd.LinkedCount
-                    </span>
-                    <span title="Queries">
-                        <i class="fa-solid fa-file-magnifying-glass"></i> @rd.ObjectedCount
-                    </span>
-                </div>
-            </div>
-        }
-
-    </div>
 </div>
 @if (TempData["LinkSuccess"] != null)
 {
@@ -477,19 +430,19 @@
 
     <div class="dash-link-alert
         @(string.Equals(
-                                                         reviewStatus,
-                                                         "Open",
-                                                         StringComparison.OrdinalIgnoreCase)
-                                                         ? "dash-link-success"
-                                                         : "dash-link-error")">
+                                                                  reviewStatus,
+                                                                  "Open",
+                                                                  StringComparison.OrdinalIgnoreCase)
+                                                                  ? "dash-link-success"
+                                                                  : "dash-link-error")">
 
         <i class="fa-solid
             @(string.Equals(
-                                                                       reviewStatus,
-                                                                       "Open",
-                                                                       StringComparison.OrdinalIgnoreCase)
-                                                                       ? "fa-unlock"
-                                                                       : "fa-lock")">
+                                                                                  reviewStatus,
+                                                                                  "Open",
+                                                                                  StringComparison.OrdinalIgnoreCase)
+                                                                                  ? "fa-unlock"
+                                                                                  : "fa-lock")">
         </i>
 
         <div>

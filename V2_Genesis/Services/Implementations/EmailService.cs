@@ -107,6 +107,36 @@ namespace V2_Genesis.Services.Implementations
             return SendEmailAsync(toEmail, subject, body);
         }
 
+        public Task SendAccountDetailsChangedAsync(
+            string toEmail,
+            string displayName,
+            IReadOnlyCollection<string> changedFields,
+            DateTime changedAt,
+            string profileUrl)
+        {
+            static string H(string? value) => WebUtility.HtmlEncode(value ?? string.Empty);
+
+            var changedItems = changedFields.Count == 0
+                ? "<li>Account details</li>"
+                : string.Join(string.Empty, changedFields.Select(x => $"<li>{H(x)}</li>"));
+
+            var subject = "City of Johannesburg — Account Details Changed";
+            var body = EmailTemplate(
+                heading: "Account Details Changed",
+                body: $@"
+                    <p>Hi <strong>{H(displayName)}</strong>,</p>
+                    <p>This email confirms that the following details on your Valuation Portal account were changed successfully:</p>
+                    <ul>{changedItems}</ul>
+                    <p><strong>Date and time:</strong> {H(changedAt.ToString("dd MMMM yyyy HH:mm"))}</p>
+                <p>If you made this change, no further action is required.</p>
+                    <p>If you did not make this change, reset your password immediately and contact Valuation Services.</p>",
+                btnLabel: "Open Valuation Portal",
+                btnLink: profileUrl,
+                footer: "For your security, passwords are never included in account emails.");
+
+            return SendEmailAsync(toEmail, subject, body);
+        }
+
         // ── Private helpers ────────────────────────────────────────────────────
         private SmtpClient BuildClient() => new SmtpClient
         {

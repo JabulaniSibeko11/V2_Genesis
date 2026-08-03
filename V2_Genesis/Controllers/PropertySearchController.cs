@@ -121,8 +121,9 @@ public class PropertySearchController : Controller
         if (!RollSearchRegistry.Configs.ContainsKey(rollSource))
             return NotFound($"No search configuration found for '{rollSource}'.");
 
-        // Load shared township + scheme lists (same across all rolls)
-        var townships = await _search.GetTownshipsAsync();
+        // Supplementary rolls use only their own townships. GV uses the
+        // complete list; LIS also keeps the complete list in SearchLis.
+        var townships = await _search.GetTownshipsAsync(rollSource);
         var schemes = await _search.GetSchemesAsync();
 
         ViewBag.Roll = roll;

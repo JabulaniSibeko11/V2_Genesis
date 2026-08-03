@@ -7,6 +7,7 @@ using V2_Genesis.Models.Results;
 using V2_Genesis.Models.Results.Section78;
 using V2_Genesis.Services;
 using V2_Genesis.Services.Interfaces;
+using V2_Genesis.Services.Omission;
 using V2_Genesis.Services.PropertySearch;
 
 namespace V2_Genesis.Services.Implementations;
@@ -67,13 +68,35 @@ public class PropertySearchService : IPropertySearchService
     // Shared search lists
     // ─────────────────────────────────────────────────────────────
 
-    public async Task<List<string>> GetTownshipsAsync()
+    public async Task<List<string>> GetTownshipsAsync(string? rollSource = null)
     {
+        var connectionString = _defaultConn;
+        var townshipProcedure = SP_TOWNSHIPS;
+
+        // GV, LIS and all callers without a supplementary roll use the
+        // complete township list. Supplementary rolls must only display
+        // townships available in that roll's own database.
+        if (!string.IsNullOrWhiteSpace(rollSource) &&
+            rollSource.StartsWith(
+                "Objection_Supp",
+                StringComparison.OrdinalIgnoreCase) &&
+            OmissionRollRegistry.Build().TryGetValue(
+                rollSource,
+                out var supplementaryRoll))
+        {
+            connectionString =
+                _config.GetConnectionString(supplementaryRoll.ConnectionKey)
+                ?? throw new InvalidOperationException(
+                    $"Connection string '{supplementaryRoll.ConnectionKey}' is missing.");
+
+            townshipProcedure = supplementaryRoll.TownSp;
+        }
+
         await using var conn =
-            new SqlConnection(_defaultConn);
+            new SqlConnection(connectionString);
 
         var rows = await conn.QueryAsync<string>(
-            SP_TOWNSHIPS,
+            townshipProcedure,
             commandType: CommandType.StoredProcedure,
             commandTimeout: 60);
 

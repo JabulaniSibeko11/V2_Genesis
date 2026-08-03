@@ -6,6 +6,36 @@
     var attrData = Model.AttrData;
 }
 
+<!-- ── Attributes info header — same pattern as the roll-detail
+     header, reusing the exact same classes for visual consistency ── -->
+<div class="cd-detail-roll-info">
+    <div class="cd-detail-roll-info-left">
+        <div class="cd-detail-roll-icon">
+            <i class="fa-solid fa-clipboard-list"></i>
+        </div>
+        <div>
+            <h2 class="cd-detail-roll-name">Property Attributes</h2>
+            <span class="cd-detail-roll-short">
+                Submit and track updated property information for valuation roll preparation
+            </span>
+        </div>
+    </div>
+
+    <div class="cd-detail-roll-info-right">
+        <span class="cd-detail-roll-dates">
+            <i class="fa-solid fa-link"></i>
+            @Model.AttributesLinked.Count linked
+            &nbsp;&middot;&nbsp;
+            <i class="fa-solid fa-file-pen"></i>
+            @attrData.SubmissionCount submitted
+        </span>
+        <span class="cd-roll-badge cd-badge-open">OPEN</span>
+        <a href="/attributes/search" class="cd-detail-search-btn">
+            <i class="fa-solid fa-magnifying-glass"></i> Search Property
+        </a>
+    </div>
+</div>
+
 <!-- ── 1. Linked Properties ──────────────────────────── -->
 <div class="cd-widget">
     <div class="cd-widget-toggle"
@@ -47,8 +77,11 @@
                             <td>@item.TownNameDesc</td>
                             <td>@item.MarketValue</td>
                             <td>
-                                <span class="attr-form-pill attr-pill-@(item.FormType.ToLower()
-                                                                                                                                                                                                                                                                                                                                  .Replace(" ", "").Replace("&", "").Replace("/", ""))">
+                                @{
+                                    var formPillClass = "attr-pill-" + item.FormType.ToLower()
+                                        .Replace(" ", "").Replace("&", "").Replace("/", "");
+                                }
+                                <span class="attr-form-pill @formPillClass">
                                     @item.FormType
                                 </span>
                             </td>
@@ -94,7 +127,9 @@
                                         }
                                         <li>
                                             <a class="dropdown-item"
-                                                   href="/attributes/unlink?id=@item.Id">
+                                                   asp-controller="Attributes"
+                                                   asp-action="Unlink"
+                                                   asp-route-id="@item.Id">
                                                 Unlink
                                             </a>
                                         </li>

@@ -1,0 +1,342 @@
+﻿/* ═══════════════════════════════════════════════════════════════
+   MY PROFILE
+   City of Johannesburg Valuation Portal
+   Poppins · Gold #e6b000 · Dark Teal #1a2e35
+   (redesigned to match the app's established brand tokens —
+   original used #161b22 charcoal + generic Tailwind greys instead
+   of the brand's actual dark teal and warm neutrals)
+═══════════════════════════════════════════════════════════════ */
+
+.profile-page {
+    min-height: calc(100vh - 90px);
+    padding: 42px 20px 70px;
+    background: #f7f5f2;
+    font-family: 'Poppins', sans-serif;
+}
+
+.profile-shell {
+    width: min(960px, 100%);
+    margin: 0 auto;
+}
+
+/* ── Hero ─────────────────────────────────────────────────────── */
+.profile-hero {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 24px;
+    padding: 28px 32px;
+    color: #fff;
+    background: linear-gradient(135deg, #1a2e35 0%, #0f2a30 100%);
+    border-radius: 18px;
+    border-bottom: 4px solid #e6b000;
+    box-shadow: 0 14px 36px rgba(26,46,53,.18);
+}
+
+.profile-avatar {
+    display: grid;
+    place-items: center;
+    flex: 0 0 72px;
+    height: 72px;
+    color: #1a2e35;
+    font-size: 30px;
+    font-weight: 800;
+    background: #e6b000;
+    border-radius: 50%;
+    box-shadow: 0 4px 14px rgba(230,176,0,.35);
+}
+
+.profile-eyebrow {
+    color: #e6b000;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+}
+
+.profile-hero h1 {
+    margin: 4px 0;
+    font-size: clamp(22px, 4vw, 32px);
+    font-weight: 800;
+    letter-spacing: -.2px;
+}
+
+.profile-hero p {
+    margin: 0;
+    color: rgba(255,255,255,.6);
+    font-size: 13.5px;
+}
+
+/* ── Cards ────────────────────────────────────────────────────── */
+.profile-card {
+    margin-top: 20px;
+    padding: 28px 30px;
+    background: #fff;
+    border: 1px solid #ede9e3;
+    border-radius: 16px;
+    box-shadow: 0 4px 24px rgba(26,46,53,.07), 0 1px 4px rgba(26,46,53,.05);
+}
+
+.profile-security-card {
+    border-left: 5px solid #e6b000;
+}
+
+.profile-card-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 22px;
+    flex-wrap: wrap;
+}
+
+.profile-card h2 {
+    margin: 0 0 6px;
+    font-size: 18px;
+    font-weight: 800;
+    color: #1a1a1a;
+}
+
+.profile-card p {
+    margin: 0;
+    color: #6b6b6b;
+    font-size: 13px;
+}
+
+/* ── Detail grid (Email / Phone / Account created) ──────────────── */
+.profile-details {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin: 24px 0 0;
+}
+
+    .profile-details div {
+        padding: 16px;
+        background: #f7f5f2;
+        border: 1px solid #ede9e3;
+        border-radius: 12px;
+        transition: border-color .15s;
+    }
+
+        .profile-details div:hover {
+            border-color: rgba(230,176,0,.4);
+        }
+
+    .profile-details dt {
+        margin-bottom: 6px;
+        color: #8a8a8a;
+        font-size: 10.5px;
+        font-weight: 800;
+        letter-spacing: .5px;
+        text-transform: uppercase;
+    }
+
+    .profile-details dd {
+        margin: 0;
+        color: #1a1a1a;
+        font-weight: 700;
+        font-size: 13.5px;
+        overflow-wrap: anywhere;
+    }
+
+/* ── Buttons ──────────────────────────────────────────────────── */
+.profile-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 11px 18px;
+    border: 0;
+    border-radius: 9px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 13.5px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform .15s ease, opacity .15s ease, background .15s ease;
+}
+
+    .profile-btn:hover {
+        transform: translateY(-1px);
+        opacity: .92;
+    }
+
+.profile-btn-primary {
+    color: #1a2e35;
+    background: #e6b000;
+}
+
+    .profile-btn-primary:hover {
+        background: #f5c200;
+        opacity: 1;
+    }
+
+.profile-btn-dark {
+    color: #e6b000;
+    background: #1a2e35;
+}
+
+    .profile-btn-dark:hover {
+        background: #243e48;
+        opacity: 1;
+    }
+
+.profile-btn-light {
+    color: #1a2e35;
+    background: #f0ece5;
+}
+
+    .profile-btn-light:hover {
+        background: #e8e2d8;
+        opacity: 1;
+    }
+
+/* ── Modal (Edit details / Change password) ──────────────────── */
+.profile-modal {
+    border: 0;
+    border-radius: 16px;
+    overflow: hidden;
+    font-family: 'Poppins', sans-serif;
+}
+
+    .profile-modal .modal-header {
+        color: #fff;
+        background: linear-gradient(135deg, #1a2e35 0%, #243e48 100%);
+        border-bottom: 4px solid #e6b000;
+    }
+
+        .profile-modal .modal-header .btn-close {
+            filter: invert(1);
+        }
+
+    .profile-modal .modal-body {
+        padding: 24px;
+    }
+
+    .profile-modal .modal-footer {
+        padding: 18px 24px;
+        background: #f7f5f2;
+        border-top: 1px solid #ede9e3;
+    }
+
+    .profile-modal .form-label {
+        font-weight: 700;
+        color: #1a1a1a;
+        font-size: 13px;
+    }
+
+    .profile-modal .form-control {
+        min-height: 46px;
+        border-radius: 9px;
+        border-color: #e0e0e0;
+        font-family: 'Poppins', sans-serif;
+    }
+
+        .profile-modal .form-control:focus {
+            border-color: #e6b000;
+            box-shadow: 0 0 0 .2rem rgba(230,176,0,.18);
+        }
+
+.profile-help {
+    margin-top: 9px !important;
+    font-size: 11.5px;
+    color: #8a8a8a;
+}
+
+.profile-validation:empty {
+    display: none;
+}
+
+/* ── Responsive — phone / tablet ─────────────────────────────── */
+@media (max-width: 900px) {
+    .profile-details {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 720px) {
+    .profile-page {
+        padding: 24px 12px 50px;
+    }
+
+    .profile-hero, .profile-card {
+        padding: 22px 18px;
+    }
+
+    .profile-card-heading {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .profile-details {
+        grid-template-columns: 1fr;
+    }
+
+    .profile-btn {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .profile-hero {
+        flex-direction: column;
+        align-items: flex-start;
+        text-align: left;
+        gap: 14px;
+        padding: 20px 16px;
+    }
+
+    .profile-avatar {
+        flex: 0 0 56px;
+        height: 56px;
+        font-size: 22px;
+    }
+
+    .profile-hero h1 {
+        font-size: 20px;
+    }
+
+    .profile-card {
+        padding: 18px 16px;
+    }
+
+        .profile-card h2 {
+            font-size: 16px;
+        }
+}
+
+@media (max-width: 380px) {
+    .profile-eyebrow {
+        font-size: 10px;
+    }
+
+    .profile-details div {
+        padding: 12px;
+    }
+}
+
+/* ── Responsive — large / ultra-wide screens ────────────────────── */
+@media (min-width: 1440px) {
+    .profile-shell {
+        width: min(1080px, 100%);
+    }
+
+    .profile-hero, .profile-card {
+        padding: 32px 38px;
+    }
+}
+
+@media (min-width: 1920px) {
+    .profile-shell {
+        width: min(1200px, 100%);
+    }
+
+    html {
+        font-size: 17px;
+    }
+}
+
+@media (min-width: 2560px) {
+    .profile-shell {
+        width: min(1400px, 100%);
+    }
+}

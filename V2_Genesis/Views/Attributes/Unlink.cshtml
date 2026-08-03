@@ -10,32 +10,34 @@
 <div class="ul-page">
     <div class="ul-inner">
 
-        <a href="/dashboard" class="ul-back">
+        <a asp-controller="Dashboard" asp-action="Index" class="ul-back">
             <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
         </a>
 
-        <!-- Warning heading -->
-        <div class="ul-warning-header">
-            <div class="ul-warning-icon">
+        <!-- ── Hero ─────────────────────────────────────────────── -->
+        <div class="ul-hero">
+            <div class="ul-hero-icon">
                 <i class="fa-solid fa-link-slash"></i>
             </div>
             <div>
-                <h1 class="ul-warning-title">Remove Linked Property</h1>
-                <p class="ul-warning-subtitle">
-                    Please review before confirming this action
+                <span class="ul-hero-eyebrow">Property Attributes</span>
+                <h1 class="ul-hero-title">Remove Linked Property</h1>
+                <p class="ul-hero-sub">
+                    Please review the details below before confirming this action
                 </p>
             </div>
         </div>
 
-        <!-- Property being removed -->
+        <!-- ── Property being removed ──────────────────────────── -->
         <div class="ul-prop-card">
             <div class="ul-prop-header">
                 <i class="fa-solid fa-building"></i>
                 Property to be Removed
             </div>
+
             <div class="ul-prop-body">
 
-                <div class="ul-prop-field">
+                <div class="ul-prop-field ul-prop-field-full">
                     <span class="ul-prop-label">
                         <i class="fa-solid fa-file-alt"></i>
                         Property Description
@@ -55,16 +57,6 @@
                     </div>
                 }
 
-                @if (!string.IsNullOrWhiteSpace(Model.Address))
-                {
-                    <div class="ul-prop-field">
-                        <span class="ul-prop-label">
-                            <i class="fa-solid fa-map-pin"></i> Address
-                        </span>
-                        <span class="ul-prop-value">@Model.Address</span>
-                    </div>
-                }
-
                 @if (!string.IsNullOrWhiteSpace(Model.CatDesc))
                 {
                     <div class="ul-prop-field">
@@ -75,15 +67,28 @@
                     </div>
                 }
 
+                @if (!string.IsNullOrWhiteSpace(Model.Address))
+                {
+                    <div class="ul-prop-field ul-prop-field-full">
+                        <span class="ul-prop-label">
+                            <i class="fa-solid fa-map-pin"></i> Address
+                        </span>
+                        <span class="ul-prop-value">@Model.Address</span>
+                    </div>
+                }
+
             </div>
         </div>
 
-        <!-- Warning notice -->
+        <!-- ── Warning notice ───────────────────────────────────── -->
         <div class="ul-notice">
-            <div class="ul-notice-title">
-                <i class="fa-solid fa-triangle-exclamation"></i>
-                Before you proceed — please read carefully
+            <div class="ul-notice-head">
+                <div class="ul-notice-icon">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+                <div class="ul-notice-title">Before you proceed — please read carefully</div>
             </div>
+
             <ul>
                 <li>
                     <strong>This action is permanent.</strong>
@@ -105,8 +110,11 @@
             </ul>
         </div>
 
-        <!-- Actions -->
-        <form method="post" action="/attributes/unlink" id="unlinkForm">
+        <!-- ── Actions ──────────────────────────────────────────── -->
+        <form asp-controller="Attributes"
+              asp-action="UnlinkConfirm"
+              method="post"
+              id="unlinkForm">
             @Html.AntiForgeryToken()
             <input type="hidden" name="id" value="@Model.Id" />
 
@@ -115,7 +123,7 @@
                     <i class="fa-solid fa-link-slash"></i>
                     Yes, Remove This Property
                 </button>
-                <a href="/dashboard" class="ul-btn-cancel">
+                <a asp-controller="Dashboard" asp-action="Index" class="ul-btn-cancel">
                     <i class="fa-solid fa-xmark"></i> Cancel
                 </a>
             </div>
@@ -125,13 +133,13 @@
 </div>
 
 @section Scripts {
-<script>
-document.getElementById('unlinkForm')
-    .addEventListener('submit', function () {
-        var btn = document.getElementById('unlinkBtn');
-        btn.disabled    = true;
-        btn.innerHTML   =
-            '<i class="fa-solid fa-spinner fa-spin"></i> Removing...';
-    });
-</script>
+    <script>
+        document.getElementById('unlinkForm')
+            .addEventListener('submit', function () {
+                var btn = document.getElementById('unlinkBtn');
+                btn.disabled    = true;
+                btn.innerHTML   =
+                    '<i class="fa-solid fa-spinner fa-spin"></i> Removing...';
+            });
+    </script>
 }
