@@ -1,6 +1,7 @@
 ﻿using Dapper;
 using GenesisV2.Services.PropertySearch;
 using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 using System.Data;
 using System.Globalization;
 using System.Text.RegularExpressions;
@@ -445,40 +446,21 @@ public class ObjectionService : IObjectionService
      rollSource,
      sourceTable);
 
-        await using var conn = new SqlConnection(connectionString);
+        await using var db = new ObjectionReadDbContext(connectionString);
 
         if (isAppeal)
         {
-            const string appealSql = @"
-SELECT TOP 1
-    Appeal_No,
-    Appeal_Status,
-    A_Property_Desc
-FROM dbo.Obj_Property_Info_Appeal
-WHERE
-    (
-        NULLIF(@ValuationKey, '') IS NOT NULL
-        AND CAST(A_Valuation_Key AS NVARCHAR(100)) = @ValuationKey
-    )
-    OR
-    (
-        NULLIF(@UnitKey, '') IS NOT NULL
-        AND CAST(A_Unit_Key AS NVARCHAR(100)) = @UnitKey
-    )
-    OR
-    (
-        NULLIF(@PropertyDesc, '') IS NOT NULL
-        AND LTRIM(RTRIM(A_Property_Desc)) = LTRIM(RTRIM(@PropertyDesc))
-    )
-ORDER BY ID DESC;
-";
-
-            var row = await conn.QueryFirstOrDefaultAsync(appealSql, new
-            {
-                UnitKey = unitKey ?? "",
-                ValuationKey = valuationKey ?? "",
-                PropertyDesc = propertyDesc ?? ""
-            });
+            var row = await db.Appeals
+                .AsNoTracking()
+                .Where(x =>
+                    (!string.IsNullOrWhiteSpace(valuationKey) &&
+                     x.ValuationKey == valuationKey) ||
+                    (!string.IsNullOrWhiteSpace(unitKey) &&
+                     x.UnitKey == unitKey) ||
+                    (!string.IsNullOrWhiteSpace(propertyDesc) &&
+                     (x.PropertyDescription ?? string.Empty).Trim() == propertyDesc))
+                .OrderByDescending(x => x.AppealId)
+                .FirstOrDefaultAsync();
 
             if (row == null)
             {
@@ -493,42 +475,23 @@ ORDER BY ID DESC;
             {
                 Exists = true,
                 IsAppeal = true,
-                ReferenceNo = row.Appeal_No,
-                Status = row.Appeal_Status,
-                PropertyDescription = row.A_Property_Desc
+                ReferenceNo = row.AppealNo,
+                Status = row.AppealStatus,
+                PropertyDescription = row.PropertyDescription
             };
         }
 
-        const string objectionSql = @"
-SELECT TOP 1
-    Objection_No,
-    objection_Status,
-    Property_Desc
-FROM dbo.Obj_Property_Info
-WHERE
-    (
-        NULLIF(@ValuationKey, '') IS NOT NULL
-        AND CAST(Valuation_Key AS NVARCHAR(100)) = @ValuationKey
-    )
-    OR
-    (
-        NULLIF(@UnitKey, '') IS NOT NULL
-        AND CAST(Unit_key AS NVARCHAR(100)) = @UnitKey
-    )
-    OR
-    (
-        NULLIF(@PropertyDesc, '') IS NOT NULL
-        AND LTRIM(RTRIM(Property_Desc)) = LTRIM(RTRIM(@PropertyDesc))
-    )
-;
-";
-
-        var objRow = await conn.QueryFirstOrDefaultAsync(objectionSql, new
-        {
-            UnitKey = unitKey ?? "",
-            ValuationKey = valuationKey ?? "",
-            PropertyDesc = propertyDesc ?? ""
-        });
+        var objRow = await db.Objections
+            .AsNoTracking()
+            .Where(x =>
+                (!string.IsNullOrWhiteSpace(valuationKey) &&
+                 x.ValuationKey == valuationKey) ||
+                (!string.IsNullOrWhiteSpace(unitKey) &&
+                 x.UnitKey == unitKey) ||
+                (!string.IsNullOrWhiteSpace(propertyDesc) &&
+                 (x.PropertyDescription ?? string.Empty).Trim() == propertyDesc))
+            .OrderByDescending(x => x.ObjectionId)
+            .FirstOrDefaultAsync();
 
         if (objRow == null)
         {
@@ -543,9 +506,9 @@ WHERE
         {
             Exists = true,
             IsAppeal = false,
-            ReferenceNo = objRow.Objection_No,
-            Status = objRow.objection_Status,
-            PropertyDescription = objRow.Property_Desc
+            ReferenceNo = objRow.ObjectionNo,
+            Status = objRow.ObjectionStatus,
+            PropertyDescription = objRow.PropertyDescription
         };
     }
     private static DateTime TodaySa()
@@ -561,20 +524,6 @@ WHERE
         }
     }
 
-    private static DateTime? TryDate(object? value)
-    {
-        if (value == null)
-            return null;
-
-        var text = value.ToString();
-
-        if (string.IsNullOrWhiteSpace(text))
-            return null;
-
-        return DateTime.TryParse(text, out var date)
-            ? date
-            : null;
-    }
     public Task<LodgementWindowResult> CheckObjectionWindowAsync(
     string rollSource,
     string sourceTable)
@@ -648,73 +597,51 @@ WHERE
                 $"Connection string '{connectionKey}' was not found.");
         }
 
-        const string sql = @"
-SELECT TOP (1)
-    obj.Objection_No,
-    obj.objection_Status,
-    obj.Property_Desc,
-    obj.Unit_key,
-    obj.Valuation_Key,
+        await using var db = new ObjectionReadDbContext(connectionString);
 
-    mvd.Appeal_Start_Date,
-    mvd.Appeal_Close_Date,
-    mvd.Appeal_Start_Date_ReviseMVD,
-    mvd.Appeal_Close_Date_ReviseMVD,
-    mvd.Revise_MVD,
+        var objection = await db.Objections
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x =>
+                (x.ObjectionNo ?? string.Empty).Trim() == objectionNo);
 
-    existing.Appeal_No AS Existing_Appeal_No,
-    existing.Appeal_Status AS Existing_Appeal_Status
-FROM dbo.Obj_Property_Info AS obj
-OUTER APPLY
-(
-    SELECT TOP (1)
-        x.Appeal_Start_Date,
-        x.Appeal_Close_Date,
-        x.Appeal_Start_Date_ReviseMVD,
-        x.Appeal_Close_Date_ReviseMVD,
-        x.Revise_MVD
-    FROM dbo.Objection_MVD1 AS x
-    WHERE LTRIM(RTRIM(x.Objection_No)) = LTRIM(RTRIM(obj.Objection_No))
-    ORDER BY x.Batch_Date DESC
-) AS mvd
-OUTER APPLY
-(
-    SELECT TOP (1)
-        appeal.Appeal_No,
-        appeal.Appeal_Status
-    FROM dbo.Obj_Property_Info_Appeal AS appeal
-    WHERE
-        LTRIM(RTRIM(ISNULL(appeal.Obj_Ref, '')))
-            = LTRIM(RTRIM(obj.Objection_No))
-        OR
-        (
-            NULLIF(@ValuationKey, '') IS NOT NULL
-            AND CAST(appeal.A_Valuation_Key AS NVARCHAR(100)) = @ValuationKey
-        )
-        OR
-        (
-            NULLIF(@UnitKey, '') IS NOT NULL
-            AND CAST(appeal.A_Unit_key AS NVARCHAR(100)) = @UnitKey
-        )
-        OR
-        (
-            NULLIF(@PropertyDesc, '') IS NOT NULL
-            AND LTRIM(RTRIM(appeal.A_Property_Desc))
-                = LTRIM(RTRIM(@PropertyDesc))
-        )
-    ORDER BY appeal.Appeal_ID DESC
-) AS existing
-WHERE LTRIM(RTRIM(obj.Objection_No)) = LTRIM(RTRIM(@ObjectionNo));";
+        AppealEligibilityRow? row = null;
 
-        await using var connection = new SqlConnection(connectionString);
-
-        var row = await connection.QueryFirstOrDefaultAsync(sql, new
+        if (objection is not null)
         {
-            ObjectionNo = objectionNo,
-            UnitKey = unitKey ?? string.Empty,
-            ValuationKey = valuationKey ?? string.Empty,
-            PropertyDesc = propertyDesc ?? string.Empty
-        });
+            var mvd = await db.MvdRevised
+                .AsNoTracking()
+                .Where(x =>
+                    (x.ObjectionNo ?? string.Empty).Trim() == objectionNo)
+                .OrderByDescending(x => x.BatchDate)
+                .FirstOrDefaultAsync();
+
+            var existing = await db.Appeals
+                .AsNoTracking()
+                .Where(x =>
+                    (x.ObjectReference ?? string.Empty).Trim() == objectionNo ||
+                    (!string.IsNullOrWhiteSpace(valuationKey) &&
+                     x.ValuationKey == valuationKey) ||
+                    (!string.IsNullOrWhiteSpace(unitKey) &&
+                     x.UnitKey == unitKey) ||
+                    (!string.IsNullOrWhiteSpace(propertyDesc) &&
+                     (x.PropertyDescription ?? string.Empty).Trim() == propertyDesc))
+                .OrderByDescending(x => x.AppealId)
+                .FirstOrDefaultAsync();
+
+            row = new AppealEligibilityRow
+            {
+                ObjectionNo = objection.ObjectionNo,
+                ObjectionStatus = objection.ObjectionStatus,
+                PropertyDescription = objection.PropertyDescription,
+                AppealStartDate = mvd?.AppealStartDate,
+                AppealCloseDate = mvd?.AppealCloseDate,
+                RevisedAppealStartDate = mvd?.RevisedAppealStartDate,
+                RevisedAppealCloseDate = mvd?.RevisedAppealCloseDate,
+                ReviseMvd = mvd?.ReviseMvd,
+                ExistingAppealNo = existing?.AppealNo,
+                ExistingAppealStatus = existing?.AppealStatus
+            };
+        }
 
         if (row is null)
         {
@@ -724,27 +651,27 @@ WHERE LTRIM(RTRIM(obj.Objection_No)) = LTRIM(RTRIM(@ObjectionNo));";
             };
         }
 
-        var status = row.objection_Status?.ToString()?.Trim() ?? string.Empty;
-        var reviseText = row.Revise_MVD?.ToString()?.Trim() ?? string.Empty;
+        var status = row.ObjectionStatus?.Trim() ?? string.Empty;
+        var reviseText = row.ReviseMvd?.Trim() ?? string.Empty;
 
         var usesRevisedDates =
             reviseText.Equals("True", StringComparison.OrdinalIgnoreCase)
             || reviseText.Equals("Yes", StringComparison.OrdinalIgnoreCase)
             || reviseText.Equals("1", StringComparison.OrdinalIgnoreCase)
             || !string.IsNullOrWhiteSpace(
-                row.Appeal_Close_Date_ReviseMVD?.ToString());
+                row.RevisedAppealCloseDate?.ToString());
 
         DateTime? startDate = null;
         DateTime? closeDate = null;
 
         if (usesRevisedDates)
         {
-            startDate = TryDate(row.Appeal_Start_Date_ReviseMVD);
-            closeDate = TryDate(row.Appeal_Close_Date_ReviseMVD);
+            startDate = row.RevisedAppealStartDate;
+            closeDate = row.RevisedAppealCloseDate;
         }
 
-        startDate ??= TryDate(row.Appeal_Start_Date);
-        closeDate ??= TryDate(row.Appeal_Close_Date);
+        startDate ??= row.AppealStartDate;
+        closeDate ??= row.AppealCloseDate;
 
         var today = TodaySa();
         var periodExists = startDate.HasValue && closeDate.HasValue;
@@ -754,10 +681,10 @@ WHERE LTRIM(RTRIM(obj.Objection_No)) = LTRIM(RTRIM(@ObjectionNo));";
             && today <= closeDate!.Value.Date;
 
         var existingAppealNumber =
-            row.Existing_Appeal_No?.ToString()?.Trim() ?? string.Empty;
+            row.ExistingAppealNo?.Trim() ?? string.Empty;
 
         var existingAppealStatus =
-            row.Existing_Appeal_Status?.ToString()?.Trim() ?? string.Empty;
+            row.ExistingAppealStatus?.Trim() ?? string.Empty;
 
         return new AppealEligibilityResult
         {
@@ -771,9 +698,9 @@ WHERE LTRIM(RTRIM(obj.Objection_No)) = LTRIM(RTRIM(@ObjectionNo));";
                 !string.IsNullOrWhiteSpace(existingAppealNumber)
                 || !string.IsNullOrWhiteSpace(existingAppealStatus),
             UsesRevisedMvdDates = usesRevisedDates,
-            ObjectionNumber = row.Objection_No?.ToString()?.Trim() ?? objectionNo,
+            ObjectionNumber = row.ObjectionNo?.Trim() ?? objectionNo,
             ObjectionStatus = status,
-            PropertyDescription = row.Property_Desc?.ToString()?.Trim() ?? string.Empty,
+            PropertyDescription = row.PropertyDescription?.Trim() ?? string.Empty,
             AppealStartDate = startDate,
             AppealCloseDate = closeDate,
             ExistingAppealNumber = existingAppealNumber,
@@ -806,50 +733,21 @@ WHERE LTRIM(RTRIM(obj.Objection_No)) = LTRIM(RTRIM(@ObjectionNo));";
                 $"Connection string '{connectionKey}' was not found.");
         }
 
-        await using var conn = new SqlConnection(connString);
+        await using var db = new ObjectionReadDbContext(connString);
 
-        var sql = @"
-SELECT TOP 1
-    Objection_No,
-    Appeal_Start_Date,
-    Appeal_Close_Date,
-    Appeal_Start_Date_ReviseMVD,
-    Appeal_Close_Date_ReviseMVD,
-    Revise_MVD,
-    Unit_Key,
-    valuation_Key,
-    Property_desc
-FROM dbo.Objection_MVD
-WHERE
-    (
-        NULLIF(@ObjectionNo, '') IS NOT NULL
-        AND Objection_No = @ObjectionNo
-    )
-    OR
-    (
-        NULLIF(@ValuationKey, '') IS NOT NULL
-        AND CAST(valuation_Key AS NVARCHAR(100)) = @ValuationKey
-    )
-    OR
-    (
-        NULLIF(@UnitKey, '') IS NOT NULL
-        AND CAST(Unit_Key AS NVARCHAR(100)) = @UnitKey
-    )
-    OR
-    (
-        NULLIF(@PropertyDesc, '') IS NOT NULL
-        AND LTRIM(RTRIM(Property_desc)) = LTRIM(RTRIM(@PropertyDesc))
-    )
-ORDER BY Batch_Date DESC;
-";
-
-        var row = await conn.QueryFirstOrDefaultAsync(sql, new
-        {
-            ObjectionNo = objectionNo ?? "",
-            UnitKey = unitKey ?? "",
-            ValuationKey = valuationKey ?? "",
-            PropertyDesc = propertyDesc ?? ""
-        });
+        var row = await db.MvdNotices
+            .AsNoTracking()
+            .Where(x =>
+                (!string.IsNullOrWhiteSpace(objectionNo) &&
+                 x.ObjectionNo == objectionNo) ||
+                (!string.IsNullOrWhiteSpace(valuationKey) &&
+                 x.ValuationKey == valuationKey) ||
+                (!string.IsNullOrWhiteSpace(unitKey) &&
+                 x.UnitKey == unitKey) ||
+                (!string.IsNullOrWhiteSpace(propertyDesc) &&
+                 (x.PropertyDescription ?? string.Empty).Trim() == propertyDesc))
+            .OrderByDescending(x => x.BatchDate)
+            .FirstOrDefaultAsync();
 
         if (row == null)
         {
@@ -861,28 +759,28 @@ ORDER BY Batch_Date DESC;
             };
         }
 
-        var reviseText = row.Revise_MVD?.ToString() ?? "";
+        var reviseText = row.ReviseMvd ?? "";
 
         var isRevised =
             reviseText.Equals("True", StringComparison.OrdinalIgnoreCase)
             || reviseText.Equals("Yes", StringComparison.OrdinalIgnoreCase)
             || reviseText.Equals("1", StringComparison.OrdinalIgnoreCase)
-            || !string.IsNullOrWhiteSpace(row.Appeal_Close_Date_ReviseMVD?.ToString());
+            || row.RevisedAppealCloseDate.HasValue;
 
         DateTime? startDate = null;
         DateTime? closeDate = null;
 
         if (isRevised)
         {
-            startDate = TryDate(row.Appeal_Start_Date_ReviseMVD);
-            closeDate = TryDate(row.Appeal_Close_Date_ReviseMVD);
+            startDate = row.RevisedAppealStartDate;
+            closeDate = row.RevisedAppealCloseDate;
         }
 
         if (!startDate.HasValue)
-            startDate = TryDate(row.Appeal_Start_Date);
+            startDate = row.AppealStartDate;
 
         if (!closeDate.HasValue)
-            closeDate = TryDate(row.Appeal_Close_Date);
+            closeDate = row.AppealCloseDate;
 
         var today = TodaySa();
 
@@ -899,7 +797,148 @@ ORDER BY Batch_Date DESC;
             Type = "Appeal",
             StartDate = startDate,
             CloseDate = closeDate,
-            ReferenceNo = row.Objection_No
+            ReferenceNo = row.ObjectionNo
         };
+    }
+
+    private sealed class ObjectionReadDbContext : DbContext
+    {
+        private readonly string _connectionString;
+
+        public ObjectionReadDbContext(string connectionString)
+        {
+            _connectionString = connectionString;
+        }
+
+        public DbSet<ObjectionReadEntity> Objections => Set<ObjectionReadEntity>();
+        public DbSet<AppealReadEntity> Appeals => Set<AppealReadEntity>();
+        public DbSet<MvdReadEntity> MvdNotices => Set<MvdReadEntity>();
+        public DbSet<MvdRevisedReadEntity> MvdRevised => Set<MvdRevisedReadEntity>();
+
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            optionsBuilder.UseSqlServer(
+                _connectionString,
+                sqlServer => sqlServer.CommandTimeout(60));
+        }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<ObjectionReadEntity>(entity =>
+            {
+                entity.HasKey(x => x.ObjectionId);
+                entity.ToTable("Obj_Property_Info", "dbo");
+                entity.Property(x => x.ObjectionId).HasColumnName("Objection_ID");
+                entity.Property(x => x.ObjectionNo).HasColumnName("Objection_No");
+                entity.Property(x => x.ObjectionStatus).HasColumnName("objection_Status");
+                entity.Property(x => x.PropertyDescription).HasColumnName("Property_Desc");
+                entity.Property(x => x.UnitKey).HasColumnName("Unit_key");
+                entity.Property(x => x.ValuationKey).HasColumnName("Valuation_Key");
+            });
+
+            modelBuilder.Entity<AppealReadEntity>(entity =>
+            {
+                entity.HasKey(x => x.AppealId);
+                entity.ToTable("Obj_Property_Info_Appeal", "dbo");
+                entity.Property(x => x.AppealId).HasColumnName("Appeal_ID");
+                entity.Property(x => x.AppealNo).HasColumnName("Appeal_No");
+                entity.Property(x => x.AppealStatus).HasColumnName("Appeal_Status");
+                entity.Property(x => x.ObjectReference).HasColumnName("Obj_Ref");
+                entity.Property(x => x.PropertyDescription).HasColumnName("A_Property_Desc");
+                entity.Property(x => x.UnitKey).HasColumnName("A_Unit_key");
+                entity.Property(x => x.ValuationKey).HasColumnName("A_Valuation_Key");
+            });
+
+            var mvd = modelBuilder.Entity<MvdReadEntity>();
+            mvd.HasNoKey();
+            mvd.ToTable("Objection_MVD", "dbo");
+            mvd.Property(x => x.ObjectionNo).HasColumnName("Objection_No");
+            mvd.Property(x => x.AppealStartDate).HasColumnName("Appeal_Start_Date");
+            mvd.Property(x => x.AppealCloseDate).HasColumnName("Appeal_Close_Date");
+            mvd.Property(x => x.RevisedAppealStartDate).HasColumnName("Appeal_Start_Date_ReviseMVD");
+            mvd.Property(x => x.RevisedAppealCloseDate).HasColumnName("Appeal_Close_Date_ReviseMVD");
+            mvd.Property(x => x.ReviseMvd).HasColumnName("Revise_MVD");
+            mvd.Property(x => x.UnitKey).HasColumnName("Unit_Key");
+            mvd.Property(x => x.ValuationKey).HasColumnName("valuation_Key");
+            mvd.Property(x => x.PropertyDescription).HasColumnName("Property_desc");
+            mvd.Property(x => x.BatchDate).HasColumnName("Batch_Date");
+
+            var revised = modelBuilder.Entity<MvdRevisedReadEntity>();
+            revised.HasNoKey();
+            revised.ToTable("Objection_MVD1", "dbo");
+            revised.Property(x => x.ObjectionNo).HasColumnName("Objection_No");
+            revised.Property(x => x.AppealStartDate).HasColumnName("Appeal_Start_Date");
+            revised.Property(x => x.AppealCloseDate).HasColumnName("Appeal_Close_Date");
+            revised.Property(x => x.RevisedAppealStartDate).HasColumnName("Appeal_Start_Date_ReviseMVD");
+            revised.Property(x => x.RevisedAppealCloseDate).HasColumnName("Appeal_Close_Date_ReviseMVD");
+            revised.Property(x => x.ReviseMvd).HasColumnName("Revise_MVD");
+            revised.Property(x => x.UnitKey).HasColumnName("Unit_Key");
+            revised.Property(x => x.ValuationKey).HasColumnName("valuation_Key");
+            revised.Property(x => x.PropertyDescription).HasColumnName("Property_desc");
+            revised.Property(x => x.BatchDate).HasColumnName("Batch_Date");
+        }
+    }
+
+    private sealed class ObjectionReadEntity
+    {
+        public long ObjectionId { get; set; }
+        public string? ObjectionNo { get; set; }
+        public string? ObjectionStatus { get; set; }
+        public string? PropertyDescription { get; set; }
+        public string? UnitKey { get; set; }
+        public string? ValuationKey { get; set; }
+    }
+
+    private sealed class AppealReadEntity
+    {
+        public long AppealId { get; set; }
+        public string? AppealNo { get; set; }
+        public string? AppealStatus { get; set; }
+        public string? ObjectReference { get; set; }
+        public string? PropertyDescription { get; set; }
+        public string? UnitKey { get; set; }
+        public string? ValuationKey { get; set; }
+    }
+
+    private sealed class MvdReadEntity
+    {
+        public string? ObjectionNo { get; set; }
+        public DateTime? AppealStartDate { get; set; }
+        public DateTime? AppealCloseDate { get; set; }
+        public DateTime? RevisedAppealStartDate { get; set; }
+        public DateTime? RevisedAppealCloseDate { get; set; }
+        public string? ReviseMvd { get; set; }
+        public string? UnitKey { get; set; }
+        public string? ValuationKey { get; set; }
+        public string? PropertyDescription { get; set; }
+        public DateTime? BatchDate { get; set; }
+    }
+
+    private sealed class MvdRevisedReadEntity
+    {
+        public string? ObjectionNo { get; set; }
+        public DateTime? AppealStartDate { get; set; }
+        public DateTime? AppealCloseDate { get; set; }
+        public DateTime? RevisedAppealStartDate { get; set; }
+        public DateTime? RevisedAppealCloseDate { get; set; }
+        public string? ReviseMvd { get; set; }
+        public string? UnitKey { get; set; }
+        public string? ValuationKey { get; set; }
+        public string? PropertyDescription { get; set; }
+        public DateTime? BatchDate { get; set; }
+    }
+
+    private sealed class AppealEligibilityRow
+    {
+        public string? ObjectionNo { get; set; }
+        public string? ObjectionStatus { get; set; }
+        public string? PropertyDescription { get; set; }
+        public DateTime? AppealStartDate { get; set; }
+        public DateTime? AppealCloseDate { get; set; }
+        public DateTime? RevisedAppealStartDate { get; set; }
+        public DateTime? RevisedAppealCloseDate { get; set; }
+        public string? ReviseMvd { get; set; }
+        public string? ExistingAppealNo { get; set; }
+        public string? ExistingAppealStatus { get; set; }
     }
 }

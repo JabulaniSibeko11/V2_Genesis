@@ -6,6 +6,36 @@
     var attrData = Model.AttrData;
 }
 
+<!-- ── Attributes info header — same pattern as the roll-detail
+     header, reusing the exact same classes for visual consistency ── -->
+<div class="cd-detail-roll-info">
+    <div class="cd-detail-roll-info-left">
+        <div class="cd-detail-roll-icon">
+            <i class="fa-solid fa-clipboard-list"></i>
+        </div>
+        <div>
+            <h2 class="cd-detail-roll-name">Property Attributes</h2>
+            <span class="cd-detail-roll-short">
+                Submit and track updated property information for valuation roll preparation
+            </span>
+        </div>
+    </div>
+
+    <div class="cd-detail-roll-info-right">
+        <span class="cd-detail-roll-dates">
+            <i class="fa-solid fa-link"></i>
+            @Model.AttributesLinked.Count linked
+            &nbsp;&middot;&nbsp;
+            <i class="fa-solid fa-file-pen"></i>
+            @attrData.SubmissionCount submitted
+        </span>
+        <span class="cd-roll-badge cd-badge-open">OPEN</span>
+        <a href="/attributes/search" class="cd-detail-search-btn">
+            <i class="fa-solid fa-magnifying-glass"></i> Search Property
+        </a>
+    </div>
+</div>
+
 <!-- ── 1. Linked Properties ──────────────────────────── -->
 <div class="cd-widget">
     <div class="cd-widget-toggle"
@@ -19,11 +49,6 @@
            id="wchev-attr-linked"></i>
     </div>
     <div class="cd-widget-body" id="widget-attr-linked">
-        <div class="cd-widget-toolbar">
-            <a href="/attributes/search" class="cd-add-btn">
-                <i class="fa-solid fa-magnifying-glass"></i> Search Property
-            </a>
-        </div>
         <div class="table-responsive">
             <table class="cd-table table table-bordered"
                    id="tbl-attr-linked">
@@ -47,8 +72,11 @@
                             <td>@item.TownNameDesc</td>
                             <td>@item.MarketValue</td>
                             <td>
-                                <span class="attr-form-pill attr-pill-@(item.FormType.ToLower()
-                                                                                                                                                                                                                                                                                                                                  .Replace(" ", "").Replace("&", "").Replace("/", ""))">
+                                @{
+                                    var formPillClass = "attr-pill-" + item.FormType.ToLower()
+                                        .Replace(" ", "").Replace("&", "").Replace("/", "");
+                                }
+                                <span class="attr-form-pill @formPillClass">
                                     @item.FormType
                                 </span>
                             </td>
@@ -94,9 +122,7 @@
                                         }
                                         <li>
                                             <a class="dropdown-item"
-                                               asp-controller="Attributes"
-                                               asp-action="Unlink"
-                                               asp-route-id="@item.Id">
+                                                   href="/attributes/unlink?id=@item.Id">
                                                 Unlink
                                             </a>
                                         </li>
@@ -181,11 +207,9 @@
                                     <ul class="dropdown-menu cd-action-menu">
                                         <li>
                                             <a class="dropdown-item"
-                                                   asp-route="ViewSubmission"
-                                                   asp-route-submissionType="Attribute"
-                                                   asp-route-referenceNumber="@item.SubmissionRef"
-                                                   asp-route-rollSource="Attributes"
-                                                   asp-route-returnUrl="/Dashboard?openRoll=attributes">
+                                                   asp-route="AttributeSubmissionById"
+                                                   asp-route-id="@item.Id"
+                                                   asp-route-returnUrl="@Url.Action("Index", "Dashboard", new { openRoll = "attributes" })">
                                                 👁️ View Submission
                                             </a>
                                         </li>
@@ -215,13 +239,12 @@
                                         @if (item.Status == "ReturnedToClient")
                                         {
                                             <li>
-                                                <a class="dropdown-item"
-                                                   asp-controller="Attributes"
-                                                   asp-action="CorrectReturned"
-                                                   asp-route-attrId="@item.Id">
+                                                <button type="button"
+                                                        class="dropdown-item"
+                                                        onclick="openReturnedCorrectionModal('@item.Id')">
                                                     <i class="fa-solid fa-rotate-right"></i>
                                                     Correct / Resubmit
-                                                </a>
+                                                </button>
                                             </li>
                                         }
                                     </ul>
@@ -236,6 +259,104 @@
 </div>
 
 
+@* ── Returned Attribute Correction / Resubmission Modals ─────────────────── *@
+@foreach (var item in attrData.Submissions.Where(x => x.Status == "ReturnedToClient"))
+{
+    <div id="returnedCorrectionModal_@item.Id"
+         class="attr-insp-modal-backdrop"
+         style="display:none;">
+
+        <div class="attr-insp-modal">
+            <div class="attr-insp-modal-head">
+                <div>
+                    Correct Returned Submission - @item.SubmissionRef
+                </div>
+
+                <button type="button"
+                        onclick="closeReturnedCorrectionModal('@item.Id')">
+                    ×
+                </button>
+            </div>
+
+            <form asp-controller="Dashboard"
+                  asp-action="ResubmitReturnedAttribute"
+                  method="post">
+
+                @Html.AntiForgeryToken()
+
+                <input type="hidden"
+                       name="AttrId"
+                       value="@item.Id" />
+
+                <input type="hidden"
+                       name="AttrNo"
+                       value="@item.SubmissionRef" />
+
+                <input type="hidden"
+                       name="PropertyDescription"
+                       value="@item.PropertyDesc" />
+
+                <div class="attr-insp-modal-body">
+                    <p>
+                        Your attribute submission was returned for correction.
+                        Please review the reason below, upload any required evidence,
+                        and resubmit your corrections.
+                    </p>
+
+                    @if (!string.IsNullOrWhiteSpace(item.RevisionReason))
+                    {
+                        <div class="alert alert-warning">
+                            <strong>Reason returned:</strong><br />
+                            @item.RevisionReason
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-warning">
+                            <strong>Reason returned:</strong><br />
+                            The valuer requested corrections to this attribute submission.
+                        </div>
+                    }
+
+                    <div class="alert alert-info">
+                        <strong>Evidence:</strong>
+                        If the valuer requested updated evidence, upload it before resubmitting.
+                        <br />
+
+                        <a href="/attributes/evidence?attrNo=@item.SubmissionRef"
+                               target="_blank"
+                               class="btn btn-sm btn-dark mt-2">
+                            <i class="fa-solid fa-paperclip"></i>
+                            Upload Evidence
+                        </a>
+                    </div>
+
+                    <label class="fw-bold">Correction Comment</label>
+
+                    <textarea name="RevisionComment"
+                              class="form-control"
+                              rows="4"
+                              placeholder="Explain what you corrected..."
+                              required></textarea>
+                </div>
+
+                <div class="attr-insp-modal-footer">
+                    <button type="button"
+                            class="btn btn-light"
+                            onclick="closeReturnedCorrectionModal('@item.Id')">
+                        Cancel
+                    </button>
+
+                    <button type="submit"
+                            class="btn btn-warning fw-bold">
+                        Resubmit Corrections
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+}
+          
 @* ── 3. My Appointments with Valuer ─────────────────── *@
 <div class="cd-widget">
     <div class="cd-widget-toggle"

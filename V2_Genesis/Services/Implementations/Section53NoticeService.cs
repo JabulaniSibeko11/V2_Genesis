@@ -1,9 +1,7 @@
-﻿using Dapper;
-using Microsoft.Data.SqlClient;
+﻿using Microsoft.EntityFrameworkCore;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
-using System.Data;
 using System.Globalization;
 using V2_Genesis.Services.Admin;
 using V2_Genesis.Services.Interfaces;
@@ -49,80 +47,19 @@ public sealed class Section53NoticeService : ISection53NoticeService
             ?? throw new InvalidOperationException(
                 $"Connection string '{roll.ConnectionKey}' was not found.");
 
-        const string sql = """
-            SELECT TOP (1)
-                p.Objection_No                         AS ObjectionNo,
-                p.UserID                               AS UserId,
-                LTRIM(RTRIM(p.objection_Status))       AS ObjectionStatus,
-                m.ADDR1                                AS Addr1,
-                m.ADDR2                                AS Addr2,
-                m.ADDR3                                AS Addr3,
-                m.ADDR4                                AS Addr4,
-                m.ADDR5                                AS Addr5,
-                m.Property_desc                        AS PropertyDesc,
-                m.valuation_Key                        AS ValuationKey,
-                m.GV_Category                          AS GvCategory,
-                m.GV_Category2                         AS GvCategory2,
-                m.GV_Category3                         AS GvCategory3,
-                m.GV_Extent                            AS GvExtent,
-                m.GV_Extent2                           AS GvExtent2,
-                m.GV_Extent3                           AS GvExtent3,
-                COALESCE(NULLIF(m.GV_Market_Value, ''), m.GVMarketValue)
-                                                       AS GvMarketValue,
-                COALESCE(NULLIF(m.GV_Market_Value2, ''), m.GVMarketValue2)
-                                                       AS GvMarketValue2,
-                COALESCE(NULLIF(m.GV_Market_Value3, ''), m.GVMarketValue3)
-                                                       AS GvMarketValue3,
-                m.MVD_Category                         AS MvdCategory,
-                m.MVD_Category2                        AS MvdCategory2,
-                m.MVD_Category3                        AS MvdCategory3,
-                m.MVD_Extent                           AS MvdExtent,
-                m.MVD_Extent2                          AS MvdExtent2,
-                m.MVD_Extent3                          AS MvdExtent3,
-                COALESCE(NULLIF(m.MVD_Market_Value, ''), m.MVDMarketValue)
-                                                       AS MvdMarketValue,
-                COALESCE(NULLIF(m.MVD_Market_Value2, ''), m.MVDMarketValue2)
-                                                       AS MvdMarketValue2,
-                COALESCE(NULLIF(m.MVD_Market_Value3, ''), m.MVDMarketValue3)
-                                                       AS MvdMarketValue3,
-                m.Section52Review                      AS Section52Review,
-                m.Batch_Date                           AS BatchDate,
-                m.Appeal_Start_Date                    AS AppealStartDate,
-                m.Appeal_Close_Date                    AS AppealCloseDate,
-                TRY_CONVERT(datetime2, m.WEFDATEMVD)   AS EffectiveDate,
-                CONVERT(nvarchar(20), m.Revise_MVD)    AS ReviseMvd,
-                m.ReviseMVD_Category                   AS RevisedCategory,
-                m.ReviseMVD_Category2                  AS RevisedCategory2,
-                m.ReviseMVD_Category3                  AS RevisedCategory3,
-                m.ReviseMVD_Extent                     AS RevisedExtent,
-                m.ReviseMVD_Extent2                    AS RevisedExtent2,
-                m.ReviseMVD_Extent3                    AS RevisedExtent3,
-                COALESCE(NULLIF(m.ReviseMVD_Market_Value, ''), m.ReviseMVD_MarketValue)
-                                                       AS RevisedMarketValue,
-                COALESCE(NULLIF(m.ReviseMVD_Market_Value2, ''), m.ReviseMVD_MarketValue2)
-                                                       AS RevisedMarketValue2,
-                COALESCE(NULLIF(m.ReviseMVD_Market_Value3, ''), m.ReviseMVD_MarketValue3)
-                                                       AS RevisedMarketValue3,
-                m.Section52Review_Revise_MVD            AS RevisedSection52Review,
-                m.Batch_Date_ReviseMVD                  AS RevisedBatchDate,
-                m.Appeal_Start_Date_ReviseMVD           AS RevisedAppealStartDate,
-                m.Appeal_Close_Date_ReviseMVD           AS RevisedAppealCloseDate
-            FROM dbo.Obj_Property_Info AS p
-            INNER JOIN dbo.Objection_MVD AS m
-                ON LTRIM(RTRIM(m.Objection_No)) = LTRIM(RTRIM(p.Objection_No))
-            WHERE LTRIM(RTRIM(p.Objection_No)) = @ObjectionNo
-              AND p.UserID = @UserId;
-            """;
+        await using var db = new Section53ReadDbContext(connectionString);
 
-        await using var connection = new SqlConnection(connectionString);
-        var command = new CommandDefinition(
-            sql,
-            new { ObjectionNo = objectionNo, UserId = userId },
-            commandType: CommandType.Text,
-            commandTimeout: 60,
-            cancellationToken: cancellationToken);
+        var data = await (
+            from objection in db.Objections.AsNoTracking()
+            join mvd in db.MvdDecisions.AsNoTracking()
+                on (objection.ObjectionNo ?? string.Empty).Trim()
+                equals (mvd.ObjectionNo ?? string.Empty).Trim()
+            where (objection.ObjectionNo ?? string.Empty).Trim() == objectionNo
+                && (objection.UserId ?? string.Empty).Trim() == userId
+            select new { objection, mvd })
+            .FirstOrDefaultAsync(cancellationToken);
 
-        var row = await connection.QueryFirstOrDefaultAsync<Section53Row>(command);
+        var row = data is null ? null : MapRow(data.objection, data.mvd);
 
         if (row is null)
             throw new KeyNotFoundException(
@@ -147,6 +84,71 @@ public sealed class Section53NoticeService : ISection53NoticeService
 
         return (pdf, $"{safeReference}_Section53_Valuer_Decision.pdf");
     }
+
+    private static Section53Row MapRow(
+        Section53ObjectionEntity objection,
+        Section53MvdEntity mvd) => new()
+        {
+            ObjectionNo = objection.ObjectionNo,
+            UserId = objection.UserId,
+            ObjectionStatus = objection.ObjectionStatus?.Trim(),
+            Addr1 = mvd.Addr1,
+            Addr2 = mvd.Addr2,
+            Addr3 = mvd.Addr3,
+            Addr4 = mvd.Addr4,
+            Addr5 = mvd.Addr5,
+            PropertyDesc = mvd.PropertyDesc,
+            ValuationKey = mvd.ValuationKey,
+            GvCategory = mvd.GvCategory,
+            GvCategory2 = mvd.GvCategory2,
+            GvCategory3 = mvd.GvCategory3,
+            GvExtent = mvd.GvExtent,
+            GvExtent2 = mvd.GvExtent2,
+            GvExtent3 = mvd.GvExtent3,
+            GvMarketValue = First(mvd.GvMarketValue, mvd.GvMarketValueFallback),
+            GvMarketValue2 = First(mvd.GvMarketValue2, mvd.GvMarketValueFallback2),
+            GvMarketValue3 = First(mvd.GvMarketValue3, mvd.GvMarketValueFallback3),
+            MvdCategory = mvd.MvdCategory,
+            MvdCategory2 = mvd.MvdCategory2,
+            MvdCategory3 = mvd.MvdCategory3,
+            MvdExtent = mvd.MvdExtent,
+            MvdExtent2 = mvd.MvdExtent2,
+            MvdExtent3 = mvd.MvdExtent3,
+            MvdMarketValue = First(mvd.MvdMarketValue, mvd.MvdMarketValueFallback),
+            MvdMarketValue2 = First(mvd.MvdMarketValue2, mvd.MvdMarketValueFallback2),
+            MvdMarketValue3 = First(mvd.MvdMarketValue3, mvd.MvdMarketValueFallback3),
+            Section52Review = mvd.Section52Review,
+            BatchDate = mvd.BatchDate,
+            AppealStartDate = mvd.AppealStartDate,
+            AppealCloseDate = mvd.AppealCloseDate,
+            EffectiveDate = TryParseDate(mvd.EffectiveDateText),
+            ReviseMvd = mvd.ReviseMvd?.ToString(),
+            RevisedCategory = mvd.RevisedCategory,
+            RevisedCategory2 = mvd.RevisedCategory2,
+            RevisedCategory3 = mvd.RevisedCategory3,
+            RevisedExtent = mvd.RevisedExtent,
+            RevisedExtent2 = mvd.RevisedExtent2,
+            RevisedExtent3 = mvd.RevisedExtent3,
+            RevisedMarketValue = First(
+            mvd.RevisedMarketValue,
+            mvd.RevisedMarketValueFallback),
+            RevisedMarketValue2 = First(
+            mvd.RevisedMarketValue2,
+            mvd.RevisedMarketValueFallback2),
+            RevisedMarketValue3 = First(
+            mvd.RevisedMarketValue3,
+            mvd.RevisedMarketValueFallback3),
+            RevisedSection52Review = mvd.RevisedSection52Review,
+            RevisedBatchDate = mvd.RevisedBatchDate,
+            RevisedAppealStartDate = mvd.RevisedAppealStartDate,
+            RevisedAppealCloseDate = mvd.RevisedAppealCloseDate
+        };
+
+    private static DateTime? TryParseDate(string? value) =>
+        DateTime.TryParse(value, CultureInfo.InvariantCulture,
+            DateTimeStyles.AllowWhiteSpaces, out var date)
+            ? date
+            : null;
 
     private byte[] BuildPdf(Section53Row row, string rollName, bool revised)
     {
@@ -405,6 +407,168 @@ public sealed class Section53NoticeService : ISection53NoticeService
         return new string((value ?? "Section53")
             .Where(character => !invalid.Contains(character))
             .ToArray());
+    }
+
+    private sealed class Section53ReadDbContext : DbContext
+    {
+        private readonly string _connectionString;
+
+        public Section53ReadDbContext(string connectionString)
+        {
+            _connectionString = connectionString;
+        }
+
+        public DbSet<Section53ObjectionEntity> Objections =>
+            Set<Section53ObjectionEntity>();
+
+        public DbSet<Section53MvdEntity> MvdDecisions =>
+            Set<Section53MvdEntity>();
+
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            optionsBuilder.UseSqlServer(
+                _connectionString,
+                sqlServer => sqlServer.CommandTimeout(60));
+        }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Section53ObjectionEntity>(entity =>
+            {
+                entity.HasKey(x => x.ObjectionId);
+                entity.ToTable("Obj_Property_Info", "dbo");
+                entity.Property(x => x.ObjectionId).HasColumnName("Objection_ID");
+                entity.Property(x => x.ObjectionNo).HasColumnName("Objection_No");
+                entity.Property(x => x.UserId).HasColumnName("UserID");
+                entity.Property(x => x.ObjectionStatus).HasColumnName("objection_Status");
+            });
+
+            modelBuilder.Entity<Section53MvdEntity>(entity =>
+            {
+                entity.HasNoKey();
+                entity.ToTable("Objection_MVD", "dbo");
+                entity.Property(x => x.ObjectionNo).HasColumnName("Objection_No");
+                entity.Property(x => x.Addr1).HasColumnName("ADDR1");
+                entity.Property(x => x.Addr2).HasColumnName("ADDR2");
+                entity.Property(x => x.Addr3).HasColumnName("ADDR3");
+                entity.Property(x => x.Addr4).HasColumnName("ADDR4");
+                entity.Property(x => x.Addr5).HasColumnName("ADDR5");
+                entity.Property(x => x.PropertyDesc).HasColumnName("Property_desc");
+                entity.Property(x => x.ValuationKey).HasColumnName("valuation_Key");
+                entity.Property(x => x.GvCategory).HasColumnName("GV_Category");
+                entity.Property(x => x.GvCategory2).HasColumnName("GV_Category2");
+                entity.Property(x => x.GvCategory3).HasColumnName("GV_Category3");
+                entity.Property(x => x.GvExtent).HasColumnName("GV_Extent");
+                entity.Property(x => x.GvExtent2).HasColumnName("GV_Extent2");
+                entity.Property(x => x.GvExtent3).HasColumnName("GV_Extent3");
+                entity.Property(x => x.GvMarketValue).HasColumnName("GV_Market_Value");
+                entity.Property(x => x.GvMarketValue2).HasColumnName("GV_Market_Value2");
+                entity.Property(x => x.GvMarketValue3).HasColumnName("GV_Market_Value3");
+                entity.Property(x => x.GvMarketValueFallback).HasColumnName("GVMarketValue");
+                entity.Property(x => x.GvMarketValueFallback2).HasColumnName("GVMarketValue2");
+                entity.Property(x => x.GvMarketValueFallback3).HasColumnName("GVMarketValue3");
+                entity.Property(x => x.MvdCategory).HasColumnName("MVD_Category");
+                entity.Property(x => x.MvdCategory2).HasColumnName("MVD_Category2");
+                entity.Property(x => x.MvdCategory3).HasColumnName("MVD_Category3");
+                entity.Property(x => x.MvdExtent).HasColumnName("MVD_Extent");
+                entity.Property(x => x.MvdExtent2).HasColumnName("MVD_Extent2");
+                entity.Property(x => x.MvdExtent3).HasColumnName("MVD_Extent3");
+                entity.Property(x => x.MvdMarketValue).HasColumnName("MVD_Market_Value");
+                entity.Property(x => x.MvdMarketValue2).HasColumnName("MVD_Market_Value2");
+                entity.Property(x => x.MvdMarketValue3).HasColumnName("MVD_Market_Value3");
+                entity.Property(x => x.MvdMarketValueFallback).HasColumnName("MVDMarketValue");
+                entity.Property(x => x.MvdMarketValueFallback2).HasColumnName("MVDMarketValue2");
+                entity.Property(x => x.MvdMarketValueFallback3).HasColumnName("MVDMarketValue3");
+                entity.Property(x => x.Section52Review).HasColumnName("Section52Review");
+                entity.Property(x => x.BatchDate).HasColumnName("Batch_Date");
+                entity.Property(x => x.AppealStartDate).HasColumnName("Appeal_Start_Date");
+                entity.Property(x => x.AppealCloseDate).HasColumnName("Appeal_Close_Date");
+                entity.Property(x => x.EffectiveDateText).HasColumnName("WEFDATEMVD");
+                entity.Property(x => x.ReviseMvd).HasColumnName("Revise_MVD");
+                entity.Property(x => x.RevisedCategory).HasColumnName("ReviseMVD_Category");
+                entity.Property(x => x.RevisedCategory2).HasColumnName("ReviseMVD_Category2");
+                entity.Property(x => x.RevisedCategory3).HasColumnName("ReviseMVD_Category3");
+                entity.Property(x => x.RevisedExtent).HasColumnName("ReviseMVD_Extent");
+                entity.Property(x => x.RevisedExtent2).HasColumnName("ReviseMVD_Extent2");
+                entity.Property(x => x.RevisedExtent3).HasColumnName("ReviseMVD_Extent3");
+                entity.Property(x => x.RevisedMarketValue).HasColumnName("ReviseMVD_Market_Value");
+                entity.Property(x => x.RevisedMarketValue2).HasColumnName("ReviseMVD_Market_Value2");
+                entity.Property(x => x.RevisedMarketValue3).HasColumnName("ReviseMVD_Market_Value3");
+                entity.Property(x => x.RevisedMarketValueFallback).HasColumnName("ReviseMVD_MarketValue");
+                entity.Property(x => x.RevisedMarketValueFallback2).HasColumnName("ReviseMVD_MarketValue2");
+                entity.Property(x => x.RevisedMarketValueFallback3).HasColumnName("ReviseMVD_MarketValue3");
+                entity.Property(x => x.RevisedSection52Review).HasColumnName("Section52Review_Revise_MVD");
+                entity.Property(x => x.RevisedBatchDate).HasColumnName("Batch_Date_ReviseMVD");
+                entity.Property(x => x.RevisedAppealStartDate).HasColumnName("Appeal_Start_Date_ReviseMVD");
+                entity.Property(x => x.RevisedAppealCloseDate).HasColumnName("Appeal_Close_Date_ReviseMVD");
+            });
+        }
+    }
+
+    private sealed class Section53ObjectionEntity
+    {
+        public long ObjectionId { get; set; }
+        public string? ObjectionNo { get; set; }
+        public string? UserId { get; set; }
+        public string? ObjectionStatus { get; set; }
+    }
+
+    private sealed class Section53MvdEntity
+    {
+        public string? ObjectionNo { get; set; }
+        public string? Addr1 { get; set; }
+        public string? Addr2 { get; set; }
+        public string? Addr3 { get; set; }
+        public string? Addr4 { get; set; }
+        public string? Addr5 { get; set; }
+        public string? PropertyDesc { get; set; }
+        public string? ValuationKey { get; set; }
+        public string? GvCategory { get; set; }
+        public string? GvCategory2 { get; set; }
+        public string? GvCategory3 { get; set; }
+        public string? GvExtent { get; set; }
+        public string? GvExtent2 { get; set; }
+        public string? GvExtent3 { get; set; }
+        public string? GvMarketValue { get; set; }
+        public string? GvMarketValue2 { get; set; }
+        public string? GvMarketValue3 { get; set; }
+        public string? GvMarketValueFallback { get; set; }
+        public string? GvMarketValueFallback2 { get; set; }
+        public string? GvMarketValueFallback3 { get; set; }
+        public string? MvdCategory { get; set; }
+        public string? MvdCategory2 { get; set; }
+        public string? MvdCategory3 { get; set; }
+        public string? MvdExtent { get; set; }
+        public string? MvdExtent2 { get; set; }
+        public string? MvdExtent3 { get; set; }
+        public string? MvdMarketValue { get; set; }
+        public string? MvdMarketValue2 { get; set; }
+        public string? MvdMarketValue3 { get; set; }
+        public string? MvdMarketValueFallback { get; set; }
+        public string? MvdMarketValueFallback2 { get; set; }
+        public string? MvdMarketValueFallback3 { get; set; }
+        public string? Section52Review { get; set; }
+        public DateTime? BatchDate { get; set; }
+        public DateTime? AppealStartDate { get; set; }
+        public DateTime? AppealCloseDate { get; set; }
+        public string? EffectiveDateText { get; set; }
+        public bool? ReviseMvd { get; set; }
+        public string? RevisedCategory { get; set; }
+        public string? RevisedCategory2 { get; set; }
+        public string? RevisedCategory3 { get; set; }
+        public string? RevisedExtent { get; set; }
+        public string? RevisedExtent2 { get; set; }
+        public string? RevisedExtent3 { get; set; }
+        public string? RevisedMarketValue { get; set; }
+        public string? RevisedMarketValue2 { get; set; }
+        public string? RevisedMarketValue3 { get; set; }
+        public string? RevisedMarketValueFallback { get; set; }
+        public string? RevisedMarketValueFallback2 { get; set; }
+        public string? RevisedMarketValueFallback3 { get; set; }
+        public string? RevisedSection52Review { get; set; }
+        public DateTime? RevisedBatchDate { get; set; }
+        public DateTime? RevisedAppealStartDate { get; set; }
+        public DateTime? RevisedAppealCloseDate { get; set; }
     }
 
     private sealed class Section53Row

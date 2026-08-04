@@ -1,6 +1,9 @@
 ﻿using Dapper;
 using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 using System.Data;
+using V2_Genesis.Data;
+using V2_Genesis.Models;
 using V2_Genesis.Models.Section51;
 using V2_Genesis.Services.Interfaces;
 using V2_Genesis.Services.Section51;
@@ -107,30 +110,34 @@ public class Section51Service : ISection51Service
         // Save record to DB
         try
         {
-            var connStr = _config.GetConnectionString(cfg.ConnectionKey)!;
-            await using var conn = new SqlConnection(connStr);
-            await conn.ExecuteAsync(
-                @"INSERT INTO [dbo].[Obj_Section_51_Uploads]
-                    (Objection_Ref_51, Files1, Files2, Files3, Files4, Files5,
-                     Files6, Files7, Files8, Files9, Files10, Evidence_count)
-                  VALUES
-                    (@Ref, @F1, @F2, @F3, @F4, @F5,
-                     @F6, @F7, @F8, @F9, @F10, @Count)",
-                new
-                {
-                    Ref = objectionNo.Trim(),
-                    F1 = savedNames.ElementAtOrDefault(0),
-                    F2 = savedNames.ElementAtOrDefault(1),
-                    F3 = savedNames.ElementAtOrDefault(2),
-                    F4 = savedNames.ElementAtOrDefault(3),
-                    F5 = savedNames.ElementAtOrDefault(4),
-                    F6 = savedNames.ElementAtOrDefault(5),
-                    F7 = savedNames.ElementAtOrDefault(6),
-                    F8 = savedNames.ElementAtOrDefault(7),
-                    F9 = savedNames.ElementAtOrDefault(8),
-                    F10 = savedNames.ElementAtOrDefault(9),
-                    Count = savedNames.Count
-                });
+            var connStr = _config.GetConnectionString(cfg.ConnectionKey)
+                ?? throw new InvalidOperationException(
+                    $"Connection string '{cfg.ConnectionKey}' was not found.");
+
+            var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+                .UseSqlServer(connStr)
+                .Options;
+
+            await using var db = new ApplicationDbContext(options);
+
+            var upload = new Obj_Section_51_Uploads
+            {
+                Objection_Ref_51 = objectionNo.Trim(),
+                Files1 = savedNames.ElementAtOrDefault(0),
+                Files2 = savedNames.ElementAtOrDefault(1),
+                Files3 = savedNames.ElementAtOrDefault(2),
+                Files4 = savedNames.ElementAtOrDefault(3),
+                Files5 = savedNames.ElementAtOrDefault(4),
+                Files6 = savedNames.ElementAtOrDefault(5),
+                Files7 = savedNames.ElementAtOrDefault(6),
+                Files8 = savedNames.ElementAtOrDefault(7),
+                Files9 = savedNames.ElementAtOrDefault(8),
+                Files10 = savedNames.ElementAtOrDefault(9),
+                Evidence_count = savedNames.Count
+            };
+
+            await db.Obj_Section_51_Uploads.AddAsync(upload);
+            await db.SaveChangesAsync();
         }
         catch (Exception ex)
         {

@@ -1,7 +1,10 @@
 ﻿using Dapper;
 using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using System.Data;
+using V2_Genesis.Data;
+using V2_Genesis.Models.Attributes;
 using V2_Genesis.Models.Configuration;
 using V2_Genesis.Models.ViewModels.ValuerInspectionEvidence;
 using V2_Genesis.Services.Interfaces;
@@ -11,6 +14,7 @@ namespace V2_Genesis.Services.Implementations
     public class ValuerInspectionEvidenceService : IValuerInspectionEvidenceService
     {
         private readonly string _connString;
+        private readonly AttributesDbContext _db;
         private readonly AttributeStorageSettings _storageSettings;
         private readonly ILogger<ValuerInspectionEvidenceService> _logger;
 
@@ -21,12 +25,14 @@ namespace V2_Genesis.Services.Implementations
 
         public ValuerInspectionEvidenceService(
             IConfiguration config,
+            AttributesDbContext db,
             IOptions<AttributeStorageSettings> storageOptions,
             ILogger<ValuerInspectionEvidenceService> logger)
         {
             _connString = config.GetConnectionString("AttributesConnection")
                 ?? throw new InvalidOperationException("AttributesConnection is missing.");
 
+            _db = db;
             _storageSettings = storageOptions.Value;
             _logger = logger;
         }
@@ -72,36 +78,32 @@ namespace V2_Genesis.Services.Implementations
 
             var cleanSap = vm.SapNumber.Trim();
 
-            await using var conn = new SqlConnection(_connString);
+            var today = DateTime.Today;
+            var tomorrow = today.AddDays(1);
 
-            var inspection = await conn.QueryFirstOrDefaultAsync<ValuerInspectionItemVm>(
-                """
-                SELECT TOP (1)
-                    r.Id AS InspectionRequestId,
-                    r.Attr_ID AS AttrId,
-                    r.Attr_No AS AttrNo,
-                    p.Property_Desc AS PropertyDescription,
-                    r.ConfirmedDateTime,
-                    r.Status,
-                    d.ValuerName
-                FROM dbo.AttrInspectionRequests r
-                INNER JOIN dbo.Attr_Property_Info p
-                    ON r.Attr_ID = p.Attr_ID
-                INNER JOIN dbo.AttrValuerInspectionDetails d
-                    ON d.SapNumber = r.ValuerSapNumber
-                    AND d.IsActive = 1
-                WHERE
-                    r.Id = @InspectionRequestId
-                    AND r.ValuerSapNumber = @SapNumber
-                    AND CAST(r.ConfirmedDateTime AS DATE) = CAST(GETDATE() AS DATE)
-                    AND r.Status = 'InspectionDetailsSent'
-                    AND ISNULL(p.IsActive, 1) = 1
-                """,
-                new
+            var inspection = await (
+                from request in _db.AttrInspectionRequests.AsNoTracking()
+                join property in _db.AttrPropertyInfo.AsNoTracking()
+                    on request.Attr_ID equals property.Attr_ID
+                join valuer in _db.AttrValuerInspectionDetails.AsNoTracking()
+                    on request.ValuerSapNumber equals valuer.SapNumber
+                where request.Id == vm.InspectionRequestId
+                      && request.ValuerSapNumber == cleanSap
+                      && request.ConfirmedDateTime >= today
+                      && request.ConfirmedDateTime < tomorrow
+                      && request.Status == "InspectionDetailsSent"
+                      && property.IsActive
+                      && valuer.IsActive
+                select new ValuerInspectionItemVm
                 {
-                    vm.InspectionRequestId,
-                    SapNumber = cleanSap
-                });
+                    InspectionRequestId = request.Id,
+                    AttrId = request.Attr_ID,
+                    AttrNo = request.Attr_No,
+                    PropertyDescription = property.Property_Desc,
+                    ConfirmedDateTime = request.ConfirmedDateTime,
+                    Status = request.Status,
+                    ValuerName = valuer.ValuerName
+                }).FirstOrDefaultAsync();
 
             if (inspection == null)
                 throw new InvalidOperationException("This inspection is not available for upload today.");
@@ -147,61 +149,28 @@ namespace V2_Genesis.Services.Implementations
             if (!savedFiles.Any())
                 throw new InvalidOperationException("No valid evidence files were uploaded.");
 
-            foreach (var saved in savedFiles)
+            var evidenceRows = savedFiles.Select(saved => new AttrInspectionEvidence
             {
-                await conn.ExecuteAsync(
-                    """
-                    INSERT INTO dbo.AttrInspectionEvidence
-                    (
-                        Attr_ID,
-                        Attr_No,
-                        InspectionRequestId,
-                        FileName,
-                        FilePath,
-                        ContentType,
-                        FileSizeBytes,
-                        UploadedBySapNumber,
-                        UploadedByUserId,
-                        UploadedByName,
-                        CaptureSource,
-                        EvidenceComment,
-                        UploadedAt,
-                        IsActive
-                    )
-                    VALUES
-                    (
-                        @AttrId,
-                        @AttrNo,
-                        @InspectionRequestId,
-                        @FileName,
-                        @FilePath,
-                        @ContentType,
-                        @FileSizeBytes,
-                        @UploadedBySapNumber,
-                        @UploadedByUserId,
-                        @UploadedByName,
-                        @CaptureSource,
-                        @EvidenceComment,
-                        GETDATE(),
-                        1
-                    )
-                    """,
-                    new
-                    {
-                        AttrId = inspection.AttrId,
-                        AttrNo = inspection.AttrNo,
-                        InspectionRequestId = inspection.InspectionRequestId,
-                        saved.FileName,
-                        saved.FilePath,
-                        saved.ContentType,
-                        FileSizeBytes = saved.Size,
-                        UploadedBySapNumber = cleanSap,
-                        UploadedByUserId = uploadedByUserId,
-                        UploadedByName = uploadedByName ?? inspection.ValuerName,
-                        CaptureSource = "CameraOrFileUpload",
-                        EvidenceComment = vm.InspectionOutcomeComment
-                    });
-            }
+                Attr_ID = inspection.AttrId,
+                Attr_No = inspection.AttrNo,
+                InspectionRequestId = inspection.InspectionRequestId,
+                FileName = saved.FileName,
+                FilePath = saved.FilePath,
+                ContentType = saved.ContentType,
+                FileSizeBytes = saved.Size,
+                UploadedBySapNumber = cleanSap,
+                UploadedByUserId = uploadedByUserId,
+                UploadedByName = uploadedByName ?? inspection.ValuerName,
+                CaptureSource = "CameraOrFileUpload",
+                EvidenceComment = vm.InspectionOutcomeComment,
+                UploadedAt = DateTime.Now,
+                IsActive = true
+            });
+
+            await _db.AttrInspectionEvidence.AddRangeAsync(evidenceRows);
+            await _db.SaveChangesAsync();
+
+            await using var conn = new SqlConnection(_connString);
 
             await conn.ExecuteAsync(
                 "dbo.Attr_CompleteValuerInspection",

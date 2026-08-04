@@ -1,5 +1,6 @@
 ﻿using Dapper;
 using QuestPDF.Fluent;
+using Microsoft.EntityFrameworkCore;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 using System.Data;
@@ -222,7 +223,7 @@ namespace V2_Genesis.Services.Implementations
                 RandomPin = obj7.RandomPin,
                 IsReview = isReview,
                 IsMulti = propertyType == "Multi",
-                ValuationKey = que.Valuation_Key,
+                ValuationKey= que.Valuation_Key,
                 FileCount = count,
                 Files = new[]
                 {
@@ -803,102 +804,27 @@ namespace V2_Genesis.Services.Implementations
 
             var reference = queryReference.Trim();
 
-            await using var conn =
-                new SqlConnection(_queryConn);
+            var query = await _qdb.Que_Property_Info
+                .AsNoTracking()
+                .FirstOrDefaultAsync(q => q.Query_No != null
+                    && q.Query_No.Trim() == reference
+                    && q.UserID == userId, cancellationToken);
 
-            await conn.OpenAsync(cancellationToken);
+            Section78AcknowledgementDbRow? row = null;
+            if (query is not null)
+            {
+                var section6 = await _qdb.Obj_Section6.AsNoTracking()
+                    .FirstOrDefaultAsync(s => s.Objection_Ref_S6 != null
+                        && s.Objection_Ref_S6.Trim() == reference, cancellationToken);
+                var section7 = await _qdb.Obj_Section7.AsNoTracking()
+                    .FirstOrDefaultAsync(s => s.Objection_Ref_S7 != null
+                        && s.Objection_Ref_S7.Trim() == reference, cancellationToken);
+                var fil = await _qdb.Obj_Files.AsNoTracking()
+                    .FirstOrDefaultAsync(f => f.Objection_Ref_files != null
+                        && f.Objection_Ref_files.Trim() == reference, cancellationToken);
 
-            const string sql =
-                """
-        SELECT TOP (1)
-            Q.Query_ID,
-            Q.QUERY_No,
-            Q.QUERY_Status,
-            Q.Sub_typ,
-            Q.Property_Type,
-            Q.Property_Desc,
-            Q.Valuation_Key,
-            Q.UserID,
-
-            S6.Old_Property_Description,
-            S6.Old_Category,
-            S6.Old_Address,
-            S6.Old_Extent,
-            S6.Old_Market_Value,
-            S6.Old_Owner,
-
-            S6.Old2_Category,
-            S6.Old2_Extent,
-            S6.Old2_Market_Value,
-
-            S6.Old3_Category,
-            S6.Old3_Extent,
-            S6.Old3_Market_Value,
-
-            S6.New_Property_Description,
-            S6.New_Category,
-            S6.New_Address,
-            S6.New_Extent,
-            S6.New_Market_Value,
-            S6.New_Owner,
-
-            S6.New2_Category,
-            S6.New2_Extent,
-            S6.New2_Market_Value,
-
-            S6.New3_Category,
-            S6.New3_Extent,
-            S6.New3_Market_Value,
-
-            S6.Objection_Reasons,
-
-            S7.RandomPin,
-            S7.Objection_Date,
-
-            F.Evidence_count,
-            F.Files1,
-            F.Files2,
-            F.Files3,
-            F.Files4,
-            F.Files5,
-            F.Files6,
-            F.Files7,
-            F.Files8,
-            F.Files9,
-            F.Files10
-
-        FROM dbo.QUE_Property_Info AS Q
-
-        LEFT JOIN dbo.Obj_Section6 AS S6
-            ON LTRIM(RTRIM(S6.Objection_Ref_S6))
-               = LTRIM(RTRIM(Q.QUERY_No))
-
-        LEFT JOIN dbo.Obj_Section7 AS S7
-            ON LTRIM(RTRIM(S7.Objection_Ref_S7))
-               = LTRIM(RTRIM(Q.QUERY_No))
-
-        LEFT JOIN dbo.Obj_Files AS F
-            ON LTRIM(RTRIM(F.Objection_Ref_files))
-               = LTRIM(RTRIM(Q.QUERY_No))
-
-        WHERE LTRIM(RTRIM(Q.QUERY_No))
-              = LTRIM(RTRIM(@QueryReference))
-
-          AND Q.UserID = @UserId;
-        """;
-
-            var row =
-                await conn.QueryFirstOrDefaultAsync<
-                    Section78AcknowledgementDbRow>(
-                    new CommandDefinition(
-                        sql,
-                        new
-                        {
-                            QueryReference = reference,
-                            UserId = userId
-                        },
-                        cancellationToken:
-                            cancellationToken));
+                row = BuildAcknowledgementRow(query, section6, section7, fil);
+            }
 
             if (row is null)
             {
@@ -1697,6 +1623,63 @@ namespace V2_Genesis.Services.Implementations
             return string.IsNullOrWhiteSpace(cleaned)
                 ? "Section78"
                 : cleaned;
+        }
+  
+        private static Section78AcknowledgementDbRow BuildAcknowledgementRow(
+            Que_Property_InfoModel query,
+            Obj_Section6Model? section6,
+            Obj_Section7Model? section7,
+            Obj_Files? files)
+        {
+            return new Section78AcknowledgementDbRow
+            {
+                Query_ID = query.Query_ID,
+                QUERY_No = query.Query_No,
+                QUERY_Status = query.Query_Status,
+                Sub_typ = query.Sub_typ,
+                Property_Type = query.Property_Type,
+                Property_Desc = query.Property_Desc,
+                Valuation_Key = query.Valuation_Key,
+                UserID = query.UserID,
+                Old_Property_Description = section6?.Old_Property_Description,
+                Old_Category = section6?.Old_Category,
+                Old_Address = section6?.Old_Address,
+                Old_Extent = section6?.Old_Extent,
+                Old_Market_Value = section6?.Old_Market_Value,
+                Old_Owner = section6?.Old_Owner,
+                Old2_Category = section6?.Old2_Category,
+                Old2_Extent = section6?.Old2_Extent,
+                Old2_Market_Value = section6?.Old2_Market_Value,
+                Old3_Category = section6?.Old3_Category,
+                Old3_Extent = section6?.Old3_Extent,
+                Old3_Market_Value = section6?.Old3_Market_Value,
+                New_Property_Description = section6?.New_Property_Description,
+                New_Category = section6?.New_Category,
+                New_Address = section6?.New_Address,
+                New_Extent = section6?.New_Extent,
+                New_Market_Value = section6?.New_Market_Value,
+                New_Owner = section6?.New_Owner,
+                New2_Category = section6?.New2_Category,
+                New2_Extent = section6?.New2_Extent,
+                New2_Market_Value = section6?.New2_Market_Value,
+                New3_Category = section6?.New3_Category,
+                New3_Extent = section6?.New3_Extent,
+                New3_Market_Value = section6?.New3_Market_Value,
+                Objection_Reasons = section6?.Objection_Reasons,
+                RandomPin = section7?.RandomPin,
+                Objection_Date = section7?.Objection_Date,
+                Evidence_count = (int)(files?.Evidence_count ?? 0),
+                Files1 = files?.Files1,
+                Files2 = files?.Files2,
+                Files3 = files?.Files3,
+                Files4 = files?.Files4,
+                Files5 = files?.Files5,
+                Files6 = files?.Files6,
+                Files7 = files?.Files7,
+                Files8 = files?.Files8,
+                Files9 = files?.Files9,
+                Files10 = files?.Files10
+            };
         }
 
         private sealed class Section78AcknowledgementDbRow

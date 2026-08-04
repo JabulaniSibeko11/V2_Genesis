@@ -38,6 +38,9 @@ namespace V2_Genesis.Data
         public DbSet<AttrFiles> AttrFiles { get; set; } = null!;
         public DbSet<AttrValuerReview> AttrValuerReviews { get; set; } = null!;
         public DbSet<AttrValuerReviewSection> AttrValuerReviewSections { get; set; } = null!;
+        public DbSet<AttrInspectionRequest> AttrInspectionRequests { get; set; } = null!;
+        public DbSet<AttrValuerInspectionDetail> AttrValuerInspectionDetails { get; set; } = null!;
+        public DbSet<AttrInspectionEvidence> AttrInspectionEvidence { get; set; } = null!;
 
         public DbSet<Sector> Sectors { get; set; } = null!;
 

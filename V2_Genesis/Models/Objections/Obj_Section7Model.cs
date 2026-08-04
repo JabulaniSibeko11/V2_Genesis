@@ -8,10 +8,10 @@ namespace V2_Genesis.Models
         [Key]
         public long ID { get; set; }
         [ForeignKey("Obj_Property_Info")]
-        
+
         public long? Ref { get; set; }
-		[StringLength(100)]
-		public string? Objection_Ref_S7 { get; set; }
+        [StringLength(100)]
+        public string? Objection_Ref_S7 { get; set; }
 
 
         //Section 7
@@ -24,7 +24,9 @@ namespace V2_Genesis.Models
 
         public string? RandomPin { get; set; }
 
-        public string?File_Name { get; set; }
+        public DateTime? Objection_Date { get; set; }
+
+        public string? File_Name { get; set; }
 
         public string? File_Type { get; set; }
 

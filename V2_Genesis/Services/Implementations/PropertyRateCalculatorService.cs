@@ -1,6 +1,5 @@
-﻿using Dapper;
-using Microsoft.Data.SqlClient;
-using System.Data;
+﻿using Microsoft.EntityFrameworkCore;
+using V2_Genesis.Data;
 using V2_Genesis.Models.Rates;
 using V2_Genesis.Services.Interfaces;
 
@@ -9,18 +8,14 @@ namespace V2_Genesis.Services.Implementations;
 public sealed class PropertyRateCalculatorService
     : IPropertyRateCalculatorService
 {
-    private readonly string _connectionString;
+    private readonly ApplicationDbContext _db;
     private readonly ILogger<PropertyRateCalculatorService> _logger;
 
     public PropertyRateCalculatorService(
-        IConfiguration configuration,
+        ApplicationDbContext db,
         ILogger<PropertyRateCalculatorService> logger)
     {
-        _connectionString =
-            configuration.GetConnectionString("DefaultConnection")
-            ?? throw new InvalidOperationException(
-                "DefaultConnection is missing from appsettings.json.");
-
+        _db = db;
         _logger = logger;
     }
 
@@ -32,77 +27,20 @@ public sealed class PropertyRateCalculatorService
         GetActiveTariffsAsync(
             CancellationToken cancellationToken = default)
     {
-        const string sql = """
-            SELECT
-                t.Id,
-                t.FinancialYearId,
-                t.CategoryCode,
-                t.CategoryName,
-                t.Ratio,
-                t.AnnualTariff,
-                t.IsZeroRated,
-                t.IsMultipurpose,
-                t.IsPenaltyTariff,
-                t.IsActive,
-                t.EffectiveFrom,
-                t.EffectiveTo,
-                t.CreatedBy,
-                t.CreatedAtUtc,
-                t.UpdatedBy,
-                t.UpdatedAtUtc,
-
-                fy.Id,
-                fy.FinancialYear,
-                fy.StartDate,
-                fy.EndDate,
-                fy.ResidentialExclusion,
-                fy.AdditionalPropertyReduction,
-                fy.IsActive,
-                fy.CreatedBy,
-                fy.CreatedAtUtc,
-                fy.UpdatedBy,
-                fy.UpdatedAtUtc
-
-            FROM [Objection].[dbo].[PropertyRateTariffs] AS t
-
-            INNER JOIN [Objection].[dbo].[RateFinancialYears] AS fy
-                ON fy.Id = t.FinancialYearId
-
-            WHERE
-                t.IsActive = 1
-                AND fy.IsActive = 1
-                AND CAST(GETDATE() AS date)
-                    BETWEEN t.EffectiveFrom AND t.EffectiveTo
-
-            ORDER BY
-                t.CategoryName;
-            """;
-
         try
         {
-            await using var connection =
-                new SqlConnection(_connectionString);
+            var today = DateTime.Today;
 
-            await connection.OpenAsync(cancellationToken);
-
-            var command = new CommandDefinition(
-                commandText: sql,
-                cancellationToken: cancellationToken);
-
-            var tariffs = await connection.QueryAsync<
-                PropertyRateTariff,
-                RateFinancialYear,
-                PropertyRateTariff>(
-                command,
-                map: (tariff, financialYear) =>
-                {
-                    tariff.FinancialYear = financialYear;
-
-                    return tariff;
-                },
-                splitOn: "Id");
-
-            return tariffs.ToList();
+            return await _db.PropertyRateTariffs
+                .AsNoTracking()
+                .Include(tariff => tariff.FinancialYear)
+                .Where(tariff =>
+                    tariff.IsActive &&
+                    tariff.FinancialYear.IsActive &&
+                    today >= tariff.EffectiveFrom.Date &&
+                    today <= tariff.EffectiveTo.Date)
+                .OrderBy(tariff => tariff.CategoryName)
+                .ToListAsync(cancellationToken);
         }
         catch (Exception ex)
         {
@@ -230,94 +168,31 @@ public sealed class PropertyRateCalculatorService
             int? financialYearId,
             CancellationToken cancellationToken)
     {
-        const string sql = """
-            SELECT TOP (1)
-                t.Id,
-                t.FinancialYearId,
-                t.CategoryCode,
-                t.CategoryName,
-                t.Ratio,
-                t.AnnualTariff,
-                t.IsZeroRated,
-                t.IsMultipurpose,
-                t.IsPenaltyTariff,
-                t.IsActive,
-                t.EffectiveFrom,
-                t.EffectiveTo,
-                t.CreatedBy,
-                t.CreatedAtUtc,
-                t.UpdatedBy,
-                t.UpdatedAtUtc,
+        var query = _db.PropertyRateTariffs
+            .AsNoTracking()
+            .Include(tariff => tariff.FinancialYear)
+            .Where(tariff =>
+                tariff.IsActive &&
+                tariff.FinancialYear.IsActive &&
+                tariff.CategoryCode.Trim().ToUpper() == categoryCode);
 
-                fy.Id,
-                fy.FinancialYear,
-                fy.StartDate,
-                fy.EndDate,
-                fy.ResidentialExclusion,
-                fy.AdditionalPropertyReduction,
-                fy.IsActive,
-                fy.CreatedBy,
-                fy.CreatedAtUtc,
-                fy.UpdatedBy,
-                fy.UpdatedAtUtc
+        if (financialYearId.HasValue)
+        {
+            query = query.Where(tariff =>
+                tariff.FinancialYearId == financialYearId.Value);
+        }
+        else
+        {
+            var today = DateTime.Today;
+            query = query.Where(tariff =>
+                today >= tariff.EffectiveFrom.Date &&
+                today <= tariff.EffectiveTo.Date);
+        }
 
-            FROM [Objection].[dbo].[PropertyRateTariffs] AS t
-
-            INNER JOIN [Objection].[dbo].[RateFinancialYears] AS fy
-                ON fy.Id = t.FinancialYearId
-
-            WHERE
-                t.IsActive = 1
-                AND fy.IsActive = 1
-                AND UPPER(LTRIM(RTRIM(t.CategoryCode))) =
-                    UPPER(LTRIM(RTRIM(@CategoryCode)))
-
-                AND
-                (
-                    @FinancialYearId IS NOT NULL
-                    AND t.FinancialYearId = @FinancialYearId
-                OR
-                    @FinancialYearId IS NULL
-                    AND CAST(GETDATE() AS date)
-                        BETWEEN t.EffectiveFrom AND t.EffectiveTo
-                )
-
-            ORDER BY
-                t.EffectiveFrom DESC,
-                t.Id DESC;
-            """;
-
-        await using var connection =
-            new SqlConnection(_connectionString);
-
-        await connection.OpenAsync(cancellationToken);
-
-        var command = new CommandDefinition(
-            commandText: sql,
-            parameters: new
-            {
-                CategoryCode = categoryCode,
-                FinancialYearId = financialYearId
-            },
-            cancellationToken: cancellationToken);
-
-        PropertyRateTariff? result = null;
-
-        await connection.QueryAsync<
-            PropertyRateTariff,
-            RateFinancialYear,
-            PropertyRateTariff>(
-            command,
-            map: (tariff, financialYear) =>
-            {
-                tariff.FinancialYear = financialYear;
-                result = tariff;
-
-                return tariff;
-            },
-            splitOn: "Id");
-
-        return result;
+        return await query
+            .OrderByDescending(tariff => tariff.EffectiveFrom)
+            .ThenByDescending(tariff => tariff.Id)
+            .FirstOrDefaultAsync(cancellationToken);
     }
 
     // ════════════════════════════════════════════════════════════════
