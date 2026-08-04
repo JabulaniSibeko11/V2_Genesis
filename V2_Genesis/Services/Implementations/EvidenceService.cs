@@ -7,7 +7,9 @@ using V2_Genesis.Models.Results.Evidence;
 using V2_Genesis.Services.Evidence;
 using V2_Genesis.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using V2_Genesis.Models;
 using V2_Genesis.Models.Attributes;
+using System.Globalization;
 
 namespace V2_Genesis.Services.Implementations;
 
@@ -17,17 +19,21 @@ public class EvidenceService : IEvidenceService
     private readonly ILogger<EvidenceService> _logger;
     private readonly IReadOnlyDictionary<string, EvidenceRollConfig> _registry;
     private readonly AttributesDbContext _attrDb;
+    private readonly QueryDbContext _queryDb;
     private const int MAX_FILES = 10;
     private const int MAX_FILE_MB = 3;
     private const int WINDOW_HOURS = 48;
 
     public EvidenceService(IConfiguration config,
-        ILogger<EvidenceService> logger, AttributesDbContext attrDb)
+        ILogger<EvidenceService> logger,
+        AttributesDbContext attrDb,
+        QueryDbContext queryDb)
     {
         _config = config;
         _logger = logger;
         _registry = EvidenceRollRegistry.Build(config);
         _attrDb = attrDb;
+        _queryDb = queryDb;
     }
 
     // ── Validate PIN + 48-hour window ─────────────────────────────────
@@ -38,12 +44,15 @@ public class EvidenceService : IEvidenceService
             return EvidenceValidateResult.Fail("Invalid roll source.");
 
         bool isAppeal = objectionNo.Trim().ToUpper().StartsWith("APP");
+        bool isQuery = IsQueryRoll(rollSource);
 
         try
         {
+            if (isQuery)
+                return await ValidateQueryAsync(objectionNo, pin);
+
             var connStr = _config.GetConnectionString(cfg.ConnectionKey)!;
             await using var conn = new SqlConnection(connStr);
-            await using var evidenceDb = new EvidenceReadDbContext(connStr);
 
             // Step 1: validate objection + PIN via SP
             var rows = await conn.QueryAsync(
@@ -64,35 +73,13 @@ public class EvidenceService : IEvidenceService
                 return EvidenceValidateResult.Fail(
                     "Incorrect PIN. Please check and try again.");
 
-            // Step 2: check the correct submission table and 48-hour window.
-            SubmissionStatusRow? statusRow;
-
-            if (isAppeal)
-            {
-                statusRow = await evidenceDb.Appeals
-                    .AsNoTracking()
-                    .Where(x =>
-                        (x.AppealNo ?? string.Empty).Trim() == objectionNo.Trim())
-                    .Select(x => new SubmissionStatusRow
-                    {
-                        SubmissionStatus = x.AppealStatus,
-                        DateSubmitted = x.AppealStartDateTime
-                    })
-                    .FirstOrDefaultAsync();
-            }
-            else
-            {
-                statusRow = await evidenceDb.Objections
-                    .AsNoTracking()
-                    .Where(x =>
-                        (x.ObjectionNo ?? string.Empty).Trim() == objectionNo.Trim())
-                    .Select(x => new SubmissionStatusRow
-                    {
-                        SubmissionStatus = x.ObjectionStatus,
-                        DateSubmitted = x.DateSubmitted ?? x.ObjectionStartDateTime
-                    })
-                    .FirstOrDefaultAsync();
-            }
+            // Step 2: calculate the deadline only from Section 7's
+            // Declaration_Date. Objection_Date and header start dates are not
+            // part of the evidence-window rule.
+            var statusRow = await GetStandardEvidenceWindowAsync(
+                conn,
+                objectionNo.Trim(),
+                isAppeal);
 
             if (statusRow is null)
             {
@@ -105,24 +92,9 @@ public class EvidenceService : IEvidenceService
             string status = statusRow.SubmissionStatus?.Trim()
                 ?? string.Empty;
 
-            DateTime? submitted = statusRow.DateSubmitted;
-
-            var statusAllowsEvidence = isAppeal
-                ? status.Equals(
-                      "App-Lodging",
-                      StringComparison.OrdinalIgnoreCase)
-                  || status.Equals(
-                      "App-Unallocated",
-                      StringComparison.OrdinalIgnoreCase)
-                : status.Equals(
-                      "Obj-Lodging",
-                      StringComparison.OrdinalIgnoreCase);
-
-            bool withinWindow =
-                statusAllowsEvidence
-                && submitted.HasValue
-                && DateTime.Now <=
-                    submitted.Value.AddHours(WINDOW_HOURS);
+            bool withinWindow = EvidenceWindowIsOpen(
+                status,
+                statusRow.DeclarationDate);
 
             if (!withinWindow)
                 return EvidenceValidateResult.Expired();
@@ -164,6 +136,39 @@ public class EvidenceService : IEvidenceService
         if (!_registry.TryGetValue(rollSource, out var cfg))
             return (false, "Invalid roll source.", currentCount, new());
 
+        if (IsQueryRoll(rollSource))
+        {
+            return await UploadQueryEvidenceAsync(
+                cfg,
+                objectionNo,
+                currentCount,
+                files);
+        }
+
+        // Re-check immediately before writing files. This prevents a client
+        // who verified earlier from uploading after the 48-hour deadline.
+        var connStr = _config.GetConnectionString(cfg.ConnectionKey);
+        if (string.IsNullOrWhiteSpace(connStr))
+            return (false, "The roll database is not configured.", currentCount, new());
+
+        await using (var windowConnection = new SqlConnection(connStr))
+        {
+            var window = await GetStandardEvidenceWindowAsync(
+                windowConnection,
+                objectionNo.Trim(),
+                isAppeal);
+
+            if (window is null ||
+                !EvidenceWindowIsOpen(window.SubmissionStatus, window.DeclarationDate))
+            {
+                return (
+                    false,
+                    "The 48-hour evidence upload window has closed.",
+                    currentCount,
+                    new());
+            }
+        }
+
         // Guard: file count
         int newCount = currentCount + files.Count;
         if (newCount > MAX_FILES)
@@ -200,8 +205,8 @@ public class EvidenceService : IEvidenceService
         // Persist to DB
         try
         {
-            var connStr = _config.GetConnectionString(cfg.ConnectionKey)!;
-            await using var conn = new SqlConnection(connStr);
+            var con = _config.GetConnectionString(cfg.ConnectionKey)!;
+            await using var conn = new SqlConnection(con);
 
             int dbIndex = currentCount;
             foreach (var name in savedNames)
@@ -234,6 +239,237 @@ public class EvidenceService : IEvidenceService
         return (true, null, newCount, savedNames);
     }
 
+
+    private async Task<EvidenceValidateResult> ValidateQueryAsync(
+        string referenceNumber,
+        string pin)
+    {
+        var reference = referenceNumber.Trim();
+        var query = await _queryDb.Que_Property_Info.AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Query_No == reference);
+
+        if (query is null)
+            return EvidenceValidateResult.Fail(
+                "Invalid Section 78 Query or Review number. Please check and try again.");
+
+        var declaration = await _queryDb.Obj_Section7.AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Objection_Ref_S7 == reference);
+
+        if (declaration is null ||
+            !string.Equals(declaration.RandomPin?.Trim(), pin.Trim(), StringComparison.Ordinal))
+            return EvidenceValidateResult.Fail("Incorrect PIN. Please check and try again.");
+
+        DateTime? submittedAt = string.IsNullOrWhiteSpace(declaration.Declaration_Date)
+      ? null
+      : ParseSubmissionDate(declaration.Declaration_Date);
+        if (!QueryEvidenceWindowIsOpen(query.Query_Status, submittedAt))
+            return EvidenceValidateResult.Expired();
+
+        var fileRecord = await _queryDb.Obj_Files.AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Objection_Ref_files == reference);
+
+        var currentCount = Convert.ToInt32(fileRecord?.Evidence_count ?? 0);
+        if (currentCount >= MAX_FILES)
+            return EvidenceValidateResult.Fail(
+                "The maximum of 10 evidence files has already been reached.");
+
+        return EvidenceValidateResult.Ok(currentCount, isAppeal: false);
+    }
+
+    private async Task<(bool Success, string? Error, int NewCount, List<string> FileNames)>
+        UploadQueryEvidenceAsync(
+            EvidenceRollConfig cfg,
+            string referenceNumber,
+            int currentCount,
+            List<IFormFile> files)
+    {
+        var reference = referenceNumber.Trim();
+        var query = await _queryDb.Que_Property_Info.AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Query_No == reference);
+        var declaration = await _queryDb.Obj_Section7.AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Objection_Ref_S7 == reference);
+
+        if (query is null || declaration is null ||
+    !QueryEvidenceWindowIsOpen(
+        query.Query_Status,
+        ParseSubmissionDate(declaration.Declaration_Date)))
+        {
+            return (
+                false,
+                "The 48-hour upload window for this submission has closed.",
+                currentCount,
+                new()
+            );
+        }
+
+        var fileRecord = await _queryDb.Obj_Files
+            .FirstOrDefaultAsync(x => x.Objection_Ref_files == reference);
+
+        if (fileRecord is null)
+            return (false,
+                "The evidence record for this Query or Review could not be found.",
+                currentCount, new());
+
+        currentCount = Convert.ToInt32(fileRecord.Evidence_count ?? 0);
+        var newCount = currentCount + files.Count;
+
+        if (newCount > MAX_FILES)
+            return (false,
+                $"Cannot upload {files.Count} file(s). Maximum {MAX_FILES} allowed " +
+                $"(you already have {currentCount}).",
+                currentCount, new());
+
+        if (string.IsNullOrWhiteSpace(cfg.FileRootPath))
+            return (false,
+                "The Section 78 evidence storage path is not configured.",
+                currentCount, new());
+
+        foreach (var file in files)
+        {
+            if (file.Length <= 0)
+                return (false, $"File '{file.FileName}' is empty.", currentCount, new());
+
+            if (file.Length > MAX_FILE_MB * 1024 * 1024)
+                return (false,
+                    $"File '{file.FileName}' exceeds {MAX_FILE_MB} MB limit.",
+                    currentCount, new());
+        }
+
+        var folder = Path.Combine(cfg.FileRootPath, reference);
+        Directory.CreateDirectory(folder);
+        var savedNames = new List<string>();
+
+        foreach (var file in files)
+        {
+            var safeName = Path.GetFileName(file.FileName);
+            var path = Path.Combine(folder, safeName);
+            await using var stream = new FileStream(
+                path, FileMode.Create, FileAccess.Write, FileShare.None);
+            await file.CopyToAsync(stream);
+            savedNames.Add(safeName);
+        }
+
+        FillQueryFileSlots(fileRecord, savedNames, currentCount);
+        fileRecord.Evidence_count = newCount;
+        await _queryDb.SaveChangesAsync();
+
+        return (true, null, newCount, savedNames);
+    }
+
+    private static bool QueryEvidenceWindowIsOpen(string? status, DateTime? submittedAt)
+    {
+        if (!submittedAt.HasValue ||
+            DateTime.Now > submittedAt.Value.AddHours(WINDOW_HOURS))
+            return false;
+
+        var value = status?.Trim();
+        return value != null &&
+            (value.Equals("Que-Lodging", StringComparison.OrdinalIgnoreCase) ||
+             value.Equals("Query-Lodging", StringComparison.OrdinalIgnoreCase) ||
+             value.Equals("Query-Unallocated", StringComparison.OrdinalIgnoreCase) ||
+             value.Equals("Review-Lodging", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static bool EvidenceWindowIsOpen(
+        string? status,
+        DateTime? declarationDate)
+    {
+        if (!declarationDate.HasValue ||
+            DateTime.Now > declarationDate.Value.AddHours(WINDOW_HOURS))
+        {
+            return false;
+        }
+
+        var value = status?.Trim();
+        return value is not null &&
+            (value.Equals("Obj-Lodging", StringComparison.OrdinalIgnoreCase) ||
+             value.Equals("Obj-Unallocated", StringComparison.OrdinalIgnoreCase) ||
+             value.Equals("App-Lodging", StringComparison.OrdinalIgnoreCase) ||
+             value.Equals("App-Unallocated", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static async Task<SubmissionStatusRow?> GetStandardEvidenceWindowAsync(
+        SqlConnection connection,
+        string referenceNumber,
+        bool isAppeal)
+    {
+        var statusSql = isAppeal
+            ? """
+              SELECT TOP (1) Appeal_Status
+              FROM dbo.Obj_Property_Info_Appeal
+              WHERE LTRIM(RTRIM(ISNULL(Appeal_No, ''))) = @ReferenceNumber
+              """
+            : """
+              SELECT TOP (1) objection_Status
+              FROM dbo.Obj_Property_Info
+              WHERE LTRIM(RTRIM(ISNULL(Objection_No, ''))) = @ReferenceNumber
+              """;
+
+        var status = await connection.QueryFirstOrDefaultAsync<string>(
+            statusSql,
+            new { ReferenceNumber = referenceNumber });
+
+        if (string.IsNullOrWhiteSpace(status))
+            return null;
+
+        var declarationText = await connection.QueryFirstOrDefaultAsync<string>(
+            """
+            SELECT TOP (1) Declaration_Date
+            FROM dbo.Obj_Section7
+            WHERE LTRIM(RTRIM(ISNULL(Objection_Ref_S7, ''))) = @ReferenceNumber
+            ORDER BY ID DESC
+            """,
+            new { ReferenceNumber = referenceNumber });
+
+        return new SubmissionStatusRow
+        {
+            SubmissionStatus = status,
+            DeclarationDate = ParseSubmissionDate(declarationText)
+        };
+    }
+
+    private static DateTime? ParseSubmissionDate(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return null;
+
+        return DateTime.TryParse(
+                value,
+                CultureInfo.GetCultureInfo("en-ZA"),
+                DateTimeStyles.AllowWhiteSpaces,
+                out var parsed)
+            ? parsed
+            : null;
+    }
+
+    private static bool IsQueryRoll(string? rollSource) =>
+        string.Equals(rollSource, "Objection_Query", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(rollSource, "Query", StringComparison.OrdinalIgnoreCase);
+
+    private static void FillQueryFileSlots(
+        Obj_Files record,
+        IReadOnlyList<string> names,
+        int startIndex)
+    {
+        var slot = startIndex;
+        foreach (var name in names)
+        {
+            slot++;
+            switch (slot)
+            {
+                case 1: record.Files1 = name; break;
+                case 2: record.Files2 = name; break;
+                case 3: record.Files3 = name; break;
+                case 4: record.Files4 = name; break;
+                case 5: record.Files5 = name; break;
+                case 6: record.Files6 = name; break;
+                case 7: record.Files7 = name; break;
+                case 8: record.Files8 = name; break;
+                case 9: record.Files9 = name; break;
+                case 10: record.Files10 = name; break;
+            }
+        }
+    }
 
     // ── ValidateAttributeAsync ───────────────────────────────────────
 
@@ -427,7 +663,7 @@ public class EvidenceService : IEvidenceService
     private sealed class SubmissionStatusRow
     {
         public string? SubmissionStatus { get; set; }
-        public DateTime? DateSubmitted { get; set; }
+        public DateTime? DeclarationDate { get; set; }
     }
 
     private static void FillFileSlots(AttrFiles f, List<string> names, int startIndex)

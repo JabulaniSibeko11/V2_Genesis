@@ -6,7 +6,7 @@ namespace V2_Genesis.Services.Interfaces
     {
         Task<GeneratedAcknowledgementResult> GenerateAsync(
         string referenceNumber,
-        string rollSource,
+        string? rollSource,
         string userId,
         CancellationToken cancellationToken = default);
     }

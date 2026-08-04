@@ -195,7 +195,15 @@
                                 <td>@item.Old_Category</td>
                                 <td>@item.Town_Name</td>
                                 <td>@DashboardDisplayHelpers.FormatZAR(item.Old_Market_Value)</td>
-                                <td>@Html.Raw(DashboardDisplayHelpers.GetStatusPill(item.objection_Status))</td>
+                                <td>
+                                    @Html.Raw(DashboardDisplayHelpers.GetStatusPill(item.objection_Status))
+                                    @if (item.Evidence_Expires_At.HasValue)
+                                    {
+                                        <small class="d-block mt-1 @(item.Evidence_Window_Open ? "text-success" : "text-muted")">
+                                            Evidence closes: @item.Evidence_Expires_At.Value.ToString("dd MMM yyyy HH:mm")
+                                        </small>
+                                    }
+                                </td>
                                 <td>
                                     <div class="dropdown">
                                         <button class="cd-action-btn dropdown-toggle"
@@ -234,20 +242,37 @@
                                                     <i class="fa-solid fa-download"></i> Download Acknowledgement
                                                 </a>
                                             </li>
-                                            @if (item.objection_Status == "Query-Lodging")
+                                            @if (item.Evidence_Window_Open)
                                             {
                                                 <li>
                                                     <a class="dropdown-item"
-                                                           href="/section78/verify?queryNo=@item.Objection_No">
+                                                           href="/evidence/verify?objectionNo=@Uri.EscapeDataString(item.DisplayReference)&rollSource=Objection_Query">
                                                         <i class="fa-solid fa-paperclip"></i> Add Evidence
                                                     </a>
                                                 </li>
                                             }
-                                            @if (item.objection_Status is "Query-Lodging" or "Query-Unallocated")
+                                            else
+                                            {
+                                                <li>
+                                                    <span class="dropdown-item disabled"
+                                                          aria-disabled="true"
+                                                          title="The 48-hour evidence window has closed">
+                                                        <i class="fa-solid fa-lock"></i>
+                                                        Evidence Window Closed
+                                                        @if (item.Evidence_Expires_At.HasValue)
+                                                        {
+                                                            <small class="d-block text-muted">
+                                                                Closed @item.Evidence_Expires_At.Value.ToString("dd MMM yyyy HH:mm")
+                                                            </small>
+                                                        }
+                                                    </span>
+                                                </li>
+                                            }
+                                            @if (item.objection_Status is "Que-Lodging" or "Query-Lodging" or "Query-Unallocated" or "Review-Lodging")
                                             {
                                                 <li>
                                                     <a class="dropdown-item"
-                                                           href="/objection/withdraw?objectionNo=@item.Query_No&withdrawType=Query&rollSource=Query&returnUrl=/dashboard">
+                                                           href="/objection/withdraw?objectionNo=@item.Query_No&withdrawType=Query&rollSource=Query&returnUrl=/Dashboard?openRoll=@Model.Roll.Source">
                                                         <i class="fa-solid fa-ban"></i> Withdraw Query
                                                     </a>
                                                 </li>
@@ -329,7 +354,15 @@
                                     <td>@item.Old_Category</td>
                                     <td>@item.Town_Name</td>
                                     <td>@DashboardDisplayHelpers.FormatZAR(item.Old_Market_Value)</td>
-                                    <td>@Html.Raw(DashboardDisplayHelpers.GetStatusPill(item.objection_Status))</td>
+                                    <td>
+                                        @Html.Raw(DashboardDisplayHelpers.GetStatusPill(item.objection_Status))
+                                        @if (item.Evidence_Expires_At.HasValue)
+                                        {
+                                            <small class="d-block mt-1 @(item.Evidence_Window_Open ? "text-success" : "text-muted")">
+                                                Evidence closes: @item.Evidence_Expires_At.Value.ToString("dd MMM yyyy HH:mm")
+                                            </small>
+                                        }
+                                    </td>
                                     <td>
                                         <div class="dropdown">
                                             <button class="cd-action-btn dropdown-toggle"
@@ -349,14 +382,34 @@
                                                         <i class="fa-solid fa-download"></i>Download Acknowledgement
                                                     </a>
                                                 </li>
-                                                @if (item.objection_Status is "Query-Lodging" or "Query-Unallocated")
+                                                @if (item.Evidence_Window_Open)
                                                 {
                                                     <li>
                                                         <a class="dropdown-item"
-                                                               href="/section78/verify?queryNo=@item.Objection_No">
+                                                               href="/evidence/verify?objectionNo=@Uri.EscapeDataString(item.DisplayReference)&rollSource=Objection_Query">
                                                             <i class="fa-solid fa-paperclip"></i> Add Evidence
                                                         </a>
                                                     </li>
+                                                }
+                                                else
+                                                {
+                                                    <li>
+                                                        <span class="dropdown-item disabled"
+                                                              aria-disabled="true"
+                                                              title="The 48-hour evidence window has closed">
+                                                            <i class="fa-solid fa-lock"></i>
+                                                            Evidence Window Closed
+                                                            @if (item.Evidence_Expires_At.HasValue)
+                                                            {
+                                                                <small class="d-block text-muted">
+                                                                    Closed @item.Evidence_Expires_At.Value.ToString("dd MMM yyyy HH:mm")
+                                                                </small>
+                                                            }
+                                                        </span>
+                                                    </li>
+                                                }
+                                                @if (item.objection_Status is "Que-Lodging" or "Query-Lodging" or "Query-Unallocated" or "Review-Lodging")
+                                                {
                                                     <li>
                                                         <a class="dropdown-item"
                                                                href="/@Model.Roll.ControllerName/Withdrawal?ObjectionNum=@item.Objection_No&Withdraw=O">
@@ -513,7 +566,15 @@ else
                                     <td>@item.Property_Desc</td>
                                     <td>@item.Old_Category</td>
                                     <td>@DashboardDisplayHelpers.FormatZAR(item.Old_Market_Value)</td>
-                                    <td>@Html.Raw(DashboardDisplayHelpers.GetStatusPill(item.objection_Status))</td>
+                                    <td>
+                                        @Html.Raw(DashboardDisplayHelpers.GetStatusPill(item.objection_Status))
+                                        @if (item.Evidence_Expires_At.HasValue)
+                                        {
+                                            <small class="d-block mt-1 @(item.Evidence_Window_Open ? "text-success" : "text-muted")">
+                                                Evidence closes: @item.Evidence_Expires_At.Value.ToString("dd MMM yyyy HH:mm")
+                                            </small>
+                                        }
+                                    </td>
                                     <td>
                                         <div class="dropdown">
                                             <button class="cd-action-btn dropdown-toggle"
@@ -545,7 +606,7 @@ else
                                                         <i class="fa-solid fa-download"></i> Download Acknowledgement
                                                     </a>
                                                 </li>
-                                                @if (item.objection_Status == "Obj-Lodging")
+                                                @if (item.Evidence_Window_Open)
                                                 {
                                                     <li>
                                                         @if (User.Identity?.IsAuthenticated == true)
@@ -555,6 +616,23 @@ else
                                                                 <i class="fa-solid fa-upload"></i> Add Evidence
                                                             </a>
                                                         }
+                                                    </li>
+                                                }
+                                                else if (item.objection_Status is "Obj-Lodging" or "Obj-Unallocated")
+                                                {
+                                                    <li>
+                                                        <span class="dropdown-item disabled"
+                                                              aria-disabled="true"
+                                                              title="The 48-hour evidence window has closed">
+                                                            <i class="fa-solid fa-lock"></i>
+                                                            Evidence Window Closed
+                                                            @if (item.Evidence_Expires_At.HasValue)
+                                                            {
+                                                                <small class="d-block text-muted">
+                                                                    Closed @item.Evidence_Expires_At.Value.ToString("dd MMM yyyy HH:mm")
+                                                                </small>
+                                                            }
+                                                        </span>
                                                     </li>
                                                 }
                                                               
@@ -632,7 +710,7 @@ else
                                                 {
                                                     <li>
                                                         <a class="dropdown-item"
-                                                               href="/objection/withdraw?objectionNo=@item.Objection_No&withdrawType=O&rollSource=@Model.Roll.Source&returnUrl=/dashboard">
+                                                               href="/objection/withdraw?objectionNo=@item.Objection_No&withdrawType=O&rollSource=@Model.Roll.Source&returnUrl=/Dashboard?openRoll=@Model.Roll.Source">
                                                             <i class="fa-solid fa-ban"></i> Withdraw Objection
                                                         </a>
                                                     </li>
@@ -685,7 +763,15 @@ else
                                     <td>@item.Property_Desc</td>
                                     <td>@item.Old_Category</td>
                                     <td>@DashboardDisplayHelpers.FormatZAR(item.Old_Market_Value)</td>
-                                    <td>@Html.Raw(DashboardDisplayHelpers.GetStatusPill(item.objection_Status))</td>
+                                    <td>
+                                        @Html.Raw(DashboardDisplayHelpers.GetStatusPill(item.objection_Status))
+                                        @if (item.Evidence_Expires_At.HasValue)
+                                        {
+                                            <small class="d-block mt-1 @(item.Evidence_Window_Open ? "text-success" : "text-muted")">
+                                                Evidence closes: @item.Evidence_Expires_At.Value.ToString("dd MMM yyyy HH:mm")
+                                            </small>
+                                        }
+                                    </td>
                                     <td>
                                         <div class="dropdown">
                                             <button class="cd-action-btn dropdown-toggle"
@@ -727,16 +813,34 @@ else
                                                     </a>
                                                 </li>
 
-                                                @if (item.objection_Status == "App-Unallocated")
+                                                @if (item.Evidence_Window_Open)
                                                 {
                                                     @if (User.Identity?.IsAuthenticated == true)
                                                     {
-                                                        <a class="btn btn-sm btn-primary"
-                                                               href="/evidence/verify?objectionNo=@item.Objection_No&rollSource=@Model.Roll.Source">
-                                                            <i class="fa-solid fa-upload"></i> Add Evidence
-                                                        </a>
+                                                        <li>
+                                                            <a class="dropdown-item"
+                                                                   href="/evidence/verify?objectionNo=@appealAckRef&rollSource=@Model.Roll.Source">
+                                                                <i class="fa-solid fa-upload"></i> Add Evidence
+                                                            </a>
+                                                        </li>
                                                     }
-                  
+                                                }
+                                                else if (item.objection_Status is "App-Lodging" or "App-Unallocated")
+                                                {
+                                                    <li>
+                                                        <span class="dropdown-item disabled"
+                                                              aria-disabled="true"
+                                                              title="The 48-hour evidence window has closed">
+                                                            <i class="fa-solid fa-lock"></i>
+                                                            Evidence Window Closed
+                                                            @if (item.Evidence_Expires_At.HasValue)
+                                                            {
+                                                                <small class="d-block text-muted">
+                                                                    Closed @item.Evidence_Expires_At.Value.ToString("dd MMM yyyy HH:mm")
+                                                                </small>
+                                                            }
+                                                        </span>
+                                                    </li>
                                                 }
 
                                                 @if (item.objection_Status == "App-Finalized")
@@ -766,7 +870,7 @@ else
                                                 {
                                                     <li>
                                                         <a class="dropdown-item"
-                                                               href="/objection/withdraw?objectionNo=@item.Appeal_No&withdrawType=Appeal&rollSource=@Model.Roll.Source&returnUrl=/dashboard">
+                                                               href="/objection/withdraw?objectionNo=@item.Appeal_No&withdrawType=Appeal&rollSource=@Model.Roll.Source&returnUrl=/Dashboard?openRoll=@Model.Roll.Source">
                                                             <i class="fa-solid fa-ban"></i> Withdraw Appeal
                                                         </a>
                                                     </li>

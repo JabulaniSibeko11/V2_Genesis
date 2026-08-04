@@ -92,7 +92,7 @@
                     EvidenceSp: "Evidence",
                     FileRootPath: QueryPath("Objection_Query"),
                     AppealRootPath: AppPath("Objection"),
-                    ConnectionKey: "DefaultConnection"),
+                    ConnectionKey: "QueryConnection"),
             };
         }
     }

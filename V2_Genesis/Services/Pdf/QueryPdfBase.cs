@@ -91,12 +91,21 @@ namespace GV_Forms.Pdf
             return "";
         }
 
+        protected string JoinV(dynamic? obj, params string[] names)
+        {
+            return string.Join(
+                ", ",
+                names.Select(name => V(obj, name))
+                    .Where(value => !string.IsNullOrWhiteSpace(value))
+                    .Select(value => value.Trim()));
+        }
+
         protected static void RoundedBlock(ColumnDescriptor col, Action<IContainer> content)
         {
             col.Item()
                .Border(1)
                .Padding(8)
-               
+
                .Element(content);
         }
 
@@ -136,6 +145,7 @@ namespace GV_Forms.Pdf
         protected virtual void BuildPropertyIntro(ColumnDescriptor col)
         {
             var s1 = S("Section1");
+            dynamic main = Data.Main;
 
             RoundedBlock(col, c =>
             {
@@ -151,8 +161,10 @@ namespace GV_Forms.Pdf
 
                     x.Item().PaddingTop(6).Row(r =>
                     {
-                        LineField(r, "ERF/UNIT NO.", V(s1, "Erf_Unit_No", "ErfUnitNo", "UnitNo", "ErfNo"), 1);
-                        LineField(r, "SUBURB/SCHEME NAME", V(s1, "Suburb_Scheme_Name", "SuburbSchemeName", "Suburb", "SchemeName", "Property_Desc"), 2);
+                        LineField(r, "ERF/UNIT NO.",
+                            V(main, "ERF", "Erf", "Unit_key", "Unit_Key", "Property_id", "Property_ID"), 1);
+                        LineField(r, "SUBURB/SCHEME NAME",
+                            V(main, "Town", "Town_Name", "Property_Desc"), 2);
                     });
                 });
             });
@@ -171,38 +183,44 @@ namespace GV_Forms.Pdf
 
                     x.Item().Row(r =>
                     {
-                        LineField(r, "REGISTERED OWNER OF PROPERTY", V(s1, "OwnerName", "RegisteredOwner", "Owner", "Name"), 2);
+                        LineField(r, "REGISTERED OWNER OF PROPERTY",
+                            V(s1, "Owner_Name", "OwnerName", "RegisteredOwner", "Owner", "Name"), 2);
                     });
 
                     x.Item().Row(r =>
                     {
-                        LineField(r, "IDENTITY NO.", V(s1, "IdentityNo", "IdNo"), 1);
-                        LineField(r, "COMPANY OR C.C REGISTRATION NO.", V(s1, "CompanyRegNo", "RegistrationNo"), 1);
+                        LineField(r, "IDENTITY NO.",
+                            V(s1, "Owner_Identity", "IdentityNo", "IdNo"), 1);
+                        LineField(r, "COMPANY OR C.C REGISTRATION NO.",
+                            V(s1, "Owner_Company", "CompanyRegNo", "RegistrationNo"), 1);
                     });
 
                     x.Item().Row(r =>
                     {
-                        LineField(r, "PHYSICAL ADDRESS OF OWNER", V(s1, "OwnerPhysicalAddress", "PhysicalAddress"), 3);
-                        LineField(r, "CODE", V(s1, "OwnerPhysicalCode", "PhysicalCode"), 1);
+                        LineField(r, "PHYSICAL ADDRESS OF OWNER",
+                            JoinV(s1, "Owner_Address_1", "Owner_Address_2", "Owner_Address_3", "Owner_Address_4"), 3);
+                        LineField(r, "CODE", V(s1, "Owner_Address_5"), 1);
                     });
 
                     x.Item().Row(r =>
                     {
-                        LineField(r, "POSTAL ADDRESS OF OWNER", V(s1, "OwnerPostalAddress", "PostalAddress"), 3);
-                        LineField(r, "CODE", V(s1, "OwnerPostalCode", "PostalCode"), 1);
+                        LineField(r, "POSTAL ADDRESS OF OWNER",
+                            JoinV(s1, "Owner_Postal_1", "Owner_Postal_2", "Owner_Postal_3", "Owner_Postal_4"), 3);
+                        LineField(r, "CODE", V(s1, "Owner_Postal_5"), 1);
                     });
 
                     x.Item().Row(r =>
                     {
-                        LineField(r, "HOME", V(s1, "OwnerTelHome", "HomeTel", "TelephoneHome"), 1);
-                        LineField(r, "WORK", V(s1, "OwnerTelWork", "WorkTel", "TelephoneWork"), 1);
-                        LineField(r, "CELL", V(s1, "OwnerCell", "Cellphone"), 1);
-                        LineField(r, "FAX", V(s1, "OwnerFax", "Fax"), 1);
+                        LineField(r, "HOME", V(s1, "Owner_Home_Phone", "OwnerTelHome", "HomeTel"), 1);
+                        LineField(r, "WORK", V(s1, "Owner_Work_Phone", "OwnerTelWork", "WorkTel"), 1);
+                        LineField(r, "CELL", V(s1, "Owner_Cell_Phone", "OwnerCell", "Cellphone"), 1);
+                        LineField(r, "FAX", V(s1, "Owner_Fax_Phone", "OwnerFax", "Fax"), 1);
                     });
 
                     x.Item().Row(r =>
                     {
-                        LineField(r, "E-MAIL ADDRESS (compulsory)", V(s1, "OwnerEmail", "Email"), 1);
+                        LineField(r, "E-MAIL ADDRESS (compulsory)",
+                            V(s1, "Owner_Email", "OwnerEmail", "Email"), 1);
                     });
                 });
             });
@@ -210,7 +228,7 @@ namespace GV_Forms.Pdf
 
         protected virtual void BuildRepresentative(ColumnDescriptor col)
         {
-            var s2 = S("Section2");
+            var s1 = S("Section1");
 
             RoundedBlock(col, c =>
             {
@@ -224,26 +242,29 @@ namespace GV_Forms.Pdf
 
                     x.Item().Row(r =>
                     {
-                        LineField(r, "NAME OF REPRESENTATIVE", V(s2, "RepresentativeName", "RepName", "Name"), 2);
+                        LineField(r, "NAME OF REPRESENTATIVE",
+                            V(s1, "Representative_name", "RepresentativeName", "RepName", "Name"), 2);
                     });
 
                     x.Item().Row(r =>
                     {
-                        LineField(r, "POSTAL ADDRESS", V(s2, "RepresentativePostalAddress", "PostalAddress"), 3);
-                        LineField(r, "CODE", V(s2, "RepresentativePostalCode", "PostalCode"), 1);
+                        LineField(r, "POSTAL ADDRESS",
+                            JoinV(s1, "Rep_Postal_1", "Rep_Postal_2", "Rep_Postal_3", "Rep_Postal_4"), 3);
+                        LineField(r, "CODE", V(s1, "Rep_Postal_5"), 1);
                     });
 
                     x.Item().Row(r =>
                     {
-                        LineField(r, "HOME", V(s2, "RepresentativeTelHome", "HomeTel"), 1);
-                        LineField(r, "WORK", V(s2, "RepresentativeTelWork", "WorkTel"), 1);
-                        LineField(r, "CELL", V(s2, "RepresentativeCell", "Cellphone"), 1);
-                        LineField(r, "FAX", V(s2, "RepresentativeFax", "Fax"), 1);
+                        LineField(r, "HOME", V(s1, "Rep_Home_Phone", "RepresentativeTelHome", "HomeTel"), 1);
+                        LineField(r, "WORK", V(s1, "Rep_Work_Phone", "RepresentativeTelWork", "WorkTel"), 1);
+                        LineField(r, "CELL", V(s1, "Rep_Cell_Phone", "RepresentativeCell", "Cellphone"), 1);
+                        LineField(r, "FAX", V(s1, "Rep_Fax_Phone", "RepresentativeFax", "Fax"), 1);
                     });
 
                     x.Item().Row(r =>
                     {
-                        LineField(r, "E-MAIL ADDRESS (compulsory)", V(s2, "RepresentativeEmail", "Email"), 1);
+                        LineField(r, "E-MAIL ADDRESS (compulsory)",
+                            V(s1, "Rep_Email", "RepresentativeEmail", "Email"), 1);
                     });
                 });
             });

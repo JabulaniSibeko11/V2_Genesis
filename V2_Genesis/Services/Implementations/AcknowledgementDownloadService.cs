@@ -53,56 +53,38 @@ public sealed class AcknowledgementDownloadService
                     cancellationToken);
         }
 
-        // Objection or Appeal.
-        if (reference.StartsWith(
-                "OBJ-",
-                StringComparison.OrdinalIgnoreCase)
-            ||
-            reference.StartsWith(
-                "APP-",
-                StringComparison.OrdinalIgnoreCase))
+        // Objection or Appeal. The form service detects the roll from the
+        // reference when the caller did not supply rollSource.
+        var data = await _objectionFormService
+            .GetAcknowledgementDataAsync(
+                rollSource?.Trim() ?? string.Empty,
+                reference);
+
+        if (data is null)
         {
-            if (string.IsNullOrWhiteSpace(rollSource))
-            {
-                throw new ArgumentException(
-                    "Roll source is required for objection and appeal acknowledgements.",
-                    nameof(rollSource));
-            }
-
-            var data = await _objectionFormService
-                .GetAcknowledgementDataAsync(
-                    rollSource.Trim(),
-                    reference);
-
-            if (data is null)
-            {
-                throw new KeyNotFoundException(
-                    $"Submission '{reference}' was not found.");
-            }
-
-            var generated = await _noticeService
-                .GenerateAcknowledgementAsync(data);
-
-            if (generated.Pdf is null || generated.Pdf.Length == 0)
-            {
-                throw new InvalidOperationException(
-                    $"Acknowledgement generation returned an empty PDF for '{reference}'.");
-            }
-
-            return new GeneratedAcknowledgementResult
-            {
-                ReferenceNumber = reference,
-                FileName = generated.FileName,
-                PdfBytes = generated.Pdf,
-                SubmissionType = reference.StartsWith(
-                    "APP-",
-                    StringComparison.OrdinalIgnoreCase)
-                        ? "Appeal"
-                        : "Objection"
-            };
+            throw new KeyNotFoundException(
+                $"Submission '{reference}' was not found.");
         }
 
-        throw new NotSupportedException(
-            $"Acknowledgement generation is not configured for reference '{reference}'.");
+        var generated = await _noticeService
+            .GenerateAcknowledgementAsync(data);
+
+        if (generated.Pdf is null || generated.Pdf.Length == 0)
+        {
+            throw new InvalidOperationException(
+                $"Acknowledgement generation returned an empty PDF for '{reference}'.");
+        }
+
+        var isAppeal = reference.StartsWith(
+            "APP-",
+            StringComparison.OrdinalIgnoreCase);
+
+        return new GeneratedAcknowledgementResult
+        {
+            ReferenceNumber = reference,
+            FileName = generated.FileName,
+            PdfBytes = generated.Pdf,
+            SubmissionType = isAppeal ? "Appeal" : "Objection"
+        };
     }
 }

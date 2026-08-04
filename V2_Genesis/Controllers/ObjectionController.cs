@@ -1386,26 +1386,33 @@ public class ObjectionController : Controller
 
         if (string.IsNullOrWhiteSpace(referenceNo))
         {
-            ViewBag.SupportingDocuments = new List<SupportingDocumentViewModel>();
+            ViewBag.SupportingDocumentNames = new List<string>();
             ViewBag.SupportingDocumentCount = 0;
-            ViewBag.CanAddMoreDocuments = true;
-            ViewBag.RemainingSupportingDocuments = 10;
             return;
         }
 
-        var docs = await _supportingDocumentService.GetDocumentsAsync(referenceNo, rollSource);
+        rollSource = ResolveUnlinkRollSource(rollSource);
 
-        ViewBag.SupportingDocuments = docs;
-        ViewBag.SupportingDocumentCount = docs.Count;
-        ViewBag.CanAddMoreDocuments = docs.Count < 10;
-        ViewBag.RemainingSupportingDocuments = Math.Max(0, 10 - docs.Count);
+        var acknowledgementData =
+            await _objectionFormService.GetAcknowledgementDataAsync(
+                rollSource,
+                referenceNo);
 
-        TempData["Count"] = docs.Count.ToString();
+        var fileNames = acknowledgementData?.UploadedDocumentNames
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList()
+            ?? new List<string>();
+
+        ViewBag.SupportingDocumentNames = fileNames;
+        ViewBag.SupportingDocumentCount = fileNames.Count;
+
+        TempData["Count"] = fileNames.Count.ToString();
 
         for (int i = 1; i <= 10; i++)
         {
-            TempData[$"File{i}"] = i <= docs.Count
-                ? docs[i - 1].FileName
+            TempData[$"File{i}"] = i <= fileNames.Count
+                ? fileNames[i - 1]
                 : null;
         }
 
@@ -1685,7 +1692,7 @@ public class ObjectionController : Controller
             var linkedProperty = await rollDb.LinkedProperties
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x =>
-                    x.IDProperty == linkedId.ToString() &&
+                    x.ID == linkedId &&
                     x.UserID == userId);
 
             if (linkedProperty is null)

@@ -24,13 +24,7 @@ namespace V2_Genesis.Models
 
         public string? RandomPin { get; set; }
 
-        public DateTime? Objection_Date { get; set; }
-
-        public string? File_Name { get; set; }
-
-        public string? File_Type { get; set; }
-
-        public string? File_Path { get; set; }
+       
 
         public long? Appeal_Ref_S7 { get; set; }
         [StringLength(50)]

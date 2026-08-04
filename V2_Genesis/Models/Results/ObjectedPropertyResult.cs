@@ -52,6 +52,10 @@ namespace V2_Genesis.Models.Results
 
         public bool CanLodgeReview { get; set; }
 
+        public DateTime? Submission_Date { get; set; }
+        public DateTime? Evidence_Expires_At { get; set; }
+        public bool Evidence_Window_Open { get; set; }
+
         public string? ReviewActionText { get; set; }
 
         public bool IsReviewOpen =>
@@ -72,4 +76,3 @@ namespace V2_Genesis.Models.Results
                 : Objection_No ?? string.Empty;
     }
 }
-

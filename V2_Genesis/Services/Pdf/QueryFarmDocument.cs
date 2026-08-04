@@ -13,7 +13,7 @@ namespace GV_Forms.Pdf
 
         protected override void BuildPropertyIntro(ColumnDescriptor col)
         {
-            var s1 = S("Section1");
+            dynamic main = Data.Main;
 
             RoundedBlock(col, c =>
             {
@@ -29,14 +29,16 @@ namespace GV_Forms.Pdf
 
                     x.Item().PaddingTop(6).Row(r =>
                     {
-                        LineField(r, "ERF/PORTION/UNIT NO.", V(s1, "Erf_Unit_No", "PortionNo", "UnitNo"), 1);
-                        LineField(r, "SUBURB/SCHEME NAME", V(s1, "Suburb_Scheme_Name", "SuburbSchemeName"), 2);
+                        LineField(r, "ERF/PORTION/UNIT NO.",
+                            V(main, "ERF", "Erf", "PTN", "Ptn", "Unit_key", "Unit_Key", "Property_id"), 1);
+                        LineField(r, "SUBURB/SCHEME NAME",
+                            V(main, "Town", "Town_Name", "Property_Desc"), 2);
                     });
 
                     x.Item().Row(r =>
                     {
-                        LineField(r, "FARM NO.", V(s1, "FarmNo", "Farm_No"), 1);
-                        LineField(r, "REG. DIV", V(s1, "RegDiv", "Reg_Div"), 1);
+                        LineField(r, "FARM NO.", V(main, "FarmNo", "Farm_No", "ERF", "Erf"), 1);
+                        LineField(r, "REG. DIV", V(main, "RegDiv", "Reg_Div"), 1);
                     });
                 });
             });

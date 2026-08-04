@@ -42,10 +42,16 @@ public class EvidenceController : Controller
     [AllowAnonymous]
     [Route("evidence/VerifyObj")]
     [Route("evidence/verify")]
+    [Route("section78/verify")]
     public async Task<IActionResult> VerifyObj(
         string? objectionNo = null,
-        string? rollSource = null)
+        string? rollSource = null,
+        string? queryNo = null)
     {
+        objectionNo = !string.IsNullOrWhiteSpace(objectionNo)
+            ? objectionNo
+            : queryNo;
+
         ViewBag.GvList = await _db.GvList.OrderBy(r => r.ID).ToListAsync();
 
         if (!string.IsNullOrWhiteSpace(objectionNo) &&
@@ -58,6 +64,7 @@ public class EvidenceController : Controller
         ViewBag.PrefilledRoll = rollSource;
         ViewBag.IsAuthenticated = User.Identity?.IsAuthenticated == true;
         ViewBag.IsAppeal = objectionNo?.Trim().ToUpper().StartsWith("APP") == true;
+        ViewBag.IsQuery = IsSection78Reference(objectionNo);
 
         return View();
     }
@@ -92,6 +99,7 @@ public class EvidenceController : Controller
             ViewBag.PrefilledRoll = rollSource;
             ViewBag.IsAuthenticated = User.Identity?.IsAuthenticated == true;
             ViewBag.IsAppeal = refNo.Trim().ToUpperInvariant().StartsWith("APP");
+            ViewBag.IsQuery = IsSection78Reference(refNo);
             return View(nameof(VerifyObj));
         }
 
@@ -120,6 +128,8 @@ public class EvidenceController : Controller
         ViewBag.Remaining = 10 - (HttpContext.Session.GetInt32(SESSION_COUNT) ?? 0);
         ViewBag.IsAppeal = bool.Parse(
             HttpContext.Session.GetString(SESSION_IS_APPEAL) ?? "false");
+        ViewBag.IsQuery = RollSourceEqualsQuery(
+            HttpContext.Session.GetString(SESSION_ROLL));
 
         return View();
     }
@@ -145,6 +155,7 @@ public class EvidenceController : Controller
         ViewBag.RollSource = roll;
         ViewBag.CurrentCount = count;
         ViewBag.IsAppeal = appeal;
+        ViewBag.IsQuery = RollSourceEqualsQuery(roll);
 
         if (files is null || !files.Any())
         {
@@ -221,6 +232,8 @@ public class EvidenceController : Controller
         ViewBag.NewCount = TempData["ev_newCount"];
         ViewBag.FileNames = fileNames;
         ViewBag.EmailWarning = TempData["ev_emailWarning"]?.ToString();
+        ViewBag.IsQuery = RollSourceEqualsQuery(
+            TempData["ev_roll"]?.ToString());
 
         TempData.Keep();
         return View();
@@ -262,6 +275,9 @@ public class EvidenceController : Controller
             .Replace(" ", string.Empty)
             .Replace("_", "-");
 
+        if (IsSection78Reference(value))
+            return "Objection_Query";
+
         // Check the highest supplementary roll first.
         if (value.Contains("SUP4") ||
             value.Contains("SUPP4") ||
@@ -297,4 +313,18 @@ public class EvidenceController : Controller
 
         return "Objection";
     }
+
+    private static bool IsSection78Reference(string? reference)
+    {
+        if (string.IsNullOrWhiteSpace(reference))
+            return false;
+
+        var value = reference.Trim().ToUpperInvariant();
+        return value.StartsWith("QUE-") ||
+               value.StartsWith("QUERY-");
+    }
+
+    private static bool RollSourceEqualsQuery(string? rollSource) =>
+        string.Equals(rollSource, "Objection_Query", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(rollSource, "Query", StringComparison.OrdinalIgnoreCase);
 }

@@ -51,7 +51,7 @@ namespace V2_Genesis.Services.Implementations
 
             if (isQuery || rollSource.Equals("Objection_Query", StringComparison.OrdinalIgnoreCase))
             {
-                return await GetQueryFormViewAsync(referenceNo);
+                return await GetQueryFormViewAsync(referenceNo, propertyType);
             }
 
             var connectionKey = GetConnectionKey(rollSource);
@@ -125,48 +125,93 @@ namespace V2_Genesis.Services.Implementations
             }
         }
 
-        private async Task<AdminFormViewResult> GetQueryFormViewAsync(string referenceNo)
+        private async Task<AdminFormViewResult> GetQueryFormViewAsync(
+            string referenceNo,
+            string propertyType)
         {
             try
             {
                 var queryRow = await _queryDb.Que_Property_Info
                     .AsNoTracking()
-                    .FirstOrDefaultAsync(x =>
-                        x.Query_No == referenceNo ||
-                        x.Review_No == referenceNo);
+                    .FirstOrDefaultAsync(x => x.Query_No == referenceNo);
 
                 var section78Row = await _queryDb.Obj_Section2Query
                     .AsNoTracking()
                     .FirstOrDefaultAsync(x =>
-                        x.Objection_Ref_SQ == referenceNo ||
-                        x.Review_No == referenceNo);
+                        x.Objection_Ref_SQ == referenceNo);
 
-                var rows = queryRow == null
-                    ? new List<ObjectionTB>()
-                    : new List<ObjectionTB>
+                var rows = new List<ObjectionTB>();
+
+                var connectionString =
+                    _config.GetConnectionString("QueryConnection");
+
+                if (!string.IsNullOrWhiteSpace(connectionString))
+                {
+                    try
                     {
-                        new()
-                        {
-                            ObjectionId = queryRow.Query_ID,
-                            ObjectionNo = queryRow.Query_No ?? queryRow.Review_No,
-                            ObjectorType = queryRow.Query_Type,
-                            PropertyType = queryRow.Property_Type,
-                            PropertyDesc = queryRow.Property_Desc,
-                            PremiseId = queryRow.Premise_id,
-                            UnitKey = queryRow.Unit_key,
-                            PropertyId = queryRow.Property_id,
-                            ValuationKey = queryRow.Valuation_Key,
-                            Sector = queryRow.Sector,
-                            objectionStatus = queryRow.Query_Status
-                        }
-                    };
+                        await using var conn = new SqlConnection(connectionString);
+
+                        rows = (await conn.QueryAsync<ObjectionTB>(
+                            GetStoredProcedure(propertyType, isAppeal: false),
+                            new { Objection_no = referenceNo },
+                            commandType: CommandType.StoredProcedure,
+                            commandTimeout: 120)).ToList();
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(
+                            ex,
+                            "Could not load Section 78 sections using the {PropertyType} form procedure. Ref={ReferenceNo}",
+                            propertyType,
+                            referenceNo);
+                    }
+                }
+
+                // Keep the header visible even if an older Query database does
+                // not yet contain the form-view stored procedure.
+                if (!rows.Any() && queryRow != null)
+                {
+                    rows.Add(new ObjectionTB
+                    {
+                        ObjectionId = queryRow.Query_ID,
+                        ObjectionNo = queryRow.Query_No,
+                        ObjectorType = queryRow.Query_Type,
+                        PropertyType = queryRow.Property_Type,
+                        PropertyDesc = queryRow.Property_Desc,
+                        PremiseId = queryRow.Premise_id,
+                        UnitKey = queryRow.Unit_key,
+                        PropertyId = queryRow.Property_id,
+                        ValuationKey = queryRow.Valuation_Key,
+                        Sector = queryRow.Sector,
+                        objectionStatus = queryRow.Query_Status
+                    });
+                }
+                else if (rows.Any() && queryRow != null)
+                {
+                    var row = rows[0];
+                    row.ObjectionId = queryRow.Query_ID;
+                    row.ObjectionNo = queryRow.Query_No;
+                    row.ObjectorType ??= queryRow.Query_Type;
+                    row.PropertyType ??= queryRow.Property_Type;
+                    row.PropertyDesc ??= queryRow.Property_Desc;
+                    row.PremiseId ??= queryRow.Premise_id;
+                    row.UnitKey ??= queryRow.Unit_key;
+                    row.PropertyId ??= queryRow.Property_id;
+                    row.ValuationKey ??= queryRow.Valuation_Key;
+                    row.Sector ??= queryRow.Sector;
+                    row.objectionStatus ??= queryRow.Query_Status;
+                }
 
                 var section78 = section78Row == null
                     ? null
                     : new Section78FormViewModel
                     {
                         QueryNo = section78Row.Objection_Ref_SQ,
-                        ReviewNo = section78Row.Review_No,
+                        ReviewNo = referenceNo.EndsWith(
+                            "-R",
+                            StringComparison.OrdinalIgnoreCase)
+                                ? section78Row.Objection_Ref_SQ
+                                : null,
                         Option_A = IsSelected(section78Row.Option_A),
                         Option_B = IsSelected(section78Row.Option_B),
                         Option_C = IsSelected(section78Row.Option_C),
@@ -193,7 +238,7 @@ namespace V2_Genesis.Services.Implementations
                     ReferenceNo = referenceNo,
                     RollSource = "Objection_Query",
                     SourceTable = "Query",
-                    PropertyType = "Query",
+                    PropertyType = propertyType,
                     IsQuery = true,
                     IsAppeal = false,
                     PartialViewName = "QueryForm",

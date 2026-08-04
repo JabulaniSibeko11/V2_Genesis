@@ -7,7 +7,7 @@ using V2_Genesis.Data;
 using V2_Genesis.Models;
 using V2_Genesis.Services.Implementations;
 using V2_Genesis.Services.Interfaces;
-[Authorize(Roles = "Client")]
+[Authorize]
 public class Section78Controller : Controller
 {
     private readonly ApplicationDbContext _db;
@@ -19,7 +19,7 @@ public class Section78Controller : Controller
     public Section78Controller(
         ApplicationDbContext db,
         ISection78Service section78,
-        IConfiguration config,IEmailService emailService,ILogger<Section78Controller>logger)
+        IConfiguration config, IEmailService emailService, ILogger<Section78Controller> logger)
     {
         _db = db;
         _section78 = section78;
@@ -34,6 +34,7 @@ public class Section78Controller : Controller
     public async Task<IActionResult> PropertyIndex()
     {
         ViewBag.GvList = await _db.GvList.OrderBy(r => r.ID).ToListAsync();
+        ApplyAdminViewContext();
         return RedirectToAction("Index", "PropertySearch",
             new { rollSource = "Query" });
     }
@@ -91,15 +92,18 @@ public class Section78Controller : Controller
         }
 
         // ── Review vs Query routing ─────────────────────────────────
-        if (qtype == "Review")
+        if (string.Equals(qtype, "Review", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(qtype, "R", StringComparison.OrdinalIgnoreCase))
         {
             TempData["ReviewStat"] = "R";
+            ViewBag.ReviewStat = "R";
             return Direct == "Multi"
                 ? View("Section78QueryMulti")
                 : View();
         }
 
         TempData["ReviewStat"] = "Q";
+        ViewBag.ReviewStat = "Q";
 
         return Direct == "Multi"
             ? View("Section78QueryMulti")
@@ -126,13 +130,21 @@ public class Section78Controller : Controller
         Obj_Files obj_file,
         List<IFormFile> files,
         List<IFormFile> fileR,
-        string? propertyType)
+        string? propertyType,
+        string? reviewStat)
     {
         ViewBag.GvList = await _db.GvList.OrderBy(r => r.ID).ToListAsync();
 
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)
                          ?? throw new InvalidOperationException("Not authenticated.");
-        var reviewStat = TempData["ReviewStat"]?.ToString() ?? "Q";
+        var resolvedReviewStat = !string.IsNullOrWhiteSpace(reviewStat)
+            ? string.Equals(reviewStat, "R", StringComparison.OrdinalIgnoreCase)
+              || string.Equals(reviewStat, "Review", StringComparison.OrdinalIgnoreCase)
+                ? "R"
+                : "Q"
+            : TempData["ReviewStat"]?.ToString() ?? "Q";
+
+        TempData["ReviewStat"] = resolvedReviewStat;
 
         var uploadRoot = _config["ObjectionRolls:Objection_Query:QueryRootPath"]
                   ?? throw new InvalidOperationException(
@@ -155,11 +167,11 @@ public class Section78Controller : Controller
             objB4, objR4,
             obj5, obj6, obj7,
             obj_file, files, fileR,
-            reviewStat, uploadRoot,
+            resolvedReviewStat, uploadRoot,
             propertyType ?? que.Property_Type ?? "Res",
             userId);
 
-        
+
         // ── Populate TempData for acknowledgement view ──────────────
         TempData["pin"] = result.RandomPin;
         TempData["id"] = result.QueryRef;
@@ -197,9 +209,11 @@ public class Section78Controller : Controller
         TempData["new3_Extent"] = result.Section6?.New3_Extent?.ToString();
         TempData["objection_reason"] = result.Section6?.Objection_Reasons;
 
-      
 
-        TempData["successmessage"] = "Query Submitted Successfully";
+
+        TempData["successmessage"] = resolvedReviewStat == "R"
+            ? "Review Submitted Successfully"
+            : "Query Submitted Successfully";
 
         return result.IsMulti
             ? RedirectToAction("MultiPurposeDisplay")
@@ -223,5 +237,63 @@ public class Section78Controller : Controller
         ViewBag.GvList = await _db.GvList.OrderBy(r => r.ID).ToListAsync();
         ViewBag.IsMulti = true;
         return View("Display");   // SAME view — flag tells it to show multi rows
+    }
+
+    private void ApplyAdminViewContext()
+    {
+        var userEmail =
+            User.FindFirstValue("AdminAppEmail")
+            ?? HttpContext.Session.GetString("AdminAppEmail")
+            ?? User.FindFirstValue(ClaimTypes.Email)
+            ?? User.Identity?.Name
+            ?? string.Empty;
+
+        var isAdmin =
+            User.Identity?.IsAuthenticated == true
+            && (
+                User.IsInRole("Admin")
+                || User.FindFirstValue("UMRole")?.Equals(
+                    "Admin", StringComparison.OrdinalIgnoreCase) == true
+                || userEmail.Equals(
+                    "AdministrationEnquiries@Joburg.org.za",
+                    StringComparison.OrdinalIgnoreCase)
+                || userEmail.StartsWith(
+                    "Val.Admin", StringComparison.OrdinalIgnoreCase)
+            );
+
+        var sapFull =
+            User.FindFirstValue("SAPNumber")
+            ?? HttpContext.Session.GetString("AdminSapNumber")
+            ?? string.Empty;
+
+        var sapNumeric =
+            User.FindFirstValue("SAPNumeric")
+            ?? HttpContext.Session.GetString("AdminSapNumeric")
+            ?? string.Empty;
+
+        if (string.IsNullOrWhiteSpace(sapNumeric)
+            && !string.IsNullOrWhiteSpace(sapFull))
+        {
+            sapNumeric = sapFull.Contains('\\')
+                ? sapFull.Split('\\').Last()
+                : sapFull;
+        }
+
+        ViewData["UserEmail"] = userEmail;
+        ViewBag.IsAdmin = isAdmin;
+        ViewBag.AdminFullName =
+            User.FindFirstValue("FullName")
+            ?? HttpContext.Session.GetString("AdminFullName")
+            ?? string.Empty;
+        ViewBag.AdminPosition =
+            User.FindFirstValue("Position")
+            ?? HttpContext.Session.GetString("AdminPosition")
+            ?? string.Empty;
+        ViewBag.SapFull = sapFull;
+        ViewBag.SapNumeric = sapNumeric;
+        ViewBag.AdminWindowsUser =
+            User.FindFirstValue("WindowsUser")
+            ?? HttpContext.Session.GetString("AdminWindowsUser")
+            ?? string.Empty;
     }
 }

@@ -4,6 +4,12 @@
        ? "~/Views/Shared/_ClientLayout.cshtml"
        : "~/Views/Shared/_Layout.cshtml";
     bool isAppeal = (bool)(ViewBag.IsAppeal ?? false);
+    bool isQuery = (bool)(ViewBag.IsQuery ?? false);
+    string submissionName = isQuery
+        ? (ViewBag.ObjectionNo?.ToString()?.EndsWith("-R", StringComparison.OrdinalIgnoreCase) == true
+            ? "Section 78 Review"
+            : "Section 78 Query")
+        : isAppeal ? "Appeal" : "Objection";
     int remaining = (int)(ViewBag.Remaining ?? 10);
     int current = (int)(ViewBag.CurrentCount ?? 0);
 }
@@ -23,7 +29,7 @@
             <div>
                 <h1 class="ev-card-title">Upload Supporting Evidence</h1>
                 <p class="ev-card-sub">
-                    @(isAppeal ? "Appeal" : "Objection"):
+                    @submissionName:
                     <strong>@ViewBag.ObjectionNo</strong>
                 </p>
             </div>

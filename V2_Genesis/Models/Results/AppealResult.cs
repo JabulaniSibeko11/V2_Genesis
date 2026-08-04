@@ -13,6 +13,7 @@
         public string? A_Property_Type { get; set; }
         public string? Appeal_Status { get; set; }
         public DateTime? Appeal_Start_DateTime { get; set; }
+        public DateTime? Submission_Date { get; set; }
 
         // Calculated by SQL Server using the same database clock that
         // stores Appeal_Start_DateTime.
@@ -20,8 +21,7 @@
         public bool Evidence_Window_Open { get; set; }
 
         public DateTime? EvidenceExpiresAt =>
-            Evidence_Expires_At
-            ?? Appeal_Start_DateTime?.AddHours(48);
+            Evidence_Expires_At;
 
         public bool IsEvidenceWindowOpen =>
             Evidence_Window_Open;

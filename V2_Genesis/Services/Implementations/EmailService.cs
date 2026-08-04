@@ -44,6 +44,8 @@ namespace V2_Genesis.Services.Implementations
             ["Objection_Supp3"] = "Sup3Connection",
             ["Objection_Supp4"] = "Sup4Connection",
             ["Objection_Supp5"] = "Sup5Connection",
+            ["Objection_Query"] = "QueryConnection",
+            ["Query"] = "QueryConnection",
         };
         private static readonly Dictionary<string, string> RollTitles = new()
         {
@@ -615,7 +617,16 @@ namespace V2_Genesis.Services.Implementations
                     $"No client email address was found in the submission for '{referenceNo}'.");
             }
 
-            var submissionType = isAppeal ? "Appeal" : "Objection";
+            var isQuery =
+                rollSource.Equals("Objection_Query", StringComparison.OrdinalIgnoreCase) ||
+                rollSource.Equals("Query", StringComparison.OrdinalIgnoreCase);
+            var submissionType = isAppeal
+                ? "Appeal"
+                : isQuery
+                    ? (referenceNo.EndsWith("-R", StringComparison.OrdinalIgnoreCase)
+                        ? "Section 78 Review"
+                        : "Section 78 Query")
+                    : "Objection";
             var subject = $"City of Johannesburg — Evidence Upload Confirmation: {referenceNo}";
 
             foreach (var recipient in recipients)
@@ -790,6 +801,10 @@ City of Johannesburg — Valuation Services Department<br>This is an automated m
             {
                 await using var conn = new SqlConnection(connStr);
 
+                var isQuery =
+                    rollSource.Equals("Objection_Query", StringComparison.OrdinalIgnoreCase) ||
+                    rollSource.Equals("Query", StringComparison.OrdinalIgnoreCase);
+
                 var sql = isAppeal
                     ? @"
                 SELECT TOP 1
@@ -808,6 +823,20 @@ City of Johannesburg — Valuation Services Department<br>This is an automated m
                        ON opia.Appeal_No = @Ref
                 LEFT JOIN dbo.Obj_Property_Info opi
                        ON opi.Objection_No = opia.Obj_Ref
+                WHERE s1.Objection_Ref_S1 = @Ref"
+                    : isQuery
+                    ? @"
+                SELECT TOP 1
+                    s1.Owner_Name,
+                    s1.Owner_Email,
+                    s1.Objector_Name,
+                    s1.Objector_Email,
+                    s1.Representative_name,
+                    s1.Rep_Email,
+                    q.Query_Type AS Objector_Type
+                FROM dbo.Obj_Section1 s1
+                LEFT JOIN dbo.Que_Property_Info q
+                       ON q.Query_No = @Ref
                 WHERE s1.Objection_Ref_S1 = @Ref"
                     : @"
                 SELECT TOP 1

@@ -18,6 +18,7 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link href="~/css/views/homeindex1.css" rel="stylesheet" asp-append-version="true" />
     <link href="~/css/views/layout.css" rel="stylesheet" />
+    <link href="~/css/global-action-loader.css" rel="stylesheet" asp-append-version="true" />
 
 
     @await RenderSectionAsync("Styles", required: false)
@@ -34,6 +35,7 @@
 </head>
 
 <body class="@(User.IsInRole("Admin") ? "role-admin" : "role-client")">
+    <partial name="_GlobalActionLoader" />
 
     @{
         var currentPath = Context.Request.Path.Value?.ToLower() ?? "";
@@ -122,9 +124,10 @@
                             </a>
                         </li>
                         <li>
-                            <a href="/section78/verify" class="pub-nav-drop-item">
+                            <a href="/evidence/verify?rollSource=Objection_Query"
+                               class="pub-nav-drop-item">
                                 <i class="fa-solid fa-file-alt"></i>
-                                Section 78 Evidence
+                                Section 78 Query / Review Evidence
                             </a>
                         </li>
                     </ul>
@@ -253,8 +256,9 @@
         <a href="/valuer-inspection" class="pub-drawer-link pub-drawer-evidence">
             <i class="fa-solid fa-camera"></i> Valuer Physical Inspection Evidence
         </a>
-        <a href="/section78/verify" class="pub-drawer-link pub-drawer-evidence">
-            <i class="fa-solid fa-file-alt"></i> Section 78 Evidence
+        <a href="/evidence/verify?rollSource=Objection_Query"
+           class="pub-drawer-link pub-drawer-evidence">
+            <i class="fa-solid fa-file-alt"></i> Section 78 Query / Review Evidence
         </a>
         <div class="pub-drawer-divider"></div>
         <a href="/Rebates/Index" class="pub-drawer-link">
@@ -342,7 +346,11 @@
                     <ul class="footer-col-links">
                         <li><a href="/evidence/VerifyObj">Objection Evidence</a></li>
                         <li><a href="/section51/verify">Section 51</a></li>
-                        <li><a href="/section78/verify">Section 78 Evidence</a></li>
+                        <li>
+                            <a href="/evidence/verify?rollSource=Objection_Query">
+                                Section 78 Query / Review Evidence
+                            </a>
+                        </li>
                         <li><a href="/Home/FAQ">FAQ</a></li>
                         <li><a href="/Sup1/ViewGuide">User Guidelines</a></li>
                     </ul>
@@ -400,6 +408,7 @@
     <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
 
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/global-action-loader.js" asp-append-version="true"></script>
 
     <script>
             // ── User dropdown ──────────────────────────────────────────────

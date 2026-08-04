@@ -430,19 +430,19 @@
 
     <div class="dash-link-alert
         @(string.Equals(
-                                                                  reviewStatus,
-                                                                  "Open",
-                                                                  StringComparison.OrdinalIgnoreCase)
-                                                                  ? "dash-link-success"
-                                                                  : "dash-link-error")">
+                                                                           reviewStatus,
+                                                                           "Open",
+                                                                           StringComparison.OrdinalIgnoreCase)
+                                                                           ? "dash-link-success"
+                                                                           : "dash-link-error")">
 
         <i class="fa-solid
             @(string.Equals(
-                                                                                  reviewStatus,
-                                                                                  "Open",
-                                                                                  StringComparison.OrdinalIgnoreCase)
-                                                                                  ? "fa-unlock"
-                                                                                  : "fa-lock")">
+                                                                                             reviewStatus,
+                                                                                             "Open",
+                                                                                             StringComparison.OrdinalIgnoreCase)
+                                                                                             ? "fa-unlock"
+                                                                                             : "fa-lock")">
         </i>
 
         <div>
@@ -706,6 +706,32 @@
         // ── Family tiles + persistent tab strip ──────────────────────
         const detailCache = {};
         let familyLookup = [];
+        const dashboardOpenRollKey = 'v2genesis.dashboard.openRoll';
+
+        function rememberDashboardRoll(source) {
+        if (!source) return;
+
+        try {
+        window.sessionStorage.setItem(dashboardOpenRollKey, source);
+        } catch (e) {
+        // The dashboard still works when browser storage is unavailable.
+        }
+        }
+
+        function getRememberedDashboardRoll() {
+        try {
+        return window.sessionStorage.getItem(dashboardOpenRollKey);
+        } catch (e) {
+        return null;
+        }
+        }
+
+        function clearRememberedDashboardRoll() {
+        try {
+        window.sessionStorage.removeItem(dashboardOpenRollKey);
+        } catch (e) {
+        }
+        }
 
         try {
         familyLookup = JSON.parse(document.getElementById('cdFamilyLookupData').textContent);
@@ -792,6 +818,8 @@
         }
 
         function selectFamilyTab(source, members) {
+        rememberDashboardRoll(source);
+
         const wrap = document.getElementById('cdFamilyTabs');
 
         if (wrap) {
@@ -815,6 +843,19 @@
         }
 
         function openStandalone(tileEl) {
+        const drawerUrl = tileEl.dataset.drawerUrl || '';
+        const rollDetailPrefix = '/dashboard/roll-detail/';
+
+        if (drawerUrl.startsWith(rollDetailPrefix)) {
+        rememberDashboardRoll(
+        decodeURIComponent(drawerUrl.substring(rollDetailPrefix.length))
+        );
+        } else if (drawerUrl === '/dashboard/attributes-detail') {
+        rememberDashboardRoll('attributes');
+        } else if (drawerUrl === '/dashboard/rebates-detail') {
+        rememberDashboardRoll('rebates');
+        }
+
         const wrap = document.getElementById('cdFamilyTabs');
         if (wrap) {
         wrap.style.display = 'none';
@@ -848,6 +889,7 @@
 
         detailArea.style.display = 'none';
         tileGrid.style.display = '';
+        clearRememberedDashboardRoll();
         }
 
         function loadIntoDetail(url) {
@@ -955,9 +997,12 @@
         // ── Open roll after redirect ────────────────────────────────
         function openLinkedRollFromQueryString() {
         const params = new URLSearchParams(window.location.search);
-        const openRoll = params.get('openRoll');
+        const requestedRoll = params.get('openRoll');
+        const openRoll = requestedRoll || getRememberedDashboardRoll();
 
         if (!openRoll) return;
+
+        rememberDashboardRoll(openRoll);
 
         const lower = openRoll.toLowerCase();
 
@@ -966,7 +1011,9 @@
         '.cd-tile[data-drawer-url="/dashboard/' + lower + '-detail"]'
         );
         if (tile) openStandalone(tile);
+        if (requestedRoll) {
         window.history.replaceState({}, document.title, window.location.pathname);
+        }
         return;
         }
 
@@ -982,7 +1029,9 @@
         openFamily(tile);
         selectFamilyTab(openRoll, family.members);
         }
+        if (requestedRoll) {
         window.history.replaceState({}, document.title, window.location.pathname);
+        }
         return;
         }
 
@@ -995,7 +1044,9 @@
         console.warn('Roll not found for openRoll:', openRoll);
         }
 
+        if (requestedRoll) {
         window.history.replaceState({}, document.title, window.location.pathname);
+        }
         }
 
         // ── Inspection date response modal ──────────────────────────

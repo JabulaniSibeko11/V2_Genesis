@@ -93,7 +93,10 @@ namespace V2_Genesis.Services.Implementations
             string propertyType,
             string userId)
         {
-            bool isReview = reviewStat == "R";
+            bool isReview = string.Equals(
+                reviewStat?.Trim(),
+                "R",
+                StringComparison.OrdinalIgnoreCase);
 
             // ── 1. Query header ────────────────────────────────────────
             que.UserID = userId;
@@ -112,7 +115,7 @@ namespace V2_Genesis.Services.Implementations
 
             // ── 2. Section 1 ───────────────────────────────────────────
             obj1.Ref = que.Query_ID;
-            obj1.Objection_Ref_S1 = que.Query_No ?? queryRef;
+            obj1.Objection_Ref_S1 = queryRef;
             _qdb.Obj_Section1.Add(obj1);
             await _qdb.SaveChangesAsync();
 
@@ -162,7 +165,7 @@ namespace V2_Genesis.Services.Implementations
             await _qdb.SaveChangesAsync();
 
             // ── 8. Section 6 ───────────────────────────────────────────
-            obj6.Ref = que.Query_ID;
+            obj6.Ref = que.Query_ID.ToString();
             obj6.Objection_Ref_S6 = queryRef;
             _qdb.Obj_Section6.Add(obj6);
             await _qdb.SaveChangesAsync();
@@ -172,6 +175,7 @@ namespace V2_Genesis.Services.Implementations
             obj7.Objection_Ref_S7 = queryRef;
             obj7.RandomPin = GeneratePin();
             obj7.Section51Pin = GeneratePin();
+           
             _qdb.Obj_Section7.Add(obj7);
             await _qdb.SaveChangesAsync();
 
@@ -223,7 +227,7 @@ namespace V2_Genesis.Services.Implementations
                 RandomPin = obj7.RandomPin,
                 IsReview = isReview,
                 IsMulti = propertyType == "Multi",
-                ValuationKey= que.Valuation_Key,
+                ValuationKey = que.Valuation_Key,
                 FileCount = count,
                 Files = new[]
                 {
@@ -1624,7 +1628,7 @@ namespace V2_Genesis.Services.Implementations
                 ? "Section78"
                 : cleaned;
         }
-  
+
         private static Section78AcknowledgementDbRow BuildAcknowledgementRow(
             Que_Property_InfoModel query,
             Obj_Section6Model? section6,
@@ -1667,7 +1671,7 @@ namespace V2_Genesis.Services.Implementations
                 New3_Market_Value = section6?.New3_Market_Value,
                 Objection_Reasons = section6?.Objection_Reasons,
                 RandomPin = section7?.RandomPin,
-                Objection_Date = section7?.Objection_Date,
+                Objection_Date = DateTime.TryParse(section7?.Declaration_Date, out var date)? date: null,
                 Evidence_count = (int)(files?.Evidence_count ?? 0),
                 Files1 = files?.Files1,
                 Files2 = files?.Files2,

@@ -324,12 +324,13 @@ public class ObjectionFormService : IObjectionFormService
         obj5.Objection_Ref_S5 = objRef;
         db.Obj_Section5.Add(obj5);
 
-        obj6.Ref = objId;
+        obj6.Ref = objId.ToString();
         obj6.Objection_Ref_S6 = objRef;
         db.Obj_Section6.Add(obj6);
 
         obj7.Ref = objId;
         obj7.Objection_Ref_S7 = objRef;
+        obj7.Declaration_Date = EnsureDeclarationDate(obj7.Declaration_Date);
         obj7.RandomPin = GeneratePin();
         obj7.Section51Pin = GeneratePin();
         db.Obj_Section7.Add(obj7);
@@ -502,7 +503,7 @@ public class ObjectionFormService : IObjectionFormService
         obj5.Objection_Ref_S5 = appNo;
         db.Obj_Section5.Add(obj5);
 
-        obj6.Ref = appId;
+        obj6.Ref = appId.ToString();
         obj6.Appeal_Ref_S6 = appId;
         obj6.Objection_Ref_S6 = appNo;
         db.Obj_Section6.Add(obj6);
@@ -510,6 +511,7 @@ public class ObjectionFormService : IObjectionFormService
         obj7.Ref = appId;
         obj7.Appeal_Ref_S7 = appId;
         obj7.Objection_Ref_S7 = appNo;
+        obj7.Declaration_Date = EnsureDeclarationDate(obj7.Declaration_Date);
         obj7.RandomPin = GeneratePin();
         obj7.Section51Pin = GeneratePin();
         db.Obj_Section7.Add(obj7);
@@ -527,7 +529,7 @@ public class ObjectionFormService : IObjectionFormService
         objFile.Ref = appId;
         objFile.Objection_Ref_files = appNo;
         objFile.Evidence_count = count;
-        objFile.Appeal_Ref_files = 1;
+        objFile.Appeal_Ref_files = appId;
 
         db.Obj_Files.Add(objFile);
         await db.SaveChangesAsync();
@@ -1000,6 +1002,17 @@ public class ObjectionFormService : IObjectionFormService
         return new string(pin);
     }
 
+    private static string EnsureDeclarationDate(string? declarationDate)
+    {
+        if (!string.IsNullOrWhiteSpace(declarationDate) &&
+            DateTime.TryParse(declarationDate, out var parsed))
+        {
+            return parsed.ToString("yyyy-MM-dd HH:mm:ss");
+        }
+
+        return DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+    }
+
     private static async Task<int> SaveFilesAsync(
         string rootPath,
         string folder,
@@ -1065,90 +1078,307 @@ public class ObjectionFormService : IObjectionFormService
         }
     }
     public async Task<AcknowledgementData?> GetAcknowledgementDataAsync(
-        string rollSource,
-        string referenceNo)
+      string rollSource,
+      string referenceNo)
     {
         if (string.IsNullOrWhiteSpace(referenceNo))
             return null;
 
-        rollSource = NormalizeRollSource(rollSource);
-        referenceNo = referenceNo.Trim();
+        var cleanReference = referenceNo.Trim();
+
+        // The reference number is the safest source for selecting the roll.
+        // This prevents a dashboard rollSource mismatch from querying the wrong DB.
+        var detectedRollSource = DetectRollSourceFromReference(cleanReference);
+
+        if (string.IsNullOrWhiteSpace(rollSource))
+        {
+            rollSource = detectedRollSource;
+        }
+        else
+        {
+            rollSource = NormalizeRollSource(rollSource);
+
+            // Objection and appeal reference numbers identify their actual roll.
+            if (cleanReference.StartsWith("GV23", StringComparison.OrdinalIgnoreCase) ||
+                cleanReference.StartsWith("OBJ-GV23", StringComparison.OrdinalIgnoreCase) ||
+                cleanReference.StartsWith("APP-GV23", StringComparison.OrdinalIgnoreCase))
+            {
+                rollSource = detectedRollSource;
+            }
+        }
 
         await using var db = CreateDbContextForRoll(rollSource);
 
-        // Appeal references are stored in Obj_Property_Info_Appeal and the
-        // shared section tables use the Appeal_Ref_* columns.
-        var appeal = await db.Obj_Property_Info_Appeal
-            .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Appeal_No == referenceNo);
+        var connectionString = db.Database.GetConnectionString();
+        if (string.IsNullOrWhiteSpace(connectionString))
+            throw new InvalidOperationException(
+                $"The database connection for roll '{rollSource}' is not configured.");
 
-        if (appeal is not null)
+        await using var connection = new SqlConnection(connectionString);
+        await connection.OpenAsync();
+
+        var isAppealReference = cleanReference.StartsWith(
+            "APP-",
+            StringComparison.OrdinalIgnoreCase);
+
+        if (isAppealReference)
         {
-            var section6 = await db.Obj_Section6
+            var appeal = await db.Obj_Property_Info_Appeal
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x =>
-                    x.Appeal_Ref_S6 == appeal.Appeal_ID ||
-                    x.Objection_Ref_S6 == referenceNo);
+                    x.Appeal_No != null &&
+                    x.Appeal_No.Trim() == cleanReference);
 
-            var section7 = await db.Obj_Section7
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x =>
-                    x.Appeal_Ref_S7 == appeal.Appeal_ID ||
-                    x.Objection_Ref_S7 == referenceNo);
+            if (appeal == null)
+                return null;
 
-            var files = await db.Obj_Files
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x =>
-                    x.Ref == appeal.Appeal_ID &&
-                    x.Objection_Ref_files == referenceNo);
+            var section6 = await GetSection6Async(
+                connection,
+                cleanReference,
+                appeal.Appeal_ID,
+                isAppeal: true);
+
+            var section7 = await GetSection7Async(
+                connection,
+                cleanReference,
+                appeal.Appeal_ID,
+                isAppeal: true);
+
+            var files = await GetAcknowledgementFilesAsync(
+                connection,
+                cleanReference,
+                appeal.Appeal_ID,
+                isAppeal: true);
+
+            var submissionDate = section7?.Declaration_Date;
 
             return BuildAcknowledgementData(
-                rollSource,
-                referenceNo,
-                section7?.RandomPin,
-                appeal.A_Valuation_Key,
-                appeal.A_Property_Type,
+                rollSource: rollSource,
+                referenceNo: cleanReference,
+                pin: section7?.RandomPin,
+                valuationKey: appeal.A_Valuation_Key,
+                propertyType: appeal.A_Property_Type,
                 isAppeal: true,
-                section6,
-                section7?.Declaration_Date,
-                files);
+                section6: section6,
+                submissionTime: submissionDate,
+                files: files);
         }
 
         var objection = await db.Obj_Property_Info
             .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Objection_No == referenceNo);
+            .FirstOrDefaultAsync(x =>
+                x.Objection_No != null &&
+                x.Objection_No.Trim() == cleanReference);
 
-        if (objection is null)
+        if (objection == null)
             return null;
 
-        var objectionSection6 = await db.Obj_Section6
-            .AsNoTracking()
-            .FirstOrDefaultAsync(x =>
-                x.Ref == objection.Objection_ID ||
-                x.Objection_Ref_S6 == referenceNo);
+        var objectionSection6 = await GetSection6Async(
+            connection,
+            cleanReference,
+            objection.Objection_ID,
+            isAppeal: false);
 
-        var objectionSection7 = await db.Obj_Section7
-            .AsNoTracking()
-            .FirstOrDefaultAsync(x =>
-                x.Ref == objection.Objection_ID ||
-                x.Objection_Ref_S7 == referenceNo);
+        var objectionSection7 = await GetSection7Async(
+            connection,
+            cleanReference,
+            objection.Objection_ID,
+            isAppeal: false);
 
-        var objectionFiles = await db.Obj_Files
-            .AsNoTracking()
-            .FirstOrDefaultAsync(x =>
-                x.Ref == objection.Objection_ID &&
-                x.Objection_Ref_files == referenceNo);
+        var objectionFiles = await GetAcknowledgementFilesAsync(
+            connection,
+            cleanReference,
+            objection.Objection_ID,
+            isAppeal: false);
+
+        var objectionSubmissionDate =
+            objectionSection7?.Declaration_Date;
 
         return BuildAcknowledgementData(
-            rollSource,
-            referenceNo,
-            objectionSection7?.RandomPin,
-            objection.Valuation_Key,
-            objection.Property_Type,
+            rollSource: rollSource,
+            referenceNo: cleanReference,
+            pin: objectionSection7?.RandomPin,
+            valuationKey: objection.Valuation_Key,
+            propertyType: objection.Property_Type,
             isAppeal: false,
-            objectionSection6,
-            objection.Objection_Start_DateTime.ToString("dd MMMM yyyy HH:mm"),
-            objectionFiles);
+            section6: objectionSection6,
+            submissionTime: objectionSubmissionDate,
+            files: objectionFiles);
+    }
+
+    private static async Task<Obj_Section6Model?> GetSection6Async(
+        SqlConnection connection,
+        string referenceNo,
+        long submissionId,
+        bool isAppeal)
+    {
+        const string columns = """
+            ID,
+            Objection_Ref_S6,
+            Old_Property_Description,
+            Old_Category,
+            Old_Address,
+            Old_Extent,
+            Old_Market_Value,
+            Old_Owner,
+            New_Property_Description,
+            New_Category,
+            New_Address,
+            New_Extent,
+            New_Market_Value,
+            New_Owner,
+            Objection_Reasons,
+            Old2_Category,
+            Old2_Extent,
+            Old2_Market_Value,
+            New2_Category,
+            New2_Extent,
+            New2_Market_Value,
+            Old3_Category,
+            Old3_Extent,
+            Old3_Market_Value,
+            New3_Category,
+            New3_Extent,
+            New3_Market_Value
+            """;
+
+        var whereClause =
+            "LTRIM(RTRIM(ISNULL(Objection_Ref_S6, ''))) = @ReferenceNo";
+
+        var section = await connection.QueryFirstOrDefaultAsync<Obj_Section6Model>(
+            $"SELECT TOP (1) {columns} FROM dbo.Obj_Section6 WHERE {whereClause} ORDER BY ID DESC",
+            new { ReferenceNo = referenceNo, SubmissionId = submissionId });
+
+        if (section != null)
+            return section;
+
+        // Some older records only contain the numeric ID in Ref. Convert Ref
+        // inside SQL because its data type differs between roll databases.
+        var idColumn = isAppeal ? "Appeal_Ref_S6" : "Ref";
+
+        return await connection.QueryFirstOrDefaultAsync<Obj_Section6Model>(
+            $"""
+            SELECT TOP (1) {columns}
+            FROM dbo.Obj_Section6
+            WHERE TRY_CONVERT(bigint, {idColumn}) = @SubmissionId
+            ORDER BY ID DESC
+            """,
+            new { SubmissionId = submissionId });
+    }
+
+    private static async Task<Obj_Section7Model?> GetSection7Async(
+        SqlConnection connection,
+        string referenceNo,
+        long submissionId,
+        bool isAppeal)
+    {
+        const string columns = """
+            ID,
+            Objection_Ref_S7,
+            Declaration_Date,
+            Signature_Picture,
+            Signature_Name,
+            RandomPin,
+            Section51Pin
+            """;
+
+        var whereClause =
+            "LTRIM(RTRIM(ISNULL(Objection_Ref_S7, ''))) = @ReferenceNo";
+
+        var section = await connection.QueryFirstOrDefaultAsync<Obj_Section7Model>(
+            $"SELECT TOP (1) {columns} FROM dbo.Obj_Section7 WHERE {whereClause} ORDER BY ID DESC",
+            new { ReferenceNo = referenceNo, SubmissionId = submissionId });
+
+        if (section != null)
+            return section;
+
+        var idColumn = isAppeal ? "Appeal_Ref_S7" : "Ref";
+
+        return await connection.QueryFirstOrDefaultAsync<Obj_Section7Model>(
+            $"""
+            SELECT TOP (1) {columns}
+            FROM dbo.Obj_Section7
+            WHERE TRY_CONVERT(bigint, {idColumn}) = @SubmissionId
+            ORDER BY ID DESC
+            """,
+            new { SubmissionId = submissionId });
+    }
+
+    private static async Task<Obj_Files?> GetAcknowledgementFilesAsync(
+        SqlConnection connection,
+        string referenceNo,
+        long submissionId,
+        bool isAppeal)
+    {
+        const string columns = """
+            ID,
+            Objection_Ref_files,
+            Files1,
+            Files2,
+            Files3,
+            Files4,
+            Files5,
+            Files6,
+            Files7,
+            Files8,
+            Files9,
+            Files10,
+            Rep_letter,
+            TRY_CONVERT(float, Evidence_count) AS Evidence_count
+            """;
+
+        var files = await connection.QueryFirstOrDefaultAsync<Obj_Files>(
+            $"""
+            SELECT TOP (1) {columns}
+            FROM dbo.Obj_Files
+            WHERE LTRIM(RTRIM(ISNULL(Objection_Ref_files, ''))) = @ReferenceNo
+            ORDER BY ID DESC
+            """,
+            new { ReferenceNo = referenceNo });
+
+        if (files != null)
+            return files;
+
+        var idColumn = isAppeal ? "Appeal_Ref_files" : "Ref";
+
+        return await connection.QueryFirstOrDefaultAsync<Obj_Files>(
+            $"""
+            SELECT TOP (1) {columns}
+            FROM dbo.Obj_Files
+            WHERE TRY_CONVERT(bigint, {idColumn}) = @SubmissionId
+            ORDER BY ID DESC
+            """,
+            new { SubmissionId = submissionId });
+    }
+    private static string DetectRollSourceFromReference(string referenceNo)
+    {
+        var value = referenceNo
+            .Trim()
+            .ToUpperInvariant()
+            .Replace("_", "-")
+            .Replace(" ", string.Empty);
+
+        if (value.Contains("SUP5") || value.Contains("SUPP5") ||
+            value.Contains("SUP-5") || value.Contains("SUPP-5"))
+            return "Objection_Supp5";
+
+        if (value.Contains("SUP4") || value.Contains("SUPP4") ||
+            value.Contains("SUP-4") || value.Contains("SUPP-4"))
+            return "Objection_Supp4";
+
+        if (value.Contains("SUP3") || value.Contains("SUPP3") ||
+            value.Contains("SUP-3") || value.Contains("SUPP-3"))
+            return "Objection_Supp3";
+
+        if (value.Contains("SUP2") || value.Contains("SUPP2") ||
+            value.Contains("SUP-2") || value.Contains("SUPP-2"))
+            return "Objection_Supp2";
+
+        if (value.Contains("SUP1") || value.Contains("SUPP1") ||
+            value.Contains("SUP-1") || value.Contains("SUPP-1"))
+            return "Objection_Supp1";
+
+        return "Objection";
     }
 
     private static AcknowledgementData BuildAcknowledgementData(

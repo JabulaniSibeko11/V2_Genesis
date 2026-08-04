@@ -9,7 +9,14 @@
     string? preRef = ViewBag.PrefilledRef as string;
     bool hasRef = !string.IsNullOrWhiteSpace(preRef);
     bool isAppeal = preRef?.Trim().ToUpper().StartsWith("APP") == true;
-    string refLabel = isAppeal ? "Appeal Number" : "Objection Number";
+    bool isQuery = (bool)(ViewBag.IsQuery ?? false) ||
+        preRef?.Trim().StartsWith("QUE-", StringComparison.OrdinalIgnoreCase) == true;
+    string submissionName = isQuery
+        ? (preRef?.EndsWith("-R", StringComparison.OrdinalIgnoreCase) == true
+            ? "Section 78 Review"
+            : "Section 78 Query")
+        : isAppeal ? "Appeal" : "Objection";
+    string refLabel = $"{submissionName} Number";
 }
 
 @section Styles {
@@ -41,11 +48,11 @@
                 <p class="ev-card-sub">
                     @if (hasRef)
                     {
-                        @:Confirm your PIN to unlock evidence upload for this @(isAppeal ? "appeal" : "objection")
+                        @:Confirm your PIN to unlock evidence upload for this @submissionName.ToLowerInvariant()
                     }
                     else
                     {
-                        @:Enter your objection or appeal number and PIN to continue
+                        @:Enter your objection, appeal, Query or Review number and PIN to continue
                     }
                 </p>
             </div>
@@ -109,7 +116,7 @@
                     <p class="ev-hint">
                         Your PIN was included in the acknowledgement letter
                         you received when you submitted your
-                        @(isAppeal ? "appeal" : "objection").
+                        @(submissionName.ToLowerInvariant()).
                     </p>
                 </div>
 
@@ -156,7 +163,7 @@
                 <div class="ev-form-group">
                     <label class="ev-label">
                         <i class="fa-solid fa-hashtag"></i>
-                        Objection / Appeal Number
+                        Objection / Appeal / Query / Review Number
                     </label>
                     <div class="ev-input-group">
                         <i class="fa-solid fa-hashtag ev-input-icon"></i>
@@ -164,7 +171,7 @@
                                name="refNo"
                                id="refNoInput"
                                class="ev-input ev-input-with-icon"
-                               placeholder="e.g. OBJ-GV23-12345 or APP-GV23-1234"
+                               placeholder="e.g. OBJ-GV23-12345, APP-GV23-1234 or QUE-GV23-1234"
                                autocomplete="off"
                                autofocus
                                required />
@@ -189,7 +196,8 @@
                     </div>
                     <p class="ev-hint">
                         Your PIN was included in the acknowledgement letter
-                        received when you submitted your objection or appeal.
+                        received when you submitted your objection, appeal,
+                        Section 78 Query or Review.
                     </p>
                 </div>
 

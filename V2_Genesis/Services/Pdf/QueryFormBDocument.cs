@@ -15,7 +15,7 @@ namespace GV_Forms.Pdf
 
         protected override void BuildPropertyIntro(ColumnDescriptor col)
         {
-            var s1 = S("Section1");
+            dynamic main = Data.Main;
 
             RoundedBlock(col, c =>
             {
@@ -36,21 +36,19 @@ namespace GV_Forms.Pdf
                     x.Item().PaddingTop(6).Row(r =>
                     {
                         LineField(r, "ERF/UNIT NO.",
-                            V(s1,
-                                "Erf_Unit_No",
-                                "ErfNo",
+                            V(main,
                                 "ERF",
+                                "Erf",
                                 "Unit_Key",
-                                "UnitNo"),
+                                "Unit_key",
+                                "Property_id"),
                             1);
 
                         LineField(r, "SUBURB/SCHEME NAME",
-                            V(s1,
-                                "Suburb_Scheme_Name",
-                                "SuburbSchemeName",
-                                "Suburb",
+                            V(main,
                                 "Town",
-                                "SchemeName"),
+                                "Town_Name",
+                                "Property_Desc"),
                             2);
                     });
                 });
@@ -87,7 +85,7 @@ namespace GV_Forms.Pdf
                         .Border(1)
                         .MinHeight(520)
                         .Padding(6)
-                       .Text((string?)Convert.ToString(V(s, "Motivation_for_Supp_Request"))?? string.Empty)
+                       .Text((string?)Convert.ToString(V(s, "Motivation_for_Supp_Request")) ?? string.Empty)
                         .FontSize(8);
                 });
             });
@@ -291,7 +289,7 @@ namespace GV_Forms.Pdf
                         .Border(1)
                         .MinHeight(70)
                         .Padding(4)
-                         .Text((string?)Convert.ToString(V(s, "Bus_Other_features_Condition"))?? string.Empty)
+                         .Text((string?)Convert.ToString(V(s, "Bus_Other_features_Condition")) ?? string.Empty)
 
                         .FontSize(8);
                 });
@@ -539,7 +537,7 @@ namespace GV_Forms.Pdf
                         .Border(1)
                         .MinHeight(70)
                         .Padding(4)
-                        .Text((string)Convert.ToString(V(s, "Objection_Reasons"))?? string.Empty)
+                        .Text((string)Convert.ToString(V(s, "Objection_Reasons")) ?? string.Empty)
                         .FontSize(8);
                 });
             });

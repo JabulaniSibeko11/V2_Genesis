@@ -1,22 +1,27 @@
 ﻿/* ════════════════════════════════════════════
-   ATTRIBUTES ABOUT PAGE
-   City of Johannesburg — Gold / Black palette
+   ATTRIBUTES — ABOUT PAGE
+   City of Johannesburg Valuation Portal
+   Poppins · Gold #e6b000 · Dark Teal #1a2e35
 ════════════════════════════════════════════ */
 :root {
     --ab-gold: #e6b000;
-    --ab-black: #1a1a1a;
-    --ab-dark: #111111;
+    --ab-gold-bright: #f5c200;
+    --ab-dark: #1a2e35;
+    --ab-dark-deep: #0f2a30;
+    --ab-teal: #36626d;
+    --ab-turq: #89b7b2;
+    --ab-orange: #bb4722;
     --ab-white: #ffffff;
-    --ab-surface: #f7f7f7;
-    --ab-border: #e8e8e8;
+    --ab-surface: #f7f5f2;
+    --ab-border: #ede9e3;
     --ab-text: #2a2a2a;
     --ab-muted: #6b6b6b;
 }
 
 /* ── Compact header ───────────────────────── */
 .ab-compact-header {
-    background: var(--ab-black);
-    border-bottom: 2px solid var(--ab-gold);
+    background: linear-gradient(135deg, var(--ab-dark) 0%, var(--ab-dark-deep) 100%);
+    border-bottom: 3px solid var(--ab-gold);
     padding: 18px 24px;
 }
 
@@ -71,21 +76,22 @@
     align-items: center;
     gap: 8px;
     background: var(--ab-gold);
-    color: var(--ab-black);
+    color: var(--ab-dark);
     padding: 10px 20px;
     border-radius: 8px;
     font-family: 'Poppins', sans-serif;
     font-size: 13.5px;
     font-weight: 700;
     text-decoration: none;
-    transition: background .15s;
+    transition: background .15s, transform .15s;
     white-space: nowrap;
     flex-shrink: 0;
 }
 
     .ab-start-btn:hover {
-        background: #f5c200;
-        color: var(--ab-black);
+        background: var(--ab-gold-bright);
+        color: var(--ab-dark);
+        transform: translateY(-1px);
     }
 
 .ab-start-btn-lg {
@@ -100,7 +106,7 @@
     z-index: 200;
     background: var(--ab-white);
     border-bottom: 1.5px solid var(--ab-border);
-    box-shadow: 0 2px 12px rgba(0,0,0,.06);
+    box-shadow: 0 2px 12px rgba(26,46,53,.08);
 }
 
 .ab-nav-inner {
@@ -134,11 +140,11 @@
 }
 
     .ab-nav-link:hover {
-        color: var(--ab-black);
+        color: var(--ab-dark);
     }
 
     .ab-nav-link.active {
-        color: var(--ab-black);
+        color: var(--ab-dark);
         border-bottom-color: var(--ab-gold);
     }
 
@@ -154,7 +160,7 @@
     gap: 7px;
     padding: 8px 16px;
     border-radius: 7px;
-    background: var(--ab-black);
+    background: var(--ab-dark);
     color: var(--ab-gold);
     font-family: 'Poppins', sans-serif;
     font-size: 12.5px;
@@ -166,7 +172,7 @@
 }
 
     .ab-nav-cta:hover {
-        background: #333;
+        background: #243e48;
         color: var(--ab-gold);
     }
 
@@ -176,7 +182,7 @@
 }
 
 .ab-section-dark {
-    background: var(--ab-black);
+    background: linear-gradient(135deg, var(--ab-dark) 0%, var(--ab-dark-deep) 100%);
     padding: 56px 24px;
 }
 
@@ -308,7 +314,7 @@
     height: 36px;
     border-radius: 50%;
     background: var(--ab-gold);
-    color: var(--ab-black);
+    color: var(--ab-dark);
     font-size: 15px;
     font-weight: 800;
     display: flex;
@@ -382,12 +388,12 @@
     }
 
 .ab-tip-green {
-    border-color: #22c55e;
-    background: rgba(34,197,94,.08);
+    border-color: var(--ab-turq);
+    background: rgba(137,183,178,.12);
 }
 
     .ab-tip-green i {
-        color: #22c55e;
+        color: var(--ab-turq);
     }
 
 /* ── Forms grid ───────────────────────────── */
@@ -407,7 +413,7 @@
 }
 
     .ab-form-card:hover {
-        box-shadow: 0 8px 24px rgba(0,0,0,.1);
+        box-shadow: 0 8px 24px rgba(26,46,53,.14);
         transform: translateY(-3px);
     }
 
@@ -418,20 +424,24 @@
     color: var(--ab-white);
 }
 
+/* Residential — teal (matches the Query tile accent elsewhere) */
 .ab-badge-green {
-    background: #166534;
+    background: var(--ab-teal);
 }
 
+/* Sectional Title — turquoise */
 .ab-badge-blue {
-    background: #1e40af;
+    background: #4a7d8a;
 }
 
+/* Business & Commercial — copper/orange (matches the Rebates tile accent) */
 .ab-badge-orange {
-    background: #9a3412;
+    background: var(--ab-orange);
 }
 
+/* DRC Method — deep teal */
 .ab-badge-purple {
-    background: #5b21b6;
+    background: var(--ab-dark);
 }
 
 .ab-form-card-body {
@@ -503,67 +513,71 @@
     margin: 0;
 }
 
+/* Submission does not imply acceptance — gold/amber */
 .ab-notice-amber {
-    background: #fffbeb;
-    border-color: #f59e0b;
+    background: #fdf6d8;
+    border-color: var(--ab-gold);
 }
 
     .ab-notice-amber .ab-notice-icon,
     .ab-notice-amber h4 {
-        color: #b45309;
+        color: #8a6800;
     }
 
     .ab-notice-amber p {
-        color: #78350f;
+        color: #6b5200;
     }
 
+/* 48-hour edit window — teal */
 .ab-notice-blue {
-    background: #eff6ff;
-    border-color: #3b82f6;
+    background: #eef4f5;
+    border-color: var(--ab-teal);
 }
 
     .ab-notice-blue .ab-notice-icon,
     .ab-notice-blue h4 {
-        color: #1d4ed8;
+        color: var(--ab-teal);
     }
 
     .ab-notice-blue p {
-        color: #1e3a5f;
+        color: #294850;
     }
 
+/* Representatives / authorisation — deep teal */
 .ab-notice-purple {
-    background: #f5f3ff;
-    border-color: #8b5cf6;
+    background: #eef1f2;
+    border-color: var(--ab-dark);
 }
 
     .ab-notice-purple .ab-notice-icon,
     .ab-notice-purple h4 {
-        color: #6d28d9;
+        color: var(--ab-dark);
     }
 
     .ab-notice-purple p {
-        color: #3b1f6a;
+        color: #33474e;
     }
 
+/* Secure / auditable — turquoise */
 .ab-notice-green {
-    background: #f0fdf4;
-    border-color: #22c55e;
+    background: #eef6f5;
+    border-color: var(--ab-turq);
 }
 
     .ab-notice-green .ab-notice-icon,
     .ab-notice-green h4 {
-        color: #15803d;
+        color: #4a7d78;
     }
 
     .ab-notice-green p {
-        color: #14532d;
+        color: #37605c;
     }
 
 /* ── Get Started strip ────────────────────── */
 .ab-getstarted {
-    background: var(--ab-black);
+    background: linear-gradient(135deg, var(--ab-dark) 0%, var(--ab-dark-deep) 100%);
     padding: 48px 24px;
-    border-top: 2px solid var(--ab-gold);
+    border-top: 3px solid var(--ab-gold);
 }
 
 .ab-getstarted-inner {
@@ -617,7 +631,7 @@
         color: var(--ab-white);
     }
 
-/* ── Mobile ───────────────────────────────── */
+/* ── Responsive ────────────────────────────── */
 @media (max-width: 900px) {
     .ab-why-grid {
         grid-template-columns: 1fr 1fr;
@@ -634,6 +648,16 @@
     .ab-getstarted-inner {
         flex-direction: column;
         align-items: flex-start;
+    }
+}
+
+@media (max-width: 700px) {
+    .ab-section, .ab-section-dark {
+        padding: 40px 20px;
+    }
+
+    .ab-section-intro {
+        margin-bottom: 26px;
     }
 }
 
@@ -669,5 +693,45 @@
     .ab-ghost-btn {
         width: 100%;
         justify-content: center;
+    }
+}
+
+@media (max-width: 420px) {
+    .ab-section, .ab-section-dark {
+        padding: 32px 16px;
+    }
+
+    .ab-why-card, .ab-form-card-body, .ab-notice {
+        padding: 16px;
+    }
+
+    .ab-step-body {
+        padding-bottom: 26px;
+    }
+
+    .ab-compact-title {
+        font-size: 16px;
+    }
+}
+
+@media (min-width: 1440px) {
+    .ab-compact-inner,
+    .ab-nav-inner,
+    .ab-section-inner,
+    .ab-getstarted-inner {
+        max-width: 1280px;
+    }
+}
+
+@media (min-width: 1920px) {
+    .ab-compact-inner,
+    .ab-nav-inner,
+    .ab-section-inner,
+    .ab-getstarted-inner {
+        max-width: 1440px;
+    }
+
+    html {
+        font-size: 17px;
     }
 }

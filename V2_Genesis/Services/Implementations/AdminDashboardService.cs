@@ -733,7 +733,6 @@ public class AdminDashboardService : IAdminDashboardService
             ?? match.Objection_No
             ?? match.Appeal_No
             ?? match.Query_No
-            ?? match.Review_No
             ?? "";
 
         var status = match.CurrentStatus ?? "";
@@ -941,7 +940,7 @@ public class AdminDashboardService : IAdminDashboardService
                     : qRow.QueryNo,
 
                 Query_No = qRow.QueryNo,
-                Review_No = qRow.ReviewNo,
+              
 
                 CurrentStatus = qRow.QueryStatus,
 
@@ -1043,7 +1042,7 @@ public class AdminDashboardService : IAdminDashboardService
                 entity.HasKey(x => x.QueryId);
                 entity.Property(x => x.QueryId).HasColumnName("Query_ID");
                 entity.Property(x => x.QueryNo).HasColumnName("Query_No");
-                entity.Property(x => x.ReviewNo).HasColumnName("Review_No");
+          
                 entity.Property(x => x.PropertyDescription).HasColumnName("Property_Desc");
                 entity.Property(x => x.PropertyType).HasColumnName("Property_Type");
                 entity.Property(x => x.TownName).HasColumnName("Town_Name");

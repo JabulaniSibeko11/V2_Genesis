@@ -6,7 +6,7 @@
     bool isAttr = reqPath.StartsWith("/attributes");
     bool isAuth = User?.Identity?.IsAuthenticated ?? false;
 
-    var currentEmail = User.FindFirstValue(ClaimTypes.Name) ?? "";
+    var currentEmail = User?.FindFirstValue(ClaimTypes.Name) ?? "";
 
     bool isAdmin = !string.IsNullOrEmpty(currentEmail) && (
         currentEmail.Equals("AdministrationEnquiries@Joburg.org.za",
@@ -71,6 +71,7 @@
 
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/views/client-dashboard.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/global-action-loader.css" asp-append-version="true" />
 
     <style>
             .nav-brand {
@@ -135,10 +136,10 @@
             }
 
             /* Nav links must always start at the left corner, right
-                           after the logo — never centered. Kept here too (in
-                           addition to site.css) since this is the layout that
-                           every page shares, so the fix is visible right where
-                           the nav itself is defined. */
+                                       after the logo — never centered. Kept here too (in
+                                       addition to site.css) since this is the layout that
+                                       every page shares, so the fix is visible right where
+                                       the nav itself is defined. */
             .cl-nav-links {
                 justify-content: flex-start !important;
             }
@@ -148,6 +149,7 @@
 </head>
 
 <body>
+    @* <partial name="_GlobalActionLoader" /> *@
 
     <!-- ══ NAVBAR ══════════════════════════════════════════════════ -->
     <nav class="cl-navbar" id="clientNav">
@@ -815,6 +817,7 @@
         });
     </script>
 
+    <script src="~/js/global-action-loader.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

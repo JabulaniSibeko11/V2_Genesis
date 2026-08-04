@@ -1096,6 +1096,11 @@ public class NoticeService : INoticeService
     int fileCount, List<string> fileNames)
     {
         var roll = _noticeSettings.For(rollSource);
+        if (rollSource.Equals("Objection_Query", StringComparison.OrdinalIgnoreCase) ||
+            rollSource.Equals("Query", StringComparison.OrdinalIgnoreCase))
+        {
+            roll.RollTitle = "SECTION 78 QUERY / REVIEW";
+        }
         var fileName = $"Attachment_{SanitiseName(objectionNo)}.pdf";
         var header = Path.Combine(_env.WebRootPath, HEADER_IMAGE);
 
@@ -1151,7 +1156,7 @@ public class NoticeService : INoticeService
                         {
                             box.Item().Text(t =>
                             {
-                                t.Span("Objection/Appeal Number: ").Bold();
+                                t.Span("Submission Reference: ").Bold();
                                 t.Span(objectionNo);
                             });
                             box.Item().Text(t =>
@@ -1670,4 +1675,3 @@ public class NoticeService : INoticeService
         };
     }
 }
-
