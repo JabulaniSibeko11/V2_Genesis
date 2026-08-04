@@ -39,12 +39,24 @@ namespace V2_Genesis.Controllers
             var identityValue =
                 User.FindFirstValue(ClaimTypes.Email)
                 ?? User.FindFirstValue(ClaimTypes.Name)
+                ?? string.Empty;
+
+            var adminAppEmail =
+                User.FindFirstValue("AdminAppEmail")
                 ?? HttpContext.Session.GetString("AdminAppEmail")
                 ?? string.Empty;
 
             var isAdmin =
                 User.IsInRole("Admin")
+                || User.FindFirstValue("UMRole")?.Equals(
+                    "Admin",
+                    StringComparison.OrdinalIgnoreCase) == true
+                || !string.IsNullOrWhiteSpace(
+                    User.FindFirstValue("SAPNumber"))
                 || identityValue.Equals(
+                    "AdministrationEnquiries@Joburg.org.za",
+                    StringComparison.OrdinalIgnoreCase)
+                || adminAppEmail.Equals(
                     "AdministrationEnquiries@Joburg.org.za",
                     StringComparison.OrdinalIgnoreCase)
                 || AdminEmailRx.IsMatch(identityValue);
@@ -83,6 +95,8 @@ namespace V2_Genesis.Controllers
                             "Index",
                             "Dashboard",
                             new { openRoll = rollSource }) ?? "/Dashboard";
+
+            ViewData["IsAdminView"] = isAdmin;
 
             return View("ViewSubmission", result.Submission);
         }

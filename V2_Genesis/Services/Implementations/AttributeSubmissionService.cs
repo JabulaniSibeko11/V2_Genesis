@@ -101,6 +101,18 @@ namespace V2_Genesis.Services.Implementations
         {
 
             ValidateAndCleanSubmission(model);
+
+            var submissionSector = await ResolveSectorByTownshipAsync(
+                model.PropertyDetails.Township);
+
+            if (string.IsNullOrWhiteSpace(submissionSector))
+            {
+                throw new InvalidOperationException(
+                    $"No sector mapping is configured for township '{model.PropertyDetails.Township}'. " +
+                    "Please contact the administrator before submitting.");
+            }
+
+            model.PropertyDetails.Sector = submissionSector;
             await using var transaction = await _context.Database.BeginTransactionAsync();
 
             var now = DateTime.Now;
@@ -167,7 +179,7 @@ namespace V2_Genesis.Services.Implementations
                 Unit_key = model.PropertyDetails.UnitKey,
                 Property_id = model.PropertyDetails.PropertyId,
                 Valuation_Key = model.PropertyDetails.ValuationKey,
-                Sector = model.PropertyDetails.Sector,
+                Sector = submissionSector,
                 RollType = model.PropertyDetails.RollType,
                 RollDescription = model.PropertyDetails.RollDescription,
 
@@ -221,7 +233,10 @@ namespace V2_Genesis.Services.Implementations
                 WithdrawnDateTime = null,
                 WithdrawalReason = null,
 
-                RoutedSector = null,
+                // Resolve routing at submission so AIVS already knows the
+                // destination sector. Status remains EvidenceOpen until the
+                // declaration-based 48-hour evidence period expires.
+                RoutedSector = submissionSector,
                 RoutedToSectorDateTime = null,
                 EvidenceLockedDateTime = null,
                 RoutingError = null,
@@ -516,14 +531,25 @@ namespace V2_Genesis.Services.Implementations
         public async Task RouteExpiredEvidenceSubmissionsAsync(string performedBy = "System")
         {
             var now = DateTime.Now;
-            var cutoff = now.AddHours(-48);
+
+            // The 48-hour period is based on the signed declaration date.
+            var expiredDeclarationIds = await _context.AttrDeclarations
+                .Where(x =>
+                    x.AdditionalEvidenceAllowed == true &&
+                    x.AdditionalEvidenceDeadline <= now)
+                .Select(x => x.Attr_ID)
+                .Distinct()
+                .ToListAsync();
+
+            if (expiredDeclarationIds.Count == 0)
+                return;
 
             var expiredItems = await _context.AttrPropertyInfo
                 .Include(x => x.PropertyDetails)
                 .Where(x =>
                     x.IsActive == true &&
                     x.Attr_Status == "EvidenceOpen" &&
-                    x.SubmissionDateTime <= cutoff)
+                    expiredDeclarationIds.Contains(x.Attr_ID))
                 .ToListAsync();
 
             foreach (var item in expiredItems)
@@ -533,7 +559,9 @@ namespace V2_Genesis.Services.Implementations
 
                 item.EvidenceLockedDateTime = now;
 
-                var sector = await ResolveSectorByTownshipAsync(township);
+                var sector = !string.IsNullOrWhiteSpace(item.Sector)
+                    ? item.Sector.Trim()
+                    : await ResolveSectorByTownshipAsync(township);
 
                 if (string.IsNullOrWhiteSpace(sector))
                 {
@@ -556,6 +584,7 @@ namespace V2_Genesis.Services.Implementations
                     continue;
                 }
 
+                item.Sector = sector;
                 item.RoutedSector = sector;
                 item.RoutedToSectorDateTime = now;
                 item.Attr_Status = "SectorInbox";
@@ -573,6 +602,16 @@ namespace V2_Genesis.Services.Implementations
                     performedBy,
                     "System",
                     $"Evidence window locked after 48 hours. Township '{township}' routed to sector '{sector}'.");
+            }
+
+            var expiredDeclarations = await _context.AttrDeclarations
+                .Where(x => expiredDeclarationIds.Contains(x.Attr_ID))
+                .ToListAsync();
+
+            foreach (var declaration in expiredDeclarations)
+            {
+                declaration.AdditionalEvidenceAllowed = false;
+                declaration.PinIsActive = false;
             }
 
             await _context.SaveChangesAsync();
@@ -2411,7 +2450,9 @@ namespace V2_Genesis.Services.Implementations
         private static void CleanDeclaration(AttributeDeclarationVm d)
         {
             d.SignatureName = CleanText(d.SignatureName, 255);
-            d.SignaturePicture = CleanText(d.SignaturePicture, 1000);
+            d.SignaturePicture = string.IsNullOrWhiteSpace(d.SignaturePicture)
+                ? null
+                : d.SignaturePicture.Trim();
             d.DeclarationText = CleanText(d.DeclarationText, 2000);
         }
         private static bool IsBlank(string? value)

@@ -217,18 +217,19 @@
                                                         ? item.Query_No
                                                         : item.Query_No ?? item.Objection_No;
 
-                                                    var viewQueryFormUrl =
-                                                        "/admin/enquiry/form-view"
-                                                        + "?referenceNo=" + Uri.EscapeDataString(queryRefNo ?? "")
-                                                        + "&rollSource=Objection_Query"
-                                                        + "&propertyType=" + Uri.EscapeDataString(item.Property_Type ?? "")
-                                                        + "&appealStatus=False"
-                                                        + "&isQuery=true";
+                                                    var viewQueryFormUrl = Url.RouteUrl(
+                                                        "ViewSubmission",
+                                                        new
+                                                        {
+                                                            submissionType = "Query",
+                                                            referenceNumber = queryRefNo,
+                                                            rollSource = "Objection_Query",
+                                                            returnUrl = "/Dashboard?openRoll=" + Uri.EscapeDataString(Model.Roll.Source ?? "")
+                                                        }) ?? "#";
                                                 }
 
                                                 <a class="dropdown-item"
-                                                       href="@viewQueryFormUrl"
-                                                       target="_blank">
+                                                       href="@viewQueryFormUrl">
                                                     <i class="fa-solid fa-eye"></i> View Query Form
                                                 </a>
                                                 @* <a class="dropdown-item"
@@ -372,8 +373,12 @@
                                             <ul class="dropdown-menu cd-action-menu">
                                                 <li>
                                                     <a class="dropdown-item"
-                                                           href="/Home/FormData@(Model.Roll.ControllerName)?propertyID=@item.Property_Type&objectionNo=@item.Objection_No&AppealStatus=False">
-                                                        <i class="fa-solid fa-eye"></i> View Form
+                                                           asp-route="ViewSubmission"
+                                                           asp-route-submissionType="Review"
+                                                           asp-route-referenceNumber="@item.DisplayReference"
+                                                           asp-route-rollSource="Objection_Query"
+                                                           asp-route-returnUrl="/Dashboard?openRoll=@Model.Roll.Source">
+                                                        <i class="fa-solid fa-eye"></i> View Review Form
                                                     </a>
                                                 </li>
                                                 <li>
@@ -584,18 +589,19 @@ else
                                             <ul class="dropdown-menu cd-action-menu">
                                                 <li>
                                                     @{
-                                                        var viewFormUrl =
-                                                            "/admin/enquiry/form-view"
-                                                            + "?referenceNo=" + Uri.EscapeDataString(item.Objection_No ?? "")
-                                                            + "&rollSource=" + Uri.EscapeDataString(Model.Roll.Source ?? "")
-                                                            + "&propertyType=" + Uri.EscapeDataString(item.Property_Type ?? "")
-                                                            + "&appealStatus=False"
-                                                            + "&isQuery=false";
+                                                        var viewFormUrl = Url.RouteUrl(
+                                                            "ViewSubmission",
+                                                            new
+                                                            {
+                                                                submissionType = "Objection",
+                                                                referenceNumber = item.Objection_No,
+                                                                rollSource = Model.Roll.Source,
+                                                                returnUrl = "/Dashboard?openRoll=" + Uri.EscapeDataString(Model.Roll.Source ?? "")
+                                                            }) ?? "#";
                                                     }
 
                                                     <a class="dropdown-item"
-                                                           href="@viewFormUrl"
-                                                           target="_blank">
+                                                           href="@viewFormUrl">
                                                         <i class="fa-solid fa-eye"></i> View Form
                                                     </a>
                                                 </li>
@@ -797,18 +803,19 @@ else
                                                             ? item.Appeal_No
                                                             : item.Objection_No;
 
-                                                        var viewAppealFormUrl =
-                                                            "/admin/enquiry/form-view"
-                                                            + "?referenceNo=" + Uri.EscapeDataString(refNo ?? "")
-                                                            + "&rollSource=" + Uri.EscapeDataString(Model.Roll.Source ?? "")
-                                                            + "&propertyType=" + Uri.EscapeDataString(item.Property_Type ?? "")
-                                                            + "&appealStatus=True"
-                                                            + "&isQuery=false";
+                                                        var viewAppealFormUrl = Url.RouteUrl(
+                                                            "ViewSubmission",
+                                                            new
+                                                            {
+                                                                submissionType = "Appeal",
+                                                                referenceNumber = refNo,
+                                                                rollSource = Model.Roll.Source,
+                                                                returnUrl = "/Dashboard?openRoll=" + Uri.EscapeDataString(Model.Roll.Source ?? "")
+                                                            }) ?? "#";
                                                     }
 
                                                     <a class="dropdown-item"
-                                                           href="@viewAppealFormUrl"
-                                                           target="_blank">
+                                                           href="@viewAppealFormUrl">
                                                         <i class="fa-solid fa-eye"></i> View Appeal Form
                                                     </a>
                                                 </li>

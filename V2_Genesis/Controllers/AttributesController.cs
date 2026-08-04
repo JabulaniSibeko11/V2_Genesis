@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Concurrent;
 using System.Security.Claims;
 using V2_Genesis.Data;
 using V2_Genesis.Models;
@@ -14,6 +15,9 @@ namespace V2_Genesis.Controllers;
 [Authorize(Roles = "Client")]
 public class AttributesController : Controller
 {
+    private static readonly ConcurrentDictionary<string, byte>
+        ActiveAttributeSubmissions = new(StringComparer.OrdinalIgnoreCase);
+
     private readonly IAttributesSearchService _attrSearch;
     private readonly IPropertySearchService _propSearch;
     private readonly ApplicationDbContext _db;
@@ -905,6 +909,23 @@ public class AttributesController : Controller
         if (string.IsNullOrWhiteSpace(userId))
             return Challenge();
 
+        var submissionKey = string.Join("|",
+            userId,
+            model.FormType?.Trim(),
+            model.PropertyDetails?.ValuationKey?.Trim(),
+            model.PropertyDetails?.UnitKey?.Trim(),
+            model.PropertyDetails?.PropertyId?.Trim(),
+            model.PropertyDetails?.PremiseId?.Trim());
+
+        if (!ActiveAttributeSubmissions.TryAdd(submissionKey, 0))
+        {
+            ModelState.AddModelError(
+                string.Empty,
+                "This attribute submission is already being processed. Please wait.");
+
+            return View(model);
+        }
+
         var userName =
             User.FindFirstValue(ClaimTypes.Name)
             ?? User.Identity?.Name
@@ -977,6 +998,10 @@ public class AttributesController : Controller
                 "An unexpected error occurred while submitting the attribute request.");
 
             return View(model);
+        }
+        finally
+        {
+            ActiveAttributeSubmissions.TryRemove(submissionKey, out _);
         }
     }
 

@@ -6,7 +6,11 @@ namespace GV_Forms.Pdf
 {
     public sealed class QueryFarmDocument : QueryPdfBase
     {
-        public QueryFarmDocument(InquiryAggregate data, Wording wording) : base(data, wording) { }
+        public QueryFarmDocument(
+            InquiryAggregate data,
+            Wording wording,
+            IWebHostEnvironment environment)
+            : base(data, wording, environment) { }
 
         protected override string GetHeadingLeft()
             => "AGRICULTURAL HOLDINGS OR FARMS";

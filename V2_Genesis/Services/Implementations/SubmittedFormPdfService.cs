@@ -384,7 +384,8 @@ public class SubmittedFormPdfService : ISubmittedFormPdfService
         byte[] pdfBytes = GenerateSection78PdfBytes(
             aggregate,
             wording,
-            formType);
+            formType,
+            _env);
 
         string fileName = BuildSubmittedFormFileName(
             referenceNumber,
@@ -595,7 +596,8 @@ public class SubmittedFormPdfService : ISubmittedFormPdfService
             GenerateSection78PdfBytes(
                 aggregate,
                 wording,
-                formType);
+                formType,
+                _env);
 
         var propertyDesc =
             FirstNotEmpty(
@@ -809,14 +811,15 @@ public class SubmittedFormPdfService : ISubmittedFormPdfService
     private static byte[] GenerateSection78PdfBytes(
         InquiryAggregate aggregate,
         Wording wording,
-        string formType)
+        string formType,
+        IWebHostEnvironment environment)
     {
         QuestPDF.Settings.License = LicenseType.Community;
 
         return formType switch
         {
-            "Agric" => new QueryFarmDocument(aggregate, wording).GeneratePdf(),
-            _ => new QueryFormBDocument(aggregate, wording).GeneratePdf()
+            "Agric" => new QueryFarmDocument(aggregate, wording, environment).GeneratePdf(),
+            _ => new QueryFormBDocument(aggregate, wording, environment).GeneratePdf()
         };
     }
 

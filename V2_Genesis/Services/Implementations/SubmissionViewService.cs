@@ -105,20 +105,23 @@ namespace V2_Genesis.Services.Implementations
                         await LoadAttributeAsync(
                             cleanReference,
                             userId,
-                            cancellationToken),
+                            cancellationToken,
+                            allowAdministrativeAccess),
 
                     "Rebate" =>
                         await LoadRebateAsync(
                             cleanReference,
                             userId,
-                            cancellationToken),
+                            cancellationToken,
+                            allowAdministrativeAccess),
 
                     "Query" or "Review" =>
                         await LoadSection78Async(
                             type,
                             cleanReference,
                             userId,
-                            cancellationToken),
+                            cancellationToken,
+                            allowAdministrativeAccess),
 
                     "Objection" or "Appeal" =>
                           await LoadObjectionOrAppealAsync(
@@ -153,7 +156,8 @@ namespace V2_Genesis.Services.Implementations
         private async Task<SubmissionViewResult> LoadRebateAsync(
             string referenceNumber,
             string userId,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken,
+            bool allowAdministrativeAccess)
         {
             referenceNumber = referenceNumber.Trim();
             userId = userId.Trim();
@@ -163,8 +167,9 @@ namespace V2_Genesis.Services.Implementations
                 .FirstOrDefaultAsync(
                     x => x.Rebate_No != null
                          && x.Rebate_No.Trim() == referenceNumber
-                         && x.UserID != null
-                         && x.UserID.Trim() == userId,
+                         && (allowAdministrativeAccess
+                             || (x.UserID != null
+                                 && x.UserID.Trim() == userId)),
                     cancellationToken);
 
             if (info is null)
@@ -301,7 +306,8 @@ namespace V2_Genesis.Services.Implementations
         private async Task<SubmissionViewResult> LoadAttributeAsync(
             string referenceNumber,
             string userId,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken,
+            bool allowAdministrativeAccess)
         {
             referenceNumber = referenceNumber.Trim();
             userId = userId.Trim();
@@ -312,8 +318,9 @@ namespace V2_Genesis.Services.Implementations
                     x =>
                         x.Attr_No != null
                         && x.Attr_No.Trim() == referenceNumber
-                        && x.SubmittedByUserId != null
-                        && x.SubmittedByUserId.Trim() == userId
+                        && (allowAdministrativeAccess
+                            || (x.SubmittedByUserId != null
+                                && x.SubmittedByUserId.Trim() == userId))
                         && x.IsActive,
                     cancellationToken);
 
@@ -324,10 +331,14 @@ namespace V2_Genesis.Services.Implementations
                     "or does not belong to your account.");
             }
 
+            var attributeOwnerUserId = allowAdministrativeAccess
+                ? info.SubmittedByUserId?.Trim() ?? userId
+                : userId;
+
             var attribute =
                 await _attributeSubmissionService.GetSubmittedViewAsync(
                     referenceNumber,
-                    userId,
+                    attributeOwnerUserId,
                     cancellationToken);
 
             if (attribute is null)
@@ -657,7 +668,8 @@ namespace V2_Genesis.Services.Implementations
             string submissionType,
             string referenceNumber,
             string userId,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken,
+            bool allowAdministrativeAccess)
         {
             var connectionString =
                 _config.GetConnectionString("QueryConnection")
@@ -692,7 +704,8 @@ namespace V2_Genesis.Services.Implementations
                     $"{submissionType} {referenceNumber} was not found.");
             }
 
-            if (!string.Equals(
+            if (!allowAdministrativeAccess
+                && !string.Equals(
                     main.UserID?.Trim(),
                     userId.Trim(),
                     StringComparison.OrdinalIgnoreCase))

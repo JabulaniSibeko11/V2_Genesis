@@ -13,11 +13,16 @@ namespace GV_Forms.Pdf
     {
         protected readonly InquiryAggregate Data;
         protected readonly Wording Wording;
+        protected readonly IWebHostEnvironment Environment;
 
-        protected QueryPdfBase(InquiryAggregate data, Wording wording)
+        protected QueryPdfBase(
+            InquiryAggregate data,
+            Wording wording,
+            IWebHostEnvironment environment)
         {
             Data = data;
             Wording = wording;
+            Environment = environment;
         }
 
         public DocumentMetadata GetMetadata() => DocumentMetadata.Default;
@@ -121,6 +126,55 @@ namespace GV_Forms.Pdf
         protected void BuildHeader(ColumnDescriptor col)
         {
             var qno = QueryNumber();
+
+            var banner1Path = Path.Combine(
+                Environment.WebRootPath,
+                "Images",
+                "banner1.webp");
+            var banner2Path = Path.Combine(
+                Environment.WebRootPath,
+                "Images",
+                "Banner2.png");
+
+            if (File.Exists(banner1Path) && File.Exists(banner2Path))
+            {
+                var banner1Bytes = File.ReadAllBytes(banner1Path);
+                var banner2Bytes = File.ReadAllBytes(banner2Path);
+
+                col.Item().PaddingBottom(6).Row(row =>
+                {
+                    row.RelativeItem(4).Row(banners =>
+                    {
+                        banners.ConstantItem(95)
+                            .Height(70)
+                            .AlignMiddle()
+                            .Image(banner1Bytes, ImageScaling.FitArea);
+                        banners.ConstantItem(12);
+                        banners.RelativeItem()
+                            .Height(70)
+                            .AlignMiddle()
+                            .Image(banner2Bytes, ImageScaling.FitArea);
+                    });
+
+                    row.RelativeItem(6)
+                        .PaddingLeft(18)
+                        .PaddingTop(4)
+                        .Column(contact =>
+                        {
+                            contact.Item().Text("City of Johannesburg")
+                                .Bold().FontSize(12);
+                            contact.Item().Text("Group Finance: Valuation Services")
+                                .FontSize(9);
+                            contact.Item().PaddingTop(4).LineHorizontal(1);
+                            contact.Item().PaddingTop(6)
+                                .Text("Phone 011 407-6622 or 011 407-6597")
+                                .FontSize(8);
+                            contact.Item().Text("valuationenquiries@joburg.org.za")
+                                .FontSize(8)
+                                .FontColor(Colors.Blue.Darken2);
+                        });
+                });
+            }
 
             col.Item().Row(row =>
             {
@@ -272,7 +326,7 @@ namespace GV_Forms.Pdf
 
         protected virtual void BuildReasonChecklist(ColumnDescriptor col)
         {
-            var s3 = S("Section3");
+            var reasons = S("Section2Query");
 
             string[] labels =
             {
@@ -304,14 +358,17 @@ namespace GV_Forms.Pdf
 
                         for (int i = 0; i < labels.Length; i++)
                         {
-                            var idx = i + 1;
-                            var tick = V(s3, $"Reason{idx}", $"R{idx}", $"Option{idx}", $"Item{idx}")?.Trim();
+                            var optionName = $"Option_{(char)('A' + i)}";
+                            string tick = Convert.ToString(
+                                V(reasons, optionName))?.Trim() ?? string.Empty;
 
                             t.Cell().Border(1).Padding(4).Text(((char)('a' + i)).ToString());
                             t.Cell().Border(1).Padding(4).Text(labels[i]);
                             t.Cell().Border(1).Padding(4).AlignCenter().Text(
                                 string.Equals(tick, "true", StringComparison.OrdinalIgnoreCase) ||
                                 string.Equals(tick, "yes", StringComparison.OrdinalIgnoreCase) ||
+                                string.Equals(tick, "on", StringComparison.OrdinalIgnoreCase) ||
+                                string.Equals(tick, "1", StringComparison.OrdinalIgnoreCase) ||
                                 string.Equals(tick, "x", StringComparison.OrdinalIgnoreCase)
                                     ? "X"
                                     : "");
@@ -344,6 +401,44 @@ namespace GV_Forms.Pdf
         {
             var sDecl = S(sectionNumber);
 
+            string declarationDateText = Convert.ToString(
+                V(sDecl, "Declaration_Date", "DeclarationDate")) ?? string.Empty;
+            var year = string.Empty;
+            var month = string.Empty;
+            var day = string.Empty;
+
+            if (DateTime.TryParse(
+                declarationDateText,
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.AllowWhiteSpaces,
+                out DateTime declarationDate)
+                || DateTime.TryParse(
+                    declarationDateText,
+                    CultureInfo.CurrentCulture,
+                    DateTimeStyles.AllowWhiteSpaces,
+                    out declarationDate))
+            {
+                year = declarationDate.Year.ToString(CultureInfo.InvariantCulture);
+                month = declarationDate.Month.ToString("00", CultureInfo.InvariantCulture);
+                day = declarationDate.Day.ToString("00", CultureInfo.InvariantCulture);
+            }
+
+            string signatureValue = Convert.ToString(
+                V(
+                    sDecl,
+                    "Signature_Picture",
+                    "SignaturePicture",
+                    "Signature")) ?? string.Empty;
+
+            string declarerName = Convert.ToString(
+                V(
+                    sDecl,
+                    "Signature_Name",
+                    "SignatureName",
+                    "Declarer",
+                    "OwnerName",
+                    "Name")) ?? string.Empty;
+
             RoundedBlock(col, c =>
             {
                 c.Column(x =>
@@ -356,14 +451,70 @@ namespace GV_Forms.Pdf
 
                     x.Item().Row(r =>
                     {
-                        LineField(r, "I / WE", V(sDecl, "Declarer", "OwnerName", "Name"), 1);
-                        LineField(r, "YEAR", V(sDecl, "Year"), 1);
-                        LineField(r, "MONTH", V(sDecl, "Month"), 1);
-                        LineField(r, "DAY", V(sDecl, "Day"), 1);
-                        LineField(r, "SIGNATURE", V(sDecl, "Signature"), 2);
+                        LineField(
+                            r,
+                            "I / WE",
+                            declarerName,
+                            2);
+                        LineField(r, "YEAR", year, 1);
+                        LineField(r, "MONTH", month, 1);
+                        LineField(r, "DAY", day, 1);
+                    });
+
+                    x.Item().PaddingTop(5).Row(r =>
+                    {
+                        r.ConstantItem(70)
+                            .Text("SIGNATURE")
+                            .SemiBold()
+                            .FontSize(8);
+
+                        if (TryGetImageBytes(
+                            signatureValue,
+                            out byte[] signatureBytes))
+                        {
+                            r.RelativeItem()
+                                .Height(45)
+                                .BorderBottom(1)
+                                .AlignLeft()
+                                .Image(signatureBytes, ImageScaling.FitArea);
+                        }
+                        else
+                        {
+                            r.RelativeItem()
+                                .BorderBottom(1)
+                                .PaddingBottom(2)
+                                .Text((string)signatureValue);
+                        }
                     });
                 });
             });
+        }
+
+        private static bool TryGetImageBytes(string? value, out byte[] bytes)
+        {
+            bytes = Array.Empty<byte>();
+
+            if (string.IsNullOrWhiteSpace(value))
+                return false;
+
+            var raw = value.Trim();
+            var commaIndex = raw.IndexOf(',');
+
+            if (raw.StartsWith("data:image", StringComparison.OrdinalIgnoreCase) &&
+                commaIndex >= 0)
+            {
+                raw = raw[(commaIndex + 1)..];
+            }
+
+            try
+            {
+                bytes = Convert.FromBase64String(raw);
+                return bytes.Length > 0;
+            }
+            catch (FormatException)
+            {
+                return false;
+            }
         }
 
         protected virtual void BuildAdminReceipt(ColumnDescriptor col)

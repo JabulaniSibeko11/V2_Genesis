@@ -5,8 +5,11 @@ namespace GV_Forms.Pdf
 {
     public sealed class QueryFormBDocument : QueryPdfBase
     {
-        public QueryFormBDocument(V2_Genesis.Models.InquiryAggregate data, Wording wording)
-            : base(data, wording)
+        public QueryFormBDocument(
+            V2_Genesis.Models.InquiryAggregate data,
+            Wording wording,
+            IWebHostEnvironment environment)
+            : base(data, wording, environment)
         {
         }
 

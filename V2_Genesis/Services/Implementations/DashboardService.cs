@@ -3,7 +3,6 @@ using GenesisV2.Services.PropertySearch;
 using Microsoft.EntityFrameworkCore;
 using System.Data;
 using System.Data.SqlClient;
-using System.Globalization;
 using V2_Genesis.Data;
 using V2_Genesis.Models.Results;
 using V2_Genesis.Models.Results.Atrributes;
@@ -184,20 +183,6 @@ public class DashboardService : IDashboardService
                 }
             }
 
-            try
-            {
-                await PopulateEvidenceWindowsAsync(
-                    rollDb,
-                    objectedProperties);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(
-                    ex,
-                    "Could not resolve 48-hour evidence windows for roll {RollSource}",
-                    rollSource);
-            }
-
             rollData.ObjectedProperties =
                 objectedProperties;
         }
@@ -229,8 +214,9 @@ public class DashboardService : IDashboardService
                     commandTimeout: 60))
                 .ToList();
 
-            // Evidence closes 48 hours after the Section 7 declaration date.
-            // Do not use Appeal_Start_DateTime for this calculation.
+            // DashboardAppeal does not currently return the Appeal evidence
+            // submission date. Hydrate the date and 48-hour window directly
+            // from Obj_Property_Info_Appeal for the Appeals returned by the SP.
             var appealNumbers = appeals
                 .Select(x => x.Appeal_No?.Trim())
                 .Where(x => !string.IsNullOrWhiteSpace(x))
@@ -239,27 +225,45 @@ public class DashboardService : IDashboardService
 
             if (appealNumbers.Length > 0)
             {
-                var declarationRows = await rollDb.QueryDeclarations
+                var appealRows = await rollDb.Appeals
                     .AsNoTracking()
                     .Where(x => appealNumbers.Contains(
-                        (x.ReferenceNumber ?? string.Empty).Trim()))
+                        (x.AppealNo ?? string.Empty).Trim()))
                     .Select(x => new
                     {
-                        x.ReferenceNumber,
-                        x.DeclarationDate
+                        x.AppealNo,
+                        x.AppealStartDateTime,
+                        x.AppealStatus
                     })
                     .ToListAsync();
 
                 var now = DateTime.Now;
-                var declarationByAppeal = declarationRows
-                    .Where(x => !string.IsNullOrWhiteSpace(x.ReferenceNumber))
+                var windowRows = appealRows.Select(x =>
+                {
+                    var expiresAt = x.AppealStartDateTime?.AddHours(48);
+                    var status = x.AppealStatus?.Trim();
+
+                    return new AppealEvidenceWindowRow
+                    {
+                        Appeal_No = x.AppealNo?.Trim(),
+                        Appeal_Start_DateTime = x.AppealStartDateTime,
+                        Evidence_Expires_At = expiresAt,
+                        Evidence_Window_Open =
+                            expiresAt.HasValue &&
+                            now <= expiresAt.Value &&
+                            (string.Equals(status, "App-Lodging", StringComparison.OrdinalIgnoreCase) ||
+                             string.Equals(status, "App-Unallocated", StringComparison.OrdinalIgnoreCase))
+                    };
+                });
+
+                var windowByAppeal = windowRows
+                    .Where(x => !string.IsNullOrWhiteSpace(x.Appeal_No))
                     .GroupBy(
-                        x => x.ReferenceNumber!.Trim(),
+                        x => x.Appeal_No!.Trim(),
                         StringComparer.OrdinalIgnoreCase)
                     .ToDictionary(
                         group => group.Key,
-                        group => ParseDeclarationDate(
-                            group.First().DeclarationDate),
+                        group => group.First(),
                         StringComparer.OrdinalIgnoreCase);
 
                 foreach (var appeal in appeals)
@@ -267,19 +271,21 @@ public class DashboardService : IDashboardService
                     var appealNo = appeal.Appeal_No?.Trim();
 
                     if (string.IsNullOrWhiteSpace(appealNo)
-                        || !declarationByAppeal.TryGetValue(
+                        || !windowByAppeal.TryGetValue(
                             appealNo,
-                            out var declarationDate))
+                            out var window))
                     {
                         continue;
                     }
 
-                    appeal.Submission_Date = declarationDate;
-                    appeal.Evidence_Expires_At = declarationDate?.AddHours(48);
+                    appeal.Appeal_Start_DateTime =
+                        window.Appeal_Start_DateTime;
+
+                    appeal.Evidence_Expires_At =
+                        window.Evidence_Expires_At;
+
                     appeal.Evidence_Window_Open =
-                        appeal.Evidence_Expires_At.HasValue &&
-                        now <= appeal.Evidence_Expires_At.Value &&
-                        StatusAllowsEvidence(appeal.Appeal_Status?.Trim());
+                        window.Evidence_Window_Open;
                 }
             }
 
@@ -402,118 +408,6 @@ public class DashboardService : IDashboardService
         public string? AppealNo { get; set; }
         public string? ObjectionNo { get; set; }
         public string? DecisionUserId { get; set; }
-    }
-
-    private static async Task PopulateEvidenceWindowsAsync(
-        DashboardReadDbContext db,
-        List<ObjectedPropertyResult> properties)
-    {
-        var references = properties
-            .Select(GetEvidenceReference)
-            .Where(x => !string.IsNullOrWhiteSpace(x))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToArray();
-
-        if (references.Length == 0)
-            return;
-
-        var declarations = await db.QueryDeclarations
-            .AsNoTracking()
-            .Where(x => references.Contains(
-                (x.ReferenceNumber ?? string.Empty).Trim()))
-            .Select(x => new
-            {
-                x.ReferenceNumber,
-                x.DeclarationDate
-            })
-            .ToListAsync();
-
-        var declarationByReference = declarations
-            .Where(x => !string.IsNullOrWhiteSpace(x.ReferenceNumber))
-            .GroupBy(x => x.ReferenceNumber!.Trim(), StringComparer.OrdinalIgnoreCase)
-            .ToDictionary(
-                group => group.Key,
-                group => ParseDeclarationDate(
-                    group.First().DeclarationDate),
-                StringComparer.OrdinalIgnoreCase);
-
-        var now = DateTime.Now;
-
-        foreach (var property in properties)
-        {
-            var reference = GetEvidenceReference(property);
-            if (string.IsNullOrWhiteSpace(reference) ||
-                !declarationByReference.TryGetValue(reference, out var declarationDate))
-                continue;
-
-            var expiresAt = declarationDate?.AddHours(48);
-            var status = property.objection_Status?.Trim();
-
-            property.Submission_Date = declarationDate;
-            property.Evidence_Expires_At = expiresAt;
-            property.Evidence_Window_Open =
-                expiresAt.HasValue &&
-                now <= expiresAt.Value &&
-                StatusAllowsEvidence(status);
-        }
-    }
-
-    private static string? GetEvidenceReference(ObjectedPropertyResult property)
-    {
-        return !string.IsNullOrWhiteSpace(property.Appeal_No)
-            ? property.Appeal_No.Trim()
-            : !string.IsNullOrWhiteSpace(property.Query_No)
-                ? property.Query_No.Trim()
-                : property.Objection_No?.Trim();
-    }
-
-    private static bool StatusAllowsEvidence(string? status)
-    {
-        return status is not null &&
-            (status.Equals("Obj-Lodging", StringComparison.OrdinalIgnoreCase) ||
-             status.Equals("Obj-Unallocated", StringComparison.OrdinalIgnoreCase) ||
-             status.Equals("App-Lodging", StringComparison.OrdinalIgnoreCase) ||
-             status.Equals("App-Unallocated", StringComparison.OrdinalIgnoreCase) ||
-             status.Equals("Que-Lodging", StringComparison.OrdinalIgnoreCase) ||
-             status.Equals("Query-Lodging", StringComparison.OrdinalIgnoreCase) ||
-             status.Equals("Query-Unallocated", StringComparison.OrdinalIgnoreCase) ||
-             status.Equals("Review-Lodging", StringComparison.OrdinalIgnoreCase));
-    }
-
-    private static DateTime? ParseDeclarationDate(string? declarationDate)
-    {
-        if (string.IsNullOrWhiteSpace(declarationDate))
-            return null;
-
-        var formats = new[]
-        {
-            "yyyy-MM-dd HH:mm:ss.fff",
-            "yyyy-MM-dd HH:mm:ss",
-            "yyyy-MM-ddTHH:mm:ss.fff",
-            "yyyy-MM-ddTHH:mm:ss",
-            "dd MMMM yyyy HH:mm",
-            "dd MMM yyyy HH:mm",
-            "dd/MM/yyyy HH:mm",
-            "yyyy/MM/dd HH:mm"
-        };
-
-        if (DateTime.TryParseExact(
-                declarationDate.Trim(),
-                formats,
-                CultureInfo.InvariantCulture,
-                DateTimeStyles.AllowWhiteSpaces,
-                out var exact))
-        {
-            return exact;
-        }
-
-        return DateTime.TryParse(
-                declarationDate,
-                CultureInfo.GetCultureInfo("en-ZA"),
-                DateTimeStyles.AllowWhiteSpaces,
-                out var parsed)
-            ? parsed
-            : null;
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -656,16 +550,30 @@ public class DashboardService : IDashboardService
                 .ToListAsync();
 
             // Load all active submissions once to avoid one COUNT query per row.
-            var submittedUnitKeys = (await _attrDb.AttrPropertyInfo
+            var submittedAttributes = await _attrDb.AttrPropertyInfo
                     .AsNoTracking()
                     .Where(x =>
                         x.SubmittedByUserId == userId &&
                         x.IsActive)
-                    .Select(x => x.Unit_key)
-                    .ToListAsync())
-                .Where(x => !string.IsNullOrWhiteSpace(x))
-                .Select(x => x!.Trim())
-                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+                    .OrderByDescending(x => x.Attr_ID)
+                    .Select(x => new
+                    {
+                        x.Unit_key,
+                        x.Attr_No
+                    })
+                    .ToListAsync();
+
+            var submissionByUnitKey = submittedAttributes
+                .Where(x =>
+                    !string.IsNullOrWhiteSpace(x.Unit_key) &&
+                    !string.IsNullOrWhiteSpace(x.Attr_No))
+                .GroupBy(
+                    x => x.Unit_key!.Trim(),
+                    StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(
+                    group => group.Key,
+                    group => group.First().Attr_No!.Trim(),
+                    StringComparer.OrdinalIgnoreCase);
 
             foreach (var linked in linkedRows)
             {
@@ -685,7 +593,10 @@ public class DashboardService : IDashboardService
                         PropertyFrom = linked.PropertyFrom,
                         PropertyDesc = linked.IDProperty,
                         FormType = "Residential",
-                        HasSubmission = submittedUnitKeys.Contains(linked.IDProperty.Trim())
+                        HasSubmission = submissionByUnitKey.TryGetValue(
+                            linked.IDProperty.Trim(),
+                            out var submissionR),
+                        SubmissionRef = submissionR
                     });
 
                     continue;
@@ -710,7 +621,10 @@ public class DashboardService : IDashboardService
                     SchemeName = schemeName,
 
                     FormType = ResolveAttributeFormType(catDesc, schemeName, unitNoText),
-                    HasSubmission = submittedUnitKeys.Contains(linked.IDProperty.Trim())
+                    HasSubmission = submissionByUnitKey.TryGetValue(
+                        linked.IDProperty.Trim(),
+                        out var submissionRef),
+                    SubmissionRef = submissionRef
                 };
 
                 var erfText = GetValue(detail, "Erf");
@@ -914,9 +828,6 @@ public class DashboardService : IDashboardService
         public DbSet<DashboardAppealDecisionEntity> AppealDecisions =>
             Set<DashboardAppealDecisionEntity>();
 
-        public DbSet<DashboardQueryDeclarationEntity> QueryDeclarations =>
-            Set<DashboardQueryDeclarationEntity>();
-
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             optionsBuilder.UseSqlServer(
@@ -945,15 +856,6 @@ public class DashboardService : IDashboardService
                 entity.Property(x => x.ObjectionNo).HasColumnName("Objection_No");
                 entity.Property(x => x.DecisionUserId).HasColumnName("A_UserID");
             });
-
-            modelBuilder.Entity<DashboardQueryDeclarationEntity>(entity =>
-            {
-                entity.HasKey(x => x.Id);
-                entity.ToTable("Obj_Section7", "dbo");
-                entity.Property(x => x.Id).HasColumnName("ID");
-                entity.Property(x => x.ReferenceNumber).HasColumnName("Objection_Ref_S7");
-                entity.Property(x => x.DeclarationDate).HasColumnName("Declaration_Date");
-            });
         }
     }
 
@@ -972,11 +874,11 @@ public class DashboardService : IDashboardService
         public string? DecisionUserId { get; set; }
     }
 
-    private sealed class DashboardQueryDeclarationEntity
+    private sealed class AppealEvidenceWindowRow
     {
-        public long Id { get; set; }
-        public string? ReferenceNumber { get; set; }
-        public string? DeclarationDate { get; set; }
+        public string? Appeal_No { get; set; }
+        public DateTime? Appeal_Start_DateTime { get; set; }
+        public DateTime? Evidence_Expires_At { get; set; }
+        public bool Evidence_Window_Open { get; set; }
     }
-
 }
