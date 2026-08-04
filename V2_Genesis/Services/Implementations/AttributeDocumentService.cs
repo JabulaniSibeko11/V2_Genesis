@@ -1113,41 +1113,62 @@ namespace V2_Genesis.Services.Attributes
                 table.Cell().Element(CellLabel).Text("Declaration Accepted");
                 table.Cell().Element(CellValue).Text(model.Declaration?.DeclarationAccepted == true ? "Yes" : "No");
 
-                table.Cell().Element(CellLabel).Text("Signature Name");
-                table.Cell().Element(CellValue).Text(model.Declaration?.SignatureName ?? "");
-
                 table.Cell().Element(CellLabel).Text("Submitted Date");
                 table.Cell().Element(CellValue).Text(DateTime.Now.ToString("dd MMMM yyyy"));
             });
+        }
 
-            if (!string.IsNullOrWhiteSpace(model.Declaration?.SignaturePicture))
-            {
-                try
+        private static void AddEvidenceAccessDetails(
+            ColumnDescriptor col,
+            AttributeSubmissionViewModel model,
+            AttrPropertyInfo propertyInfo)
+        {
+            var reference = propertyInfo.Attr_No ?? model.AttrNo ?? "";
+            var pin = model.GeneratedEvidencePin;
+            var deadline = model.GeneratedEvidenceDeadline;
+
+            col.Item()
+                .PaddingTop(8)
+                .Background("#EAF7F5")
+                .Border(1)
+                .BorderColor("#006B70")
+                .Padding(10)
+                .Column(box =>
                 {
-                    var base64 = model.Declaration.SignaturePicture;
+                    box.Item()
+                        .Text("Additional Evidence Access")
+                        .Bold()
+                        .FontSize(11)
+                        .FontColor("#006B70");
 
-                    if (base64.Contains(","))
-                        base64 = base64.Split(',')[1];
+                    box.Item().PaddingTop(5).Table(table =>
+                    {
+                        table.ColumnsDefinition(columns =>
+                        {
+                            columns.RelativeColumn();
+                            columns.RelativeColumn(2.2f);
+                        });
 
-                    var bytes = Convert.FromBase64String(base64);
+                        table.Cell().Element(CellLabel).Text("Reference Number");
+                        table.Cell().Element(CellValue).Text(reference).Bold();
 
-                    col.Item()
-                        .PaddingTop(8)
-                        .Text("Signature")
-                        .Bold();
+                        table.Cell().Element(CellLabel).Text("Evidence PIN");
+                        table.Cell().Element(CellValue)
+                            .Text(string.IsNullOrWhiteSpace(pin) ? "Not available" : pin)
+                            .Bold()
+                            .FontSize(12);
 
-                    col.Item()
-                        .Border(0.5f)
-                        .BorderColor("#BFD8D6")
-                        .Padding(5)
-                        .Height(80)
-                        .Image(bytes, ImageScaling.FitArea);
-                }
-                catch
-                {
-                    col.Item().PaddingTop(5).Text("Signature image could not be rendered.");
-                }
-            }
+                        table.Cell().Element(CellLabel).Text("Evidence Window Closes");
+                        table.Cell().Element(CellValue).Text(
+                            deadline.HasValue
+                                ? deadline.Value.ToString("dd MMMM yyyy HH:mm")
+                                : "48 hours after declaration");
+                    });
+
+                    box.Item().PaddingTop(6).Text(
+                        "Use the Attribute reference number and Evidence PIN on the Valuation Portal to upload additional evidence. The PIN expires when the 48-hour evidence window closes.")
+                        .FontSize(8);
+                });
         }
         private static void AddHeader(TableDescriptor table, params string[] headers)
         {
@@ -1320,6 +1341,8 @@ namespace V2_Genesis.Services.Attributes
                     {
                         AddAcknowledgementIntro(col, model, propertyInfo);
 
+                        AddEvidenceAccessDetails(col, model, propertyInfo);
+
                         AddSubmittedPropertyDetails(col, model);
 
                         AddSubmittedValuationDetails(col, model);
@@ -1392,8 +1415,45 @@ namespace V2_Genesis.Services.Attributes
                 .Padding(4);
         }
 
-        
+        private static void AddAckRow(TableDescriptor table, string label, string? value, string background)
+        {
+            table.Cell().Border(1).Background(background).Padding(7).Text(label).Bold();
+            table.Cell().Border(1).Background(background).Padding(7).Text(value ?? "");
+        }
 
-        
+        private static void AddAckSectionTitle(ColumnDescriptor col, string title, string background)
+        {
+            col.Item()
+                .PaddingTop(18)
+                .Background(background)
+                .Border(1)
+                .Padding(7)
+                .AlignCenter()
+                .Text(title)
+                .FontColor(Colors.White)
+                .Bold()
+                .FontSize(11);
+        }
+
+        private static void AddHeaderCell(TableDescriptor table, string text)
+        {
+            table.Cell()
+                .Border(1)
+                .Background(Colors.Grey.Lighten3)
+                .Padding(5)
+                .AlignCenter()
+                .Text(text)
+                .Bold()
+                .FontSize(8);
+        }
+
+        private static void AddBodyCell(TableDescriptor table, string? text)
+        {
+            table.Cell()
+                .Border(1)
+                .Padding(5)
+                .Text(text ?? "")
+                .FontSize(8);
+        }
     }
 }
