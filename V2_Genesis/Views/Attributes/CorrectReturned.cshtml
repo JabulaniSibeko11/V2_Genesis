@@ -7,6 +7,24 @@
     ViewData["Title"] = "Correct Attribute Submission";
     Layout = "~/Views/Shared/_ClientLayout.cshtml";
 
+    string formLabel = Model.FormType switch
+    {
+        "Residential" => "Residential",
+        "ResidentialST" => "Residential — Sectional Title",
+        "BusinessCommercial" => "Non-Residential / Business and Commercial",
+        "DRCMethod" => "DRC Method",
+        _ => "Attribute Submission"
+    };
+
+    string formIcon = Model.FormType switch
+    {
+        "Residential" => "fa-house",
+        "ResidentialST" => "fa-building",
+        "BusinessCommercial" => "fa-store",
+        "DRCMethod" => "fa-calculator",
+        _ => "fa-clipboard-list"
+    };
+
     var excluded = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {
         "AttrId", "AttrNo", "FormType", "PropertyId", "PremiseId", "UnitKey",
@@ -109,6 +127,58 @@
         _ => Convert.ToString(value, System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty
     };
 
+
+
+    string NormaliseFieldCode(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return string.Empty;
+        var result = new System.Text.StringBuilder();
+        for (var i = 0; i < value.Length; i++)
+        {
+            var ch = value[i];
+            if (!char.IsLetterOrDigit(ch))
+            {
+                if (result.Length > 0 && result[^1] != '_') result.Append('_');
+                continue;
+            }
+            if (char.IsUpper(ch) && i > 0 && char.IsLower(value[i - 1]) && result[^1] != '_')
+                result.Append('_');
+            result.Append(char.ToUpperInvariant(ch));
+        }
+        return result.ToString().Trim('_');
+    }
+
+    string FieldCodeFor(string prefix, string propertyName)
+    {
+        var propertyCode = NormaliseFieldCode(propertyName);
+        var rowMatch = System.Text.RegularExpressions.Regex.Match(prefix, @"^(?<name>[^\[]+)\[(?<index>\d+)\]$");
+        if (!rowMatch.Success) return propertyCode;
+
+        var rowNo = int.Parse(rowMatch.Groups["index"].Value) + 1;
+        var rowPrefix = rowMatch.Groups["name"].Value switch
+        {
+            "BusinessBuildings" or "DrcBuildings" => "BUILDING",
+            "BusinessSections" => "SECTION",
+            "DrcImprovements" => "IMPROVEMENT",
+            "DrcVacantLands" => "LAND",
+            "ContactInfos" => "CONTACT",
+            _ => NormaliseFieldCode(rowMatch.Groups["name"].Value)
+        };
+
+        return $"{rowPrefix}_{rowNo}_{propertyCode}";
+    }
+
+    V2_Genesis.Models.ViewModels.Attributes.ReturnedAttributeCorrectionFieldVm? CorrectionFor(
+        string sectionCode,
+        string prefix,
+        string propertyName)
+    {
+        var fieldCode = FieldCodeFor(prefix, propertyName);
+        return Model.Fields.FirstOrDefault(x =>
+            string.Equals(NormaliseFieldCode(x.SectionCode), NormaliseFieldCode(sectionCode), StringComparison.OrdinalIgnoreCase)
+            && string.Equals(NormaliseFieldCode(x.FieldCode), fieldCode, StringComparison.OrdinalIgnoreCase));
+    }
+
     List<(string Prefix, object Data)> SourcesFor(string code)
     {
         var submission = Model.Submission;
@@ -118,7 +188,7 @@
             "VALUATION_DETAILS" => new() { ("ValuationDetails", submission.ValuationDetails) },
             "CONTACT_INFORMATION" => submission.ContactInfos
                 .Select((item, index) => ($"ContactInfos[{index}]", (object)item)).ToList(),
-            "ACCESS_INFORMATION" => new() { ("Access", submission.Access) },
+            "ACCESS" or "ACCESS_INFORMATION" => new() { ("Access", submission.Access) },
             "PRIMARY_ATTRIBUTES" => new() { ("PrimaryAttributes", submission.PrimaryAttributes) },
             "SECONDARY_ATTRIBUTES" => new() { ("SecondaryAttributes", submission.SecondaryAttributes) },
             "BUSINESS_BUILDINGS" => submission.BusinessBuildings
@@ -145,21 +215,46 @@
 <div class="attr-hero">
     <div class="attr-hero-inner">
         <div class="attr-hero-left">
-            <div class="attr-hero-logo"><img src="~/images/joburg_logo.png" alt="City of Johannesburg" /></div>
+            <div class="attr-hero-logo">
+                <img src="~/images/joburg_logo.png" alt="City of Johannesburg" />
+            </div>
             <div>
                 <div class="attr-hero-org">City of Johannesburg · Valuation Services</div>
-                <div class="attr-hero-eyebrow"><span></span>Returned attribute submission</div>
-                <h1 class="attr-hero-title">Correct and <em>Resubmit</em></h1>
-                <p class="attr-hero-sub">Only the sections identified by the valuer are editable.</p>
+                <div class="attr-hero-eyebrow">
+                    <span></span>
+                    Property Attributes · Returned by Valuer
+                </div>
+                <h1 class="attr-hero-title">
+                    Property Attribute <em>Correction</em>
+                </h1>
+                <p class="attr-hero-sub">
+                    <i class="fa-solid fa-@formIcon" style="font-size:11px;"></i>
+                    @Html.Raw(formLabel)
+                    <span class="attr-hero-sub-dot"></span>
+                    Update only the fields selected by the valuer
+                </p>
             </div>
         </div>
         <div class="attr-hero-right">
-            <span class="attr-hero-badge"><i class="fa-solid fa-rotate-right"></i> @Model.AttrNo</span>
-            <div class="attr-hero-prop">
-                <div class="attr-hero-prop-icon"><i class="fa-solid fa-location-dot"></i></div>
-                <div><span class="attr-hero-prop-label">Property</span><span class="attr-hero-prop-value">@Model.PropertyDescription</span></div>
-            </div>
+            <span class="attr-hero-badge">
+                <i class="fa-solid fa-rotate-right"></i>
+                @Model.AttrNo
+            </span>
+            @if (!string.IsNullOrWhiteSpace(Model.PropertyDescription))
+            {
+                <div class="attr-hero-prop">
+                    <div class="attr-hero-prop-icon"><i class="fa-solid fa-location-dot"></i></div>
+                    <div>
+                        <span class="attr-hero-prop-label">Property</span>
+                        <span class="attr-hero-prop-value">@Model.PropertyDescription</span>
+                    </div>
+                </div>
+            }
         </div>
+    </div>
+    <div class="attr-form-head">
+        <span class="attr-form-head-label">Reference</span>
+        <span class="attr-form-head-title">@Model.AttrNo · @Html.Raw(formLabel) · Correct and resubmit</span>
     </div>
 </div>
 
@@ -173,15 +268,98 @@
         <input asp-for="AttrId" type="hidden" />
         <input asp-for="AttrNo" type="hidden" />
         <input asp-for="FormType" type="hidden" />
-        <input asp-for="PropertyDescription" type="hidden" />
         <input asp-for="Submission.FormType" type="hidden" />
         <input asp-for="Submission.AttrId" type="hidden" />
         <input asp-for="Submission.AttrNo" type="hidden" />
 
         <div asp-validation-summary="All" class="attr-validation-list"></div>
 
-        <div class="attr-card" style="border-left:4px solid #e6b000;">
-            <div class="attr-title"><i class="fa-solid fa-message"></i> Valuer correction request</div>
+        @{
+            var property = Model.Submission.PropertyDetails;
+            string Show(string? value) => string.IsNullOrWhiteSpace(value) ? "Not supplied" : value;
+            string ShowNumber(object? value) => value == null ? "Not supplied" : Convert.ToString(value, System.Globalization.CultureInfo.InvariantCulture) ?? "Not supplied";
+        }
+
+        <div class="attr-card">
+            <div class="attr-title">
+                <i class="fa-solid fa-map-pin" style="color:var(--at-gold);margin-right:8px;"></i>
+                Section 1: Property Details
+            </div>
+            <div class="attr-divider"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
+
+            @if (!string.IsNullOrWhiteSpace(Model.PropertyDescription))
+            {
+                <div class="attr-prop-banner">
+                    <div class="attr-prop-banner-icon"><i class="fa-solid fa-location-dot"></i></div>
+                    <div>
+                        <span class="attr-prop-banner-label">Property Description</span>
+                        <span class="attr-prop-banner-value">@Model.PropertyDescription</span>
+                    </div>
+                </div>
+            }
+
+            <div class="attr-section-title"><span class="num">1.1</span> Property Identification</div>
+            <table class="attr-table">
+                <tr>
+                    <td class="attr-label">Reference Number</td>
+                    <td><input class="attr-input" value="@Model.AttrNo" readonly /></td>
+                    <td class="attr-label">Form Type</td>
+                    <td><input class="attr-input" value="@formLabel" readonly /></td>
+                </tr>
+                <tr>
+                    <td class="attr-label">H Area</td>
+                    <td><input class="attr-input" value="@Show(property?.HArea)" readonly /></td>
+                    <td class="attr-label">Data Controller</td>
+                    <td><input class="attr-input" value="@Show(property?.DataController)" readonly /></td>
+                </tr>
+                <tr>
+                    <td class="attr-label">Collection Block</td>
+                    <td><input class="attr-input" value="@Show(property?.CollectionBlock)" readonly /></td>
+                    <td class="attr-label">Data Collector</td>
+                    <td><input class="attr-input" value="@Show(property?.DataCollector)" readonly /></td>
+                </tr>
+                <tr>
+                    <td class="attr-label">SG Number</td>
+                    <td><input class="attr-input" value="@Show(property?.SGNumber)" readonly /></td>
+                    <td class="attr-label">Centroid</td>
+                    <td><input class="attr-input" value="@Show(property?.Centroid)" readonly /></td>
+                </tr>
+                <tr>
+                    <td class="attr-label">Erf</td>
+                    <td><input class="attr-input" value="@Show(property?.Erf)" readonly /></td>
+                    <td class="attr-label">Extent</td>
+                    <td><input class="attr-input" value="@ShowNumber(property?.Extent)" readonly /></td>
+                </tr>
+                <tr>
+                    <td class="attr-label">Sectional Title</td>
+                    <td><input class="attr-input" value="@Show(property?.SectionalTitle)" readonly /></td>
+                    <td class="attr-label">Land Use Financials</td>
+                    <td><input class="attr-input" value="@Show(property?.LandUseFinancials)" readonly /></td>
+                </tr>
+                <tr>
+                    <td class="attr-label">Municipality</td>
+                    <td><input class="attr-input" value="@Show(property?.Municipality)" readonly /></td>
+                    <td class="attr-label">Ward</td>
+                    <td><input class="attr-input" value="@Show(property?.Ward)" readonly /></td>
+                </tr>
+                <tr>
+                    <td class="attr-label">Township</td>
+                    <td><input class="attr-input" value="@Show(property?.Township)" readonly /></td>
+                    <td class="attr-label">Zoning</td>
+                    <td><input class="attr-input" value="@Show(property?.Zoning)" readonly /></td>
+                </tr>
+                <tr>
+                    <td class="attr-label">Sources</td>
+                    <td><input class="attr-input" value="@Show(property?.Sources)" readonly /></td>
+                    <td class="attr-label">Address</td>
+                    <td><input class="attr-input" value="@Show(property?.Address)" readonly /></td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="attr-card">
+            <div class="attr-title"><i class="fa-solid fa-message" style="color:var(--at-gold);margin-right:8px;"></i> Valuer Correction Request</div>
+            <div class="attr-divider"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
             <p><strong>Reason:</strong> @(string.IsNullOrWhiteSpace(Model.RevisionReason) ? "Correction requested by the valuer." : Model.RevisionReason)</p>
             @if (Model.RequestedAt.HasValue)
             {
@@ -193,7 +371,8 @@
         {
             var sources = SourcesFor(sec.Code);
             <div class="attr-card">
-                <div class="attr-title"><i class="fa-solid fa-pen-to-square"></i> @sec.Name</div>
+                <div class="attr-title"><i class="fa-solid fa-pen-to-square" style="color:var(--at-gold);margin-right:8px;"></i> @sec.Name</div>
+                <div class="attr-divider"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
                 @if (!string.IsNullOrWhiteSpace(sec.Comment))
                 {
                     <div class="alert alert-warning"><strong>Valuer comment:</strong><br />@sec.Comment</div>
@@ -222,44 +401,64 @@
                             <div class="attr-section-title"><span class="num">@(sourceIndex + 1)</span> Entry @(sourceIndex + 1)</div>
                         }
                         <div class="row g-3">
-                            @foreach (var property in EditableProperties(source.Data))
+                            @foreach (var prop in EditableProperties(source.Data))
                             {
-                                var name = $"Submission.{source.Prefix}.{property.Name}";
-                                var value = property.GetValue(source.Data);
-                                var type = Nullable.GetUnderlyingType(property.PropertyType) ?? property.PropertyType;
-                                if (!CanClientEdit(source.Prefix, property.Name))
-                                {
-                                    <input type="hidden" name="@name" value="@FormatValue(value)" />
-                                    continue;
-                                }
-                                <div class="col-md-6">
-                                    <label class="form-label fw-bold" for="@name">@Label(property)</label>
-                                    @if (type == typeof(bool))
-                                    {
-                                        <select class="form-select" id="@name" name="@name">
-                                            @if (string.Equals(FormatValue(value), "true", StringComparison.OrdinalIgnoreCase))
-                                            {
-                                                <option value="true" selected>Yes</option><option value="false">No</option>
-                                            }
-                                            else
-                                            {
-                                                <option value="true">Yes</option><option value="false" selected>No</option>
-                                            }
-                                        </select>
-                                    }
-                                    else if (IsLongText(property))
-                                    {
-                                        <textarea class="form-control" id="@name" name="@name" rows="3">@FormatValue(value)</textarea>
-                                    }
-                                    else
-                                    {
-                                        <input class="form-control"
-                                               id="@name"
-                                               name="@name"
-                                               type="@InputType(property)"
-                                               step="@(InputType(property) == "number" ? "any" : null)"
-                                               value="@FormatValue(value)" />
-                                    }
+                                var correction = CorrectionFor(sec.Code, source.Prefix, prop.Name);
+                                if (correction is null) continue;
+
+                                var name = $"Submission.{source.Prefix}.{prop.Name}";
+                                var value = prop.GetValue(source.Data);
+                                var type = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
+                                var canEdit = CanClientEdit(source.Prefix, prop.Name);
+
+                                <div class="col-12">
+                                    <div class="attr-section-title"><span class="num"><i class="fa-solid fa-pen"></i></span> @correction.FieldLabel</div>
+                                    <table class="attr-table">
+                                        <tr>
+                                            <td class="attr-label">City Value</td>
+                                            <td><input class="attr-input" value="@(string.IsNullOrWhiteSpace(correction.CityValue) ? "Not supplied" : correction.CityValue)" readonly /></td>
+                                            <td class="attr-label">Previously Submitted</td>
+                                            <td><input class="attr-input" value="@(string.IsNullOrWhiteSpace(correction.ClientValue) ? "Not supplied" : correction.ClientValue)" readonly /></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="attr-label">Corrected Value</td>
+                                            <td colspan="3">
+                                                @if (!canEdit)
+                                                {
+                                                    <input type="hidden" name="@name" value="@FormatValue(value)" />
+                                                    <div class="form-control bg-light text-muted">This field is read-only.</div>
+                                                }
+                                                else if (type == typeof(bool))
+                                                {
+                                                    <select class="attr-input" id="@name" name="@name">
+                                                        @if (string.Equals(FormatValue(value), "true", StringComparison.OrdinalIgnoreCase))
+                                                        {
+                                                            <option value="true" selected>Yes</option>
+                                                            <option value="false">No</option>
+                                                        }
+                                                        else
+                                                        {
+                                                            <option value="true">Yes</option>
+                                                            <option value="false" selected>No</option>
+                                                        }
+                                                    </select>
+                                                }
+                                                else if (IsLongText(prop))
+                                                {
+                                                    <textarea class="attr-input" id="@name" name="@name" rows="3">@FormatValue(value)</textarea>
+                                                }
+                                                else
+                                                {
+                                                    <input class="attr-input"
+                                                           id="@name"
+                                                           name="@name"
+                                                           type="@InputType(prop)"
+                                                           step="@(InputType(prop) == "number" ? "any" : null)"
+                                                           value="@FormatValue(value)" />
+                                                }
+                                            </td>
+                                        </tr>
+                                    </table>
                                 </div>
                             }
                         </div>
@@ -269,15 +468,20 @@
         }
 
         <div class="attr-card">
-            <div class="attr-title"><i class="fa-solid fa-comment-dots"></i> Correction summary</div>
+            <div class="attr-title"><i class="fa-solid fa-comment-dots" style="color:var(--at-gold);margin-right:8px;"></i> Correction Summary</div>
+            <div class="attr-divider"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
             <label asp-for="RevisionComment" class="form-label fw-bold">Explain what you corrected <span class="text-danger">*</span></label>
-            <textarea asp-for="RevisionComment" class="form-control" rows="4" maxlength="2000" required></textarea>
+            <textarea asp-for="RevisionComment" class="attr-input" rows="4" maxlength="2000" required></textarea>
             <span asp-validation-for="RevisionComment" class="text-danger"></span>
         </div>
 
-        <div class="d-flex justify-content-between gap-3 mb-5">
-            <a href="/Dashboard?openRoll=attributes" class="btn btn-light"><i class="fa-solid fa-arrow-left"></i> Cancel</a>
-            <button type="submit" class="btn btn-warning fw-bold"><i class="fa-solid fa-paper-plane"></i> Resubmit corrections</button>
+        <div class="attr-actions">
+            <a href="/Dashboard?openRoll=attributes" class="btn-attr-secondary">
+                <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
+            </a>
+            <button type="submit" class="btn-attr-primary">
+                <i class="fa-solid fa-paper-plane"></i> Resubmit Corrected Information
+            </button>
         </div>
     </form>
 </div>

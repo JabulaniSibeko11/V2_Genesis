@@ -3451,3 +3451,64 @@
         .cd-action-menu .cd-action-primary i {
             color: #b88700;
         }
+
+/* Returned attribute submissions requiring urgent client attention */
+#tbl-attr-submissions tbody tr.attr-row-action-required > td {
+    background: #fff1f2 !important;
+    border-top-color: #fecdd3 !important;
+    border-bottom-color: #fecdd3 !important;
+}
+
+    #tbl-attr-submissions tbody tr.attr-row-action-required > td:first-child {
+        border-left: 5px solid #dc2626 !important;
+    }
+
+#tbl-attr-submissions tbody tr.attr-row-action-required:hover > td {
+    background: #ffe4e6 !important;
+}
+
+.attr-action-required-message {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    margin-top: 7px;
+    color: #b91c1c;
+    font-size: 11px;
+    line-height: 1.35;
+    font-weight: 800;
+}
+
+    .attr-action-required-message i {
+        margin-top: 1px;
+    }
+
+/* Inspection PIN appointment countdown */
+.attr-pin-validity {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: fit-content;
+    margin-top: 7px;
+    padding: 5px 9px;
+    border: 1px solid #f5c842;
+    border-radius: 8px;
+    background: #fff8d8;
+    color: #785900;
+    font-size: 11px;
+    line-height: 1.3;
+    font-weight: 800;
+}
+
+.attr-pin-validity-active {
+    border-color: #86efac;
+    background: #ecfdf5;
+    color: #166534;
+}
+
+.attr-pin-validity-note {
+    max-width: 320px;
+    margin-top: 5px;
+    color: #64748b;
+    font-size: 10px;
+    line-height: 1.35;
+}

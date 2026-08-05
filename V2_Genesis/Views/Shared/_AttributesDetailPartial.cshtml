@@ -48,7 +48,7 @@
                             <td>@item.MarketValue</td>
                             <td>
                                 <span class="attr-form-pill attr-pill-@(item.FormType.ToLower()
-                                                                                                                                                                                                                                                                                                                                                                                                            .Replace(" ", "").Replace("&", "").Replace("/", ""))">
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      .Replace(" ", "").Replace("&", "").Replace("/", ""))">
                                     @item.FormType
                                 </span>
                             </td>
@@ -153,7 +153,12 @@
                 <tbody>
                     @foreach (var item in attrData.Submissions)
                     {
-                        <tr>
+                        var isReturnedToClient = string.Equals(
+                            item.Status,
+                            "ReturnedToClient",
+                            StringComparison.OrdinalIgnoreCase);
+
+                        <tr class="@(isReturnedToClient ? "attr-row-action-required" : null)">
                             <td><strong>@item.SubmissionRef</strong></td>
                             <td>@item.PropertyDesc</td>
                             <td>@item.FormType</td>
@@ -175,7 +180,16 @@
                                     </span>
                                 }
                             </td>
-                            <td>@Html.Raw(DashboardDisplayHelpers.GetAttrStatusPill(item.Status))</td>
+                            <td>
+                                @Html.Raw(DashboardDisplayHelpers.GetAttrStatusPill(item.Status))
+                                @if (isReturnedToClient)
+                                {
+                                    <div class="attr-action-required-message">
+                                        <i class="fa-solid fa-triangle-exclamation"></i>
+                                        Action required: update the fields returned by the valuer.
+                                    </div>
+                                }
+                            </td>
                             <td>
                                 <div class="dropdown">
                                     <button class="cd-action-btn dropdown-toggle"
@@ -284,6 +298,12 @@
                     {
                         @foreach (var item in attrData.Appointments)
                         {
+                            var appointmentTime = item.ConfirmedDateTime ?? item.AppointmentDate;
+                            var hasPin = string.Equals(
+                                item.Status,
+                                "InspectionDetailsSent",
+                                StringComparison.OrdinalIgnoreCase);
+
                             <tr>
                                 <td>
                                     <strong>@item.AppointmentRef</strong>
@@ -328,6 +348,23 @@
 
                                 <td>
                                     @Html.Raw(DashboardDisplayHelpers.GetApptStatusPill(item.Status))
+
+                                    @if (appointmentTime.HasValue &&
+                                         (item.Status == "Confirmed" || item.Status == "InspectionDetailsSent"))
+                                    {
+                                        <div class="attr-pin-validity"
+                                             data-pin-countdown
+                                             data-appointment-epoch="@(new DateTimeOffset(appointmentTime.Value).ToUnixTimeMilliseconds())"
+                                             data-has-pin="@(hasPin ? "true" : "false")">
+                                            <i class="fa-solid fa-hourglass-half"></i>
+                                            <span class="attr-pin-validity-text">
+                                                Calculating time to appointment...
+                                            </span>
+                                        </div>
+                                        <div class="attr-pin-validity-note">
+                                            The PIN security window starts at the confirmed appointment time.
+                                        </div>
+                                    }
                                 </td>
 
                                 <td>
@@ -616,4 +653,3 @@
                 
     </div>
 </div>
-

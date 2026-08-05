@@ -1544,22 +1544,47 @@ namespace V2_Genesis.Services.Implementations
 
             if (review is null) return null;
 
-            var sections = await _context.AttrValuerReviewSections
+            var fields = await _context.AttrValuerReviewFieldCorrections
                 .AsNoTracking()
-                .Where(x => x.ReviewId == review.Id
-                            && (x.RequiresCorrection || x.SectionDecision == "Needs correction"))
-                .OrderBy(x => x.Id)
-                .Select(x => new ReturnedAttributeCorrectionSectionVm
+                .Where(x => x.ReviewId == review.Id && x.IsActive)
+                .OrderBy(x => x.SectionCode)
+                .ThenBy(x => x.FieldLabel)
+                .Select(x => new ReturnedAttributeCorrectionFieldVm
                 {
-                    Code = x.SectionCode,
-                    Name = x.SectionName,
-                    Comment = x.SectionComment ?? string.Empty
+                    SectionCode = x.SectionCode,
+                    FieldCode = x.FieldCode,
+                    FieldLabel = x.FieldLabel,
+                    CityValue = x.CityValue,
+                    ClientValue = x.ClientValue
                 })
                 .ToListAsync(cancellationToken);
 
-            // A returned submission without a marked correction section is incomplete
-            // on the valuer side and must not expose the entire form for editing.
-            if (sections.Count == 0) return null;
+            // Only fields explicitly selected by the valuer may be corrected.
+            if (fields.Count == 0) return null;
+
+            var sectionCommentRows = await _context.AttrValuerReviewSections
+                .AsNoTracking()
+                .Where(x => x.ReviewId == review.Id)
+                .Select(x => new { x.SectionCode, x.SectionComment })
+                .ToListAsync(cancellationToken);
+
+            var sectionComments = sectionCommentRows
+                .GroupBy(x => x.SectionCode, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(
+                    x => x.Key,
+                    x => x.Select(v => v.SectionComment).FirstOrDefault() ?? string.Empty,
+                    StringComparer.OrdinalIgnoreCase);
+
+            var sections = fields
+                .GroupBy(x => x.SectionCode, StringComparer.OrdinalIgnoreCase)
+                .Select(x => new ReturnedAttributeCorrectionSectionVm
+                {
+                    Code = x.Key,
+                    Name = GetReturnedSectionName(x.Key),
+                    Comment = sectionComments.TryGetValue(x.Key, out var comment) ? comment : string.Empty
+                })
+                .OrderBy(x => x.Name)
+                .ToList();
 
             var submission = await BuildSubmittedAttributeViewModelAsync(attrId, cancellationToken);
             if (submission is null) return null;
@@ -1574,7 +1599,8 @@ namespace V2_Genesis.Services.Implementations
                 RequestedAt = info.RevisionRequestedDateTime,
                 RequestedBy = info.RevisionRequestedBy ?? string.Empty,
                 Submission = submission,
-                Sections = sections
+                Sections = sections,
+                Fields = fields
             };
         }
 
@@ -1617,16 +1643,12 @@ namespace V2_Genesis.Services.Implementations
             if (review is null)
                 throw new InvalidOperationException("The valuer correction request could not be found.");
 
-            var allowedCodeRows = await _context.AttrValuerReviewSections
-                .Where(x => x.ReviewId == review.Id
-                            && (x.RequiresCorrection || x.SectionDecision == "Needs correction"))
-                .Select(x => x.SectionCode)
+            var allowedFields = await _context.AttrValuerReviewFieldCorrections
+                .Where(x => x.ReviewId == review.Id && x.IsActive)
                 .ToListAsync(cancellationToken);
 
-            var allowedCodes = allowedCodeRows.ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-            if (allowedCodes.Count == 0)
-                throw new InvalidOperationException("The valuer did not identify any form section for correction.");
+            if (allowedFields.Count == 0)
+                throw new InvalidOperationException("The valuer did not identify any fields for correction.");
 
             var propertyId = info.PropertyDetails.Id;
             var posted = model.Submission ?? new AttributeSubmissionViewModel();
@@ -1645,88 +1667,13 @@ namespace V2_Genesis.Services.Implementations
 
             var now = DateTime.Now;
 
-            if (allowedCodes.Contains("PROPERTY_DETAILS"))
-            {
-                CopyMatchingValues(posted.PropertyDetails, info.PropertyDetails);
-                info.Property_Desc = posted.PropertyDetails.PropertyDesc ?? info.Property_Desc;
-                StampUpdated(info.PropertyDetails, userId, now);
-            }
-
-            if (allowedCodes.Contains("VALUATION_DETAILS"))
-            {
-                var row = await _context.AttrValuationDetails
-                    .FirstOrDefaultAsync(x => x.PropertyDetailsId == propertyId, cancellationToken);
-                if (row is null)
-                {
-                    row = new AttrValuationDetails { PropertyDetailsId = propertyId, CreatedBy = userId, CreatedDate = now };
-                    _context.AttrValuationDetails.Add(row);
-                }
-                CopyMatchingValues(posted.ValuationDetails, row);
-                StampUpdated(row, userId, now);
-            }
-
-            if (allowedCodes.Contains("CONTACT_INFORMATION"))
-                await ReplaceRowsAsync(_context.AttrContactInfo, propertyId, posted.ContactInfos, userId, now, cancellationToken);
-
-            if (allowedCodes.Contains("ACCESS_INFORMATION"))
-            {
-                var row = await _context.AttrAccess
-                    .FirstOrDefaultAsync(x => x.PropertyDetailsId == propertyId, cancellationToken);
-                if (row is null)
-                {
-                    row = new AttrAccess { PropertyDetailsId = propertyId, CreatedBy = userId, CreatedDate = now };
-                    _context.AttrAccess.Add(row);
-                }
-                CopyMatchingValues(posted.Access, row);
-                StampUpdated(row, userId, now);
-            }
-
-            if (allowedCodes.Contains("PRIMARY_ATTRIBUTES"))
-                await UpdateSingleAsync(_context.AttrPrimaryAttributes, propertyId, posted.PrimaryAttributes, userId, now, cancellationToken);
-
-            if (allowedCodes.Contains("SECONDARY_ATTRIBUTES"))
-                await UpdateSingleAsync(_context.AttrSecondaryAttributes, propertyId, posted.SecondaryAttributes, userId, now, cancellationToken);
-
-            if (allowedCodes.Contains("BUSINESS_BUILDINGS"))
-                await ReplaceRowsAsync(_context.AttrBusinessBuildings, propertyId, posted.BusinessBuildings, userId, now, cancellationToken);
-
-            if (allowedCodes.Contains("BUSINESS_SECTIONS"))
-                await ReplaceRowsAsync(_context.AttrBusinessSections, propertyId, posted.BusinessSections, userId, now, cancellationToken);
-
-            if (allowedCodes.Contains("BUSINESS_GENERAL"))
-                await UpdateSingleAsync(_context.AttrBusinessGeneral, propertyId, posted.BusinessGeneral, userId, now, cancellationToken);
-
-            if (allowedCodes.Contains("DRC_BUILDINGS"))
-                await ReplaceRowsAsync(_context.AttrDrcBuildings, propertyId, posted.DrcBuildings, userId, now, cancellationToken);
-
-            if (allowedCodes.Contains("DRC_IMPROVEMENTS"))
-                await ReplaceRowsAsync(_context.AttrDrcImprovements, propertyId, posted.DrcImprovements, userId, now, cancellationToken);
-
-            if (allowedCodes.Contains("DRC_VACANT_LAND"))
-                await ReplaceRowsAsync(_context.AttrDrcVacantLand, propertyId, posted.DrcVacantLands, userId, now, cancellationToken);
-
-            if (allowedCodes.Contains("DRC_MARKET_VALUE"))
-                await UpdateSingleAsync(_context.AttrDrcMarketValueDemolition, propertyId, posted.DrcMarketValueDemolition, userId, now, cancellationToken);
-
-            if (allowedCodes.Contains("CALCULATIONS"))
-                await UpdateSingleAsync(_context.AttrCalculations, propertyId, posted.Calculations, userId, now, cancellationToken);
-
-            if (allowedCodes.Contains("DECLARATION"))
-            {
-                var declaration = await _context.AttrDeclarations
-                    .FirstOrDefaultAsync(x => x.Attr_ID == info.Attr_ID, cancellationToken);
-                if (declaration is not null)
-                {
-                    declaration.Declaration_Accepted = posted.Declaration.DeclarationAccepted;
-                    declaration.Declaration_Text = posted.Declaration.DeclarationText;
-                    declaration.Signature_Name = posted.Declaration.SignatureName;
-                    if (!string.IsNullOrWhiteSpace(posted.Declaration.SignaturePicture))
-                        declaration.Signature_Picture = posted.Declaration.SignaturePicture;
-                    declaration.Declaration_Date = now;
-                    declaration.UpdatedBy = userId;
-                    declaration.UpdatedDate = now;
-                }
-            }
+            await ApplySelectedFieldCorrectionsAsync(
+                info,
+                posted,
+                allowedFields,
+                userId,
+                now,
+                cancellationToken);
 
             var oldStatus = info.Attr_Status;
             info.Attr_Status = "Resubmitted";
@@ -1753,6 +1700,233 @@ namespace V2_Genesis.Services.Implementations
 
             await _context.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
+        }
+
+        private static string GetReturnedSectionName(string? code) => (code ?? string.Empty).ToUpperInvariant() switch
+        {
+            "VALUATION_DETAILS" => "Valuation Details",
+            "ACCESS" or "ACCESS_INFORMATION" => "Access Information",
+            "PRIMARY_ATTRIBUTES" => "Primary Attributes",
+            "SECONDARY_ATTRIBUTES" => "Secondary Attributes",
+            "BUSINESS_BUILDINGS" => "Business Buildings",
+            "BUSINESS_SECTIONS" => "Business Sections",
+            "BUSINESS_GENERAL" => "Business General",
+            "DRC_BUILDINGS" => "DRC Buildings",
+            "DRC_IMPROVEMENTS" => "DRC Improvements",
+            "DRC_VACANT_LAND" => "DRC Vacant Land",
+            "DRC_MARKET_VALUE" => "DRC Market Value and Demolition",
+            "CALCULATIONS" => "Calculations",
+            _ => (code ?? string.Empty).Replace('_', ' ')
+        };
+
+        private async Task ApplySelectedFieldCorrectionsAsync(
+            AttrPropertyInfo info,
+            AttributeSubmissionViewModel posted,
+            IReadOnlyCollection<AttrValuerReviewFieldCorrection> selectedFields,
+            string userId,
+            DateTime now,
+            CancellationToken cancellationToken)
+        {
+            if (info.PropertyDetails is null) return;
+            var propertyId = info.PropertyDetails.Id;
+
+            foreach (var group in selectedFields.GroupBy(x => x.SectionCode, StringComparer.OrdinalIgnoreCase))
+            {
+                var code = group.Key.ToUpperInvariant();
+
+                if (code == "VALUATION_DETAILS")
+                {
+                    var row = await _context.AttrValuationDetails.FirstOrDefaultAsync(x => x.PropertyDetailsId == propertyId, cancellationToken);
+                    if (row is null)
+                    {
+                        row = new AttrValuationDetails { PropertyDetailsId = propertyId, CreatedBy = userId, CreatedDate = now };
+                        _context.AttrValuationDetails.Add(row);
+                    }
+                    CopySelectedObjectFields(posted.ValuationDetails, row, group);
+                    StampUpdated(row, userId, now);
+                }
+                else if (code is "ACCESS" or "ACCESS_INFORMATION")
+                {
+                    var row = await _context.AttrAccess.FirstOrDefaultAsync(x => x.PropertyDetailsId == propertyId, cancellationToken);
+                    if (row is null)
+                    {
+                        row = new AttrAccess { PropertyDetailsId = propertyId, CreatedBy = userId, CreatedDate = now };
+                        _context.AttrAccess.Add(row);
+                    }
+                    CopySelectedObjectFields(posted.Access, row, group);
+                    StampUpdated(row, userId, now);
+                }
+                else if (code == "PRIMARY_ATTRIBUTES")
+                {
+                    var row = await _context.AttrPrimaryAttributes.FirstOrDefaultAsync(x => x.PropertyDetailsId == propertyId, cancellationToken);
+                    if (row is null)
+                    {
+                        row = new AttrPrimaryAttributes { PropertyDetailsId = propertyId, CreatedBy = userId, CreatedDate = now };
+                        _context.AttrPrimaryAttributes.Add(row);
+                    }
+                    CopySelectedObjectFields(posted.PrimaryAttributes, row, group);
+                    StampUpdated(row, userId, now);
+                }
+                else if (code == "SECONDARY_ATTRIBUTES")
+                {
+                    var row = await _context.AttrSecondaryAttributes.FirstOrDefaultAsync(x => x.PropertyDetailsId == propertyId, cancellationToken);
+                    if (row is null)
+                    {
+                        row = new AttrSecondaryAttributes { PropertyDetailsId = propertyId, CreatedBy = userId, CreatedDate = now };
+                        _context.AttrSecondaryAttributes.Add(row);
+                    }
+                    CopySelectedObjectFields(posted.SecondaryAttributes, row, group);
+                    StampUpdated(row, userId, now);
+                }
+                else if (code == "BUSINESS_GENERAL")
+                {
+                    var row = await _context.AttrBusinessGeneral.FirstOrDefaultAsync(x => x.PropertyDetailsId == propertyId, cancellationToken);
+                    if (row is null)
+                    {
+                        row = new AttrBusinessGeneral { PropertyDetailsId = propertyId, CreatedBy = userId, CreatedDate = now };
+                        _context.AttrBusinessGeneral.Add(row);
+                    }
+                    CopySelectedObjectFields(posted.BusinessGeneral, row, group);
+                    StampUpdated(row, userId, now);
+                }
+                else if (code == "DRC_MARKET_VALUE")
+                {
+                    var row = await _context.AttrDrcMarketValueDemolition.FirstOrDefaultAsync(x => x.PropertyDetailsId == propertyId, cancellationToken);
+                    if (row is null)
+                    {
+                        row = new AttrDrcMarketValueDemolition { PropertyDetailsId = propertyId, CreatedBy = userId, CreatedDate = now };
+                        _context.AttrDrcMarketValueDemolition.Add(row);
+                    }
+                    CopySelectedObjectFields(posted.DrcMarketValueDemolition, row, group);
+                    StampUpdated(row, userId, now);
+                }
+                else if (code == "CALCULATIONS")
+                {
+                    var row = await _context.AttrCalculations.FirstOrDefaultAsync(x => x.PropertyDetailsId == propertyId, cancellationToken);
+                    if (row is null)
+                    {
+                        row = new AttrCalculations { PropertyDetailsId = propertyId, CreatedBy = userId, CreatedDate = now };
+                        _context.AttrCalculations.Add(row);
+                    }
+                    CopySelectedObjectFields(posted.Calculations, row, group);
+                    StampUpdated(row, userId, now);
+                }
+                else if (code == "BUSINESS_BUILDINGS")
+                {
+                    var rows = await _context.AttrBusinessBuildings.Where(x => x.PropertyDetailsId == propertyId).OrderBy(x => x.Id).ToListAsync(cancellationToken);
+                    CopySelectedListFields(posted.BusinessBuildings, rows, group, "BUILDING", userId, now);
+                }
+                else if (code == "BUSINESS_SECTIONS")
+                {
+                    var rows = await _context.AttrBusinessSections.Where(x => x.PropertyDetailsId == propertyId).OrderBy(x => x.Id).ToListAsync(cancellationToken);
+                    CopySelectedListFields(posted.BusinessSections, rows, group, "SECTION", userId, now);
+                }
+                else if (code == "DRC_BUILDINGS")
+                {
+                    var rows = await _context.AttrDrcBuildings.Where(x => x.PropertyDetailsId == propertyId).OrderBy(x => x.Id).ToListAsync(cancellationToken);
+                    CopySelectedListFields(posted.DrcBuildings, rows, group, "BUILDING", userId, now);
+                }
+                else if (code == "DRC_IMPROVEMENTS")
+                {
+                    var rows = await _context.AttrDrcImprovements.Where(x => x.PropertyDetailsId == propertyId).OrderBy(x => x.Id).ToListAsync(cancellationToken);
+                    CopySelectedListFields(posted.DrcImprovements, rows, group, "IMPROVEMENT", userId, now);
+                }
+                else if (code == "DRC_VACANT_LAND")
+                {
+                    var rows = await _context.AttrDrcVacantLand.Where(x => x.PropertyDetailsId == propertyId).OrderBy(x => x.Id).ToListAsync(cancellationToken);
+                    CopySelectedListFields(posted.DrcVacantLands, rows, group, "LAND", userId, now);
+                }
+            }
+        }
+
+        private static void CopySelectedObjectFields<TSource, TTarget>(
+            TSource source,
+            TTarget target,
+            IEnumerable<AttrValuerReviewFieldCorrection> fields)
+        {
+            var selected = fields.Select(x => NormalizeCorrectionCode(x.FieldCode))
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            var targetProperties = typeof(TTarget).GetProperties()
+                .Where(x => x.CanWrite)
+                .ToDictionary(x => NormalizeCorrectionCode(x.Name), StringComparer.OrdinalIgnoreCase);
+
+            foreach (var sourceProperty in typeof(TSource).GetProperties().Where(x => x.CanRead))
+            {
+                var code = NormalizeCorrectionCode(sourceProperty.Name);
+                if (!selected.Contains(code) || !targetProperties.TryGetValue(code, out var targetProperty)) continue;
+                SetConvertedValue(target, targetProperty, sourceProperty.GetValue(source));
+            }
+        }
+
+        private static void CopySelectedListFields<TSource, TTarget>(
+            IReadOnlyList<TSource> sources,
+            IReadOnlyList<TTarget> targets,
+            IEnumerable<AttrValuerReviewFieldCorrection> fields,
+            string rowPrefix,
+            string userId,
+            DateTime now)
+        {
+            foreach (var field in fields)
+            {
+                var match = System.Text.RegularExpressions.Regex.Match(
+                    field.FieldCode ?? string.Empty,
+                    $"^{rowPrefix}_(\\d+)_(.+)$",
+                    System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+                if (!match.Success || !int.TryParse(match.Groups[1].Value, out var rowNo)) continue;
+                var index = rowNo - 1;
+                if (index < 0 || index >= sources.Count || index >= targets.Count) continue;
+
+                var propertyCode = NormalizeCorrectionCode(match.Groups[2].Value);
+                var sourceProperty = typeof(TSource).GetProperties()
+                    .FirstOrDefault(x => x.CanRead && NormalizeCorrectionCode(x.Name) == propertyCode);
+                var targetProperty = typeof(TTarget).GetProperties()
+                    .FirstOrDefault(x => x.CanWrite && NormalizeCorrectionCode(x.Name) == propertyCode);
+
+                if (sourceProperty is null || targetProperty is null) continue;
+                SetConvertedValue(targets[index]!, targetProperty, sourceProperty.GetValue(sources[index]));
+                StampUpdated(targets[index]!, userId, now);
+            }
+        }
+
+        private static string NormalizeCorrectionCode(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return string.Empty;
+            var result = new System.Text.StringBuilder();
+            for (var i = 0; i < value.Length; i++)
+            {
+                var ch = value[i];
+                if (!char.IsLetterOrDigit(ch))
+                {
+                    if (result.Length > 0 && result[^1] != '_') result.Append('_');
+                    continue;
+                }
+                if (char.IsUpper(ch) && i > 0 && char.IsLower(value[i - 1]) && result[^1] != '_') result.Append('_');
+                result.Append(char.ToUpperInvariant(ch));
+            }
+            return result.ToString().Trim('_');
+        }
+
+        private static void SetConvertedValue(object target, System.Reflection.PropertyInfo targetProperty, object? value)
+        {
+            if (value is null)
+            {
+                targetProperty.SetValue(target, null);
+                return;
+            }
+
+            var targetType = Nullable.GetUnderlyingType(targetProperty.PropertyType) ?? targetProperty.PropertyType;
+            if (targetType.IsInstanceOfType(value))
+            {
+                targetProperty.SetValue(target, value);
+                return;
+            }
+
+            if (targetType.IsEnum)
+                targetProperty.SetValue(target, Enum.Parse(targetType, Convert.ToString(value)!, true));
+            else
+                targetProperty.SetValue(target, Convert.ChangeType(value, targetType, System.Globalization.CultureInfo.InvariantCulture));
         }
 
         private static void CopyMatchingValues<TSource, TTarget>(TSource source, TTarget target)

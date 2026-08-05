@@ -18,6 +18,16 @@ namespace V2_Genesis.Models.ViewModels.Attributes
 
         public AttributeSubmissionViewModel Submission { get; set; } = new();
         public List<ReturnedAttributeCorrectionSectionVm> Sections { get; set; } = new();
+        public List<ReturnedAttributeCorrectionFieldVm> Fields { get; set; } = new();
+    }
+
+    public sealed class ReturnedAttributeCorrectionFieldVm
+    {
+        public string SectionCode { get; set; } = string.Empty;
+        public string FieldCode { get; set; } = string.Empty;
+        public string FieldLabel { get; set; } = string.Empty;
+        public string? CityValue { get; set; }
+        public string? ClientValue { get; set; }
     }
 
     public sealed class ReturnedAttributeCorrectionSectionVm

@@ -76,20 +76,31 @@ public class AttributesController : Controller
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrWhiteSpace(userId)) return Challenge();
 
+        // Load the trusted database model once. Do not repeatedly call the GET
+        // builder from each validation/catch branch because that can overwrite
+        // the posted correction values and display metadata.
+        var current = await _attributeService.GetReturnedCorrectionAsync(
+            attrId,
+            userId,
+            cancellationToken);
+
+        if (current is null)
+        {
+            TempData["AttributeError"] =
+                "This submission is not available for correction or does not belong to your account.";
+            return RedirectToAction("Index", "Dashboard", new { openRoll = "attributes" });
+        }
+
         model.AttrId = attrId;
+
+        // PropertyDescription and the nested property-identification fields are
+        // server-owned display values. They must never participate in POST
+        // validation or be trusted from hidden inputs.
+        RemoveDisplayOnlyCorrectionValidation();
 
         if (!ModelState.IsValid)
         {
-            var current = await _attributeService.GetReturnedCorrectionAsync(
-                attrId,
-                userId,
-                cancellationToken);
-
-            if (current is null) return NotFound();
-
-            current.Submission = model.Submission;
-            current.RevisionComment = model.RevisionComment;
-            return View("CorrectReturned", current);
+            return View("CorrectReturned", RebuildReturnedCorrectionModel(current, model));
         }
 
         try
@@ -108,15 +119,7 @@ public class AttributesController : Controller
         catch (InvalidOperationException ex)
         {
             ModelState.AddModelError(string.Empty, ex.Message);
-            var current = await _attributeService.GetReturnedCorrectionAsync(
-                attrId,
-                userId,
-                cancellationToken);
-
-            if (current is null) return NotFound();
-            current.Submission = model.Submission;
-            current.RevisionComment = model.RevisionComment;
-            return View("CorrectReturned", current);
+            return View("CorrectReturned", RebuildReturnedCorrectionModel(current, model));
         }
         catch (Exception ex)
         {
@@ -130,16 +133,47 @@ public class AttributesController : Controller
                 string.Empty,
                 "The corrections could not be saved. Please try again or contact Valuation Services.");
 
-            var current = await _attributeService.GetReturnedCorrectionAsync(
-                attrId,
-                userId,
-                cancellationToken);
-
-            if (current is null) return NotFound();
-            current.Submission = model.Submission;
-            current.RevisionComment = model.RevisionComment;
-            return View("CorrectReturned", current);
+            return View("CorrectReturned", RebuildReturnedCorrectionModel(current, model));
         }
+    }
+
+    private void RemoveDisplayOnlyCorrectionValidation()
+    {
+        var displayOnlyKeys = new[]
+        {
+            nameof(ReturnedAttributeCorrectionViewModel.PropertyDescription),
+            nameof(ReturnedAttributeCorrectionViewModel.AttrNo),
+            nameof(ReturnedAttributeCorrectionViewModel.FormType),
+            "Submission.PropertyDetails",
+            "Submission.PropertyDetails.PropertyDesc",
+            "Submission.PropertyDetails.PropertyDescription",
+            "Submission.AttrNo",
+            "Submission.FormType"
+        };
+
+        foreach (var key in displayOnlyKeys)
+        {
+            ModelState.Remove(key);
+        }
+    }
+
+    private static ReturnedAttributeCorrectionViewModel RebuildReturnedCorrectionModel(
+        ReturnedAttributeCorrectionViewModel current,
+        ReturnedAttributeCorrectionViewModel posted)
+    {
+        // Preserve the user's entered correction values, but restore all trusted
+        // property/reference metadata from the database model.
+        var postedSubmission = posted.Submission ?? new AttributeSubmissionViewModel();
+        postedSubmission.AttrId = current.Submission.AttrId;
+        postedSubmission.AttrNo = current.Submission.AttrNo;
+        postedSubmission.FormType = current.Submission.FormType;
+        postedSubmission.PropertyDetails = current.Submission.PropertyDetails;
+
+        current.Submission = postedSubmission;
+        current.AttrId = current.AttrId;
+        current.RevisionComment = posted.RevisionComment;
+
+        return current;
     }
 
     [HttpGet]

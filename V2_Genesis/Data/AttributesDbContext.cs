@@ -38,6 +38,7 @@ namespace V2_Genesis.Data
         public DbSet<AttrFiles> AttrFiles { get; set; } = null!;
         public DbSet<AttrValuerReview> AttrValuerReviews { get; set; } = null!;
         public DbSet<AttrValuerReviewSection> AttrValuerReviewSections { get; set; } = null!;
+        public DbSet<AttrValuerReviewFieldCorrection> AttrValuerReviewFieldCorrections { get; set; } = null!;
         public DbSet<AttrInspectionRequest> AttrInspectionRequests { get; set; } = null!;
         public DbSet<AttrValuerInspectionDetail> AttrValuerInspectionDetails { get; set; } = null!;
         public DbSet<AttrInspectionEvidence> AttrInspectionEvidence { get; set; } = null!;
@@ -47,6 +48,11 @@ namespace V2_Genesis.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            modelBuilder.Entity<AttrValuerReviewFieldCorrection>(entity =>
+            {
+                entity.HasIndex(x => new { x.ReviewId, x.SectionCode, x.FieldCode }).IsUnique();
+            });
 
             modelBuilder.Entity<Sector>(entity =>
             {
