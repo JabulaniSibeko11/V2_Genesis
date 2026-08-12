@@ -12,7 +12,7 @@ namespace V2_Genesis.Services.Interfaces
             string unitKey, string? valuationKey);
 
         // ── Submit a query/review ────────────────────────────────────────
-  
+
 
         // ── Dashboard data ───────────────────────────────────────────────
         Task<List<Section78LinkedResult>> GetLinkedAsync(string userId);
@@ -41,8 +41,12 @@ namespace V2_Genesis.Services.Interfaces
     string userId);
 
 
-        Task<GeneratedAcknowledgementResult>GenerateAcknowledgementFromDatabaseAsync(string queryReference,string userId,CancellationToken cancellationToken = default);
+        Task<GeneratedAcknowledgementResult> GenerateAcknowledgementFromDatabaseAsync(
+            string queryReference,
+            string userId,
+            bool allowAdministrativeAccess = false,
+            CancellationToken cancellationToken = default);
     }
 
-  
-    }
+
+}

@@ -6,5 +6,6 @@ public interface IAppealDecisionNoticeService
         string rollSource,
         string referenceNumber,
         string userId,
+        bool allowAdministrativeAccess = false,
         CancellationToken cancellationToken = default);
 }

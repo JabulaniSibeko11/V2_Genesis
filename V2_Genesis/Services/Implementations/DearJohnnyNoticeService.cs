@@ -27,6 +27,7 @@ public sealed class DearJohnnyNoticeService : IDearJohnnyNoticeService
         string rollSource,
         string objectionNo,
         string userId,
+        bool allowAdministrativeAccess = false,
         CancellationToken cancellationToken = default)
     {
         rollSource = rollSource?.Trim() ?? string.Empty;
@@ -52,7 +53,8 @@ public sealed class DearJohnnyNoticeService : IDearJohnnyNoticeService
                 on (notice.ObjectionNo ?? string.Empty).Trim()
                 equals (objection.ObjectionNo ?? string.Empty).Trim()
             where (notice.ObjectionNo ?? string.Empty).Trim() == objectionNo
-                && (objection.UserId ?? string.Empty).Trim() == userId
+                && (allowAdministrativeAccess ||
+                    (objection.UserId ?? string.Empty).Trim() == userId)
                 && (objection.ObjectionStatus ?? string.Empty).Trim() ==
                     "Notice-Sent-Dear-Johnny"
             orderby notice.Id descending
@@ -60,19 +62,14 @@ public sealed class DearJohnnyNoticeService : IDearJohnnyNoticeService
             {
                 Id = notice.Id,
                 ObjectionNo = notice.ObjectionNo,
-                ObjectorType = notice.ObjectorType,
-                PropertyDescription = notice.PropertyDescription,
+                ObjectorType = objection.ObjectorType,
+                PropertyDescription = objection.PropertyDescription,
                 ObjectorName = notice.ObjectorName,
-                ObjectorSurname = notice.ObjectorSurname,
-                ObjectorAddress = notice.ObjectorAddress,
                 ObjectorEmail = notice.ObjectorEmail,
-                ObjectorPhone = notice.ObjectorPhone,
                 LetterDate = notice.LetterDate,
-                GeneratedDate = notice.GeneratedDate,
                 ValuationKey = notice.ValuationKey,
                 BatchName = notice.BatchName,
                 BatchDate = notice.BatchDate,
-                SentStatus = notice.SentStatus,
                 ObjectionStatus = objection.ObjectionStatus
             })
             .FirstOrDefaultAsync(cancellationToken);
@@ -94,7 +91,7 @@ public sealed class DearJohnnyNoticeService : IDearJohnnyNoticeService
     private byte[] BuildPdf(DearJohnnyRow row, string rollName)
     {
         QuestPDF.Settings.License = LicenseType.Community;
-        var letterDate = row.LetterDate ?? row.BatchDate ?? row.GeneratedDate ?? DateTime.Today;
+        var letterDate = row.LetterDate ?? row.BatchDate ?? DateTime.Today;
         var headerPath = Path.Combine(
             _environment.WebRootPath,
             "Images",
@@ -259,19 +256,12 @@ public sealed class DearJohnnyNoticeService : IDearJohnnyNoticeService
                 entity.ToTable("DearJohnnyTable", "dbo");
                 entity.Property(x => x.Id).HasColumnName("Id");
                 entity.Property(x => x.ObjectionNo).HasColumnName("Objection_No");
-                entity.Property(x => x.ObjectorType).HasColumnName("Objector_Type");
-                entity.Property(x => x.PropertyDescription).HasColumnName("Property_Desc");
                 entity.Property(x => x.ObjectorName).HasColumnName("Objector_Name");
-                entity.Property(x => x.ObjectorSurname).HasColumnName("Objector_Surname");
-                entity.Property(x => x.ObjectorAddress).HasColumnName("Objector_Address");
                 entity.Property(x => x.ObjectorEmail).HasColumnName("Objector_Email");
-                entity.Property(x => x.ObjectorPhone).HasColumnName("Objector_Phone");
                 entity.Property(x => x.LetterDate).HasColumnName("Letter_Date");
-                entity.Property(x => x.GeneratedDate).HasColumnName("Generated_Date");
                 entity.Property(x => x.ValuationKey).HasColumnName("Valuation_Key");
                 entity.Property(x => x.BatchName).HasColumnName("Batch_Name");
                 entity.Property(x => x.BatchDate).HasColumnName("Batch_Date");
-                entity.Property(x => x.SentStatus).HasColumnName("SentStatus");
             });
 
             modelBuilder.Entity<DearJohnnyObjectionEntity>(entity =>
@@ -282,6 +272,8 @@ public sealed class DearJohnnyNoticeService : IDearJohnnyNoticeService
                 entity.Property(x => x.ObjectionNo).HasColumnName("Objection_No");
                 entity.Property(x => x.UserId).HasColumnName("UserID");
                 entity.Property(x => x.ObjectionStatus).HasColumnName("objection_Status");
+                entity.Property(x => x.ObjectorType).HasColumnName("Objector_Type");
+                entity.Property(x => x.PropertyDescription).HasColumnName("Property_Desc");
             });
         }
     }
@@ -290,19 +282,12 @@ public sealed class DearJohnnyNoticeService : IDearJohnnyNoticeService
     {
         public long Id { get; set; }
         public string? ObjectionNo { get; set; }
-        public string? ObjectorType { get; set; }
-        public string? PropertyDescription { get; set; }
         public string? ObjectorName { get; set; }
-        public string? ObjectorSurname { get; set; }
-        public string? ObjectorAddress { get; set; }
         public string? ObjectorEmail { get; set; }
-        public string? ObjectorPhone { get; set; }
         public DateTime? LetterDate { get; set; }
-        public DateTime? GeneratedDate { get; set; }
         public string? ValuationKey { get; set; }
         public string? BatchName { get; set; }
         public DateTime? BatchDate { get; set; }
-        public string? SentStatus { get; set; }
     }
 
     private sealed class DearJohnnyObjectionEntity
@@ -311,6 +296,8 @@ public sealed class DearJohnnyNoticeService : IDearJohnnyNoticeService
         public string? ObjectionNo { get; set; }
         public string? UserId { get; set; }
         public string? ObjectionStatus { get; set; }
+        public string? ObjectorType { get; set; }
+        public string? PropertyDescription { get; set; }
     }
 
     private sealed class DearJohnnyRow
@@ -323,13 +310,10 @@ public sealed class DearJohnnyNoticeService : IDearJohnnyNoticeService
         public string? ObjectorSurname { get; set; }
         public string? ObjectorAddress { get; set; }
         public string? ObjectorEmail { get; set; }
-        public string? ObjectorPhone { get; set; }
         public DateTime? LetterDate { get; set; }
-        public DateTime? GeneratedDate { get; set; }
         public string? ValuationKey { get; set; }
         public string? BatchName { get; set; }
         public DateTime? BatchDate { get; set; }
-        public string? SentStatus { get; set; }
         public string? ObjectionStatus { get; set; }
     }
 }

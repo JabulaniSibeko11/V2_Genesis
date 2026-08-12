@@ -56,6 +56,7 @@ public class NoticeController : Controller
     public async Task<IActionResult> DownloadAppealOutcome(
         string rollSource,
         string referenceNumber,
+        string? returnUrl,
         CancellationToken cancellationToken)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -68,6 +69,7 @@ public class NoticeController : Controller
                 rollSource,
                 referenceNumber,
                 userId,
+                IsAdministrativeUser(),
                 cancellationToken);
 
             return File(generated.Pdf, "application/pdf", generated.FileName);
@@ -78,7 +80,9 @@ public class NoticeController : Controller
                 "Final appeal outcome not found. Roll={RollSource}, Reference={ReferenceNumber}",
                 rollSource,
                 referenceNumber);
-            return NotFound("The final appeal outcome could not be found for your account.");
+            TempData["NoticeError"] =
+                "The final appeal outcome could not be found.";
+            return RedirectToDashboard(returnUrl, rollSource);
         }
         catch (UnauthorizedAccessException)
         {
@@ -92,7 +96,7 @@ public class NoticeController : Controller
                 referenceNumber);
             TempData["NoticeError"] =
                 "The final appeal outcome could not be generated. Please try again.";
-            return RedirectToAction("Index", "Dashboard");
+            return RedirectToDashboard(returnUrl, rollSource);
         }
     }
 
@@ -102,6 +106,7 @@ public class NoticeController : Controller
     public async Task<IActionResult> DownloadInvalidOutcome(
         string rollSource,
         string objectionNo,
+        string? returnUrl,
         CancellationToken cancellationToken)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -114,6 +119,7 @@ public class NoticeController : Controller
                 rollSource,
                 objectionNo,
                 userId,
+                IsAdministrativeUser(),
                 cancellationToken);
 
             return File(generated.Pdf, "application/pdf", generated.FileName);
@@ -124,7 +130,9 @@ public class NoticeController : Controller
                 "Invalid outcome notice not found. Roll={RollSource}, Objection={ObjectionNo}",
                 rollSource,
                 objectionNo);
-            return NotFound("The objection outcome notice could not be found for your account.");
+            TempData["NoticeError"] =
+                "The objection outcome notice could not be found.";
+            return RedirectToDashboard(returnUrl, rollSource);
         }
         catch (UnauthorizedAccessException)
         {
@@ -138,7 +146,7 @@ public class NoticeController : Controller
                 objectionNo);
             TempData["NoticeError"] =
                 "The objection outcome notice could not be generated. Please try again.";
-            return RedirectToAction("Index", "Dashboard");
+            return RedirectToDashboard(returnUrl, rollSource);
         }
     }
 
@@ -148,6 +156,7 @@ public class NoticeController : Controller
     public async Task<IActionResult> DownloadPreviousProcessOutcome(
         string rollSource,
         string objectionNo,
+        string? returnUrl,
         CancellationToken cancellationToken)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -160,6 +169,7 @@ public class NoticeController : Controller
                 rollSource,
                 objectionNo,
                 userId,
+                IsAdministrativeUser(),
                 cancellationToken);
 
             return File(generated.Pdf, "application/pdf", generated.FileName);
@@ -170,7 +180,9 @@ public class NoticeController : Controller
                 "Objection outcome notice not found. Roll={RollSource}, Objection={ObjectionNo}",
                 rollSource,
                 objectionNo);
-            return NotFound("The objection outcome notice could not be found for your account.");
+            TempData["NoticeError"] =
+                "The objection outcome notice could not be found.";
+            return RedirectToDashboard(returnUrl, rollSource);
         }
         catch (UnauthorizedAccessException)
         {
@@ -184,7 +196,7 @@ public class NoticeController : Controller
                 objectionNo);
             TempData["NoticeError"] =
                 "The objection outcome notice could not be generated. Please try again.";
-            return RedirectToAction("Index", "Dashboard");
+            return RedirectToDashboard(returnUrl, rollSource);
         }
     }
 
@@ -194,6 +206,7 @@ public class NoticeController : Controller
     public async Task<IActionResult> DownloadSection53(
         string rollSource,
         string objectionNo,
+        string? returnUrl,
         CancellationToken cancellationToken)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -206,6 +219,7 @@ public class NoticeController : Controller
                 rollSource,
                 objectionNo,
                 userId,
+                IsAdministrativeUser(),
                 cancellationToken);
 
             return File(generated.Pdf, "application/pdf", generated.FileName);
@@ -216,7 +230,9 @@ public class NoticeController : Controller
                 "Section 53 notice not found. Roll={RollSource}, Objection={ObjectionNo}",
                 rollSource,
                 objectionNo);
-            return NotFound("The Section 53 notice could not be found for your account.");
+            TempData["NoticeError"] =
+                "The Section 53 notice could not be found.";
+            return RedirectToDashboard(returnUrl, rollSource);
         }
         catch (UnauthorizedAccessException)
         {
@@ -229,7 +245,7 @@ public class NoticeController : Controller
                 rollSource,
                 objectionNo);
             TempData["NoticeError"] = ex.Message;
-            return RedirectToAction("Index", "Dashboard");
+            return RedirectToDashboard(returnUrl, rollSource);
         }
     }
 
@@ -294,6 +310,7 @@ public class NoticeController : Controller
     public async Task<IActionResult> DownloadAcknowledgement(
     string objectionNo,
     string? rollSource,
+    string? returnUrl,
     CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(objectionNo))
@@ -318,6 +335,7 @@ public class NoticeController : Controller
                         objectionNo,
                         rollSource,
                         userId,
+                        IsAdministrativeUser(),
                         cancellationToken);
 
             if (generated.PdfBytes.Length == 0)
@@ -343,8 +361,9 @@ public class NoticeController : Controller
                 "Acknowledgement data was not found for {ReferenceNumber}.",
                 objectionNo);
 
-            return NotFound(
-                "The submitted application was not found.");
+            TempData["NoticeError"] =
+                "The submitted application was not found.";
+            return RedirectToDashboard(returnUrl, rollSource);
         }
         catch (UnauthorizedAccessException)
         {
@@ -357,7 +376,8 @@ public class NoticeController : Controller
                 "Unsupported acknowledgement reference {ReferenceNumber}.",
                 objectionNo);
 
-            return BadRequest(ex.Message);
+            TempData["NoticeError"] = ex.Message;
+            return RedirectToDashboard(returnUrl, rollSource);
         }
         catch (Exception ex)
         {
@@ -369,9 +389,7 @@ public class NoticeController : Controller
             TempData["NoticeError"] =
                 "The acknowledgement could not be generated. Please try again.";
 
-            return RedirectToAction(
-                "Index",
-                "Dashboard");
+            return RedirectToDashboard(returnUrl, rollSource);
         }
     }
 
@@ -476,7 +494,10 @@ public class NoticeController : Controller
     [Route("notices/download-available")]
     public async Task<IActionResult> DownloadAvailable(
         string referenceNo,
-        NoticeType type)
+        NoticeType type,
+        string? rollSource,
+        string? returnUrl,
+        string? ownerUserId)
     {
         if (string.IsNullOrWhiteSpace(referenceNo))
             return BadRequest("The reference number is required.");
@@ -485,22 +506,71 @@ public class NoticeController : Controller
         if (string.IsNullOrWhiteSpace(userId))
             return Challenge();
 
-        var displayName = User.FindFirstValue(ClaimTypes.Name) ?? "Client";
-        var notices = await _notice.GetNoticesDashboardAsync(userId, displayName);
+        try
+        {
+            var noticeOwnerUserId = IsAdministrativeUser() &&
+                !string.IsNullOrWhiteSpace(ownerUserId)
+                    ? ownerUserId.Trim()
+                    : userId;
 
-        var item = notices.ObjectionNotices
-            .Concat(notices.AppealNotices)
-            .Concat(notices.QueryNotices)
-            .FirstOrDefault(x =>
-                x.Type == type &&
-                string.Equals(
-                    x.ReferenceNo?.Trim(),
-                    referenceNo.Trim(),
-                    StringComparison.OrdinalIgnoreCase));
+            var displayName = User.FindFirstValue(ClaimTypes.Name) ?? "Client";
+            var notices = await _notice.GetNoticesDashboardAsync(
+                noticeOwnerUserId,
+                displayName);
 
-        if (item is null || !item.FileExists || string.IsNullOrWhiteSpace(item.FilePath))
-            return NotFound("The notice is not available for your account yet.");
+            var item = notices.ObjectionNotices
+                .Concat(notices.AppealNotices)
+                .Concat(notices.QueryNotices)
+                .FirstOrDefault(x =>
+                    x.Type == type &&
+                    string.Equals(
+                        x.ReferenceNo?.Trim(),
+                        referenceNo.Trim(),
+                        StringComparison.OrdinalIgnoreCase));
 
-        return Download(Uri.EscapeDataString(item.FilePath));
+            if (item is null || !item.FileExists || string.IsNullOrWhiteSpace(item.FilePath))
+            {
+                TempData["NoticeError"] =
+                    "The notice is not available for your account yet.";
+                return RedirectToDashboard(returnUrl, rollSource);
+            }
+
+            return Download(Uri.EscapeDataString(item.FilePath));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Available notice download failed. Reference={ReferenceNo}, Type={NoticeType}",
+                referenceNo,
+                type);
+
+            TempData["NoticeError"] =
+                "The notice could not be downloaded. Please try again.";
+            return RedirectToDashboard(returnUrl, rollSource);
+        }
+    }
+
+    private bool IsAdministrativeUser() =>
+        User.IsInRole("Admin") ||
+        User.FindFirstValue("UMRole")?.Equals(
+            "Admin",
+            StringComparison.OrdinalIgnoreCase) == true ||
+        !string.IsNullOrWhiteSpace(User.FindFirstValue("SAPNumber"));
+
+    private IActionResult RedirectToDashboard(
+        string? returnUrl,
+        string? rollSource)
+    {
+        if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+            return LocalRedirect(returnUrl);
+
+        var openRoll = string.IsNullOrWhiteSpace(rollSource)
+            ? "Objection"
+            : rollSource.Trim();
+
+        return IsAdministrativeUser()
+            ? RedirectToAction("Index", "Admin", new { openRoll })
+            : RedirectToAction("Index", "Dashboard", new { openRoll });
     }
 }

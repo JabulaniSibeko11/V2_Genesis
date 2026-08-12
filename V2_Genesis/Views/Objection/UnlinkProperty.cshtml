@@ -1,7 +1,7 @@
 ﻿@{
     ViewData["Title"] = "Unlink Property";
 
-    var linkedId = ViewData["LinkedId"]?.ToString() ?? "";
+    var idProperty = ViewData["IDProperty"]?.ToString() ?? "";
     var propertyDescription = ViewData["PropertyDescription"]?.ToString()
         ?? "Property description not available";
     var propertyKey = ViewData["PropertyKey"]?.ToString() ?? "";
@@ -80,7 +80,7 @@
                       class="unlink-form">
                     @Html.AntiForgeryToken()
 
-                    <input type="hidden" name="linkedId" value="@linkedId" />
+                    <input type="hidden" name="idProperty" value="@idProperty" />
                     <input type="hidden" name="rollSource" value="@rollSource" />
                     <input type="hidden" name="returnUrl" value="@returnUrl" />
 

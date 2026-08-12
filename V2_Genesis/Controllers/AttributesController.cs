@@ -1229,16 +1229,17 @@ public class AttributesController : Controller
     }
 
     [HttpGet]
-    [Authorize(Roles = "Client")]
+    [Authorize]
     [Route("attributes/unlink")]
-    public async Task<IActionResult> Unlink(long id)
+    public async Task<IActionResult> Unlink(long id, string? returnUrl = null)
     {
+        var safeReturnUrl = ResolveAttributeUnlinkReturnUrl(returnUrl);
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
         if (string.IsNullOrWhiteSpace(userId) || id <= 0)
         {
             TempData["AttrLinkError"] = "The linked property could not be identified.";
-            return RedirectToAction("Index", "Dashboard");
+            return LocalRedirect(safeReturnUrl);
         }
 
         // The dashboard passes LinkedProperties_Attr.ID, not IDProperty.
@@ -1251,7 +1252,7 @@ public class AttributesController : Controller
         if (linked is null)
         {
             TempData["AttrLinkError"] = "Property not found or already removed.";
-            return RedirectToAction("Index", "Dashboard");
+            return LocalRedirect(safeReturnUrl);
         }
 
         // Optionally load property details for the confirmation page
@@ -1265,7 +1266,8 @@ public class AttributesController : Controller
             TownNameDesc = detail?.TownNameDesc,
             CatDesc = detail?.CatDesc,
             MarketValue = detail?.MarketValue,
-            Address = detail?.LisStreetAddress
+            Address = detail?.LisStreetAddress,
+            ReturnUrl = safeReturnUrl
         };
 
         return View(vm);
@@ -1273,17 +1275,18 @@ public class AttributesController : Controller
 
     // ── POST /attributes/unlink — permanent delete ────────────────────
     [HttpPost]
-    [Authorize(Roles = "Client")]
+    [Authorize]
     [Route("attributes/unlink")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> UnlinkConfirm(long id)
+    public async Task<IActionResult> UnlinkConfirm(long id, string? returnUrl = null)
     {
+        var safeReturnUrl = ResolveAttributeUnlinkReturnUrl(returnUrl);
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
         if (string.IsNullOrWhiteSpace(userId) || id <= 0)
         {
             TempData["AttrLinkError"] = "The linked property could not be identified.";
-            return RedirectToAction("Index", "Dashboard");
+            return LocalRedirect(safeReturnUrl);
         }
 
         var linked = await _attrDb.LinkedProperties
@@ -1292,7 +1295,7 @@ public class AttributesController : Controller
         if (linked is null)
         {
             TempData["AttrLinkError"] = "Property not found or already removed.";
-            return RedirectToAction("Index", "Dashboard");
+            return LocalRedirect(safeReturnUrl);
         }
 
         _attrDb.LinkedProperties.Remove(linked);
@@ -1302,7 +1305,17 @@ public class AttributesController : Controller
             "Property has been removed from your profile. " +
             "You can search and link it again at any time.";
 
-        return RedirectToAction("Index", "Dashboard");
+        return LocalRedirect(safeReturnUrl);
+    }
+
+    private string ResolveAttributeUnlinkReturnUrl(string? returnUrl)
+    {
+        if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+            return returnUrl;
+
+        return User.IsInRole("Admin")
+            ? "/admin?openRoll=attributes"
+            : "/Dashboard?openRoll=attributes";
     }
     [HttpGet]
     [AllowAnonymous]
@@ -1511,21 +1524,57 @@ public class AttributesController : Controller
     [HttpGet]
     [AllowAnonymous]
     [Route("attributes/acknowledgement/download")]
-    public async Task<IActionResult> DownloadAcknowledgement(string attrNo)
+    public async Task<IActionResult> DownloadAcknowledgement(
+        string attrNo,
+        string? returnUrl = null)
     {
         if (string.IsNullOrWhiteSpace(attrNo))
             return BadRequest("Attribute number is required.");
 
-        var generated = await _attributeService.GenerateAcknowledgementPdfAsync(attrNo.Trim());
-
-        if (generated is null || generated.Value.Pdf.Length == 0)
+        try
         {
-            _logger.LogWarning(
-                "[Attributes] On-demand acknowledgement generation returned nothing for Attr_No={AttrNo}",
-                attrNo);
-            return NotFound("Could not generate the acknowledgement for this submission.");
-        }
+            var generated = await _attributeService
+                .GenerateAcknowledgementPdfAsync(attrNo.Trim());
 
-        return File(generated.Value.Pdf, "application/pdf", generated.Value.FileName);
+            if (generated is null || generated.Value.Pdf.Length == 0)
+            {
+                _logger.LogWarning(
+                    "[Attributes] On-demand acknowledgement generation returned nothing for Attr_No={AttrNo}",
+                    attrNo);
+                TempData["NoticeError"] =
+                    "Could not generate the acknowledgement for this submission.";
+                return RedirectAfterAttributeDownload(returnUrl);
+            }
+
+            return File(
+                generated.Value.Pdf,
+                "application/pdf",
+                generated.Value.FileName);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "[Attributes] Acknowledgement download failed for Attr_No={AttrNo}",
+                attrNo);
+            TempData["NoticeError"] =
+                "The attribute acknowledgement could not be downloaded.";
+            return RedirectAfterAttributeDownload(returnUrl);
+        }
+    }
+
+    private IActionResult RedirectAfterAttributeDownload(string? returnUrl)
+    {
+        if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+            return LocalRedirect(returnUrl);
+
+        var isAdmin = User.IsInRole("Admin") ||
+            User.FindFirstValue("UMRole")?.Equals(
+                "Admin", StringComparison.OrdinalIgnoreCase) == true ||
+            !string.IsNullOrWhiteSpace(User.FindFirstValue("SAPNumber"));
+
+        return isAdmin
+            ? RedirectToAction("Index", "Admin", new { openRoll = "attributes" })
+            : RedirectToAction("Index", "Dashboard", new { openRoll = "attributes" });
     }
 }

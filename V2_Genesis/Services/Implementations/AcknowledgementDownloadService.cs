@@ -24,6 +24,7 @@ public sealed class AcknowledgementDownloadService
         string referenceNumber,
         string? rollSource,
         string userId,
+        bool allowAdministrativeAccess = false,
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(referenceNumber))
@@ -42,14 +43,13 @@ public sealed class AcknowledgementDownloadService
         var reference = referenceNumber.Trim();
 
         // Section 78 Query or Review.
-        if (reference.StartsWith(
-                "QUE-",
-                StringComparison.OrdinalIgnoreCase))
+        if (IsSection78Reference(reference, rollSource))
         {
             return await _section78Service
                 .GenerateAcknowledgementFromDatabaseAsync(
                     reference,
                     userId,
+                    allowAdministrativeAccess,
                     cancellationToken);
         }
 
@@ -86,5 +86,25 @@ public sealed class AcknowledgementDownloadService
             PdfBytes = generated.Pdf,
             SubmissionType = isAppeal ? "Appeal" : "Objection"
         };
+    }
+
+    private static bool IsSection78Reference(
+        string reference,
+        string? rollSource)
+    {
+        if (string.Equals(rollSource?.Trim(), "Objection_Query",
+                StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(rollSource?.Trim(), "Query",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        var value = reference.Trim().ToUpperInvariant();
+        return value.StartsWith("QUE-") ||
+               value.StartsWith("QUERY-") ||
+               value.Contains("-QUE-") ||
+               value.Contains("-QUERY-") ||
+               value.EndsWith("-R");
     }
 }

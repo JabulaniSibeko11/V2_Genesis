@@ -494,31 +494,31 @@ namespace V2_Genesis.Services.Implementations
             var formType =
                 NormalizePropertyType(rawPropertyType);
 
-            var procedure =
-                ResolveFormProcedure(formType);
+            List<object> resultSets;
 
-            var command = new CommandDefinition(
-                procedure,
-                new
-                {
-                    InquiryType = isAppeal
-                        ? "Appeal"
-                        : "Objection",
+            if (IsSupplementaryRoll(rollSource))
+            {
+                // Sup1-Sup4 do not consistently contain the GV23 submitted-
+                // form stored procedures. Read the same submitted section
+                // tables directly from the selected supplementary database.
+                resultSets = await LoadSupplementaryFormDataAsync(
+                    connection,
+                    referenceNumber,
+                    formType,
+                    isAppeal,
+                    cancellationToken);
+            }
+            else
+            {
+                resultSets = await LoadProcedureFormDataAsync(
+                    connection,
+                    referenceNumber,
+                    formType,
+                    isAppeal,
+                    cancellationToken);
+            }
 
-                    RefNo = referenceNumber
-                },
-                commandType: CommandType.StoredProcedure,
-                commandTimeout: 60,
-                cancellationToken: cancellationToken);
-
-            using var grid =
-                await connection.QueryMultipleAsync(command);
-
-            var resultSets = new List<object>();
-
-            var main =
-                (await grid.ReadAsync())
-                .FirstOrDefault();
+            var main = resultSets.FirstOrDefault();
 
             if (main is null)
             {
@@ -526,23 +526,11 @@ namespace V2_Genesis.Services.Implementations
                     $"{submissionType} {referenceNumber} was not found.");
             }
 
-            resultSets.Add(main);
-
             if (!allowAdministrativeAccess
                 && !BelongsToUser(main, userId, isAppeal))
             {
                 return SubmissionViewResult.Fail(
                     "This submission does not belong to your account.");
-            }
-
-            while (!grid.IsConsumed)
-            {
-                var row =
-                    (await grid.ReadAsync())
-                    .FirstOrDefault();
-
-                if (row is not null)
-                    resultSets.Add(row);
             }
 
             var section1 =
@@ -663,6 +651,190 @@ namespace V2_Genesis.Services.Implementations
 
             return SubmissionViewResult.Ok(model);
         }
+
+        private static async Task<List<object>> LoadProcedureFormDataAsync(
+            SqlConnection connection,
+            string referenceNumber,
+            string formType,
+            bool isAppeal,
+            CancellationToken cancellationToken)
+        {
+            var command = new CommandDefinition(
+                ResolveFormProcedure(formType),
+                new
+                {
+                    InquiryType = isAppeal ? "Appeal" : "Objection",
+                    RefNo = referenceNumber
+                },
+                commandType: CommandType.StoredProcedure,
+                commandTimeout: 60,
+                cancellationToken: cancellationToken);
+
+            using var grid = await connection.QueryMultipleAsync(command);
+            var resultSets = new List<object>();
+
+            while (!grid.IsConsumed)
+            {
+                var row = (await grid.ReadAsync()).FirstOrDefault();
+                if (row is not null)
+                    resultSets.Add(row);
+            }
+
+            return resultSets;
+        }
+
+        private static async Task<List<object>> LoadSupplementaryFormDataAsync(
+            SqlConnection connection,
+            string referenceNumber,
+            string formType,
+            bool isAppeal,
+            CancellationToken cancellationToken)
+        {
+            var mainSql = isAppeal
+                ? """
+                    SELECT TOP (1) *
+                    FROM dbo.Obj_Property_Info_Appeal
+                    WHERE LTRIM(RTRIM(ISNULL(Appeal_No, ''))) = @ReferenceNumber
+                    """
+                : """
+                    SELECT TOP (1) *
+                    FROM dbo.Obj_Property_Info
+                    WHERE LTRIM(RTRIM(ISNULL(Objection_No, ''))) = @ReferenceNumber
+                    """;
+
+            var command = new CommandDefinition(
+                mainSql,
+                new { ReferenceNumber = referenceNumber.Trim() },
+                commandTimeout: 60,
+                cancellationToken: cancellationToken);
+
+            var main = await connection.QueryFirstOrDefaultAsync<dynamic>(command);
+            if (main is null)
+                return new List<object>();
+
+            var resultSets = new List<object> { main };
+            var submissionIdText = FirstValue(
+                main,
+                isAppeal ? "Appeal_ID" : "Objection_ID");
+
+            var sections = GetSupplementarySectionDefinitions(formType);
+
+            foreach (var section in sections)
+            {
+                var sectionRow = await LoadSupplementarySectionAsync(
+                    connection,
+                    section.TableName,
+                    section.ReferenceColumn,
+                    section.AppealReferenceColumn,
+                    referenceNumber,
+                    submissionIdText,
+                    isAppeal,
+                    cancellationToken);
+
+                if (sectionRow is not null)
+                    resultSets.Add(sectionRow);
+            }
+
+            return resultSets;
+        }
+
+        private static async Task<object?> LoadSupplementarySectionAsync(
+            SqlConnection connection,
+            string tableName,
+            string referenceColumn,
+            string appealReferenceColumn,
+            string referenceNumber,
+            string submissionIdText,
+            bool isAppeal,
+            CancellationToken cancellationToken)
+        {
+            var byReference = new CommandDefinition(
+                $"""
+                 SELECT TOP (1) *
+                 FROM dbo.{tableName}
+                 WHERE LTRIM(RTRIM(ISNULL({referenceColumn}, ''))) = @ReferenceNumber
+                 """,
+                new { ReferenceNumber = referenceNumber.Trim() },
+                commandTimeout: 60,
+                cancellationToken: cancellationToken);
+
+            var row = await connection.QueryFirstOrDefaultAsync<dynamic>(byReference);
+            if (row is not null || string.IsNullOrWhiteSpace(submissionIdText))
+                return row;
+
+            var numericReferenceColumn = isAppeal
+                ? appealReferenceColumn
+                : "Ref";
+
+            var legacyFilter = isAppeal
+                ? $"TRY_CONVERT(bigint, {numericReferenceColumn}) = TRY_CONVERT(bigint, @SubmissionId)"
+                : $"TRY_CONVERT(bigint, {numericReferenceColumn}) = TRY_CONVERT(bigint, @SubmissionId) AND {appealReferenceColumn} IS NULL";
+
+            var byNumericReference = new CommandDefinition(
+                $"""
+                 SELECT TOP (1) *
+                 FROM dbo.{tableName}
+                 WHERE {legacyFilter}
+                 """,
+                new { SubmissionId = submissionIdText },
+                commandTimeout: 60,
+                cancellationToken: cancellationToken);
+
+            return await connection.QueryFirstOrDefaultAsync<dynamic>(byNumericReference);
+        }
+
+        private static IReadOnlyList<SupplementarySectionDefinition>
+            GetSupplementarySectionDefinitions(string formType)
+        {
+            var sections = new List<SupplementarySectionDefinition>
+            {
+                new("Obj_Section1", "Objection_Ref_S1", "Appeal_Ref_S1"),
+                new("Obj_Section2", "Objection_Ref_S2", "Appeal_Ref_S2")
+            };
+
+            switch (formType)
+            {
+                case "Bus":
+                    sections.Add(new("Obj_Section3Bus", "Objection_Ref_SB3", "Appeal_Ref_SB3"));
+                    sections.Add(new("Obj_Section4Bus", "Objection_Ref_SB4", "Appeal_Ref_SB4"));
+                    break;
+
+                case "Agric":
+                    sections.Add(new("Obj_Section3Agri", "Objection_Ref_SA3", "Appeal_Ref_SA3"));
+                    break;
+
+                case "Multi":
+                    sections.Add(new("Obj_Section3Res", "Objection_Ref_SR3", "Appeal_Ref_SR3"));
+                    sections.Add(new("Obj_Section3Bus", "Objection_Ref_SB3", "Appeal_Ref_SB3"));
+                    sections.Add(new("Obj_Section3Agri", "Objection_Ref_SA3", "Appeal_Ref_SA3"));
+                    sections.Add(new("Obj_Section4Res", "Objection_Ref_SR4", "Appeal_Ref_SR4"));
+                    sections.Add(new("Obj_Section4Bus", "Objection_Ref_SB4", "Appeal_Ref_SB4"));
+                    break;
+
+                default:
+                    sections.Add(new("Obj_Section3Res", "Objection_Ref_SR3", "Appeal_Ref_SR3"));
+                    sections.Add(new("Obj_Section4Res", "Objection_Ref_SR4", "Appeal_Ref_SR4"));
+                    break;
+            }
+
+            sections.Add(new("Obj_Section5", "Objection_Ref_S5", "Appeal_Ref_S5"));
+            sections.Add(new("Obj_Section6", "Objection_Ref_S6", "Appeal_Ref_S6"));
+            sections.Add(new("Obj_Section7", "Objection_Ref_S7", "Appeal_Ref_S7"));
+            sections.Add(new("Obj_Files", "Objection_Ref_files", "Appeal_Ref_files"));
+
+            return sections;
+        }
+
+        private static bool IsSupplementaryRoll(string rollSource) =>
+            rollSource.Equals("Objection_Supp1", StringComparison.OrdinalIgnoreCase)
+            || rollSource.Equals("Objection_Supp2", StringComparison.OrdinalIgnoreCase)
+            || rollSource.Equals("Objection_Supp3", StringComparison.OrdinalIgnoreCase)
+            || rollSource.Equals("Objection_Supp4", StringComparison.OrdinalIgnoreCase);
+
+        private sealed record SupplementarySectionDefinition(
+            string TableName,
+            string ReferenceColumn,
+            string AppealReferenceColumn);
 
         private async Task<SubmissionViewResult> LoadSection78Async(
             string submissionType,

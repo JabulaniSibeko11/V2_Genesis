@@ -2,15 +2,15 @@
     ViewData["Title"] = "Application Submitted";
     Layout = "~/Views/Shared/_ClientLayout.cshtml";
 
-    var rebateNo   = TempData["id"]?.ToString()     ?? "";
-    var rebateType = TempData["Type"]?.ToString()   ?? "Rebate Application";
-    var status     = TempData["Status"]?.ToString() ?? "Acknowledge";
-    var date       = TempData["Date"]?.ToString()   ?? DateTime.Now.ToString("dd MMM yyyy HH:mm");
-    var count      = TempData["Count"]?.ToString()  ?? "0";
+    var rebateNo = TempData["id"]?.ToString() ?? "";
+    var rebateType = TempData["Type"]?.ToString() ?? "Rebate Application";
+    var status = TempData["Status"]?.ToString() ?? "Acknowledge";
+    var date = TempData["Date"]?.ToString() ?? DateTime.Now.ToString("dd MMM yyyy HH:mm");
+    var count = TempData["Count"]?.ToString() ?? "0";
 
     // Keep TempData so refresh doesn't wipe it
-    TempData.Keep("id");    TempData.Keep("Type");  TempData.Keep("Status");
-    TempData.Keep("Date");  TempData.Keep("Count");
+    TempData.Keep("id"); TempData.Keep("Type"); TempData.Keep("Status");
+    TempData.Keep("Date"); TempData.Keep("Count");
     for (int k = 1; k <= 10; k++) TempData.Keep($"File{k}");
 
     var files = new List<string>();
@@ -133,7 +133,7 @@
                     To enquire, contact us at
                     <strong>011 407-6622</strong> or
                     <a href="mailto:valuationenquiries@joburg.org.za"
-                       style="color:#7a2010;font-weight:600;">
+                           style="color:#7a2010;font-weight:600;">
                         valuationenquiries@joburg.org.za
                     </a>.
                 </div>
@@ -156,19 +156,20 @@
                 @if (!isRejected)
                 {
                     <a asp-controller="Rebates" asp-action="Download"
-                       asp-route-rebateNo="@rebateNo"
-                       class="disp-btn disp-btn-gold">
+                           asp-route-rebateNo="@rebateNo"
+                           class="disp-btn disp-btn-gold">
                         <i class="fa-solid fa-file-pdf"></i>
                         Download Acknowledgement
                     </a>
                 }
                 <a asp-controller="Dashboard" asp-action="Index"
-                   class="disp-btn disp-btn-teal">
+                       asp-route-openRoll="Rebates"
+                       class="disp-btn disp-btn-teal">
                     <i class="fa-solid fa-gauge-high"></i>
                     My Applications
                 </a>
                 <a asp-controller="Rebates" asp-action="Index"
-                   class="disp-btn disp-btn-outline">
+                       class="disp-btn disp-btn-outline">
                     <i class="fa-solid fa-plus"></i>
                     New Application
                 </a>

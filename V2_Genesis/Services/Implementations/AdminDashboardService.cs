@@ -776,34 +776,31 @@ public class AdminDashboardService : IAdminDashboardService
 
         var status = match.CurrentStatus ?? "";
 
-        // View submitted form
+        // Use the same unified read-only submitted-form viewer as the dashboards.
+        // SubmissionController grants the ownership bypass only to authenticated
+        // administrators and keeps the normal ownership check for client users.
+        var submissionType = string.IsNullOrWhiteSpace(match.RefType)
+            ? "Objection"
+            : match.RefType.Trim();
+
         notices.Add(new AdminNoticeOption
         {
             NoticeName = "View Submitted Form",
-            Url = match.Property_Type?.Equals("Multi", StringComparison.OrdinalIgnoreCase) == true
-                ? $"/objection/multipurpose-details?referenceNo={refNo}&rollSource={match.RollSource}"
-                : $"/objection/form-details?referenceNo={refNo}&rollSource={match.RollSource}",
+            Url = $"/submissions/view/{Uri.EscapeDataString(submissionType)}/" +
+                  $"{Uri.EscapeDataString(refNo)}?rollSource=" +
+                  $"{Uri.EscapeDataString(match.RollSource)}&returnUrl=%2Fadmin%2Fsearch",
             IsAvailable = true,
             Icon = "fa-eye"
         });
 
-        // Acknowledgement from saved folder
+        // Acknowledgement generated from the submitted database record.
         notices.Add(new AdminNoticeOption
         {
             NoticeName = "Acknowledgement",
-            Url = $"/notice/acknowledgement/download?objectionNo={refNo}&rollSource={match.RollSource}",
+            Url = $"/notice/acknowledgement/download?objectionNo=" +
+                  $"{Uri.EscapeDataString(refNo)}&rollSource=" +
+                  $"{Uri.EscapeDataString(match.RollSource)}&returnUrl=%2Fadmin%2Fsearch",
             IsAvailable = true,
-            Icon = "fa-file-pdf"
-        });
-
-        // Section 49
-        notices.Add(new AdminNoticeOption
-        {
-            NoticeName = "Section 49 Notice",
-            Url = $"/notice/section49/download?rollSource={match.RollSource}&unitKey={match.Unit_key}&valuationKey={match.Valuation_Key}",
-            IsAvailable = !string.IsNullOrWhiteSpace(match.Unit_key) ||
-                          !string.IsNullOrWhiteSpace(match.Valuation_Key),
-            ReasonUnavailable = "Section 49 can only be downloaded when the property is found on the roll.",
             Icon = "fa-file-pdf"
         });
 
@@ -811,7 +808,10 @@ public class AdminDashboardService : IAdminDashboardService
         notices.Add(new AdminNoticeOption
         {
             NoticeName = "Section 51 Notice",
-            Url = $"/section51/download?referenceNo={refNo}&rollSource={match.RollSource}",
+            Url = $"/notices/download-available?referenceNo=" +
+                  $"{Uri.EscapeDataString(refNo)}&type=Section51&rollSource=" +
+                  $"{Uri.EscapeDataString(match.RollSource)}&returnUrl=%2Fadmin%2Fsearch" +
+                  $"&ownerUserId={Uri.EscapeDataString(match.UserId ?? string.Empty)}",
             IsAvailable = match.IsThirdParty || match.IsRepresentative,
             ReasonUnavailable = "Section 51 is only applicable where the case requires third-party or representative handling.",
             Icon = "fa-file-pdf"
@@ -821,7 +821,9 @@ public class AdminDashboardService : IAdminDashboardService
         notices.Add(new AdminNoticeOption
         {
             NoticeName = "Section 53 Notice",
-            Url = $"/{RollSourceToController(match.RollSource)}/DownloadSection53?ObjectionNum={refNo}",
+            Url = $"/notice/section53/download?objectionNo=" +
+                  $"{Uri.EscapeDataString(refNo)}&rollSource=" +
+                  $"{Uri.EscapeDataString(match.RollSource)}&returnUrl=%2Fadmin%2Fsearch",
             IsAvailable = status.Equals("Notice-Sent", StringComparison.OrdinalIgnoreCase) ||
                           status.Equals("Appeal-Closed", StringComparison.OrdinalIgnoreCase),
             ReasonUnavailable = "Section 53 is only available after Notice-Sent.",
@@ -832,7 +834,9 @@ public class AdminDashboardService : IAdminDashboardService
         notices.Add(new AdminNoticeOption
         {
             NoticeName = "Appeal Decision / Section 52",
-            Url = $"/{RollSourceToController(match.RollSource)}/DownloadAppeal?ObjectionNum={refNo}",
+            Url = $"/notice/appeal-outcome/download?referenceNumber=" +
+                  $"{Uri.EscapeDataString(refNo)}&rollSource=" +
+                  $"{Uri.EscapeDataString(match.RollSource)}&returnUrl=%2Fadmin%2Fsearch",
             IsAvailable = status.Equals("App-Finalized", StringComparison.OrdinalIgnoreCase),
             ReasonUnavailable = "Appeal decision is only available after App-Finalized.",
             Icon = "fa-gavel"

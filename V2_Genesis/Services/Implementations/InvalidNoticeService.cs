@@ -30,6 +30,7 @@ public sealed class InvalidNoticeService : IInvalidNoticeService
         string rollSource,
         string objectionNo,
         string userId,
+        bool allowAdministrativeAccess = false,
         CancellationToken cancellationToken = default)
     {
         rollSource = rollSource?.Trim() ?? string.Empty;
@@ -55,7 +56,8 @@ public sealed class InvalidNoticeService : IInvalidNoticeService
                 on (notice.ObjectionNo ?? string.Empty).Trim()
                 equals (objection.ObjectionNo ?? string.Empty).Trim()
             where (notice.ObjectionNo ?? string.Empty).Trim() == objectionNo
-                && (objection.UserId ?? string.Empty).Trim() == userId
+                && (allowAdministrativeAccess ||
+                    (objection.UserId ?? string.Empty).Trim() == userId)
                 && ((objection.ObjectionStatus ?? string.Empty).Trim() == InvalidObjectionStatus
                     || (objection.ObjectionStatus ?? string.Empty).Trim() == InvalidOmissionStatus)
             orderby notice.Id descending

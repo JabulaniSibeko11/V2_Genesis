@@ -3,6 +3,10 @@
 @{
     // Loaded on demand — see DashboardController.RebatesDetail(...).
     var rebateCount = Model.Rebates?.Count ?? 0;
+    var rebateReturnUrl = Url.Action(
+        "Index",
+        "Dashboard",
+        new { openRoll = "Rebates" }) ?? "/Dashboard?openRoll=Rebates";
 }
 
 @if (rebateCount == 0)
@@ -98,7 +102,7 @@ else
                                                        asp-route-submissionType="Rebate"
                                                        asp-route-referenceNumber="@item.Rebate_No"
                                                        asp-route-rollSource="Rebates"
-                                                       asp-route-returnUrl="/Dashboard?openRoll=Rebates">
+                                                       asp-route-returnUrl="@rebateReturnUrl">
                                                     <i class="fa-solid fa-eye"></i>
                                                     View Form
                                                 </a>

@@ -6,5 +6,6 @@ public interface IInvalidNoticeService
         string rollSource,
         string objectionNo,
         string userId,
+        bool allowAdministrativeAccess = false,
         CancellationToken cancellationToken = default);
 }

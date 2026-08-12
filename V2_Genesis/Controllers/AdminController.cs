@@ -376,7 +376,7 @@ public class AdminController : Controller
                     referenceNumber,
                     rollSource,
                     userId,
-                    cancellationToken);
+                    cancellationToken: cancellationToken);
 
             await _audit.LogAsync(
                 AdminEmail,

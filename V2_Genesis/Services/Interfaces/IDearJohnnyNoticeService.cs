@@ -6,5 +6,6 @@ public interface IDearJohnnyNoticeService
         string rollSource,
         string objectionNo,
         string userId,
+        bool allowAdministrativeAccess = false,
         CancellationToken cancellationToken = default);
 }

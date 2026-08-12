@@ -8,6 +8,7 @@ namespace V2_Genesis.Services.Interfaces
         string referenceNumber,
         string? rollSource,
         string userId,
+        bool allowAdministrativeAccess = false,
         CancellationToken cancellationToken = default);
     }
 }

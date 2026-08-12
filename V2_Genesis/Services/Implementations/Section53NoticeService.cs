@@ -28,6 +28,7 @@ public sealed class Section53NoticeService : ISection53NoticeService
         string rollSource,
         string objectionNo,
         string userId,
+        bool allowAdministrativeAccess = false,
         CancellationToken cancellationToken = default)
     {
         rollSource = rollSource?.Trim() ?? string.Empty;
@@ -55,7 +56,8 @@ public sealed class Section53NoticeService : ISection53NoticeService
                 on (objection.ObjectionNo ?? string.Empty).Trim()
                 equals (mvd.ObjectionNo ?? string.Empty).Trim()
             where (objection.ObjectionNo ?? string.Empty).Trim() == objectionNo
-                && (objection.UserId ?? string.Empty).Trim() == userId
+                && (allowAdministrativeAccess ||
+                    (objection.UserId ?? string.Empty).Trim() == userId)
             select new { objection, mvd })
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -121,7 +123,6 @@ public sealed class Section53NoticeService : ISection53NoticeService
             BatchDate = mvd.BatchDate,
             AppealStartDate = mvd.AppealStartDate,
             AppealCloseDate = mvd.AppealCloseDate,
-            EffectiveDate = TryParseDate(mvd.EffectiveDateText),
             ReviseMvd = mvd.ReviseMvd?.ToString(),
             RevisedCategory = mvd.RevisedCategory,
             RevisedCategory2 = mvd.RevisedCategory2,
@@ -143,12 +144,6 @@ public sealed class Section53NoticeService : ISection53NoticeService
             RevisedAppealStartDate = mvd.RevisedAppealStartDate,
             RevisedAppealCloseDate = mvd.RevisedAppealCloseDate
         };
-
-    private static DateTime? TryParseDate(string? value) =>
-        DateTime.TryParse(value, CultureInfo.InvariantCulture,
-            DateTimeStyles.AllowWhiteSpaces, out var date)
-            ? date
-            : null;
 
     private byte[] BuildPdf(Section53Row row, string rollName, bool revised)
     {
@@ -483,7 +478,6 @@ public sealed class Section53NoticeService : ISection53NoticeService
                 entity.Property(x => x.BatchDate).HasColumnName("Batch_Date");
                 entity.Property(x => x.AppealStartDate).HasColumnName("Appeal_Start_Date");
                 entity.Property(x => x.AppealCloseDate).HasColumnName("Appeal_Close_Date");
-                entity.Property(x => x.EffectiveDateText).HasColumnName("WEFDATEMVD");
                 entity.Property(x => x.ReviseMvd).HasColumnName("Revise_MVD");
                 entity.Property(x => x.RevisedCategory).HasColumnName("ReviseMVD_Category");
                 entity.Property(x => x.RevisedCategory2).HasColumnName("ReviseMVD_Category2");
@@ -551,7 +545,6 @@ public sealed class Section53NoticeService : ISection53NoticeService
         public DateTime? BatchDate { get; set; }
         public DateTime? AppealStartDate { get; set; }
         public DateTime? AppealCloseDate { get; set; }
-        public string? EffectiveDateText { get; set; }
         public bool? ReviseMvd { get; set; }
         public string? RevisedCategory { get; set; }
         public string? RevisedCategory2 { get; set; }

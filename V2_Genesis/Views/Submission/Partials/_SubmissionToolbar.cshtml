@@ -2,9 +2,14 @@
 @{
     var returnUrl = ViewData["ReturnUrl"]?.ToString() ?? "/Dashboard";
     var isAdminView = ViewData["IsAdminView"] as bool? ?? false;
-    var dashboardLabel = isAdminView
-        ? "Back to admin dashboard"
-        : "Back to dashboard";
+    var returnsToRebates = returnUrl.Contains(
+        "openRoll=Rebates",
+        StringComparison.OrdinalIgnoreCase);
+    var dashboardLabel = returnsToRebates
+        ? "Back to Rebates"
+        : isAdminView
+            ? "Back to admin dashboard"
+            : "Back to dashboard";
 }
 <div class="submission-toolbar">
     <a href="@returnUrl" class="submission-back-link">

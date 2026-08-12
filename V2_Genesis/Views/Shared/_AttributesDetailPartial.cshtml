@@ -5,6 +5,8 @@
 
 @{
     var attrData = Model.AttrData;
+    var dashboardReturnUrl =
+        $"{Context.Request.PathBase}{Context.Request.Path}{Context.Request.QueryString}";
 
     bool IsPendingInspectionAppointment(AttributeAppointment appointment)
     {
@@ -88,7 +90,7 @@
                             <td>@item.MarketValue</td>
                             <td>
                                 <span class="attr-form-pill attr-pill-@(item.FormType.ToLower()
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                .Replace(" ", "").Replace("&", "").Replace("/", ""))">
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          .Replace(" ", "").Replace("&", "").Replace("/", ""))">
                                     @item.FormType
                                 </span>
                             </td>
@@ -131,7 +133,7 @@
                                                        asp-route-submissionType="Attribute"
                                                        asp-route-referenceNumber="@item.SubmissionRef"
                                                        asp-route-rollSource="Attributes"
-                                                       asp-route-returnUrl="/Dashboard?openRoll=Attributes">
+                                                       asp-route-returnUrl="@dashboardReturnUrl">
                                                     View Submission
                                                 </a>
                                             </li>
@@ -140,7 +142,8 @@
                                             <a class="dropdown-item"
                                                    asp-controller="Attributes"
                                                    asp-action="Unlink"
-                                                   asp-route-id="@item.Id">
+                                                   asp-route-id="@item.Id"
+                                                   asp-route-returnUrl="@dashboardReturnUrl">
                                                 Unlink
                                             </a>
                                         </li>
@@ -258,13 +261,16 @@
                                                    asp-route-submissionType="Attribute"
                                                    asp-route-referenceNumber="@item.SubmissionRef"
                                                    asp-route-rollSource="Attributes"
-                                                   asp-route-returnUrl="/Dashboard?openRoll=attributes">
+                                                   asp-route-returnUrl="@dashboardReturnUrl">
                                                 👁️ View Submission
                                             </a>
                                         </li>
                                         <li>
                                             <a class="dropdown-item"
-                                                   href="/attributes/acknowledgement/download?attrNo=@item.SubmissionRef"
+                                                   asp-controller="Attributes"
+                                                   asp-action="DownloadAcknowledgement"
+                                                   asp-route-attrNo="@item.SubmissionRef"
+                                                   asp-route-returnUrl="@dashboardReturnUrl"
                                                    target="_blank">
                                                 <i class="fa-solid fa-file-pdf" style="color:#dc2626;"></i>
                                                 Download Acknowledgement

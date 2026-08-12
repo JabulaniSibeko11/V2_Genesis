@@ -10,7 +10,7 @@
 <div class="ul-page">
     <div class="ul-inner">
 
-        <a asp-controller="Dashboard" asp-action="Index" class="ul-back">
+        <a href="@Model.ReturnUrl" class="ul-back">
             <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
         </a>
 
@@ -117,13 +117,14 @@
               id="unlinkForm">
             @Html.AntiForgeryToken()
             <input type="hidden" name="id" value="@Model.Id" />
+            <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
 
             <div class="ul-actions">
                 <button type="submit" class="ul-btn-danger" id="unlinkBtn">
                     <i class="fa-solid fa-link-slash"></i>
                     Yes, Remove This Property
                 </button>
-                <a asp-controller="Dashboard" asp-action="Index" class="ul-btn-cancel">
+                <a href="@Model.ReturnUrl" class="ul-btn-cancel">
                     <i class="fa-solid fa-xmark"></i> Cancel
                 </a>
             </div>

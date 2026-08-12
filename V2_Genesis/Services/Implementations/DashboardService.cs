@@ -120,6 +120,9 @@ public class DashboardService : IDashboardService
             var linkedProperties =
                 linked.ToList();
 
+            NormaliseLinkedPropertyKeys(
+                linkedProperties);
+
             if (isQuery)
             {
                 NormaliseQueryLinkedProperties(
@@ -413,6 +416,25 @@ public class DashboardService : IDashboardService
     // ─────────────────────────────────────────────────────────────
     // Section 78 Query dashboard safeguards
     // ─────────────────────────────────────────────────────────────
+
+    private static void NormaliseLinkedPropertyKeys(
+        List<LinkedPropertyResult> properties)
+    {
+        foreach (var property in properties)
+        {
+            /*
+             * DashboardLinked and DashboardLinkedQ expose the property key
+             * through Id. Copy it into IDProperty when the procedure does not
+             * return an IDProperty column so downstream actions can use one
+             * consistent property-key field.
+             */
+            if (string.IsNullOrWhiteSpace(property.IDProperty) &&
+                property.Id > 0)
+            {
+                property.IDProperty = property.Id.ToString();
+            }
+        }
+    }
 
     private static void NormaliseQueryLinkedProperties(
         List<LinkedPropertyResult> properties)

@@ -175,7 +175,7 @@ namespace V2_Genesis.Services.Implementations
             obj7.Objection_Ref_S7 = queryRef;
             obj7.RandomPin = GeneratePin();
             obj7.Section51Pin = GeneratePin();
-           
+
             _qdb.Obj_Section7.Add(obj7);
             await _qdb.SaveChangesAsync();
 
@@ -791,6 +791,7 @@ namespace V2_Genesis.Services.Implementations
     GenerateAcknowledgementFromDatabaseAsync(
         string queryReference,
         string userId,
+        bool allowAdministrativeAccess = false,
         CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(queryReference))
@@ -807,25 +808,67 @@ namespace V2_Genesis.Services.Implementations
             }
 
             var reference = queryReference.Trim();
+            var databaseReference = reference.EndsWith(
+                "-R",
+                StringComparison.OrdinalIgnoreCase)
+                    ? reference[..^2]
+                    : reference;
 
-            var query = await _qdb.Que_Property_Info
-                .AsNoTracking()
-                .FirstOrDefaultAsync(q => q.Query_No != null
-                    && q.Query_No.Trim() == reference
-                    && q.UserID == userId, cancellationToken);
+            await using var connection =
+                new SqlConnection(_queryConn);
+
+            await connection.OpenAsync(cancellationToken);
+
+            var query = await connection
+                .QueryFirstOrDefaultAsync<Section78AcknowledgementHeaderRow>(
+                    new CommandDefinition(
+                        """
+                        SELECT TOP (1)
+                            TRY_CONVERT(bigint, Query_ID) AS Query_ID,
+                            CONVERT(nvarchar(100), QUERY_No) AS QUERY_No,
+                            CONVERT(nvarchar(100), QUERY_Status) AS QUERY_Status,
+                            ISNULL(TRY_CONVERT(int, Sub_typ), 0) AS Sub_typ,
+                            CONVERT(nvarchar(100), Property_Type) AS Property_Type,
+                            CONVERT(nvarchar(500), Property_Desc) AS Property_Desc,
+                            CONVERT(nvarchar(100), Valuation_Key) AS Valuation_Key,
+                            CONVERT(nvarchar(450), UserID) AS UserID
+                        FROM dbo.QUE_Property_Info
+                        WHERE LTRIM(RTRIM(CONVERT(nvarchar(100), QUERY_No))) = @Reference
+                          AND (@AllowAdministrativeAccess = 1 OR UserID = @UserId)
+                        """,
+                        new
+                        {
+                            Reference = databaseReference,
+                            UserId = userId,
+                            AllowAdministrativeAccess =
+                                allowAdministrativeAccess
+                        },
+                        cancellationToken:
+                            cancellationToken));
 
             Section78AcknowledgementDbRow? row = null;
             if (query is not null)
             {
-                var section6 = await _qdb.Obj_Section6.AsNoTracking()
-                    .FirstOrDefaultAsync(s => s.Objection_Ref_S6 != null
-                        && s.Objection_Ref_S6.Trim() == reference, cancellationToken);
-                var section7 = await _qdb.Obj_Section7.AsNoTracking()
-                    .FirstOrDefaultAsync(s => s.Objection_Ref_S7 != null
-                        && s.Objection_Ref_S7.Trim() == reference, cancellationToken);
-                var fil = await _qdb.Obj_Files.AsNoTracking()
-                    .FirstOrDefaultAsync(f => f.Objection_Ref_files != null
-                        && f.Objection_Ref_files.Trim() == reference, cancellationToken);
+                var section6 = await GetSection78Section6Async(
+                    connection,
+                    reference,
+                    databaseReference,
+                    query.Query_ID,
+                    cancellationToken);
+
+                var section7 = await GetSection78Section7Async(
+                    connection,
+                    reference,
+                    databaseReference,
+                    query.Query_ID,
+                    cancellationToken);
+
+                var fil = await GetSection78FilesAsync(
+                    connection,
+                    reference,
+                    databaseReference,
+                    query.Query_ID,
+                    cancellationToken);
 
                 row = BuildAcknowledgementRow(query, section6, section7, fil);
             }
@@ -1629,8 +1672,131 @@ namespace V2_Genesis.Services.Implementations
                 : cleaned;
         }
 
+        private static Task<Obj_Section6Model?> GetSection78Section6Async(
+            SqlConnection connection,
+            string reference,
+            string databaseReference,
+            long queryId,
+            CancellationToken cancellationToken)
+        {
+            return connection.QueryFirstOrDefaultAsync<Obj_Section6Model>(
+                new CommandDefinition(
+                    """
+                    SELECT TOP (1)
+                        CONVERT(nvarchar(100), Objection_Ref_S6) AS Objection_Ref_S6,
+                        CONVERT(nvarchar(500), Old_Property_Description) AS Old_Property_Description,
+                        CONVERT(nvarchar(100), Old_Category) AS Old_Category,
+                        CONVERT(nvarchar(500), Old_Address) AS Old_Address,
+                        CONVERT(nvarchar(100), Old_Extent) AS Old_Extent,
+                        CONVERT(nvarchar(100), Old_Market_Value) AS Old_Market_Value,
+                        CONVERT(nvarchar(200), Old_Owner) AS Old_Owner,
+                        CONVERT(nvarchar(500), New_Property_Description) AS New_Property_Description,
+                        CONVERT(nvarchar(100), New_Category) AS New_Category,
+                        CONVERT(nvarchar(500), New_Address) AS New_Address,
+                        CONVERT(nvarchar(100), New_Extent) AS New_Extent,
+                        CONVERT(nvarchar(100), New_Market_Value) AS New_Market_Value,
+                        CONVERT(nvarchar(200), New_Owner) AS New_Owner,
+                        CONVERT(nvarchar(max), Objection_Reasons) AS Objection_Reasons,
+                        CONVERT(nvarchar(100), Old2_Category) AS Old2_Category,
+                        CONVERT(nvarchar(100), Old2_Extent) AS Old2_Extent,
+                        CONVERT(nvarchar(100), Old2_Market_Value) AS Old2_Market_Value,
+                        CONVERT(nvarchar(100), New2_Category) AS New2_Category,
+                        CONVERT(nvarchar(100), New2_Extent) AS New2_Extent,
+                        CONVERT(nvarchar(100), New2_Market_Value) AS New2_Market_Value,
+                        CONVERT(nvarchar(100), Old3_Category) AS Old3_Category,
+                        CONVERT(nvarchar(100), Old3_Extent) AS Old3_Extent,
+                        CONVERT(nvarchar(100), Old3_Market_Value) AS Old3_Market_Value,
+                        CONVERT(nvarchar(100), New3_Category) AS New3_Category,
+                        CONVERT(nvarchar(100), New3_Extent) AS New3_Extent,
+                        CONVERT(nvarchar(100), New3_Market_Value) AS New3_Market_Value
+                    FROM dbo.Obj_Section6
+                    WHERE LTRIM(RTRIM(CONVERT(nvarchar(100), Objection_Ref_S6)))
+                              IN (@Reference, @DatabaseReference)
+                       OR TRY_CONVERT(bigint, Ref) = @QueryId
+                    """,
+                    new
+                    {
+                        Reference = reference,
+                        DatabaseReference = databaseReference,
+                        QueryId = queryId
+                    },
+                    cancellationToken:
+                        cancellationToken));
+        }
+
+        private static Task<Obj_Section7Model?> GetSection78Section7Async(
+            SqlConnection connection,
+            string reference,
+            string databaseReference,
+            long queryId,
+            CancellationToken cancellationToken)
+        {
+            return connection.QueryFirstOrDefaultAsync<Obj_Section7Model>(
+                new CommandDefinition(
+                    """
+                    SELECT TOP (1)
+                        CONVERT(nvarchar(100), Objection_Ref_S7) AS Objection_Ref_S7,
+                        CONVERT(nvarchar(50), Declaration_Date, 121) AS Declaration_Date,
+                        CONVERT(nvarchar(max), Signature_Picture) AS Signature_Picture,
+                        CONVERT(nvarchar(200), Signature_Name) AS Signature_Name,
+                        CONVERT(nvarchar(100), RandomPin) AS RandomPin,
+                        CONVERT(nvarchar(100), Section51Pin) AS Section51Pin
+                    FROM dbo.Obj_Section7
+                    WHERE LTRIM(RTRIM(CONVERT(nvarchar(100), Objection_Ref_S7)))
+                              IN (@Reference, @DatabaseReference)
+                       OR TRY_CONVERT(bigint, Ref) = @QueryId
+                    """,
+                    new
+                    {
+                        Reference = reference,
+                        DatabaseReference = databaseReference,
+                        QueryId = queryId
+                    },
+                    cancellationToken:
+                        cancellationToken));
+        }
+
+        private static Task<Obj_Files?> GetSection78FilesAsync(
+            SqlConnection connection,
+            string reference,
+            string databaseReference,
+            long queryId,
+            CancellationToken cancellationToken)
+        {
+            return connection.QueryFirstOrDefaultAsync<Obj_Files>(
+                new CommandDefinition(
+                    """
+                    SELECT TOP (1)
+                        CONVERT(nvarchar(100), Objection_Ref_files) AS Objection_Ref_files,
+                        CONVERT(nvarchar(500), Files1) AS Files1,
+                        CONVERT(nvarchar(500), Files2) AS Files2,
+                        CONVERT(nvarchar(500), Files3) AS Files3,
+                        CONVERT(nvarchar(500), Files4) AS Files4,
+                        CONVERT(nvarchar(500), Files5) AS Files5,
+                        CONVERT(nvarchar(500), Files6) AS Files6,
+                        CONVERT(nvarchar(500), Files7) AS Files7,
+                        CONVERT(nvarchar(500), Files8) AS Files8,
+                        CONVERT(nvarchar(500), Files9) AS Files9,
+                        CONVERT(nvarchar(500), Files10) AS Files10,
+                        CONVERT(nvarchar(500), Rep_letter) AS Rep_letter,
+                        TRY_CONVERT(float, Evidence_count) AS Evidence_count
+                    FROM dbo.Obj_Files
+                    WHERE LTRIM(RTRIM(CONVERT(nvarchar(100), Objection_Ref_files)))
+                              IN (@Reference, @DatabaseReference)
+                       OR TRY_CONVERT(bigint, Ref) = @QueryId
+                    """,
+                    new
+                    {
+                        Reference = reference,
+                        DatabaseReference = databaseReference,
+                        QueryId = queryId
+                    },
+                    cancellationToken:
+                        cancellationToken));
+        }
+
         private static Section78AcknowledgementDbRow BuildAcknowledgementRow(
-            Que_Property_InfoModel query,
+            Section78AcknowledgementHeaderRow query,
             Obj_Section6Model? section6,
             Obj_Section7Model? section7,
             Obj_Files? files)
@@ -1671,7 +1837,7 @@ namespace V2_Genesis.Services.Implementations
                 New3_Market_Value = section6?.New3_Market_Value,
                 Objection_Reasons = section6?.Objection_Reasons,
                 RandomPin = section7?.RandomPin,
-                Objection_Date = DateTime.TryParse(section7?.Declaration_Date, out var date)? date: null,
+                Objection_Date = DateTime.TryParse(section7?.Declaration_Date, out var date) ? date : null,
                 Evidence_count = (int)(files?.Evidence_count ?? 0),
                 Files1 = files?.Files1,
                 Files2 = files?.Files2,
@@ -1684,6 +1850,18 @@ namespace V2_Genesis.Services.Implementations
                 Files9 = files?.Files9,
                 Files10 = files?.Files10
             };
+        }
+
+        private sealed class Section78AcknowledgementHeaderRow
+        {
+            public long Query_ID { get; set; }
+            public string? Query_No { get; set; }
+            public string? Query_Status { get; set; }
+            public int Sub_typ { get; set; }
+            public string? Property_Type { get; set; }
+            public string? Property_Desc { get; set; }
+            public string? Valuation_Key { get; set; }
+            public string? UserID { get; set; }
         }
 
         private sealed class Section78AcknowledgementDbRow

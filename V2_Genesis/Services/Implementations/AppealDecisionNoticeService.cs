@@ -28,6 +28,7 @@ public sealed class AppealDecisionNoticeService : IAppealDecisionNoticeService
         string rollSource,
         string referenceNumber,
         string userId,
+        bool allowAdministrativeAccess = false,
         CancellationToken cancellationToken = default)
     {
         rollSource = rollSource?.Trim() ?? string.Empty;
@@ -53,14 +54,15 @@ public sealed class AppealDecisionNoticeService : IAppealDecisionNoticeService
             where
                 ((decision.AppealNo ?? string.Empty).Trim() == referenceNumber ||
                  (decision.ObjectionNo ?? string.Empty).Trim() == referenceNumber)
-                && (appeal.UserId ?? string.Empty).Trim() == userId
-                && (appeal.AppealStatus ?? string.Empty).Trim() == "App-Finalized"
+                && (allowAdministrativeAccess ||
+                    (appeal.UserId ?? string.Empty).Trim() == userId)
+                && (
+                    (appeal.AppealStatus ?? string.Empty).Trim() == "App-Finalized"
+                    || (appeal.AppealStatus ?? string.Empty).Trim() == "App-Finalised")
                 && (
                     (appeal.AppealNo ?? string.Empty).Trim() ==
                         (decision.AppealNo ?? string.Empty).Trim()
                     || (appeal.ObjectReference ?? string.Empty).Trim() ==
-                        (decision.ObjectionNo ?? string.Empty).Trim()
-                    || (appeal.ObjectionNo ?? string.Empty).Trim() ==
                         (decision.ObjectionNo ?? string.Empty).Trim())
             orderby (decision.EmailDate ?? decision.BatchDate) descending
             select new AppealDecisionRow
@@ -94,7 +96,6 @@ public sealed class AppealDecisionNoticeService : IAppealDecisionNoticeService
                 Remainder = decision.Remainder,
                 Town = decision.Town,
                 DecisionUserId = decision.DecisionUserId,
-                NoticeStatus = decision.NoticeStatus,
                 AppealStatus = appeal.AppealStatus
             })
             .FirstOrDefaultAsync(cancellationToken);
@@ -411,7 +412,6 @@ public sealed class AppealDecisionNoticeService : IAppealDecisionNoticeService
                 entity.Property(x => x.Remainder).HasColumnName("RE");
                 entity.Property(x => x.Town).HasColumnName("Town");
                 entity.Property(x => x.DecisionUserId).HasColumnName("A_UserID");
-                entity.Property(x => x.NoticeStatus).HasColumnName("Notice_Status");
             });
 
             modelBuilder.Entity<AppealLinkEntity>(entity =>
@@ -421,7 +421,6 @@ public sealed class AppealDecisionNoticeService : IAppealDecisionNoticeService
                 entity.Property(x => x.AppealId).HasColumnName("Appeal_ID");
                 entity.Property(x => x.AppealNo).HasColumnName("Appeal_No");
                 entity.Property(x => x.ObjectReference).HasColumnName("Obj_Ref");
-                entity.Property(x => x.ObjectionNo).HasColumnName("Objection_No");
                 entity.Property(x => x.UserId).HasColumnName("A_UserID");
                 entity.Property(x => x.AppealStatus).HasColumnName("Appeal_Status");
             });
@@ -459,7 +458,6 @@ public sealed class AppealDecisionNoticeService : IAppealDecisionNoticeService
         public string? Remainder { get; set; }
         public string? Town { get; set; }
         public string? DecisionUserId { get; set; }
-        public string? NoticeStatus { get; set; }
     }
 
     private sealed class AppealLinkEntity
@@ -467,7 +465,6 @@ public sealed class AppealDecisionNoticeService : IAppealDecisionNoticeService
         public long AppealId { get; set; }
         public string? AppealNo { get; set; }
         public string? ObjectReference { get; set; }
-        public string? ObjectionNo { get; set; }
         public string? UserId { get; set; }
         public string? AppealStatus { get; set; }
     }
@@ -503,7 +500,6 @@ public sealed class AppealDecisionNoticeService : IAppealDecisionNoticeService
         public string? Remainder { get; set; }
         public string? Town { get; set; }
         public string? DecisionUserId { get; set; }
-        public string? NoticeStatus { get; set; }
         public string? AppealStatus { get; set; }
     }
 }

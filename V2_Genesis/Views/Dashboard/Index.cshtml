@@ -79,6 +79,13 @@
         @TempData["DownloadError"]
     </div>
 }
+@if (TempData["NoticeError"] != null)
+{
+    <div class="alert alert-warning" style="border-left:5px solid #e6b000;">
+        <strong>Download Failed</strong><br />
+        @TempData["NoticeError"]
+    </div>
+}
 @if (TempData["PinError"] != null)
 {
     <div class="alert alert-danger" style="border-left:5px solid #b91c1c;">
@@ -430,19 +437,19 @@
 
     <div class="dash-link-alert
         @(string.Equals(
-                                                                                             reviewStatus,
-                                                                                             "Open",
-                                                                                             StringComparison.OrdinalIgnoreCase)
-                                                                                             ? "dash-link-success"
-                                                                                             : "dash-link-error")">
+                                                                                                      reviewStatus,
+                                                                                                      "Open",
+                                                                                                      StringComparison.OrdinalIgnoreCase)
+                                                                                                      ? "dash-link-success"
+                                                                                                      : "dash-link-error")">
 
         <i class="fa-solid
             @(string.Equals(
-                                                                                                                   reviewStatus,
-                                                                                                                   "Open",
-                                                                                                                   StringComparison.OrdinalIgnoreCase)
-                                                                                                                   ? "fa-unlock"
-                                                                                                                   : "fa-lock")">
+                                                                                                                              reviewStatus,
+                                                                                                                              "Open",
+                                                                                                                              StringComparison.OrdinalIgnoreCase)
+                                                                                                                              ? "fa-unlock"
+                                                                                                                              : "fa-lock")">
         </i>
 
         <div>

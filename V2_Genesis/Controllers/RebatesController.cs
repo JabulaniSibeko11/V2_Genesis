@@ -90,21 +90,48 @@ public class RebatesController : Controller
     // ════════════════════════════════════════════════════════════
 
     [HttpGet]
-    public IActionResult Download(string rebateNo)
+    public IActionResult Download(string rebateNo, string? returnUrl = null)
     {
-        var root = _config["ObjectionRolls:Rebates:RebateRooTPath"]
-                    ?? throw new InvalidOperationException("RebateRooTPath missing.");
-        var path = Path.Combine(root, rebateNo, $"{rebateNo}_Acknowledgement.pdf");
-
-        if (!System.IO.File.Exists(path))
-            return NotFound("Acknowledgement not found.");
-
-        return new FileStreamResult(
-            new FileStream(path, FileMode.Open, FileAccess.Read),
-            "application/pdf")
+        try
         {
-            FileDownloadName = $"{rebateNo}_Acknowledgement.pdf"
-        };
+            var root = _config["ObjectionRolls:Rebates:RebateRooTPath"]
+                        ?? throw new InvalidOperationException("RebateRooTPath missing.");
+            var path = Path.Combine(root, rebateNo, $"{rebateNo}_Acknowledgement.pdf");
+
+            if (!System.IO.File.Exists(path))
+            {
+                TempData["NoticeError"] = "The rebate acknowledgement was not found.";
+                return RedirectAfterDownload(returnUrl, "Rebates");
+            }
+
+            return new FileStreamResult(
+                new FileStream(path, FileMode.Open, FileAccess.Read),
+                "application/pdf")
+            {
+                FileDownloadName = $"{rebateNo}_Acknowledgement.pdf"
+            };
+        }
+        catch
+        {
+            TempData["NoticeError"] =
+                "The rebate acknowledgement could not be downloaded.";
+            return RedirectAfterDownload(returnUrl, "Rebates");
+        }
+    }
+
+    private IActionResult RedirectAfterDownload(string? returnUrl, string openRoll)
+    {
+        if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+            return LocalRedirect(returnUrl);
+
+        var isAdmin = User.IsInRole("Admin") ||
+            User.FindFirstValue("UMRole")?.Equals(
+                "Admin", StringComparison.OrdinalIgnoreCase) == true ||
+            !string.IsNullOrWhiteSpace(User.FindFirstValue("SAPNumber"));
+
+        return isAdmin
+            ? RedirectToAction("Index", "Admin", new { openRoll })
+            : RedirectToAction("Index", "Dashboard", new { openRoll });
     }
 
     // ════════════════════════════════════════════════════════════

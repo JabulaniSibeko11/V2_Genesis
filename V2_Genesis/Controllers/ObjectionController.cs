@@ -25,6 +25,7 @@ public class ObjectionController : Controller
 {
     private readonly IObjectionService _objectionService;
     private readonly ApplicationDbContext _db;
+    private readonly QueryDbContext _queryDb;
     private readonly IObjectionFormService _objectionFormService;
     private readonly ISection78Service _section78Service;
     private readonly ISubmittedFormPdfService _submittedFormPdfService;
@@ -39,6 +40,7 @@ public class ObjectionController : Controller
     public ObjectionController(
         IObjectionService objectionService,
         ApplicationDbContext db,
+        QueryDbContext queryDb,
         IObjectionFormService objectionFormService, ISection78Service section78Service, INoticeService noticeService
         , IEmailService emailService, IConfiguration config, ISubmittedFormPdfService submittedFormPdfService,
         ISupportingDocumentService supportingDocumentService
@@ -47,6 +49,7 @@ public class ObjectionController : Controller
     {
         _objectionService = objectionService;
         _db = db;
+        _queryDb = queryDb;
         _objectionFormService = objectionFormService;
         _emailService = emailService;
         _notificationService = notificationService;
@@ -1546,10 +1549,20 @@ public class ObjectionController : Controller
         string rollSource,
         string? returnUrl = null)
     {
+        if (string.IsNullOrWhiteSpace(objectionNo))
+        {
+            TempData["WithdrawError"] =
+                "The submission reference number is missing.";
+
+            return RedirectAfterWithdrawal(returnUrl, rollSource);
+        }
+
+        returnUrl = ResolveWithdrawalReturnUrl(returnUrl, rollSource);
+
         TempData["ObjectionNum"] = objectionNo;
         TempData["WithdrawType"] = withdrawType;
         TempData["RollSource"] = rollSource;
-        TempData["ReturnUrl"] = returnUrl ?? "/dashboard";
+        TempData["ReturnUrl"] = returnUrl;
         TempData.Keep();
         return View();
     }
@@ -1566,7 +1579,12 @@ public class ObjectionController : Controller
         string withdrawalReason,
         string? returnUrl)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (string.IsNullOrWhiteSpace(userId))
+            return Challenge();
+
+        returnUrl = ResolveWithdrawalReturnUrl(returnUrl, rollSource);
 
         if (string.IsNullOrWhiteSpace(withdrawalReason))
         {
@@ -1574,7 +1592,7 @@ public class ObjectionController : Controller
             TempData["ObjectionNum"] = objectionNo;
             TempData["WithdrawType"] = withdrawType;
             TempData["RollSource"] = rollSource;
-            TempData["ReturnUrl"] = returnUrl ?? "/dashboard";
+            TempData["ReturnUrl"] = returnUrl;
             TempData["WithdrawalReason"] = withdrawalReason;
             TempData.Keep();
             return View("Withdrawal");
@@ -1585,15 +1603,18 @@ public class ObjectionController : Controller
 
         if (!success)
         {
-            TempData["WithdrawError"] = error;
+            TempData["WithdrawError"] =
+                string.IsNullOrWhiteSpace(error)
+                    ? "The withdrawal could not be completed. Please try again."
+                    : error;
             // Re-populate TempData so the view can re-render
             TempData["ObjectionNum"] = objectionNo;
             TempData["WithdrawType"] = withdrawType;
             TempData["RollSource"] = rollSource;
-            TempData["ReturnUrl"] = returnUrl ?? "/dashboard";
+            TempData["ReturnUrl"] = returnUrl;
             TempData["WithdrawalReason"] = withdrawalReason;
             TempData.Keep();
-            return View();
+            return View("Withdrawal");
         }
 
         bool isAppeal = withdrawType?.Contains("Appeal", StringComparison.OrdinalIgnoreCase) == true;
@@ -1642,13 +1663,36 @@ public class ObjectionController : Controller
         TempData["LinkPropertyInfo"] =
             $"The property linked to {objectionNo} is available to link again.";
 
-        return RedirectToAction("Index", "PropertySearch", new
-        {
-            rollSource
-        });
+        return LocalRedirect(returnUrl);
     }
+
+    private string ResolveWithdrawalReturnUrl(
+        string? returnUrl,
+        string? rollSource)
+    {
+        if (!string.IsNullOrWhiteSpace(returnUrl) &&
+            Url.IsLocalUrl(returnUrl))
+        {
+            return returnUrl;
+        }
+
+        var resolvedRoll = ResolveUnlinkRollSource(rollSource);
+        var dashboard = IsAdminAppealRequest()
+            ? "/admin"
+            : "/Dashboard";
+
+        return string.IsNullOrWhiteSpace(resolvedRoll)
+            ? dashboard
+            : $"{dashboard}?openRoll={Uri.EscapeDataString(resolvedRoll)}";
+    }
+
+    private IActionResult RedirectAfterWithdrawal(
+        string? returnUrl,
+        string? rollSource) =>
+        LocalRedirect(
+            ResolveWithdrawalReturnUrl(returnUrl, rollSource));
     // ══════════════════════════════════════════════════════════════
-    //  UNLINK — remove only the client dashboard property link.
+    //  UNLINK — remove only the linked-dashboard property record.
     //  The selected roll determines which database is queried.
     //  Existing submissions and evidence remain unchanged.
     // ══════════════════════════════════════════════════════════════
@@ -1656,16 +1700,18 @@ public class ObjectionController : Controller
     [HttpGet("property/unlink", Name = "PropertyUnlink")]
     [Authorize]
     public async Task<IActionResult> UnlinkProperty(
-        long linkedId,
+        string? idProperty,
         string? rollSource = null,
         string? returnUrl = null)
     {
-        if (linkedId <= 0)
+        idProperty = idProperty?.Trim();
+
+        if (string.IsNullOrWhiteSpace(idProperty))
         {
             TempData["ErrorMessage"] =
-                "The linked property reference is invalid.";
+                "The linked property key is invalid.";
 
-            return RedirectToAction("Index", "Dashboard");
+            return RedirectAfterUnlink(returnUrl, rollSource);
         }
 
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -1680,20 +1726,33 @@ public class ObjectionController : Controller
             TempData["ErrorMessage"] =
                 "The valuation roll could not be identified.";
 
-            return RedirectToAction("Index", "Dashboard");
+            return RedirectAfterUnlink(returnUrl, rollSource);
         }
 
         HttpContext.Session.SetString("RollSource", rollSource);
 
         try
         {
-            await using var rollDb = CreateDbContextForRoll(rollSource);
+            LinkedProperties? linkedProperty;
 
-            var linkedProperty = await rollDb.LinkedProperties
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x =>
-                    x.ID == linkedId &&
-                    x.UserID == userId);
+            if (IsQueryUnlinkRoll(rollSource))
+            {
+                linkedProperty = await _queryDb.LinkedPropertiesQuery
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(x =>
+                        x.IDProperty == idProperty &&
+                        x.UserID == userId);
+            }
+            else
+            {
+                await using var rollDb = CreateDbContextForRoll(rollSource);
+
+                linkedProperty = await rollDb.LinkedProperties
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(x =>
+                        x.IDProperty == idProperty &&
+                        x.UserID == userId);
+            }
 
             if (linkedProperty is null)
             {
@@ -1701,23 +1760,18 @@ public class ObjectionController : Controller
                     $"The property was not found in {GetRollDisplayName(rollSource)}, " +
                     "may already be unlinked, or does not belong to your account.";
 
-                return RedirectToAction(
-                    "Index",
-                    "Dashboard",
-                    new { openRoll = rollSource });
+                return RedirectAfterUnlink(returnUrl, rollSource);
             }
 
-            var propertyKey = linkedProperty.IDProperty?.Trim();
+            var propertyKey = linkedProperty.IDProperty?.Trim() ?? idProperty;
 
             var propertyDescription =
+                await ResolveUnlinkPropertyDescriptionAsync(
+                    propertyKey,
+                    userId,
+                    rollSource);
 
-    await ResolveUnlinkPropertyDescriptionAsync(
-        linkedId,
-        userId,
-        rollSource,
-        propertyKey);
-
-            ViewData["LinkedId"] = linkedProperty.ID.ToString();
+            ViewData["IDProperty"] = propertyKey;
             ViewData["PropertyDescription"] = propertyDescription;
             ViewData["PropertyKey"] = propertyKey ?? string.Empty;
             ViewData["RollSource"] = rollSource;
@@ -1735,19 +1789,16 @@ public class ObjectionController : Controller
         {
             _logger.LogError(
                 ex,
-                "Failed to load unlink page for linked property {LinkedId}, " +
+                "Failed to load unlink page for linked property {IDProperty}, " +
                 "user {UserId}, roll {RollSource}.",
-                linkedId,
+                idProperty,
                 userId,
                 rollSource);
 
             TempData["ErrorMessage"] =
                 "The property could not be loaded for unlinking. Please try again.";
 
-            return RedirectToAction(
-                "Index",
-                "Dashboard",
-                new { openRoll = rollSource });
+            return RedirectAfterUnlink(returnUrl, rollSource);
         }
     }
 
@@ -1755,16 +1806,18 @@ public class ObjectionController : Controller
     [Authorize]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> UnlinkPropertyConfirm(
-        long linkedId,
+        string? idProperty,
         string? rollSource,
         string? returnUrl)
     {
-        if (linkedId <= 0)
+        idProperty = idProperty?.Trim();
+
+        if (string.IsNullOrWhiteSpace(idProperty))
         {
             TempData["UnlinkError"] =
-                "The linked property reference is invalid.";
+                "The linked property key is invalid.";
 
-            return RedirectToAction("Index", "Dashboard");
+            return RedirectAfterUnlink(returnUrl, rollSource);
         }
 
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -1779,7 +1832,7 @@ public class ObjectionController : Controller
             TempData["UnlinkError"] =
                 "The valuation roll could not be identified.";
 
-            return RedirectToAction("Index", "Dashboard");
+            return RedirectAfterUnlink(returnUrl, rollSource);
         }
 
         HttpContext.Session.SetString("RollSource", rollSource);
@@ -1789,48 +1842,69 @@ public class ObjectionController : Controller
 
         try
         {
-            await using var rollDb = CreateDbContextForRoll(rollSource);
-
-            // This query is tracked because the row is deleted below.
-            var linkedProperty = await rollDb.LinkedProperties
-    .FirstOrDefaultAsync(x =>
-        x.ID == linkedId &&
-        x.UserID == userId);
-
-            if (linkedProperty is null)
+            if (IsQueryUnlinkRoll(rollSource))
             {
-                TempData["UnlinkError"] =
-                    $"The property was not found in {GetRollDisplayName(rollSource)}, " +
-                    "may already be unlinked, or does not belong to your account.";
+                var queryLinkedProperty = await _queryDb.LinkedPropertiesQuery
+                    .FirstOrDefaultAsync(x =>
+                        x.IDProperty == idProperty &&
+                        x.UserID == userId);
 
-                return RedirectToAction(
-                    nameof(UnlinkProperty),
-                    new
-                    {
-                        linkedId,
-                        rollSource,
-                        returnUrl
-                    });
+                if (queryLinkedProperty is null)
+                {
+                    TempData["UnlinkError"] =
+                        $"The property was not found in {GetRollDisplayName(rollSource)}, " +
+                        "may already be unlinked, or does not belong to your account.";
+
+                    return RedirectToAction(
+                        nameof(UnlinkProperty),
+                        new { idProperty, rollSource, returnUrl });
+                }
+
+                propertyKey = queryLinkedProperty.IDProperty?.Trim();
+                propertyDescription = await ResolveUnlinkPropertyDescriptionAsync(
+                    propertyKey ?? idProperty,
+                    userId,
+                    rollSource);
+
+                _queryDb.LinkedPropertiesQuery.Remove(queryLinkedProperty);
+                await _queryDb.SaveChangesAsync();
+            }
+            else
+            {
+                await using var rollDb = CreateDbContextForRoll(rollSource);
+
+                // This query is tracked because the row is deleted below.
+                var linkedProperty = await rollDb.LinkedProperties
+                    .FirstOrDefaultAsync(x =>
+                        x.IDProperty == idProperty &&
+                        x.UserID == userId);
+
+                if (linkedProperty is null)
+                {
+                    TempData["UnlinkError"] =
+                        $"The property was not found in {GetRollDisplayName(rollSource)}, " +
+                        "may already be unlinked, or does not belong to your account.";
+
+                    return RedirectToAction(
+                        nameof(UnlinkProperty),
+                        new { idProperty, rollSource, returnUrl });
+                }
+
+                propertyKey = linkedProperty.IDProperty?.Trim();
+                propertyDescription = await ResolveUnlinkPropertyDescriptionAsync(
+                    propertyKey ?? idProperty,
+                    userId,
+                    rollSource);
+
+                rollDb.LinkedProperties.Remove(linkedProperty);
+                await rollDb.SaveChangesAsync();
             }
 
-            propertyKey = linkedProperty.IDProperty?.Trim();
-
-            // Resolve from DashboardLinked before deleting.
-            propertyDescription =
-                await ResolveUnlinkPropertyDescriptionAsync(
-                    linkedId,
-                    userId,
-                    rollSource,
-                    propertyKey);
-
-            rollDb.LinkedProperties.Remove(linkedProperty);
-            await rollDb.SaveChangesAsync();
-
             _logger.LogInformation(
-                "User {UserId} unlinked property record {LinkedId} " +
+                "User {UserId} unlinked property {IDProperty} " +
                 "from roll {RollSource}. Property key: {PropertyKey}.",
                 userId,
-                linkedId,
+                idProperty,
                 rollSource,
                 propertyKey);
         }
@@ -1838,9 +1912,9 @@ public class ObjectionController : Controller
         {
             _logger.LogError(
                 ex,
-                "Failed to unlink property {LinkedId} for user {UserId} " +
+                "Failed to unlink property {IDProperty} for user {UserId} " +
                 "from roll {RollSource}.",
-                linkedId,
+                idProperty,
                 userId,
                 rollSource);
 
@@ -1851,7 +1925,7 @@ public class ObjectionController : Controller
                 nameof(UnlinkProperty),
                 new
                 {
-                    linkedId,
+                    idProperty,
                     rollSource,
                     returnUrl
                 });
@@ -1884,8 +1958,8 @@ public class ObjectionController : Controller
             // The unlink itself has already succeeded.
             _logger.LogError(
                 ex,
-                "Property {LinkedId} was unlinked, but the client notification failed.",
-                linkedId);
+                "Property {IDProperty} was unlinked, but the client notification failed.",
+                idProperty);
         }
 
         if (!string.IsNullOrWhiteSpace(returnUrl) &&
@@ -1893,6 +1967,19 @@ public class ObjectionController : Controller
         {
             return LocalRedirect(returnUrl);
         }
+
+        return RedirectToAction(
+            "Index",
+            "Dashboard",
+            new { openRoll = rollSource });
+    }
+
+    private IActionResult RedirectAfterUnlink(
+        string? returnUrl,
+        string? rollSource)
+    {
+        if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+            return LocalRedirect(returnUrl);
 
         return RedirectToAction(
             "Index",
@@ -1972,11 +2059,18 @@ public class ObjectionController : Controller
         return new ApplicationDbContext(options);
     }
 
+    private static bool IsQueryUnlinkRoll(string rollSource) =>
+        rollSource.Equals(
+            "Objection_Query",
+            StringComparison.OrdinalIgnoreCase)
+        || rollSource.Equals(
+            "Query",
+            StringComparison.OrdinalIgnoreCase);
+
     private async Task<string> ResolveUnlinkPropertyDescriptionAsync(
-     long linkedId,
-     string userId,
-     string rollSource,
-     string? propertyKey)
+        string idProperty,
+        string userId,
+        string rollSource)
     {
         const string fallback = "Property description not available";
 
@@ -1992,13 +2086,17 @@ public class ObjectionController : Controller
                 userEmail);
 
             var linkedProperty = rollData.LinkedProperties
-                .FirstOrDefault(x => x.Id == linkedId);
+                .FirstOrDefault(x =>
+                    string.Equals(
+                        x.IDProperty?.Trim(),
+                        idProperty,
+                        StringComparison.OrdinalIgnoreCase));
 
             var propertyDescription =
                 FirstNotEmpty(
                     linkedProperty?.PropertyDesc,
                     linkedProperty?.LisStreetAddress,
-                    propertyKey);
+                    idProperty);
 
             return string.IsNullOrWhiteSpace(propertyDescription)
                 ? fallback
@@ -2009,13 +2107,13 @@ public class ObjectionController : Controller
             _logger.LogError(
                 ex,
                 "Failed to resolve the linked-property description. " +
-                "LinkedId={LinkedId}, UserId={UserId}, RollSource={RollSource}.",
-                linkedId,
+                "IDProperty={IDProperty}, UserId={UserId}, RollSource={RollSource}.",
+                idProperty,
                 userId,
                 rollSource);
 
-            return !string.IsNullOrWhiteSpace(propertyKey)
-                ? propertyKey.Trim()
+            return !string.IsNullOrWhiteSpace(idProperty)
+                ? idProperty.Trim()
                 : fallback;
         }
     }
