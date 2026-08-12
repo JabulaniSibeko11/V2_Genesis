@@ -136,16 +136,16 @@
                                             <li>
                                                 <a class="dropdown-item cd-action-danger"
                                                        href="@Url.RouteUrl(
-                                                                                                                                                                                                                                                                                 "PropertyUnlink",
-                                                                                                                                                                                                                                                                                 new
-                                                                                                                                                                                                                                                                                 {
-                                                                                                                                                                                                                                                                                     linkedId = item.Id,
-                                                                                                                                                                                                                                                                                     rollSource = Model.Roll.Source,
-                                                                                                                                                                                                                                                                                     returnUrl = Url.Action(
-                                                                                                                                                                                                                                                                                         "Index",
-                                                                                                                                                                                                                                                                                         "Dashboard",
-                                                                                                                                                                                                                                                                                         new { openRoll = Model.Roll.Source })
-                                                                                                                                                                                                                                                                                 })">
+                                                                                                                                                                                                                                                                                                                                                                                            "PropertyUnlink",
+                                                                                                                                                                                                                                                                                                                                                                                            new
+                                                                                                                                                                                                                                                                                                                                                                                            {
+                                                                                                                                                                                                                                                                                                                                                                                                linkedId = item.Id,
+                                                                                                                                                                                                                                                                                                                                                                                                rollSource = Model.Roll.Source,
+                                                                                                                                                                                                                                                                                                                                                                                                returnUrl = Url.Action(
+                                                                                                                                                                                                                                                                                                                                                                                                    "Index",
+                                                                                                                                                                                                                                                                                                                                                                                                    "Dashboard",
+                                                                                                                                                                                                                                                                                                                                                                                                    new { openRoll = Model.Roll.Source })
+                                                                                                                                                                                                                                                                                                                                                                                            })">
                                                     <i class="fa-solid fa-link-slash"></i> Unlink Property
                                                 </a>
                                             </li>
@@ -239,10 +239,23 @@
                                             </li>
                                             <li>
                                                 <a class="dropdown-item"
-                                                       href="/notice/acknowledgement/download?objectionNo=@item.Objection_No&rollSource=@Model.Roll.Source">
+                                                       href="/notice/acknowledgement/download?objectionNo=@Uri.EscapeDataString(item.DisplayReference)&rollSource=Objection_Query">
                                                     <i class="fa-solid fa-download"></i> Download Acknowledgement
                                                 </a>
                                             </li>
+                                            @if (DashboardNoticeStatusHelper.CanDownloadSection78Outcome(item.objection_Status))
+                                            {
+                                                <li>
+                                                    <a class="dropdown-item"
+                                                           asp-controller="Notice"
+                                                           asp-action="DownloadAvailable"
+                                                           asp-route-referenceNo="@item.DisplayReference"
+                                                           asp-route-type="Section78Outcome">
+                                                        <i class="fa-solid fa-file-magnifying-glass"></i>
+                                                        Download Section 78 Query Outcome
+                                                    </a>
+                                                </li>
+                                            }
                                             @if (item.Evidence_Window_Open)
                                             {
                                                 <li>
@@ -279,7 +292,7 @@
                                                 </li>
                                             }
                                             @* ── Review button — only when Query-Finalized ── *@
-                                            @if (item.objection_Status == "Query-Finalized")
+                                            @if (DashboardNoticeStatusHelper.Is(item.objection_Status, "Query-Finalized"))
                                             {
                                                 <li><hr class="dropdown-divider" /></li>
                                                 <li>
@@ -383,10 +396,23 @@
                                                 </li>
                                                 <li>
                                                     <a class="dropdown-item"
-                                                           href="/notice/acknowledgement/download?objectionNo=@item.Objection_No&rollSource=@Model.Roll.Source">
+                                                           href="/notice/acknowledgement/download?objectionNo=@Uri.EscapeDataString(item.DisplayReference)&rollSource=Objection_Query">
                                                         <i class="fa-solid fa-download"></i>Download Acknowledgement
                                                     </a>
                                                 </li>
+                                                @if (DashboardNoticeStatusHelper.CanDownloadSection78Outcome(item.objection_Status))
+                                                {
+                                                    <li>
+                                                        <a class="dropdown-item"
+                                                               asp-controller="Notice"
+                                                               asp-action="DownloadAvailable"
+                                                               asp-route-referenceNo="@item.DisplayReference"
+                                                               asp-route-type="Section78Outcome">
+                                                            <i class="fa-solid fa-file-magnifying-glass"></i>
+                                                            Download Section 78 Review Outcome
+                                                        </a>
+                                                    </li>
+                                                }
                                                 @if (item.Evidence_Window_Open)
                                                 {
                                                     <li>
@@ -511,16 +537,16 @@ else
                                             <li>
                                                 <a class="dropdown-item cd-action-danger"
                                                        href="@Url.RouteUrl(
-                                                                                                                                                                                                                                                                                 "PropertyUnlink",
-                                                                                                                                                                                                                                                                                 new
-                                                                                                                                                                                                                                                                                 {
-                                                                                                                                                                                                                                                                                     linkedId = item.Id,
-                                                                                                                                                                                                                                                                                     rollSource = Model.Roll.Source,
-                                                                                                                                                                                                                                                                                     returnUrl = Url.Action(
-                                                                                                                                                                                                                                                                                         "Index",
-                                                                                                                                                                                                                                                                                         "Dashboard",
-                                                                                                                                                                                                                                                                                         new { openRoll = Model.Roll.Source })
-                                                                                                                                                                                                                                                                                 })">
+                                                                                                                                                                                                                                                                                                                                                                                            "PropertyUnlink",
+                                                                                                                                                                                                                                                                                                                                                                                            new
+                                                                                                                                                                                                                                                                                                                                                                                            {
+                                                                                                                                                                                                                                                                                                                                                                                                linkedId = item.Id,
+                                                                                                                                                                                                                                                                                                                                                                                                rollSource = Model.Roll.Source,
+                                                                                                                                                                                                                                                                                                                                                                                                returnUrl = Url.Action(
+                                                                                                                                                                                                                                                                                                                                                                                                    "Index",
+                                                                                                                                                                                                                                                                                                                                                                                                    "Dashboard",
+                                                                                                                                                                                                                                                                                                                                                                                                    new { openRoll = Model.Roll.Source })
+                                                                                                                                                                                                                                                                                                                                                                                            })">
                                                     <i class="fa-solid fa-link-slash"></i> Unlink
                                                 </a>
                                             </li>
@@ -612,6 +638,30 @@ else
                                                         <i class="fa-solid fa-download"></i> Download Acknowledgement
                                                     </a>
                                                 </li>
+                                                <li>
+                                                    <a class="dropdown-item"
+                                                           asp-controller="Notice"
+                                                           asp-action="DownloadSection49"
+                                                           asp-route-rollSource="@Model.Roll.Source"
+                                                           asp-route-unitKey="@item.Unit_key"
+                                                           asp-route-valuationKey="@item.Valuation_Key">
+                                                        <i class="fa-solid fa-envelope-open-text"></i>
+                                                        Download Section 49 Notice
+                                                    </a>
+                                                </li>
+                                                @if (DashboardNoticeStatusHelper.CanDownloadSection51(item.objection_Status))
+                                                {
+                                                    <li>
+                                                        <a class="dropdown-item"
+                                                               asp-controller="Notice"
+                                                               asp-action="DownloadAvailable"
+                                                               asp-route-referenceNo="@item.Objection_No"
+                                                               asp-route-type="Section51">
+                                                            <i class="fa-solid fa-users"></i>
+                                                            Download Section 51 Notice
+                                                        </a>
+                                                    </li>
+                                                }
                                                 @if (item.Evidence_Window_Open)
                                                 {
                                                     <li>
@@ -642,22 +692,21 @@ else
                                                     </li>
                                                 }
                                                               
-                                              @if (item.objection_Status == "Notice-Sent" ||
-    item.objection_Status == "Appeal-Closed")
-{
-    <li>
-        <a class="dropdown-item"
-           asp-controller="Notice"
-           asp-action="DownloadSection53"
-           asp-route-rollSource="@Model.Roll.Source"
-           asp-route-objectionNo="@item.Objection_No"
-           onclick="logAction('DownloadDecision', '@Model.Roll.Source', '@item.Objection_No')">
-            <i class="fa-solid fa-file-pdf"></i>
-            Download Section 53 – Valuer Decision
-        </a>
-    </li>
-}
-                                                @if (item.objection_Status == "Notice-Sent-Dear-Johnny")
+                                                @if (DashboardNoticeStatusHelper.CanDownloadSection53(item.objection_Status))
+                                                {
+                                                    <li>
+                                                        <a class="dropdown-item"
+                                                               asp-controller="Notice"
+                                                               asp-action="DownloadSection53"
+                                                               asp-route-rollSource="@Model.Roll.Source"
+                                                               asp-route-objectionNo="@item.Objection_No"
+                                                               onclick="logAction('DownloadDecision', '@Model.Roll.Source', '@item.Objection_No')">
+                                                            <i class="fa-solid fa-file-pdf"></i>
+                                                            Download Section 53 – Valuer Decision
+                                                        </a>
+                                                    </li>
+                                                }
+                                                @if (DashboardNoticeStatusHelper.CanDownloadDearOwner(item.objection_Status))
                                                 {
                                                     <li>
                                                         <a class="dropdown-item"
@@ -671,11 +720,10 @@ else
                                                         </a>
                                                     </li>
                                                 }
-                                                @if (item.objection_Status == "Notice-Sent-Invalid-Objection" ||
-                                                    item.objection_Status == "Notice-Sent-Invalid-Omission")
+                                                @if (DashboardNoticeStatusHelper.CanDownloadInvalid(item.objection_Status))
                                                 {
                                                     var invalidNoticeLabel =
-                                                        item.objection_Status == "Notice-Sent-Invalid-Omission"
+                                                        DashboardNoticeStatusHelper.IsInvalidOmission(item.objection_Status)
                                                             ? "Download Invalid Omission Notice"
                                                             : "Download Invalid Objection Notice";
 
@@ -699,7 +747,9 @@ else
                                                         valuationKey: item.Valuation_Key,
                                                         propertyDesc: item.Property_Desc);
 
-                                                    var canLodgeAppealForItem = item.objection_Status == "Notice-Sent" && appealWindow.IsOpen;
+                                                    var canLodgeAppealForItem =
+                                                        DashboardNoticeStatusHelper.Is(item.objection_Status, "Notice-Sent") &&
+                                                        appealWindow.IsOpen;
                                                 }
 
                                                 @if (canLodgeAppealForItem)
@@ -850,7 +900,7 @@ else
                                                     </li>
                                                 }
 
-                                                @if (item.objection_Status == "App-Finalized")
+                                                @if (DashboardNoticeStatusHelper.CanDownloadAppealOutcome(item.objection_Status))
                                                 {
                                                     var finalAppealReference =
                                                         !string.IsNullOrWhiteSpace(item.Appeal_No)

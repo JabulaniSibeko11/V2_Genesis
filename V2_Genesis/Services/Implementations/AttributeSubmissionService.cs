@@ -15,17 +15,28 @@ namespace V2_Genesis.Services.Implementations
         private readonly IAttributeDocumentService _documentService;
         private readonly IEmailService _emailService;
         private readonly ILogger<AttributeSubmissionService> _logger;
+        private readonly bool _bypassEvidenceWindow;
+
         public AttributeSubmissionService(
             AttributesDbContext context,
-           IAttributeDocumentService documentService,
-           IEmailService emailService,
-           ILogger<AttributeSubmissionService> logger)
+            IAttributeDocumentService documentService,
+            IEmailService emailService,
+            ILogger<AttributeSubmissionService> logger,
+            IConfiguration configuration)
         {
             _context = context;
 
             _documentService = documentService;
             _emailService = emailService;
             _logger = logger;
+            _bypassEvidenceWindow = configuration.GetValue<bool>(
+                "AttributeRouting:BypassEvidenceWindow");
+
+            if (_bypassEvidenceWindow)
+            {
+                _logger.LogWarning(
+                    "Attribute evidence-window bypass is enabled. New submissions will route directly to AIVS SectorInbox.");
+            }
         }
 
         public AttributeSubmissionViewModel CreateNew(string formType)
@@ -116,6 +127,9 @@ namespace V2_Genesis.Services.Implementations
             await using var transaction = await _context.Database.BeginTransactionAsync();
 
             var now = DateTime.Now;
+            var initialStatus = _bypassEvidenceWindow
+                ? "SectorInbox"
+                : "EvidenceOpen";
 
             var firstContact = model.ContactInfos?
                 .FirstOrDefault(x =>
@@ -191,7 +205,7 @@ namespace V2_Genesis.Services.Implementations
                 SubmissionDateTime = now,
                 ClientComment = model.ClientComment,
 
-                Attr_Status = "EvidenceOpen",
+                Attr_Status = initialStatus,
                 IsActive = true,
 
                 Physical_Inspection_Required = false,
@@ -234,11 +248,11 @@ namespace V2_Genesis.Services.Implementations
                 WithdrawalReason = null,
 
                 // Resolve routing at submission so AIVS already knows the
-                // destination sector. Status remains EvidenceOpen until the
-                // declaration-based 48-hour evidence period expires.
+                // destination sector. In presentation mode the evidence
+                // window is locked immediately and the item enters AIVS.
                 RoutedSector = submissionSector,
-                RoutedToSectorDateTime = null,
-                EvidenceLockedDateTime = null,
+                RoutedToSectorDateTime = _bypassEvidenceWindow ? now : null,
+                EvidenceLockedDateTime = _bypassEvidenceWindow ? now : null,
                 RoutingError = null,
 
                 CreatedBy = userId,
@@ -257,7 +271,9 @@ namespace V2_Genesis.Services.Implementations
             await SaveFormSpecificSectionsAsync(model, propertyDetails.Id, userId);
 
             var evidencePin = GenerateEvidencePin();
-            var evidenceDeadline = now.AddHours(48);
+            var evidenceDeadline = _bypassEvidenceWindow
+                ? now
+                : now.AddHours(48);
 
             model.GeneratedEvidencePin = evidencePin;
             model.GeneratedEvidenceDeadline = evidenceDeadline;
@@ -286,9 +302,9 @@ namespace V2_Genesis.Services.Implementations
 
                 PinGeneratedDateTime = now,
                 PinExpiryDateTime = evidenceDeadline,
-                PinIsActive = true,
+                PinIsActive = !_bypassEvidenceWindow,
 
-                AdditionalEvidenceAllowed = true,
+                AdditionalEvidenceAllowed = !_bypassEvidenceWindow,
                 AdditionalEvidenceDeadline = evidenceDeadline,
 
                 DeclaredByUserId = userId,
@@ -386,18 +402,20 @@ namespace V2_Genesis.Services.Implementations
                 propertyInfo.Attr_No,
                 "Submitted",
                 null,
-                "EvidenceOpen",
+                initialStatus,
                 userId,
                 userName,
                 "Client",
-                "Client submitted attribute property information. Evidence upload window is open for 48 hours.");
+                _bypassEvidenceWindow
+                    ? $"Client submitted attribute property information. Presentation bypass routed the submission directly to sector '{submissionSector}'."
+                    : "Client submitted attribute property information. Evidence upload window is open for 48 hours.");
 
             await AddAuditAsync(
                 propertyInfo.Attr_ID,
                 propertyInfo.Attr_No,
                 "PDF and Evidence Saved",
-                "EvidenceOpen",
-                "EvidenceOpen",
+                initialStatus,
+                initialStatus,
                 userId,
                 userName,
                 "Client",
@@ -407,12 +425,14 @@ namespace V2_Genesis.Services.Implementations
                 propertyInfo.Attr_ID,
                 propertyInfo.Attr_No,
                 "Declaration Submitted",
-                "EvidenceOpen",
-                "EvidenceOpen",
+                initialStatus,
+                initialStatus,
                 userId,
                 userName,
                 "Client",
-                "Client accepted declaration and signature was captured. Evidence PIN generated for 48 hours.");
+                _bypassEvidenceWindow
+                    ? "Client accepted declaration and signature was captured. Additional evidence was locked by the presentation bypass."
+                    : "Client accepted declaration and signature was captured. Evidence PIN generated for 48 hours.");
 
             var unitKey = model.PropertyDetails.UnitKey
                 ?? model.PropertyDetails.PropertyId
@@ -532,11 +552,13 @@ namespace V2_Genesis.Services.Implementations
         {
             var now = DateTime.Now;
 
-            // The 48-hour period is based on the signed declaration date.
+            // The normal 48-hour period is based on the signed declaration
+            // date. Presentation mode also picks up existing EvidenceOpen
+            // submissions immediately.
             var expiredDeclarationIds = await _context.AttrDeclarations
                 .Where(x =>
                     x.AdditionalEvidenceAllowed == true &&
-                    x.AdditionalEvidenceDeadline <= now)
+                    (_bypassEvidenceWindow || x.AdditionalEvidenceDeadline <= now))
                 .Select(x => x.Attr_ID)
                 .Distinct()
                 .ToListAsync();
@@ -601,7 +623,9 @@ namespace V2_Genesis.Services.Implementations
                     performedBy,
                     performedBy,
                     "System",
-                    $"Evidence window locked after 48 hours. Township '{township}' routed to sector '{sector}'.");
+                    _bypassEvidenceWindow
+                        ? $"Presentation bypass locked the evidence window. Township '{township}' routed to sector '{sector}'."
+                        : $"Evidence window locked after 48 hours. Township '{township}' routed to sector '{sector}'.");
             }
 
             var expiredDeclarations = await _context.AttrDeclarations

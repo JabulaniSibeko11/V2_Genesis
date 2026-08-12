@@ -12,7 +12,7 @@ using V2_Genesis.Services.Interfaces;
 
 namespace V2_Genesis.Controllers;
 
-[Authorize(Roles = "Client")]
+[Authorize]
 public class AttributesController : Controller
 {
     private static readonly ConcurrentDictionary<string, byte>

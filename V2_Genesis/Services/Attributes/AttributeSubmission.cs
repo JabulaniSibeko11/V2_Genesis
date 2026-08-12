@@ -13,7 +13,7 @@
 
         public bool? RevisionRequired { get; set; }
 
-       
+
 
         public string? RevisedBy { get; set; }
 
@@ -24,12 +24,34 @@
         public DateTime? EditDeadline { get; set; }
 
         public int? EditTimeLeftSeconds { get; set; }
-        public bool IsEditable =>
-            Status is not ("Approved" or "Rejected" or "Withdrawn" or "Extracted to OVVIO")
-            && SubmittedAt.AddHours(48) > DateTime.Now;
+        private DateTime EffectiveEditDeadline =>
+            EditDeadline ?? SubmittedAt.AddHours(48);
+
+        public bool IsEditable
+        {
+            get
+            {
+                var statusKey = new string((Status ?? string.Empty)
+                    .Where(char.IsLetterOrDigit)
+                    .Select(char.ToUpperInvariant)
+                    .ToArray());
+
+                // Additional evidence is only editable while the submission
+                // is genuinely in its evidence stage. Once AIVS has moved it
+                // to the sector inbox/review/inspection workflow, Genesis
+                // must show the submission as locked even if 48 hours have
+                // not elapsed yet.
+                var evidenceWindowStatus = statusKey is
+                    "EVIDENCEOPEN" or
+                    "SUBMITTED";
+
+                return evidenceWindowStatus &&
+                       EffectiveEditDeadline > DateTime.Now;
+            }
+        }
 
         public TimeSpan? EditTimeLeft => IsEditable
-            ? SubmittedAt.AddHours(48) - DateTime.Now
+            ? EffectiveEditDeadline - DateTime.Now
             : null;
     }
 }

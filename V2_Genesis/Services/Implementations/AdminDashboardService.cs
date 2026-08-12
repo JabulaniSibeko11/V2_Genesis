@@ -160,25 +160,34 @@ public class AdminDashboardService : IAdminDashboardService
         {
             await using var rollDb = GetRollDb(rollSource);
 
-            var objProps = await rollDb.Objections
-                .AsNoTracking()
-                .OrderByDescending(x => x.ObjectionNo)
-                .Take(500)
-                .Select(x => new ObjectedPropertyResult
+            var objProps = await (
+                from objection in rollDb.Objections.AsNoTracking()
+                join section in rollDb.Section6.AsNoTracking()
+                    on objection.ObjectionNo equals section.ObjectionReference
+                    into sectionRows
+                from section in sectionRows.DefaultIfEmpty()
+                orderby objection.ObjectionNo descending
+                select new ObjectedPropertyResult
                 {
-                    Objection_No = x.ObjectionNo,
-                    Property_Desc = x.PropertyDescription,
-                    Old_Category = x.OldCategory,
-                    Town_Name = x.TownName,
-                    Old_Market_Value = x.OldMarketValue,
-                    objection_Status = x.ObjectionStatus,
-                    Sub_typ = x.SubType,
-                    Unit_key = x.UnitKey,
-                    Valuation_Key = x.ValuationKey,
-                    Property_Type = x.PropertyType,
-                    PropertyFrom = x.PropertyFrom
+                    Objection_No = objection.ObjectionNo,
+                    Property_Desc = objection.PropertyDescription,
+                    Old_Category = section.OldCategory,
+                    Old_Market_Value = section.OldMarketValue,
+                    objection_Status = objection.ObjectionStatus,
+                    Sub_typ = 0,
+                    Unit_key = objection.UnitKey,
+                    Valuation_Key = objection.ValuationKey,
+                    Property_Type = objection.PropertyType,
+                    PropertyFrom = objection.PropertyFrom
                 })
+                .Take(500)
                 .ToListAsync();
+
+            foreach (var objection in objProps)
+            {
+                objection.Town_Name =
+                    ExtractTownFromPropertyDesc(objection.Property_Desc);
+            }
 
             var appealRows = await rollDb.Appeals
                 .AsNoTracking()
@@ -322,8 +331,24 @@ public class AdminDashboardService : IAdminDashboardService
                         from objection in rollDb.Objections.AsNoTracking()
                         join section in rollDb.Section6.AsNoTracking()
                             on objection.ObjectionNo equals section.ObjectionReference
+                            into sectionRows
+                        from section in sectionRows.DefaultIfEmpty()
                         where objection.ObjectionNo == refNo
-                        select new { objection, section })
+                        select new
+                        {
+                            objection.ObjectionNo,
+                            objection.ObjectionStatus,
+                            objection.PropertyDescription,
+                            objection.PropertyType,
+                            objection.UnitKey,
+                            objection.ValuationKey,
+                            objection.PremiseId,
+                            objection.PropertyFrom,
+                            objection.UserId,
+                            objection.ObjectorType,
+                            section.OldCategory,
+                            section.OldMarketValue
+                        })
                         .FirstOrDefaultAsync();
 
                     if (oRow is null)
@@ -336,27 +361,27 @@ public class AdminDashboardService : IAdminDashboardService
                         SourceTable = RollSourceToSourceTable(roll),
 
                         RefType = "Objection",
-                        ReferenceNo = oRow.objection.ObjectionNo,
-                        Objection_No = oRow.objection.ObjectionNo,
+                        ReferenceNo = oRow.ObjectionNo,
+                        Objection_No = oRow.ObjectionNo,
 
-                        CurrentStatus = oRow.objection.ObjectionStatus,
+                        CurrentStatus = oRow.ObjectionStatus,
 
-                        Property_Desc = oRow.objection.PropertyDescription,
-                        Property_Type = oRow.objection.PropertyType,
-                        Town_Name = oRow.objection.TownName,
-                        Old_Category = oRow.section.OldCategory,
-                        Old_Market_Value = oRow.section.OldMarketValue,
+                        Property_Desc = oRow.PropertyDescription,
+                        Property_Type = oRow.PropertyType,
+                        Town_Name = ExtractTownFromPropertyDesc(oRow.PropertyDescription),
+                        Old_Category = oRow.OldCategory,
+                        Old_Market_Value = oRow.OldMarketValue,
 
-                        Unit_key = oRow.objection.UnitKey,
-                        Valuation_Key = oRow.objection.ValuationKey,
-                        PremiseId = oRow.objection.PremiseId,
-                        PropertyFrom = oRow.objection.PropertyFrom,
-                        UserId = oRow.objection.UserId,
+                        Unit_key = oRow.UnitKey,
+                        Valuation_Key = oRow.ValuationKey,
+                        PremiseId = oRow.PremiseId,
+                        PropertyFrom = oRow.PropertyFrom,
+                        UserId = oRow.UserId,
 
-                        IsThirdParty = oRow.objection.ObjectorType
+                        IsThirdParty = oRow.ObjectorType
                             ?.Contains("Third", StringComparison.OrdinalIgnoreCase) == true,
 
-                        IsRepresentative = oRow.objection.ObjectorType
+                        IsRepresentative = oRow.ObjectorType
                             ?.Contains("Representative", StringComparison.OrdinalIgnoreCase) == true
                     };
 
@@ -433,8 +458,21 @@ public class AdminDashboardService : IAdminDashboardService
                         .Where(predicate)
                     join section in rollDb.Section6.AsNoTracking()
                         on objection.ObjectionNo equals section.ObjectionReference
+                        into sectionRows
+                    from section in sectionRows.DefaultIfEmpty()
                     orderby objection.ObjectionNo descending
-                    select new { objection, section })
+                    select new
+                    {
+                        objection.ObjectionNo,
+                        objection.PropertyDescription,
+                        objection.ObjectionStatus,
+                        objection.UnitKey,
+                        objection.ValuationKey,
+                        objection.PropertyFrom,
+                        objection.UserId,
+                        section.OldCategory,
+                        section.OldMarketValue
+                    })
                     .Take(100)
                     .ToListAsync();
 
@@ -444,22 +482,20 @@ public class AdminDashboardService : IAdminDashboardService
                     {
                         RollSource = roll,
                         RollName = RollName(roll),
-                        Objection_No = r.objection.ObjectionNo,
-                        Property_Desc = r.objection.PropertyDescription,
+                        Objection_No = r.ObjectionNo,
+                        Property_Desc = r.PropertyDescription,
 
                         // We do not have Town_Name column. Pull town from Property_Desc.
-                        Town_Name = string.IsNullOrWhiteSpace(r.objection.TownName)
-                            ? ExtractTownFromPropertyDesc(r.objection.PropertyDescription)
-                            : r.objection.TownName,
+                        Town_Name = ExtractTownFromPropertyDesc(r.PropertyDescription),
 
-                        Old_Category = r.section.OldCategory,
-                        Old_Market_Value = r.section.OldMarketValue,
-                        objection_Status = r.objection.ObjectionStatus,
-                        Sub_typ = r.objection.SubType,
-                        Unit_key = r.objection.UnitKey,
-                        Valuation_Key = r.objection.ValuationKey,
-                        PropertyFrom = r.objection.PropertyFrom,
-                        UserId = r.objection.UserId,
+                        Old_Category = r.OldCategory,
+                        Old_Market_Value = r.OldMarketValue,
+                        objection_Status = r.ObjectionStatus,
+                        Sub_typ = 0,
+                        Unit_key = r.UnitKey,
+                        Valuation_Key = r.ValuationKey,
+                        PropertyFrom = r.PropertyFrom,
+                        UserId = r.UserId,
                     };
 
                     await PopulateClientAccountAsync(propertyMatch);
@@ -715,7 +751,9 @@ public class AdminDashboardService : IAdminDashboardService
         var value = refNo.Trim().ToUpperInvariant();
         return value.StartsWith("QUE") ||
                value.StartsWith("QUERY") ||
-               value.Contains("QUERY");
+               value.Contains("QUERY") ||
+               value.Contains("-QUE-") ||
+               value.Contains("-QUE");
     }
 
     private static bool LooksLikeReview(string refNo)
@@ -723,7 +761,8 @@ public class AdminDashboardService : IAdminDashboardService
         var value = refNo.Trim().ToUpperInvariant();
         return value.StartsWith("REV") ||
                value.StartsWith("REVIEW") ||
-               value.Contains("REVIEW");
+               value.Contains("REVIEW") ||
+               value.EndsWith("-R");
     }
     private static List<AdminNoticeOption> BuildNoticeOptions(AdminRefMatch match)
     {
@@ -919,14 +958,45 @@ public class AdminDashboardService : IAdminDashboardService
         {
             await using var queryDb = GetQueryDb();
 
-            var qRow = isReview
-                ? await queryDb.Queries.AsNoTracking()
-                    .FirstOrDefaultAsync(x => x.ReviewNo == refNo)
-                : await queryDb.Queries.AsNoTracking()
-                    .FirstOrDefaultAsync(x => x.QueryNo == refNo);
+            var queryReference = isReview && refNo.EndsWith(
+                    "-R",
+                    StringComparison.OrdinalIgnoreCase)
+                ? refNo[..^2]
+                : refNo;
+
+            var qRow = await queryDb.Queries
+                .AsNoTracking()
+                .Where(x =>
+                    x.QueryNo == refNo ||
+                    (isReview &&
+                     x.QueryNo == queryReference &&
+                     x.SubType == 1))
+                .OrderByDescending(x => x.SubType)
+                .FirstOrDefaultAsync();
 
             if (qRow is null)
                 return;
+
+            var storedQueryReference = qRow.QueryNo?.Trim() ?? queryReference;
+            var displayReference = isReview &&
+                                   !storedQueryReference.EndsWith(
+                                       "-R",
+                                       StringComparison.OrdinalIgnoreCase)
+                ? storedQueryReference + "-R"
+                : storedQueryReference;
+
+            var section = await queryDb.Section6
+                .AsNoTracking()
+                .Where(x =>
+                    x.ObjectionReference == displayReference ||
+                    x.ObjectionReference == storedQueryReference)
+                .OrderByDescending(x =>
+                    x.ObjectionReference == displayReference)
+                .FirstOrDefaultAsync();
+
+            var propertyDescription = FirstNonEmptyDynamic(
+                qRow.PropertyDescription,
+                section?.OldPropertyDescription);
 
             var match = new AdminRefMatch
             {
@@ -935,20 +1005,18 @@ public class AdminDashboardService : IAdminDashboardService
                 SourceTable = "Query",
 
                 RefType = isReview ? "Review" : "Query",
-                ReferenceNo = isReview
-                    ? qRow.ReviewNo
-                    : qRow.QueryNo,
+                ReferenceNo = displayReference,
 
-                Query_No = qRow.QueryNo,
-              
+                Query_No = storedQueryReference,
+
 
                 CurrentStatus = qRow.QueryStatus,
 
-                Property_Desc = qRow.PropertyDescription,
+                Property_Desc = propertyDescription,
                 Property_Type = qRow.PropertyType,
-                Town_Name = qRow.TownName,
-                Old_Category = qRow.OldCategory,
-                Old_Market_Value = qRow.OldMarketValue,
+                Town_Name = ExtractTownFromPropertyDesc(propertyDescription),
+                Old_Category = section?.OldCategory,
+                Old_Market_Value = section?.OldMarketValue,
 
                 Unit_key = qRow.UnitKey,
                 Valuation_Key = qRow.ValuationKey,
@@ -992,11 +1060,7 @@ public class AdminDashboardService : IAdminDashboardService
                 entity.Property(x => x.ObjectionNo).HasColumnName("Objection_No");
                 entity.Property(x => x.PropertyDescription).HasColumnName("Property_Desc");
                 entity.Property(x => x.PropertyType).HasColumnName("Property_Type");
-                entity.Property(x => x.TownName).HasColumnName("Town_Name");
-                entity.Property(x => x.OldCategory).HasColumnName("Old_Category");
-                entity.Property(x => x.OldMarketValue).HasColumnName("Old_Market_Value");
                 entity.Property(x => x.ObjectionStatus).HasColumnName("objection_Status");
-                entity.Property(x => x.SubType).HasColumnName("Sub_typ");
                 entity.Property(x => x.UnitKey).HasColumnName("Unit_key");
                 entity.Property(x => x.ValuationKey).HasColumnName("Valuation_Key");
                 entity.Property(x => x.PremiseId).HasColumnName("Premise_id");
@@ -1032,6 +1096,7 @@ public class AdminDashboardService : IAdminDashboardService
                 entity.ToTable("Obj_Section6", "dbo");
                 entity.HasNoKey();
                 entity.Property(x => x.ObjectionReference).HasColumnName("Objection_Ref_S6");
+                entity.Property(x => x.OldPropertyDescription).HasColumnName("Old_Property_Description");
                 entity.Property(x => x.OldCategory).HasColumnName("Old_Category");
                 entity.Property(x => x.OldMarketValue).HasColumnName("Old_Market_Value");
             });
@@ -1042,13 +1107,10 @@ public class AdminDashboardService : IAdminDashboardService
                 entity.HasKey(x => x.QueryId);
                 entity.Property(x => x.QueryId).HasColumnName("Query_ID");
                 entity.Property(x => x.QueryNo).HasColumnName("Query_No");
-          
                 entity.Property(x => x.PropertyDescription).HasColumnName("Property_Desc");
                 entity.Property(x => x.PropertyType).HasColumnName("Property_Type");
-                entity.Property(x => x.TownName).HasColumnName("Town_Name");
-                entity.Property(x => x.OldCategory).HasColumnName("Old_Category");
-                entity.Property(x => x.OldMarketValue).HasColumnName("Old_Market_Value");
                 entity.Property(x => x.QueryStatus).HasColumnName("Query_Status");
+                entity.Property(x => x.SubType).HasColumnName("Sub_typ");
                 entity.Property(x => x.UnitKey).HasColumnName("Unit_key");
                 entity.Property(x => x.ValuationKey).HasColumnName("Valuation_Key");
                 entity.Property(x => x.PremiseId).HasColumnName("Premise_id");
@@ -1063,11 +1125,7 @@ public class AdminDashboardService : IAdminDashboardService
         public string? ObjectionNo { get; set; }
         public string? PropertyDescription { get; set; }
         public string? PropertyType { get; set; }
-        public string? TownName { get; set; }
-        public string? OldCategory { get; set; }
-        public string? OldMarketValue { get; set; }
         public string? ObjectionStatus { get; set; }
-        public int SubType { get; set; }
         public string? UnitKey { get; set; }
         public string? ValuationKey { get; set; }
         public string? PremiseId { get; set; }
@@ -1099,6 +1157,7 @@ public class AdminDashboardService : IAdminDashboardService
     private sealed class AdminSection6Row
     {
         public string? ObjectionReference { get; set; }
+        public string? OldPropertyDescription { get; set; }
         public string? OldCategory { get; set; }
         public string? OldMarketValue { get; set; }
     }
@@ -1107,13 +1166,10 @@ public class AdminDashboardService : IAdminDashboardService
     {
         public long QueryId { get; set; }
         public string? QueryNo { get; set; }
-        public string? ReviewNo { get; set; }
         public string? PropertyDescription { get; set; }
         public string? PropertyType { get; set; }
-        public string? TownName { get; set; }
-        public string? OldCategory { get; set; }
-        public string? OldMarketValue { get; set; }
         public string? QueryStatus { get; set; }
+        public int SubType { get; set; }
         public string? UnitKey { get; set; }
         public string? ValuationKey { get; set; }
         public string? PremiseId { get; set; }

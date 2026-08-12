@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using System.Security.Claims;
 using V2_Genesis.Data;
+using V2_Genesis.Models.Notice;
 using V2_Genesis.Services.Interfaces;
 using V2_Genesis.Services.Notice;
 using V2_Genesis.Services.PropertySearch;
@@ -50,7 +51,7 @@ public class NoticeController : Controller
     }
 
     [HttpGet]
-    [Authorize(Roles = "Client")]
+    [Authorize]
     [Route("notice/appeal-outcome/download")]
     public async Task<IActionResult> DownloadAppealOutcome(
         string rollSource,
@@ -96,7 +97,7 @@ public class NoticeController : Controller
     }
 
     [HttpGet]
-    [Authorize(Roles = "Client")]
+    [Authorize]
     [Route("notice/invalid-outcome/download")]
     public async Task<IActionResult> DownloadInvalidOutcome(
         string rollSource,
@@ -142,7 +143,7 @@ public class NoticeController : Controller
     }
 
     [HttpGet]
-    [Authorize(Roles = "Client")]
+    [Authorize]
     [Route("notice/objection-outcome/download")]
     public async Task<IActionResult> DownloadPreviousProcessOutcome(
         string rollSource,
@@ -188,7 +189,7 @@ public class NoticeController : Controller
     }
 
     [HttpGet]
-    [Authorize(Roles = "Client")]
+    [Authorize]
     [Route("notice/section53/download")]
     public async Task<IActionResult> DownloadSection53(
         string rollSource,
@@ -421,6 +422,12 @@ public class NoticeController : Controller
                     ["ObjectionRolls:Objection_Supp3:RootPath"] ?? "",
                 HttpContext.RequestServices
                     .GetRequiredService<IConfiguration>()
+                    ["ObjectionRolls:Objection_Supp4:RootPath"] ?? "",
+                HttpContext.RequestServices
+                    .GetRequiredService<IConfiguration>()
+                    ["ObjectionRolls:Objection_Supp5:RootPath"] ?? "",
+                HttpContext.RequestServices
+                    .GetRequiredService<IConfiguration>()
                     ["AppSettings:Section49RootPath"]            ?? "",
                 HttpContext.RequestServices
                     .GetRequiredService<IConfiguration>()
@@ -460,5 +467,40 @@ public class NoticeController : Controller
             return StatusCode(500, "Could not retrieve the file.");
         }
     }
-}
 
+    // Downloads a notice only after resolving it from the signed-in
+    // client's own notice list. This is the endpoint used by the client
+    // dashboard and My Notices page; the browser never needs a server path.
+    [HttpGet]
+    [Authorize]
+    [Route("notices/download-available")]
+    public async Task<IActionResult> DownloadAvailable(
+        string referenceNo,
+        NoticeType type)
+    {
+        if (string.IsNullOrWhiteSpace(referenceNo))
+            return BadRequest("The reference number is required.");
+
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrWhiteSpace(userId))
+            return Challenge();
+
+        var displayName = User.FindFirstValue(ClaimTypes.Name) ?? "Client";
+        var notices = await _notice.GetNoticesDashboardAsync(userId, displayName);
+
+        var item = notices.ObjectionNotices
+            .Concat(notices.AppealNotices)
+            .Concat(notices.QueryNotices)
+            .FirstOrDefault(x =>
+                x.Type == type &&
+                string.Equals(
+                    x.ReferenceNo?.Trim(),
+                    referenceNo.Trim(),
+                    StringComparison.OrdinalIgnoreCase));
+
+        if (item is null || !item.FileExists || string.IsNullOrWhiteSpace(item.FilePath))
+            return NotFound("The notice is not available for your account yet.");
+
+        return Download(Uri.EscapeDataString(item.FilePath));
+    }
+}

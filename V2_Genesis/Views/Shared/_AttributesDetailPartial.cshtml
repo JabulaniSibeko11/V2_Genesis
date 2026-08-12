@@ -1,11 +1,51 @@
 ﻿@using V2_Genesis.Helpers
+@using V2_Genesis.Services.Attributes
 @model V2_Genesis.Models.ViewModels.Dashboard.AttributesDetailViewModel
 
 
 @{
     var attrData = Model.AttrData;
-}
 
+    bool IsPendingInspectionAppointment(AttributeAppointment appointment)
+    {
+        var statusKey = new string((appointment.Status ?? string.Empty)
+            .Where(char.IsLetterOrDigit)
+            .Select(char.ToUpperInvariant)
+            .ToArray());
+
+        return appointment.ConfirmedDateTime == null &&
+               appointment.Slots != null &&
+               appointment.Slots.Any() &&
+               statusKey is "PENDINGCLIENTRESPONSE" or "INSPECTIONREQUIRED";
+    }
+}
+<div class="cd-detail-roll-info">
+    <div class="cd-detail-roll-info-left">
+        <div class="cd-detail-roll-icon">
+            <i class="fa-solid fa-clipboard-list"></i>
+        </div>
+        <div>
+            <h2 class="cd-detail-roll-name">Property Attributes</h2>
+            <span class="cd-detail-roll-short">
+                Submit and track updated property information for valuation roll preparation
+            </span>
+        </div>
+    </div>
+
+    <div class="cd-detail-roll-info-right">
+        <span class="cd-detail-roll-dates">
+            <i class="fa-solid fa-link"></i>
+            @Model.AttributesLinked.Count linked
+            &nbsp;&middot;&nbsp;
+            <i class="fa-solid fa-file-pen"></i>
+            @attrData.SubmissionCount submitted
+        </span>
+        <span class="cd-roll-badge cd-badge-open">OPEN</span>
+        <a href="/attributes/search" class="cd-detail-search-btn">
+            <i class="fa-solid fa-magnifying-glass"></i> Search Property
+        </a>
+    </div>
+</div>
 <!-- ── 1. Linked Properties ──────────────────────────── -->
 <div class="cd-widget">
     <div class="cd-widget-toggle"
@@ -48,7 +88,7 @@
                             <td>@item.MarketValue</td>
                             <td>
                                 <span class="attr-form-pill attr-pill-@(item.FormType.ToLower()
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      .Replace(" ", "").Replace("&", "").Replace("/", ""))">
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                .Replace(" ", "").Replace("&", "").Replace("/", ""))">
                                     @item.FormType
                                 </span>
                             </td>
@@ -158,6 +198,21 @@
                             "ReturnedToClient",
                             StringComparison.OrdinalIgnoreCase);
 
+                        var pendingInspectionAppointment = attrData.Appointments?
+                            .FirstOrDefault(appointment =>
+                                IsPendingInspectionAppointment(appointment) &&
+                                (
+                                    appointment.AttrId == item.Id ||
+                                    string.Equals(
+                                        appointment.AppointmentRef?.Trim(),
+                                        item.SubmissionRef?.Trim(),
+                                        StringComparison.OrdinalIgnoreCase) ||
+                                    string.Equals(
+                                        appointment.PropertyDesc?.Trim(),
+                                        item.PropertyDesc?.Trim(),
+                                        StringComparison.OrdinalIgnoreCase)
+                                ));
+
                         <tr class="@(isReturnedToClient ? "attr-row-action-required" : null)">
                             <td><strong>@item.SubmissionRef</strong></td>
                             <td>@item.PropertyDesc</td>
@@ -215,6 +270,17 @@
                                                 Download Acknowledgement
                                             </a>
                                         </li>
+                                        @if (pendingInspectionAppointment != null)
+                                        {
+                                            <li>
+                                                <button type="button"
+                                                        class="dropdown-item"
+                                                        onclick="openInspectionResponseModal('@pendingInspectionAppointment.Id')">
+                                                    <i class="fa-solid fa-calendar-check"></i>
+                                                    Select Inspection Date
+                                                </button>
+                                            </li>
+                                        }
                                         @if (item.IsEditable)
                                         {
                                             @*  <li>
@@ -368,7 +434,7 @@
                                 </td>
 
                                 <td>
-                                    @if (item.Status == "PendingClientResponse")
+                                    @if (IsPendingInspectionAppointment(item))
                                     {
                                         <button type="button"
                                                 class="cd-action-btn"
@@ -411,7 +477,7 @@
         </div>
 
         @* Date selection modals *@
-        @foreach (var appointment in attrData.Appointments.Where(x => x.Status == "PendingClientResponse"))
+        @foreach (var appointment in attrData.Appointments.Where(IsPendingInspectionAppointment))
         {
             <div id="inspectionModal_@appointment.Id"
                  class="attr-insp-modal-backdrop"

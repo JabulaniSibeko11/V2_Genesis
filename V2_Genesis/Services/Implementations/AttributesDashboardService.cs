@@ -93,6 +93,8 @@ public class AttributesDashboardService : IAttributesDashboardService
                         .Where(x => x.InspectionRequestId == appointment.Id)
                         .OrderBy(x => x.SlotNo)
                         .ToList();
+
+                    appointment.Status = NormalizeAppointmentStatus(appointment);
                 }
             }
             catch (Exception ex)
@@ -110,6 +112,33 @@ public class AttributesDashboardService : IAttributesDashboardService
         }
 
         return data;
+    }
+
+    private static string NormalizeAppointmentStatus(
+        AttributeAppointment appointment)
+    {
+        var statusKey = new string((appointment.Status ?? string.Empty)
+            .Where(char.IsLetterOrDigit)
+            .Select(char.ToUpperInvariant)
+            .ToArray());
+
+        return statusKey switch
+        {
+            "PENDINGCLIENTRESPONSE" => "PendingClientResponse",
+            "CONFIRMED" => "Confirmed",
+            "INSPECTIONDETAILSSENT" => "InspectionDetailsSent",
+            "EXPIRED" => "Expired",
+
+            // Some versions of Attr_DashboardAppointments return the parent
+            // Attribute status instead of AttrInspectionRequests.Status.
+            // An unconfirmed request with offered slots is still awaiting the
+            // client's selection and must expose the Select Date action.
+            "INSPECTIONREQUIRED"
+                when appointment.ConfirmedDateTime == null &&
+                     appointment.Slots.Any() => "PendingClientResponse",
+
+            _ => appointment.Status?.Trim() ?? string.Empty
+        };
     }
 
     public async Task RespondToInspectionAppointmentAsync(

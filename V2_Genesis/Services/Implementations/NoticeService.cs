@@ -1596,7 +1596,8 @@ public class NoticeService : INoticeService
             await using var conn = new SqlConnection(connStr);
 
             var queries = await conn.QueryAsync(
-                @"SELECT q.Query_No, s1.Old_Property_Description AS Property_Desc
+                @"SELECT q.Query_No, q.Query_Status, q.Sub_typ,
+                         s1.Old_Property_Description AS Property_Desc
                   FROM   dbo.Que_Property_Info  q
                   JOIN   dbo.Obj_Section1        s1
                          ON s1.Objection_Ref_S1 = q.Query_No
@@ -1607,13 +1608,26 @@ public class NoticeService : INoticeService
             {
                 var queryNo = q.Query_No?.ToString() ?? "";
                 var propDesc = q.Property_Desc?.ToString() ?? "";
+                var status = q.Query_Status?.ToString() ?? "";
+                var isReview = Convert.ToInt32(q.Sub_typ ?? 0) == 1;
+
+                var isOutcomeStatus =
+                    status.Equals("Query-Finalized", StringComparison.OrdinalIgnoreCase) ||
+                    status.Equals("Review-Finalized", StringComparison.OrdinalIgnoreCase) ||
+                    status.Equals("Notice-Sent", StringComparison.OrdinalIgnoreCase);
+
+                if (!isOutcomeStatus)
+                    continue;
 
                 // Section 78 outcome — same pattern as Section 49
                 var outcome = FindNoticeFile(QueryRoot, propDesc);
                 if (outcome.exists)
                     vm.QueryNotices.Add(Notice(
                         queryNo, propDesc, "Query / Review",
-                        NoticeType.Section78Outcome, "Section 78 Query Outcome",
+                        NoticeType.Section78Outcome,
+                        isReview
+                            ? "Section 78 Review Outcome"
+                            : "Section 78 Query Outcome",
                         outcome.path, outcome.ext,
                         null, null, null));
             }

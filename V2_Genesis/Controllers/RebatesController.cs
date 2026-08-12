@@ -8,7 +8,7 @@ using V2_Genesis.Services.Interfaces;
 
 namespace V2_Genesis.Controllers;
 
-[Authorize(Roles = "Client")]
+[Authorize]
 public class RebatesController : Controller
 {
     private readonly IRebatesService _rebates;
@@ -83,7 +83,7 @@ public class RebatesController : Controller
             _ => View(data)
         };
     }
-    
+
 
     // ════════════════════════════════════════════════════════════
     //  DOWNLOAD ACKNOWLEDGEMENT PDF

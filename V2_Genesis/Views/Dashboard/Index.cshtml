@@ -430,19 +430,19 @@
 
     <div class="dash-link-alert
         @(string.Equals(
-                                                                                    reviewStatus,
-                                                                                    "Open",
-                                                                                    StringComparison.OrdinalIgnoreCase)
-                                                                                    ? "dash-link-success"
-                                                                                    : "dash-link-error")">
+                                                                                             reviewStatus,
+                                                                                             "Open",
+                                                                                             StringComparison.OrdinalIgnoreCase)
+                                                                                             ? "dash-link-success"
+                                                                                             : "dash-link-error")">
 
         <i class="fa-solid
             @(string.Equals(
-                                                                                                        reviewStatus,
-                                                                                                        "Open",
-                                                                                                        StringComparison.OrdinalIgnoreCase)
-                                                                                                        ? "fa-unlock"
-                                                                                                        : "fa-lock")">
+                                                                                                                   reviewStatus,
+                                                                                                                   "Open",
+                                                                                                                   StringComparison.OrdinalIgnoreCase)
+                                                                                                                   ? "fa-unlock"
+                                                                                                                   : "fa-lock")">
         </i>
 
         <div>
@@ -594,6 +594,7 @@
             <span class="cd-tile-badge cd-badge-open">NEW</span>
             <span class="cd-tile-open-hint">View Details <i class="fa-solid fa-arrow-right"></i></span>
         </div>
+
     </div>
 
     <!-- ── Detail area — shown after a tile is clicked ────────────────── -->
@@ -1474,4 +1475,3 @@
         });
     </script>
 }
-
