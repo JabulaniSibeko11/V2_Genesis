@@ -48,6 +48,12 @@ namespace V2_Genesis.Models.Attributes
         [StringLength(100)]
         public string? SubmittedByUserId { get; set; }
 
+        // SAP number of the Windows-authenticated Admin who captured the
+        // submission on behalf of a client. Client self-service submissions
+        // leave this value null.
+        [StringLength(100)]
+        public string? Capturer { get; set; }
+
         [StringLength(255)]
         public string? SubmittedByName { get; set; }
 
@@ -222,7 +228,7 @@ namespace V2_Genesis.Models.Attributes
         public DateTime? RoutedToSectorDateTime { get; set; }
         public string? RoutingError { get; set; }
 
- 
+
 
         [Timestamp]
         public byte[] RowVersion { get; set; } = Array.Empty<byte>();

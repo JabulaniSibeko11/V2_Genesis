@@ -1150,11 +1150,12 @@
 
 .attr-glossary {
     margin: 14px 0 18px;
-    padding: 16px;
-    border: 1px solid #d7e7e7;
-    border-left: 5px solid var(--at-gold);
+    padding: 18px;
+    border: 2px solid var(--at-gold);
+    border-left: 7px solid var(--at-gold);
     border-radius: 14px;
-    background: #fbfdfd;
+    background: linear-gradient(135deg, #fffaf0 0%, #f3f9f9 100%);
+    box-shadow: 0 5px 16px rgba(0, 55, 61, .08);
 }
 
 .attr-glossary-title {
@@ -1164,6 +1165,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
+    font-size: 15px;
 }
 
 .attr-glossary-grid {
@@ -1493,7 +1495,7 @@
     right: 12px;
     width: 20px;
     height: 20px;
-    border-radius: 50%;
+    border-radius: 6px;
     border: 2px solid #d0ccc7;
     background: #fff;
     display: flex;
@@ -1598,6 +1600,14 @@
     position: absolute;
     top: 10px;
     right: 12px;
+    border-radius: 50%;
+}
+
+.sf-sub-tile.selected .sf-tile-check,
+.sf-sub-tile:has(input[type="radio"]:checked) .sf-tile-check {
+    background: #006570;
+    border-color: #006570;
+    color: #fff;
 }
 
 /* Rep notice */

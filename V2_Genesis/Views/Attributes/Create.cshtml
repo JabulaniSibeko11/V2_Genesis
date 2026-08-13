@@ -1,4 +1,5 @@
-﻿@model V2_Genesis.Models.ViewModels.Attributes.AttributeSubmissionViewModel
+﻿@using Microsoft.AspNetCore.Http
+@model V2_Genesis.Models.ViewModels.Attributes.AttributeSubmissionViewModel
 @{
     ViewData["Title"] = "Attribute Property Submission";
     Layout = "~/Views/Shared/_ClientLayout.cshtml";
@@ -24,6 +25,65 @@
         "DRCMethod" => "fa-calculator",
         _ => "fa-clipboard-list"
     };
+
+    string declarationCapacity = ViewBag.Declaration?.ToString() ?? "Owner";
+    string declarationCapacityLabel = declarationCapacity.Equals("Owner", StringComparison.OrdinalIgnoreCase)
+        ? "Individual"
+        : declarationCapacity;
+
+    // Admins use the shared AdministrationEnquiries account for the capture
+    // journey, while their real Windows/UserManagement identity is retained
+    // in claims/session. These values are display-only; the POST action remains
+    // responsible for obtaining the trusted SAP capturer value server-side.
+    bool isAdminCapture =
+        (ViewBag.IsAdmin as bool? ?? false)
+        || User.IsInRole("Admin")
+        || User.FindFirst("AdminAppEmail")?.Value?.Equals(
+            "AdministrationEnquiries@Joburg.org.za",
+            StringComparison.OrdinalIgnoreCase) == true
+        || Context.Session.GetString("AdminAppEmail")?.Equals(
+            "AdministrationEnquiries@Joburg.org.za",
+            StringComparison.OrdinalIgnoreCase) == true
+        || User.FindFirst("LoginType")?.Value?.Equals(
+            "AdminWindows",
+            StringComparison.OrdinalIgnoreCase) == true
+        || !string.IsNullOrWhiteSpace(User.FindFirst("SAPNumber")?.Value);
+
+    string adminFullName =
+        User.FindFirst("FullName")?.Value
+        ?? Context.Session.GetString("AdminFullName")
+        ?? ViewBag.AdminFullName?.ToString()
+        ?? "Admin User";
+
+    string adminPosition =
+        User.FindFirst("Position")?.Value
+        ?? Context.Session.GetString("AdminPosition")
+        ?? ViewBag.AdminPosition?.ToString()
+        ?? string.Empty;
+
+    string adminSapFull =
+        User.FindFirst("SAPNumber")?.Value
+        ?? Context.Session.GetString("AdminSapNumber")
+        ?? ViewBag.SapFull?.ToString()
+        ?? string.Empty;
+
+    string adminSapNumeric =
+        User.FindFirst("SAPNumeric")?.Value
+        ?? Context.Session.GetString("AdminSapNumeric")
+        ?? ViewBag.SapNumeric?.ToString()
+        ?? string.Empty;
+
+    if (string.IsNullOrWhiteSpace(adminSapNumeric)
+        && !string.IsNullOrWhiteSpace(adminSapFull))
+    {
+        adminSapNumeric = new string(adminSapFull.Where(char.IsDigit).ToArray());
+    }
+
+    string adminWindowsUser =
+        User.FindFirst("WindowsUser")?.Value
+        ?? Context.Session.GetString("AdminWindowsUser")
+        ?? ViewBag.AdminWindowsUser?.ToString()
+        ?? string.Empty;
 }
 <link href="~/css/views/attribute-create.css" rel="stylesheet" asp-append-version="true" />
 
@@ -364,7 +424,7 @@
                 <div class="attr-section-title">
                     <span class="num">@(i + 1)</span>
                     <span id="contactHeading-@i" class="contact-heading-label">
-                        @(Model.ContactInfos[i].IsCompany ? "Company Details" : "Owner Details")
+                        @(Model.ContactInfos[i].IsCompany ? "Company Details" : "Individual Details")
                     </span>
                 </div>
 
@@ -392,7 +452,7 @@
                                            class="contact-type-radio"
                                            data-index="@i"
                                     @(Model.ContactInfos[i].IsCompany ? "" : "checked") />
-                                    Owner
+                                    Individual
                                 </label>
 
                                 <label>
@@ -415,7 +475,7 @@
                                    class="attr-input"
                                    maxlength="255"
                                    data-owner-required="@i"
-                                   placeholder="Owner first names" />
+                                   placeholder="Individual first names" />
                             <span asp-validation-for="ContactInfos[i].FirstNames" class="attr-field-error"></span>
                         </td>
 
@@ -425,7 +485,7 @@
                                    class="attr-input"
                                    maxlength="255"
                                    data-owner-required="@i"
-                                   placeholder="Owner surname" />
+                                   placeholder="Individual surname" />
                             <span asp-validation-for="ContactInfos[i].LastName" class="attr-field-error"></span>
                         </td>
                     </tr>
@@ -468,8 +528,8 @@
                                        class="same-postal-checkbox"
                                        data-index="@i"
                                 @(!string.IsNullOrWhiteSpace(Model.ContactInfos[i].PhysicalAddress) &&
-                                                                                                    Model.ContactInfos[i].PhysicalAddress == Model.ContactInfos[i].PostalAddress
-                                                                                                    ? "checked" : "") />
+                                                                                                                                    Model.ContactInfos[i].PhysicalAddress == Model.ContactInfos[i].PostalAddress
+                                                                                                                                    ? "checked" : "") />
                                 Postal address is the same as the physical address
                             </label>
                         </td>
@@ -477,11 +537,19 @@
 
                     <tr>
                         <td class="attr-label">Postal Address</td>
-                        <td colspan="3">
+                        <td>
                             <textarea asp-for="ContactInfos[i].PostalAddress"
                                       id="postalAddress-@i"
                                       class="attr-textarea"
                                       placeholder="Postal address"></textarea>
+                        </td>
+                        <td class="attr-label">Postal Code</td>
+                        <td>
+                            <input asp-for="ContactInfos[i].PostalCode"
+                                   class="attr-input"
+                                   maxlength="10"
+                                   inputmode="numeric"
+                                   placeholder="e.g. 2001" />
                         </td>
                     </tr>
 
@@ -551,7 +619,7 @@
                 <div class="attr-glossary">
                     <div class="attr-glossary-title">
                         <i class="fa-solid fa-circle-info"></i>
-                        Attribute Glossary
+                        @(isSt ? "Sectional Title Residential" : "Residential") Form Glossary
                     </div>
 
                     <div class="attr-glossary-grid">
@@ -775,6 +843,21 @@
                 </div>
                 <div class="attr-divider"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
 
+                <div class="attr-glossary">
+                    <div class="attr-glossary-title">
+                        <i class="fa-solid fa-book-open"></i>
+                        Business &amp; Commercial Form Glossary
+                    </div>
+                    <div class="attr-glossary-grid">
+                        <div><strong>GBA</strong><span>Gross building area measured in square metres</span></div>
+                        <div><strong>NLA</strong><span>Net lettable area available to a tenant</span></div>
+                        <div><strong>Rental</strong><span>Monthly rental amount per square metre</span></div>
+                        <div><strong>Usage</strong><span>The activity for which the section is occupied</span></div>
+                        <div><strong>Quality</strong><span>Standard of materials, finishes and workmanship</span></div>
+                        <div><strong>Condition</strong><span>Current physical state of the building</span></div>
+                    </div>
+                </div>
+
                 <div class="attr-section-title"><span class="num">3.1</span> Buildings</div>
                 <div class="table-responsive">
                     <table class="attr-dyn-table" id="tbl-bus-buildings">
@@ -897,6 +980,21 @@
                     Section 3: DRC Method — Buildings &amp; Land
                 </div>
                 <div class="attr-divider"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
+
+                <div class="attr-glossary">
+                    <div class="attr-glossary-title">
+                        <i class="fa-solid fa-book-open"></i>
+                        DRC Method Form Glossary
+                    </div>
+                    <div class="attr-glossary-grid">
+                        <div><strong>DRC</strong><span>Depreciated replacement cost of the improvement</span></div>
+                        <div><strong>GBA</strong><span>Gross building area measured in square metres</span></div>
+                        <div><strong>Replacement Cost</strong><span>Current cost to replace the asset with an equivalent asset</span></div>
+                        <div><strong>Depreciation</strong><span>Reduction for age, condition and obsolescence</span></div>
+                        <div><strong>Quality</strong><span>Standard of construction materials and workmanship</span></div>
+                        <div><strong>Demolition Value</strong><span>Value after allowing for demolition-related costs</span></div>
+                    </div>
+                </div>
 
                 <div class="attr-section-title"><span class="num">3.1</span> Buildings</div>
                 <div class="table-responsive">
@@ -1165,7 +1263,7 @@
                 <tr>
                     <td class="attr-label">Capacity</td>
                     <td colspan="3">
-                        <input class="attr-input" value="@(ViewBag.Declaration?.ToString() ?? "Owner")" readonly
+                        <input class="attr-input" value="@declarationCapacityLabel" readonly
                                style="background:var(--at-teal-pale);font-weight:700;color:var(--at-gold);" />
                     </td>
                 </tr>
@@ -1180,6 +1278,68 @@
                     <td><input id="declDate" class="attr-input" readonly style="background:var(--at-teal-pale);" /></td>
                 </tr>
             </table>
+
+            @if (isAdminCapture)
+            {
+                <div id="capturer" style="display:flex;align-items:center;gap:14px;
+                    background:linear-gradient(135deg,#1a2e35,#2d4f58);
+                    border:1.5px solid rgba(230,176,0,.4);border-radius:10px;
+                    padding:14px 18px;margin:18px 14px;flex-wrap:wrap;">
+
+                    <div style="width:42px;height:42px;border-radius:9px;flex-shrink:0;
+                        background:rgba(230,176,0,.15);border:1.5px solid rgba(230,176,0,.4);
+                        display:flex;align-items:center;justify-content:center;
+                        color:#e6b000;font-size:18px;">
+                        <i class="fa-solid fa-id-badge"></i>
+                    </div>
+
+                    <div style="flex:1;min-width:220px;">
+                        <div style="font-size:9.5px;font-weight:700;letter-spacing:1.5px;
+                            color:rgba(255,255,255,.4);text-transform:uppercase;margin-bottom:1px;">
+                            Captured by Windows Authenticator
+                        </div>
+
+                        <div style="font-size:15px;font-weight:800;color:#fff;line-height:1.2;">
+                            @adminFullName
+                        </div>
+
+                        @if (!string.IsNullOrWhiteSpace(adminPosition))
+                        {
+                            <div style="font-size:11.5px;color:rgba(230,176,0,.8);font-weight:600;margin-top:2px;">
+                                @adminPosition
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(adminWindowsUser))
+                        {
+                            <div style="font-size:10.5px;color:rgba(255,255,255,.4);margin-top:3px;
+                                font-family:monospace;overflow-wrap:anywhere;">
+                                Windows: @adminWindowsUser
+                            </div>
+                        }
+                    </div>
+
+                    <div style="display:flex;flex-direction:column;align-items:flex-end;
+                        gap:3px;flex-shrink:0;">
+                        <span style="font-size:9px;font-weight:700;letter-spacing:1.5px;
+                            color:rgba(255,255,255,.35);text-transform:uppercase;">
+                            SAP No.
+                        </span>
+                        <span style="font-size:14px;font-weight:800;color:#e6b000;font-family:monospace;">
+                            @(!string.IsNullOrWhiteSpace(adminSapNumeric) ? adminSapNumeric : "Not available")
+                        </span>
+                    </div>
+                </div>
+
+                <div style="margin:-8px 14px 12px;font-size:11px;color:#64748b;
+                    display:flex;align-items:flex-start;gap:7px;">
+                    <i class="fa-solid fa-circle-info" style="color:#e6b000;margin-top:2px;"></i>
+                    <span>
+                        The Admin is assisting with capturing only. Client communication will use
+                        the email and contact details supplied in this form.
+                    </span>
+                </div>
+            }
 
             <div style="padding:14px;">
                 <div style="font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.5px;
@@ -1326,7 +1486,7 @@
             });
 
             if (heading) {
-                heading.textContent = isCompany ? 'Company Details' : 'Owner Details';
+                heading.textContent = isCompany ? 'Company Details' : 'Individual Details';
             }
 
             if (hiddenContactType) {
@@ -1562,6 +1722,63 @@
         // ─────────────────────────────────────────────
         // Evidence upload counter/list
         // ─────────────────────────────────────────────
+        let selectedEvidenceFiles = new DataTransfer();
+
+        function appendEvidenceFiles(files) {
+            const maxFiles = 10;
+            const maxFileSize = 20 * 1024 * 1024;
+            const allowedExtensions = ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png', 'xls', 'xlsx'];
+            const existing = new Set(Array.from(selectedEvidenceFiles.files).map(fileKey));
+            const rejected = [];
+
+            Array.from(files || []).forEach(function (file) {
+                const ext = (file.name.split('.').pop() || '').toLowerCase();
+                const key = fileKey(file);
+
+                if (existing.has(key)) return;
+                if (!allowedExtensions.includes(ext)) {
+                    rejected.push(file.name + ' is not a supported file type.');
+                    return;
+                }
+                if (file.size > maxFileSize) {
+                    rejected.push(file.name + ' is larger than 20 MB.');
+                    return;
+                }
+                if (selectedEvidenceFiles.files.length >= maxFiles) {
+                    rejected.push('Only 10 supporting documents can be selected.');
+                    return;
+                }
+
+                selectedEvidenceFiles.items.add(file);
+                existing.add(key);
+            });
+
+            if (rejected.length) {
+                alert(Array.from(new Set(rejected)).join('\n'));
+            }
+        }
+
+        function fileKey(file) {
+            return [file.name, file.size, file.lastModified].join('|');
+        }
+
+        function removeEvidenceFile(index) {
+            const replacement = new DataTransfer();
+            Array.from(selectedEvidenceFiles.files).forEach(function (file, currentIndex) {
+                if (currentIndex !== index) replacement.items.add(file);
+            });
+            selectedEvidenceFiles = replacement;
+
+            const input = document.getElementById('evFileInput');
+            if (input) input.files = selectedEvidenceFiles.files;
+
+            updateEvidenceList(
+                selectedEvidenceFiles.files,
+                document.getElementById('evFileList'),
+                document.getElementById('evCountText'),
+                document.getElementById('evCountFill'));
+        }
+
         function initialiseEvidenceUpload() {
             const input = document.getElementById('evFileInput');
             const list = document.getElementById('evFileList');
@@ -1574,7 +1791,9 @@
             if (!input) return;
 
             input.addEventListener('change', function () {
-                updateEvidenceList(input.files, list, countText, countFill);
+                appendEvidenceFiles(input.files);
+                input.files = selectedEvidenceFiles.files;
+                updateEvidenceList(selectedEvidenceFiles.files, list, countText, countFill);
             });
 
             if (dropzone) {
@@ -1592,8 +1811,9 @@
                     dropzone.classList.remove('drag-over');
 
                     if (e.dataTransfer && e.dataTransfer.files) {
-                        input.files = e.dataTransfer.files;
-                        updateEvidenceList(input.files, list, countText, countFill);
+                        appendEvidenceFiles(e.dataTransfer.files);
+                        input.files = selectedEvidenceFiles.files;
+                        updateEvidenceList(selectedEvidenceFiles.files, list, countText, countFill);
                     }
                 });
             }
@@ -1708,7 +1928,7 @@
 
             if (!files || fileCount === 0) return;
 
-            Array.from(files).forEach(function (file) {
+            Array.from(files).forEach(function (file, index) {
                 const item = document.createElement('div');
                 const sizeMb = file.size / 1024 / 1024;
                 const ext = (file.name.split('.').pop() || '').toLowerCase();
@@ -1721,8 +1941,11 @@
 
                 item.innerHTML =
                     '<i class="fa-solid fa-file"></i>' +
-                    '<span>' + escapeHtml(file.name) + '</span>' +
-                    '<small>' + sizeMb.toFixed(2) + ' MB</small>';
+                    '<span class="ev-file-name">' + escapeHtml(file.name) + '</span>' +
+                    '<small>' + sizeMb.toFixed(2) + ' MB</small>' +
+                    '<button type="button" class="ev-file-remove" title="Remove file" ' +
+                    'onclick="removeEvidenceFile(' + index + ')">' +
+                    '<i class="fa-solid fa-xmark"></i></button>';
 
                 list.appendChild(item);
             });

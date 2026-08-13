@@ -30,6 +30,8 @@
 
         public string? PostalAddress { get; set; }
 
+        public string? PostalCode { get; set; }
+
         public string? Email { get; set; }
 
         public string? HomePhoneNo { get; set; }

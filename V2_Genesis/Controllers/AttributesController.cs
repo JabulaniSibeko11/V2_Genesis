@@ -236,7 +236,6 @@ public class AttributesController : Controller
     }
 
     [HttpPost]
-    [Authorize(Roles = "Client")]
     [Route("attributes/link")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> LinkProperty(string idProperty, string propertyFrom)
@@ -255,7 +254,7 @@ public class AttributesController : Controller
             _logger.LogError(ex, "[Attributes] Link failed — {P} {U}", idProperty, userId);
             TempData["AttrLinkError"] = "Could not link this property. Please try again.";
         }
-        return RedirectToAction("Index", "Dashboard");
+        return RedirectToAttributesWorkspace();
     }
 
     // AttributesController.cs — updated Check + CheckConfirm + Form actions
@@ -270,7 +269,6 @@ public class AttributesController : Controller
     // ════════════════════════════════════════════════════════════
 
     [HttpGet]
-    [Authorize(Roles = "Client")]
     [Route("attributes/check")]
     public Task<IActionResult> Check(
         string? idProperty,
@@ -282,7 +280,6 @@ public class AttributesController : Controller
     }
 
     [HttpGet]
-    [Authorize(Roles = "Client")]
     [Route("attributes/select-form")]
     public Task<IActionResult> SelectForm(
         string? unitKey,
@@ -312,10 +309,7 @@ public class AttributesController : Controller
             TempData["AttrLinkError"] =
                 "Property reference was not supplied.";
 
-            return RedirectToAction(
-                "Index",
-                "Dashboard",
-                new { openRoll = "attributes" });
+            return RedirectToAttributesWorkspace();
         }
 
         propertyReference = propertyReference.Trim();
@@ -330,10 +324,7 @@ public class AttributesController : Controller
                 "Could not load the linked property. " +
                 "Please search and link it again.";
 
-            return RedirectToAction(
-                "Index",
-                "Dashboard",
-                new { openRoll = "attributes" });
+            return RedirectToAttributesWorkspace();
         }
 
         TempData["Attr_Detail_Json"] =
@@ -385,7 +376,6 @@ public class AttributesController : Controller
     }
 
     [HttpPost]
-    [Authorize(Roles = "Client")]
     [Route("attributes/select-form")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> SelectForm(
@@ -400,10 +390,7 @@ public class AttributesController : Controller
             TempData["AttrLinkError"] =
                 "Property reference was not supplied.";
 
-            return RedirectToAction(
-                "Index",
-                "Dashboard",
-                new { openRoll = "attributes" });
+            return RedirectToAttributesWorkspace();
         }
 
         model.UnitKey = model.UnitKey.Trim();
@@ -452,10 +439,7 @@ public class AttributesController : Controller
                 "Could not load the linked property. " +
                 "Please search and link it again.";
 
-            return RedirectToAction(
-                "Index",
-                "Dashboard",
-                new { openRoll = "attributes" });
+            return RedirectToAttributesWorkspace();
         }
 
         PopulateAttributeSelectModel(
@@ -504,7 +488,6 @@ public class AttributesController : Controller
 
     // Compatibility for an old Check form POST.
     [HttpPost]
-    [Authorize(Roles = "Client")]
     [Route("attributes/check")]
     [ValidateAntiForgeryToken]
     public IActionResult CheckConfirm(
@@ -517,10 +500,7 @@ public class AttributesController : Controller
             TempData["AttrLinkError"] =
                 "Property reference was not supplied.";
 
-            return RedirectToAction(
-                "Index",
-                "Dashboard",
-                new { openRoll = "attributes" });
+            return RedirectToAttributesWorkspace();
         }
 
         formType =
@@ -765,7 +745,7 @@ public class AttributesController : Controller
         if (string.IsNullOrWhiteSpace(idProperty))
         {
             TempData["AttrLinkError"] = "Property reference was not supplied.";
-            return RedirectToAction("Index", "Dashboard");
+            return RedirectToAttributesWorkspace();
         }
 
         var declaration = TempData["AttrDeclaration"]?.ToString();
@@ -974,6 +954,54 @@ public class AttributesController : Controller
             ?? User.FindFirstValue(ClaimTypes.HomePhone)
             ?? User.FindFirstValue("phone_number");
 
+        // Admin authentication uses the fixed AdministrationEnquiries portal
+        // account, while the real Windows/UserManagement identity is carried
+        // in SAP claims. Never accept the Capturer value from the form.
+        var isAdminCapture =
+            User.IsInRole("Admin")
+            || User.FindFirstValue("AdminAppEmail")?.Equals(
+                "AdministrationEnquiries@Joburg.org.za",
+                StringComparison.OrdinalIgnoreCase) == true
+            || HttpContext.Session.GetString("AdminAppEmail")?.Equals(
+                "AdministrationEnquiries@Joburg.org.za",
+                StringComparison.OrdinalIgnoreCase) == true
+            || User.FindFirstValue("UMRole")?.Equals(
+                "Admin",
+                StringComparison.OrdinalIgnoreCase) == true
+            || User.FindFirstValue("LoginType")?.Equals(
+                "AdminWindows",
+                StringComparison.OrdinalIgnoreCase) == true
+            || !string.IsNullOrWhiteSpace(
+                User.FindFirstValue("SAPNumber"));
+
+        var rawCapturerSapNumber = isAdminCapture
+            ? User.FindFirstValue("SAPNumeric")
+                ?? HttpContext.Session.GetString("AdminSapNumeric")
+                ?? User.FindFirstValue("SAPNumber")
+                ?? HttpContext.Session.GetString("AdminSapNumber")
+            : null;
+
+        // SAPNumber can contain the Windows domain in compatibility claims
+        // (for example JOBURG\10112533). Persist only the numeric SAP value.
+        var capturerSapNumber = string.IsNullOrWhiteSpace(rawCapturerSapNumber)
+            ? null
+            : new string(rawCapturerSapNumber.Where(char.IsDigit).ToArray());
+
+        capturerSapNumber = string.IsNullOrWhiteSpace(capturerSapNumber)
+            ? null
+            : capturerSapNumber;
+
+        if (isAdminCapture && string.IsNullOrWhiteSpace(capturerSapNumber))
+        {
+            ActiveAttributeSubmissions.TryRemove(submissionKey, out _);
+
+            ModelState.AddModelError(
+                string.Empty,
+                "Your SAP number could not be verified. Please sign in again using Windows authentication.");
+
+            return View(model);
+        }
+
         // Some identity configurations store the email in User.Identity.Name.
         if (string.IsNullOrWhiteSpace(userEmail) &&
             !string.IsNullOrWhiteSpace(User.Identity?.Name) &&
@@ -989,7 +1017,8 @@ public class AttributesController : Controller
                 userId,
                 userName,
                 userEmail,
-                userPhone);
+                userPhone,
+                capturerSapNumber);
 
             if (attrId <= 0)
             {
@@ -1142,7 +1171,6 @@ public class AttributesController : Controller
 
 
     [HttpGet]
-    [Authorize(Roles = "Client")]
     [Route("attributes/representative")]
     public async Task<IActionResult> Representative(
     string idProperty, string formType = "Residential")
@@ -1189,7 +1217,6 @@ public class AttributesController : Controller
     }
 
     [HttpPost]
-    [Authorize(Roles = "Client")]
     [Route("attributes/representative")]
     [ValidateAntiForgeryToken]
     public IActionResult RepresentativeSubmit(RepresentativeViewModel vm)
@@ -1226,6 +1253,171 @@ public class AttributesController : Controller
 
         return RedirectToAction("Form",
             new { idProperty = vm.IDProperty, formType = vm.FormType });
+    }
+
+    [Authorize]
+    [HttpGet(
+        "attributes/withdraw/{attrId:long}",
+        Name = "AttributeWithdrawalGet")]
+    public async Task<IActionResult> WithdrawalGet(
+        long attrId,
+        string? returnUrl = null)
+    {
+        var safeReturnUrl = ResolveAttributeWithdrawalReturnUrl(returnUrl);
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (string.IsNullOrWhiteSpace(userId))
+            return Challenge();
+
+        var model = await BuildAttributeWithdrawalModelAsync(
+            attrId,
+            userId,
+            safeReturnUrl);
+
+        if (model is null)
+        {
+            TempData["AttributeError"] =
+                "The Attributes submission was not found or is not available to your account.";
+            return LocalRedirect(safeReturnUrl);
+        }
+
+        return View("Withdrawal", model);
+    }
+
+    [Authorize]
+    [HttpPost(
+        "attributes/withdraw",
+        Name = "AttributeWithdrawalPost")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> WithdrawalPost(
+        AttributeWithdrawalViewModel model)
+    {
+        var safeReturnUrl = ResolveAttributeWithdrawalReturnUrl(model.ReturnUrl);
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (string.IsNullOrWhiteSpace(userId))
+            return Challenge();
+
+        var trustedModel = await BuildAttributeWithdrawalModelAsync(
+            model.AttrId,
+            userId,
+            safeReturnUrl);
+
+        if (trustedModel is null)
+        {
+            TempData["AttributeError"] =
+                "The Attributes submission was not found or is not available to your account.";
+            return LocalRedirect(safeReturnUrl);
+        }
+
+        trustedModel.Reason = model.Reason?.Trim() ?? string.Empty;
+
+        if (string.IsNullOrWhiteSpace(trustedModel.Reason))
+        {
+            ModelState.AddModelError(
+                nameof(model.Reason),
+                "Please provide a reason for the withdrawal.");
+        }
+        else if (trustedModel.Reason.Length < 10)
+        {
+            ModelState.AddModelError(
+                nameof(model.Reason),
+                "Please provide a withdrawal reason of at least 10 characters.");
+        }
+        else if (trustedModel.Reason.Length > 1000)
+        {
+            ModelState.AddModelError(
+                nameof(model.Reason),
+                "The withdrawal reason cannot exceed 1,000 characters.");
+        }
+
+        if (!ModelState.IsValid)
+            return View("Withdrawal", trustedModel);
+
+        var userName =
+            User.FindFirstValue("FullName")
+            ?? User.FindFirstValue(ClaimTypes.Name)
+            ?? User.Identity?.Name
+            ?? userId;
+
+        try
+        {
+            await _attributeService.WithdrawAsync(
+                trustedModel.AttrId,
+                userId,
+                userName,
+                trustedModel.Reason);
+
+            TempData["AttributeSuccess"] =
+                $"Attributes submission {trustedModel.AttrNo} was withdrawn successfully. " +
+                "The property is available to submit again.";
+
+            return LocalRedirect(safeReturnUrl);
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(
+                ex,
+                "Attributes withdrawal was rejected for Attr_ID={AttrId}, UserId={UserId}.",
+                trustedModel.AttrId,
+                userId);
+
+            ModelState.AddModelError(string.Empty, ex.Message);
+            return View("Withdrawal", trustedModel);
+        }
+    }
+
+    private async Task<AttributeWithdrawalViewModel?>
+        BuildAttributeWithdrawalModelAsync(
+            long attrId,
+            string userId,
+            string returnUrl)
+    {
+        if (attrId <= 0)
+            return null;
+
+        return await _attrDb.AttrPropertyInfo
+            .AsNoTracking()
+            .Where(x =>
+                x.Attr_ID == attrId &&
+                x.SubmittedByUserId == userId &&
+                !x.IsWithdrawn &&
+                string.IsNullOrWhiteSpace(x.Task_Assigned_To_UserId) &&
+                string.IsNullOrWhiteSpace(x.Task_Assigned_To) &&
+                string.IsNullOrWhiteSpace(x.ValuerUserId) &&
+                string.IsNullOrWhiteSpace(x.Valuer))
+            .Select(x => new AttributeWithdrawalViewModel
+            {
+                AttrId = x.Attr_ID,
+                AttrNo = x.Attr_No ?? string.Empty,
+                PropertyDescription = x.Property_Desc ?? string.Empty,
+                CurrentStatus = x.Attr_Status,
+                ReturnUrl = returnUrl
+            })
+            .FirstOrDefaultAsync();
+    }
+
+    private bool IsAdminAttributeSession()
+    {
+        return User.IsInRole("Admin")
+            || User.FindFirstValue("AdminAppEmail")?.Equals(
+                "AdministrationEnquiries@Joburg.org.za",
+                StringComparison.OrdinalIgnoreCase) == true
+            || HttpContext.Session.GetString("AdminAppEmail")?.Equals(
+                "AdministrationEnquiries@Joburg.org.za",
+                StringComparison.OrdinalIgnoreCase) == true
+            || User.FindFirstValue("LoginType")?.Equals(
+                "AdminWindows",
+                StringComparison.OrdinalIgnoreCase) == true
+            || !string.IsNullOrWhiteSpace(User.FindFirstValue("SAPNumber"));
+    }
+
+    private string ResolveAttributeWithdrawalReturnUrl(string? returnUrl)
+    {
+        if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+            return returnUrl;
+
+        return "/Dashboard?openRoll=Attributes";
     }
 
     [HttpGet]
@@ -1568,9 +1760,16 @@ public class AttributesController : Controller
         if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
             return LocalRedirect(returnUrl);
 
+        return RedirectToAttributesWorkspace();
+    }
+
+    private IActionResult RedirectToAttributesWorkspace()
+    {
         var isAdmin = User.IsInRole("Admin") ||
             User.FindFirstValue("UMRole")?.Equals(
                 "Admin", StringComparison.OrdinalIgnoreCase) == true ||
+            User.FindFirstValue("LoginType")?.Equals(
+                "AdminWindows", StringComparison.OrdinalIgnoreCase) == true ||
             !string.IsNullOrWhiteSpace(User.FindFirstValue("SAPNumber"));
 
         return isAdmin

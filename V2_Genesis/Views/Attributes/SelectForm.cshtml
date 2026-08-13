@@ -41,6 +41,7 @@
         <div asp-validation-summary="All" class="text-danger" style="margin:12px 0;font-weight:700;"></div>
         <input type="hidden" name="UnitKey" value="@Model.UnitKey" />
         <input type="hidden" name="PropertyDesc" value="@Model.PropertyDesc" />
+        <input type="hidden" name="OwnerName" value="@Model.OwnerName" />
 
         <div class="sf-body">
 
@@ -83,6 +84,11 @@
                         <div class="sf-prop-field full">
                             <span class="sf-prop-label">Property Description</span>
                             <span class="sf-prop-value address">@Model.PropertyDesc</span>
+                        </div>
+
+                        <div class="sf-prop-field full">
+                            <span class="sf-prop-label">Registered Owner</span>
+                            <span class="sf-prop-value address">@(string.IsNullOrWhiteSpace(Model.OwnerName) ? "—" : Model.OwnerName)</span>
                         </div>
 
                         <div class="sf-prop-field full">
@@ -135,7 +141,8 @@
                     <div class="sf-form-grid">
 
                         <label class="sf-form-tile" id="tile-res" onclick="pickForm(this)">
-                            <input type="radio" name="SelectedFormType" value="Residential" />
+                            <input type="radio" name="SelectedFormType" value="Residential"
+                            @(Model.SelectedFormType == "Residential" ? "checked" : null) />
                             <div class="sf-tile-icon"><i class="fa-solid fa-house"></i></div>
                             <div>
                                 <div class="sf-tile-title">Form A — Residential</div>
@@ -145,7 +152,8 @@
                         </label>
 
                         <label class="sf-form-tile" id="tile-st" onclick="pickForm(this)">
-                            <input type="radio" name="SelectedFormType" value="ResidentialST" />
+                            <input type="radio" name="SelectedFormType" value="ResidentialST"
+                            @(Model.SelectedFormType == "ResidentialST" ? "checked" : null) />
                             <div class="sf-tile-icon"><i class="fa-solid fa-building"></i></div>
                             <div>
                                 <div class="sf-tile-title">Form B — Residential ST</div>
@@ -155,7 +163,8 @@
                         </label>
 
                         <label class="sf-form-tile" id="tile-bus" onclick="pickForm(this)">
-                            <input type="radio" name="SelectedFormType" value="BusinessCommercial" />
+                            <input type="radio" name="SelectedFormType" value="BusinessCommercial"
+                            @(Model.SelectedFormType == "BusinessCommercial" ? "checked" : null) />
                             <div class="sf-tile-icon"><i class="fa-solid fa-store"></i></div>
                             <div>
                                 <div class="sf-tile-title">Form C — Business &amp; Commercial</div>
@@ -165,7 +174,8 @@
                         </label>
 
                         <label class="sf-form-tile" id="tile-drc" onclick="pickForm(this)">
-                            <input type="radio" name="SelectedFormType" value="DRCMethod" />
+                            <input type="radio" name="SelectedFormType" value="DRCMethod"
+                            @(Model.SelectedFormType == "DRCMethod" ? "checked" : null) />
                             <div class="sf-tile-icon"><i class="fa-solid fa-calculator"></i></div>
                             <div>
                                 <div class="sf-tile-title">Form D — DRC Method</div>
@@ -190,7 +200,8 @@
                     <div class="sf-sub-grid">
 
                         <label class="sf-sub-tile" id="sub-owner" onclick="pickSub(this)">
-                            <input type="radio" name="DeclarationType" value="Owner" />
+                            <input type="radio" name="DeclarationType" value="Owner"
+                            @(Model.DeclarationType == "Owner" ? "checked" : null) />
                             <div class="sf-sub-icon"><i class="fa-solid fa-house-user"></i></div>
                             <div>
                                 <div class="sf-sub-title">Property Owner</div>
@@ -200,7 +211,8 @@
                         </label>
 
                         <label class="sf-sub-tile" id="sub-rep" onclick="pickSub(this)">
-                            <input type="radio" name="DeclarationType" value="Representative" />
+                            <input type="radio" name="DeclarationType" value="Representative"
+                            @(Model.DeclarationType == "Representative" ? "checked" : null) />
                             <div class="sf-sub-icon"><i class="fa-solid fa-user-tie"></i></div>
                             <div>
                                 <div class="sf-sub-title">Authorised Representative</div>

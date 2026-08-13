@@ -3,10 +3,18 @@
 @{
     // Loaded on demand — see DashboardController.RebatesDetail(...).
     var rebateCount = Model.Rebates?.Count ?? 0;
-    var rebateReturnUrl = Url.Action(
-        "Index",
-        "Dashboard",
-        new { openRoll = "Rebates" }) ?? "/Dashboard?openRoll=Rebates";
+    // This partial is shared by the Client and Admin dashboards. Preserve the
+    // active workspace instead of sending every user to the Client dashboard.
+    var isAdminDashboard = Context.Request.Path.StartsWithSegments("/admin");
+    var rebateReturnUrl = isAdminDashboard
+        ? Url.Action(
+            "Index",
+            "Admin",
+            new { openRoll = "Rebates" }) ?? "/Admin?openRoll=Rebates"
+        : Url.Action(
+            "Index",
+            "Dashboard",
+            new { openRoll = "Rebates" }) ?? "/Dashboard?openRoll=Rebates";
 }
 
 @if (rebateCount == 0)

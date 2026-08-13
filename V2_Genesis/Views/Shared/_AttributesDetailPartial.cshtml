@@ -1,53 +1,21 @@
 ﻿@using V2_Genesis.Helpers
-@using V2_Genesis.Services.Attributes
 @model V2_Genesis.Models.ViewModels.Dashboard.AttributesDetailViewModel
 
 
 @{
     var attrData = Model.AttrData;
-    var dashboardReturnUrl =
-        $"{Context.Request.PathBase}{Context.Request.Path}{Context.Request.QueryString}";
-
-    bool IsPendingInspectionAppointment(AttributeAppointment appointment)
-    {
-        var statusKey = new string((appointment.Status ?? string.Empty)
-            .Where(char.IsLetterOrDigit)
-            .Select(char.ToUpperInvariant)
-            .ToArray());
-
-        return appointment.ConfirmedDateTime == null &&
-               appointment.Slots != null &&
-               appointment.Slots.Any() &&
-               statusKey is "PENDINGCLIENTRESPONSE" or "INSPECTIONREQUIRED";
-    }
+    var isAdminDashboard = Context.Request.Path.StartsWithSegments("/admin");
+    var attributesReturnUrl = isAdminDashboard
+        ? Url.Action(
+            "Index",
+            "Admin",
+            new { openRoll = "Attributes" }) ?? "/Admin?openRoll=Attributes"
+        : Url.Action(
+            "Index",
+            "Dashboard",
+            new { openRoll = "Attributes" }) ?? "/Dashboard?openRoll=Attributes";
 }
-<div class="cd-detail-roll-info">
-    <div class="cd-detail-roll-info-left">
-        <div class="cd-detail-roll-icon">
-            <i class="fa-solid fa-clipboard-list"></i>
-        </div>
-        <div>
-            <h2 class="cd-detail-roll-name">Property Attributes</h2>
-            <span class="cd-detail-roll-short">
-                Submit and track updated property information for valuation roll preparation
-            </span>
-        </div>
-    </div>
 
-    <div class="cd-detail-roll-info-right">
-        <span class="cd-detail-roll-dates">
-            <i class="fa-solid fa-link"></i>
-            @Model.AttributesLinked.Count linked
-            &nbsp;&middot;&nbsp;
-            <i class="fa-solid fa-file-pen"></i>
-            @attrData.SubmissionCount submitted
-        </span>
-        <span class="cd-roll-badge cd-badge-open">OPEN</span>
-        <a href="/attributes/search" class="cd-detail-search-btn">
-            <i class="fa-solid fa-magnifying-glass"></i> Search Property
-        </a>
-    </div>
-</div>
 <!-- ── 1. Linked Properties ──────────────────────────── -->
 <div class="cd-widget">
     <div class="cd-widget-toggle"
@@ -90,7 +58,7 @@
                             <td>@item.MarketValue</td>
                             <td>
                                 <span class="attr-form-pill attr-pill-@(item.FormType.ToLower()
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          .Replace(" ", "").Replace("&", "").Replace("/", ""))">
+                                                                                                                                                                                                                                                                                                                                                                                                            .Replace(" ", "").Replace("&", "").Replace("/", ""))">
                                     @item.FormType
                                 </span>
                             </td>
@@ -133,7 +101,7 @@
                                                        asp-route-submissionType="Attribute"
                                                        asp-route-referenceNumber="@item.SubmissionRef"
                                                        asp-route-rollSource="Attributes"
-                                                       asp-route-returnUrl="@dashboardReturnUrl">
+                                                       asp-route-returnUrl="@attributesReturnUrl">
                                                     View Submission
                                                 </a>
                                             </li>
@@ -142,8 +110,7 @@
                                             <a class="dropdown-item"
                                                    asp-controller="Attributes"
                                                    asp-action="Unlink"
-                                                   asp-route-id="@item.Id"
-                                                   asp-route-returnUrl="@dashboardReturnUrl">
+                                                   asp-route-id="@item.Id">
                                                 Unlink
                                             </a>
                                         </li>
@@ -196,27 +163,34 @@
                 <tbody>
                     @foreach (var item in attrData.Submissions)
                     {
-                        var isReturnedToClient = string.Equals(
-                            item.Status,
-                            "ReturnedToClient",
-                            StringComparison.OrdinalIgnoreCase);
+                        var nonWithdrawableStatuses = new[]
+                        {
+                            "Withdrawn",
+                            "Approved",
+                            "Rejected",
+                            "Finalized",
+                            "Finalised",
+                            "Extracted",
+                            "Extracted to OVVIO",
+                            "OvvioExtracted"
+                        };
+                        var withdrawableStatuses = new[]
+                        {
+                            "EvidenceOpen",
+                            "SectorInbox",
+                            "Awaiting Valuer Assignment",
+                            "Pending",
+                            "Submitted"
+                        };
+                        var canWithdraw =
+                            !nonWithdrawableStatuses.Contains(
+                                item.Status ?? string.Empty,
+                                StringComparer.OrdinalIgnoreCase) &&
+                            withdrawableStatuses.Contains(
+                                item.Status ?? string.Empty,
+                                StringComparer.OrdinalIgnoreCase);
 
-                        var pendingInspectionAppointment = attrData.Appointments?
-                            .FirstOrDefault(appointment =>
-                                IsPendingInspectionAppointment(appointment) &&
-                                (
-                                    appointment.AttrId == item.Id ||
-                                    string.Equals(
-                                        appointment.AppointmentRef?.Trim(),
-                                        item.SubmissionRef?.Trim(),
-                                        StringComparison.OrdinalIgnoreCase) ||
-                                    string.Equals(
-                                        appointment.PropertyDesc?.Trim(),
-                                        item.PropertyDesc?.Trim(),
-                                        StringComparison.OrdinalIgnoreCase)
-                                ));
-
-                        <tr class="@(isReturnedToClient ? "attr-row-action-required" : null)">
+                        <tr>
                             <td><strong>@item.SubmissionRef</strong></td>
                             <td>@item.PropertyDesc</td>
                             <td>@item.FormType</td>
@@ -238,16 +212,7 @@
                                     </span>
                                 }
                             </td>
-                            <td>
-                                @Html.Raw(DashboardDisplayHelpers.GetAttrStatusPill(item.Status))
-                                @if (isReturnedToClient)
-                                {
-                                    <div class="attr-action-required-message">
-                                        <i class="fa-solid fa-triangle-exclamation"></i>
-                                        Action required: update the fields returned by the valuer.
-                                    </div>
-                                }
-                            </td>
+                            <td>@Html.Raw(DashboardDisplayHelpers.GetAttrStatusPill(item.Status))</td>
                             <td>
                                 <div class="dropdown">
                                     <button class="cd-action-btn dropdown-toggle"
@@ -261,32 +226,18 @@
                                                    asp-route-submissionType="Attribute"
                                                    asp-route-referenceNumber="@item.SubmissionRef"
                                                    asp-route-rollSource="Attributes"
-                                                   asp-route-returnUrl="@dashboardReturnUrl">
+                                                   asp-route-returnUrl="@attributesReturnUrl">
                                                 👁️ View Submission
                                             </a>
                                         </li>
                                         <li>
                                             <a class="dropdown-item"
-                                                   asp-controller="Attributes"
-                                                   asp-action="DownloadAcknowledgement"
-                                                   asp-route-attrNo="@item.SubmissionRef"
-                                                   asp-route-returnUrl="@dashboardReturnUrl"
+                                                   href="/attributes/acknowledgement/download?attrNo=@item.SubmissionRef"
                                                    target="_blank">
                                                 <i class="fa-solid fa-file-pdf" style="color:#dc2626;"></i>
                                                 Download Acknowledgement
                                             </a>
                                         </li>
-                                        @if (pendingInspectionAppointment != null)
-                                        {
-                                            <li>
-                                                <button type="button"
-                                                        class="dropdown-item"
-                                                        onclick="openInspectionResponseModal('@pendingInspectionAppointment.Id')">
-                                                    <i class="fa-solid fa-calendar-check"></i>
-                                                    Select Inspection Date
-                                                </button>
-                                            </li>
-                                        }
                                         @if (item.IsEditable)
                                         {
                                             @*  <li>
@@ -311,6 +262,19 @@
                                                        asp-route-attrId="@item.Id">
                                                     <i class="fa-solid fa-rotate-right"></i>
                                                     Correct / Resubmit
+                                                </a>
+                                            </li>
+                                        }
+                                        @if (canWithdraw)
+                                        {
+                                            <li><hr class="dropdown-divider" /></li>
+                                            <li>
+                                                <a class="dropdown-item text-danger"
+                                                       asp-route="AttributeWithdrawalGet"
+                                                       asp-route-attrId="@item.Id"
+                                                       asp-route-returnUrl="@attributesReturnUrl">
+                                                    <i class="fa-solid fa-file-circle-xmark"></i>
+                                                    Withdraw Submission
                                                 </a>
                                             </li>
                                         }
@@ -357,25 +321,10 @@
                 </thead>
 
                 <tbody>
-                    @if (attrData.Appointments == null || !attrData.Appointments.Any())
-                    {
-                        <tr>
-                            <td colspan="5"
-                                style="text-align:center;font-weight:700;color:#777;">
-                                No inspection appointment requests found.
-                            </td>
-                        </tr>
-                    }
-                    else
+                    @if (attrData.Appointments != null && attrData.Appointments.Any())
                     {
                         @foreach (var item in attrData.Appointments)
                         {
-                            var appointmentTime = item.ConfirmedDateTime ?? item.AppointmentDate;
-                            var hasPin = string.Equals(
-                                item.Status,
-                                "InspectionDetailsSent",
-                                StringComparison.OrdinalIgnoreCase);
-
                             <tr>
                                 <td>
                                     <strong>@item.AppointmentRef</strong>
@@ -420,27 +369,10 @@
 
                                 <td>
                                     @Html.Raw(DashboardDisplayHelpers.GetApptStatusPill(item.Status))
-
-                                    @if (appointmentTime.HasValue &&
-                                         (item.Status == "Confirmed" || item.Status == "InspectionDetailsSent"))
-                                    {
-                                        <div class="attr-pin-validity"
-                                             data-pin-countdown
-                                             data-appointment-epoch="@(new DateTimeOffset(appointmentTime.Value).ToUnixTimeMilliseconds())"
-                                             data-has-pin="@(hasPin ? "true" : "false")">
-                                            <i class="fa-solid fa-hourglass-half"></i>
-                                            <span class="attr-pin-validity-text">
-                                                Calculating time to appointment...
-                                            </span>
-                                        </div>
-                                        <div class="attr-pin-validity-note">
-                                            The PIN security window starts at the confirmed appointment time.
-                                        </div>
-                                    }
                                 </td>
 
                                 <td>
-                                    @if (IsPendingInspectionAppointment(item))
+                                    @if (item.Status == "PendingClientResponse")
                                     {
                                         <button type="button"
                                                 class="cd-action-btn"
@@ -483,7 +415,7 @@
         </div>
 
         @* Date selection modals *@
-        @foreach (var appointment in attrData.Appointments.Where(IsPendingInspectionAppointment))
+        @foreach (var appointment in attrData.Appointments.Where(x => x.Status == "PendingClientResponse"))
         {
             <div id="inspectionModal_@appointment.Id"
                  class="attr-insp-modal-backdrop"
@@ -725,3 +657,4 @@
                 
     </div>
 </div>
+

@@ -150,6 +150,32 @@
             </div>
         </div>
 
+        @* ── Uploaded document names ─────────────────── *@
+        <div class="aa-card">
+            <div class="aa-card-bar">
+                <i class="fa-solid fa-paperclip"></i>
+                <h3>Uploaded Supporting Documents</h3>
+            </div>
+            <div class="aa-card-body">
+                @if (Model.UploadedDocuments.Any())
+                {
+                    <ul class="aa-uploaded-files">
+                        @foreach (var fileName in Model.UploadedDocuments)
+                        {
+                            <li>
+                                <i class="fa-solid fa-file-circle-check"></i>
+                                <span>@fileName</span>
+                            </li>
+                        }
+                    </ul>
+                }
+                else
+                {
+                    <div class="aa-field-value">No supporting documents were uploaded with this form.</div>
+                }
+            </div>
+        </div>
+
         @* ── Submitted form data (partial) ───────────── *@
         @if (Model.Submission != null)
         {
@@ -166,20 +192,20 @@
         @* ── Actions ──────────────────────────────────── *@
         <div class="aa-actions">
             <a class="aa-btn aa-btn-primary"
-               href="/attributes/acknowledgement/download?attrNo=@Model.AttrNo">
+                   href="/attributes/acknowledgement/download?attrNo=@Model.AttrNo">
                 <i class="fa-solid fa-download"></i> Download Acknowledgement
             </a>
 
             @if (!isExpired)
             {
                 <a class="aa-btn aa-btn-gold"
-                   href="/attributes/evidence?attrNo=@Model.AttrNo">
+                       href="/attributes/evidence?attrNo=@Model.AttrNo">
                     <i class="fa-solid fa-upload"></i> Upload Evidence
                 </a>
             }
 
             <a class="aa-btn aa-btn-light"
-               href="/dashboard?openRoll=attributes">
+                   href="/dashboard?openRoll=attributes">
                 <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
             </a>
         </div>

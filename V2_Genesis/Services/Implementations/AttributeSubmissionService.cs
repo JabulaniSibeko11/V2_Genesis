@@ -104,14 +104,45 @@ namespace V2_Genesis.Services.Implementations
         }
 
         public async Task<long> SubmitAsync(
-     AttributeSubmissionViewModel model,
-     string userId,
-     string userName,
-     string? userEmail,
-     string? userPhone)
+            AttributeSubmissionViewModel model,
+            string userId,
+            string userName,
+            string? userEmail,
+            string? userPhone,
+            string? capturerSapNumber = null)
         {
 
             ValidateAndCleanSubmission(model);
+
+            capturerSapNumber = string.IsNullOrWhiteSpace(capturerSapNumber)
+                ? null
+                : new string(capturerSapNumber.Where(char.IsDigit).ToArray());
+
+            capturerSapNumber = string.IsNullOrWhiteSpace(capturerSapNumber)
+                ? null
+                : capturerSapNumber;
+
+            const string adminPortalEmail =
+                "AdministrationEnquiries@Joburg.org.za";
+
+            var isSharedAdminAccount =
+                string.Equals(
+                    userName?.Trim(),
+                    adminPortalEmail,
+                    StringComparison.OrdinalIgnoreCase)
+                || string.Equals(
+                    userEmail?.Trim(),
+                    adminPortalEmail,
+                    StringComparison.OrdinalIgnoreCase);
+
+            if (isSharedAdminAccount && capturerSapNumber is null)
+            {
+                throw new InvalidOperationException(
+                    "The logged-in Admin SAP number could not be verified. " +
+                    "Please sign out, sign in again using Windows authentication, and retry the submission.");
+            }
+
+            var isAdminCapture = capturerSapNumber is not null;
 
             var submissionSector = await ResolveSectorByTownshipAsync(
                 model.PropertyDetails.Township);
@@ -138,9 +169,14 @@ namespace V2_Genesis.Services.Implementations
                     !string.IsNullOrWhiteSpace(x.HomePhoneNo) ||
                     !string.IsNullOrWhiteSpace(x.WorkPhoneNo));
 
+            // During an Admin-assisted capture, communication belongs to the
+            // client entered on the form. Never fall back to the shared Admin
+            // portal email address.
             var submittedByEmail = !string.IsNullOrWhiteSpace(firstContact?.Email)
                 ? firstContact.Email.Trim()
-                : userEmail?.Trim();
+                : isAdminCapture
+                    ? null
+                    : userEmail?.Trim();
 
             var submittedByPhone =
                 !string.IsNullOrWhiteSpace(firstContact?.CellNo)
@@ -198,6 +234,7 @@ namespace V2_Genesis.Services.Implementations
                 RollDescription = model.PropertyDetails.RollDescription,
 
                 SubmittedByUserId = userId,
+                Capturer = capturerSapNumber,
                 SubmittedByName = userName,
                 SubmittedByEmail = submittedByEmail,
                 SubmittedByPhone = submittedByPhone,
@@ -397,6 +434,20 @@ namespace V2_Genesis.Services.Implementations
                 });
             }
 
+            if (isAdminCapture)
+            {
+                await AddAuditAsync(
+                    propertyInfo.Attr_ID,
+                    propertyInfo.Attr_No,
+                    "Captured On Behalf Of Client",
+                    null,
+                    initialStatus,
+                    userId,
+                    userName,
+                    "Admin",
+                    $"Attributes submission captured on behalf of the client by Admin SAP number {capturerSapNumber}. Client communication email: {submittedByEmail}.");
+            }
+
             await AddAuditAsync(
                 propertyInfo.Attr_ID,
                 propertyInfo.Attr_No,
@@ -405,10 +456,10 @@ namespace V2_Genesis.Services.Implementations
                 initialStatus,
                 userId,
                 userName,
-                "Client",
+                isAdminCapture ? "Admin" : "Client",
                 _bypassEvidenceWindow
-                    ? $"Client submitted attribute property information. Presentation bypass routed the submission directly to sector '{submissionSector}'."
-                    : "Client submitted attribute property information. Evidence upload window is open for 48 hours.");
+                    ? $"{(isAdminCapture ? "Admin captured on behalf of client" : "Client submitted")} attribute property information. Presentation bypass routed the submission directly to sector '{submissionSector}'."
+                    : $"{(isAdminCapture ? "Admin captured on behalf of client" : "Client submitted")} attribute property information. Evidence upload window is open for 48 hours.");
 
             await AddAuditAsync(
                 propertyInfo.Attr_ID,
@@ -418,7 +469,7 @@ namespace V2_Genesis.Services.Implementations
                 initialStatus,
                 userId,
                 userName,
-                "Client",
+                isAdminCapture ? "Admin" : "Client",
                 $"Acknowledgement saved as {documentResult.AcknowledgementFileName}. Evidence files uploaded: {documentResult.EvidenceCount}.");
 
             await AddAuditAsync(
@@ -429,10 +480,10 @@ namespace V2_Genesis.Services.Implementations
                 initialStatus,
                 userId,
                 userName,
-                "Client",
+                isAdminCapture ? "Admin" : "Client",
                 _bypassEvidenceWindow
-                    ? "Client accepted declaration and signature was captured. Additional evidence was locked by the presentation bypass."
-                    : "Client accepted declaration and signature was captured. Evidence PIN generated for 48 hours.");
+                    ? $"{(isAdminCapture ? "Admin-assisted" : "Client")} declaration and signature were captured. Additional evidence was locked by the presentation bypass."
+                    : $"{(isAdminCapture ? "Admin-assisted" : "Client")} declaration and signature were captured. Evidence PIN generated for 48 hours.");
 
             var unitKey = model.PropertyDetails.UnitKey
                 ?? model.PropertyDetails.PropertyId
@@ -686,7 +737,9 @@ namespace V2_Genesis.Services.Implementations
                     MaritalStatus = contact.MaritalStatus,
                     Citizenship = contact.Citizenship,
                     PhysicalAddress = contact.PhysicalAddress,
-                    PostalAddress = contact.PostalAddress,
+                    // Attr_Contact_Info has one postal-address column. Keep the
+                    // separately captured code by appending it at persistence time.
+                    PostalAddress = CombinePostalAddress(contact.PostalAddress, contact.PostalCode),
                     Email = contact.Email,
                     HomePhoneNo = contact.HomePhoneNo,
                     WorkPhoneNo = contact.WorkPhoneNo,
@@ -1041,21 +1094,104 @@ namespace V2_Genesis.Services.Implementations
 
         public async Task WithdrawAsync(long attrId, string userId, string userName, string reason)
         {
-            var item = await _context.AttrPropertyInfo.FirstOrDefaultAsync(x => x.Attr_ID == attrId);
+            if (attrId <= 0)
+                throw new InvalidOperationException("Invalid Attributes submission reference.");
+
+            if (string.IsNullOrWhiteSpace(userId))
+                throw new InvalidOperationException("The logged-in user could not be verified.");
+
+            reason = reason?.Trim() ?? string.Empty;
+
+            if (reason.Length < 10)
+                throw new InvalidOperationException(
+                    "Please provide a withdrawal reason of at least 10 characters.");
+
+            if (reason.Length > 1000)
+                throw new InvalidOperationException(
+                    "The withdrawal reason cannot exceed 1,000 characters.");
+
+            await using var transaction =
+                await _context.Database.BeginTransactionAsync();
+
+            var item = await _context.AttrPropertyInfo
+                .FirstOrDefaultAsync(x =>
+                    x.Attr_ID == attrId &&
+                    x.SubmittedByUserId == userId);
 
             if (item == null)
-                throw new InvalidOperationException("Attribute submission was not found.");
+                throw new InvalidOperationException(
+                    "The Attributes submission was not found or does not belong to your account.");
+
+            if (item.IsWithdrawn || string.Equals(
+                    item.Attr_Status,
+                    "Withdrawn",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException(
+                    "This Attributes submission has already been withdrawn.");
+            }
+
+            var isAllocatedToValuer =
+                !string.IsNullOrWhiteSpace(item.Task_Assigned_To_UserId)
+                || !string.IsNullOrWhiteSpace(item.Task_Assigned_To)
+                || !string.IsNullOrWhiteSpace(item.ValuerUserId)
+                || !string.IsNullOrWhiteSpace(item.Valuer);
+
+            if (isAllocatedToValuer)
+            {
+                throw new InvalidOperationException(
+                    "This submission cannot be withdrawn because it has already been allocated to a valuer.");
+            }
+
+            var terminalStatuses = new HashSet<string>(
+                StringComparer.OrdinalIgnoreCase)
+            {
+                "Approved",
+                "Rejected",
+                "Finalized",
+                "Finalised",
+                "Extracted",
+                "Extracted to OVVIO",
+                "OvvioExtracted"
+            };
+
+            if (terminalStatuses.Contains(item.Attr_Status ?? string.Empty))
+                throw new InvalidOperationException(
+                    $"A submission with status '{item.Attr_Status}' can no longer be withdrawn.");
 
             var oldStatus = item.Attr_Status;
+            var now = DateTime.Now;
+            var isAdminWithdrawal =
+                !string.IsNullOrWhiteSpace(item.Capturer)
+                || string.Equals(
+                    userName?.Trim(),
+                    "AdministrationEnquiries@Joburg.org.za",
+                    StringComparison.OrdinalIgnoreCase);
 
             item.IsWithdrawn = true;
+            item.IsActive = false;
             item.WithdrawnByUserId = userId;
             item.WithdrawnByName = userName;
-            item.WithdrawnDateTime = DateTime.Now;
+            item.WithdrawnDateTime = now;
             item.WithdrawalReason = reason;
             item.Attr_Status = "Withdrawn";
             item.UpdatedBy = userId;
-            item.UpdatedDate = DateTime.Now;
+            item.UpdatedDate = now;
+
+            // Preserve the original declaration date as audit evidence. Disable
+            // the declaration and all evidence/PIN activity instead of deleting
+            // the original declaration timestamp.
+            var declaration = await _context.AttrDeclarations
+                .FirstOrDefaultAsync(x => x.Attr_ID == item.Attr_ID);
+
+            if (declaration != null)
+            {
+                declaration.Declaration_Accepted = false;
+                declaration.PinIsActive = false;
+                declaration.AdditionalEvidenceAllowed = false;
+                declaration.UpdatedBy = userId;
+                declaration.UpdatedDate = now;
+            }
 
             _context.AttrWithdrawals.Add(new AttrWithdrawals
             {
@@ -1065,10 +1201,36 @@ namespace V2_Genesis.Services.Implementations
                 WithdrawalReason = reason,
                 WithdrawnByUserId = userId,
                 WithdrawnByName = userName,
-                WithdrawnByRole = "Client",
+                WithdrawnByRole = isAdminWithdrawal ? "Admin" : "Client",
                 WithdrawalStatus = "Withdrawn",
-                DateWithdrawn = DateTime.Now
+                DateWithdrawn = now
             });
+
+            // Submission removes the property from LinkedProperties_Attr.
+            // Restore it atomically so it is available to link/submit again.
+            var propertyKey = item.Unit_key
+                ?? item.Property_id
+                ?? item.Premise_id;
+
+            if (!string.IsNullOrWhiteSpace(propertyKey))
+            {
+                propertyKey = propertyKey.Trim();
+
+                var alreadyLinked = await _context.LinkedProperties
+                    .AnyAsync(x =>
+                        x.IDProperty == propertyKey &&
+                        x.UserID == userId);
+
+                if (!alreadyLinked)
+                {
+                    _context.LinkedProperties.Add(new LinkedPropertyAttr
+                    {
+                        IDProperty = propertyKey,
+                        UserID = userId,
+                        PropertyFrom = "Attributes"
+                    });
+                }
+            }
 
             await AddAuditAsync(
                 item.Attr_ID,
@@ -1078,10 +1240,11 @@ namespace V2_Genesis.Services.Implementations
                 "Withdrawn",
                 userId,
                 userName,
-                "Client",
+                isAdminWithdrawal ? "Admin" : "Client",
                 reason);
 
             await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
         }
 
         private async Task AddAuditAsync(
@@ -1162,6 +1325,25 @@ namespace V2_Genesis.Services.Implementations
                    && x.VacantLandCost == null;
         }
 
+        private static string? CombinePostalAddress(string? address, string? postalCode)
+        {
+            var cleanAddress = address?.Trim();
+            var cleanCode = postalCode?.Trim();
+
+            if (string.IsNullOrWhiteSpace(cleanCode))
+                return cleanAddress;
+
+            if (string.IsNullOrWhiteSpace(cleanAddress))
+                return cleanCode;
+
+            // Do not append the code twice if a validation retry posts an
+            // already-combined value.
+            if (cleanAddress.EndsWith(cleanCode, StringComparison.OrdinalIgnoreCase))
+                return cleanAddress;
+
+            return $"{cleanAddress}, {cleanCode}";
+        }
+
 
         public async Task<AttributeAcknowledgementVm?> GetAcknowledgementAsync(long attrId)
         {
@@ -1181,18 +1363,7 @@ namespace V2_Genesis.Services.Implementations
             var files = await _context.AttrFiles
                 .FirstOrDefaultAsync(x => x.Attr_ID == attrId);
 
-            var uploadedDocs = new List<string>();
-
-            if (!string.IsNullOrWhiteSpace(files?.Files1)) uploadedDocs.Add(files.Files1);
-            if (!string.IsNullOrWhiteSpace(files?.Files2)) uploadedDocs.Add(files.Files2);
-            if (!string.IsNullOrWhiteSpace(files?.Files3)) uploadedDocs.Add(files.Files3);
-            if (!string.IsNullOrWhiteSpace(files?.Files4)) uploadedDocs.Add(files.Files4);
-            if (!string.IsNullOrWhiteSpace(files?.Files5)) uploadedDocs.Add(files.Files5);
-            if (!string.IsNullOrWhiteSpace(files?.Files6)) uploadedDocs.Add(files.Files6);
-            if (!string.IsNullOrWhiteSpace(files?.Files7)) uploadedDocs.Add(files.Files7);
-            if (!string.IsNullOrWhiteSpace(files?.Files8)) uploadedDocs.Add(files.Files8);
-            if (!string.IsNullOrWhiteSpace(files?.Files9)) uploadedDocs.Add(files.Files9);
-            if (!string.IsNullOrWhiteSpace(files?.Files10)) uploadedDocs.Add(files.Files10);
+            var uploadedDocs = GetStoredFileNames(files);
 
             var submission = await BuildSubmittedAttributeViewModelAsync(attrId);
 
@@ -1289,6 +1460,10 @@ namespace V2_Genesis.Services.Implementations
 
             var declaration = await _context.AttrDeclarations
                 .FirstOrDefaultAsync(x => x.Attr_ID == attrId, cancellationToken);
+
+            var storedFiles = await _context.AttrFiles
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Attr_ID == attrId && x.IsActive, cancellationToken);
 
             var contacts = await _context.AttrContactInfo
                 .Where(x => x.PropertyDetailsId == propertyDetailsId)
@@ -1444,6 +1619,11 @@ namespace V2_Genesis.Services.Implementations
                     DeclarationText = declaration?.Declaration_Text
                 },
 
+                Files = new AttributeFilesVm
+                {
+                    UploadedFileNames = GetStoredFileNames(storedFiles)
+                },
+
                 ContactInfos = contacts.Select(c => new AttributeContactInfoVm
                 {
                     ContactType = c.ContactType,
@@ -1539,6 +1719,55 @@ namespace V2_Genesis.Services.Implementations
             };
 
             return model;
+        }
+
+        private static List<string> GetStoredFileNames(AttrFiles? files)
+        {
+            if (files == null)
+                return new List<string>();
+
+            var stored = new[]
+                {
+                    (Name: files.Rep_Letter, Label: "Representative_Letter"),
+                    (Name: files.Files1, Label: "Evidence_1"),
+                    (Name: files.Files2, Label: "Evidence_2"),
+                    (Name: files.Files3, Label: "Evidence_3"),
+                    (Name: files.Files4, Label: "Evidence_4"),
+                    (Name: files.Files5, Label: "Evidence_5"),
+                    (Name: files.Files6, Label: "Evidence_6"),
+                    (Name: files.Files7, Label: "Evidence_7"),
+                    (Name: files.Files8, Label: "Evidence_8"),
+                    (Name: files.Files9, Label: "Evidence_9"),
+                    (Name: files.Files10, Label: "Evidence_10")
+                };
+
+            return stored
+                .Where(x => !string.IsNullOrWhiteSpace(x.Name))
+                .Select(x => GetUploadedDisplayName(x.Name!, files.Attr_No, x.Label))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+
+        private static string GetUploadedDisplayName(
+            string storedFileName,
+            string? attrNo,
+            string storageLabel)
+        {
+            var fileName = Path.GetFileName(storedFileName);
+            var extension = Path.GetExtension(fileName);
+            var baseName = Path.GetFileNameWithoutExtension(fileName);
+            var prefix = $"{attrNo}_{storageLabel}_";
+
+            if (!string.IsNullOrWhiteSpace(attrNo) &&
+                baseName.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            {
+                baseName = baseName[prefix.Length..];
+            }
+
+            baseName = Regex.Replace(baseName, @"_\d{8}_\d{9}$", string.Empty);
+            return string.IsNullOrWhiteSpace(baseName)
+                ? fileName
+                : baseName + extension;
         }
 
         public async Task<ReturnedAttributeCorrectionViewModel?> GetReturnedCorrectionAsync(
@@ -2580,6 +2809,7 @@ namespace V2_Genesis.Services.Implementations
                 c.Citizenship = CleanText(c.Citizenship, 100);
                 c.PhysicalAddress = CleanText(c.PhysicalAddress, 500);
                 c.PostalAddress = CleanText(c.PostalAddress, 500);
+                c.PostalCode = CleanText(c.PostalCode, 10);
                 c.Email = CleanEmail(c.Email);
                 c.HomePhoneNo = CleanPhone(c.HomePhoneNo);
                 c.WorkPhoneNo = CleanPhone(c.WorkPhoneNo);

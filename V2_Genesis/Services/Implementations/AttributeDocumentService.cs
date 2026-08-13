@@ -351,7 +351,7 @@ namespace V2_Genesis.Services.Attributes
                     ("Marital Status", c.MaritalStatus),
                     ("Citizenship", c.Citizenship),
                     ("Physical Address", c.PhysicalAddress),
-                    ("Postal Address", c.PostalAddress),
+                    ("Postal Address", CombinePostalAddress(c.PostalAddress, c.PostalCode)),
                     ("Email", c.Email),
                     ("Home Phone", c.HomePhoneNo),
                     ("Work Phone", c.WorkPhoneNo),
@@ -825,7 +825,7 @@ namespace V2_Genesis.Services.Attributes
                     }
 
                     AddFullRow(table, "Physical Address", c.PhysicalAddress);
-                    AddFullRow(table, "Postal Address", c.PostalAddress);
+                    AddFullRow(table, "Postal Address", CombinePostalAddress(c.PostalAddress, c.PostalCode));
                     AddTwoColumnRow(table, "Email", c.Email, "Cell No", c.CellNo);
                     AddTwoColumnRow(table, "Home Phone", c.HomePhoneNo, "Work Phone", c.WorkPhoneNo);
                 });
@@ -1082,6 +1082,14 @@ namespace V2_Genesis.Services.Attributes
 
             if (model.Files?.EvidenceFiles != null)
                 fileNames.AddRange(model.Files.EvidenceFiles.Select(f => f.FileName));
+
+            if (model.Files?.UploadedFileNames != null)
+                fileNames.AddRange(model.Files.UploadedFileNames);
+
+            fileNames = fileNames
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
 
             if (!fileNames.Any())
             {
@@ -1369,6 +1377,18 @@ namespace V2_Genesis.Services.Attributes
             }).GeneratePdf(pdfPath);
         }
 
+        private static string? CombinePostalAddress(string? address, string? postalCode)
+        {
+            var cleanAddress = address?.Trim();
+            var cleanCode = postalCode?.Trim();
+
+            if (string.IsNullOrWhiteSpace(cleanCode)) return cleanAddress;
+            if (string.IsNullOrWhiteSpace(cleanAddress)) return cleanCode;
+            if (cleanAddress.EndsWith(cleanCode, StringComparison.OrdinalIgnoreCase)) return cleanAddress;
+
+            return $"{cleanAddress}, {cleanCode}";
+        }
+
         private static string GetFormLabel(string? formType)
         {
             return formType switch
@@ -1415,45 +1435,8 @@ namespace V2_Genesis.Services.Attributes
                 .Padding(4);
         }
 
-        private static void AddAckRow(TableDescriptor table, string label, string? value, string background)
-        {
-            table.Cell().Border(1).Background(background).Padding(7).Text(label).Bold();
-            table.Cell().Border(1).Background(background).Padding(7).Text(value ?? "");
-        }
+       
 
-        private static void AddAckSectionTitle(ColumnDescriptor col, string title, string background)
-        {
-            col.Item()
-                .PaddingTop(18)
-                .Background(background)
-                .Border(1)
-                .Padding(7)
-                .AlignCenter()
-                .Text(title)
-                .FontColor(Colors.White)
-                .Bold()
-                .FontSize(11);
-        }
-
-        private static void AddHeaderCell(TableDescriptor table, string text)
-        {
-            table.Cell()
-                .Border(1)
-                .Background(Colors.Grey.Lighten3)
-                .Padding(5)
-                .AlignCenter()
-                .Text(text)
-                .Bold()
-                .FontSize(8);
-        }
-
-        private static void AddBodyCell(TableDescriptor table, string? text)
-        {
-            table.Cell()
-                .Border(1)
-                .Padding(5)
-                .Text(text ?? "")
-                .FontSize(8);
-        }
+       
     }
 }
