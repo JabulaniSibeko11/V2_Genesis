@@ -790,3 +790,13 @@
         justify-content: center;
     }
 }
+.res-btn-info {
+    background: var(--sr-teal-pale, #e8f3f4);
+    color: var(--sr-teal, #006570);
+}
+
+    .res-btn-info:hover {
+        background: #d8ecec;
+        color: var(--sr-teal, #006570);
+    }
+ 

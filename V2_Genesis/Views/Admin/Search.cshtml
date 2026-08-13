@@ -7,8 +7,10 @@
 }
 
 @section Styles {
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css" />
     <link href="~/css/views/clientdashboardcss.css" rel="stylesheet" asp-append-version="true" />
-    <link href="~/css/views/admin-search.css" rel="stylesheet" asp-append-version="true"/>
+    <link href="~/css/views/admin-search.css" rel="stylesheet" asp-append-version="true" />
 }
 
 <div class="adms-page">
@@ -32,11 +34,10 @@
 
         @if (TempData["SearchError"] is string searchError)
         {
-            <div class="adms-err" style="padding:12px 14px;background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;font-size:13px;color:#b91c1c;margin-bottom:14px;">
+            <div class="adms-err">
                 <i class="fa-solid fa-circle-xmark"></i> @searchError
             </div>
         }
-
 
         <div class="adms-tab-bar">
             <button class="adms-tab active" id="tab-ref"
@@ -51,7 +52,6 @@
             </button>
         </div>
 
-       
         <div class="adms-pane active" id="pane-ref">
             <div class="adms-card">
                 <div class="adms-card-head">
@@ -97,7 +97,6 @@
                 </div>
             </div>
         </div>
-
 
         <div class="adms-pane" id="pane-prop">
             <div class="adms-card">
@@ -187,6 +186,12 @@
 </div>
 
 @section Scripts {
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
     <script>
         function switchTab(tab) {
             ['ref','prop'].forEach(function(t) {
@@ -217,7 +222,6 @@
             if (ex) ex.remove();
             var d = document.createElement('div');
             d.className = 'adms-err';
-            d.style.cssText = 'padding:10px 14px;background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;font-size:13px;color:#b91c1c;margin-bottom:10px;';
             d.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> ' + msg;
             form.insertBefore(d, form.firstChild);
             setTimeout(function() { d.remove(); }, 5000);

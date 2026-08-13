@@ -80,10 +80,105 @@
 }
 
 @section Styles {
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css" />
     <link href="~/css/views/clientdashboardcss.css" rel="stylesheet" asp-append-version="true" />
     <link href="~/css/views/admin-dashboard-premium.css" rel="stylesheet" asp-append-version="true" />
     <link href="~/css/views/admin-search-result.css" rel="stylesheet" asp-append-version="true" />
     <link href="~/css/views/admin-search-foundation.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/views/property-search.css" rel="stylesheet" asp-append-version="true" />
+
+    <style>
+        /* Keep the Admin enquiry tables consistent with the Home property-search table. */
+        .enquiry-tab-panel .dataTables_wrapper,
+        .enquiry-property-results .dataTables_wrapper,
+        .res-table-card .dataTables_wrapper {
+            width: 100%;
+        }
+
+        .enquiry-tab-panel .dataTables_scroll,
+        .enquiry-tab-panel .dataTables_scrollHead,
+        .enquiry-tab-panel .dataTables_scrollHeadInner,
+        .enquiry-tab-panel .dataTables_scrollBody,
+        .enquiry-property-results .dataTables_scroll,
+        .enquiry-property-results .dataTables_scrollHead,
+        .enquiry-property-results .dataTables_scrollHeadInner,
+        .enquiry-property-results .dataTables_scrollBody,
+        .res-table-card .dataTables_scroll,
+        .res-table-card .dataTables_scrollHead,
+        .res-table-card .dataTables_scrollHeadInner,
+        .res-table-card .dataTables_scrollBody {
+            width: 100% !important;
+        }
+
+        .enquiry-tab-panel table.dataTable,
+        .enquiry-property-results table.dataTable,
+        .res-table-card table.dataTable {
+            width: 100% !important;
+            margin: 0 !important;
+        }
+
+        .enquiry-dt-top,
+        .enquiry-dt-bottom {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            width: 100%;
+            padding: 12px 0;
+        }
+
+            .enquiry-dt-top .dt-buttons {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            .enquiry-dt-top .dataTables_filter {
+                margin-left: auto;
+            }
+
+                .enquiry-dt-top .dataTables_filter input {
+                    min-width: 240px;
+                }
+
+            .enquiry-dt-bottom .dataTables_paginate {
+                margin-left: auto;
+            }
+
+        .enquiry-dt-btn {
+            border: 1px solid #d8dee3 !important;
+            border-radius: 8px !important;
+            background: #fff !important;
+            color: #163740 !important;
+            font-weight: 700 !important;
+            padding: 8px 12px !important;
+        }
+
+            .enquiry-dt-btn:hover {
+                border-color: #e6b000 !important;
+                background: #fff8d9 !important;
+            }
+
+        @@media (max-width: 768px) {
+            .enquiry-dt-top,
+            .enquiry-dt-bottom {
+                align-items: stretch;
+                flex-direction: column;
+            }
+
+                .enquiry-dt-top .dataTables_filter,
+                .enquiry-dt-bottom .dataTables_paginate {
+                    margin-left: 0;
+                }
+
+                    .enquiry-dt-top .dataTables_filter input {
+                        min-width: 0;
+                        width: 100%;
+                    }
+        }
+    </style>
 }
 
 <div class="res-page">
@@ -386,7 +481,9 @@
                     @if (rollInformation.HasProperties)
                     {
                         <div class="table-responsive">
-                            <table class="enquiry-roll-table enquiry-roll-detail-table">
+                            <table class="display table enquiry-roll-table enquiry-roll-detail-table"
+                                   id="rollInformationTable"
+                                   style="width:100%">
                                 <thead>
                                     <tr>
                                         <th>Roll / Source</th>
@@ -430,7 +527,7 @@
                                             <td>
                                                 <div class="enquiry-row-actions">
                                                     <a class="enquiry-row-btn"
-                                                       href="/property/view?rollSource=@Uri.EscapeDataString(item.RollSource)&unitKey=@Uri.EscapeDataString(item.UnitKey)&valuationKey=@Uri.EscapeDataString(item.ValuationKey)&propertyFrom=@Uri.EscapeDataString(item.PropertyFrom)">
+                                                           href="/property/view?rollSource=@Uri.EscapeDataString(item.RollSource)&unitKey=@Uri.EscapeDataString(item.UnitKey)&valuationKey=@Uri.EscapeDataString(item.ValuationKey)&propertyFrom=@Uri.EscapeDataString(item.PropertyFrom)">
                                                         <i class="fa-solid fa-eye"></i>
                                                         View
                                                     </a>
@@ -462,7 +559,7 @@
                                                     @if (item.CanLodgeObjection)
                                                     {
                                                         <a class="enquiry-row-btn enquiry-row-btn-gold"
-                                                           href="/objection/check?rollSource=@Uri.EscapeDataString(item.RollSource)&sourceTable=@Uri.EscapeDataString(item.SourceTable)&unitKey=@Uri.EscapeDataString(item.UnitKey)&valuationKey=@Uri.EscapeDataString(item.ValuationKey)&appealStatus=False&PropertyFrom=@Uri.EscapeDataString(item.PropertyFrom)">
+                                                               href="/objection/check?rollSource=@Uri.EscapeDataString(item.RollSource)&sourceTable=@Uri.EscapeDataString(item.SourceTable)&unitKey=@Uri.EscapeDataString(item.UnitKey)&valuationKey=@Uri.EscapeDataString(item.ValuationKey)&appealStatus=False&PropertyFrom=@Uri.EscapeDataString(item.PropertyFrom)">
                                                             <i class="fa-solid fa-file-pen"></i>
                                                             Lodge Objection
                                                         </a>
@@ -503,7 +600,7 @@
                                     @if (omission.CanLodge)
                                     {
                                         <a class="enquiry-row-btn enquiry-row-btn-gold"
-                                           href="/search/@Uri.EscapeDataString(omission.RollSource)">
+                                               href="/search/@Uri.EscapeDataString(omission.RollSource)">
                                             <i class="fa-solid fa-magnifying-glass"></i>
                                             Continue to Omission Search
                                         </a>
@@ -552,7 +649,9 @@
                     else
                     {
                         <div class="table-responsive">
-                            <table class="enquiry-roll-table enquiry-case-table">
+                            <table class="display table enquiry-roll-table enquiry-case-table"
+                                   id="caseHistoryTable"
+                                   style="width:100%">
                                 <thead>
                                     <tr>
                                         <th>Type / Reference</th>
@@ -597,7 +696,7 @@
                                                         @if (history.CanLodgeAppeal)
                                                         {
                                                             <a class="enquiry-row-btn enquiry-row-btn-gold"
-                                                               href="/objection/check?rollSource=@Uri.EscapeDataString(history.RollSource)&sourceTable=@Uri.EscapeDataString(history.PropertyFrom)&unitKey=@Uri.EscapeDataString(history.UnitKey)&valuationKey=@Uri.EscapeDataString(history.ValuationKey)&appealStatus=True&ObjectionNo=@Uri.EscapeDataString(history.ReferenceNumber)">
+                                                                   href="/objection/check?rollSource=@Uri.EscapeDataString(history.RollSource)&sourceTable=@Uri.EscapeDataString(history.PropertyFrom)&unitKey=@Uri.EscapeDataString(history.UnitKey)&valuationKey=@Uri.EscapeDataString(history.ValuationKey)&appealStatus=True&ObjectionNo=@Uri.EscapeDataString(history.ReferenceNumber)">
                                                                 <i class="fa-solid fa-gavel"></i>
                                                                 Lodge Appeal
                                                             </a>
@@ -719,7 +818,9 @@
                 }
 
                 <div class="table-responsive">
-                    <table class="enquiry-roll-table enquiry-property-candidate-table" id="propertyCandidateTable">
+                    <table class="display table enquiry-roll-table enquiry-property-candidate-table"
+                           id="propertyCandidateTable"
+                           style="width:100%">
                         <thead>
                             <tr>
                                 <th>Property</th>
@@ -806,7 +907,7 @@
                                 <span>@omission.SourceTable</span>
                             </div>
                             <a class="enquiry-row-btn enquiry-row-btn-gold"
-                               href="/search/@Uri.EscapeDataString(omission.RollSource)">
+                                   href="/search/@Uri.EscapeDataString(omission.RollSource)">
                                 <i class="fa-solid fa-magnifying-glass"></i>
                                 Continue to Omission Search
                             </a>
@@ -901,11 +1002,6 @@
                             <span class="res-value">@(m.Valuation_Key ?? "—")</span>
                         </div>
 
-                        @*  <div class="res-field">
-                            <span class="res-label">Premise ID</span>
-                            <span class="res-value">@(m.PremiseId ?? "—")</span>
-                        </div> *@
-
                         <div class="res-field">
                             <span class="res-label">Origin</span>
                             <span class="res-value">@(m.PropertyFrom ?? m.SourceTable ?? "—")</span>
@@ -950,17 +1046,9 @@
 
                     <div class="res-ref-footer">
 
-                        @* @if (!string.IsNullOrWhiteSpace(m.Unit_key) || !string.IsNullOrWhiteSpace(m.Valuation_Key))
-                        {
-                            <a class="res-btn res-btn-primary"
-                                   href="/property/view?rollSource=@m.RollSource&unitKey=@m.Unit_key&valuationKey=@m.Valuation_Key">
-                                <i class="fa-solid fa-eye"></i> View Property
-                            </a>
-                        } *@
-
                         @if (m.RefType == "Query" || m.RefType == "Review")
                         {
-                            <a class="res-btn" style="background:#e8f3ff;color:#005da8;"
+                            <a class="res-btn res-btn-info"
                                    href="/Section78/Display?queryNo=@referenceNo">
                                 <i class="fa-solid fa-eye"></i> View @m.RefType
                             </a>
@@ -1021,7 +1109,7 @@
                 </div>
 
                 <div class="table-responsive">
-                    <table class="res-table" id="resTable">
+                    <table class="display table res-table" id="resTable" style="width:100%">
                         <thead>
                             <tr>
                                 <th>Reference</th>
@@ -1066,16 +1154,6 @@
                                             </button>
 
                                             <ul class="dropdown-menu cd-action-menu">
-                                                @*   @if (!string.IsNullOrWhiteSpace(m.Unit_key) || !string.IsNullOrWhiteSpace(m.Valuation_Key))
-                                                {
-                                                    <li>
-                                                        <a class="dropdown-item"
-                                                               href="/property/view?rollSource=@m.RollSource&unitKey=@m.Unit_key&valuationKey=@m.Valuation_Key">
-                                                            <i class="fa-solid fa-eye"></i> View Property
-                                                        </a>
-                                                    </li>
-                                                } *@
-
                                                 @if (m.ClientAccountResolved && !string.IsNullOrWhiteSpace(m.UserId))
                                                 {
                                                     <li>
@@ -1111,35 +1189,193 @@
 </div>
 
 @section Scripts {
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+
     <script>
         $(document).ready(function () {
-            $('[data-enquiry-tab]').on('click', function () {
-                var selected = $(this).data('enquiry-tab');
 
-                $('[data-enquiry-tab]').each(function () {
-                    var active = $(this).data('enquiry-tab') === selected;
-                    $(this).toggleClass('active', active)
-                           .attr('aria-selected', active ? 'true' : 'false');
-                });
+        function initialiseEnquiryTable(selector, order) {
+        var table = $(selector);
 
-                $('[data-enquiry-panel]').each(function () {
-                    var active = $(this).data('enquiry-panel') === selected;
-                    $(this).toggleClass('active', active).prop('hidden', !active);
-                });
-            });
+        if (!table.length) {
+        return;
+        }
 
-            if ($('#resTable').length && !$.fn.DataTable.isDataTable('#resTable')) {
-                $('#resTable').DataTable({
-                    responsive: true,
-                    dom: '<"cd-dt-top"lf>rt<"cd-dt-bottom"ip>',
-                    lengthMenu: [[10, 25, 50, -1], [10, 25, 50, 'All']],
-                    language: {
-                        search: '_INPUT_',
-                        searchPlaceholder: 'Filter results…'
-                    },
-                    order: [[0, 'desc']]
-                });
-            }
+        if ($.fn.DataTable.isDataTable(selector)) {
+        table.DataTable()
+        .columns
+        .adjust()
+        .draw(false);
+
+        return;
+        }
+
+        table.DataTable({
+        responsive: false,
+        scrollX: true,
+        scrollCollapse: true,
+        autoWidth: false,
+        destroy: true,
+
+        dom:
+        '<"ps-dt-top"lBf>' +
+        'rt' +
+        '<"ps-dt-bottom"ip>',
+
+        lengthMenu: [
+        [10, 25, 50, -1],
+        [10, 25, 50, 'All']
+        ],
+
+        pageLength: 10,
+
+        buttons: [
+        {
+        extend: 'excel',
+        text:
+        '<i class="fa-solid fa-file-excel"></i> Excel',
+        className: 'ps-dt-btn',
+        exportOptions: {
+        columns: ':not(:last-child)'
+        }
+        },
+        {
+        extend: 'pdf',
+        text:
+        '<i class="fa-solid fa-file-pdf"></i> PDF',
+        className: 'ps-dt-btn',
+        orientation: 'landscape',
+        pageSize: 'A4',
+        exportOptions: {
+        columns: ':not(:last-child)'
+        }
+        }
+        ],
+
+        language: {
+        search: '_INPUT_',
+        searchPlaceholder: 'Search results…',
+        lengthMenu: 'Show _MENU_ entries',
+        info:
+        'Showing _START_ to _END_ of _TOTAL_',
+        infoEmpty: 'No properties found',
+        infoFiltered:
+        '(filtered from _MAX_ total)',
+        emptyTable: 'No properties found',
+        zeroRecords:
+        'No matching properties found',
+        paginate: {
+        previous: 'Previous',
+        next: 'Next'
+        }
+        },
+
+        columnDefs: [
+        {
+        orderable: false,
+        searchable: false,
+        targets: -1
+        }
+        ],
+
+        order: order || [],
+
+        initComplete: function () {
+        this.api().columns.adjust();
+        }
+        });
+        }
+
+        /*
+        * Tables displayed immediately when the page loads.
+        */
+        initialiseEnquiryTable(
+        '#propertyCandidateTable',
+        []
+        );
+
+        initialiseEnquiryTable(
+        '#resTable',
+        [[0, 'desc']]
+        );
+
+        /*
+        * Account, Roll Information, Case History
+        * and Notices tab navigation.
+        */
+        $('[data-enquiry-tab]').on('click', function () {
+        var selectedTab =
+        $(this).data('enquiry-tab');
+
+        $('[data-enquiry-tab]').each(function () {
+        var isActive =
+        $(this).data('enquiry-tab') ===
+        selectedTab;
+
+        $(this)
+        .toggleClass('active', isActive)
+        .attr(
+        'aria-selected',
+        isActive ? 'true' : 'false'
+        );
+        });
+
+        $('[data-enquiry-panel]').each(function () {
+        var isActive =
+        $(this).data('enquiry-panel') ===
+        selectedTab;
+
+        $(this)
+        .toggleClass('active', isActive)
+        .prop('hidden', !isActive);
+        });
+
+        /*
+        * Initialise after the hidden tab becomes visible.
+        * This allows DataTables to calculate the correct width.
+        */
+        setTimeout(function () {
+        if (selectedTab === 'rolls') {
+        initialiseEnquiryTable(
+        '#rollInformationTable',
+        []
+        );
+        }
+
+        if (selectedTab === 'history') {
+        initialiseEnquiryTable(
+        '#caseHistoryTable',
+        [[3, 'desc']]
+        );
+        }
+
+        $.fn.dataTable
+        .tables({
+        visible: true,
+        api: true
+        })
+        .columns
+        .adjust();
+        }, 50);
+        });
+
+        /*
+        * Maintain the correct column width when resizing.
+        */
+        $(window).on('resize', function () {
+        $.fn.dataTable
+        .tables({
+        visible: true,
+        api: true
+        })
+        .columns
+        .adjust();
+        });
         });
     </script>
 }
