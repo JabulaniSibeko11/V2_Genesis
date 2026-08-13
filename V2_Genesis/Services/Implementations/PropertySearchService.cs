@@ -132,7 +132,8 @@ public class PropertySearchService : IPropertySearchService
 
     public async Task<List<PropertySearchResult>> SearchAsync(
         string rollSource,
-        PropertySearchParams searchParams)
+        PropertySearchParams searchParams,
+        CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(rollSource))
             return new List<PropertySearchResult>();
@@ -164,13 +165,13 @@ public class PropertySearchService : IPropertySearchService
             await using var conn =
                 new SqlConnection(connectionString);
 
-            var results =
-                await conn.QueryAsync<PropertySearchResult>(
+            var results = await conn.QueryAsync<PropertySearchResult>(
+                new CommandDefinition(
                     storedProcedure,
                     parameters,
-                    commandType:
-                        CommandType.StoredProcedure,
-                    commandTimeout: 60);
+                    commandType: CommandType.StoredProcedure,
+                    commandTimeout: 15,
+                    cancellationToken: cancellationToken));
 
             /*
              * For the Query roll, the search stored procedure must
@@ -180,6 +181,10 @@ public class PropertySearchService : IPropertySearchService
              * PropertySearchResult.Review_Close_Date
              */
             return results.ToList();
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
         }
         catch (Exception ex)
         {
@@ -203,7 +208,8 @@ public class PropertySearchService : IPropertySearchService
         GetPropertyDetailsAsync(
             string rollSource,
             string unitKey,
-            string valuationKey)
+            string valuationKey,
+            CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(rollSource))
             return new List<PropertyDetailResult>();
@@ -233,17 +239,17 @@ public class PropertySearchService : IPropertySearchService
             await using var conn =
                 new SqlConnection(connectionString);
 
-            var results =
-                await conn.QueryAsync<PropertyDetailResult>(
+            var results = await conn.QueryAsync<PropertyDetailResult>(
+                new CommandDefinition(
                     config.DetailSp,
                     new
                     {
                         UnitKey = unitKey,
                         ValuationKey = valuationKey
                     },
-                    commandType:
-                        CommandType.StoredProcedure,
-                    commandTimeout: 60);
+                    commandType: CommandType.StoredProcedure,
+                    commandTimeout: 15,
+                    cancellationToken: cancellationToken));
 
             /*
              * For the Query roll, the detail stored procedure must
@@ -254,6 +260,10 @@ public class PropertySearchService : IPropertySearchService
              */
             return DeduplicatePropertyDetails(
                 results.ToList());
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
         }
         catch (Exception ex)
         {

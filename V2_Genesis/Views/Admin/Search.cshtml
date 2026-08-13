@@ -20,7 +20,7 @@
             </div>
             <div>
                 <h1>Search Enquiry</h1>
-                <p>Find any objection, appeal or query across all rolls</p>
+                <p>Find any objection, appeal, query, review or Attributes submission</p>
             </div>
             <a href="/admin" class="adms-hero-back">
                 <i class="fa-solid fa-arrow-left"></i> Dashboard
@@ -29,6 +29,13 @@
     </div>
 
     <div class="adms-body">
+
+        @if (TempData["SearchError"] is string searchError)
+        {
+            <div class="adms-err" style="padding:12px 14px;background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;font-size:13px;color:#b91c1c;margin-bottom:14px;">
+                <i class="fa-solid fa-circle-xmark"></i> @searchError
+            </div>
+        }
 
 
         <div class="adms-tab-bar">
@@ -50,7 +57,7 @@
                 <div class="adms-card-head">
                     <i class="fa-solid fa-hashtag" style="color:#e6b000;"></i>
                     <h3>Search by Reference Number</h3>
-                    <p>Objection No / Appeal No / Query No</p>
+                    <p>Objection No / Appeal No / Query No / Review No / Attribute No</p>
                 </div>
                 <div class="adms-card-body">
                     <form method="post" action="/admin/search/ref"
@@ -61,7 +68,7 @@
                             <label><i class="fa-solid fa-layer-group"></i> Roll:</label>
                             <select name="rollSource" class="adms-roll-select">
                                 <option value="">All Rolls</option>
-                                @foreach (var r in gvList.Where(r => !r.IsQuery))
+                                @foreach (var r in gvList.Where(r => !r.IsQuery && r.Source != "Objection_Supp5"))
                                 {
                                     <option value="@r.Source">@r.Short — @r.Name</option>
                                 }
@@ -75,10 +82,10 @@
                             </label>
                             <input type="text" name="refNo" id="refNo"
                                    class="adms-input"
-                                   placeholder="e.g. GV23-1234  |  APP-GV23-1234  |  QUE-GV23-1234"
+                                   placeholder="e.g. GV23-1234 | APP-GV23-1234 | GV23-QUE-123 | ATTR-GV23-19"
                                    autocomplete="off" />
                             <p style="font-size:11px;color:#9aa3af;margin:4px 0 0;">
-                                The system auto-detects whether it's an Objection, Appeal or Query
+                                The system identifies Objections, Appeals, Queries, Reviews and Attributes automatically.
                             </p>
                         </div>
 
@@ -108,7 +115,7 @@
                             <label><i class="fa-solid fa-layer-group"></i> Roll:</label>
                             <select name="rollSource" class="adms-roll-select">
                                 <option value="">All Rolls</option>
-                                @foreach (var r in gvList.Where(r => !r.IsQuery))
+                                @foreach (var r in gvList.Where(r => !r.IsQuery && r.Source != "Objection_Supp5"))
                                 {
                                     <option value="@r.Source">@r.Short — @r.Name</option>
                                 }
@@ -120,8 +127,8 @@
                                 <label class="adms-label" for="TownName">
                                     <i class="fa-solid fa-map-pin"></i> Township
                                 </label>
-                                <select name="TownName" id="TownName" class="adms-input">
-                                    <option value="">— Select Township (optional) —</option>
+                                <select name="TownName" id="TownName" class="adms-input" required>
+                                    <option value="">— Select Township (required) —</option>
                                     @foreach (var t in towns)
                                     {
                                         <option value="@t">@t</option>

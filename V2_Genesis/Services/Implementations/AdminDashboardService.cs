@@ -6,7 +6,6 @@ using Microsoft.EntityFrameworkCore;
 using V2_Genesis.Data;
 using Microsoft.Data.SqlClient;
 using System.Data;
-using System.Linq.Expressions;
 using V2_Genesis.Models.Admin;
 using V2_Genesis.Models.Results;
 using V2_Genesis.Models.Results.Admin;
@@ -21,15 +20,33 @@ public class AdminDashboardService : IAdminDashboardService
     private readonly IConfiguration _config;
     private readonly ILogger<AdminDashboardService> _logger;
     private readonly ApplicationDbContext _db;
+    private readonly IAdminReferenceResolver _referenceResolver;
+    private readonly IAdminAccountInformationService _accountInformationService;
+    private readonly IAdminRollInformationService _rollInformationService;
+    private readonly IAdminCaseHistoryService _caseHistoryService;
+    private readonly IAdminEnquiryNoticeService _enquiryNoticeService;
+    private readonly IAdminPropertyLookupService _propertyLookupService;
 
     public AdminDashboardService(
         IConfiguration config,
         ILogger<AdminDashboardService> logger,
-        ApplicationDbContext db)
+        ApplicationDbContext db,
+        IAdminReferenceResolver referenceResolver,
+        IAdminAccountInformationService accountInformationService,
+        IAdminRollInformationService rollInformationService,
+        IAdminCaseHistoryService caseHistoryService,
+        IAdminEnquiryNoticeService enquiryNoticeService,
+        IAdminPropertyLookupService propertyLookupService)
     {
         _config = config;
         _logger = logger;
         _db = db;
+        _referenceResolver = referenceResolver;
+        _accountInformationService = accountInformationService;
+        _rollInformationService = rollInformationService;
+        _caseHistoryService = caseHistoryService;
+        _enquiryNoticeService = enquiryNoticeService;
+        _propertyLookupService = propertyLookupService;
     }
 
     private SqlConnection GetConn(string rollSource)
@@ -240,7 +257,8 @@ public class AdminDashboardService : IAdminDashboardService
     // ── Unified search by reference number ───────────────────────────
     public async Task<AdminSearchResult> SearchByReferenceAsync(
         string refNo,
-        string? rollSource)
+        string? rollSource,
+        CancellationToken cancellationToken = default)
     {
         var result = new AdminSearchResult
         {
@@ -253,6 +271,96 @@ public class AdminDashboardService : IAdminDashboardService
             return result;
 
         refNo = refNo.Trim();
+
+        // Phase 1 foundation: resolve the reference once, then use stable
+        // property identifiers for narrow cross-roll lookups. The legacy code
+        // below remains as a safe fallback during the tab-by-tab migration.
+        var foundation = await _referenceResolver.ResolveAsync(
+            refNo,
+            rollSource,
+            cancellationToken);
+
+        if (foundation is not null)
+        {
+            foundation.AccountInformation =
+                await _accountInformationService.GetAsync(
+                    foundation,
+                    cancellationToken);
+
+            var rollInformationTask = _rollInformationService.GetAsync(
+                foundation,
+                rollSource,
+                cancellationToken);
+            var caseHistoryTask = _caseHistoryService.GetAsync(
+                foundation,
+                cancellationToken);
+
+            await Task.WhenAll(rollInformationTask, caseHistoryTask);
+            foundation.RollInformation = rollInformationTask.Result;
+            foundation.CaseHistory = caseHistoryTask.Result;
+
+            foundation.Notices = _enquiryNoticeService.Build(foundation);
+
+            result.Foundation = foundation;
+
+            var resolved = foundation.Reference;
+            var property = foundation.Property;
+            var match = new AdminRefMatch
+            {
+                RollSource = resolved.RollSource,
+                RollName = resolved.RollName,
+                SourceTable = resolved.RollSource,
+                RefType = resolved.ReferenceType,
+                ReferenceNo = resolved.ReferenceNumber,
+                Objection_No = resolved.ReferenceType == "Objection"
+                    ? resolved.ReferenceNumber
+                    : null,
+                Appeal_No = resolved.ReferenceType == "Appeal"
+                    ? resolved.ReferenceNumber
+                    : null,
+                Query_No = resolved.ReferenceType is "Query" or "Review"
+                    ? resolved.ReferenceNumber.EndsWith(
+                        "-R",
+                        StringComparison.OrdinalIgnoreCase)
+                            ? resolved.ReferenceNumber[..^2]
+                            : resolved.ReferenceNumber
+                    : null,
+                Review_No = resolved.ReferenceType == "Review"
+                    ? resolved.ReferenceNumber
+                    : null,
+                CurrentStatus = resolved.Status,
+                Property_Desc = property.PropertyDescription,
+                Property_Type = property.PropertyType,
+                Town_Name = ExtractTownFromPropertyDesc(property.PropertyDescription),
+                Unit_key = property.UnitKey,
+                Valuation_Key = property.ValuationKey,
+                PremiseId = property.PremiseId,
+                PropertyFrom = property.PropertyFrom,
+                UserId = resolved.UserId,
+                IsThirdParty = resolved.ObjectorType.Contains(
+                    "Third",
+                    StringComparison.OrdinalIgnoreCase),
+                IsRepresentative = resolved.ObjectorType.Contains(
+                    "Representative",
+                    StringComparison.OrdinalIgnoreCase)
+            };
+
+            match.Notices = BuildNoticeOptions(match);
+
+            var account = foundation.AccountInformation.SubmittingAccount;
+            if (account.Resolved)
+            {
+                match.UserId = account.UserId;
+                match.ClientDisplayName = account.DisplayName;
+                match.ClientEmail = account.Email;
+                match.ClientPhoneNumber = account.PhoneNumber;
+                match.ClientAccountType = account.AccountType;
+                match.ClientAccountResolved = true;
+            }
+
+            result.RefMatches.Add(match);
+            return result;
+        }
 
         var isAppeal = LooksLikeAppeal(refNo);
         var isQuery = LooksLikeQuery(refNo);
@@ -412,266 +520,93 @@ public class AdminDashboardService : IAdminDashboardService
       string? address,
       string? scheme,
       string? unit,
-      string? rollSource)
+      string? rollSource,
+      CancellationToken cancellationToken = default)
     {
-        var result = new AdminSearchResult
+        return await _propertyLookupService.SearchAsync(
+            town,
+            stand,
+            address,
+            scheme,
+            unit,
+            rollSource,
+            cancellationToken);
+    }
+
+    public async Task<AdminSearchResult> OpenPropertyAsync(
+        string rollSource,
+        string propertyFrom,
+        string propertyDescription,
+        string unitKey,
+        string valuationKey,
+        CancellationToken cancellationToken = default)
+    {
+        var provisional = new AdminEnquiryFoundation
+        {
+            Reference = new AdminResolvedReference
+            {
+                ReferenceType = "Property",
+                ReferenceNumber = "Property Search",
+                RollSource = rollSource,
+                RollName = RollName(rollSource),
+                Status = "Property identified"
+            },
+            Property = new AdminCanonicalProperty
+            {
+                UnitKey = unitKey?.Trim() ?? string.Empty,
+                ValuationKey = valuationKey?.Trim() ?? string.Empty,
+                PropertyDescription = propertyDescription?.Trim() ?? string.Empty,
+                PropertyFrom = propertyFrom?.Trim() ?? string.Empty
+            }
+        };
+
+        var history = await _caseHistoryService.GetAsync(
+            provisional,
+            cancellationToken);
+
+        var relatedCase = history.Cases
+            .Where(x => !string.IsNullOrWhiteSpace(x.ReferenceNumber))
+            .OrderBy(x => x.CaseType switch
+            {
+                "Objection" => 0,
+                "Appeal" => 1,
+                "Query" => 2,
+                "Review" => 3,
+                "Attributes" => 4,
+                _ => 9
+            })
+            .ThenByDescending(x => x.SubmittedAt)
+            .FirstOrDefault();
+
+        if (relatedCase is not null)
+        {
+            var resolved = await SearchByReferenceAsync(
+                relatedCase.ReferenceNumber,
+                relatedCase.RollSource,
+                cancellationToken);
+
+            if (resolved.Foundation is not null)
+            {
+                resolved.SearchType = "Property";
+                resolved.SearchInput = provisional.Property.PropertyDescription;
+                return resolved;
+            }
+        }
+
+        provisional.CaseHistory = history;
+        provisional.RollInformation = await _rollInformationService.GetAsync(
+            provisional,
+            rollSource,
+            cancellationToken);
+        provisional.Notices = _enquiryNoticeService.Build(provisional);
+
+        return new AdminSearchResult
         {
             SearchType = "Property",
-            SearchInput = string.Join(" ",
-                new[] { town, stand, address, scheme, unit }
-                    .Where(v => !string.IsNullOrWhiteSpace(v))),
-            RollFilter = rollSource
+            SearchInput = provisional.Property.PropertyDescription,
+            RollFilter = rollSource,
+            Foundation = provisional
         };
-
-        string RollName(string src) => src switch
-        {
-            "Objection" => "GV 2023",
-            "Objection_Supp1" => "Supp 1",
-            "Objection_Supp2" => "Supp 2",
-            "Objection_Supp3" => "Supp 3",
-            "Objection_Supp4" => "Supp 4",
-            "Objection_Supp5" => "Supp 5",
-            _ => src
-        };
-
-        var rolls = AdminRollRegistry.Configs
-            .Where(kv => string.IsNullOrWhiteSpace(rollSource) || kv.Key == rollSource)
-            .ToList();
-
-        foreach (var (roll, cfg) in rolls)
-        {
-            try
-            {
-                await using var rollDb = GetRollDb(roll);
-
-                var searchPatterns = BuildPropertyDescriptionSearchPatterns(
-                    town,
-                    stand,
-                    address,
-                    scheme,
-                    unit);
-
-                var predicate = BuildPropertyDescriptionPredicate(searchPatterns);
-
-                var rows = await (
-                    from objection in rollDb.Objections.AsNoTracking()
-                        .Where(predicate)
-                    join section in rollDb.Section6.AsNoTracking()
-                        on objection.ObjectionNo equals section.ObjectionReference
-                        into sectionRows
-                    from section in sectionRows.DefaultIfEmpty()
-                    orderby objection.ObjectionNo descending
-                    select new
-                    {
-                        objection.ObjectionNo,
-                        objection.PropertyDescription,
-                        objection.ObjectionStatus,
-                        objection.UnitKey,
-                        objection.ValuationKey,
-                        objection.PropertyFrom,
-                        objection.UserId,
-                        section.OldCategory,
-                        section.OldMarketValue
-                    })
-                    .Take(100)
-                    .ToListAsync();
-
-                foreach (var r in rows)
-                {
-                    var propertyMatch = new AdminPropMatch
-                    {
-                        RollSource = roll,
-                        RollName = RollName(roll),
-                        Objection_No = r.ObjectionNo,
-                        Property_Desc = r.PropertyDescription,
-
-                        // We do not have Town_Name column. Pull town from Property_Desc.
-                        Town_Name = ExtractTownFromPropertyDesc(r.PropertyDescription),
-
-                        Old_Category = r.OldCategory,
-                        Old_Market_Value = r.OldMarketValue,
-                        objection_Status = r.ObjectionStatus,
-                        Sub_typ = 0,
-                        Unit_key = r.UnitKey,
-                        Valuation_Key = r.ValuationKey,
-                        PropertyFrom = r.PropertyFrom,
-                        UserId = r.UserId,
-                    };
-
-                    await PopulateClientAccountAsync(propertyMatch);
-                    result.PropMatches.Add(propertyMatch);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex,
-                    "[AdminSearch] PropSearch failed for {Roll}", roll);
-            }
-        }
-
-        return result;
-    }
-
-    private static Expression<Func<AdminObjectionRow, bool>>
-        BuildPropertyDescriptionPredicate(IReadOnlyCollection<string> patterns)
-    {
-        if (patterns.Count == 0)
-            return _ => true;
-
-        var row = Expression.Parameter(typeof(AdminObjectionRow), "row");
-        var propertyDescription = Expression.Property(
-            row,
-            nameof(AdminObjectionRow.PropertyDescription));
-
-        Expression body = Expression.Constant(false);
-        var notNull = Expression.NotEqual(
-            propertyDescription,
-            Expression.Constant(null, typeof(string)));
-
-        var containsMethod = typeof(string).GetMethod(
-            nameof(string.Contains),
-            new[] { typeof(string) })!;
-
-        foreach (var pattern in patterns)
-        {
-            var contains = Expression.Call(
-                propertyDescription,
-                containsMethod,
-                Expression.Constant(pattern));
-
-            body = Expression.OrElse(
-                body,
-                Expression.AndAlso(notNull, contains));
-        }
-
-        return Expression.Lambda<Func<AdminObjectionRow, bool>>(body, row);
-    }
-
-    private static List<string> BuildPropertyDescriptionSearchPatterns(
-       string? town,
-       string? stand,
-       string? address,
-       string? scheme,
-       string? unit)
-    {
-        var patterns = new List<string>();
-
-        town = CleanSearchText(town);
-        stand = CleanSearchText(stand);
-        address = CleanSearchText(address);
-        scheme = CleanSearchText(scheme);
-        unit = CleanSearchText(unit);
-
-        /*
-            Pattern 1:
-            Full Title ERF 334 LINBRO PARK EXT.181
-        */
-        if (!string.IsNullOrWhiteSpace(stand) &&
-            !string.IsNullOrWhiteSpace(town))
-        {
-            patterns.Add($"FULL TITLE ERF {stand} {town}");
-            patterns.Add($"ERF {stand} {town}");
-            patterns.Add($"{stand} {town}");
-        }
-
-        /*
-            Pattern 2:
-            PORTION 42 RUIMSIG 265-IQ
-        */
-        if (!string.IsNullOrWhiteSpace(stand) &&
-            !string.IsNullOrWhiteSpace(town))
-        {
-            patterns.Add($"PORTION {stand} {town}");
-            patterns.Add($"PTN {stand} {town}");
-        }
-
-        /*
-            Pattern 3:
-            RE PORTION 3 LANGLAAGTE 224-IQ
-        */
-        if (!string.IsNullOrWhiteSpace(stand) &&
-            !string.IsNullOrWhiteSpace(town))
-        {
-            patterns.Add($"RE PORTION {stand} {town}");
-            patterns.Add($"RE OF PORTION {stand} {town}");
-            patterns.Add($"REMAINDER PORTION {stand} {town}");
-            patterns.Add($"REMAINDER OF PORTION {stand} {town}");
-        }
-
-        /*
-            Pattern 4:
-            Scheme UNIT 28, MULBARTON GARDENS, (556/2024), BEVERLEY EXT.100
-        */
-        if (!string.IsNullOrWhiteSpace(unit) &&
-            !string.IsNullOrWhiteSpace(scheme) &&
-            !string.IsNullOrWhiteSpace(town))
-        {
-            patterns.Add($"SCHEME UNIT {unit} {scheme} {town}");
-            patterns.Add($"UNIT {unit} {scheme} {town}");
-            patterns.Add($"{unit} {scheme} {town}");
-        }
-
-        if (!string.IsNullOrWhiteSpace(unit) &&
-            !string.IsNullOrWhiteSpace(scheme))
-        {
-            patterns.Add($"SCHEME UNIT {unit} {scheme}");
-            patterns.Add($"UNIT {unit} {scheme}");
-            patterns.Add($"{unit} {scheme}");
-        }
-
-        if (!string.IsNullOrWhiteSpace(scheme) &&
-            !string.IsNullOrWhiteSpace(town))
-        {
-            patterns.Add($"{scheme} {town}");
-        }
-
-        /*
-            Address fallback
-        */
-        if (!string.IsNullOrWhiteSpace(address))
-        {
-            patterns.Add(address);
-
-            if (!string.IsNullOrWhiteSpace(town))
-                patterns.Add($"{address} {town}");
-        }
-
-        /*
-            Town-only fallback
-        */
-        if (!string.IsNullOrWhiteSpace(town))
-        {
-            patterns.Add(town);
-        }
-
-        /*
-            Stand-only fallback
-        */
-        if (!string.IsNullOrWhiteSpace(stand))
-        {
-            patterns.Add($"ERF {stand}");
-            patterns.Add($"PORTION {stand}");
-            patterns.Add($"PTN {stand}");
-            patterns.Add($"RE PORTION {stand}");
-            patterns.Add(stand);
-        }
-
-        return patterns
-            .Where(x => !string.IsNullOrWhiteSpace(x))
-            .Select(x => x.Trim())
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList();
-    }
-
-    private static string CleanSearchText(string? value)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-            return "";
-
-        return value
-            .Trim()
-            .Replace(",", " ")
-            .Replace("  ", " ");
     }
 
     private static string ExtractTownFromPropertyDesc(string? propertyDesc)
@@ -805,6 +740,10 @@ public class AdminDashboardService : IAdminDashboardService
         });
 
         // Section 51
+        var isObjection = submissionType.Equals(
+            "Objection",
+            StringComparison.OrdinalIgnoreCase);
+
         notices.Add(new AdminNoticeOption
         {
             NoticeName = "Section 51 Notice",
@@ -812,8 +751,8 @@ public class AdminDashboardService : IAdminDashboardService
                   $"{Uri.EscapeDataString(refNo)}&type=Section51&rollSource=" +
                   $"{Uri.EscapeDataString(match.RollSource)}&returnUrl=%2Fadmin%2Fsearch" +
                   $"&ownerUserId={Uri.EscapeDataString(match.UserId ?? string.Empty)}",
-            IsAvailable = match.IsThirdParty || match.IsRepresentative,
-            ReasonUnavailable = "Section 51 is only applicable where the case requires third-party or representative handling.",
+            IsAvailable = isObjection && match.IsThirdParty,
+            ReasonUnavailable = "Section 51 is only applicable to a Third-Party objection.",
             Icon = "fa-file-pdf"
         });
 
@@ -824,8 +763,10 @@ public class AdminDashboardService : IAdminDashboardService
             Url = $"/notice/section53/download?objectionNo=" +
                   $"{Uri.EscapeDataString(refNo)}&rollSource=" +
                   $"{Uri.EscapeDataString(match.RollSource)}&returnUrl=%2Fadmin%2Fsearch",
-            IsAvailable = status.Equals("Notice-Sent", StringComparison.OrdinalIgnoreCase) ||
-                          status.Equals("Appeal-Closed", StringComparison.OrdinalIgnoreCase),
+            IsAvailable = isObjection
+                          && status.Equals(
+                              "Notice-Sent",
+                              StringComparison.OrdinalIgnoreCase),
             ReasonUnavailable = "Section 53 is only available after Notice-Sent.",
             Icon = "fa-file-pdf"
         });

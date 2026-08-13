@@ -26,7 +26,8 @@ namespace V2_Genesis.Services.Implementations
         // ── Main search — picks the right SP based on params ─────────────
         public async Task<List<LisProperty>> SearchAsync(
         string rollSource,
-        LisSearchParams p)
+        LisSearchParams p,
+        CancellationToken cancellationToken = default)
         {
             rollSource = ObjectionService.NormalizeRollSource(rollSource);
 
@@ -75,7 +76,8 @@ namespace V2_Genesis.Services.Implementations
                     conn,
                     plan.SpName,
                     plan.Params,
-                    rollSource);
+                    rollSource,
+                    cancellationToken);
 
                 allRows.AddRange(rows);
             }
@@ -199,7 +201,8 @@ namespace V2_Genesis.Services.Implementations
     SqlConnection conn,
     string spName,
     object parameters,
-    string rollSource)
+    string rollSource,
+    CancellationToken cancellationToken)
         {
             if (string.IsNullOrWhiteSpace(spName))
                 return new();
@@ -207,9 +210,12 @@ namespace V2_Genesis.Services.Implementations
             try
             {
                 var rows = await conn.QueryAsync(
-                    spName,
-                    parameters,
-                    commandType: CommandType.StoredProcedure);
+                    new CommandDefinition(
+                        spName,
+                        parameters,
+                        commandType: CommandType.StoredProcedure,
+                        commandTimeout: 15,
+                        cancellationToken: cancellationToken));
 
                 return rows.Select(MapRow).ToList();
             }
@@ -222,6 +228,10 @@ namespace V2_Genesis.Services.Implementations
                     rollSource);
 
                 return new();
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -479,9 +489,10 @@ namespace V2_Genesis.Services.Implementations
         }
        
         public async Task<LisProperty?> GetPropertyByKeysAsync(
-      string rollSource,
-      string unitKey,
-      string valuationKey)
+            string rollSource,
+            string unitKey,
+            string valuationKey,
+            CancellationToken cancellationToken = default)
         {
             if (!_registry.TryGetValue(rollSource, out var cfg))
             {
@@ -534,9 +545,12 @@ namespace V2_Genesis.Services.Implementations
                     try
                     {
                         var rows = await conn.QueryAsync(
-                            cfg.DetailSp,
-                            parameters,
-                            commandType: CommandType.StoredProcedure);
+                            new CommandDefinition(
+                                cfg.DetailSp,
+                                parameters,
+                                commandType: CommandType.StoredProcedure,
+                                commandTimeout: 15,
+                                cancellationToken: cancellationToken));
 
                         var mapped = rows.Select(MapRow).ToList();
 
@@ -586,6 +600,10 @@ namespace V2_Genesis.Services.Implementations
                     valuationKey);
 
                 return null;
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
             }
             catch (Exception ex)
             {

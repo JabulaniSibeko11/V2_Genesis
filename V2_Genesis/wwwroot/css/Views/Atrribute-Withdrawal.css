@@ -1,0 +1,88 @@
+﻿/* Attributes-specific additions to the shared Objection withdrawal design. */
+
+.wd-card--attributes {
+    max-width: 720px;
+}
+
+.wd-meta-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, .72fr);
+    gap: 18px;
+}
+
+.wd-field--full {
+    grid-column: 1 / -1;
+}
+
+.wd-field label i {
+    margin-right: 5px;
+}
+
+.wd-status {
+    font-family: 'Poppins', sans-serif;
+    letter-spacing: 0;
+}
+
+.wd-property {
+    width: 100%;
+    min-height: 46px;
+    padding: 11px 16px;
+    background: rgba(26,46,53,.04);
+    border: 2px solid #e6b000;
+    border-radius: 9px;
+    color: #1a2e35;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+}
+
+.wd-required,
+.wd-validation {
+    color: #b91c1c;
+}
+
+.wd-validation {
+    display: block;
+    margin-top: 6px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+    .wd-validation:empty {
+        display: none;
+    }
+
+.wd-help {
+    display: block;
+    margin-top: 6px;
+    color: #64748b;
+    font-size: 11.5px;
+}
+
+.validation-summary-valid {
+    display: none;
+}
+
+.wd-error ul {
+    margin: 0;
+    padding-left: 18px;
+}
+
+@media (max-width: 640px) {
+    .wd-meta-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .wd-field--full {
+        grid-column: auto;
+    }
+
+    .wd-header,
+    .wd-warning,
+    .wd-body,
+    .wd-footer {
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+}

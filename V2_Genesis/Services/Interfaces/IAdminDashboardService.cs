@@ -17,12 +17,24 @@ public interface IAdminDashboardService
     Task<RollData> GetAllRollDataAsync(string rollSource);
 
     // ── New: unified search ───────────────────────────────────────────
-    /// <summary>Search all rolls by reference number (Obj/Appeal/Query No).</summary>
-    Task<AdminSearchResult> SearchByReferenceAsync(string refNo, string? rollSource);
+    /// <summary>Search by Objection, Appeal, Query, Review or Attribute reference.</summary>
+    Task<AdminSearchResult> SearchByReferenceAsync(
+        string refNo,
+        string? rollSource,
+        CancellationToken cancellationToken = default);
 
     /// <summary>Search all rolls by property attributes (like home search).</summary>
     Task<AdminSearchResult> SearchByPropertyAsync(
         string? town, string? stand, string? address,
         string? scheme, string? unit,
-        string? rollSource);
+        string? rollSource,
+        CancellationToken cancellationToken = default);
+
+    Task<AdminSearchResult> OpenPropertyAsync(
+        string rollSource,
+        string propertyFrom,
+        string propertyDescription,
+        string unitKey,
+        string valuationKey,
+        CancellationToken cancellationToken = default);
 }

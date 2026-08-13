@@ -6,13 +6,16 @@ namespace V2_Genesis.Services.Interfaces
     public interface ILisSearchService
     {
         Task<List<LisProperty>> SearchAsync(
-        string rollSource, LisSearchParams p);
+        string rollSource,
+        LisSearchParams p,
+        CancellationToken cancellationToken = default);
 
         Task<List<LisProperty>> GetTownSchemesAsync(string rollSource);
 
         Task<LisProperty?> GetPropertyByKeysAsync(
-    string rollSource,
-    string unitKey,
-    string valuationKey);
+            string rollSource,
+            string unitKey,
+            string valuationKey,
+            CancellationToken cancellationToken = default);
     }
 }

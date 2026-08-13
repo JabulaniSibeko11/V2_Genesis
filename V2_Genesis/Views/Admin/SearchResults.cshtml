@@ -31,6 +31,7 @@
         "Appeal" => "fa-gavel",
         "Query" => "fa-magnifying-glass-chart",
         "Review" => "fa-magnifying-glass",
+        "Attributes" => "fa-clipboard-list",
         _ => "fa-file-pen"
     };
 
@@ -39,6 +40,7 @@
         "Appeal" => "#7c3aed",
         "Query" => "#0ea5e9",
         "Review" => "#e6b000",
+        "Attributes" => "#00747d",
         _ => "#36626d"
     };
 
@@ -58,6 +60,14 @@
         return "R " + amount.ToString("N0", new System.Globalization.CultureInfo("en-ZA"));
     }
 
+    string PhonePair(string? home, string? work)
+    {
+        var values = new[] { home, work }
+            .Where(x => !string.IsNullOrWhiteSpace(x));
+        var result = string.Join(" / ", values);
+        return string.IsNullOrWhiteSpace(result) ? "—" : result;
+    }
+
     string RefNo(V2_Genesis.Models.Results.Admin.AdminRefMatch m)
     {
         return m.ReferenceNo
@@ -73,6 +83,7 @@
     <link href="~/css/views/clientdashboardcss.css" rel="stylesheet" asp-append-version="true" />
     <link href="~/css/views/admin-dashboard-premium.css" rel="stylesheet" asp-append-version="true" />
     <link href="~/css/views/admin-search-result.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/views/admin-search-foundation.css" rel="stylesheet" asp-append-version="true" />
 }
 
 <div class="res-page">
@@ -113,6 +124,30 @@
 
     <div class="res-body">
 
+        @if (TempData["SearchSuccess"] is string searchSuccess)
+        {
+            <div class="enquiry-flash enquiry-flash-success">
+                <i class="fa-solid fa-circle-check"></i>
+                @searchSuccess
+            </div>
+        }
+
+        @if (TempData["SearchError"] is string searchError)
+        {
+            <div class="enquiry-flash enquiry-flash-error">
+                <i class="fa-solid fa-circle-exclamation"></i>
+                @searchError
+            </div>
+        }
+
+        @foreach (var warning in Model.Warnings)
+        {
+            <div class="enquiry-flash enquiry-flash-error">
+                <i class="fa-solid fa-circle-exclamation"></i>
+                @warning
+            </div>
+        }
+
         <div class="res-context">
             <span class="res-context-type">@Model.SearchType</span>
             <span class="res-context-val">@Model.SearchInput</span>
@@ -123,13 +158,663 @@
             }
 
             @{
-                var count = Model.RefMatches.Count + Model.PropMatches.Count;
+                var count = Model.Foundation is not null
+                    ? 1
+                    : Model.PropertyCandidates.Count > 0
+                        ? Model.PropertyCandidates.Count
+                        : Model.RefMatches.Count + Model.PropMatches.Count;
             }
 
             <span class="res-count @(count == 0 ? "zero" : "")">
                 @count result@(count == 1 ? "" : "s")
             </span>
         </div>
+
+        @if (Model.Foundation is not null)
+        {
+            var foundation = Model.Foundation;
+            var property = foundation.Property;
+            var accountInfo = foundation.AccountInformation;
+            var account = accountInfo.SubmittingAccount;
+            var rollInformation = foundation.RollInformation;
+
+            <section class="enquiry-foundation" aria-label="Resolved property">
+                <div class="enquiry-foundation-head">
+                    <div>
+                        <span>Resolved property</span>
+                        <h2>@property.PropertyDescription</h2>
+                    </div>
+                    <div class="enquiry-foundation-ref">
+                        <span>@foundation.Reference.ReferenceType</span>
+                        <strong>@foundation.Reference.ReferenceNumber</strong>
+                    </div>
+                </div>
+
+                <div class="enquiry-key-grid">
+                    <div>
+                        <span>Premise ID</span>
+                        <strong>@(string.IsNullOrWhiteSpace(property.PremiseId) ? "—" : property.PremiseId)</strong>
+                    </div>
+                    <div>
+                        <span>Unit Key</span>
+                        <strong>@(string.IsNullOrWhiteSpace(property.UnitKey) ? "—" : property.UnitKey)</strong>
+                    </div>
+                    <div>
+                        <span>Valuation Key</span>
+                        <strong>@(string.IsNullOrWhiteSpace(property.ValuationKey) ? "—" : property.ValuationKey)</strong>
+                    </div>
+                    <div>
+                        <span>Property origin</span>
+                        <strong>@(string.IsNullOrWhiteSpace(property.PropertyFrom) ? "—" : property.PropertyFrom)</strong>
+                    </div>
+                </div>
+
+                <div class="enquiry-tabs" role="tablist" aria-label="Property enquiry information">
+                    <button class="active"
+                            type="button"
+                            role="tab"
+                            aria-selected="true"
+                            data-enquiry-tab="account">
+                        <i class="fa-solid fa-address-card"></i>
+                        Account Information
+                        <span>@accountInfo.Parties.Count</span>
+                    </button>
+                    <button type="button"
+                            role="tab"
+                            aria-selected="false"
+                            data-enquiry-tab="rolls">
+                        <i class="fa-solid fa-layer-group"></i>
+                        Roll Information
+                        <span>@rollInformation.Properties.Count</span>
+                    </button>
+                    <button type="button"
+                            role="tab"
+                            aria-selected="false"
+                            data-enquiry-tab="history">
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                        Case History
+                        <span>@foundation.CaseHistory.Cases.Count</span>
+                    </button>
+                    <button type="button"
+                            role="tab"
+                            aria-selected="false"
+                            data-enquiry-tab="notices">
+                        <i class="fa-solid fa-file-circle-check"></i>
+                        Notices
+                        <span>@foundation.Notices.AvailableCount</span>
+                    </button>
+                </div>
+
+                <div class="enquiry-tab-panel active"
+                     role="tabpanel"
+                     data-enquiry-panel="account">
+                    @if (account.IsAdminCaptured)
+                    {
+                        <div class="enquiry-admin-capture">
+                            <i class="fa-solid fa-user-shield"></i>
+                            <div>
+                                <strong>Captured by an Administrator</strong>
+                                <span>
+                                    SAP number: @account.CapturerSapNumber. The submitting account below is audit information;
+                                    the client parties are shown separately from the submitted form.
+                                </span>
+                            </div>
+                        </div>
+                    }
+
+                    <div class="enquiry-section-head">
+                        <div>
+                            <span>Audit account</span>
+                            <h3>Submitting login account</h3>
+                        </div>
+                        <span class="enquiry-account-state @(account.Resolved ? "resolved" : "unresolved")">
+                            @(account.Resolved ? "Account resolved" : "Account not resolved")
+                        </span>
+                    </div>
+
+                    <div class="enquiry-account-grid">
+                        <div><span>Account name</span><strong>@(string.IsNullOrWhiteSpace(account.DisplayName) ? "—" : account.DisplayName)</strong></div>
+                        <div><span>Account type</span><strong>@(string.IsNullOrWhiteSpace(account.AccountType) ? "—" : account.AccountType)</strong></div>
+                        <div><span>Email address</span><strong>@(string.IsNullOrWhiteSpace(account.Email) ? "—" : account.Email)</strong></div>
+                        <div><span>Phone number</span><strong>@(string.IsNullOrWhiteSpace(account.PhoneNumber) ? "—" : account.PhoneNumber)</strong></div>
+                        <div><span>User ID</span><strong>@(string.IsNullOrWhiteSpace(account.UserId) ? "—" : account.UserId)</strong></div>
+                        <div><span>Email confirmed</span><strong>@(account.Resolved ? (account.EmailConfirmed ? "Yes" : "No") : "—")</strong></div>
+                        <div><span>Account created</span><strong>@(account.AccountCreatedAt?.ToString("dd MMMM yyyy HH:mm") ?? "—")</strong></div>
+                        <div><span>Submitted</span><strong>@(account.SubmittedAt?.ToString("dd MMMM yyyy HH:mm") ?? "—")</strong></div>
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(account.SubmittedByName)
+                         || !string.IsNullOrWhiteSpace(account.SubmittedByEmail)
+                         || !string.IsNullOrWhiteSpace(account.SubmittedByPhone))
+                    {
+                        <div class="enquiry-submission-snapshot">
+                            <strong>Contact details stored with this submission</strong>
+                            <span>@(string.IsNullOrWhiteSpace(account.SubmittedByName) ? "—" : account.SubmittedByName)</span>
+                            <span>@(string.IsNullOrWhiteSpace(account.SubmittedByEmail) ? "—" : account.SubmittedByEmail)</span>
+                            <span>@(string.IsNullOrWhiteSpace(account.SubmittedByPhone) ? "—" : account.SubmittedByPhone)</span>
+                        </div>
+                    }
+
+                    <div class="enquiry-section-head enquiry-party-heading">
+                        <div>
+                            <span>Submitted form</span>
+                            <h3>Owner, Representative and Third-Party details</h3>
+                        </div>
+                    </div>
+
+                    @if (!accountInfo.PartyInformationFound)
+                    {
+                        <div class="enquiry-empty-parties">
+                            <i class="fa-solid fa-user-slash"></i>
+                            <strong>No form-party information was found.</strong>
+                            <span>The submission can still be viewed using the existing submitted-form action below.</span>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="enquiry-party-grid">
+                            @foreach (var party in accountInfo.Parties)
+                            {
+                                var displayName = !string.IsNullOrWhiteSpace(party.CompanyName)
+                                    ? party.CompanyName
+                                    : party.FullName;
+
+                                <article class="enquiry-party-card">
+                                    <div class="enquiry-party-head">
+                                        <div class="enquiry-party-icon">
+                                            <i class="fa-solid @(party.Role.Contains("Representative", StringComparison.OrdinalIgnoreCase) ? "fa-user-tie" : party.Role.Contains("Third", StringComparison.OrdinalIgnoreCase) ? "fa-users" : "fa-house-user")"></i>
+                                        </div>
+                                        <div>
+                                            <span>@party.Role</span>
+                                            <h4>@(string.IsNullOrWhiteSpace(displayName) ? "Name not captured" : displayName)</h4>
+                                        </div>
+                                    </div>
+                                    <dl>
+                                        @if (!string.IsNullOrWhiteSpace(party.FullName) && !string.IsNullOrWhiteSpace(party.CompanyName))
+                                        {
+                                            <div><dt>Contact person</dt><dd>@party.FullName</dd></div>
+                                        }
+                                        <div><dt>Email</dt><dd>@(string.IsNullOrWhiteSpace(party.Email) ? "—" : party.Email)</dd></div>
+                                        <div><dt>Cell</dt><dd>@(string.IsNullOrWhiteSpace(party.CellPhone) ? "—" : party.CellPhone)</dd></div>
+                                        <div><dt>Home / Work</dt><dd>@PhonePair(party.HomePhone, party.WorkPhone)</dd></div>
+                                        @if (!string.IsNullOrWhiteSpace(party.IdentityNumber))
+                                        {
+                                            <div><dt>Identity number</dt><dd>@party.IdentityNumber</dd></div>
+                                        }
+                                        @if (!string.IsNullOrWhiteSpace(party.CompanyRegistrationNumber))
+                                        {
+                                            <div><dt>Company registration</dt><dd>@party.CompanyRegistrationNumber</dd></div>
+                                        }
+                                        @if (!string.IsNullOrWhiteSpace(party.PhysicalAddress))
+                                        {
+                                            <div><dt>Physical address</dt><dd>@party.PhysicalAddress</dd></div>
+                                        }
+                                        @if (!string.IsNullOrWhiteSpace(party.PostalAddress))
+                                        {
+                                            <div><dt>Postal address</dt><dd>@party.PostalAddress</dd></div>
+                                        }
+                                    </dl>
+                                </article>
+                            }
+                        </div>
+                    }
+                </div>
+
+                <div class="enquiry-tab-panel"
+                     role="tabpanel"
+                     data-enquiry-panel="rolls"
+                     hidden>
+                    <div class="enquiry-roll-head">
+                        <div>
+                            <span>Valuation roll and LIS search</span>
+                            <h3>Roll Information</h3>
+                        </div>
+                        <span class="enquiry-roll-count">
+                            @rollInformation.Properties.Count propert@(rollInformation.Properties.Count == 1 ? "y" : "ies")
+                        </span>
+                    </div>
+
+                    @if (rollInformation.UsedLisFallback)
+                    {
+                        <div class="enquiry-lis-notice">
+                            <i class="fa-solid fa-database"></i>
+                            The property was not found on a valuation roll. These results came from LIS;
+                            Section 49 is therefore not available.
+                        </div>
+                    }
+
+                    @if (rollInformation.HasProperties)
+                    {
+                        <div class="table-responsive">
+                            <table class="enquiry-roll-table enquiry-roll-detail-table">
+                                <thead>
+                                    <tr>
+                                        <th>Roll / Source</th>
+                                        <th>Property</th>
+                                        <th>Category / Value</th>
+                                        <th>Linked</th>
+                                        <th>Admin lodging</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in rollInformation.Properties)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <strong>@item.RollName</strong>
+                                                <small>@item.SourceTable · @item.PropertyFrom</small>
+                                            </td>
+                                            <td>
+                                                <strong>@item.PropertyDescription</strong>
+                                                <small>Premise: @(string.IsNullOrWhiteSpace(item.PremiseId) ? "—" : item.PremiseId)</small>
+                                                <small>Unit: @item.UnitKey · Valuation: @item.ValuationKey</small>
+                                            </td>
+                                            <td>
+                                                <strong>@(string.IsNullOrWhiteSpace(item.Category) ? "—" : item.Category)</strong>
+                                                <small>@FormatMoney(item.MarketValue)</small>
+                                            </td>
+                                            <td>
+                                                <span class="enquiry-link-state @(item.IsLinked ? "linked" : "not-linked")">
+                                                    <i class="fa-solid @(item.IsLinked ? "fa-link" : "fa-link-slash")"></i>
+                                                    @(item.IsLinked ? "Linked" : "Not linked")
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <strong class="enquiry-admin-open">Always open for Admin</strong>
+                                                @if (item.ObjectionCloseDate.HasValue)
+                                                {
+                                                    <small>Client closing date: @item.ObjectionCloseDate.Value.ToString("dd MMM yyyy")</small>
+                                                }
+                                            </td>
+                                            <td>
+                                                <div class="enquiry-row-actions">
+                                                    <a class="enquiry-row-btn"
+                                                       href="/property/view?rollSource=@Uri.EscapeDataString(item.RollSource)&unitKey=@Uri.EscapeDataString(item.UnitKey)&valuationKey=@Uri.EscapeDataString(item.ValuationKey)&propertyFrom=@Uri.EscapeDataString(item.PropertyFrom)">
+                                                        <i class="fa-solid fa-eye"></i>
+                                                        View
+                                                    </a>
+
+                                                    @if (item.CanLink)
+                                                    {
+                                                        <form method="post" asp-controller="Admin" asp-action="LinkEnquiryProperty">
+                                                            @Html.AntiForgeryToken()
+                                                            <input type="hidden" name="referenceNumber" value="@foundation.Reference.ReferenceNumber" />
+                                                            <input type="hidden" name="rollSource" value="@item.RollSource" />
+                                                            <input type="hidden" name="idProperty" value="@item.IdProperty" />
+                                                            <input type="hidden" name="propertyFrom" value="@item.PropertyFrom" />
+                                                            <button class="enquiry-row-btn enquiry-row-btn-primary"
+                                                                    type="submit"
+                                                                    onclick="return confirm('Link this property to the resolved client account?');">
+                                                                <i class="fa-solid fa-link"></i>
+                                                                Link to Client
+                                                            </button>
+                                                        </form>
+                                                    }
+                                                    else if (!item.IsLinked)
+                                                    {
+                                                        <span class="enquiry-row-btn disabled" title="@item.LinkUnavailableReason">
+                                                            <i class="fa-solid fa-lock"></i>
+                                                            Link unavailable
+                                                        </span>
+                                                    }
+
+                                                    @if (item.CanLodgeObjection)
+                                                    {
+                                                        <a class="enquiry-row-btn enquiry-row-btn-gold"
+                                                           href="/objection/check?rollSource=@Uri.EscapeDataString(item.RollSource)&sourceTable=@Uri.EscapeDataString(item.SourceTable)&unitKey=@Uri.EscapeDataString(item.UnitKey)&valuationKey=@Uri.EscapeDataString(item.ValuationKey)&appealStatus=False&PropertyFrom=@Uri.EscapeDataString(item.PropertyFrom)">
+                                                            <i class="fa-solid fa-file-pen"></i>
+                                                            Lodge Objection
+                                                        </a>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="enquiry-row-btn disabled" title="@item.ObjectionUnavailableReason">
+                                                            <i class="fa-solid fa-lock"></i>
+                                                            Objection unavailable
+                                                        </span>
+                                                    }
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="enquiry-not-found">
+                            <i class="fa-solid fa-map-location-dot"></i>
+                            <div>
+                                <strong>Property not found on the valuation rolls or LIS.</strong>
+                                <span>Admin may continue through the existing Omission search process at any time.</span>
+                            </div>
+                        </div>
+
+                        <div class="enquiry-omission-grid">
+                            @foreach (var omission in rollInformation.OmissionCandidates)
+                            {
+                                <article>
+                                    <div>
+                                        <strong>@omission.RollName</strong>
+                                        <span>@omission.SourceTable</span>
+                                    </div>
+                                    @if (omission.CanLodge)
+                                    {
+                                        <a class="enquiry-row-btn enquiry-row-btn-gold"
+                                           href="/search/@Uri.EscapeDataString(omission.RollSource)">
+                                            <i class="fa-solid fa-magnifying-glass"></i>
+                                            Continue to Omission Search
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <span class="enquiry-row-btn disabled" title="@omission.UnavailableReason">
+                                            <i class="fa-solid fa-lock"></i>
+                                            Omission unavailable
+                                        </span>
+                                    }
+                                </article>
+                            }
+                        </div>
+                    }
+                </div>
+
+                <div class="enquiry-tab-panel"
+                     role="tabpanel"
+                     data-enquiry-panel="history"
+                     hidden>
+                    <div class="enquiry-roll-head">
+                        <div>
+                            <span>All submissions for this property</span>
+                            <h3>Case History</h3>
+                        </div>
+                        <div class="enquiry-history-summary">
+                            <span>@foundation.CaseHistory.ObjectionCount Objection(s)</span>
+                            <span>@foundation.CaseHistory.AppealCount Appeal(s)</span>
+                            <span>@foundation.CaseHistory.QueryCount Query(s)</span>
+                            <span>@foundation.CaseHistory.ReviewCount Review(s)</span>
+                            <span>@foundation.CaseHistory.AttributeCount Attributes</span>
+                        </div>
+                    </div>
+
+                    @if (!foundation.CaseHistory.Cases.Any())
+                    {
+                        <div class="enquiry-not-found">
+                            <i class="fa-solid fa-folder-open"></i>
+                            <div>
+                                <strong>No submissions were found for this property.</strong>
+                                <span>The Roll Information tab remains available for linking or lodging.</span>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="enquiry-roll-table enquiry-case-table">
+                                <thead>
+                                    <tr>
+                                        <th>Type / Reference</th>
+                                        <th>Roll</th>
+                                        <th>Property</th>
+                                        <th>Submitted</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var history in foundation.CaseHistory.Cases)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <span class="enquiry-case-type type-@history.CaseType.ToLowerInvariant()">@history.CaseType</span>
+                                                <strong>@history.ReferenceNumber</strong>
+                                                @if (!string.IsNullOrWhiteSpace(history.RelatedReferenceNumber))
+                                                {
+                                                    <small>Related to @history.RelatedReferenceNumber</small>
+                                                }
+                                            </td>
+                                            <td>
+                                                <strong>@history.RollName</strong>
+                                                <small>@history.SourceTable · @history.PropertyFrom</small>
+                                            </td>
+                                            <td>
+                                                <strong>@history.PropertyDescription</strong>
+                                                <small>@history.ObjectorType</small>
+                                            </td>
+                                            <td>@(history.SubmittedAt?.ToString("dd MMM yyyy HH:mm") ?? "—")</td>
+                                            <td><span class="enquiry-case-status">@history.Status</span></td>
+                                            <td>
+                                                <div class="enquiry-row-actions">
+                                                    <a class="enquiry-row-btn" href="@history.ViewUrl" target="_blank">
+                                                        <i class="fa-solid fa-eye"></i>
+                                                        View Form
+                                                    </a>
+
+                                                    @if (history.CaseType == "Objection")
+                                                    {
+                                                        @if (history.CanLodgeAppeal)
+                                                        {
+                                                            <a class="enquiry-row-btn enquiry-row-btn-gold"
+                                                               href="/objection/check?rollSource=@Uri.EscapeDataString(history.RollSource)&sourceTable=@Uri.EscapeDataString(history.PropertyFrom)&unitKey=@Uri.EscapeDataString(history.UnitKey)&valuationKey=@Uri.EscapeDataString(history.ValuationKey)&appealStatus=True&ObjectionNo=@Uri.EscapeDataString(history.ReferenceNumber)">
+                                                                <i class="fa-solid fa-gavel"></i>
+                                                                Lodge Appeal
+                                                            </a>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="enquiry-row-btn disabled" title="@history.AppealUnavailableReason">
+                                                                <i class="fa-solid fa-lock"></i>
+                                                                Appeal unavailable
+                                                            </span>
+                                                        }
+                                                    }
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+
+                <div class="enquiry-tab-panel"
+                     role="tabpanel"
+                     data-enquiry-panel="notices"
+                     hidden>
+                    <div class="enquiry-roll-head">
+                        <div>
+                            <span>Dashboard-parity documents</span>
+                            <h3>Notices and Acknowledgements</h3>
+                        </div>
+                        <span class="enquiry-roll-count">
+                            @foundation.Notices.AvailableCount available
+                        </span>
+                    </div>
+
+                    @if (!foundation.Notices.Items.Any())
+                    {
+                        <div class="enquiry-not-found">
+                            <i class="fa-solid fa-file-circle-xmark"></i>
+                            <div>
+                                <strong>No notices were identified.</strong>
+                                <span>Notice availability will appear when a matching roll property or submission exists.</span>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        @foreach (var noticeGroup in foundation.Notices.Items.GroupBy(x => x.Group))
+                        {
+                            <section class="enquiry-notice-group">
+                                <div class="enquiry-notice-group-head">
+                                    <h4>@noticeGroup.Key</h4>
+                                    <span>@noticeGroup.Count(x => x.IsAvailable) available</span>
+                                </div>
+                                <div class="enquiry-notice-grid">
+                                    @foreach (var notice in noticeGroup)
+                                    {
+                                        <article class="enquiry-notice-card @(notice.IsAvailable ? "available" : "unavailable")">
+                                            <div class="enquiry-notice-icon">
+                                                <i class="fa-solid @notice.Icon"></i>
+                                            </div>
+                                            <div class="enquiry-notice-copy">
+                                                <span>@notice.CaseType · @notice.RollSource</span>
+                                                <strong>@notice.NoticeName</strong>
+                                                <small>@notice.ReferenceNumber · @notice.Status</small>
+                                                @if (!notice.IsAvailable)
+                                                {
+                                                    <p>@notice.ReasonUnavailable</p>
+                                                }
+                                            </div>
+                                            @if (notice.IsAvailable)
+                                            {
+                                                <a class="enquiry-row-btn enquiry-row-btn-primary" href="@notice.Url">
+                                                    <i class="fa-solid fa-download"></i>
+                                                    Download
+                                                </a>
+                                            }
+                                            else
+                                            {
+                                                <span class="enquiry-row-btn disabled">
+                                                    <i class="fa-solid fa-lock"></i>
+                                                    Not available
+                                                </span>
+                                            }
+                                        </article>
+                                    }
+                                </div>
+                            </section>
+                        }
+                    }
+                </div>
+            </section>
+        }
+
+        @if (Model.PropertyCandidates.Any())
+        {
+            var lisResults = Model.PropertyCandidates.All(x => x.IsLis);
+
+            <section class="enquiry-property-results">
+                <div class="enquiry-property-results-head">
+                    <div>
+                        <span>@(lisResults ? "LIS fallback" : "Valuation roll results")</span>
+                        <h2>Select the correct property</h2>
+                        <p>
+                            Results match the Township and every additional field entered.
+                            Numeric ERF and Unit values are matched as complete numbers.
+                        </p>
+                    </div>
+                    <span class="enquiry-roll-count">@Model.PropertyCandidates.Count found</span>
+                </div>
+
+                @if (lisResults)
+                {
+                    <div class="enquiry-lis-notice">
+                        <i class="fa-solid fa-database"></i>
+                        No matching valuation-roll property was found. These candidates came from LIS.
+                    </div>
+                }
+
+                <div class="table-responsive">
+                    <table class="enquiry-roll-table enquiry-property-candidate-table" id="propertyCandidateTable">
+                        <thead>
+                            <tr>
+                                <th>Property</th>
+                                <th>Roll / Origin</th>
+                                <th>Address</th>
+                                <th>Category / Value</th>
+                                <th>Stable keys</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var candidate in Model.PropertyCandidates)
+                            {
+                                var canOpen = !string.IsNullOrWhiteSpace(candidate.UnitKey)
+                                    && !string.IsNullOrWhiteSpace(candidate.ValuationKey);
+
+                                <tr>
+                                    <td>
+                                        <strong>@candidate.PropertyDescription</strong>
+                                        <small>@candidate.Town</small>
+                                    </td>
+                                    <td>
+                                        <strong>@candidate.RollName</strong>
+                                        <small>@candidate.SourceTable · @candidate.PropertyFrom</small>
+                                    </td>
+                                    <td>@(string.IsNullOrWhiteSpace(candidate.Address) ? "—" : candidate.Address)</td>
+                                    <td>
+                                        <strong>@(string.IsNullOrWhiteSpace(candidate.Category) ? "—" : candidate.Category)</strong>
+                                        <small>@FormatMoney(candidate.MarketValue)</small>
+                                    </td>
+                                    <td>
+                                        <small>Unit: @candidate.UnitKey</small>
+                                        <small>Valuation: @candidate.ValuationKey</small>
+                                    </td>
+                                    <td>
+                                        @if (canOpen)
+                                        {
+                                            <form method="post" asp-controller="Admin" asp-action="OpenPropertySearchResult">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="rollSource" value="@candidate.RollSource" />
+                                                <input type="hidden" name="propertyFrom" value="@candidate.PropertyFrom" />
+                                                <input type="hidden" name="propertyDescription" value="@candidate.PropertyDescription" />
+                                                <input type="hidden" name="unitKey" value="@candidate.UnitKey" />
+                                                <input type="hidden" name="valuationKey" value="@candidate.ValuationKey" />
+                                                <button class="enquiry-row-btn enquiry-row-btn-primary" type="submit">
+                                                    <i class="fa-solid fa-folder-open"></i>
+                                                    Open Enquiry
+                                                </button>
+                                            </form>
+                                        }
+                                        else
+                                        {
+                                            <span class="enquiry-row-btn disabled" title="Stable property keys are missing.">
+                                                <i class="fa-solid fa-lock"></i>
+                                                Cannot open
+                                            </span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        }
+
+        @if (Model.PropertyOmissionCandidates.Any())
+        {
+            <section class="enquiry-property-results">
+                <div class="enquiry-not-found">
+                    <i class="fa-solid fa-map-location-dot"></i>
+                    <div>
+                        <strong>The property was not found on the selected valuation roll(s) or LIS.</strong>
+                        <span>Admin may continue to the existing Omission search process at any time.</span>
+                    </div>
+                </div>
+
+                <div class="enquiry-omission-grid">
+                    @foreach (var omission in Model.PropertyOmissionCandidates)
+                    {
+                        <article>
+                            <div>
+                                <strong>@omission.RollName</strong>
+                                <span>@omission.SourceTable</span>
+                            </div>
+                            <a class="enquiry-row-btn enquiry-row-btn-gold"
+                               href="/search/@Uri.EscapeDataString(omission.RollSource)">
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                                Continue to Omission Search
+                            </a>
+                        </article>
+                    }
+                </div>
+            </section>
+        }
 
         @if (!Model.HasResults)
         {
@@ -151,7 +836,7 @@
             </div>
         }
 
-        @if (Model.RefMatches.Any())
+        @if (Model.Foundation is null && Model.RefMatches.Any())
         {
             foreach (var m in Model.RefMatches)
             {
@@ -428,6 +1113,21 @@
 @section Scripts {
     <script>
         $(document).ready(function () {
+            $('[data-enquiry-tab]').on('click', function () {
+                var selected = $(this).data('enquiry-tab');
+
+                $('[data-enquiry-tab]').each(function () {
+                    var active = $(this).data('enquiry-tab') === selected;
+                    $(this).toggleClass('active', active)
+                           .attr('aria-selected', active ? 'true' : 'false');
+                });
+
+                $('[data-enquiry-panel]').each(function () {
+                    var active = $(this).data('enquiry-panel') === selected;
+                    $(this).toggleClass('active', active).prop('hidden', !active);
+                });
+            });
+
             if ($('#resTable').length && !$.fn.DataTable.isDataTable('#resTable')) {
                 $('#resTable').DataTable({
                     responsive: true,

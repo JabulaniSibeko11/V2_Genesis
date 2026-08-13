@@ -2,81 +2,124 @@
 @{
     ViewData["Title"] = "Withdraw Attributes Submission";
     Layout = "~/Views/Shared/_ClientLayout.cshtml";
+
+    var returnUrl = !string.IsNullOrWhiteSpace(Model.ReturnUrl)
+        ? Model.ReturnUrl
+        : "/Dashboard?openRoll=Attributes";
 }
 
-<div class="container py-4" style="max-width:900px;">
-    <div class="card border-0 shadow-sm" style="border-radius:16px;overflow:hidden;">
-        <div style="background:#12343b;color:#fff;padding:24px 28px;border-bottom:5px solid #e6b000;">
-            <div class="d-flex align-items-center gap-3">
-                <div style="width:52px;height:52px;border-radius:12px;background:rgba(230,176,0,.16);
-                    display:flex;align-items:center;justify-content:center;color:#e6b000;font-size:22px;">
-                    <i class="fa-solid fa-file-circle-xmark"></i>
+@section Styles {
+    <link href="~/css/views/objection-withdrawal.css"
+          rel="stylesheet"
+          asp-append-version="true" />
+    <link href="~/css/views/attribute-withdrawal.css"
+          rel="stylesheet"
+          asp-append-version="true" />
+    <link href="~/css/views/clientdashboardcss.css"
+          rel="stylesheet"
+          asp-append-version="true" />
+}
+
+<div class="wd-wrap">
+    <div class="wd-card wd-card--attributes">
+        <form asp-route="AttributeWithdrawalPost" method="post">
+            @Html.AntiForgeryToken()
+            <input asp-for="AttrId" type="hidden" />
+            <input asp-for="ReturnUrl" type="hidden" />
+
+            <div class="wd-header">
+                <div class="wd-header-icon">
+                    <i class="fa-solid fa-clipboard-list"></i>
                 </div>
-                <div>
-                    <div style="font-size:13px;color:rgba(255,255,255,.65);font-weight:700;">
-                        Property Attributes
+                <div class="wd-header-text">
+                    <h2>Withdraw Attributes Submission</h2>
+                    <p>City of Johannesburg · Valuation Services</p>
+                </div>
+            </div>
+
+            <div class="wd-warning">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                Are you sure you want to withdraw this Attributes submission?
+            </div>
+
+            <div class="wd-body">
+                <div asp-validation-summary="ModelOnly"
+                     class="wd-error"
+                     role="alert"></div>
+
+                <div class="wd-meta-grid">
+                    <div class="wd-field">
+                        <label>
+                            <i class="fa-solid fa-hashtag"></i>
+                            Attributes Reference Number
+                        </label>
+                        <input class="wd-ref"
+                               value="@Model.AttrNo"
+                               readonly
+                               aria-label="Attributes reference number" />
                     </div>
-                    <h1 class="h3 mb-0 fw-bold">Withdraw Submission</h1>
-                </div>
-            </div>
-        </div>
 
-        <div class="card-body p-4 p-md-5">
-            <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+                    <div class="wd-field">
+                        <label>
+                            <i class="fa-solid fa-signal"></i>
+                            Current Status
+                        </label>
+                        <input class="wd-ref wd-status"
+                               value="@Model.CurrentStatus"
+                               readonly
+                               aria-label="Current status" />
+                    </div>
 
-            <div class="alert alert-warning d-flex gap-3 align-items-start" role="alert">
-                <i class="fa-solid fa-triangle-exclamation mt-1"></i>
-                <div>
-                    <strong>This action cannot be undone.</strong><br />
-                    The submission will be marked as withdrawn and the property will become available
-                    for a new Attributes submission.
+                    <div class="wd-field wd-field--full">
+                        <label>
+                            <i class="fa-solid fa-location-dot"></i>
+                            Property Description
+                        </label>
+                        <div class="wd-property">@Model.PropertyDescription</div>
+                    </div>
                 </div>
-            </div>
 
-            <div class="row g-3 mb-4">
-                <div class="col-md-4">
-                    <label class="form-label fw-bold">Reference</label>
-                    <div class="form-control bg-light fw-bold">@Model.AttrNo</div>
-                </div>
-                <div class="col-md-8">
-                    <label class="form-label fw-bold">Property</label>
-                    <div class="form-control bg-light">@Model.PropertyDescription</div>
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label fw-bold">Current Status</label>
-                    <div class="form-control bg-light">@Model.CurrentStatus</div>
-                </div>
-            </div>
-
-            <form asp-route="AttributeWithdrawalPost" method="post">
-                @Html.AntiForgeryToken()
-                <input asp-for="AttrId" type="hidden" />
-                <input asp-for="ReturnUrl" type="hidden" />
-
-                <div class="mb-4">
-                    <label asp-for="Reason" class="form-label fw-bold">
-                        Reason for withdrawal <span class="text-danger">*</span>
+                <div class="wd-field">
+                    <label asp-for="Reason">
+                        <i class="fa-solid fa-comment"></i>
+                        Withdrawal Reason <span class="wd-required">*</span>
                     </label>
                     <textarea asp-for="Reason"
-                              class="form-control"
                               rows="5"
                               maxlength="1000"
-                              placeholder="Explain why you are withdrawing this Attributes submission."
-                              style="font-size:16px;"></textarea>
-                    <span asp-validation-for="Reason" class="text-danger fw-semibold"></span>
-                    <div class="form-text">Minimum 10 characters; maximum 1,000 characters.</div>
+                              required
+                              aria-describedby="reasonHelp reasonError"
+                              placeholder="Explain why you are withdrawing this Attributes submission"></textarea>
+                    <span asp-validation-for="Reason"
+                          id="reasonError"
+                          class="wd-validation"></span>
+                    <small id="reasonHelp" class="wd-help">
+                        Enter between 10 and 1,000 characters.
+                    </small>
                 </div>
 
-                <div class="d-flex flex-column flex-sm-row justify-content-end gap-3">
-                    <a href="@Model.ReturnUrl" class="btn btn-outline-secondary btn-lg px-4">
-                        <i class="fa-solid fa-arrow-left me-2"></i>Cancel
-                    </a>
-                    <button type="submit" class="btn btn-danger btn-lg px-4">
-                        <i class="fa-solid fa-file-circle-xmark me-2"></i>Confirm Withdrawal
-                    </button>
+                <div class="wd-note">
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                    <div>
+                        <strong>This action cannot be undone.</strong>
+                        The submission will be marked as withdrawn, its evidence access will be
+                        disabled and the property will become available for a new Attributes
+                        submission. Withdrawal is allowed only before allocation to a valuer.
+                    </div>
                 </div>
-            </form>
-        </div>
+            </div>
+
+            <div class="wd-footer">
+                <button type="submit" class="wd-btn wd-btn-confirm">
+                    <i class="fa-solid fa-check-circle"></i>
+                    Yes, Withdraw
+                </button>
+                <a href="@returnUrl" class="wd-btn wd-btn-cancel">
+                    <i class="fa-solid fa-times-circle"></i>
+                    No, Cancel
+                </a>
+            </div>
+        </form>
     </div>
 </div>
 

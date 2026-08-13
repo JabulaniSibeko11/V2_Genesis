@@ -15,13 +15,15 @@ namespace V2_Genesis.Services.Interfaces
 
         Task<List<PropertySearchResult>> SearchAsync(
             string rollSource,
-            PropertySearchParams searchParams);
+            PropertySearchParams searchParams,
+            CancellationToken cancellationToken = default);
 
 
         Task<List<PropertyDetailResult>> GetPropertyDetailsAsync(
             string rollSource,
             string unitKey,
-            string valuationKey);
+            string valuationKey,
+            CancellationToken cancellationToken = default);
 
 
         Task<LinkResult> LinkPropertyAsync(

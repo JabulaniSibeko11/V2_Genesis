@@ -25,6 +25,9 @@ public class AdminController : Controller
     private readonly IAdminDashboardService _adminService;
     private readonly IAdminClientAccountService _adminClientAccountService;
     private readonly IAdminPropertyEnquiryService _adminPropertyEnquiryService;
+    private readonly IAdminReferenceResolver _adminReferenceResolver;
+    private readonly IAdminAccountInformationService _adminAccountInformationService;
+    private readonly IAdminRollInformationService _adminRollInformationService;
     private readonly IAcknowledgementDownloadService _acknowledgementDownloadService;
     private readonly IAuditService _audit;
     private readonly ApplicationDbContext _db;
@@ -46,6 +49,9 @@ public class AdminController : Controller
         IAdminDashboardService adminService,
         IAdminClientAccountService adminClientAccountService,
         IAdminPropertyEnquiryService adminPropertyEnquiryService,
+        IAdminReferenceResolver adminReferenceResolver,
+        IAdminAccountInformationService adminAccountInformationService,
+        IAdminRollInformationService adminRollInformationService,
         IAcknowledgementDownloadService acknowledgementDownloadService,
         IAuditService audit,
         ApplicationDbContext db,
@@ -62,6 +68,9 @@ public class AdminController : Controller
         _adminService = adminService;
         _adminClientAccountService = adminClientAccountService;
         _adminPropertyEnquiryService = adminPropertyEnquiryService;
+        _adminReferenceResolver = adminReferenceResolver;
+        _adminAccountInformationService = adminAccountInformationService;
+        _adminRollInformationService = adminRollInformationService;
         _acknowledgementDownloadService = acknowledgementDownloadService;
         _audit = audit;
         _db = db;
@@ -199,7 +208,10 @@ public class AdminController : Controller
     [HttpPost]
     [Route("admin/search/ref")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> SearchByRef(string refNo, string? rollSource)
+    public async Task<IActionResult> SearchByRef(
+        string refNo,
+        string? rollSource,
+        CancellationToken cancellationToken)
     {
         if (!IsAdmin()) return View("_NoAccess");
 
@@ -209,12 +221,131 @@ public class AdminController : Controller
             return RedirectToAction(nameof(Search));
         }
 
-        var result = await _adminService.SearchByReferenceAsync(refNo.Trim(), rollSource);
+        var result = await _adminService.SearchByReferenceAsync(
+            refNo.Trim(),
+            rollSource,
+            cancellationToken);
 
         await _audit.LogAsync(AdminEmail, AuditActions.Search, SapNumber,
             rollSource: rollSource ?? "All",
             searchValue: refNo, ipAddress: ClientIp);
 
+        return View("SearchResults", result);
+    }
+
+    // POST /admin/search/link-property
+    // Links an already-found roll/LIS property to the resolved client account.
+    // The reference is resolved again so posted UserIDs and property keys can
+    // never redirect ownership to the logged-in Administrator.
+    [HttpPost]
+    [Route("admin/search/link-property")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> LinkEnquiryProperty(
+        string referenceNumber,
+        string rollSource,
+        string idProperty,
+        string propertyFrom,
+        CancellationToken cancellationToken)
+    {
+        if (!IsAdmin())
+            return View("_NoAccess");
+
+        if (string.IsNullOrWhiteSpace(referenceNumber)
+            || string.IsNullOrWhiteSpace(rollSource)
+            || string.IsNullOrWhiteSpace(idProperty))
+        {
+            TempData["SearchError"] =
+                "The property could not be linked because required information was missing.";
+            return RedirectToAction(nameof(Search));
+        }
+
+        var foundation = await _adminReferenceResolver.ResolveAsync(
+            referenceNumber.Trim(),
+            null,
+            cancellationToken);
+
+        if (foundation is null)
+        {
+            TempData["SearchError"] =
+                "The original submission reference could not be resolved again.";
+            return RedirectToAction(nameof(Search));
+        }
+
+        foundation.AccountInformation =
+            await _adminAccountInformationService.GetAsync(
+                foundation,
+                cancellationToken);
+
+        var account = foundation.AccountInformation.SubmittingAccount;
+
+        if (!account.CanOwnLinkedProperties)
+        {
+            TempData["SearchError"] = account.IsAdministrativeAccount
+                ? "The property was not linked because the resolved account belongs to Administration. Resolve the genuine client account first."
+                : "The property was not linked because no genuine client account was resolved.";
+
+            var blockedResult = await _adminService.SearchByReferenceAsync(
+                referenceNumber,
+                null,
+                cancellationToken);
+            return View("SearchResults", blockedResult);
+        }
+
+        var rollInformation = await _adminRollInformationService.GetAsync(
+            foundation,
+            rollSource,
+            cancellationToken);
+
+        var verifiedProperty = rollInformation.Properties.FirstOrDefault(x =>
+            x.RollSource.Equals(rollSource, StringComparison.OrdinalIgnoreCase)
+            && x.IdProperty.Equals(idProperty, StringComparison.OrdinalIgnoreCase)
+            && x.PropertyFrom.Equals(propertyFrom, StringComparison.OrdinalIgnoreCase));
+
+        if (verifiedProperty is null || !verifiedProperty.CanLink)
+        {
+            TempData["SearchError"] =
+                verifiedProperty?.LinkUnavailableReason
+                ?? "The property link was rejected because the posted property did not match the resolved roll record.";
+
+            var rejectedResult = await _adminService.SearchByReferenceAsync(
+                referenceNumber,
+                null,
+                cancellationToken);
+            return View("SearchResults", rejectedResult);
+        }
+
+        var link = await _search.LinkPropertyAsync(
+            verifiedProperty.RollSource,
+            verifiedProperty.IdProperty,
+            account.UserId,
+            verifiedProperty.PropertyFrom);
+
+        if (link.Success)
+        {
+            TempData["SearchSuccess"] =
+                $"Property linked successfully to {account.DisplayName}'s account on {verifiedProperty.RollName}.";
+
+            await _audit.LogAsync(
+                AdminEmail,
+                "AdminLinkClientProperty",
+                SapNumber,
+                rollSource: verifiedProperty.RollSource,
+                searchValue: referenceNumber,
+                entityRef: account.UserId,
+                details:
+                    $"Linked property '{verifiedProperty.PropertyDescription}' to client account {account.UserId}.",
+                ipAddress: ClientIp);
+        }
+        else
+        {
+            TempData["SearchError"] = link.ErrorMessage
+                ?? "The property could not be linked.";
+        }
+
+        var result = await _adminService.SearchByReferenceAsync(
+            referenceNumber,
+            null,
+            cancellationToken);
         return View("SearchResults", result);
     }
 
@@ -224,16 +355,73 @@ public class AdminController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> SearchByProperty(
         string? TownName, string? Stand, string? Address,
-        string? Scheme, string? Unit, string? rollSource)
+        string? Scheme, string? Unit, string? rollSource,
+        CancellationToken cancellationToken)
     {
         if (!IsAdmin()) return View("_NoAccess");
 
+        if (string.IsNullOrWhiteSpace(TownName))
+        {
+            TempData["SearchError"] =
+                "Please select a Township before searching for a property.";
+            return RedirectToAction(nameof(Search));
+        }
+
         var result = await _adminService.SearchByPropertyAsync(
-            TownName, Stand, Address, Scheme, Unit, rollSource);
+            TownName,
+            Stand,
+            Address,
+            Scheme,
+            Unit,
+            rollSource,
+            cancellationToken);
 
         await _audit.LogAsync(AdminEmail, AuditActions.Search, SapNumber,
             rollSource: rollSource ?? "All",
             searchValue: result.SearchInput, ipAddress: ClientIp);
+
+        return View("SearchResults", result);
+    }
+
+    [HttpPost]
+    [Route("admin/search/property/open")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> OpenPropertySearchResult(
+        string rollSource,
+        string propertyFrom,
+        string propertyDescription,
+        string unitKey,
+        string valuationKey,
+        CancellationToken cancellationToken)
+    {
+        if (!IsAdmin())
+            return View("_NoAccess");
+
+        if (string.IsNullOrWhiteSpace(rollSource)
+            || string.IsNullOrWhiteSpace(unitKey)
+            || string.IsNullOrWhiteSpace(valuationKey))
+        {
+            TempData["SearchError"] =
+                "The selected property could not be opened because its stable property keys were missing.";
+            return RedirectToAction(nameof(Search));
+        }
+
+        var result = await _adminService.OpenPropertyAsync(
+            rollSource.Trim(),
+            propertyFrom?.Trim() ?? string.Empty,
+            propertyDescription?.Trim() ?? string.Empty,
+            unitKey?.Trim() ?? string.Empty,
+            valuationKey?.Trim() ?? string.Empty,
+            cancellationToken);
+
+        await _audit.LogAsync(
+            AdminEmail,
+            "OpenPropertySearchResult",
+            SapNumber,
+            rollSource: rollSource,
+            searchValue: propertyDescription,
+            entityRef: $"{unitKey}|{valuationKey}",
+            ipAddress: ClientIp);
 
         return View("SearchResults", result);
     }
