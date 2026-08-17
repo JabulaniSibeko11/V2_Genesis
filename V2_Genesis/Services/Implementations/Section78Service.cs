@@ -1,6 +1,6 @@
 ﻿using Dapper;
-using QuestPDF.Fluent;
 using Microsoft.EntityFrameworkCore;
+using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 using System.Data;
@@ -93,10 +93,7 @@ namespace V2_Genesis.Services.Implementations
             string propertyType,
             string userId)
         {
-            bool isReview = string.Equals(
-                reviewStat?.Trim(),
-                "R",
-                StringComparison.OrdinalIgnoreCase);
+            bool isReview = reviewStat == "R";
 
             // ── 1. Query header ────────────────────────────────────────
             que.UserID = userId;
@@ -115,7 +112,7 @@ namespace V2_Genesis.Services.Implementations
 
             // ── 2. Section 1 ───────────────────────────────────────────
             obj1.Ref = que.Query_ID;
-            obj1.Objection_Ref_S1 = queryRef;
+            obj1.Objection_Ref_S1 = que.Query_No ?? queryRef;
             _qdb.Obj_Section1.Add(obj1);
             await _qdb.SaveChangesAsync();
 
@@ -175,7 +172,6 @@ namespace V2_Genesis.Services.Implementations
             obj7.Objection_Ref_S7 = queryRef;
             obj7.RandomPin = GeneratePin();
             obj7.Section51Pin = GeneratePin();
-
             _qdb.Obj_Section7.Add(obj7);
             await _qdb.SaveChangesAsync();
 
@@ -294,6 +290,10 @@ namespace V2_Genesis.Services.Implementations
                 await _emailService.SendSection78AcknowledgementAsync(
                     result.QueryRef,
                     result.IsReview,
+                    result.Section6?.Old_Property_Description
+                        ?? result.Section6?.New_Property_Description
+                        ?? que.Property_Desc
+                        ?? "Property",
                     ackPdfBytes,
                     folderPath,
                     extraAttachments);
@@ -788,11 +788,11 @@ namespace V2_Genesis.Services.Implementations
             catch { return new(); }
         }
         public async Task<GeneratedAcknowledgementResult>
-    GenerateAcknowledgementFromDatabaseAsync(
-        string queryReference,
-        string userId,
-        bool allowAdministrativeAccess = false,
-        CancellationToken cancellationToken = default)
+     GenerateAcknowledgementFromDatabaseAsync(
+         string queryReference,
+         string userId,
+         bool allowAdministrativeAccess = false,
+         CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(queryReference))
             {
@@ -808,221 +808,191 @@ namespace V2_Genesis.Services.Implementations
             }
 
             var reference = queryReference.Trim();
-            var databaseReference = reference.EndsWith(
-                "-R",
-                StringComparison.OrdinalIgnoreCase)
-                    ? reference[..^2]
-                    : reference;
 
-            await using var connection =
-                new SqlConnection(_queryConn);
+            // EF Core parameterises this query automatically.
+            var query = await _qdb.Que_Property_Info
+                .AsNoTracking()
+                .Where(q =>
+                    q.Query_No != null &&
+                    q.Query_No.Trim() == reference &&
+                    (
+                        allowAdministrativeAccess ||
+                        q.UserID == userId
+                    ))
+                .Select(q => new
+                {
+                    q.Query_ID,
+                    q.Query_No,
+                    q.Query_Status,
+                    q.Sub_typ,
+                    q.Property_Type,
+                    q.Property_Desc,
+                    q.Valuation_Key,
+                    q.UserID
+                })
+                .FirstOrDefaultAsync(cancellationToken);
 
-            await connection.OpenAsync(cancellationToken);
-
-            var query = await connection
-                .QueryFirstOrDefaultAsync<Section78AcknowledgementHeaderRow>(
-                    new CommandDefinition(
-                        """
-                        SELECT TOP (1)
-                            TRY_CONVERT(bigint, Query_ID) AS Query_ID,
-                            CONVERT(nvarchar(100), QUERY_No) AS QUERY_No,
-                            CONVERT(nvarchar(100), QUERY_Status) AS QUERY_Status,
-                            ISNULL(TRY_CONVERT(int, Sub_typ), 0) AS Sub_typ,
-                            CONVERT(nvarchar(100), Property_Type) AS Property_Type,
-                            CONVERT(nvarchar(500), Property_Desc) AS Property_Desc,
-                            CONVERT(nvarchar(100), Valuation_Key) AS Valuation_Key,
-                            CONVERT(nvarchar(450), UserID) AS UserID
-                        FROM dbo.QUE_Property_Info
-                        WHERE LTRIM(RTRIM(CONVERT(nvarchar(100), QUERY_No))) = @Reference
-                          AND (@AllowAdministrativeAccess = 1 OR UserID = @UserId)
-                        """,
-                        new
-                        {
-                            Reference = databaseReference,
-                            UserId = userId,
-                            AllowAdministrativeAccess =
-                                allowAdministrativeAccess
-                        },
-                        cancellationToken:
-                            cancellationToken));
-
-            Section78AcknowledgementDbRow? row = null;
-            if (query is not null)
-            {
-                var section6 = await GetSection78Section6Async(
-                    connection,
-                    reference,
-                    databaseReference,
-                    query.Query_ID,
-                    cancellationToken);
-
-                var section7 = await GetSection78Section7Async(
-                    connection,
-                    reference,
-                    databaseReference,
-                    query.Query_ID,
-                    cancellationToken);
-
-                var fil = await GetSection78FilesAsync(
-                    connection,
-                    reference,
-                    databaseReference,
-                    query.Query_ID,
-                    cancellationToken);
-
-                row = BuildAcknowledgementRow(query, section6, section7, fil);
-            }
-
-            if (row is null)
+            if (query is null)
             {
                 throw new KeyNotFoundException(
-                    $"Section 78 submission '{reference}' was not found for the current user.");
+                    allowAdministrativeAccess
+                        ? $"Section 78 submission '{reference}' was not found."
+                        : $"Section 78 submission '{reference}' was not found for the current user.");
             }
 
+            var section6 = await _qdb.Obj_Section6
+                .AsNoTracking()
+                .FirstOrDefaultAsync(
+                    x => x.Ref == query.Query_ID.ToString(),
+                    cancellationToken);
+
+            var section7 = await _qdb.Obj_Section7
+                .AsNoTracking()
+                .FirstOrDefaultAsync(
+                    x => x.Ref == query.Query_ID,
+                    cancellationToken);
+
+            var evidence = await _qdb.Obj_Files
+                .AsNoTracking()
+                .FirstOrDefaultAsync(
+                    x => x.Ref == query.Query_ID,
+                    cancellationToken);
+
             var isReview =
-                row.Sub_typ == 1
-                ||
+                query.Sub_typ == 1 ||
                 reference.EndsWith(
                     "-R",
                     StringComparison.OrdinalIgnoreCase);
 
-            var files =
-                new[]
+            var files = new[]
+            {
+        evidence?.Files1,
+        evidence?.Files2,
+        evidence?.Files3,
+        evidence?.Files4,
+        evidence?.Files5,
+        evidence?.Files6,
+        evidence?.Files7,
+        evidence?.Files8,
+        evidence?.Files9,
+        evidence?.Files10
+    };
+
+            var actualFileCount = files.Count(
+                x => !string.IsNullOrWhiteSpace(x));
+
+            var result = new Section78SubmitResult
+            {
+                QueryRef = reference,
+                QueryId = query.Query_ID,
+                RandomPin = section7?.RandomPin,
+                IsReview = isReview,
+
+                IsMulti = string.Equals(
+                    query.Property_Type,
+                    "Multi",
+                    StringComparison.OrdinalIgnoreCase),
+
+                ValuationKey = query.Valuation_Key,
+
+                FileCount = evidence?.Evidence_count > 0
+                    ? Convert.ToInt32(evidence.Evidence_count.Value)
+                    : actualFileCount,
+
+                Files = files,
+
+                Section6 = new Obj_Section6Model
                 {
-            row.Files1,
-            row.Files2,
-            row.Files3,
-            row.Files4,
-            row.Files5,
-            row.Files6,
-            row.Files7,
-            row.Files8,
-            row.Files9,
-            row.Files10
-                };
+                    Old_Property_Description = FirstNotEmpty(
+                        section6?.Old_Property_Description,
+                        query.Property_Desc),
 
-            var actualFileCount =
-                files.Count(x =>
-                    !string.IsNullOrWhiteSpace(x));
+                    Old_Category =
+                        section6?.Old_Category,
 
-            var result =
-                new Section78SubmitResult
-                {
-                    QueryRef =
-                        reference,
+                    Old_Address =
+                        section6?.Old_Address,
 
-                    QueryId =
-                        row.Query_ID,
+                    Old_Extent =
+                        section6?.Old_Extent,
 
-                    RandomPin =
-                        row.RandomPin,
+                    Old_Market_Value =
+                        section6?.Old_Market_Value,
 
-                    IsReview =
-                        isReview,
+                    Old_Owner =
+                        section6?.Old_Owner,
 
-                    IsMulti =
-                        string.Equals(
-                            row.Property_Type,
-                            "Multi",
-                            StringComparison.OrdinalIgnoreCase),
+                    Old2_Category =
+                        section6?.Old2_Category,
 
-                    ValuationKey =
-                        row.Valuation_Key,
+                    Old2_Extent =
+                        section6?.Old2_Extent,
 
-                    FileCount =
-                        row.Evidence_count > 0
-                            ? row.Evidence_count
-                            : actualFileCount,
+                    Old2_Market_Value =
+                        section6?.Old2_Market_Value,
 
-                    Files =
-                        files,
+                    Old3_Category =
+                        section6?.Old3_Category,
 
-                    Section6 =
-                        new Obj_Section6Model
-                        {
-                            Old_Property_Description =
-                                FirstNotEmpty(
-                                    row.Old_Property_Description,
-                                    row.Property_Desc),
+                    Old3_Extent =
+                        section6?.Old3_Extent,
 
-                            Old_Category =
-                                row.Old_Category,
+                    Old3_Market_Value =
+                        section6?.Old3_Market_Value,
 
-                            Old_Address =
-                                row.Old_Address,
+                    New_Property_Description =
+                        section6?.New_Property_Description,
 
-                            Old_Extent =
-                                row.Old_Extent,
+                    New_Category =
+                        section6?.New_Category,
 
-                            Old_Market_Value =
-                                row.Old_Market_Value,
+                    New_Address =
+                        section6?.New_Address,
 
-                            Old_Owner =
-                                row.Old_Owner,
+                    New_Extent =
+                        section6?.New_Extent,
 
-                            Old2_Category =
-                                row.Old2_Category,
+                    New_Market_Value =
+                        section6?.New_Market_Value,
 
-                            Old2_Extent =
-                                row.Old2_Extent,
+                    New_Owner =
+                        section6?.New_Owner,
 
-                            Old2_Market_Value =
-                                row.Old2_Market_Value,
+                    New2_Category =
+                        section6?.New2_Category,
 
-                            Old3_Category =
-                                row.Old3_Category,
+                    New2_Extent =
+                        section6?.New2_Extent,
 
-                            Old3_Extent =
-                                row.Old3_Extent,
+                    New2_Market_Value =
+                        section6?.New2_Market_Value,
 
-                            Old3_Market_Value =
-                                row.Old3_Market_Value,
+                    New3_Category =
+                        section6?.New3_Category,
 
-                            New_Property_Description =
-                                row.New_Property_Description,
+                    New3_Extent =
+                        section6?.New3_Extent,
 
-                            New_Category =
-                                row.New_Category,
+                    New3_Market_Value =
+                        section6?.New3_Market_Value,
 
-                            New_Address =
-                                row.New_Address,
+                    Objection_Reasons =
+                        section6?.Objection_Reasons
+                }
+            };
 
-                            New_Extent =
-                                row.New_Extent,
+            DateTime? submittedAt = null;
 
-                            New_Market_Value =
-                                row.New_Market_Value,
+            if (DateTime.TryParse(
+                    section7?.Declaration_Date,
+                    out var parsedSubmissionDate))
+            {
+                submittedAt = parsedSubmissionDate;
+            }
 
-                            New_Owner =
-                                row.New_Owner,
-
-                            New2_Category =
-                                row.New2_Category,
-
-                            New2_Extent =
-                                row.New2_Extent,
-
-                            New2_Market_Value =
-                                row.New2_Market_Value,
-
-                            New3_Category =
-                                row.New3_Category,
-
-                            New3_Extent =
-                                row.New3_Extent,
-
-                            New3_Market_Value =
-                                row.New3_Market_Value,
-
-                            Objection_Reasons =
-                                row.Objection_Reasons
-                        }
-                };
-
-            var pdfBytes =
-                GenerateAcknowledgementPdf(
-                    result,
-                    row.Objection_Date);
+            var pdfBytes = GenerateAcknowledgementPdf(
+                result,
+                submittedAt);
 
             if (pdfBytes is null || pdfBytes.Length == 0)
             {
@@ -1030,10 +1000,9 @@ namespace V2_Genesis.Services.Implementations
                     $"Acknowledgement PDF generation returned no data for '{reference}'.");
             }
 
-            var submissionType =
-                isReview
-                    ? "Section78Review"
-                    : "Section78Query";
+            var submissionType = isReview
+                ? "Section78Review"
+                : "Section78Query";
 
             var fileName =
                 $"{SanitiseFileName(reference)}_" +
@@ -1041,24 +1010,18 @@ namespace V2_Genesis.Services.Implementations
                 $"{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
 
             _logger.LogInformation(
-                "[S78 Acknowledgement Download] Generated {SubmissionType} acknowledgement from database for {Reference}. User={UserId}",
+                "[S78 Acknowledgement Download] Generated {SubmissionType} acknowledgement from database for {Reference}. User={UserId}. AdministrativeAccess={AdministrativeAccess}",
                 submissionType,
                 reference,
-                userId);
+                userId,
+                allowAdministrativeAccess);
 
             return new GeneratedAcknowledgementResult
             {
-                ReferenceNumber =
-                    reference,
-
-                FileName =
-                    fileName,
-
-                PdfBytes =
-                    pdfBytes,
-
-                SubmissionType =
-                    submissionType
+                ReferenceNumber = reference,
+                FileName = fileName,
+                PdfBytes = pdfBytes,
+                SubmissionType = submissionType
             };
         }
 
@@ -1670,198 +1633,6 @@ namespace V2_Genesis.Services.Implementations
             return string.IsNullOrWhiteSpace(cleaned)
                 ? "Section78"
                 : cleaned;
-        }
-
-        private static Task<Obj_Section6Model?> GetSection78Section6Async(
-            SqlConnection connection,
-            string reference,
-            string databaseReference,
-            long queryId,
-            CancellationToken cancellationToken)
-        {
-            return connection.QueryFirstOrDefaultAsync<Obj_Section6Model>(
-                new CommandDefinition(
-                    """
-                    SELECT TOP (1)
-                        CONVERT(nvarchar(100), Objection_Ref_S6) AS Objection_Ref_S6,
-                        CONVERT(nvarchar(500), Old_Property_Description) AS Old_Property_Description,
-                        CONVERT(nvarchar(100), Old_Category) AS Old_Category,
-                        CONVERT(nvarchar(500), Old_Address) AS Old_Address,
-                        CONVERT(nvarchar(100), Old_Extent) AS Old_Extent,
-                        CONVERT(nvarchar(100), Old_Market_Value) AS Old_Market_Value,
-                        CONVERT(nvarchar(200), Old_Owner) AS Old_Owner,
-                        CONVERT(nvarchar(500), New_Property_Description) AS New_Property_Description,
-                        CONVERT(nvarchar(100), New_Category) AS New_Category,
-                        CONVERT(nvarchar(500), New_Address) AS New_Address,
-                        CONVERT(nvarchar(100), New_Extent) AS New_Extent,
-                        CONVERT(nvarchar(100), New_Market_Value) AS New_Market_Value,
-                        CONVERT(nvarchar(200), New_Owner) AS New_Owner,
-                        CONVERT(nvarchar(max), Objection_Reasons) AS Objection_Reasons,
-                        CONVERT(nvarchar(100), Old2_Category) AS Old2_Category,
-                        CONVERT(nvarchar(100), Old2_Extent) AS Old2_Extent,
-                        CONVERT(nvarchar(100), Old2_Market_Value) AS Old2_Market_Value,
-                        CONVERT(nvarchar(100), New2_Category) AS New2_Category,
-                        CONVERT(nvarchar(100), New2_Extent) AS New2_Extent,
-                        CONVERT(nvarchar(100), New2_Market_Value) AS New2_Market_Value,
-                        CONVERT(nvarchar(100), Old3_Category) AS Old3_Category,
-                        CONVERT(nvarchar(100), Old3_Extent) AS Old3_Extent,
-                        CONVERT(nvarchar(100), Old3_Market_Value) AS Old3_Market_Value,
-                        CONVERT(nvarchar(100), New3_Category) AS New3_Category,
-                        CONVERT(nvarchar(100), New3_Extent) AS New3_Extent,
-                        CONVERT(nvarchar(100), New3_Market_Value) AS New3_Market_Value
-                    FROM dbo.Obj_Section6
-                    WHERE LTRIM(RTRIM(CONVERT(nvarchar(100), Objection_Ref_S6)))
-                              IN (@Reference, @DatabaseReference)
-                       OR TRY_CONVERT(bigint, Ref) = @QueryId
-                    """,
-                    new
-                    {
-                        Reference = reference,
-                        DatabaseReference = databaseReference,
-                        QueryId = queryId
-                    },
-                    cancellationToken:
-                        cancellationToken));
-        }
-
-        private static Task<Obj_Section7Model?> GetSection78Section7Async(
-            SqlConnection connection,
-            string reference,
-            string databaseReference,
-            long queryId,
-            CancellationToken cancellationToken)
-        {
-            return connection.QueryFirstOrDefaultAsync<Obj_Section7Model>(
-                new CommandDefinition(
-                    """
-                    SELECT TOP (1)
-                        CONVERT(nvarchar(100), Objection_Ref_S7) AS Objection_Ref_S7,
-                        CONVERT(nvarchar(50), Declaration_Date, 121) AS Declaration_Date,
-                        CONVERT(nvarchar(max), Signature_Picture) AS Signature_Picture,
-                        CONVERT(nvarchar(200), Signature_Name) AS Signature_Name,
-                        CONVERT(nvarchar(100), RandomPin) AS RandomPin,
-                        CONVERT(nvarchar(100), Section51Pin) AS Section51Pin
-                    FROM dbo.Obj_Section7
-                    WHERE LTRIM(RTRIM(CONVERT(nvarchar(100), Objection_Ref_S7)))
-                              IN (@Reference, @DatabaseReference)
-                       OR TRY_CONVERT(bigint, Ref) = @QueryId
-                    """,
-                    new
-                    {
-                        Reference = reference,
-                        DatabaseReference = databaseReference,
-                        QueryId = queryId
-                    },
-                    cancellationToken:
-                        cancellationToken));
-        }
-
-        private static Task<Obj_Files?> GetSection78FilesAsync(
-            SqlConnection connection,
-            string reference,
-            string databaseReference,
-            long queryId,
-            CancellationToken cancellationToken)
-        {
-            return connection.QueryFirstOrDefaultAsync<Obj_Files>(
-                new CommandDefinition(
-                    """
-                    SELECT TOP (1)
-                        CONVERT(nvarchar(100), Objection_Ref_files) AS Objection_Ref_files,
-                        CONVERT(nvarchar(500), Files1) AS Files1,
-                        CONVERT(nvarchar(500), Files2) AS Files2,
-                        CONVERT(nvarchar(500), Files3) AS Files3,
-                        CONVERT(nvarchar(500), Files4) AS Files4,
-                        CONVERT(nvarchar(500), Files5) AS Files5,
-                        CONVERT(nvarchar(500), Files6) AS Files6,
-                        CONVERT(nvarchar(500), Files7) AS Files7,
-                        CONVERT(nvarchar(500), Files8) AS Files8,
-                        CONVERT(nvarchar(500), Files9) AS Files9,
-                        CONVERT(nvarchar(500), Files10) AS Files10,
-                        CONVERT(nvarchar(500), Rep_letter) AS Rep_letter,
-                        TRY_CONVERT(float, Evidence_count) AS Evidence_count
-                    FROM dbo.Obj_Files
-                    WHERE LTRIM(RTRIM(CONVERT(nvarchar(100), Objection_Ref_files)))
-                              IN (@Reference, @DatabaseReference)
-                       OR TRY_CONVERT(bigint, Ref) = @QueryId
-                    """,
-                    new
-                    {
-                        Reference = reference,
-                        DatabaseReference = databaseReference,
-                        QueryId = queryId
-                    },
-                    cancellationToken:
-                        cancellationToken));
-        }
-
-        private static Section78AcknowledgementDbRow BuildAcknowledgementRow(
-            Section78AcknowledgementHeaderRow query,
-            Obj_Section6Model? section6,
-            Obj_Section7Model? section7,
-            Obj_Files? files)
-        {
-            return new Section78AcknowledgementDbRow
-            {
-                Query_ID = query.Query_ID,
-                QUERY_No = query.Query_No,
-                QUERY_Status = query.Query_Status,
-                Sub_typ = query.Sub_typ,
-                Property_Type = query.Property_Type,
-                Property_Desc = query.Property_Desc,
-                Valuation_Key = query.Valuation_Key,
-                UserID = query.UserID,
-                Old_Property_Description = section6?.Old_Property_Description,
-                Old_Category = section6?.Old_Category,
-                Old_Address = section6?.Old_Address,
-                Old_Extent = section6?.Old_Extent,
-                Old_Market_Value = section6?.Old_Market_Value,
-                Old_Owner = section6?.Old_Owner,
-                Old2_Category = section6?.Old2_Category,
-                Old2_Extent = section6?.Old2_Extent,
-                Old2_Market_Value = section6?.Old2_Market_Value,
-                Old3_Category = section6?.Old3_Category,
-                Old3_Extent = section6?.Old3_Extent,
-                Old3_Market_Value = section6?.Old3_Market_Value,
-                New_Property_Description = section6?.New_Property_Description,
-                New_Category = section6?.New_Category,
-                New_Address = section6?.New_Address,
-                New_Extent = section6?.New_Extent,
-                New_Market_Value = section6?.New_Market_Value,
-                New_Owner = section6?.New_Owner,
-                New2_Category = section6?.New2_Category,
-                New2_Extent = section6?.New2_Extent,
-                New2_Market_Value = section6?.New2_Market_Value,
-                New3_Category = section6?.New3_Category,
-                New3_Extent = section6?.New3_Extent,
-                New3_Market_Value = section6?.New3_Market_Value,
-                Objection_Reasons = section6?.Objection_Reasons,
-                RandomPin = section7?.RandomPin,
-                Objection_Date = DateTime.TryParse(section7?.Declaration_Date, out var date) ? date : null,
-                Evidence_count = (int)(files?.Evidence_count ?? 0),
-                Files1 = files?.Files1,
-                Files2 = files?.Files2,
-                Files3 = files?.Files3,
-                Files4 = files?.Files4,
-                Files5 = files?.Files5,
-                Files6 = files?.Files6,
-                Files7 = files?.Files7,
-                Files8 = files?.Files8,
-                Files9 = files?.Files9,
-                Files10 = files?.Files10
-            };
-        }
-
-        private sealed class Section78AcknowledgementHeaderRow
-        {
-            public long Query_ID { get; set; }
-            public string? Query_No { get; set; }
-            public string? Query_Status { get; set; }
-            public int Sub_typ { get; set; }
-            public string? Property_Type { get; set; }
-            public string? Property_Desc { get; set; }
-            public string? Valuation_Key { get; set; }
-            public string? UserID { get; set; }
         }
 
         private sealed class Section78AcknowledgementDbRow

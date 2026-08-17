@@ -148,11 +148,14 @@ public class PropertySearchController : Controller
 
         var results = await _search.SearchAsync(rollSource, @params);
 
+        // Preserve the exact criteria used for the roll search so the LIS
+        // fallback does not have to reconstruct them from the page DOM.
+        ViewBag.Params = @params;
+
         if (!results.Any())
             return PartialView("_NoResults", roll);
 
         ViewBag.Roll = roll;
-        ViewBag.Params = @params;
         return PartialView("_Results", results);
     }
     [HttpGet]
@@ -737,6 +740,7 @@ public class PropertySearchController : Controller
     [HttpPost]
     [Authorize]
     [Route("search/{rollSource}/lis")]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> SearchLis(
     string rollSource,
     string? SearchTownName,

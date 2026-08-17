@@ -668,6 +668,62 @@ public class AttributesController : Controller
         return "Residential";
     }
 
+    private static string BuildOwnerDisplayName(LisPropertyDetail detail)
+    {
+        var reconstructedName = NormaliseOwnerName(string.Join(
+            " ",
+            new[] { detail.OwnerLastName, detail.OwnerFirstNames }
+                .Where(value => !string.IsNullOrWhiteSpace(value))));
+
+        // For companies, LIS/SAP splits the leading registered name into the
+        // surname field.  Reconstruct from the split fields so UNITY remains
+        // in front of ALMA PROP PTY LTD.
+        if (LooksLikeCompanyName(reconstructedName))
+            return reconstructedName;
+
+        var suppliedOwnerName = NormaliseOwnerName(detail.OwnerName);
+        if (!string.IsNullOrWhiteSpace(suppliedOwnerName))
+            return suppliedOwnerName;
+
+        return reconstructedName;
+    }
+
+    private static bool IsCompanyOwner(
+        LisPropertyDetail detail,
+        string ownerDisplayName)
+    {
+        var value = string.Join(
+            " ",
+            new[]
+            {
+                ownerDisplayName,
+                detail.OwnerFirstNames,
+                detail.OwnerLastName
+            });
+
+        return LooksLikeCompanyName(value);
+    }
+
+    private static bool LooksLikeCompanyName(string? value)
+    {
+        var searchable = $" {NormaliseOwnerName(value).ToUpperInvariant()} ";
+        var companyMarkers = new[]
+        {
+            " PTY ", " LTD ", " LIMITED ", " PROPRIETARY ", " CC ",
+            " NPC ", " INC ", " COMPANY ", " TRUST ", " CORPORATION "
+        };
+
+        return companyMarkers.Any(searchable.Contains);
+    }
+
+    private static string NormaliseOwnerName(string? value) =>
+        string.Join(
+            " ",
+            (value ?? string.Empty).Split(
+                ' ',
+                StringSplitOptions.RemoveEmptyEntries |
+                StringSplitOptions.TrimEntries));
+
     private static string BuildDisplayPropertyDescription(
         LisPropertyDetail property)
     {
@@ -790,14 +846,25 @@ public class AttributesController : Controller
                     // Pre-fill contact 0 with owner data
                     if (model.ContactInfos.Any())
                     {
-                        model.ContactInfos[0].FirstNames = d.OwnerFirstNames;
-                        model.ContactInfos[0].LastName = d.OwnerLastName;
-                        model.ContactInfos[0].IDNumber = d.OwnerId;
-                        model.ContactInfos[0].Email = d.Email;
-                        model.ContactInfos[0].CellNo = d.CellNo;
-                        model.ContactInfos[0].HomePhoneNo = d.TelNo;
-                        model.ContactInfos[0].ContactType =
-                            declaration == "Representative" ? "Representative" : "Owner";
+                        var contact = model.ContactInfos[0];
+                        var ownerDisplayName = BuildOwnerDisplayName(d);
+                        var isCompany = IsCompanyOwner(d, ownerDisplayName);
+
+                        contact.FirstNames = d.OwnerFirstNames;
+                        contact.LastName = d.OwnerLastName;
+                        contact.IsCompany = isCompany;
+                        contact.CompanyName = isCompany
+                            ? ownerDisplayName
+                            : null;
+                        contact.IDNumber = d.OwnerId;
+                        contact.Email = d.Email;
+                        contact.CellNo = d.CellNo;
+                        contact.HomePhoneNo = d.TelNo;
+                        contact.ContactType = isCompany
+                            ? "Company"
+                            : declaration == "Representative"
+                                ? "Representative"
+                                : "Owner";
                     }
                 }
             }

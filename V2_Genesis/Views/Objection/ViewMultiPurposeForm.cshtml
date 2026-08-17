@@ -236,6 +236,8 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
     };
     foreach (var _k in _keysToKeep)
         if (TempData.ContainsKey(_k)) TempData.Keep(_k);
+
+
 }
 
 @functions {
@@ -267,17 +269,90 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
 
 }
 @section Styles {
+    <link href="~/css/views/objection-form.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/views/form-consistency.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/views/clientdashboardcss.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/views/property-search.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/views/searchpropertycss.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/views/objection-form-css.css" rel="stylesheet" asp-append-version="true" />
+    <style>
+        /* Multipurpose supporting documents — same interaction as Attributes. */
+        .obj-ev-intro { margin: 0 0 16px; color: #6b7280; font: 12.5px/1.6 'Poppins', sans-serif; }
+        .obj-ev-label { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; color: #006570; font: 700 11.5px 'Poppins', sans-serif; letter-spacing: .4px; text-transform: uppercase; }
+        .obj-ev-label i { color: #e6b000; }
+        .obj-ev-optional { color: #9a9a9a; font-weight: 400; text-transform: none; }
 
-@* 4. Add this CSS link at the top *@
-<link href="~/css/views/objection-form.css" rel="stylesheet" asp-append-version="true" />
-<link href="~/css/views/clientdashboardcss.css" rel="stylesheet" asp-append-version="true" />
-<link href="~/css/views/property-search.css" rel="stylesheet" asp-append-version="true" />
-<link href="~/css/views/searchpropertycss.css" rel="stylesheet" asp-append-version="true" />
-<link href="~/css/views/objection-form-css.css" rel="stylesheet" asp-append-version="true" />
+        .obj-ev-dropzone {
+            margin-bottom: 12px;
+            padding: 36px 24px;
+            border: 2.5px dashed #e6b000;
+            border-radius: 12px;
+            background: #fff8dc;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color .15s, background .15s;
+        }
+
+        .obj-ev-dropzone:hover,
+        .obj-ev-dropzone.dragover { border-color: #006570; background: #eef8f8; }
+        .obj-ev-dropzone.full { opacity: .55; pointer-events: none; }
+        .obj-ev-icon { margin-bottom: 8px; color: #006570; font-size: 36px; }
+        .obj-ev-title { margin-bottom: 4px; color: #006570; font: 700 15px 'Poppins', sans-serif; }
+        .obj-ev-sub { margin-bottom: 14px; color: #888; font: 12.5px 'Poppins', sans-serif; }
+
+        .obj-ev-browse {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 9px 20px;
+            border: 0;
+            border-radius: 8px;
+            background: #006570;
+            color: #fff;
+            cursor: pointer;
+            font: 700 13px 'Poppins', sans-serif;
+        }
+
+        #multipurposeEvidenceInput,
+        #files { display: none; }
+
+        .obj-ev-counter { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; color: #888; font: 12px 'Poppins', sans-serif; }
+        .obj-ev-track { flex: 1; height: 5px; border-radius: 3px; background: #e8e8e8; }
+        .obj-ev-fill { width: 0; height: 100%; border-radius: 3px; background: #006570; transition: width .25s; }
+        .obj-ev-fill.full { background: #dc2626; }
+        .obj-ev-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+
+        .obj-ev-file {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 14px;
+            border: 1px solid rgba(54,98,109,.2);
+            border-radius: 8px;
+            background: #eaf4f5;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .obj-ev-file > i { color: #006570; }
+        .obj-ev-name { flex: 1; overflow: hidden; color: #1a1a1a; font-size: 13px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+        .obj-ev-size { flex-shrink: 0; color: #666; font-size: 11.5px; }
+        .obj-ev-remove { padding: 2px 5px; border: 0; background: transparent; color: #dc2626; cursor: pointer; font-size: 15px; }
+        .obj-ev-note { color: #888; font: 12px 'Poppins', sans-serif; }
+        .obj-ev-note i { margin-right: 4px; color: #006570; }
+
+        /* Attributes-style signature: drawing is captured automatically. */
+        .obj-auto-signature { padding: 14px; }
+        .obj-auto-signature-title { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font: 700 11px 'Poppins', sans-serif; letter-spacing: .5px; text-transform: uppercase; }
+        .obj-auto-signature-title i { color: #e6b000; }
+        .obj-signature-canvas-wrap { position: relative; max-width: 600px; border: 2px solid #006570; border-radius: 8px; background: #fff; }
+        #signature { display: block; width: 100%; height: 160px; border: 0 !important; border-radius: 6px; cursor: crosshair; touch-action: none; }
+        .obj-signature-line { position: absolute; right: 20px; bottom: 40px; left: 20px; border-bottom: 1px dashed #d0d0d0; pointer-events: none; }
+        .obj-signature-hint { position: absolute; bottom: 20px; left: 20px; color: #ccc; font: 11px 'Poppins', sans-serif; pointer-events: none; }
+        .obj-signature-controls { display: flex; align-items: center; gap: 12px; margin-top: 10px; }
+        .obj-signature-clear { padding: 6px 16px; border: 1px solid #d0d0d0; border-radius: 6px; background: #f7f7f7; cursor: pointer; font: 700 12px 'Poppins', sans-serif; }
+        #signatureStatus { color: #6b6b6b; font: 12px 'Poppins', sans-serif; }
+    </style>
 }
-
-
-
 
 <div class="obj-hero">
     <div class="obj-hero-inner">
@@ -327,13 +402,6 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
 </div>
 
 <form id="myForm"method="post"enctype="multipart/form-data"asp-controller="Objection" asp-action="SubmitObjectionForm"asp-route-PropertyFrom="@propertyFrom" style="margin-left: 0px">
-    <input type="hidden" id="userEmail" value="@ViewData["UserEmail"]" />
-    <input type="hidden" id="isAdminFlag" value="@(_isAdmin ? "true" : "false")" />
-    <input type="hidden" name="PropertyFrom" value="@propertyFrom" />
-    <input type="hidden" name="SourceTable" value="@sourceTable" />
-    <input type="hidden" name="RollSource" value="@rollSource" />
-
-
     <div style="display:flex;justify-content:center;">
         <div class="obj-form-card" style="margin-top:12px;">
 
@@ -397,8 +465,6 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
 
         </div>
     </div>
-    @*-----------------------------------------------------------------SECTION 1 -----------------------------------------------------------*@
-
     <input type="text" hidden onpaste="return false;" ondrop="return false;" class="form-control border-2 rounded shadow-sm px-4 py-2" id="Objector_Type" asp-for="Objector_Type" />
     <input type="hidden" id="Property_Type" asp-for="Property_Type" value="Multi" />
     <input type="text" hidden onpaste="return false;" ondrop="return false;" class="form-control border-2 rounded shadow-sm px-4 py-2" id="Premise_id" value="@messagePID" asp-for="Premise_id" />
@@ -408,13 +474,18 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
     <input type="text" hidden onpaste="return false;" ondrop="return false;" class="form-control border-2 rounded shadow-sm px-4 py-2" id="Sector_Type" value="@messageS" asp-for="Sector" />
     <input type="text" hidden onpaste="return false;" ondrop="return false;" class="form-control border-2 rounded shadow-sm px-4 py-2" id="AppealStat" name="AppealStat" value="">
     <input type="text" hidden onpaste="return false;" ondrop="return false;" class="form-control border-2 rounded shadow-sm px-4 py-2" id="obj_appeal" name="obj_appeal" value="@obj_Appeal">
+    <input type="hidden" id="userEmail" value="@ViewData["UserEmail"]" />
+    <input type="hidden" id="isAdminFlag" value="@(_isAdmin ? "true" : "false")" />
+    <input type="hidden" name="PropertyFrom" value="@propertyFrom" />
+    <input type="hidden" name="SourceTable" value="@sourceTable" />
+    <input type="hidden" name="RollSource" value="@rollSource" />
+    @*-----------------------------------------------------------------SECTION 1 -----------------------------------------------------------*@
+     <div id="section1" style="display:flex;justify-content: center;">
 
-    <div id="section1" style="display:flex;justify-content: center;">
-
-        <div class="div1 obj-form-card">
+     <div class="div1 obj-form-card">  
 
             <div style="width: 100%; margin: 20px 0; padding: 10px 0; position: relative;">
-                <h4 class="obj-section-title" id="s_head"><strong>SECTION 1: @partyUpper INFORMATION</strong></h4>
+               <h4 class="obj-section-title" id="s_head"><strong>SECTION 1: @partyUpper INFORMATION</strong></h4>
 
                 <div class="obj-step-divider">
                     <div class="line"></div>
@@ -426,15 +497,15 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
             <div class="Div1-1">
                 <div class="obj-section-bar">
                     <span class="obj-bar-num">1.1</span>
-                    <span>@partyUpper IS THE OWNER</span>
+                    <span >@partyUpper IS THE OWNER</span>
                 </div>
-
              
+
                 <div class="mb-4">
                     <label for="o_name" class="form-label fw-semibold  text-dark">
                         Registered Owner of Property<span style="color: red;">*</span>
                     </label>
-                    <input name="owner_name" id="o_name" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Owner_Name" placeholder="Enter full name of registered owner" />
+                    <input name="owner_name" id="o_name"class="form-control border-2 rounded shadow-sm px-4 py-2"maxlength="80"type="text"onpaste="return false;"ondrop="return false;"asp-for="Owner_Name"placeholder="Enter full name of registered owner" />
                 </div>
 
                 <div id="owner_details">
@@ -442,27 +513,27 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
                     <div class="row mb-2">
                       
                         <div class="col-sm-8">
-                            <div class="form-group">
+                             <div class="form-group">
                                 <label class="form-label fw-semibold  text-dark">ID Number</label>
                                 <input type="radio" name="edit" value="true" onclick="enable_ID()" checked />
                                 <label class="form-label fw-semibold  text-dark">Passport Number</label>
                                 <input type="radio" name="edit" value="true" onclick="disable_ID()" />
-                            </div>
+                             </div>
 
-                            <div class="form-floating">
-                                <input asp-for="Owner_Identity" id="o_id" class="form-control border-2 rounded shadow-sm px-4" autocomplete="username" aria-required="true" onkeypress="return onlyNumberKey(event)" />
-                                <label asp-for="Owner_Identity" id="id_input_L" onpaste="return false;" ondrop="return false;">ID Number</label>
-                                <span id="id_status" style="color: red;"></span>
-                            </div>
+                              <div class="form-floating">
+                             <input asp-for="Owner_Identity" id="o_id" class="form-control border-2 rounded shadow-sm px-4" autocomplete="username" aria-required="true" onkeypress="return onlyNumberKey(event)" />
+                                <label asp-for="Owner_Identity" id="id_input_L"  onpaste="return false;" ondrop="return false;">ID Number</label>
+                                    <span id="id_status" style="color: red;"></span>
+                              </div>
 
-                            <div class="form-floating">
-                                <input asp-for="Owner_Identity" id="o_pass" class="form-control border-2 rounded shadow-sm px-4" autocomplete="username" aria-required="true" />
-                                <label asp-for="Owner_Identity" id="pass_input_L" onpaste="return false;" ondrop="return false;">Passport Number</label>
-                            </div>
-                        </div>
+                             <div class="form-floating">
+                                 <input asp-for="Owner_Identity" id="o_pass" class="form-control border-2 rounded shadow-sm px-4" autocomplete="username" aria-required="true"  />
+                                  <label asp-for="Owner_Identity" id="pass_input_L" onpaste="return false;" ondrop="return false;">Passport Number</label>
+                             </div>
+                        </div>    
                     
                         <div class="col-sm-4">
-                            <!--rIGHT-->
+                            
                             <label class="form-label fw-semibold  text-dark"> COMPANY OR C.C REGISTRATION NO. </label>
                             <input class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="30" type="text" onpaste="return false;" ondrop="return false;" asp-for="Owner_Company" placeholder="Enter Company or C.C Registration Number">
 
@@ -472,23 +543,23 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
                 
                     <div class="obj-section-bar">
 
-                        <span style="font-weight: bold; color:white; font-size: 16px; text-transform: uppercase; letter-spacing: 0.5px;">PHYSICAL ADDRESS OF OWNER</span>
-                    </div>
+                          <span style="font-weight: bold; color:white; font-size: 16px; text-transform: uppercase; letter-spacing: 0.5px;">PHYSICAL ADDRESS OF OWNER</span>
+                  </div>
                     <div class="row mb-2">
                         <div class="col-sm-3">
                             <label class="form-label fw-semibold text-dark" for="o_st_1">
                                 STREET NUMBER <span class="text-danger" title="This field is required">*</span>
                             </label>
-                            <input id="o_st_1" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="10" type="text" onpaste="return false;" ondrop="return false;" asp-for="Owner_Address_1">
+                            <input  id="o_st_1" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="10" type="text" onpaste="return false;" ondrop="return false;" asp-for="Owner_Address_1">
                         </div>
                         <div class="col-sm-9">
-                            <!--LEFT-->
+                           <!--LEFT-->
                             <label class="form-label fw-semibold  text-dark"> STREET NAME: <span class="text-danger" title="This field is required">*</span></label>
-                            <input id="o_st_2" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Owner_Address_2">
+                            <input  id="o_st_2" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Owner_Address_2">
                         </div>
                         <div class="col-sm-12">
                             <label class="form-label fw-semibold  text-dark"> SUBURB NAME:<span class="text-danger" title="This field is required">*</span></label>
-                            <input id="o_st_3" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Owner_Address_3">
+                            <input  id="o_st_3" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Owner_Address_3">
                         </div>
                     </div>
 
@@ -496,394 +567,383 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
                     <div class="row mb-2">
                         <div class="col-sm-9">
                             <label class="form-label fw-semibold  text-dark"> TOWN NAME: <span class="text-danger" title="This field is required">*</span></label>
-                            <input id="o_st_4" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Owner_Address_4">
+                            <input  id="o_st_4" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Owner_Address_4">
                         </div>
                         <div class="col-sm-3">
                             <label class="form-label fw-semibold  text-dark"> POSTAL CODE: <span class="text-danger" title="This field is required">*</span></label>
-                            <input id="o_st_5" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="10" type="text" onpaste="return false;" ondrop="return false;" asp-for="Owner_Address_5">
+                            <input  id="o_st_5" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="10" type="text" onpaste="return false;" ondrop="return false;" asp-for="Owner_Address_5">
                         </div>
                     </div>
 
-                </br>
+                    </br>
                   
-                <div class="obj-section-bar">
+                    <div class="obj-section-bar">
 
-                    <span>POSTAL ADDRESS OF OWNER</span>
-                </div>
+                        <span>POSTAL ADDRESS OF OWNER</span>
+                    </div>
                   
-                <div class="obj-section-bar">
+                  <div class="obj-section-bar">
                     
-                    <fieldset class="col-md-6" style="width: 100%;">
-                        <p style="color:white;">
-                            <label class="form-label fw-semibold " style="color:white;">Postal Address is the same as Physical Address? &nbsp;</label>
-                            <span>
-                                <label class="form-label fw-semibold " style="color:white;">No</label>
-                                <input type="radio" name="add_pos" value="No" onclick="pos_no()" checked />
-                                <label class="form-label fw-semibold " style="color:white;">Yes</label>
-                                <input type="radio" name="add_pos" onclick="pos_yes()" value="Yes" />
-                            </span>
-                        </p>
+                      <fieldset class="col-md-6" style="width: 100%;">
+                    <label class="gen-same-address">
+                        <input type="checkbox" id="samePostalAddress"
+                               onchange="this.checked ? pos_yes() : pos_no()" />
+                        Physical address is the same as the postal address
+                    </label>
                     </fieldset>
-                </div>
+                    </div>
 
+                    <div class="row mb-2">
+                        <div class="col-sm-3">
+                            <label class="form-label fw-semibold  text-dark"> STREET NUMBER <span style="color: red;">*</span></label>
+                            <input  id="o_p_1" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="10" type="text" onpaste="return false;" ondrop="return false;" asp-for="Owner_Postal_1">
+
+                        </div>
+                        <div class="col-sm-9">
+                            <label class="form-label fw-semibold  text-dark">STREET NAME<span style="color: red;">*</span></label>
+                            <input  id="o_p_2" class="form-control" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Owner_Postal_2">
+
+                        </div>
+                    </div>
+
+                    <div class="col-sm-12">
+                        <label class="form-label fw-semibold  text-dark"> SUBURB NAME <span style="color: red;">*</span></label>
+                        <input  id="o_p_3" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Owner_Postal_3">
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-sm-9">
+                            <label class="form-label fw-semibold  text-dark"> TOWN NAME <span style="color: red;">*</span></label>
+                            <input  id="o_p_4" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Owner_Postal_4">
+                        </div>
+                        <div class="col-sm-3">
+                            <label class="form-label fw-semibold  text-dark"> POSTAL CODE <span style="color: red;">*</span></label>
+                            <input  id="o_p_5" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="10" type="text" onpaste="return false;" ondrop="return false;" asp-for="Owner_Postal_5">
+                        </div>
+                    </div>
+                </div>
+                
+
+           
+                <div class="obj-section-bar">
+                  
+                    <span >CONTACT DETAILS</span>
+                  </div>
+            
+                <div class="alert-notice">
+                    <div class="instruction-box">
+                        <p>
+                            <span class="bullet">•</span>
+                            <span id="o_cd_invalid"><strong>Please fill in at least one of the contact details fields.</strong></span>
+                        </p>
+                        <p>
+                            <span class="bullet">•</span>
+                            <span ><strong>Please ensure that all contact details provided are valid, accurate</strong></span>
+                        </p>
+                    </div>
+
+                </div>
                 <div class="row mb-2">
-                    <div class="col-sm-3">
-                        <label class="form-label fw-semibold  text-dark"> STREET NUMBER <span style="color: red;">*</span></label>
-                        <input id="o_p_1" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="10" type="text" onpaste="return false;" ondrop="return false;" asp-for="Owner_Postal_1">
+                    <div class="col-sm-6">
+                        <label class="form-label fw-semibold  text-dark"> HOME TELEPHONE <span style="color: red;">*</span></label>
+                        <input  id="o_cd_1" class="form-control o_cell_no border-2 rounded shadow-sm px-4 py-2" maxlength="13" onkeypress="return onlyNumberKey(event)" type="tel" onpaste="return false;" ondrop="return false;" asp-for="Owner_Home_Phone"placeholder="0112345678">
 
                     </div>
-                    <div class="col-sm-9">
-                        <label class="form-label fw-semibold  text-dark">STREET NAME<span style="color: red;">*</span></label>
-                        <input id="o_p_2" class="form-control" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Owner_Postal_2">
+                    <div class="col-sm-6">
+                        <label class="form-label fw-semibold  text-dark"> WORK TELEPHONE <span style="color: red;">*</span></label>
+                        <input  id="o_cd_2" class="form-control o_cell_no border-2 rounded shadow-sm px-4 py-2" maxlength="13" onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;" asp-for="Owner_Work_Phone" placeholder="0112345678">
 
+                    </div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col-sm-6">
+                        <label class="form-label fw-semibold  text-dark"> CELLPHONE NUMBER<span style="color: red;">*</span> </label>
+                        <input  id="o_cd_3" class="form-control o_cell_no border-2 rounded shadow-sm px-4 py-2" maxlength="13" onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;" asp-for="Owner_Cell_Phone" placeholder="0712345678">
+
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label fw-semibold  text-dark"> FAX </label>
+                        <input  id="o_cd_4" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="13" onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;" asp-for="Owner_Fax_Phone" placeholder="0112345678">
                     </div>
                 </div>
 
                 <div class="col-sm-12">
-                    <label class="form-label fw-semibold  text-dark"> SUBURB NAME <span style="color: red;">*</span></label>
-                    <input id="o_p_3" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Owner_Postal_3">
+                    <label class="form-label fw-semibold  text-dark">E-MAIL ADDRESS <span style="color: red;">*</span></label>
+                    <input  id="o_cd_5" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Owner_Email"placeholder="@(_isAppeal ? "appeal@mail.com" : "objection@mail.com")">
                 </div>
-                <div class="row mb-2">
-                    <div class="col-sm-9">
-                        <label class="form-label fw-semibold  text-dark"> TOWN NAME <span style="color: red;">*</span></label>
-                        <input id="o_p_4" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Owner_Postal_4">
-                    </div>
-                    <div class="col-sm-3">
-                        <label class="form-label fw-semibold  text-dark"> POSTAL CODE <span style="color: red;">*</span></label>
-                        <input id="o_p_5" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="10" type="text" onpaste="return false;" ondrop="return false;" asp-for="Owner_Postal_5">
-                    </div>
-                </div>
+
+
+
+
             </div>
 
-                
-
-            <div class="obj-section-bar">
-                  
-                <span>CONTACT DETAILS</span>
-            </div>
-            
-            <div class="alert-notice">
-                <div class="instruction-box">
-                    <p>
-                        <span class="bullet">•</span>
-                        <span id="o_cd_invalid"><strong>Please fill in at least one of the contact details fields.</strong></span>
-                    </p>
-                    <p>
-                        <span class="bullet">•</span>
-                        <span><strong>Please ensure that all contact details provided are valid, accurate</strong></span>
-                    </p>
-                </div>
-
-            </div>
-            <div class="row mb-2">
-                <div class="col-sm-6">
-                    <label class="form-label fw-semibold  text-dark"> HOME TELEPHONE <span style="color: red;">*</span></label>
-                    <input id="o_cd_1" class="form-control o_cell_no border-2 rounded shadow-sm px-4 py-2" maxlength="13" onkeypress="return onlyNumberKey(event)" type="tel" onpaste="return false;" ondrop="return false;" asp-for="Owner_Home_Phone" placeholder="0112345678">
-
-                </div>
-                <div class="col-sm-6">
-                    <label class="form-label fw-semibold  text-dark"> WORK TELEPHONE <span style="color: red;">*</span></label>
-                    <input id="o_cd_2" class="form-control o_cell_no border-2 rounded shadow-sm px-4 py-2" maxlength="13" onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;" asp-for="Owner_Work_Phone" placeholder="0112345678">
-
-                </div>
-            </div>
-            <div class="row mb-2">
-                <div class="col-sm-6">
-                    <label class="form-label fw-semibold  text-dark"> CELLPHONE NUMBER<span style="color: red;">*</span> </label>
-                    <input id="o_cd_3" class="form-control o_cell_no border-2 rounded shadow-sm px-4 py-2" maxlength="13" onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;" asp-for="Owner_Cell_Phone" placeholder="0712345678">
-
-                </div>
-                <div class="col-sm-6">
-                    <label class="form-label fw-semibold  text-dark"> FAX </label>
-                    <input id="o_cd_4" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="13" onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;" asp-for="Owner_Fax_Phone" placeholder="0112345678">
-                </div>
-            </div>
-
-            <div class="col-sm-12">
-                <label class="form-label fw-semibold  text-dark">E-MAIL ADDRESS <span style="color: red;">*</span></label>
-                <input id="o_cd_5" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Owner_Email" placeholder="@(_isAppeal ? "appeal@mail.com" : "objection@mail.com")">
-            </div>
-
-
-
-
-        </div>
-
-        <div class="Div1-2">
-
+            <div class="Div1-2">      
        
               
-            <div class="obj-section-bar">
-                <span class="obj-bar-num">1.2</span>
-                <span>@partyUpper IS NOT THE OWNER OR REPRESENTATIVE</span>
-            </div>
 
-            <div class="col-sm-12">
-                <label class="form-label fw-semibold  text-dark"> <span id="TP_Name">NAME OF @partyUpper</span>  <span style="color: red;">*</span> </label>
-                <input id="objector_name" class="form-control rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Objector_Name">
+                <div class="obj-section-bar">
+                    <span class="obj-bar-num">1.2</span>
+                    <span >@partyUpper IS NOT THE OWNER OR REPRESENTATIVE</span>
+                  </div>
 
-            </div>
+                <div class="col-sm-12">
+                     <label class="form-label fw-semibold  text-dark"> <span id="TP_Name">NAME OF @partyUpper</span>  <span style="color: red;">*</span> </label>
+                    <input  id="objector_name" class="form-control rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Objector_Name">
+
+                </div>
                
             <div class=" row mb-2">
 
-                <div class="col-sm-8">
-                    <div class="form-group">
-                        <label class="form-label fw-semibold  text-dark">ID Number</label>
-                        <input type="radio" name="edit" value="true" onclick="enable_ID2()" checked="checked" />
-                        <label class="form-label fw-semibold  text-dark">Passport Number</label>
-                        <input type="radio" name="edit" value="true" onclick="disable_ID2()" />
-                    </div>
+                   <div class="col-sm-8">
+                         <div class="form-group">
+                             <label class="form-label fw-semibold  text-dark">ID Number</label>
+                              <input type="radio" name="edit" value="true" onclick="enable_ID2()" checked="checked" />
+                                <label class="form-label fw-semibold  text-dark">Passport Number</label>
+                                <input type="radio" name="edit" value="true" onclick="disable_ID2()" />
+                         </div>
 
-                    <div class="form-floating">
-                        <input asp-for="Objector_Identity" id="objector_id" class="form-control" autocomplete="username" aria-required="true" onkeypress="return onlyNumberKey(event)" />
-                        <label asp-for="Objector_Identity" id="id_L" onpaste="return false;" ondrop="return false;">ID Number</label>
-                        <span id="obj_id_status" style="color: red;"></span>
-                    </div>
+                          <div class="form-floating">
+                         <input asp-for="Objector_Identity" id="objector_id" class="form-control" autocomplete="username" aria-required="true" onkeypress="return onlyNumberKey(event)" />
+                            <label asp-for="Objector_Identity" id="id_L"  onpaste="return false;" ondrop="return false;">ID Number</label>
+                                <span id="obj_id_status" style="color: red;"></span>
+                          </div>
 
-                    <div class="form-floating">
-                        <input asp-for="Objector_Identity" id="objector_pass" class="form-control" autocomplete="username" aria-required="true" />
-                        <label asp-for="Objector_Identity" id="pass_L" onpaste="return false;" ondrop="return false;">Passport Number</label>
-                    </div>
-                </div>
+                         <div class="form-floating">
+                             <input asp-for="Objector_Identity" id="objector_pass" class="form-control" autocomplete="username" aria-required="true"  />
+                              <label asp-for="Objector_Identity" id="pass_L" onpaste="return false;" ondrop="return false;">Passport Number</label>
+                         </div>
+                    </div>    
                     
-                <div class="col-sm-4">
-                    <label class="form-label fw-semibold  text-dark"> COMPANY OR CC REGISTRATION NO. </label>
-                    <input class="form-control rounded shadow-sm px-4 py-2" maxlength="20" type="text" onpaste="return false;" ondrop="return false;" asp-for="Objector_Company">
+                  <div class="col-sm-4">
+                     <label class="form-label fw-semibold  text-dark"> COMPANY OR CC REGISTRATION NO. </label>
+                    <input class="form-control rounded shadow-sm px-4 py-2" maxlength="20"  type="text" onpaste="return false;" ondrop="return false;" asp-for="Objector_Company">
 
-                </div>
+                  </div>
             </div>
-            <br></br>
+             <br></br>
              
-            <div class="obj-section-bar">
+                <div class="obj-section-bar">
                  
-                <span style="font-weight: bold; font-size: 16px; color: white; text-transform: uppercase; letter-spacing: 0.5px;">POSTAL ADDRESS OF @partyUpper</span>
-            </div>
+                    <span style="font-weight: bold; font-size: 16px; color: white; text-transform: uppercase; letter-spacing: 0.5px;">POSTAL ADDRESS OF @partyUpper</span>
+                  </div>
 
-            <div class="row mb-2">
-                <div class="col-sm-3">
-                    <label class="form-label fw-semibold  text-dark">STREET NUMBER  <span style="color: red;">*</span></label>
-                    <input id="obj_p_1" class="form-control rounded shadow-sm px-4 py-2" maxlength="10" type="text" onpaste="return false;" ondrop="return false;" asp-for="Objector_Postal_1">
+                <div class="row mb-2">
+                    <div class="col-sm-3">
+                        <label class="form-label fw-semibold  text-dark">STREET NUMBER  <span style="color: red;">*</span></label>
+                        <input  id="obj_p_1" class="form-control rounded shadow-sm px-4 py-2" maxlength="10" type="text" onpaste="return false;" ondrop="return false;" asp-for="Objector_Postal_1">
+                    </div>
+                     <div class="col-sm-9">
+                        <label class="form-label fw-semibold  text-dark"> STREET NAME  <span style="color: red;">*</span></label>
+                        <input  id="obj_p_2" class="form-control rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Objector_Postal_2">
+                     </div>
+                     <div class="col-sm-12">
+                            <label class="form-label fw-semibold  text-dark"> SUBURB NAME  <span style="color: red;">*</span></label>
+                            <input  id="obj_p_3" class="form-control rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Objector_Postal_3">
+                     </div>
+
+
+                     <div class="col-sm-9">
+                         <label class="form-label fw-semibold  text-dark"> TOWN NAME  <span style="color: red;">*</span></label>
+                          <input  id="obj_p_4" class="form-control rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Objector_Postal_4">
+
+                     </div>
+                     <div class="col-sm-3">
+                           <label class="form-label fw-semibold  text-dark"> POSTAL CODE  <span style="color: red;">*</span></label>
+                        <input  id="obj_p_5" class="form-control rounded shadow-sm px-4 py-2" maxlength="10" type="text" onpaste="return false;" ondrop="return false;" asp-for="Objector_Postal_5">
+
+                     </div>
                 </div>
-                <div class="col-sm-9">
-                    <label class="form-label fw-semibold  text-dark"> STREET NAME  <span style="color: red;">*</span></label>
-                    <input id="obj_p_2" class="form-control rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Objector_Postal_2">
-                </div>
-                <div class="col-sm-12">
-                    <label class="form-label fw-semibold  text-dark"> SUBURB NAME  <span style="color: red;">*</span></label>
-                    <input id="obj_p_3" class="form-control rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Objector_Postal_3">
-                </div>
-
-
-                <div class="col-sm-9">
-                    <label class="form-label fw-semibold  text-dark"> TOWN NAME  <span style="color: red;">*</span></label>
-                    <input id="obj_p_4" class="form-control rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Objector_Postal_4">
-
-                </div>
-                <div class="col-sm-3">
-                    <label class="form-label fw-semibold  text-dark"> POSTAL CODE  <span style="color: red;">*</span></label>
-                    <input id="obj_p_5" class="form-control rounded shadow-sm px-4 py-2" maxlength="10" type="text" onpaste="return false;" ondrop="return false;" asp-for="Objector_Postal_5">
-
-                </div>
-            </div>
-            <br></br>
-
-      
-             
-            <div class="obj-section-bar">
-               
-                <span>CONTACT DETAILS</span>
-            </div>
-
-               
-            <div class="alert-notice">
-                <div class="instruction-box">
-                    <p>
-                        <span class="bullet">•</span>
-                        <span id="obj_cd_invalid"><strong>Please fill in at least one of the contact details fields.</strong></span>
-                    </p>
-                    <p>
-                        <span class="bullet">•</span>
-                        <span><strong>Please ensure that all contact details provided are valid, accurate</strong></span>
-                    </p>
-                </div>
-
-            </div>
-            <div class="row mb-2">
-                <div class="col-sm-6">
-                    <label class="form-label fw-semibold  text-dark"> HOME TELEPHONE <span style="color: red;">*</span></label>
-                    <input id="obj_cd_1" class="form-control rounded shadow-sm px-4 py-2" maxlength="13" onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;" asp-for="Objector_Home" placeholder="0112345678">
-
-                </div>
-                <div class="col-sm-6">
-                    <label class="form-label fw-semibold  text-dark"> WORK TELEPHONE<span style="color: red;">*</span></label>
-                    <input id="obj_cd_2" class="form-control rounded shadow-sm px-4 py-2" maxlength="13" onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;" asp-for="Objector_Work" placeholder="0112345678">
-
-                </div>
-                <div class="col-sm-6">
-                    <label class="form-label fw-semibold  text-dark"> CELL <span style="color: red;">*</span></label>
-                    <input id="obj_cd_3" class="form-control rounded shadow-sm px-4 py-2" maxlength="13" onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;" asp-for="Objector_Cell" placeholder="0712345678">
-
-                </div>
-                <div class="col-sm-6">
-                    <label class="form-label fw-semibold  text-dark"> FAX </label>
-                    <input id="obj_cd_4" class="form-control rounded shadow-sm px-4 py-2" maxlength="13" onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;" asp-for="Objector_Fax" placeholder="0112345678">
- 
-                </div>
-                <div class="col-sm-12">
-                    <label class="form-label fw-semibold  text-dark">E-MAIL ADDRESS <span style="color: red;">*</span></label>
-                    <input id="obj_cd_5" class="form-control rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Objector_Email" placeholder="@(_isAppeal ? "appeal@mail.com" : "objection@mail.com")">
-
-                </div>
-                <div class="col-sm-12">
-                    <label class="form-label fw-semibold  text-dark"> <span id="tp_status">STATUS OF @partyUpper</span><span style="color: red;">*</span><small class="text-muted fst-italic ms-2">(e.g. Tenant, Pending Purchaser, Municipality, etc)</small>  </label>
-                    <input id="objector_stat" class="form-control rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Objector_Status">
-                </div>
-            </div>
-        </div>
-
-        <div class="Div1-3">
-            <br />
-              
-            <div class="obj-section-bar">
-                <span class="obj-bar-num">1.3</span>
-                <span style="font-weight: bold; color: white; font-size: 16px; text-transform: uppercase; letter-spacing: 0.5px;">AUTHORISED REPRESENTATIVE OF THE @partyUpper</span>
-            </div>
-            <div class="col-sm-12">
-                <label class="form-label fw-semibold  text-dark"> NAME OF REPRESENTATIVE <span style="color: red;">*</span> </label>
-                <input class="form-control rounded shadow-sm px-4 py-2" id="rep_name" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Representative_name">
-
-            </div>
-            <br></br>
-
             
-            <div class="obj-section-bar">
+      
+       
+                <div class="obj-section-bar">
+               
+                    <span >CONTACT DETAILS</span>
+                  </div>
+               
+              
+                <div class="alert-notice">
+                    <div class="instruction-box">
+                        <p>
+                            <span class="bullet">•</span>
+                            <span id="obj_cd_invalid"><strong>Please fill in at least one of the contact details fields.</strong></span>
+                        </p>
+                        <p>
+                            <span class="bullet">•</span>
+                            <span><strong>Please ensure that all contact details provided are valid, accurate</strong></span>
+                        </p>
+                    </div>
+
+                </div>
+                <div class="row mb-2">
+                    <div class="col-sm-6">
+                        <label class="form-label fw-semibold  text-dark"> HOME TELEPHONE <span style="color: red;">*</span></label>
+                        <input  id="obj_cd_1" class="form-control rounded shadow-sm px-4 py-2" maxlength="13" onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;" asp-for="Objector_Home" placeholder="0112345678">
+
+                    </div>
+                      <div class="col-sm-6">
+                           <label class="form-label fw-semibold  text-dark"> WORK TELEPHONE<span style="color: red;">*</span></label>
+                             <input  id="obj_cd_2" class="form-control rounded shadow-sm px-4 py-2" maxlength="13"  onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;" asp-for="Objector_Work" placeholder="0112345678">
+
+                      </div>
+                        <div class="col-sm-6">
+                              <label class="form-label fw-semibold  text-dark"> CELL <span style="color: red;">*</span></label>
+                             <input  id="obj_cd_3" class="form-control rounded shadow-sm px-4 py-2" maxlength="13"  onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;" asp-for="Objector_Cell" placeholder="0712345678">
+
+                        </div>
+                          <div class="col-sm-6">
+                               <label class="form-label fw-semibold  text-dark"> FAX </label>
+                        <input  id="obj_cd_4" class="form-control rounded shadow-sm px-4 py-2" maxlength="13" onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;" asp-for="Objector_Fax" placeholder="0112345678">
+ 
+                          </div>
+                           <div class="col-sm-12">
+                                 <label class="form-label fw-semibold  text-dark">E-MAIL ADDRESS <span style="color: red;">*</span></label>
+                        <input  id="obj_cd_5" class="form-control rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Objector_Email" placeholder="@(_isAppeal ? "appeal@mail.com" : "objection@mail.com")">
+
+                           </div>
+                          <div class="col-sm-12">
+                               <label class="form-label fw-semibold  text-dark"> <span id="tp_status">STATUS OF @partyUpper</span><span style="color: red;">*</span><small class="text-muted fst-italic ms-2">(e.g. Tenant, Pending Purchaser, Municipality, etc)</small>  </label>
+                                 <input  id="objector_stat"  class="form-control rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Objector_Status">
+                          </div>
+                </div>
+          </div>
+
+            <div class="Div1-3">  
+              <br/>
+              
+                <div class="obj-section-bar">
+                    <span class="obj-bar-num">1.3</span>
+                    <span style="font-weight: bold; color: white; font-size: 16px; text-transform: uppercase; letter-spacing: 0.5px;">AUTHORISED REPRESENTATIVE OF THE @partyUpper</span>
+                  </div>
+                 <div class="col-sm-12">
+                     <label class="form-label fw-semibold  text-dark"> NAME OF REPRESENTATIVE <span style="color: red;">*</span> </label>
+                     <input  class="form-control rounded shadow-sm px-4 py-2" id="rep_name" maxlength="80"  type="text" onpaste="return false;" ondrop="return false;" asp-for="Representative_name">
+
+                    </div>
+                    <br/>
+            
+
+                <div class="obj-section-bar">
                     
-                <span style="font-weight: bold; font-size: 16px; color:white; text-transform: uppercase; letter-spacing: 0.5px;">POSTAL ADDRESS OF REPRESENTATIVE</span>
-            </div>
+                    <span style="font-weight: bold; font-size: 16px; color:white; text-transform: uppercase; letter-spacing: 0.5px;">POSTAL ADDRESS OF REPRESENTATIVE</span>
+                  </div>
 
-            <div class="row mb-2">
+                <div class="row mb-2">
                   
-                <div class="col-sm-3">
-                    <label class="form-label fw-semibold  text-dark"> STREET NUMBER <span style="color: red;">*</span></label>
-                    <input id="rep_p_1" class="form-control rounded shadow-sm px-4 py-2" maxlength="10" type="text" onpaste="return false;" ondrop="return false;" asp-for="Rep_Postal_1">
+                     <div class="col-sm-3">
+                        <label class="form-label fw-semibold  text-dark"> STREET NUMBER <span style="color: red;">*</span></label>
+                      <input  id="rep_p_1" class="form-control rounded shadow-sm px-4 py-2" maxlength="10" type="text" onpaste="return false;" ondrop="return false;" asp-for="Rep_Postal_1">
 
+                     </div>
+                      <div class="col-sm-9">
+                        <label class="form-label fw-semibold  text-dark"> STREET NAME <span style="color: red;">*</span></label>
+                      <input  id="rep_p_2" class="form-control rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Rep_Postal_2">
+
+                      </div>
+                       <div class="col-sm-12">
+                        <label class="form-label fw-semibold  text-dark"> SUBURB NAME<span style="color: red;">*</span></label>
+                        <input  id="rep_p_3" class="form-control rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Rep_Postal_3">
+
+                       </div>
+                        <div class="col-sm-9">
+                            <label class="form-label fw-semibold  text-dark"> TOWN NAME <span style="color: red;">*</span></label>
+                            <input  id="rep_p_4" class="form-control rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Rep_Postal_4">
+
+                        </div>
+                        <div class="col-sm-3">
+                               <label class="form-label fw-semibold  text-dark"> POSTAL CODE <span style="color: red;">*</span></label>
+                            <input  id="rep_p_5" class="form-control rounded shadow-sm px-4 py-2" maxlength="10" type="text" onpaste="return false;" ondrop="return false;" asp-for="Rep_Postal_5">
+
+                        </div>
                 </div>
-                <div class="col-sm-9">
-                    <label class="form-label fw-semibold  text-dark"> STREET NAME <span style="color: red;">*</span></label>
-                    <input id="rep_p_2" class="form-control rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Rep_Postal_2">
-
-                </div>
-                <div class="col-sm-12">
-                    <label class="form-label fw-semibold  text-dark"> SUBURB NAME<span style="color: red;">*</span></label>
-                    <input id="rep_p_3" class="form-control rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Rep_Postal_3">
-
-                </div>
-                <div class="col-sm-9">
-                    <label class="form-label fw-semibold  text-dark"> TOWN NAME <span style="color: red;">*</span></label>
-                    <input id="rep_p_4" class="form-control rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Rep_Postal_4">
-
-                </div>
-                <div class="col-sm-3">
-                    <label class="form-label fw-semibold  text-dark"> POSTAL CODE <span style="color: red;">*</span></label>
-                    <input id="rep_p_5" class="form-control rounded shadow-sm px-4 py-2" maxlength="10" type="text" onpaste="return false;" ondrop="return false;" asp-for="Rep_Postal_5">
-
-                </div>
-            </div>
-
              
                 
-            <br></br>
-             
-            <div class="obj-section-bar">
-                   
-                <span>CONTACT DETAILS</span>
-            </div>
-            @*  <div class="text-danger fw-semibold small mt-1" id="rep_cd_invalid">
-                    Please fill in at least one of the contact details fields.
-                </div>
- *@
-            <div class="alert-notice">
-                <div class="instruction-box">
-                    <p>
-                        <span class="bullet">•</span>
-                        <span id="rep_cd_invalid"><strong>Please fill in at least one of the contact details fields.</strong></span>
-                    </p>
-                    <p>
-                        <span class="bullet">•</span>
-                        <span><strong>Please ensure that all contact details provided are valid, accurate</strong></span>
-                    </p>
-                </div>
-
-            </div>
-
-            <div class="row mb-2">
-                <div class="col-sm-6">
-                    <label class="form-label fw-semibold  text-dark"> HOME TELEPHONE <span style="color: red;">*</span></label>
-                    <input id="rep_cd_1" class="form-control rounded shadow-sm px-4 py-2" maxlength="13" onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;" asp-for="Rep_Home_Phone" placeholder="0112345678">
-
-                </div>
-                <div class="col-sm-6">
-                    <label class="form-label fw-semibold  text-dark"> WORK TELEPHONE<span style="color: red;">*</span></label>
-                    <input id="rep_cd_2" class="form-control rounded shadow-sm px-4 py-2" maxlength="13" onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;" asp-for="Rep_Work_Phone" placeholder="0112345678">
-
-                </div>
-                <div class="col-sm-6">
-                          
-                    <label class="form-label fw-semibold  text-dark"> CELL<span style="color: red;">*</span> </label>
-                    <input id="rep_cd_3" class="form-control rounded shadow-sm px-4 py-2" maxlength="13" onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;" asp-for="Rep_Cell_Phone" placeholder="0712345678">
-
-                </div>
-                <div class="col-sm-6">
-                    <label class="form-label fw-semibold  text-dark"> FAX </label>
-                    <input id="rep_cd_4" class="form-control rounded shadow-sm px-4 py-2" maxlength="13" onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;" asp-for="Rep_Fax_Phone" placeholder="0112345678">
- 
-                </div>
-                <div class="col-sm-12">
-                    <label class="form-label fw-semibold  text-dark">E-MAIL ADDRESS <span style="color: red;">*</span></label>
-                    <input id="rep_cd_5" class="form-control rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Rep_Email" placeholder="objectionRep@mail.com"><br />
-
-                </div>
-            </div>
-
-               
-            <div class="card mt-4" style="background: white; border: 2px solid #e6b000; border-radius: 10px; padding: 25px; margin-bottom: 30px; box-shadow: 0 2px 10px rgba(0, 101, 112, 0.1);">
-                <div class="card-body">
-                    <h5 style="font-size: 18px; font-weight: 700; color: #006570; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 0.5px;">
-                        If a representative is appointed, proof of authorisation must be attached to this form
-                    </h5>
-        
-                    <h6 style="font-size: 16px; font-weight: 600; color: #006570; margin-bottom: 15px;">Upload Letter</h6>
-        
-                    <div style="background: #fff3cd; border: 2px solid #e6b000; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
-                        <strong style="color: #006570;">Note:</strong>
-                        <span style="color: #333;">The document must be in <b>PDF format</b> and not exceed <b>10 MB</b> in size.</span>
-                    </div>
-        
-                    <div class="form-group">
-                        <label for="fileR" style="font-weight: 600; color: #006570; font-size: 14px; margin-bottom: 8px; display: block;">Upload PDF Document</label>
-                        <input class="form-control-file" style="padding: 10px; border: 2px solid #006570; border-radius: 5px; background: white; font-family: 'Poppins', sans-serif;" type="file" id="fileR" name="fileR" accept=".pdf" />
-                    </div>
-                </div>
-            </div>
-
-        </div>
+                
            
-        <div>
-            <br />
+             
+                <div class="obj-section-bar">
+                   
+                    <span >CONTACT DETAILS</span>
+                  </div>
+            
+                <div class="alert-notice">
+                    <div class="instruction-box">
+                        <p>
+                            <span class="bullet">•</span>
+                            <span id="rep_cd_invalid"><strong>Please fill in at least one of the contact details fields.</strong></span>
+                        </p>
+                        <p>
+                            <span class="bullet">•</span>
+                            <span><strong>Please ensure that all contact details provided are valid, accurate</strong></span>
+                        </p>
+                    </div>
+
+                </div>
+
+                <div class="row mb-2">
+                    <div class="col-sm-6">
+                         <label class="form-label fw-semibold  text-dark"> HOME TELEPHONE <span style="color: red;">*</span></label>
+                        <input  id="rep_cd_1" class="form-control rounded shadow-sm px-4 py-2" maxlength="13" onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;" asp-for="Rep_Home_Phone" placeholder="0112345678">
+
+                    </div>
+                    <div class="col-sm-6">
+                    <label class="form-label fw-semibold  text-dark"> WORK TELEPHONE<span style="color: red;">*</span></label>
+                        <input  id="rep_cd_2" class="form-control rounded shadow-sm px-4 py-2" maxlength="13" onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;" asp-for="Rep_Work_Phone" placeholder="0112345678">
+
+                    </div>
+                    <div class="col-sm-6">
+                          
+                <label class="form-label fw-semibold  text-dark"> CELL<span style="color: red;">*</span> </label>
+                    <input  id="rep_cd_3" class="form-control rounded shadow-sm px-4 py-2" maxlength="13"  onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;" asp-for="Rep_Cell_Phone"placeholder="0712345678">
+
+                    </div>
+                    <div class="col-sm-6">
+                         <label class="form-label fw-semibold  text-dark"> FAX </label>
+                        <input  id="rep_cd_4" class="form-control rounded shadow-sm px-4 py-2" maxlength="13" onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;" asp-for="Rep_Fax_Phone" placeholder="0112345678">
+ 
+                    </div>
+                    <div class="col-sm-12">
+                         <label class="form-label fw-semibold  text-dark">E-MAIL ADDRESS <span style="color: red;">*</span></label>
+                        <input  id="rep_cd_5" class="form-control rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Rep_Email" placeholder="objectionRep@mail.com"><br />
+
+                    </div>
+                </div>
+               
+        
+                <div class="card mt-4" style="background: white; border: 2px solid #e6b000; border-radius: 10px; padding: 25px; margin-bottom: 30px; box-shadow: 0 2px 10px rgba(0, 101, 112, 0.1);">
+                    <div class="card-body">
+                        <h5 style="font-size: 18px; font-weight: 700; color: #006570; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 0.5px;">
+                            If a representative is appointed, proof of authorisation must be attached to this form
+                        </h5>
+        
+                        <h6 style="font-size: 16px; font-weight: 600; color: #006570; margin-bottom: 15px;">Upload Letter</h6>
+        
+                        <div style="background: #fff3cd; border: 2px solid #e6b000; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+                            <strong style="color: #006570;">Note:</strong> 
+                            <span style="color: #333;">The document must be in <b>PDF format</b> and not exceed <b>10 MB</b> in size.</span>
+                        </div>
+        
+                        <div class="form-group">
+                            <label for="fileR" style="font-weight: 600; color: #006570; font-size: 14px; margin-bottom: 8px; display: block;">Upload PDF Document</label>
+                            <input class="form-control-file" style="padding: 10px; border: 2px solid #006570; border-radius: 5px; background: white; font-family: 'Poppins', sans-serif;" type="file" id="fileR" name="fileR" accept=".pdf" />
+                        </div>
+                    </div>
+                </div>
+
+          </div>
+           
+          <div>
+                <br />
             <a href="javascript:history.back()" id="form_back" class="form_back btn obj-nav-btn obj-nav-btn-prev">
                 <i class="fa-solid fa-arrow-left"></i> <strong>Back</strong>
-            </a>
+            </a>            
 
-            <button type="button" class="btn_n2 btn obj-nav-btn obj-nav-btn-next"><strong>Next</strong></button>
+                <button type="button" class="btn_n1 btn obj-nav-btn obj-nav-btn-next"><strong>Next</strong></button>
         </div>
             
+        </div>
     </div>
-</div>
-
-
     @*-----------------------------------------------------------------SECTION 2 -----------------------------------------------------------*@
-
-      <div id="section2" style="display:flex;justify-content: center;">
+    <div id="section2" style="display:flex;justify-content: center;">
 
     <div class="div2 obj-form-card">
         <div style="width: 100%; margin: 20px 0; padding: 10px 0; position: relative;">
@@ -1044,769 +1104,765 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
     </div>
 
 </div>
+    @*-----------------------------------------------------------------SECTION 3 RESIDENTIAL------------------------------------------------*@
+   <div id="section3-res" style="display:flex;justify-content: center;">
 
-    @*-----------------------------------------------------------------SECTION 3 RESIDENTIAL-----------------------------------------------------------*@
+        <div class="div3_R obj-form-card">
+          <div style="width: 100%; margin: 20px 0; padding: 10px 0; position: relative;">
 
-      <div id="section3-res" style="display:flex;justify-content: center;">
-
-    <div class="div3_R obj-form-card">
-        <div style="width: 100%; margin: 20px 0; padding: 10px 0; position: relative;">
-
-            <h4 class="obj-section-title" id="s_head"><strong>SECTION 3: DESCRIPTION OF RESIDENTIAL DWELLING (FOR SECTIONAL TITLES SEE SECTION 4)</strong></h4>
-            <div class="obj-step-divider">
-                <div class="line"></div>
-                <div class="dot"></div>
-                <div class="line"></div>
-            </div>
-        </div>
+                <h4 class="obj-section-title" id="s_head"><strong>SECTION 3: DESCRIPTION OF RESIDENTIAL DWELLING (FOR SECTIONAL TITLES SEE SECTION 4)</strong></h4>
+                 <div class="obj-step-divider">
+                    <div class="line"></div>
+                    <div class="dot"></div>
+                    <div class="line"></div>
+                </div>
+          </div>
 
           
-        <div class="obj-section-bar">
-            <span class="obj-bar-num">3.1</span>
-            <span>MAIN DWELLING</span>
-        </div>
-        <div class="row mb-2">
-            <div class="col-sm-6">
-                <label class="form-label fw-semibold text-dark"> NO. OF BEDROOMS </label>
-                <input id="s3r" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" maxlength="3" asp-for="Res_No_of_Bedroom">
-            </div>
+                   <div class="obj-section-bar">
+                        <span class="obj-bar-num">3.1</span>
+                    <span >MAIN DWELLING</span>
+                  </div>
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <label class="form-label fw-semibold text-dark"> NO. OF BEDROOMS </label>
+                    <input  id="s3r" class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" maxlength="3" asp-for="Res_No_of_Bedroom">
+                </div>
                
-            <div class="col-sm-6">
-                <label class="form-label fw-semibold text-dark"> NO. OF BATHROOMS</label>
-                <input class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" maxlength="3" asp-for="Res_No_of_BathRoom">
+                <div class="col-sm-6">
+                    <label class="form-label fw-semibold text-dark"> NO. OF BATHROOMS</label>
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" maxlength="3" asp-for="Res_No_of_BathRoom">
+                </div>
             </div>
-        </div>
-        <br></br>
+            <br></br>
 
    
-        <div class="obj-section-bar">
+                  <div class="obj-section-bar">
                
-            <span style="font-weight: bold; font-size: 16px; color:white; text-transform: uppercase; letter-spacing: 0.5px;">STATE YES OR NO <small style="color:white;">(If Yes, indicate number of rooms)</small></span>
-        </div>
-
-        <div class="d-flex">
-            <fieldset class="col-md-4">
-                <label class="form-label fw-semibold text-dark"> KITCHEN </label>
-                <span>
-                    <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
-                        <input type="radio" name="k_res" class="form-check-input" onclick="show_res_kitchins()">
-                        Yes
-                    </label>
-                </span>
-                <span>
-                    <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
-                        <input type="radio" name="k_res" class="form-check-input" onclick="hide_res_kitchins()" asp-for="Res_Kitchen" value="No">
-                        No
-                    </label>
-                </span>
-                <div id="res_kitchins">
+                <span style="font-weight: bold; font-size: 16px; color:white; text-transform: uppercase; letter-spacing: 0.5px;">STATE YES OR NO <small style="color:white;">(If Yes, indicate number of rooms)</small></span>
+            </div>
+
+            <div class="d-flex">
+                <fieldset class="col-md-4">
+                    <label class="form-label fw-semibold text-dark"> KITCHEN </label>
+                    <span>
+                      <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
+                            <input type="radio" name="k_res" class="form-check-input" onclick="show_res_kitchins()">
+                            Yes
+                        </label>
+                    </span>
+                    <span>
+                        <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
+                            <input type="radio" name="k_res" class="form-check-input" onclick="hide_res_kitchins()" asp-for="Res_Kitchen" value="No">
+                            No
+                        </label>
+                    </span>
+                    <div id="res_kitchins">
 
-                    <select asp-for="Res_Kitchen">
+                        <select asp-for="Res_Kitchen">
 
-                        <option id="kitchen_one" selected>
+                            <option id="kitchen_one" selected>
 
-                        </option>
-                        <option id="kitchen_two">
+                            </option>
+                            <option id="kitchen_two">
 
-                        </option>
-                        <option id="kitchen_three">
+                            </option>
+                            <option id="kitchen_three">
 
-                        </option>
-                        <option id="kitchen_four">
+                            </option>
+                            <option id="kitchen_four">
 
-                        </option>
-                        <option id="kitchen_five">
-
-                        </option>
-                    </select>
-                </div>
-
-            </fieldset>
-
-            <fieldset class="col-md-4 px-3">
-                <label class="form-label fw-semibold text-dark" style="vertical-align:middle"> LOUNGE </label>
-                <span>
-                    <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
-                        <input type="radio" name="l_res" class="form-check-input" onclick="show_res_lounge()">
-                        Yes
-                    </label>
-                </span>
-                <span>
-                    <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
-                        <input type="radio" name="l_res" class="form-check-input" onclick="hide_res_lounge()" asp-for="Res_Lounge" value="No">
-                        No
-                    </label>
-                </span>
+                            </option>
+                            <option id="kitchen_five">
 
-                <div id="res_lounges">
+                            </option>
+                        </select>
+                    </div>
 
-                    <select asp-for="Res_Lounge">
+                </fieldset>
 
+                <fieldset class="col-md-4 px-3">
+                    <label class="form-label fw-semibold text-dark" style="vertical-align:middle"> LOUNGE </label>
+                    <span>
+                      <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
+                            <input type="radio" name="l_res" class="form-check-input" onclick="show_res_lounge()">
+                            Yes
+                        </label>
+                    </span>
+                    <span>
+                      <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
+                            <input type="radio" name="l_res" class="form-check-input" onclick="hide_res_lounge()" asp-for="Res_Lounge" value="No">
+                            No
+                        </label>
+                    </span>
 
-                        <option id="lounge_one" selected>
+                    <div id="res_lounges">
 
-                        </option>
-                        <option id="lounge_two">
+                        <select asp-for="Res_Lounge">
 
-                        </option>
-                        <option id="lounge_three">
 
-                        </option>
-                        <option id="lounge_four">
+                            <option id="lounge_one" selected>
 
-                        </option>
-                        <option id="lounge_five">
+                            </option>
+                            <option id="lounge_two">
 
-                        </option>
-                    </select>
-                </div>
-
-            </fieldset>
-
-
-            <fieldset class="col-md-4 px-0">
-                <label class="form-label fw-semibold text-dark" style="vertical-align:middle"> DINING ROOM </label>
-                <span>
-                    <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
-                        <input type="radio" name="d_res" class="form-check-input" onclick="show_res_dining_room()">
-                        Yes
-                    </label>
-                </span>
-                <span>
-                    <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
-                        <input type="radio" name="d_res" class="form-check-input" onclick="hide_res_dining_room()" asp-for="Res_Dinning_Room" value="No">
-                        No
-                    </label>
-                </span>
+                            </option>
+                            <option id="lounge_three">
 
-                <div id="res_dining_room">
+                            </option>
+                            <option id="lounge_four">
 
-                    <select asp-for="Res_Dinning_Room">
+                            </option>
+                            <option id="lounge_five">
 
+                            </option>
+                        </select>
+                    </div>
 
-                        <option id="dining_room_one" selected>
+                </fieldset>
 
-                        </option>
-                        <option id="dining_room_two">
 
-                        </option>
-                        <option id="dining_room_three">
+                <fieldset class="col-md-4 px-0">
+                    <label class="form-label fw-semibold text-dark" style="vertical-align:middle"> DINING ROOM </label>
+                    <span>
+                      <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
+                            <input type="radio" name="d_res" class="form-check-input" onclick="show_res_dining_room()">
+                            Yes
+                        </label>
+                    </span>
+                    <span>
+                      <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
+                            <input type="radio" name="d_res" class="form-check-input" onclick="hide_res_dining_room()" asp-for="Res_Dinning_Room" value="No">
+                            No
+                        </label>
+                    </span>
 
-                        </option>
-                        <option id="dining_room_four">
-
-                        </option>
-                        <option id="dining_room_five">
-
-                        </option>
-                    </select>
-                </div>
-            </fieldset>
+                    <div id="res_dining_room">
 
-        </div>
+                        <select asp-for="Res_Dinning_Room">
 
-        <div class="d-flex">
-            <fieldset class="col-md-4 mt-3">
-                <label class="form-label fw-semibold text-dark" style="vertical-align:middle"> LAUNDRY</label>
-                <span>
-                    <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
-                        <input type="radio" name="la_res" class="form-check-input" onclick="show_res_laundry()">
-                        Yes
-                    </label>
-                </span>
-                <span>
-                    <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
-                        <input type="radio" name="la_res" class="form-check-input" onclick="hide_res_laundry()" asp-for="Res_Laundry" value="No">
-                        No
-                    </label>
-                </span>
 
-                <div id="res_laundry">
+                            <option id="dining_room_one" selected>
 
-                    <select asp-for="Res_Laundry">
+                            </option>
+                            <option id="dining_room_two">
 
-                        <option id="laundry_one" selected>
+                            </option>
+                            <option id="dining_room_three">
 
-                        </option>
-                        <option id="laundry_two">
+                            </option>
+                            <option id="dining_room_four">
 
-                        </option>
-                        <option id="laundry_three">
+                            </option>
+                            <option id="dining_room_five">
 
-                        </option>
-                        <option id="laundry_four">
-
-                        </option>
-                        <option id="laundry_five">
-
-                        </option>
-                    </select>
-                </div>
-            </fieldset>
-
-
-
-            <fieldset class="col-md-4 mt-3 px-3">
-                <label class="form-label fw-semibold text-dark" style="vertical-align:middle"> STUDY</label>
-                <span>
-                    <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
-                        <input type="radio" name="s_res" class="form-check-input" onclick="show_res_study()">
-                        Yes
-                    </label>
-                </span>
-                <span>
-                    <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
-                        <input type="radio" name="s_res" class="form-check-input" onclick="hide_res_study()" asp-for="Res_Study" value="No">
-                        No
-                    </label>
-                </span>
-                <div id="res_study">
-
-                    <select asp-for="Res_Study">
-
-                        <option id="study_one" selected>
-
-                        </option>
-                        <option id="study_two">
-
-                        </option>
-                        <option id="study_three">
-
-                        </option>
-                        <option id="study_four">
-
-                        </option>
-                        <option id="study_five">
-
-                        </option>
-                    </select>
-                </div>
-            </fieldset>
-
-            <fieldset class="col-md-4 mt-3 px-0">
-                <label class="form-label fw-semibold text-dark" style="vertical-align:middle"> PLAYROOM</label>
-                <span>
-                    <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
-                        <input type="radio" name="p_res" class="form-check-input" onclick="show_res_playroom()">
-                        Yes
-                    </label>
-                </span>
-                <span>
-                    <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
-                        <input type="radio" name="p_res" class="form-check-input" onclick="hide_res_playroom()" asp-for="Res_Play_Room" value="No">
-                        No
-                    </label>
-                </span>
-
-                <div id="res_playroom">
-
-                    <select asp-for="Res_Play_Room">
-
-                        <option id="playroom_one" selected>
-
-                        </option>
-                        <option id="playroom_two">
-
-                        </option>
-                        <option id="playroom_three">
-
-                        </option>
-                        <option id="playroom_four">
-
-                        </option>
-                        <option id="playroom_five">
-
-                        </option>
-                    </select>
-                </div>
-            </fieldset>
-
-
-        </div>
-
-        <div class="d-flex">
-            <fieldset class="col-md-4 mt-3">
-                <label class="form-label fw-semibold text-dark" style="vertical-align:middle;"> TV ROOM</label>
-                <span>
-                    <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
-                        <input type="radio" name="tv_res" class="form-check-input" onclick="show_res_television()">
-                        Yes
-                    </label>
-                </span>
-                <span>
-                    <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
-                        <input type="radio" name="tv_res" class="form-check-input" onclick="hide_res_television()" asp-for="Res_Television" value="No">
-                        No
-                    </label>
-                </span>
-
-                <div id="res_television">
-
-                    <select asp-for="Res_Television">
-
-                        <option id="television_one" selected>
-
-                        </option>
-                        <option id="television_two">
-
-                        </option>
-                        <option id="television_three">
-
-                        </option>
-                        <option id="television_four">
-
-                        </option>
-                        <option id="television_five">
-
-                        </option>
-                    </select>
-                </div>
-            </fieldset>
-
-
-
-            <fieldset class="col-md-4 mt-3 mb-3 px-3">
-                <label class="form-label fw-semibold text-dark" style="vertical-align:middle"> SEPARATE TOILET</label>
-                <span>
-                    <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
-                        <input type="radio" name="st_res" class="form-check-input" onclick="show_res_separate_toilets()">
-                        Yes
-                    </label>
-                </span>
-                <span>
-                    <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
-                        <input type="radio" name="st_res" class="form-check-input" onclick="hide_res_separate_toilets()" asp-for="Res_Seperate_Toilet" value="No">
-                        No
-                    </label>
-                </span>
-
-                <div id="res_separate_toilets">
-
-                    <select asp-for="Res_Seperate_Toilet">
-
-                        <option id="separate_toilets_one" selected>
-
-                        </option>
-                        <option id="separate_toilets_two">
-
-                        </option>
-                        <option id="separate_toilets_three">
-
-                        </option>
-                        <option id="separate_toilets_four">
-
-                        </option>
-                        <option id="separate_toilets_five">
-
-                        </option>
-                    </select>
-                </div>
-            </fieldset>
-
-            <fieldset class="col-md-5 mt-3">
-                <label class="form-label fw-semibold text-dark" style="vertical-align:middle"> LOUNGE WITH DINING ROOM </label>
-                <span>
-                    <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
-                        <input type="radio" name="ld_res" class="form-check-input" onclick="show_res_lounge_dining_room()">
-                        Yes
-                    </label>
-                </span>
-                <span>
-                    <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
-                        <input type="radio" name="ld_res" class="form-check-input" onclick="hide_res_lounge_dining_room()" asp-for="Res_Lounge_Dining_Room" value="No">
-                        No
-                    </label>
-                </span>
-
-                <div id="res_lounge_dining_room">
-
-                    <select asp-for="Res_Lounge_Dining_Room">
-
-                        <option id="lounge_dining_room_one" selected>
-
-                        </option>
-                        <option id="lounge_dining_room_two">
-
-                        </option>
-                        <option id="lounge_dining_room_three">
-
-                        </option>
-                        <option id="lounge_dining_room_four">
-
-                        </option>
-                        <option id="lounge_dining_room_five">
-
-                        </option>
-                    </select>
-                </div>
-            </fieldset>
-        </div>
-
-
-        <div class="row mb-2">
-            <div class="col-sm-3">
-                <label class="form-label fw-semibold text-dark"> OTHER (1) </label>
-                <input class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" maxlength="80" asp-for="Res_Dwell_Other1">
+                            </option>
+                        </select>
+                    </div>
+                </fieldset>
 
             </div>
-            <div class="col-sm-3">
-                <label class="form-label fw-semibold text-dark">OTHER (2)   </label>
-                <input class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" maxlength="80" asp-for="Res_Dwell_Other2">
+
+            <div class="d-flex">
+                <fieldset class="col-md-4 mt-3">
+                    <label class="form-label fw-semibold text-dark" style="vertical-align:middle"> LAUNDRY</label>
+                    <span>
+                      <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
+                            <input type="radio" name="la_res" class="form-check-input" onclick="show_res_laundry()">
+                            Yes
+                        </label>
+                    </span>
+                    <span>
+                      <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
+                            <input type="radio" name="la_res" class="form-check-input" onclick="hide_res_laundry()" asp-for="Res_Laundry" value="No">
+                            No
+                        </label>
+                    </span>
+
+                    <div id="res_laundry">
+
+                        <select asp-for="Res_Laundry">
+
+                            <option id="laundry_one" selected>
+
+                            </option>
+                            <option id="laundry_two">
+
+                            </option>
+                            <option id="laundry_three">
+
+                            </option>
+                            <option id="laundry_four">
+
+                            </option>
+                            <option id="laundry_five">
+
+                            </option>
+                        </select>
+                    </div>
+                </fieldset>
+
+
+
+                <fieldset class="col-md-4 mt-3 px-3">
+                    <label class="form-label fw-semibold text-dark" style="vertical-align:middle"> STUDY</label>
+                    <span>
+                      <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
+                            <input type="radio" name="s_res" class="form-check-input" onclick="show_res_study()">
+                            Yes
+                        </label>
+                    </span>
+                    <span>
+                      <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
+                            <input type="radio" name="s_res" class="form-check-input" onclick="hide_res_study()" asp-for="Res_Study" value="No">
+                            No
+                        </label>
+                    </span>
+                    <div id="res_study">
+
+                        <select asp-for="Res_Study">
+
+                            <option id="study_one" selected>
+
+                            </option>
+                            <option id="study_two">
+
+                            </option>
+                            <option id="study_three">
+
+                            </option>
+                            <option id="study_four">
+
+                            </option>
+                            <option id="study_five">
+
+                            </option>
+                        </select>
+                    </div>
+                </fieldset>
+
+                <fieldset class="col-md-4 mt-3 px-0">
+                    <label class="form-label fw-semibold text-dark" style="vertical-align:middle"> PLAYROOM</label>
+                    <span>
+                      <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
+                            <input type="radio" name="p_res" class="form-check-input" onclick="show_res_playroom()">
+                            Yes
+                        </label>
+                    </span>
+                    <span>
+                      <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
+                            <input type="radio" name="p_res" class="form-check-input" onclick="hide_res_playroom()" asp-for="Res_Play_Room" value="No">
+                            No
+                        </label>
+                    </span>
+
+                    <div id="res_playroom">
+
+                        <select asp-for="Res_Play_Room">
+
+                            <option id="playroom_one" selected>
+
+                            </option>
+                            <option id="playroom_two">
+
+                            </option>
+                            <option id="playroom_three">
+
+                            </option>
+                            <option id="playroom_four">
+
+                            </option>
+                            <option id="playroom_five">
+
+                            </option>
+                        </select>
+                    </div>
+                </fieldset>
+
 
             </div>
-            <div class="col-sm-3">
-                <label class="form-label fw-semibold text-dark"> OTHER (3)  </label>
-                <input class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" maxlength="80" asp-for="Res_Dwell_Other3">
 
-            </div>
-            <div class="col-sm-3">
-                <label class="form-label fw-semibold text-dark">OTHER (4)  </label>
-                <input class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" maxlength="80" asp-for="Res_Dwell_Other4">
+            <div class="d-flex">
+                <fieldset class="col-md-4 mt-3">
+                    <label class="form-label fw-semibold text-dark" style="vertical-align:middle;"> TV ROOM</label>
+                    <span>
+                      <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
+                            <input type="radio" name="tv_res" class="form-check-input" onclick="show_res_television()">
+                            Yes
+                        </label>
+                    </span>
+                    <span>
+                      <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
+                            <input type="radio" name="tv_res" class="form-check-input" onclick="hide_res_television()" asp-for="Res_Television" value="No">
+                            No
+                        </label>
+                    </span>
 
+                    <div id="res_television">
+
+                        <select asp-for="Res_Television">
+
+                            <option id="television_one" selected>
+
+                            </option>
+                            <option id="television_two">
+
+                            </option>
+                            <option id="television_three">
+
+                            </option>
+                            <option id="television_four">
+
+                            </option>
+                            <option id="television_five">
+
+                            </option>
+                        </select>
+                    </div>
+                </fieldset>
+
+
+
+                <fieldset class="col-md-4 mt-3 mb-3 px-3">
+                    <label class="form-label fw-semibold text-dark" style="vertical-align:middle"> SEPARATE TOILET</label>
+                    <span>
+                      <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
+                            <input type="radio" name="st_res" class="form-check-input" onclick="show_res_separate_toilets()">
+                            Yes
+                        </label>
+                    </span>
+                    <span>
+                      <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
+                            <input type="radio" name="st_res" class="form-check-input" onclick="hide_res_separate_toilets()" asp-for="Res_Seperate_Toilet" value="No">
+                            No
+                        </label>
+                    </span>
+
+                    <div id="res_separate_toilets">
+
+                        <select asp-for="Res_Seperate_Toilet">
+
+                            <option id="separate_toilets_one" selected>
+
+                            </option>
+                            <option id="separate_toilets_two">
+
+                            </option>
+                            <option id="separate_toilets_three">
+
+                            </option>
+                            <option id="separate_toilets_four">
+
+                            </option>
+                            <option id="separate_toilets_five">
+
+                            </option>
+                        </select>
+                    </div>
+                </fieldset>
+
+                <fieldset class="col-md-5 mt-3">
+                    <label class="form-label fw-semibold text-dark" style="vertical-align:middle"> LOUNGE WITH DINING ROOM </label>
+                    <span>
+                      <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
+                            <input type="radio" name="ld_res" class="form-check-input" onclick="show_res_lounge_dining_room()">
+                            Yes
+                        </label>
+                    </span>
+                    <span>
+                      <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
+                            <input type="radio" name="ld_res" class="form-check-input" onclick="hide_res_lounge_dining_room()" asp-for="Res_Lounge_Dining_Room" value="No">
+                            No
+                        </label>
+                    </span>
+
+                    <div id="res_lounge_dining_room">
+
+                        <select asp-for="Res_Lounge_Dining_Room">
+
+                            <option id="lounge_dining_room_one" selected>
+
+                            </option>
+                            <option id="lounge_dining_room_two">
+
+                            </option>
+                            <option id="lounge_dining_room_three">
+
+                            </option>
+                            <option id="lounge_dining_room_four">
+
+                            </option>
+                            <option id="lounge_dining_room_five">
+
+                            </option>
+                        </select>
+                    </div>
+                </fieldset>
             </div>
-        </div>
-        <br></br>
+
+
+            <div class="row mb-2">
+                <div class="col-sm-3">
+                    <label class="form-label fw-semibold text-dark"> OTHER (1) </label>
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" maxlength="80" asp-for="Res_Dwell_Other1">
+
+                </div>
+                <div class="col-sm-3">
+                    <label class="form-label fw-semibold text-dark">OTHER (2)   </label>
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" maxlength="80" asp-for="Res_Dwell_Other2">
+
+                </div>
+                <div class="col-sm-3">
+                    <label class="form-label fw-semibold text-dark"> OTHER (3)  </label>
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" maxlength="80" asp-for="Res_Dwell_Other3">
+
+                </div>
+                <div class="col-sm-3">
+                    <label class="form-label fw-semibold text-dark">OTHER (4)  </label>
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" maxlength="80" asp-for="Res_Dwell_Other4">
+
+                </div>
+            </div>
+            <br></br>
 
           
-        <div class="obj-section-bar">
-            <span class="obj-bar-num">3.2</span>
-            <span style="font-weight: bold; font-size: 16px; color:white; : uppercase; letter-spacing: 0.5px;">OUTBUILDING</span>
-        </div>
+            <div class="obj-section-bar">
+                <span class="obj-bar-num">3.2</span>
+                    <span style="font-weight: bold; font-size: 16px; color:white; : uppercase; letter-spacing: 0.5px;">OUTBUILDING</span>
+           </div>
 
-        <div class="row mb-2">
-            <div class="col-sm-4">
-                <label class="form-label fw-semibold text-dark"> NO. OF GARAGES </label>
-                <input class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" maxlength="3" asp-for="Res_No_of_Garages">
+            <div class="row mb-2">
+                <div class="col-sm-4">
+                    <label class="form-label fw-semibold text-dark"> NO. OF GARAGES </label>
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" maxlength="3" asp-for="Res_No_of_Garages">
+
+                </div>
+                <div class="col-sm-4">
+                    <label class="form-label fw-semibold text-dark"> GRANNY FLAT/ROOMS </label>
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" maxlength="80" asp-for="Res_Granny_Room">
+
+                </div>
+
+                <div class="col-sm-4">
+                    <label class="form-label fw-semibold text-dark"> SIZE OF MAIN DWELLING<small class="text-muted fst-italic ms-2">(m²)</small></label>
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" maxlength="6" asp-for="Res_Main_Dwelling_Size">
+
+                </div>
 
             </div>
-            <div class="col-sm-4">
-                <label class="form-label fw-semibold text-dark"> GRANNY FLAT/ROOMS </label>
-                <input class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" maxlength="80" asp-for="Res_Granny_Room">
+
+            <div class="col-sm-12">
+                <label class="form-label fw-semibold text-dark"> OTHER</label>
+                <input  class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" maxlength="80" asp-for="Res_Outbuild_Other">
 
             </div>
-
-            <div class="col-sm-4">
-                <label class="form-label fw-semibold text-dark"> SIZE OF MAIN DWELLING<small class="text-muted fst-italic ms-2">(m²)</small></label>
-                <input class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" maxlength="6" asp-for="Res_Main_Dwelling_Size">
-
-            </div>
-
-        </div>
-
-        <div class="col-sm-12">
-            <label class="form-label fw-semibold text-dark"> OTHER</label>
-            <input class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" maxlength="80" asp-for="Res_Outbuild_Other">
-
-        </div>
            
-        <div class="row mb-2">
-            <div class="col-sm-4">
-                <label class="form-label fw-semibold text-dark"> SIZE OF OUTBUILDING <small class="text-muted fst-italic ms-2">(m²)</small></label>
-                <input class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" maxlength="6" asp-for="Res_Outside_Building_Size">
+            <div class="row mb-2">
+                <div class="col-sm-4">
+                    <label class="form-label fw-semibold text-dark"> SIZE OF OUTBUILDING <small class="text-muted fst-italic ms-2">(m²)</small></label>
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" maxlength="6" asp-for="Res_Outside_Building_Size">
 
+                </div>
+                <div class="col-sm-4">
+                    <label class="form-label fw-semibold text-dark"> SIZE OF OTHER BUILDING <small class="text-muted fst-italic ms-2">(m²)</small></label>
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" maxlength="6" asp-for="Res_Other_Building_Size">
+
+                </div>
+                <div class="col-sm-4">
+                    <label class="form-label fw-semibold text-dark"> TOTAL SIZE OF ALL BUILDINGS <small class="text-muted fst-italic ms-2">(m²)</small></label>
+                    <input  class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" maxlength="6" asp-for="Res_Total_Building_Size">
+
+                </div>
             </div>
-            <div class="col-sm-4">
-                <label class="form-label fw-semibold text-dark"> SIZE OF OTHER BUILDING <small class="text-muted fst-italic ms-2">(m²)</small></label>
-                <input class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" maxlength="6" asp-for="Res_Other_Building_Size">
 
-            </div>
-            <div class="col-sm-4">
-                <label class="form-label fw-semibold text-dark"> TOTAL SIZE OF ALL BUILDINGS <small class="text-muted fst-italic ms-2">(m²)</small></label>
-                <input class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" maxlength="6" asp-for="Res_Total_Building_Size">
-
-            </div>
-        </div>
-
-        <br></br>
+            <br></br>
 
            
-        <div class="obj-section-bar">
-            <span class="obj-bar-num">3.3</span>
-            <span>OTHER BUILDINGS <small style="color:white;">(ATTACH ANNEXURE)</small></span>
-        </div>
-
-        <div class="d-flex">
-            <fieldset class="col-md-4 mt-3">
-                <label class="form-label fw-semibold text-dark" style="vertical-align:middle">SWIMMING POOL</label>
-                <span>
-                    <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
-                        <input type="radio" class="form-check-input" asp-for="Res_Swimming_Pool" value="Yes">
-                        Yes
-                    </label>
-                </span>
-                <span>
-                    <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
-                        <input type="radio" class="form-check-input" asp-for="Res_Swimming_Pool" value="No">
-                        No
-                    </label>
-                </span>
-            </fieldset>
-
-            <fieldset class="col-md-3 mt-3">
-                <label class="form-label fw-semibold text-dark" style="vertical-align:middle">BORE HOLE</label>
-                <span>
-                    <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
-                        <input type="radio" class="form-check-input" asp-for="Res_Bore_Hole" value="Yes">
-                        Yes
-                    </label>
-                </span>
-                <span>
-                    <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
-                        <input type="radio" class="form-check-input" asp-for="Res_Bore_Hole" value="No">
-                        No
-                    </label>
-                </span>
-            </fieldset>
-
-
-            <fieldset class="col-md-4 mt-3">
-                <label class="form-label fw-semibold text-dark" style="vertical-align:middle">TENNIS COURT</label>
-                <span>
-                    <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
-                        <input type="radio" class="form-check-input" asp-for="Res_Tennis_Court" value="Yes">
-                        Yes
-                    </label>
-                </span>
-                <span>
-                    <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
-                        <input type="radio" class="form-check-input" asp-for="Res_Tennis_Court" value="No">
-                        No
-                    </label>
-                </span>
-            </fieldset>
-        </div>
-
-        <div class="d-flex">
-            <fieldset class="col-md-5 mb-3 mt-3">
-                <label class="form-label fw-semibold text-dark" style="vertical-align:middle">GARDEN</label>
-                <span>
-                    <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
-                        <input type="radio" class="form-check-input" asp-for="Res_Garden" value="Good">
-                        GOOD
-                    </label>
-                </span>
-                <span>
-                    <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
-                        <input type="radio" class="form-check-input" asp-for="Res_Garden" value="Average">
-                        AVERAGE
-                    </label>
-                </span>
-
-                <span>
-                    <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
-                        <input type="radio" class="form-check-input" asp-for="Res_Garden" value="Poor">
-                        POOR
-                    </label>
-                </span>
-            </fieldset>
-        </div>
-
-        <div class="row mb-2">
-            <div class="col-sm-6">
-                <label class="form-label fw-semibold text-dark"> OTHER (1) </label>
-                <input class="form-control" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Res_other_dwell1">
+            <div class="obj-section-bar">
+                <span class="obj-bar-num">3.3</span>
+                    <span >OTHER BUILDINGS <small style="color:white;">(ATTACH ANNEXURE)</small></span>
             </div>
-            <div class="col-sm-6">
-                <label class="form-label fw-semibold text-dark"> OTHER (2) </label>
-                <input class="form-control" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Res_other_dwell2">
 
-            </div>
-        </div>
-
-        <div class="d-flex">
-            <fieldset class="col-md-3 mt-3">
-                <label class="form-label fw-semibold text-dark" style="vertical-align:middle">FENCING</label>
-                <span>
-                    <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
-                        <input type="radio" class="form-check-input" asp-for="Res_Fence" value="Yes">
-                        Yes
-                    </label>
-                </span>
-                <span>
-                    <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
-                        <input type="radio" class="form-check-input" asp-for="Res_Fence" value="No">
-                        No
-                    </label>
-                </span>
-            </fieldset>
-        </div>
-
-        <div id="fence_table" style="display: none">
-            <table class="table table-bordered table-hover mt-3">
-                <thead class="thead-light">
-                    <tr>
-                        <th scope="col" class="col-1">
-                            FENCING&nbsp;&nbsp;
-                        </th>
-                        <th scope="col" class="col-1">
-                            FRONT
-                        </th>
-                        <th scope="col" class="col-1">
-                            BACK
-                        </th>
-                        <th scope="col" class="col-1">
-                            SIDE 1
-                        </th>
-                        <th scope="col" class="col-1">
-                            SIDE 2
-                        </th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <th scope="row">
-                            Type
-                        </th>
-                        <td>
-                            <input style="border:none;" placeholder="e.g. Wood, Masonry" asp-for="Res_Fence_Front" maxlength="30" onpaste="return false;" ondrop="return false;" />
-                        </td>
-                        <td>
-                            <input style="border:none;" placeholder="e.g. Wood, Masonry" asp-for="Res_Fence_Back" maxlength="30" onpaste="return false;" ondrop="return false;" />
-                        </td>
-                        <td>
-                            <input style="border:none;" placeholder="e.g. Wood, Masonry" asp-for="Res_Fence_Side_1" maxlength="30" onpaste="return false;" ondrop="return false;" />
-                        </td>
-                        <td>
-                            <input style="border:none;" placeholder="e.g. Wood, Masonry" asp-for="Res_Fence_Side_2" maxlength="30" onpaste="return false;" ondrop="return false;" />
-                        </td>
-                    </tr>
-                    <tr>
-                        <th scope="row">
-                            Height (CM)
-                        </th>
-                        <td>
-                            <input style="border:none;" asp-for="Res_Fence_Height_Front" onpaste="return false;" maxlength="4" ondrop="return false;" onkeypress="return onlyNumberKey(event)" />
-                        </td>
-                        <td>
-                            <input style="border:none;" asp-for="Res_Fence_Height_Back" onpaste="return false;" maxlength="4" ondrop="return false;" onkeypress="return onlyNumberKey(event)" />
-                        </td>
-                        <td>
-                            <input style="border:none;" asp-for="Res_Fence_Height_Side1" onpaste="return false;" maxlength="4" ondrop="return false;" onkeypress="return onlyNumberKey(event)" />
-                        </td>
-                        <td>
-                            <input style="border:none;" asp-for="Res_Fence_Height_Side2" onpaste="return false;" maxlength="4" ondrop="return false;" onkeypress="return onlyNumberKey(event)" />
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-        <script>
-                        document.addEventListener("DOMContentLoaded", function () {
-                            const yesRadio = document.querySelector('input[name="Res_Fence"][value="Yes"]');
-                            const noRadio = document.querySelector('input[name="Res_Fence"][value="No"]');
-                            const fenceTable = document.getElementById("fence_table");
-
-                            function toggleFenceTable() {
-                                if (yesRadio.checked) {
-                                    fenceTable.style.display = "block";
-                                } else {
-                                    fenceTable.style.display = "none";
-                                }
-                            }
-
-                            yesRadio.addEventListener("change", toggleFenceTable);
-                            noRadio.addEventListener("change", toggleFenceTable);
-
-                            // Run once on page load to handle pre-filled data
-                            toggleFenceTable();
-                        });
-        </script>
-
-        <div class="col-sm-12">
-            <label class="form-label fw-semibold text-dark">  DRIVEWAY<small class="text-muted fst-italic d-block">((e.g. Bricks, pavers))</small>  </label>
-            <input class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="50" type="text" onpaste="return false;" ondrop="return false;" asp-for="Res_Drive_Way">
-        </div>
-
-
-        <div class="d-flex mb-3">
-            <fieldset class="col-md-6 mt-3">
-                <label class="form-label fw-semibold text-dark" style="vertical-align:middle">IS YOUR PROPERTY SITUATED IN A BOOMED AREA OR SECURITY</label>
-                <span>
-                    <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
-                        <input type="radio" class="form-check-input" asp-for="Res_Security_Boomed_Area" value="Yes">
-                        Yes
-                    </label>
-                </span>
-                <span>
-                    <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
-                        <input type="radio" class="form-check-input" asp-for="Res_Security_Boomed_Area" value="No">
-                        No
-                    </label>
-                </span>
-            </fieldset>
-        </div>
-
-        <label class="form-label fw-semibold text-dark"> OTHER FEATURES: </label>
-        <input maxlength="80" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" asp-for="Res_Other_features">
-
-        <div class="d-flex">
-            <div class="d-flex col-md-4">
-                <fieldset class="col-md-12 mb-3 mt-3">
-                    <label class="form-label fw-semibold text-dark" style="vertical-align:middle">OTHER FEATURE CONDITION </label>
-                    <br />
+            <div class="d-flex">
+                <fieldset class="col-md-4 mt-3">
+                    <label class="form-label fw-semibold text-dark" style="vertical-align:middle">SWIMMING POOL</label>
                     <span>
-                        <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
-                            <input type="radio" class="form-check-input" asp-for="Res_Other_features_Condition" value="Good">
+                      <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
+                            <input type="radio" class="form-check-input" asp-for="Res_Swimming_Pool" value="Yes">
+                            Yes
+                        </label>
+                    </span>
+                    <span>
+                      <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
+                            <input type="radio" class="form-check-input" asp-for="Res_Swimming_Pool" value="No">
+                            No
+                        </label>
+                    </span>
+                </fieldset>
+
+                <fieldset class="col-md-3 mt-3">
+                    <label class="form-label fw-semibold text-dark" style="vertical-align:middle">BORE HOLE</label>
+                    <span>
+                      <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
+                            <input type="radio" class="form-check-input" asp-for="Res_Bore_Hole" value="Yes">
+                            Yes
+                        </label>
+                    </span>
+                    <span>
+                      <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
+                            <input type="radio" class="form-check-input" asp-for="Res_Bore_Hole" value="No">
+                            No
+                        </label>
+                    </span>
+                </fieldset>
+
+
+                <fieldset class="col-md-4 mt-3">
+                    <label class="form-label fw-semibold text-dark" style="vertical-align:middle">TENNIS COURT</label>
+                    <span>
+                      <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
+                            <input type="radio" class="form-check-input" asp-for="Res_Tennis_Court" value="Yes">
+                            Yes
+                        </label>
+                    </span>
+                    <span>
+                      <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
+                            <input type="radio" class="form-check-input" asp-for="Res_Tennis_Court" value="No">
+                            No
+                        </label>
+                    </span>
+                </fieldset>
+            </div>
+
+            <div class="d-flex">
+                <fieldset class="col-md-5 mb-3 mt-3">
+                    <label class="form-label fw-semibold text-dark" style="vertical-align:middle">GARDEN</label>
+                    <span>
+                      <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
+                            <input type="radio" class="form-check-input" asp-for="Res_Garden" value="Good">
                             GOOD
                         </label>
                     </span>
                     <span>
-                        <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
-                            <input type="radio" class="form-check-input" asp-for="Res_Other_features_Condition" value="Average">
+                      <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
+                            <input type="radio" class="form-check-input" asp-for="Res_Garden" value="Average">
                             AVERAGE
                         </label>
                     </span>
 
                     <span>
-                        <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
-                            <input type="radio" class="form-check-input" asp-for="Res_Other_features_Condition" value="Poor">
+                      <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
+                            <input type="radio" class="form-check-input" asp-for="Res_Garden" value="Poor">
                             POOR
                         </label>
                     </span>
                 </fieldset>
             </div>
-            <div class="d-flex  col-md-6">
-                <fieldset class="col-md-12 mb-3 mt-3">
-                    <label class="form-label fw-semibold text-dark" style="vertical-align:middle">GENERAL CONDITION OF PROPERTY </label>
-                    <br />
-                    <span>
-                        <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
-                            <input type="radio" class="form-check-input" asp-for="Res_General_Condition" value="Good">
-                            GOOD
-                        </label>
-                    </span>
-                    <span>
-                        <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
-                            <input type="radio" class="form-check-input" asp-for="Res_General_Condition" value="Average">
-                            AVERAGE
-                        </label>
-                    </span>
 
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <label class="form-label fw-semibold text-dark"> OTHER (1) </label>
+                    <input  class="form-control" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Res_other_dwell1">
+                </div>
+                <div class="col-sm-6">
+                    <label class="form-label fw-semibold text-dark"> OTHER (2) </label>
+                    <input  class="form-control" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Res_other_dwell2">
+
+                </div>
+            </div>
+
+            <div class="d-flex">
+                <fieldset class="col-md-3 mt-3">
+                    <label class="form-label fw-semibold text-dark" style="vertical-align:middle">FENCING</label>
                     <span>
-                        <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
-                            <input type="radio" class="form-check-input" asp-for="Res_General_Condition" value="Poor">
-                            POOR
+                      <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
+                            <input type="radio" class="form-check-input" asp-for="Res_Fence" value="Yes">
+                            Yes
+                        </label>
+                    </span>
+                    <span>
+                      <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
+                            <input type="radio" class="form-check-input" asp-for="Res_Fence" value="No">
+                            No
                         </label>
                     </span>
                 </fieldset>
             </div>
-        </div>
 
-        <div>
-            @*  <button style="margin-top: 10px; margin-left: 2%;color:white; background-color:#006572;" type="button" class="btn_p3 btn"><strong>Previous</strong></button>
+            <div id="fence_table" style="display: none">
+                <table class="table table-bordered table-hover mt-3">
+                    <thead class="thead-light">
+                        <tr>
+                            <th scope="col" class="col-1">
+                                FENCING&nbsp;&nbsp;
+                            </th>
+                            <th scope="col" class="col-1">
+                                FRONT
+                            </th>
+                            <th scope="col" class="col-1">
+                                BACK
+                            </th>
+                            <th scope="col" class="col-1">
+                                SIDE 1
+                            </th>
+                            <th scope="col" class="col-1">
+                                SIDE 2
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <th scope="row">
+                                Type
+                            </th>
+                            <td>
+                                <input style="border:none;" placeholder="e.g. Wood, Masonry" asp-for="Res_Fence_Front" maxlength="30" onpaste="return false;" ondrop="return false;" />
+                            </td>
+                            <td>
+                                <input style="border:none;" placeholder="e.g. Wood, Masonry" asp-for="Res_Fence_Back" maxlength="30" onpaste="return false;" ondrop="return false;" />
+                            </td>
+                            <td>
+                                <input style="border:none;" placeholder="e.g. Wood, Masonry" asp-for="Res_Fence_Side_1" maxlength="30" onpaste="return false;" ondrop="return false;" />
+                            </td>
+                            <td>
+                                <input style="border:none;" placeholder="e.g. Wood, Masonry" asp-for="Res_Fence_Side_2" maxlength="30" onpaste="return false;" ondrop="return false;" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">
+                                Height (CM)
+                            </th>
+                            <td>
+                                <input style="border:none;" asp-for="Res_Fence_Height_Front" onpaste="return false;" maxlength="4" ondrop="return false;" onkeypress="return onlyNumberKey(event)" />
+                            </td>
+                            <td>
+                                <input style="border:none;" asp-for="Res_Fence_Height_Back" onpaste="return false;" maxlength="4" ondrop="return false;" onkeypress="return onlyNumberKey(event)" />
+                            </td>
+                            <td>
+                                <input style="border:none;" asp-for="Res_Fence_Height_Side1" onpaste="return false;" maxlength="4" ondrop="return false;" onkeypress="return onlyNumberKey(event)" />
+                            </td>
+                            <td>
+                                <input style="border:none;" asp-for="Res_Fence_Height_Side2" onpaste="return false;" maxlength="4" ondrop="return false;" onkeypress="return onlyNumberKey(event)" />
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <script>
+                document.addEventListener("DOMContentLoaded", function () {
+                    const yesRadio = document.querySelector('input[name="Res_Fence"][value="Yes"]');
+                    const noRadio = document.querySelector('input[name="Res_Fence"][value="No"]');
+                    const fenceTable = document.getElementById("fence_table");
+
+                    function toggleFenceTable() {
+                        if (yesRadio.checked) {
+                            fenceTable.style.display = "block";
+                        } else {
+                            fenceTable.style.display = "none";
+                        }
+                    }
+
+                    yesRadio.addEventListener("change", toggleFenceTable);
+                    noRadio.addEventListener("change", toggleFenceTable);
+
+                    // Run once on page load to handle pre-filled data
+                    toggleFenceTable();
+                });
+            </script>
+
+            <div class="col-sm-12">
+                <label class="form-label fw-semibold text-dark">  DRIVEWAY<small class="text-muted fst-italic d-block">((e.g. Bricks, pavers))</small>  </label>
+                <input  class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="50" type="text" onpaste="return false;" ondrop="return false;" asp-for="Res_Drive_Way">
+            </div>
+
+
+            <div class="d-flex mb-3">
+                <fieldset class="col-md-6 mt-3">
+                    <label class="form-label fw-semibold text-dark" style="vertical-align:middle">IS YOUR PROPERTY SITUATED IN A BOOMED AREA OR SECURITY</label>
+                    <span>
+                      <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
+                            <input type="radio" class="form-check-input" asp-for="Res_Security_Boomed_Area" value="Yes">
+                            Yes
+                        </label>
+                    </span>
+                    <span>
+                      <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
+                            <input type="radio" class="form-check-input" asp-for="Res_Security_Boomed_Area" value="No">
+                            No
+                        </label>
+                    </span>
+                </fieldset>
+            </div>
+
+            <label class="form-label fw-semibold text-dark"> OTHER FEATURES: </label>
+            <input  maxlength="80" class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" asp-for="Res_Other_features">
+
+            <div class="d-flex">
+                <div class="d-flex col-md-4">
+                    <fieldset class="col-md-12 mb-3 mt-3">
+                        <label class="form-label fw-semibold text-dark" style="vertical-align:middle">OTHER FEATURE CONDITION </label>
+                        <br />
+                        <span>
+                          <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
+                                <input type="radio" class="form-check-input" asp-for="Res_Other_features_Condition" value="Good">
+                                GOOD
+                            </label>
+                        </span>
+                        <span>
+                          <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
+                                <input type="radio" class="form-check-input" asp-for="Res_Other_features_Condition" value="Average">
+                                AVERAGE
+                            </label>
+                        </span>
+
+                        <span>
+                          <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
+                                <input type="radio" class="form-check-input" asp-for="Res_Other_features_Condition" value="Poor">
+                                POOR
+                            </label>
+                        </span>
+                    </fieldset>
+                </div>
+                <div class="d-flex  col-md-6">
+                    <fieldset class="col-md-12 mb-3 mt-3">
+                        <label class="form-label fw-semibold text-dark" style="vertical-align:middle">GENERAL CONDITION OF PROPERTY </label>
+                        <br />
+                        <span>
+                          <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
+                                <input type="radio" class="form-check-input" asp-for="Res_General_Condition" value="Good">
+                                GOOD
+                            </label>
+                        </span>
+                        <span>
+                          <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
+                                <input type="radio" class="form-check-input" asp-for="Res_General_Condition" value="Average">
+                                AVERAGE
+                            </label>
+                        </span>
+
+                        <span>
+                          <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
+                                <input type="radio" class="form-check-input" asp-for="Res_General_Condition" value="Poor">
+                                POOR
+                            </label>
+                        </span>
+                    </fieldset>
+                </div>
+            </div>
+
+            <div>
+               @*  <button style="margin-top: 10px; margin-left: 2%;color:white; background-color:#006572;" type="button" class="btn_p3 btn"><strong>Previous</strong></button>
 
                 <button style="margin-top: 10px; margin-right: 2%; float:right;color:white; background-color:#006572;" type="button" class="btn_n3 btn"><strong>Next</strong></button><br />
           *@  
-            <button type="button" class="btn_p3 btn obj-nav-btn obj-nav-btn-prev"><strong>Previous</strong></button>
-            <button type="button" class="btn_n3 btn obj-nav-btn obj-nav-btn-next"><strong>Next</strong></button>
+          <button type="button" class="btn_R_p3 btn obj-nav-btn obj-nav-btn-prev"><strong>Previous</strong></button>
+            <button type="button" class="btn_R_n3 btn obj-nav-btn obj-nav-btn-next"><strong>Next</strong></button>
+            </div>
         </div>
+
+
     </div>
-
-
-</div>
-
-    @*---------------------------------------- Section 3 Agricultural Section ---------------------------------------*@
-   
+    @*---------------------------------------- Section 3 Agricultural Section --------------------------------------------------------------*@
     <div id="section3-agric" style="display:flex;justify-content: center;">
 
     <div class="div3_A obj-form-card">
@@ -2748,13 +2804,12 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
 
                 <button style="margin-top: 10px; margin-right: 2%; float:right;color:white; background-color:#006572;" type="button" class="btn_n3 btn"><strong>Next</strong></button><br />
             *@
-            <button type="button" class="btn_p3 btn obj-nav-btn obj-nav-btn-prev"><strong>Previous</strong></button>
-            <button type="button" class="btn_n3 btn obj-nav-btn obj-nav-btn-next"><strong>Next</strong></button>
+            <button type="button" class="btn_A_p3 btn obj-nav-btn obj-nav-btn-prev"><strong>Previous</strong></button>
+            <button type="button" class="btn_A_n3 btn obj-nav-btn obj-nav-btn-next"><strong>Next</strong></button>
         </div>
     </div>
 </div>
-    @*---------------------------------------------------------Section 3 Business -------------------------------------------------*@
-
+    @*---------------------------------------------------------Section 3 Business ----------------------------------------------------------*@
     <div id="section3-bus" style="display:flex;justify-content: center;">
 
 
@@ -2878,15 +2933,14 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
 
                 <button style="margin-top: 10px; margin-right: 2%; float:right;color:white; background-color:#006572;" type="button" class="btn_n3 btn"><strong></strong>Next</button><br />
             *@
-            <button type="button" class="btn_p3 btn obj-nav-btn obj-nav-btn-prev"><strong>Previous</strong></button>
-            <button type="button" class="btn_n3 btn obj-nav-btn obj-nav-btn-next"><strong>Next</strong></button>
+            <button type="button" class="btn_B_p3 btn obj-nav-btn obj-nav-btn-prev"><strong>Previous</strong></button>
+            <button type="button" class="btn_B_n3 btn obj-nav-btn obj-nav-btn-next"><strong>Next</strong></button>
             </div>
         </div>
 
 
     </div>
-
-    @*---------------------------------------------------------Section 4 Business -------------------------------------------------*@
+    @*---------------------------------------------------------Section 4 Business ----------------------------------------------------------*@
     <div id="section4-bus" style="display:flex;justify-content: center;">
     <div class="div4_B obj-form-card">
 
@@ -3106,14 +3160,12 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
 
                 <button style="margin-top: 10px; margin-right: 2%; float:right;color:white; background-color:#63696B;" type="button" class="btn_n4 btn"><strong>Next</strong></button><br />
                 *@ 
-            <button type="button" class="btn_p4 btn obj-nav-btn obj-nav-btn-prev"><strong>Previous</strong></button>
-            <button type="button" class="btn_n4 btn obj-nav-btn obj-nav-btn-next"><strong>Next</strong></button>
+            <button type="button" class="btn_B_p4 btn obj-nav-btn obj-nav-btn-prev"><strong>Previous</strong></button>
+            <button type="button" class="btn_B_n4 btn obj-nav-btn obj-nav-btn-next"><strong>Next</strong></button>
         </div>
     </div>
 </div>
-
-    @*-----------------------------------------------------------------SECTION 4 RESIDENTIAL-----------------------------------------------------------*@
-
+    @*-----------------------------------------------------------------SECTION 4 RESIDENTIAL------------------------------------------------*@
     <div id="section4-res" style="display:flex;justify-content: center;">
 
     <div class="div4_R obj-form-card">
@@ -3660,13 +3712,13 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
 
                 <button style="margin-top: 10px; margin-right: 2%; float:right;color:white; background-color:#006572;" type="button" class="btn_n4 btn"><strong>Next</strong></button><br />
      *@
-    <button type="button" class="btn_p4 btn obj-nav-btn obj-nav-btn-prev"><strong>Previous</strong></button>
-    <button type="button" class="btn_n4 btn obj-nav-btn obj-nav-btn-next"><strong>Next</strong></button>
+    <button type="button" class="btn_R_p4 btn obj-nav-btn obj-nav-btn-prev"><strong>Previous</strong></button>
+    <button type="button" class="btn_R_n4 btn obj-nav-btn obj-nav-btn-next"><strong>Next</strong></button>
 </div>
 </div>
 </div>
-    @*----------------------------------------Section 5  ---------------------------------------*@
-<div id="section5" style="display:flex;justify-content: center;">
+    @*----------------------------------------Section 5  -----------------------------------------------------------------------------------*@
+    <div id="section5" style="display:flex;justify-content: center;">
 
 
     <div class="div5 obj-form-card">
@@ -3758,56 +3810,51 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
     </div>
 
 </div>
-    @*----------------------------------------Section 6  ---------------------------------------*@
+    @*----------------------------------------Section 6  -----------------------------------------------------------------------------------*@
     <div id="section6" style="display:flex;justify-content: center;">
         @{
-            var cat = TempData["Category"];
-            var mv = TempData["marketValue"];
-            var pa = TempData["physicalAddress"];
-            var on = TempData["Owner"];
+                    var cat = TempData["Category"];
+                    var mv = TempData["marketValue"];
+                    var pa = TempData["physicalAddress"];
+                    var on = TempData["Owner"];
 
 
-            //Multiple Purpose
-            var mult_purp_CAT = TempData["CurrentFilter_mult_purp_CAT"];
-            var mult_purp_PA = TempData["CurrentFilter_mult_purp_PA"];
-            var mult_purp_EXT = TempData["CurrentFilter_mult_purp_EXT"];
-            var mult_purp_MV = TempData["CurrentFilter_mult_purp_MV"];
+                    //Multiple Purpose
+                    var mult_purp_CAT = TempData["CurrentFilter_mult_purp_CAT"];
+                    var mult_purp_PA = TempData["CurrentFilter_mult_purp_PA"];
+                    var mult_purp_EXT = TempData["CurrentFilter_mult_purp_EXT"];
+                    var mult_purp_MV = TempData["CurrentFilter_mult_purp_MV"];
 
-            TempData.Keep("CurrentFilter_mult_purp_CAT");
-            TempData.Keep("CurrentFilter_mult_purp_PA");
-            TempData.Keep("CurrentFilter_mult_purp_EXT");
-            TempData.Keep("CurrentFilter_mult_purp_CAT");
+                    TempData.Keep("CurrentFilter_mult_purp_CAT");
+                    TempData.Keep("CurrentFilter_mult_purp_PA");
+                    TempData.Keep("CurrentFilter_mult_purp_EXT");
+                    TempData.Keep("CurrentFilter_mult_purp_CAT");
 
-            //Res Multipurpose
-            var mult_Res_CAT = TempData["CurrentFilter_mult_Res_CAT"];
-            var mult_Res_PA = TempData["CurrentFilter_mult_Res_PA"];
-            var mult_Res_EXT = TempData["CurrentFilter_mult_Res_EXT"];
-            var mult_Res_MV = TempData["CurrentFilter_mult_Res_MV"];
-            var mult_Res_OwnerName = TempData["CurrentFilter_mult_Res_OwnerName"];
+                    //Res Multipurpose
+                    var mult_Res_CAT = TempData["CurrentFilter_mult_Res_CAT"];
+                    var mult_Res_PA = TempData["CurrentFilter_mult_Res_PA"];
+                    var mult_Res_EXT = TempData["CurrentFilter_mult_Res_EXT"];
+                    var mult_Res_MV = TempData["CurrentFilter_mult_Res_MV"];
+                    var mult_Res_OwnerName = TempData["CurrentFilter_mult_Res_OwnerName"];
 
-            TempData.Keep("CurrentFilter_mult_Res_CAT");
-            TempData.Keep("CurrentFilter_mult_Res_PA");
-            TempData.Keep("CurrentFilter_mult_Res_EXT");
-            TempData.Keep("CurrentFilter_mult_Res_MV");
-            TempData.Keep("CurrentFilter_mult_Res_OwnerName");
+                    TempData.Keep("CurrentFilter_mult_Res_CAT");
+                    TempData.Keep("CurrentFilter_mult_Res_PA");
+                    TempData.Keep("CurrentFilter_mult_Res_EXT");
+                    TempData.Keep("CurrentFilter_mult_Res_MV");
+                    TempData.Keep("CurrentFilter_mult_Res_OwnerName");
 
-            //Bus Multipurpose
-            var mult_Bus_CAT = TempData["CurrentFilter_mult_Bus_CAT"];
-            var mult_Bus_PA = TempData["CurrentFilter_mult_Bus_PA"];
-            var mult_Bus_EXT = TempData["CurrentFilter_mult_Bus_EXT"];
-            var mult_Bus_MV = TempData["CurrentFilter_mult_Bus_MV"];
+                    //Bus Multipurpose
+                    var mult_Bus_CAT = TempData["CurrentFilter_mult_Bus_CAT"];
+                    var mult_Bus_PA = TempData["CurrentFilter_mult_Bus_PA"];
+                    var mult_Bus_EXT = TempData["CurrentFilter_mult_Bus_EXT"];
+                    var mult_Bus_MV = TempData["CurrentFilter_mult_Bus_MV"];
 
-            TempData.Keep("CurrentFilter_mult_Bus_CAT");
-            TempData.Keep("CurrentFilter_mult_Bus_PA");
-            TempData.Keep("CurrentFilter_mult_Bus_EXT");
-            TempData.Keep("CurrentFilter_mult_Bus_MV");
+                    TempData.Keep("CurrentFilter_mult_Bus_CAT");
+                    TempData.Keep("CurrentFilter_mult_Bus_PA");
+                    TempData.Keep("CurrentFilter_mult_Bus_EXT");
+                    TempData.Keep("CurrentFilter_mult_Bus_MV");
         }
-
-        <script type="text/javascript">
-            var mess = '@cat';
-            if (mess)
-                alert(mess);
-        </script>
+        <script type="text/javascript">var mess = '@cat';if (mess) alert(mess);</script>
 
         <div class="div6 obj-form-card">
 
@@ -4106,7 +4153,8 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
        </div>
         </div>
     </div>
-    @*----------------------------------------Locus Standis  ---------------------------------------*@
+    </div>
+    @*----------------------------------------Locus Standis  -------------------------------------------------------------------------------*@
     <div id="locusStandModal" class="locus-modal-backdrop" style="display:none;">
         <div class="locus-modal">
             <div class="locus-modal-header">
@@ -4135,7 +4183,7 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
             </div>
         </div>
     </div>
-    @*  ------------------------------------------- Document Upload -------------------------------------------  *@
+    @*  ------------------------------------------- Document Upload ------------------------------------------------------------------------*@
     <div id="sectionUpload" style="display:flex;justify-content: center;">
         <div class="divU obj-form-card">
 
@@ -4144,24 +4192,43 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
                 <span>Upload Documents</span>
             </div>
 
-            <div class="card shadow-sm border-0 mt-4">
-                <div style="background: #f8f9fa; border: 2px solid #e6b000; border-radius: 10px; padding: 25px; margin-bottom: 20px;">
-                    <h6 class="fw-bold text-dark mb-3">Upload Supporting Document(s)</h6>
+            <p class="obj-ev-intro">
+                Attach anything that supports the information supplied in this form.
+                You may browse more than once; files selected from another folder are
+                added to the files already selected.
+            </p>
 
-                    <div style="background: #fff3cd; border: 2px solid #e6b000; border-radius: 10px; padding: 15px; margin-bottom: 20px;">
-                        <p style="font-size: 14px; color: #006570; font-weight: 600; margin: 0;">
-                            <strong>Note:</strong> Only PDF, PNG, JPEG, HEIC formats are allowed.
-                        </p>
-                        <p style="font-size: 14px; color: #006570; font-weight: 700; margin: 5px 0 0 0;">
-                            Max 10 PDF files • Max file size: 10MB
-                        </p>
-                    </div>
+            <div class="obj-ev-label">
+                <i class="fa-solid fa-folder-open"></i>
+                Other supporting documents
+                <span class="obj-ev-optional">(optional)</span>
+            </div>
 
-                    <div style="margin-bottom: 15px;">
-                        <label for="files" style="font-weight: 600; color: #006570; font-size: 14px; margin-bottom: 8px; display: block; text-transform: uppercase; letter-spacing: 0.5px;">Select File(s)</label>
-                        <input style="width: 100%; padding: 10px; border: 2px solid #006570; border-radius: 5px; font-family: 'Poppins', sans-serif; background: white;" type="file" id="files" name="files" accept=".pdf, .png, .jpeg, .jpg, .heic" multiple />
-                    </div>
-                </div>
+            <div class="obj-ev-dropzone" id="multipurposeDropzone" tabindex="0"
+                 role="button" aria-label="Choose supporting documents">
+                <div class="obj-ev-icon"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+                <div class="obj-ev-title">Drag files here to upload</div>
+                <div class="obj-ev-sub">PDF, Word, Excel and images</div>
+                <button type="button" class="obj-ev-browse" id="multipurposeBrowseFiles">
+                    <i class="fa-solid fa-folder-open"></i> Browse Files
+                </button>
+            </div>
+
+            @* ObjectionMulti.js expects #files. Keep an unnamed compatibility
+               input so its legacy validator does not replace cumulative files. *@
+            <input type="file" id="files" tabindex="-1" aria-hidden="true" />
+            <input type="file" id="multipurposeEvidenceInput" name="files" multiple
+                   accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xls,.xlsx" />
+
+            <div class="obj-ev-counter">
+                <span id="multipurposeFileCount">0 of 10 files added</span>
+                <div class="obj-ev-track"><div class="obj-ev-fill" id="multipurposeFileFill"></div></div>
+            </div>
+            <div class="obj-ev-list" id="multipurposeFileList"></div>
+            <div class="obj-ev-note">
+                <i class="fa-solid fa-circle-info"></i>
+                Supported: PDF, Word, Excel, JPG, PNG &nbsp;|&nbsp;
+                Max 10 files &nbsp;|&nbsp; Max 20 MB per file
             </div>
 
             <div>
@@ -4174,12 +4241,10 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
             </div>
         </div>
     </div>
-
-    @*----------------------------------------Section 7  ---------------------------------------*@
-
+    @*----------------------------------------Section 7  -----------------------------------------------------------------------------------*@
     <div id="section7" style="display:flex;justify-content: center;">
 
-        <div class="div7" obj-form-card">
+        <div class="div7 obj-form-card">
             <div style="width: 100%; margin: 20px 0; padding: 10px 0; position: relative;">
                 <h4 class="obj-section-title" id="s_head"><strong>Section 7: Declaration</strong></h4>
                 <div class="obj-step-divider">
@@ -4287,24 +4352,24 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
                    id="signDate" required type="datetime-local" asp-for="Declaration_Date">
 
             <!-- ── Signature ───────────────────────────────────────────── -->
-            <div class="obj-signature-card">
-                <div class="obj-signature-label">
-                    <i class="fa-solid fa-signature"></i>
-                    Signature <span class="req">*</span>
+            <div class="obj-signature-card obj-auto-signature">
+                <div class="obj-auto-signature-title">
+                    <i class="fa-solid fa-pen-nib"></i>
+                    Draw signature below <span class="req">*</span>
+                    <span style="font-weight:400;text-transform:none;color:#888;">(mouse or finger)</span>
                 </div>
 
-                <canvas width="500" height="200" id="signature"></canvas>
-                <img width="500" height="200" id="savetarget"
-                     style="width:100%;max-width:500px;height:auto;border:2px solid #006570;border-radius:8px;display:block;margin-top:14px;"
-                     hidden="hidden">
+                <div class="obj-signature-canvas-wrap">
+                    <canvas width="598" height="160" id="signature"></canvas>
+                    <div class="obj-signature-line"></div>
+                    <div class="obj-signature-hint">Sign here</div>
+                </div>
 
-                <div class="obj-signature-actions">
-                    <button type="button" id="Clear" class="obj-sig-btn">
-                        <i class="fa-solid fa-eraser"></i> Clear
+                <div class="obj-signature-controls">
+                    <button type="button" id="Clear" class="obj-signature-clear">
+                        <i class="fa-solid fa-rotate-left"></i> Clear
                     </button>
-                    <button type="button" id="accept" class="obj-sig-btn obj-sig-btn-accept" onclick="checkCanvas()">
-                        <i class="fa-solid fa-check"></i> Accept Signature
-                    </button>
+                    <span id="signatureStatus">No signature drawn</span>
                 </div>
 
                 <input type="text" onpaste="return false;" ondrop="return false;"
@@ -4313,7 +4378,7 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
 
             <!-- ── Navigation ──────────────────────────────────────────── -->
             <div style="margin-top:18px;">
-                <button type="button" class="btn_p4 btn obj-nav-btn obj-nav-btn-prev"><strong>Previous</strong></button>
+                <button type="button" class="btn_p7 btn obj-nav-btn obj-nav-btn-prev"><strong>Previous</strong></button>
                 <button type="submit" class="btn obj-nav-btn obj-nav-btn-submit" disabled id="submitForm" onclick="showInput()"><i class="fa-solid fa-paper-plane"></i> <strong>Submit</strong></button>
 
 
@@ -4322,7 +4387,6 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
         </div>
 
     </div>
-
     <div id="objLoaderOverlay" class="obj-loader-overlay">
         <div class="obj-loader-spinner"></div>
         <div class="obj-loader-text">
@@ -4332,13 +4396,195 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
             this page.
         </div>
     </div>
-
-    @section Scripts {
+</form>
+  @section Scripts {
         <script src="https://cdnjs.cloudflare.com/ajax/libs/signature_pad/1.5.3/signature_pad.min.js"></script>
         <script src="https://code.jquery.com/jquery-latest.min.js" type="text/javascript"></script>
         <script asp-append-version="true" src="~/js/objectionmulti.js" type="text/javascript"></script>
+        <script asp-append-version="true" src="~/js/form-consistency.js"></script>
+        <script>
+            (function () {
+                'use strict';
+
+                const maximumFiles = 10;
+                const maximumFileSize = 20 * 1024 * 1024;
+                const allowedExtensions = ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png', 'xls', 'xlsx'];
+                let selectedMultipurposeFiles = new DataTransfer();
+
+                function fileKey(file) {
+                    return [file.name, file.size, file.lastModified].join('|');
+                }
+
+                function safeText(value) {
+                    return String(value || '')
+                        .replace(/&/g, '&amp;')
+                        .replace(/</g, '&lt;')
+                        .replace(/>/g, '&gt;')
+                        .replace(/"/g, '&quot;')
+                        .replace(/'/g, '&#039;');
+                }
+
+                function addMultipurposeFiles(files) {
+                    const existing = new Set(Array.from(selectedMultipurposeFiles.files).map(fileKey));
+                    const rejected = [];
+
+                    Array.from(files || []).forEach(function (file) {
+                        const extension = (file.name.split('.').pop() || '').toLowerCase();
+                        const key = fileKey(file);
+
+                        if (existing.has(key)) return;
+                        if (!allowedExtensions.includes(extension)) {
+                            rejected.push(file.name + ' is not a supported file type.');
+                            return;
+                        }
+                        if (file.size > maximumFileSize) {
+                            rejected.push(file.name + ' is larger than 20 MB.');
+                            return;
+                        }
+                        if (selectedMultipurposeFiles.files.length >= maximumFiles) {
+                            rejected.push('Only 10 supporting documents can be selected.');
+                            return;
+                        }
+
+                        selectedMultipurposeFiles.items.add(file);
+                        existing.add(key);
+                    });
+
+                    if (rejected.length) {
+                        alert(Array.from(new Set(rejected)).join('\n'));
+                    }
+                }
+
+                function renderMultipurposeFiles() {
+                    const input = document.getElementById('multipurposeEvidenceInput');
+                    const list = document.getElementById('multipurposeFileList');
+                    const count = document.getElementById('multipurposeFileCount');
+                    const fill = document.getElementById('multipurposeFileFill');
+                    const dropzone = document.getElementById('multipurposeDropzone');
+                    if (!input || !list) return;
+
+                    input.files = selectedMultipurposeFiles.files;
+                    const total = selectedMultipurposeFiles.files.length;
+
+                    count.textContent = total + ' of ' + maximumFiles + ' files added';
+                    fill.style.width = Math.min((total / maximumFiles) * 100, 100) + '%';
+                    fill.classList.toggle('full', total >= maximumFiles);
+                    dropzone.classList.toggle('full', total >= maximumFiles);
+                    list.innerHTML = '';
+
+                    Array.from(selectedMultipurposeFiles.files).forEach(function (file, index) {
+                        const item = document.createElement('div');
+                        item.className = 'obj-ev-file';
+                        item.innerHTML =
+                            '<i class="fa-solid fa-file"></i>' +
+                            '<span class="obj-ev-name">' + safeText(file.name) + '</span>' +
+                            '<span class="obj-ev-size">' + (file.size / 1024 / 1024).toFixed(2) + ' MB</span>' +
+                            '<button type="button" class="obj-ev-remove" data-remove-multipurpose-file="' + index + '" title="Remove file">' +
+                            '<i class="fa-solid fa-xmark"></i></button>';
+                        list.appendChild(item);
+                    });
+                }
+
+                function initialiseMultipurposeUpload() {
+                    const input = document.getElementById('multipurposeEvidenceInput');
+                    const browse = document.getElementById('multipurposeBrowseFiles');
+                    const dropzone = document.getElementById('multipurposeDropzone');
+                    const list = document.getElementById('multipurposeFileList');
+                    if (!input || !browse || !dropzone || !list) return;
+
+                    function openBrowser(event) {
+                        if (event) {
+                            event.preventDefault();
+                            event.stopPropagation();
+                        }
+                        input.click();
+                    }
+
+                    browse.addEventListener('click', openBrowser);
+                    dropzone.addEventListener('click', openBrowser);
+                    dropzone.addEventListener('keydown', function (event) {
+                        if (event.key === 'Enter' || event.key === ' ') openBrowser(event);
+                    });
+                    dropzone.addEventListener('dragover', function (event) {
+                        event.preventDefault();
+                        dropzone.classList.add('dragover');
+                    });
+                    dropzone.addEventListener('dragleave', function () {
+                        dropzone.classList.remove('dragover');
+                    });
+                    dropzone.addEventListener('drop', function (event) {
+                        event.preventDefault();
+                        dropzone.classList.remove('dragover');
+                        addMultipurposeFiles(event.dataTransfer && event.dataTransfer.files);
+                        renderMultipurposeFiles();
+                    });
+                    input.addEventListener('change', function () {
+                        addMultipurposeFiles(input.files);
+                        renderMultipurposeFiles();
+                    });
+                    list.addEventListener('click', function (event) {
+                        const button = event.target.closest('[data-remove-multipurpose-file]');
+                        if (!button) return;
+
+                        const removeIndex = Number(button.dataset.removeMultipurposeFile);
+                        const replacement = new DataTransfer();
+                        Array.from(selectedMultipurposeFiles.files).forEach(function (file, index) {
+                            if (index !== removeIndex) replacement.items.add(file);
+                        });
+                        selectedMultipurposeFiles = replacement;
+                        renderMultipurposeFiles();
+                    });
+
+                    renderMultipurposeFiles();
+                }
+
+                function initialiseAutomaticSignature() {
+                    const canvas = document.getElementById('signature');
+                    const signatureData = document.getElementById('SignatureDataUrl');
+                    const clear = document.getElementById('Clear');
+                    const status = document.getElementById('signatureStatus');
+                    const submit = document.getElementById('submitForm');
+                    if (!canvas || !signatureData || !clear) return;
+
+                    function canvasHasInk() {
+                        const pixels = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data;
+                        for (let index = 3; index < pixels.length; index += 4) {
+                            if (pixels[index] !== 0) return true;
+                        }
+                        return false;
+                    }
+
+                    function captureSignature() {
+                        window.requestAnimationFrame(function () {
+                            if (!canvasHasInk()) return;
+                            signatureData.value = canvas.toDataURL('image/png');
+                            signatureData.dispatchEvent(new Event('change', { bubbles: true }));
+                            status.textContent = 'Signature captured';
+                            status.style.color = '#0f766e';
+                            if (submit) submit.disabled = false;
+                        });
+                    }
+
+                    canvas.addEventListener('mouseup', captureSignature);
+                    canvas.addEventListener('touchend', captureSignature);
+                    canvas.addEventListener('pointerup', captureSignature);
+
+                    clear.addEventListener('click', function () {
+                        canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+                        signatureData.value = '';
+                        status.textContent = 'No signature drawn';
+                        status.style.color = '#6b6b6b';
+                        if (submit) submit.disabled = true;
+                    });
+                }
+
+                document.addEventListener('DOMContentLoaded', function () {
+                    initialiseMultipurposeUpload();
+                    initialiseAutomaticSignature();
+                });
+            })();
+        </script>
         <script type="text/javascript">load();</script>
     
     }
-</form>
 

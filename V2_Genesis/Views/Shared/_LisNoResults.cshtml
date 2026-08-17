@@ -4,24 +4,31 @@
 ═══════════════════════════════════════════════════════════════ *@
 @using V2_Genesis.Models.LIS
 @{
-    var rollSource = ViewBag.RollSource   as string       ?? "Objection_Supp3";
-    var rollName   = ViewBag.RollName     as string       ?? rollSource;
-    var towns      = ViewBag.Towns        as List<string> ?? new List<string>();
-    var schemes    = ViewBag.Schemes      as List<string> ?? new List<string>();
-    var sp         = ViewBag.SearchParams as LisSearchParams ?? new LisSearchParams();
+    var rollSource = ViewBag.RollSource as string ?? "Objection_Supp3";
+    var rollName = ViewBag.RollName as string ?? rollSource;
+    var towns = ViewBag.Towns as List<string> ?? new List<string>();
+    var schemes = ViewBag.Schemes as List<string> ?? new List<string>();
+    var sp = ViewBag.SearchParams as LisSearchParams ?? new LisSearchParams();
 
-    bool likelyST  = !string.IsNullOrWhiteSpace(sp.SearchScheme)
+    var searchedTown = sp.SearchTownName?.Trim() ?? string.Empty;
+    var matchedTown = towns.FirstOrDefault(t =>
+        string.Equals(
+            t?.Trim(),
+            searchedTown,
+            StringComparison.OrdinalIgnoreCase));
+
+    bool likelyST = !string.IsNullOrWhiteSpace(sp.SearchScheme)
                   || !string.IsNullOrWhiteSpace(sp.SearchUnit);
     string defType = likelyST ? "ST" : "FH";
 
-    string jsTown   = System.Text.Json.JsonSerializer.Serialize(sp.SearchTownName ?? "");
-    string jsStand  = System.Text.Json.JsonSerializer.Serialize(sp.SearchStand   ?? "");
-    string jsScheme = System.Text.Json.JsonSerializer.Serialize(sp.SearchScheme  ?? "");
-    string jsUnit   = System.Text.Json.JsonSerializer.Serialize(sp.SearchUnit    ?? "");
-    string jsAddr   = System.Text.Json.JsonSerializer.Serialize(sp.SearchAddress ?? "");
+    string jsTown = System.Text.Json.JsonSerializer.Serialize(sp.SearchTownName ?? "");
+    string jsStand = System.Text.Json.JsonSerializer.Serialize(sp.SearchStand ?? "");
+    string jsScheme = System.Text.Json.JsonSerializer.Serialize(sp.SearchScheme ?? "");
+    string jsUnit = System.Text.Json.JsonSerializer.Serialize(sp.SearchUnit ?? "");
+    string jsAddr = System.Text.Json.JsonSerializer.Serialize(sp.SearchAddress ?? "");
 }
 
-<link href="~/css/views/ommission-view.css" rel="stylesheet" asp-append-version="true"/>
+<link href="~/css/views/ommission-view.css" rel="stylesheet" asp-append-version="true" />
 <div class="nf-wrap">
 
 
@@ -126,7 +133,7 @@
               novalidate>
             @Html.AntiForgeryToken()
             <input type="hidden" name="rollSource" value="@rollSource" />
-            <input type="hidden" name="propType"   id="omitPropType" value="@defType" />
+            <input type="hidden" name="propType" id="omitPropType" value="@defType" />
 
             <div class="om-section">
                 <div class="om-section-label">
@@ -134,10 +141,10 @@
                     Select Property Type
                 </div>
                 <div class="om-type-row">
-                    <label class="om-type-card @(defType=="FH"?"om-selected":"")"
+                    <label class="om-type-card @(defType == "FH" ? "om-selected" : "")"
                            id="lbl-FH" onclick="omitSwitch('FH')">
                         <input type="radio" name="propTypeRadio" value="FH"
-                               @(defType=="FH"?"checked":"")
+                        @(defType == "FH" ? "checked" : "")
                                style="position:absolute;opacity:0;" />
                         <div class="om-type-icon">
                             <i class="fa-solid fa-house-chimney"></i>
@@ -151,10 +158,10 @@
                         </div>
                     </label>
 
-                    <label class="om-type-card @(defType=="ST"?"om-selected":"")"
+                    <label class="om-type-card @(defType == "ST" ? "om-selected" : "")"
                            id="lbl-ST" onclick="omitSwitch('ST')">
                         <input type="radio" name="propTypeRadio" value="ST"
-                               @(defType=="ST"?"checked":"")
+                        @(defType == "ST" ? "checked" : "")
                                style="position:absolute;opacity:0;" />
                         <div class="om-type-icon">
                             <i class="fa-solid fa-building"></i>
@@ -185,9 +192,24 @@
                         <select name="FH_Town" id="omitTown"
                                 class="om-ctrl om-select" required>
                             <option value="">— Select Township —</option>
+
+                            @* Keep the exact township used in the search even
+                               when its text is not present in the dropdown list. *@
+                            @if (!string.IsNullOrWhiteSpace(searchedTown) && matchedTown is null)
+                            {
+                                <option value="@searchedTown" selected>@searchedTown</option>
+                            }
+
                             @foreach (var t in towns)
                             {
-                                <option value="@t">@t</option>
+                                if (string.Equals(t, matchedTown, StringComparison.OrdinalIgnoreCase))
+                                {
+                                    <option value="@t" selected>@t</option>
+                                }
+                                else
+                                {
+                                    <option value="@t">@t</option>
+                                }
                             }
                         </select>
                         <i class="fa-solid fa-chevron-down om-select-arrow"></i>
@@ -197,7 +219,7 @@
 
 
             <div id="omitFH" class="om-section"
-                 style="display:@(defType=="FH"?"block":"none");">
+                 style="display:@(defType == "FH" ? "block" : "none");">
                 <div class="om-section-label">
                     <span class="om-section-num">C</span>
                     Freehold Property Details
@@ -288,7 +310,7 @@
 
         
             <div id="omitST" class="om-section"
-                 style="display:@(defType=="ST"?"block":"none");">
+                 style="display:@(defType == "ST" ? "block" : "none");">
                 <div class="om-section-label">
                     <span class="om-section-num">C</span>
                     Sectional Title Details
@@ -527,8 +549,9 @@
         // Town dropdown — case-insensitive match
         var town = document.getElementById('omitTown');
         if (town && _omitTown) {
+            var searchedTown = _omitTown.trim().toLowerCase();
             for (var i = 0; i < town.options.length; i++) {
-                if (town.options[i].value.toLowerCase() === _omitTown.toLowerCase()) {
+                if (town.options[i].value.trim().toLowerCase() === searchedTown) {
                     town.selectedIndex = i; break;
                 }
             }

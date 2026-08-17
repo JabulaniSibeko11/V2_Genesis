@@ -37,6 +37,7 @@ namespace V2_Genesis.Services.Interfaces
         Task SendSection78AcknowledgementAsync(
             string queryRef,
             bool isReview,
+            string propertyDescription,
             byte[] acknowledgementPdf,
             string folderPath,
             List<EmailAttachment>? extraAttachments = null);
@@ -81,6 +82,7 @@ namespace V2_Genesis.Services.Interfaces
             byte[] acknowledgementPdf,
             byte[] submittedFormPdf,
             string acknowledgementFileName,
-            string submittedFormFileName);
+            string submittedFormFileName,
+            string folderPath);
     }
 }

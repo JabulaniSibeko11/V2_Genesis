@@ -8,6 +8,7 @@ namespace V2_Genesis.Services.Notice
         public string ObjectionNo { get; set; } = string.Empty;
         public string ObjectionRef { get; set; } = string.Empty;
         public string RollSource { get; set; } = string.Empty;
+        public string PropertyFrom { get; set; } = string.Empty;
         public string SubmissionTime { get; set; } = string.Empty;
         public bool IsMulti { get; set; }
         public int FileCount { get; set; }
@@ -63,6 +64,7 @@ namespace V2_Genesis.Services.Notice
                 ObjectionNo = pin,
                 ObjectionRef = Get("objection_ref") ?? pin,
                 RollSource = rollSource,
+                PropertyFrom = Get("PropertyFrom") ?? string.Empty,
                 SubmissionTime = Get("time") ?? DateTime.Now.ToString("dd MMMM yyyy HH:mm"),
                 IsMulti = (Get("IsMulti") ?? "false").Equals("true", StringComparison.OrdinalIgnoreCase),
 

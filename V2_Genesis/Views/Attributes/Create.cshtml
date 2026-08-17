@@ -528,8 +528,8 @@
                                        class="same-postal-checkbox"
                                        data-index="@i"
                                 @(!string.IsNullOrWhiteSpace(Model.ContactInfos[i].PhysicalAddress) &&
-                                                                                                                                    Model.ContactInfos[i].PhysicalAddress == Model.ContactInfos[i].PostalAddress
-                                                                                                                                    ? "checked" : "") />
+                                                                                                                                                                    Model.ContactInfos[i].PhysicalAddress == Model.ContactInfos[i].PostalAddress
+                                                                                                                                                                    ? "checked" : "") />
                                 Postal address is the same as the physical address
                             </label>
                         </td>
@@ -1507,8 +1507,8 @@
             if (companyName) {
                 if (isCompany && !companyName.value.trim()) {
                     const combinedName = [
-                        firstNames ? firstNames.value.trim() : '',
-                        surname ? surname.value.trim() : ''
+                        surname ? surname.value.trim() : '',
+                        firstNames ? firstNames.value.trim() : ''
                     ].filter(Boolean).join(' ');
 
                     companyName.value = combinedName;

@@ -15,28 +15,17 @@ namespace V2_Genesis.Services.Implementations
         private readonly IAttributeDocumentService _documentService;
         private readonly IEmailService _emailService;
         private readonly ILogger<AttributeSubmissionService> _logger;
-        private readonly bool _bypassEvidenceWindow;
-
         public AttributeSubmissionService(
             AttributesDbContext context,
-            IAttributeDocumentService documentService,
-            IEmailService emailService,
-            ILogger<AttributeSubmissionService> logger,
-            IConfiguration configuration)
+           IAttributeDocumentService documentService,
+           IEmailService emailService,
+           ILogger<AttributeSubmissionService> logger)
         {
             _context = context;
 
             _documentService = documentService;
             _emailService = emailService;
             _logger = logger;
-            _bypassEvidenceWindow = configuration.GetValue<bool>(
-                "AttributeRouting:BypassEvidenceWindow");
-
-            if (_bypassEvidenceWindow)
-            {
-                _logger.LogWarning(
-                    "Attribute evidence-window bypass is enabled. New submissions will route directly to AIVS SectorInbox.");
-            }
         }
 
         public AttributeSubmissionViewModel CreateNew(string formType)
@@ -104,45 +93,16 @@ namespace V2_Genesis.Services.Implementations
         }
 
         public async Task<long> SubmitAsync(
-            AttributeSubmissionViewModel model,
-            string userId,
-            string userName,
-            string? userEmail,
-            string? userPhone,
-            string? capturerSapNumber = null)
-        {
+      AttributeSubmissionViewModel model,
+      string userId,
+      string userName,
+      string? userEmail,
+      string? userPhone,
+      string? capturerSapNumber = null)
+        
+            {
 
             ValidateAndCleanSubmission(model);
-
-            capturerSapNumber = string.IsNullOrWhiteSpace(capturerSapNumber)
-                ? null
-                : new string(capturerSapNumber.Where(char.IsDigit).ToArray());
-
-            capturerSapNumber = string.IsNullOrWhiteSpace(capturerSapNumber)
-                ? null
-                : capturerSapNumber;
-
-            const string adminPortalEmail =
-                "AdministrationEnquiries@Joburg.org.za";
-
-            var isSharedAdminAccount =
-                string.Equals(
-                    userName?.Trim(),
-                    adminPortalEmail,
-                    StringComparison.OrdinalIgnoreCase)
-                || string.Equals(
-                    userEmail?.Trim(),
-                    adminPortalEmail,
-                    StringComparison.OrdinalIgnoreCase);
-
-            if (isSharedAdminAccount && capturerSapNumber is null)
-            {
-                throw new InvalidOperationException(
-                    "The logged-in Admin SAP number could not be verified. " +
-                    "Please sign out, sign in again using Windows authentication, and retry the submission.");
-            }
-
-            var isAdminCapture = capturerSapNumber is not null;
 
             var submissionSector = await ResolveSectorByTownshipAsync(
                 model.PropertyDetails.Township);
@@ -158,9 +118,6 @@ namespace V2_Genesis.Services.Implementations
             await using var transaction = await _context.Database.BeginTransactionAsync();
 
             var now = DateTime.Now;
-            var initialStatus = _bypassEvidenceWindow
-                ? "SectorInbox"
-                : "EvidenceOpen";
 
             var firstContact = model.ContactInfos?
                 .FirstOrDefault(x =>
@@ -169,14 +126,9 @@ namespace V2_Genesis.Services.Implementations
                     !string.IsNullOrWhiteSpace(x.HomePhoneNo) ||
                     !string.IsNullOrWhiteSpace(x.WorkPhoneNo));
 
-            // During an Admin-assisted capture, communication belongs to the
-            // client entered on the form. Never fall back to the shared Admin
-            // portal email address.
             var submittedByEmail = !string.IsNullOrWhiteSpace(firstContact?.Email)
                 ? firstContact.Email.Trim()
-                : isAdminCapture
-                    ? null
-                    : userEmail?.Trim();
+                : userEmail?.Trim();
 
             var submittedByPhone =
                 !string.IsNullOrWhiteSpace(firstContact?.CellNo)
@@ -219,9 +171,10 @@ namespace V2_Genesis.Services.Implementations
             {
                 Attr_PropertyDetailsId = propertyDetails.Id,
 
-                Objector_Type = model.ContactInfos != null && model.ContactInfos.Count > 0
-                    ? model.ContactInfos[0].ContactType
-                    : null,
+                Objector_Type = model.ContactInfos != null &&
+                     model.ContactInfos.Count > 0
+         ? model.ContactInfos[0].ContactType
+         : null,
 
                 Property_Type = model.FormType,
                 Property_Desc = model.PropertyDetails.PropertyDesc,
@@ -234,7 +187,6 @@ namespace V2_Genesis.Services.Implementations
                 RollDescription = model.PropertyDetails.RollDescription,
 
                 SubmittedByUserId = userId,
-                Capturer = capturerSapNumber,
                 SubmittedByName = userName,
                 SubmittedByEmail = submittedByEmail,
                 SubmittedByPhone = submittedByPhone,
@@ -242,60 +194,14 @@ namespace V2_Genesis.Services.Implementations
                 SubmissionDateTime = now,
                 ClientComment = model.ClientComment,
 
-                Attr_Status = initialStatus,
+                Capturer = string.IsNullOrWhiteSpace(capturerSapNumber)
+         ? null
+         : capturerSapNumber.Trim(),
+
+                Attr_Status = "EvidenceOpen",
                 IsActive = true,
 
-                Physical_Inspection_Required = false,
-                Physical_Inspection_Status = null,
-                Physical_Inspection_Comment = null,
-                Inspection_Scheduled_Date = null,
-                Inspection_Scheduled_Time = null,
-                Inspection_Address = null,
-                Inspection_Valuer = null,
-                Inspection_ValuerUserId = null,
-                Digital_Valuer_ID = null,
-                Digital_Valuer_ID_GeneratedDateTime = null,
-                Inspection_Outcome = null,
-                Inspection_Outcome_Comment = null,
-                Inspection_EvidencePath = null,
-
-                RevisionRequired = false,
-                RevisionRequestedBy = null,
-                RevisionRequestedDateTime = null,
-                RevisionReason = null,
-                RevisedBy = null,
-                RevisedDateTime = null,
-                RevisionComment = null,
-
-                ReadyForOvvioExtract = false,
-                OvvioExtractStatus = null,
-                OvvioExtractBatchNo = null,
-                OvvioExtractDateTime = null,
-                OvvioExtractedBy = null,
-                OvvioExtractError = null,
-
-                Evidence_Count = 0,
-                Has_Client_Evidence = false,
-                Last_Evidence_Uploaded_DateTime = null,
-
-                IsWithdrawn = false,
-                WithdrawnByUserId = null,
-                WithdrawnByName = null,
-                WithdrawnDateTime = null,
-                WithdrawalReason = null,
-
-                // Resolve routing at submission so AIVS already knows the
-                // destination sector. In presentation mode the evidence
-                // window is locked immediately and the item enters AIVS.
-                RoutedSector = submissionSector,
-                RoutedToSectorDateTime = _bypassEvidenceWindow ? now : null,
-                EvidenceLockedDateTime = _bypassEvidenceWindow ? now : null,
-                RoutingError = null,
-
-                CreatedBy = userId,
-                CreatedDate = now,
-                UpdatedBy = userId,
-                UpdatedDate = now
+                // Keep the remaining existing properties.
             };
 
             _context.AttrPropertyInfo.Add(propertyInfo);
@@ -308,9 +214,7 @@ namespace V2_Genesis.Services.Implementations
             await SaveFormSpecificSectionsAsync(model, propertyDetails.Id, userId);
 
             var evidencePin = GenerateEvidencePin();
-            var evidenceDeadline = _bypassEvidenceWindow
-                ? now
-                : now.AddHours(48);
+            var evidenceDeadline = now.AddHours(48);
 
             model.GeneratedEvidencePin = evidencePin;
             model.GeneratedEvidenceDeadline = evidenceDeadline;
@@ -339,9 +243,9 @@ namespace V2_Genesis.Services.Implementations
 
                 PinGeneratedDateTime = now,
                 PinExpiryDateTime = evidenceDeadline,
-                PinIsActive = !_bypassEvidenceWindow,
+                PinIsActive = true,
 
-                AdditionalEvidenceAllowed = !_bypassEvidenceWindow,
+                AdditionalEvidenceAllowed = true,
                 AdditionalEvidenceDeadline = evidenceDeadline,
 
                 DeclaredByUserId = userId,
@@ -434,56 +338,38 @@ namespace V2_Genesis.Services.Implementations
                 });
             }
 
-            if (isAdminCapture)
-            {
-                await AddAuditAsync(
-                    propertyInfo.Attr_ID,
-                    propertyInfo.Attr_No,
-                    "Captured On Behalf Of Client",
-                    null,
-                    initialStatus,
-                    userId,
-                    userName,
-                    "Admin",
-                    $"Attributes submission captured on behalf of the client by Admin SAP number {capturerSapNumber}. Client communication email: {submittedByEmail}.");
-            }
-
             await AddAuditAsync(
                 propertyInfo.Attr_ID,
                 propertyInfo.Attr_No,
                 "Submitted",
                 null,
-                initialStatus,
+                "EvidenceOpen",
                 userId,
                 userName,
-                isAdminCapture ? "Admin" : "Client",
-                _bypassEvidenceWindow
-                    ? $"{(isAdminCapture ? "Admin captured on behalf of client" : "Client submitted")} attribute property information. Presentation bypass routed the submission directly to sector '{submissionSector}'."
-                    : $"{(isAdminCapture ? "Admin captured on behalf of client" : "Client submitted")} attribute property information. Evidence upload window is open for 48 hours.");
+                "Client",
+                "Client submitted attribute property information. Evidence upload window is open for 48 hours.");
 
             await AddAuditAsync(
                 propertyInfo.Attr_ID,
                 propertyInfo.Attr_No,
                 "PDF and Evidence Saved",
-                initialStatus,
-                initialStatus,
+                "EvidenceOpen",
+                "EvidenceOpen",
                 userId,
                 userName,
-                isAdminCapture ? "Admin" : "Client",
+                "Client",
                 $"Acknowledgement saved as {documentResult.AcknowledgementFileName}. Evidence files uploaded: {documentResult.EvidenceCount}.");
 
             await AddAuditAsync(
                 propertyInfo.Attr_ID,
                 propertyInfo.Attr_No,
                 "Declaration Submitted",
-                initialStatus,
-                initialStatus,
+                "EvidenceOpen",
+                "EvidenceOpen",
                 userId,
                 userName,
-                isAdminCapture ? "Admin" : "Client",
-                _bypassEvidenceWindow
-                    ? $"{(isAdminCapture ? "Admin-assisted" : "Client")} declaration and signature were captured. Additional evidence was locked by the presentation bypass."
-                    : $"{(isAdminCapture ? "Admin-assisted" : "Client")} declaration and signature were captured. Evidence PIN generated for 48 hours.");
+                "Client",
+                "Client accepted declaration and signature was captured. Evidence PIN generated for 48 hours.");
 
             var unitKey = model.PropertyDetails.UnitKey
                 ?? model.PropertyDetails.PropertyId
@@ -525,7 +411,8 @@ namespace V2_Genesis.Services.Implementations
                         acknowledgementPdf,
                         submittedFormPdf,
                         documentResult.AcknowledgementFileName,
-                        documentResult.PdfFileName);
+                        documentResult.PdfFileName,
+                        documentResult.AttrFolderPath);
                 }
                 else
                 {
@@ -603,13 +490,11 @@ namespace V2_Genesis.Services.Implementations
         {
             var now = DateTime.Now;
 
-            // The normal 48-hour period is based on the signed declaration
-            // date. Presentation mode also picks up existing EvidenceOpen
-            // submissions immediately.
+            // The 48-hour period is based on the signed declaration date.
             var expiredDeclarationIds = await _context.AttrDeclarations
                 .Where(x =>
                     x.AdditionalEvidenceAllowed == true &&
-                    (_bypassEvidenceWindow || x.AdditionalEvidenceDeadline <= now))
+                    x.AdditionalEvidenceDeadline <= now)
                 .Select(x => x.Attr_ID)
                 .Distinct()
                 .ToListAsync();
@@ -674,9 +559,7 @@ namespace V2_Genesis.Services.Implementations
                     performedBy,
                     performedBy,
                     "System",
-                    _bypassEvidenceWindow
-                        ? $"Presentation bypass locked the evidence window. Township '{township}' routed to sector '{sector}'."
-                        : $"Evidence window locked after 48 hours. Township '{township}' routed to sector '{sector}'.");
+                    $"Evidence window locked after 48 hours. Township '{township}' routed to sector '{sector}'.");
             }
 
             var expiredDeclarations = await _context.AttrDeclarations
@@ -737,9 +620,7 @@ namespace V2_Genesis.Services.Implementations
                     MaritalStatus = contact.MaritalStatus,
                     Citizenship = contact.Citizenship,
                     PhysicalAddress = contact.PhysicalAddress,
-                    // Attr_Contact_Info has one postal-address column. Keep the
-                    // separately captured code by appending it at persistence time.
-                    PostalAddress = CombinePostalAddress(contact.PostalAddress, contact.PostalCode),
+                    PostalAddress = contact.PostalAddress,
                     Email = contact.Email,
                     HomePhoneNo = contact.HomePhoneNo,
                     WorkPhoneNo = contact.WorkPhoneNo,
@@ -1094,104 +975,21 @@ namespace V2_Genesis.Services.Implementations
 
         public async Task WithdrawAsync(long attrId, string userId, string userName, string reason)
         {
-            if (attrId <= 0)
-                throw new InvalidOperationException("Invalid Attributes submission reference.");
-
-            if (string.IsNullOrWhiteSpace(userId))
-                throw new InvalidOperationException("The logged-in user could not be verified.");
-
-            reason = reason?.Trim() ?? string.Empty;
-
-            if (reason.Length < 10)
-                throw new InvalidOperationException(
-                    "Please provide a withdrawal reason of at least 10 characters.");
-
-            if (reason.Length > 1000)
-                throw new InvalidOperationException(
-                    "The withdrawal reason cannot exceed 1,000 characters.");
-
-            await using var transaction =
-                await _context.Database.BeginTransactionAsync();
-
-            var item = await _context.AttrPropertyInfo
-                .FirstOrDefaultAsync(x =>
-                    x.Attr_ID == attrId &&
-                    x.SubmittedByUserId == userId);
+            var item = await _context.AttrPropertyInfo.FirstOrDefaultAsync(x => x.Attr_ID == attrId);
 
             if (item == null)
-                throw new InvalidOperationException(
-                    "The Attributes submission was not found or does not belong to your account.");
-
-            if (item.IsWithdrawn || string.Equals(
-                    item.Attr_Status,
-                    "Withdrawn",
-                    StringComparison.OrdinalIgnoreCase))
-            {
-                throw new InvalidOperationException(
-                    "This Attributes submission has already been withdrawn.");
-            }
-
-            var isAllocatedToValuer =
-                !string.IsNullOrWhiteSpace(item.Task_Assigned_To_UserId)
-                || !string.IsNullOrWhiteSpace(item.Task_Assigned_To)
-                || !string.IsNullOrWhiteSpace(item.ValuerUserId)
-                || !string.IsNullOrWhiteSpace(item.Valuer);
-
-            if (isAllocatedToValuer)
-            {
-                throw new InvalidOperationException(
-                    "This submission cannot be withdrawn because it has already been allocated to a valuer.");
-            }
-
-            var terminalStatuses = new HashSet<string>(
-                StringComparer.OrdinalIgnoreCase)
-            {
-                "Approved",
-                "Rejected",
-                "Finalized",
-                "Finalised",
-                "Extracted",
-                "Extracted to OVVIO",
-                "OvvioExtracted"
-            };
-
-            if (terminalStatuses.Contains(item.Attr_Status ?? string.Empty))
-                throw new InvalidOperationException(
-                    $"A submission with status '{item.Attr_Status}' can no longer be withdrawn.");
+                throw new InvalidOperationException("Attribute submission was not found.");
 
             var oldStatus = item.Attr_Status;
-            var now = DateTime.Now;
-            var isAdminWithdrawal =
-                !string.IsNullOrWhiteSpace(item.Capturer)
-                || string.Equals(
-                    userName?.Trim(),
-                    "AdministrationEnquiries@Joburg.org.za",
-                    StringComparison.OrdinalIgnoreCase);
 
             item.IsWithdrawn = true;
-            item.IsActive = false;
             item.WithdrawnByUserId = userId;
             item.WithdrawnByName = userName;
-            item.WithdrawnDateTime = now;
+            item.WithdrawnDateTime = DateTime.Now;
             item.WithdrawalReason = reason;
             item.Attr_Status = "Withdrawn";
             item.UpdatedBy = userId;
-            item.UpdatedDate = now;
-
-            // Preserve the original declaration date as audit evidence. Disable
-            // the declaration and all evidence/PIN activity instead of deleting
-            // the original declaration timestamp.
-            var declaration = await _context.AttrDeclarations
-                .FirstOrDefaultAsync(x => x.Attr_ID == item.Attr_ID);
-
-            if (declaration != null)
-            {
-                declaration.Declaration_Accepted = false;
-                declaration.PinIsActive = false;
-                declaration.AdditionalEvidenceAllowed = false;
-                declaration.UpdatedBy = userId;
-                declaration.UpdatedDate = now;
-            }
+            item.UpdatedDate = DateTime.Now;
 
             _context.AttrWithdrawals.Add(new AttrWithdrawals
             {
@@ -1201,36 +999,10 @@ namespace V2_Genesis.Services.Implementations
                 WithdrawalReason = reason,
                 WithdrawnByUserId = userId,
                 WithdrawnByName = userName,
-                WithdrawnByRole = isAdminWithdrawal ? "Admin" : "Client",
+                WithdrawnByRole = "Client",
                 WithdrawalStatus = "Withdrawn",
-                DateWithdrawn = now
+                DateWithdrawn = DateTime.Now
             });
-
-            // Submission removes the property from LinkedProperties_Attr.
-            // Restore it atomically so it is available to link/submit again.
-            var propertyKey = item.Unit_key
-                ?? item.Property_id
-                ?? item.Premise_id;
-
-            if (!string.IsNullOrWhiteSpace(propertyKey))
-            {
-                propertyKey = propertyKey.Trim();
-
-                var alreadyLinked = await _context.LinkedProperties
-                    .AnyAsync(x =>
-                        x.IDProperty == propertyKey &&
-                        x.UserID == userId);
-
-                if (!alreadyLinked)
-                {
-                    _context.LinkedProperties.Add(new LinkedPropertyAttr
-                    {
-                        IDProperty = propertyKey,
-                        UserID = userId,
-                        PropertyFrom = "Attributes"
-                    });
-                }
-            }
 
             await AddAuditAsync(
                 item.Attr_ID,
@@ -1240,11 +1012,10 @@ namespace V2_Genesis.Services.Implementations
                 "Withdrawn",
                 userId,
                 userName,
-                isAdminWithdrawal ? "Admin" : "Client",
+                "Client",
                 reason);
 
             await _context.SaveChangesAsync();
-            await transaction.CommitAsync();
         }
 
         private async Task AddAuditAsync(
@@ -1325,25 +1096,6 @@ namespace V2_Genesis.Services.Implementations
                    && x.VacantLandCost == null;
         }
 
-        private static string? CombinePostalAddress(string? address, string? postalCode)
-        {
-            var cleanAddress = address?.Trim();
-            var cleanCode = postalCode?.Trim();
-
-            if (string.IsNullOrWhiteSpace(cleanCode))
-                return cleanAddress;
-
-            if (string.IsNullOrWhiteSpace(cleanAddress))
-                return cleanCode;
-
-            // Do not append the code twice if a validation retry posts an
-            // already-combined value.
-            if (cleanAddress.EndsWith(cleanCode, StringComparison.OrdinalIgnoreCase))
-                return cleanAddress;
-
-            return $"{cleanAddress}, {cleanCode}";
-        }
-
 
         public async Task<AttributeAcknowledgementVm?> GetAcknowledgementAsync(long attrId)
         {
@@ -1363,7 +1115,18 @@ namespace V2_Genesis.Services.Implementations
             var files = await _context.AttrFiles
                 .FirstOrDefaultAsync(x => x.Attr_ID == attrId);
 
-            var uploadedDocs = GetStoredFileNames(files);
+            var uploadedDocs = new List<string>();
+
+            if (!string.IsNullOrWhiteSpace(files?.Files1)) uploadedDocs.Add(files.Files1);
+            if (!string.IsNullOrWhiteSpace(files?.Files2)) uploadedDocs.Add(files.Files2);
+            if (!string.IsNullOrWhiteSpace(files?.Files3)) uploadedDocs.Add(files.Files3);
+            if (!string.IsNullOrWhiteSpace(files?.Files4)) uploadedDocs.Add(files.Files4);
+            if (!string.IsNullOrWhiteSpace(files?.Files5)) uploadedDocs.Add(files.Files5);
+            if (!string.IsNullOrWhiteSpace(files?.Files6)) uploadedDocs.Add(files.Files6);
+            if (!string.IsNullOrWhiteSpace(files?.Files7)) uploadedDocs.Add(files.Files7);
+            if (!string.IsNullOrWhiteSpace(files?.Files8)) uploadedDocs.Add(files.Files8);
+            if (!string.IsNullOrWhiteSpace(files?.Files9)) uploadedDocs.Add(files.Files9);
+            if (!string.IsNullOrWhiteSpace(files?.Files10)) uploadedDocs.Add(files.Files10);
 
             var submission = await BuildSubmittedAttributeViewModelAsync(attrId);
 
@@ -1460,10 +1223,6 @@ namespace V2_Genesis.Services.Implementations
 
             var declaration = await _context.AttrDeclarations
                 .FirstOrDefaultAsync(x => x.Attr_ID == attrId, cancellationToken);
-
-            var storedFiles = await _context.AttrFiles
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.Attr_ID == attrId && x.IsActive, cancellationToken);
 
             var contacts = await _context.AttrContactInfo
                 .Where(x => x.PropertyDetailsId == propertyDetailsId)
@@ -1619,11 +1378,6 @@ namespace V2_Genesis.Services.Implementations
                     DeclarationText = declaration?.Declaration_Text
                 },
 
-                Files = new AttributeFilesVm
-                {
-                    UploadedFileNames = GetStoredFileNames(storedFiles)
-                },
-
                 ContactInfos = contacts.Select(c => new AttributeContactInfoVm
                 {
                     ContactType = c.ContactType,
@@ -1721,55 +1475,6 @@ namespace V2_Genesis.Services.Implementations
             return model;
         }
 
-        private static List<string> GetStoredFileNames(AttrFiles? files)
-        {
-            if (files == null)
-                return new List<string>();
-
-            var stored = new[]
-                {
-                    (Name: files.Rep_Letter, Label: "Representative_Letter"),
-                    (Name: files.Files1, Label: "Evidence_1"),
-                    (Name: files.Files2, Label: "Evidence_2"),
-                    (Name: files.Files3, Label: "Evidence_3"),
-                    (Name: files.Files4, Label: "Evidence_4"),
-                    (Name: files.Files5, Label: "Evidence_5"),
-                    (Name: files.Files6, Label: "Evidence_6"),
-                    (Name: files.Files7, Label: "Evidence_7"),
-                    (Name: files.Files8, Label: "Evidence_8"),
-                    (Name: files.Files9, Label: "Evidence_9"),
-                    (Name: files.Files10, Label: "Evidence_10")
-                };
-
-            return stored
-                .Where(x => !string.IsNullOrWhiteSpace(x.Name))
-                .Select(x => GetUploadedDisplayName(x.Name!, files.Attr_No, x.Label))
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToList();
-        }
-
-        private static string GetUploadedDisplayName(
-            string storedFileName,
-            string? attrNo,
-            string storageLabel)
-        {
-            var fileName = Path.GetFileName(storedFileName);
-            var extension = Path.GetExtension(fileName);
-            var baseName = Path.GetFileNameWithoutExtension(fileName);
-            var prefix = $"{attrNo}_{storageLabel}_";
-
-            if (!string.IsNullOrWhiteSpace(attrNo) &&
-                baseName.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
-            {
-                baseName = baseName[prefix.Length..];
-            }
-
-            baseName = Regex.Replace(baseName, @"_\d{8}_\d{9}$", string.Empty);
-            return string.IsNullOrWhiteSpace(baseName)
-                ? fileName
-                : baseName + extension;
-        }
-
         public async Task<ReturnedAttributeCorrectionViewModel?> GetReturnedCorrectionAsync(
             long attrId,
             string userId,
@@ -1797,47 +1502,22 @@ namespace V2_Genesis.Services.Implementations
 
             if (review is null) return null;
 
-            var fields = await _context.AttrValuerReviewFieldCorrections
+            var sections = await _context.AttrValuerReviewSections
                 .AsNoTracking()
-                .Where(x => x.ReviewId == review.Id && x.IsActive)
-                .OrderBy(x => x.SectionCode)
-                .ThenBy(x => x.FieldLabel)
-                .Select(x => new ReturnedAttributeCorrectionFieldVm
-                {
-                    SectionCode = x.SectionCode,
-                    FieldCode = x.FieldCode,
-                    FieldLabel = x.FieldLabel,
-                    CityValue = x.CityValue,
-                    ClientValue = x.ClientValue
-                })
-                .ToListAsync(cancellationToken);
-
-            // Only fields explicitly selected by the valuer may be corrected.
-            if (fields.Count == 0) return null;
-
-            var sectionCommentRows = await _context.AttrValuerReviewSections
-                .AsNoTracking()
-                .Where(x => x.ReviewId == review.Id)
-                .Select(x => new { x.SectionCode, x.SectionComment })
-                .ToListAsync(cancellationToken);
-
-            var sectionComments = sectionCommentRows
-                .GroupBy(x => x.SectionCode, StringComparer.OrdinalIgnoreCase)
-                .ToDictionary(
-                    x => x.Key,
-                    x => x.Select(v => v.SectionComment).FirstOrDefault() ?? string.Empty,
-                    StringComparer.OrdinalIgnoreCase);
-
-            var sections = fields
-                .GroupBy(x => x.SectionCode, StringComparer.OrdinalIgnoreCase)
+                .Where(x => x.ReviewId == review.Id
+                            && (x.RequiresCorrection || x.SectionDecision == "Needs correction"))
+                .OrderBy(x => x.Id)
                 .Select(x => new ReturnedAttributeCorrectionSectionVm
                 {
-                    Code = x.Key,
-                    Name = GetReturnedSectionName(x.Key),
-                    Comment = sectionComments.TryGetValue(x.Key, out var comment) ? comment : string.Empty
+                    Code = x.SectionCode,
+                    Name = x.SectionName,
+                    Comment = x.SectionComment ?? string.Empty
                 })
-                .OrderBy(x => x.Name)
-                .ToList();
+                .ToListAsync(cancellationToken);
+
+            // A returned submission without a marked correction section is incomplete
+            // on the valuer side and must not expose the entire form for editing.
+            if (sections.Count == 0) return null;
 
             var submission = await BuildSubmittedAttributeViewModelAsync(attrId, cancellationToken);
             if (submission is null) return null;
@@ -1852,8 +1532,7 @@ namespace V2_Genesis.Services.Implementations
                 RequestedAt = info.RevisionRequestedDateTime,
                 RequestedBy = info.RevisionRequestedBy ?? string.Empty,
                 Submission = submission,
-                Sections = sections,
-                Fields = fields
+                Sections = sections
             };
         }
 
@@ -1896,12 +1575,16 @@ namespace V2_Genesis.Services.Implementations
             if (review is null)
                 throw new InvalidOperationException("The valuer correction request could not be found.");
 
-            var allowedFields = await _context.AttrValuerReviewFieldCorrections
-                .Where(x => x.ReviewId == review.Id && x.IsActive)
+            var allowedCodeRows = await _context.AttrValuerReviewSections
+                .Where(x => x.ReviewId == review.Id
+                            && (x.RequiresCorrection || x.SectionDecision == "Needs correction"))
+                .Select(x => x.SectionCode)
                 .ToListAsync(cancellationToken);
 
-            if (allowedFields.Count == 0)
-                throw new InvalidOperationException("The valuer did not identify any fields for correction.");
+            var allowedCodes = allowedCodeRows.ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            if (allowedCodes.Count == 0)
+                throw new InvalidOperationException("The valuer did not identify any form section for correction.");
 
             var propertyId = info.PropertyDetails.Id;
             var posted = model.Submission ?? new AttributeSubmissionViewModel();
@@ -1920,13 +1603,88 @@ namespace V2_Genesis.Services.Implementations
 
             var now = DateTime.Now;
 
-            await ApplySelectedFieldCorrectionsAsync(
-                info,
-                posted,
-                allowedFields,
-                userId,
-                now,
-                cancellationToken);
+            if (allowedCodes.Contains("PROPERTY_DETAILS"))
+            {
+                CopyMatchingValues(posted.PropertyDetails, info.PropertyDetails);
+                info.Property_Desc = posted.PropertyDetails.PropertyDesc ?? info.Property_Desc;
+                StampUpdated(info.PropertyDetails, userId, now);
+            }
+
+            if (allowedCodes.Contains("VALUATION_DETAILS"))
+            {
+                var row = await _context.AttrValuationDetails
+                    .FirstOrDefaultAsync(x => x.PropertyDetailsId == propertyId, cancellationToken);
+                if (row is null)
+                {
+                    row = new AttrValuationDetails { PropertyDetailsId = propertyId, CreatedBy = userId, CreatedDate = now };
+                    _context.AttrValuationDetails.Add(row);
+                }
+                CopyMatchingValues(posted.ValuationDetails, row);
+                StampUpdated(row, userId, now);
+            }
+
+            if (allowedCodes.Contains("CONTACT_INFORMATION"))
+                await ReplaceRowsAsync(_context.AttrContactInfo, propertyId, posted.ContactInfos, userId, now, cancellationToken);
+
+            if (allowedCodes.Contains("ACCESS_INFORMATION"))
+            {
+                var row = await _context.AttrAccess
+                    .FirstOrDefaultAsync(x => x.PropertyDetailsId == propertyId, cancellationToken);
+                if (row is null)
+                {
+                    row = new AttrAccess { PropertyDetailsId = propertyId, CreatedBy = userId, CreatedDate = now };
+                    _context.AttrAccess.Add(row);
+                }
+                CopyMatchingValues(posted.Access, row);
+                StampUpdated(row, userId, now);
+            }
+
+            if (allowedCodes.Contains("PRIMARY_ATTRIBUTES"))
+                await UpdateSingleAsync(_context.AttrPrimaryAttributes, propertyId, posted.PrimaryAttributes, userId, now, cancellationToken);
+
+            if (allowedCodes.Contains("SECONDARY_ATTRIBUTES"))
+                await UpdateSingleAsync(_context.AttrSecondaryAttributes, propertyId, posted.SecondaryAttributes, userId, now, cancellationToken);
+
+            if (allowedCodes.Contains("BUSINESS_BUILDINGS"))
+                await ReplaceRowsAsync(_context.AttrBusinessBuildings, propertyId, posted.BusinessBuildings, userId, now, cancellationToken);
+
+            if (allowedCodes.Contains("BUSINESS_SECTIONS"))
+                await ReplaceRowsAsync(_context.AttrBusinessSections, propertyId, posted.BusinessSections, userId, now, cancellationToken);
+
+            if (allowedCodes.Contains("BUSINESS_GENERAL"))
+                await UpdateSingleAsync(_context.AttrBusinessGeneral, propertyId, posted.BusinessGeneral, userId, now, cancellationToken);
+
+            if (allowedCodes.Contains("DRC_BUILDINGS"))
+                await ReplaceRowsAsync(_context.AttrDrcBuildings, propertyId, posted.DrcBuildings, userId, now, cancellationToken);
+
+            if (allowedCodes.Contains("DRC_IMPROVEMENTS"))
+                await ReplaceRowsAsync(_context.AttrDrcImprovements, propertyId, posted.DrcImprovements, userId, now, cancellationToken);
+
+            if (allowedCodes.Contains("DRC_VACANT_LAND"))
+                await ReplaceRowsAsync(_context.AttrDrcVacantLand, propertyId, posted.DrcVacantLands, userId, now, cancellationToken);
+
+            if (allowedCodes.Contains("DRC_MARKET_VALUE"))
+                await UpdateSingleAsync(_context.AttrDrcMarketValueDemolition, propertyId, posted.DrcMarketValueDemolition, userId, now, cancellationToken);
+
+            if (allowedCodes.Contains("CALCULATIONS"))
+                await UpdateSingleAsync(_context.AttrCalculations, propertyId, posted.Calculations, userId, now, cancellationToken);
+
+            if (allowedCodes.Contains("DECLARATION"))
+            {
+                var declaration = await _context.AttrDeclarations
+                    .FirstOrDefaultAsync(x => x.Attr_ID == info.Attr_ID, cancellationToken);
+                if (declaration is not null)
+                {
+                    declaration.Declaration_Accepted = posted.Declaration.DeclarationAccepted;
+                    declaration.Declaration_Text = posted.Declaration.DeclarationText;
+                    declaration.Signature_Name = posted.Declaration.SignatureName;
+                    if (!string.IsNullOrWhiteSpace(posted.Declaration.SignaturePicture))
+                        declaration.Signature_Picture = posted.Declaration.SignaturePicture;
+                    declaration.Declaration_Date = now;
+                    declaration.UpdatedBy = userId;
+                    declaration.UpdatedDate = now;
+                }
+            }
 
             var oldStatus = info.Attr_Status;
             info.Attr_Status = "Resubmitted";
@@ -1953,233 +1711,6 @@ namespace V2_Genesis.Services.Implementations
 
             await _context.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
-        }
-
-        private static string GetReturnedSectionName(string? code) => (code ?? string.Empty).ToUpperInvariant() switch
-        {
-            "VALUATION_DETAILS" => "Valuation Details",
-            "ACCESS" or "ACCESS_INFORMATION" => "Access Information",
-            "PRIMARY_ATTRIBUTES" => "Primary Attributes",
-            "SECONDARY_ATTRIBUTES" => "Secondary Attributes",
-            "BUSINESS_BUILDINGS" => "Business Buildings",
-            "BUSINESS_SECTIONS" => "Business Sections",
-            "BUSINESS_GENERAL" => "Business General",
-            "DRC_BUILDINGS" => "DRC Buildings",
-            "DRC_IMPROVEMENTS" => "DRC Improvements",
-            "DRC_VACANT_LAND" => "DRC Vacant Land",
-            "DRC_MARKET_VALUE" => "DRC Market Value and Demolition",
-            "CALCULATIONS" => "Calculations",
-            _ => (code ?? string.Empty).Replace('_', ' ')
-        };
-
-        private async Task ApplySelectedFieldCorrectionsAsync(
-            AttrPropertyInfo info,
-            AttributeSubmissionViewModel posted,
-            IReadOnlyCollection<AttrValuerReviewFieldCorrection> selectedFields,
-            string userId,
-            DateTime now,
-            CancellationToken cancellationToken)
-        {
-            if (info.PropertyDetails is null) return;
-            var propertyId = info.PropertyDetails.Id;
-
-            foreach (var group in selectedFields.GroupBy(x => x.SectionCode, StringComparer.OrdinalIgnoreCase))
-            {
-                var code = group.Key.ToUpperInvariant();
-
-                if (code == "VALUATION_DETAILS")
-                {
-                    var row = await _context.AttrValuationDetails.FirstOrDefaultAsync(x => x.PropertyDetailsId == propertyId, cancellationToken);
-                    if (row is null)
-                    {
-                        row = new AttrValuationDetails { PropertyDetailsId = propertyId, CreatedBy = userId, CreatedDate = now };
-                        _context.AttrValuationDetails.Add(row);
-                    }
-                    CopySelectedObjectFields(posted.ValuationDetails, row, group);
-                    StampUpdated(row, userId, now);
-                }
-                else if (code is "ACCESS" or "ACCESS_INFORMATION")
-                {
-                    var row = await _context.AttrAccess.FirstOrDefaultAsync(x => x.PropertyDetailsId == propertyId, cancellationToken);
-                    if (row is null)
-                    {
-                        row = new AttrAccess { PropertyDetailsId = propertyId, CreatedBy = userId, CreatedDate = now };
-                        _context.AttrAccess.Add(row);
-                    }
-                    CopySelectedObjectFields(posted.Access, row, group);
-                    StampUpdated(row, userId, now);
-                }
-                else if (code == "PRIMARY_ATTRIBUTES")
-                {
-                    var row = await _context.AttrPrimaryAttributes.FirstOrDefaultAsync(x => x.PropertyDetailsId == propertyId, cancellationToken);
-                    if (row is null)
-                    {
-                        row = new AttrPrimaryAttributes { PropertyDetailsId = propertyId, CreatedBy = userId, CreatedDate = now };
-                        _context.AttrPrimaryAttributes.Add(row);
-                    }
-                    CopySelectedObjectFields(posted.PrimaryAttributes, row, group);
-                    StampUpdated(row, userId, now);
-                }
-                else if (code == "SECONDARY_ATTRIBUTES")
-                {
-                    var row = await _context.AttrSecondaryAttributes.FirstOrDefaultAsync(x => x.PropertyDetailsId == propertyId, cancellationToken);
-                    if (row is null)
-                    {
-                        row = new AttrSecondaryAttributes { PropertyDetailsId = propertyId, CreatedBy = userId, CreatedDate = now };
-                        _context.AttrSecondaryAttributes.Add(row);
-                    }
-                    CopySelectedObjectFields(posted.SecondaryAttributes, row, group);
-                    StampUpdated(row, userId, now);
-                }
-                else if (code == "BUSINESS_GENERAL")
-                {
-                    var row = await _context.AttrBusinessGeneral.FirstOrDefaultAsync(x => x.PropertyDetailsId == propertyId, cancellationToken);
-                    if (row is null)
-                    {
-                        row = new AttrBusinessGeneral { PropertyDetailsId = propertyId, CreatedBy = userId, CreatedDate = now };
-                        _context.AttrBusinessGeneral.Add(row);
-                    }
-                    CopySelectedObjectFields(posted.BusinessGeneral, row, group);
-                    StampUpdated(row, userId, now);
-                }
-                else if (code == "DRC_MARKET_VALUE")
-                {
-                    var row = await _context.AttrDrcMarketValueDemolition.FirstOrDefaultAsync(x => x.PropertyDetailsId == propertyId, cancellationToken);
-                    if (row is null)
-                    {
-                        row = new AttrDrcMarketValueDemolition { PropertyDetailsId = propertyId, CreatedBy = userId, CreatedDate = now };
-                        _context.AttrDrcMarketValueDemolition.Add(row);
-                    }
-                    CopySelectedObjectFields(posted.DrcMarketValueDemolition, row, group);
-                    StampUpdated(row, userId, now);
-                }
-                else if (code == "CALCULATIONS")
-                {
-                    var row = await _context.AttrCalculations.FirstOrDefaultAsync(x => x.PropertyDetailsId == propertyId, cancellationToken);
-                    if (row is null)
-                    {
-                        row = new AttrCalculations { PropertyDetailsId = propertyId, CreatedBy = userId, CreatedDate = now };
-                        _context.AttrCalculations.Add(row);
-                    }
-                    CopySelectedObjectFields(posted.Calculations, row, group);
-                    StampUpdated(row, userId, now);
-                }
-                else if (code == "BUSINESS_BUILDINGS")
-                {
-                    var rows = await _context.AttrBusinessBuildings.Where(x => x.PropertyDetailsId == propertyId).OrderBy(x => x.Id).ToListAsync(cancellationToken);
-                    CopySelectedListFields(posted.BusinessBuildings, rows, group, "BUILDING", userId, now);
-                }
-                else if (code == "BUSINESS_SECTIONS")
-                {
-                    var rows = await _context.AttrBusinessSections.Where(x => x.PropertyDetailsId == propertyId).OrderBy(x => x.Id).ToListAsync(cancellationToken);
-                    CopySelectedListFields(posted.BusinessSections, rows, group, "SECTION", userId, now);
-                }
-                else if (code == "DRC_BUILDINGS")
-                {
-                    var rows = await _context.AttrDrcBuildings.Where(x => x.PropertyDetailsId == propertyId).OrderBy(x => x.Id).ToListAsync(cancellationToken);
-                    CopySelectedListFields(posted.DrcBuildings, rows, group, "BUILDING", userId, now);
-                }
-                else if (code == "DRC_IMPROVEMENTS")
-                {
-                    var rows = await _context.AttrDrcImprovements.Where(x => x.PropertyDetailsId == propertyId).OrderBy(x => x.Id).ToListAsync(cancellationToken);
-                    CopySelectedListFields(posted.DrcImprovements, rows, group, "IMPROVEMENT", userId, now);
-                }
-                else if (code == "DRC_VACANT_LAND")
-                {
-                    var rows = await _context.AttrDrcVacantLand.Where(x => x.PropertyDetailsId == propertyId).OrderBy(x => x.Id).ToListAsync(cancellationToken);
-                    CopySelectedListFields(posted.DrcVacantLands, rows, group, "LAND", userId, now);
-                }
-            }
-        }
-
-        private static void CopySelectedObjectFields<TSource, TTarget>(
-            TSource source,
-            TTarget target,
-            IEnumerable<AttrValuerReviewFieldCorrection> fields)
-        {
-            var selected = fields.Select(x => NormalizeCorrectionCode(x.FieldCode))
-                .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-            var targetProperties = typeof(TTarget).GetProperties()
-                .Where(x => x.CanWrite)
-                .ToDictionary(x => NormalizeCorrectionCode(x.Name), StringComparer.OrdinalIgnoreCase);
-
-            foreach (var sourceProperty in typeof(TSource).GetProperties().Where(x => x.CanRead))
-            {
-                var code = NormalizeCorrectionCode(sourceProperty.Name);
-                if (!selected.Contains(code) || !targetProperties.TryGetValue(code, out var targetProperty)) continue;
-                SetConvertedValue(target, targetProperty, sourceProperty.GetValue(source));
-            }
-        }
-
-        private static void CopySelectedListFields<TSource, TTarget>(
-            IReadOnlyList<TSource> sources,
-            IReadOnlyList<TTarget> targets,
-            IEnumerable<AttrValuerReviewFieldCorrection> fields,
-            string rowPrefix,
-            string userId,
-            DateTime now)
-        {
-            foreach (var field in fields)
-            {
-                var match = System.Text.RegularExpressions.Regex.Match(
-                    field.FieldCode ?? string.Empty,
-                    $"^{rowPrefix}_(\\d+)_(.+)$",
-                    System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-
-                if (!match.Success || !int.TryParse(match.Groups[1].Value, out var rowNo)) continue;
-                var index = rowNo - 1;
-                if (index < 0 || index >= sources.Count || index >= targets.Count) continue;
-
-                var propertyCode = NormalizeCorrectionCode(match.Groups[2].Value);
-                var sourceProperty = typeof(TSource).GetProperties()
-                    .FirstOrDefault(x => x.CanRead && NormalizeCorrectionCode(x.Name) == propertyCode);
-                var targetProperty = typeof(TTarget).GetProperties()
-                    .FirstOrDefault(x => x.CanWrite && NormalizeCorrectionCode(x.Name) == propertyCode);
-
-                if (sourceProperty is null || targetProperty is null) continue;
-                SetConvertedValue(targets[index]!, targetProperty, sourceProperty.GetValue(sources[index]));
-                StampUpdated(targets[index]!, userId, now);
-            }
-        }
-
-        private static string NormalizeCorrectionCode(string? value)
-        {
-            if (string.IsNullOrWhiteSpace(value)) return string.Empty;
-            var result = new System.Text.StringBuilder();
-            for (var i = 0; i < value.Length; i++)
-            {
-                var ch = value[i];
-                if (!char.IsLetterOrDigit(ch))
-                {
-                    if (result.Length > 0 && result[^1] != '_') result.Append('_');
-                    continue;
-                }
-                if (char.IsUpper(ch) && i > 0 && char.IsLower(value[i - 1]) && result[^1] != '_') result.Append('_');
-                result.Append(char.ToUpperInvariant(ch));
-            }
-            return result.ToString().Trim('_');
-        }
-
-        private static void SetConvertedValue(object target, System.Reflection.PropertyInfo targetProperty, object? value)
-        {
-            if (value is null)
-            {
-                targetProperty.SetValue(target, null);
-                return;
-            }
-
-            var targetType = Nullable.GetUnderlyingType(targetProperty.PropertyType) ?? targetProperty.PropertyType;
-            if (targetType.IsInstanceOfType(value))
-            {
-                targetProperty.SetValue(target, value);
-                return;
-            }
-
-            if (targetType.IsEnum)
-                targetProperty.SetValue(target, Enum.Parse(targetType, Convert.ToString(value)!, true));
-            else
-                targetProperty.SetValue(target, Convert.ChangeType(value, targetType, System.Globalization.CultureInfo.InvariantCulture));
         }
 
         private static void CopyMatchingValues<TSource, TTarget>(TSource source, TTarget target)
@@ -2809,7 +2340,6 @@ namespace V2_Genesis.Services.Implementations
                 c.Citizenship = CleanText(c.Citizenship, 100);
                 c.PhysicalAddress = CleanText(c.PhysicalAddress, 500);
                 c.PostalAddress = CleanText(c.PostalAddress, 500);
-                c.PostalCode = CleanText(c.PostalCode, 10);
                 c.Email = CleanEmail(c.Email);
                 c.HomePhoneNo = CleanPhone(c.HomePhoneNo);
                 c.WorkPhoneNo = CleanPhone(c.WorkPhoneNo);

@@ -571,6 +571,14 @@ public class NoticeService : INoticeService
         var now = DateTime.Now;
         var letterDate = now.ToString("dd MMMM yyyy");
         var generatedDate = now.ToString("dd MMMM yyyy HH:mm");
+        var evidenceCloseDate = ResolveSubmissionDate(data.SubmissionTime, now).AddHours(48);
+
+        var sourceType = ResolveAcknowledgementSource(data.PropertyFrom);
+        var isLis = sourceType == AcknowledgementSource.Lis;
+        var isOmission = sourceType == AcknowledgementSource.Omission;
+        var rollTitle = string.IsNullOrWhiteSpace(roll.RollTitle)
+            ? data.RollSource
+            : roll.RollTitle.Trim();
 
         string actionWord = data.IsAppeal ? "appeal" : "objection";
         string actionWordUpper = data.IsAppeal ? "APPEAL" : "OBJECTION";
@@ -588,7 +596,22 @@ public class NoticeService : INoticeService
             ? "Appeal Number:"
             : "Objection Number:";
 
-        string listedTitle = "PROPERTY DETAILS AS LISTED IN THE VALUATION ROLL";
+        string listedTitle = isLis
+            ? "PROPERTY DETAILS AS LISTED IN LIS"
+            : $"PROPERTY DETAILS AS LISTED IN {rollTitle.ToUpperInvariant()}";
+
+        string sourceSummary = sourceType switch
+        {
+            AcknowledgementSource.Lis =>
+                $"LIS IN {rollTitle.ToUpperInvariant()}",
+            AcknowledgementSource.Omission =>
+                $"OMISSION IN {rollTitle.ToUpperInvariant()}",
+            _ when dates is not null =>
+                $"{rollTitle.ToUpperInvariant()}\n{actionWordUpper} PERIOD: " +
+                $"{dates.OpenDate:dd MMMM yyyy} AT 08:00 - " +
+                $"{dates.VisibleUntil:dd MMMM yyyy} AT 15:00",
+            _ => rollTitle.ToUpperInvariant()
+        };
 
         string requestedTitle = data.IsAppeal
             ? "PROPERTY DETAILS AS APPEALED"
@@ -643,7 +666,8 @@ public class NoticeService : INoticeService
                         .FontSize(9);
 
                     col.Item().Text(
-                        "IMPORTANT NOTICE: You have 48 hours from submission to upload outstanding evidence.")
+                        "IMPORTANT NOTICE: You have 48 hours from submission to upload outstanding evidence. " +
+                        $"Evidence upload closes: {evidenceCloseDate:dd MMMM yyyy 'at' HH:mm}.")
                         .FontSize(9)
                         .Bold();
 
@@ -664,9 +688,6 @@ public class NoticeService : INoticeService
                             RefRow(refBox, referenceLabel, data.ObjectionRef);
                             RefRow(refBox, "PIN:", data.ObjectionNo);
                             RefRow(refBox, "Date Captured:", data.SubmissionTime);
-
-                            if (!string.IsNullOrWhiteSpace(data.ValuationKey))
-                                RefRow(refBox, "Valuation Key:", data.ValuationKey);
                         });
 
                     col.Item().BorderBottom(1).BorderColor("#555555");
@@ -679,19 +700,19 @@ public class NoticeService : INoticeService
 
                     PropertyTable(
                         col,
-                        data.Old_PropertyDescription,
-                        data.Old_Category,
-                        data.Old_Address,
-                        data.Old_MarketValue,
-                        data.Old_Extent,
-                        data.Old_Owner,
-                        data.IsMulti,
-                        data.Old2_Category,
-                        data.Old2_MarketValue,
-                        data.Old2_Extent,
-                        data.Old3_Category,
-                        data.Old3_MarketValue,
-                        data.Old3_Extent);
+                        isOmission ? null : data.Old_PropertyDescription,
+                        isOmission ? null : data.Old_Category,
+                        isOmission ? null : data.Old_Address,
+                        isOmission ? null : FormatAcknowledgementMarketValue(data.Old_MarketValue),
+                        isOmission ? null : data.Old_Extent,
+                        isOmission ? null : data.Old_Owner,
+                        !isOmission && data.IsMulti,
+                        isOmission ? null : data.Old2_Category,
+                        isOmission ? null : FormatAcknowledgementMarketValue(data.Old2_MarketValue),
+                        isOmission ? null : data.Old2_Extent,
+                        isOmission ? null : data.Old3_Category,
+                        isOmission ? null : FormatAcknowledgementMarketValue(data.Old3_MarketValue),
+                        isOmission ? null : data.Old3_Extent);
 
                     col.Item().BorderBottom(1).BorderColor("#555555");
 
@@ -706,15 +727,15 @@ public class NoticeService : INoticeService
                         data.New_PropertyDescription,
                         data.New_Category,
                         data.New_Address,
-                        data.New_MarketValue,
+                        FormatAcknowledgementMarketValue(data.New_MarketValue),
                         data.New_Extent,
                         data.New_Owner,
                         data.IsMulti,
                         data.New2_Category,
-                        data.New2_MarketValue,
+                        FormatAcknowledgementMarketValue(data.New2_MarketValue),
                         data.New2_Extent,
                         data.New3_Category,
-                        data.New3_MarketValue,
+                        FormatAcknowledgementMarketValue(data.New3_MarketValue),
                         data.New3_Extent);
 
                     // REASONS
@@ -753,19 +774,16 @@ public class NoticeService : INoticeService
 
 
                     col.Item().Element(e => SupportingDocumentsBlock(e, docs));
-                    // CLOSING DATE
-                    if (dates is not null)
-                    {
-                        col.Item()
-                            .Background("#FFF5E6")
-                            .Border(1)
-                            .BorderColor("#FF8C00")
-                            .Padding(6)
-                            .AlignCenter()
-                            .Text($"{actionWordUpper} PERIOD CLOSES: {dates.VisibleUntil:dd MMMM yyyy} AT 15:00")
-                            .Bold()
-                            .FontSize(8);
-                    }
+                    // SOURCE / ROLL PERIOD
+                    col.Item()
+                        .Background("#FFF5E6")
+                        .Border(1)
+                        .BorderColor("#FF8C00")
+                        .Padding(6)
+                        .AlignCenter()
+                        .Text(sourceSummary)
+                        .Bold()
+                        .FontSize(8);
 
                     // SIGNATURE
                     //if (File.Exists(signaturePath))
@@ -791,7 +809,7 @@ public class NoticeService : INoticeService
                             .FontSize(7)
                             .FontColor("#666666");
 
-                        if (!string.IsNullOrWhiteSpace(data.ValuationKey))
+                        if (!isOmission && !string.IsNullOrWhiteSpace(data.ValuationKey))
                         {
                             f.Item()
                                 .Text(data.ValuationKey)
@@ -802,6 +820,32 @@ public class NoticeService : INoticeService
                     });
             });
         }).GeneratePdf();
+
+
+        static DateTime ResolveSubmissionDate(string? value, DateTime fallback)
+        {
+            if (DateTime.TryParse(value, out var parsed))
+                return parsed;
+
+            return fallback;
+        }
+
+        static string? FormatAcknowledgementMarketValue(string? value)
+            => string.IsNullOrWhiteSpace(value) ? null : FormatZAR(value);
+
+        static AcknowledgementSource ResolveAcknowledgementSource(string? value)
+        {
+            var source = value?.Trim() ?? string.Empty;
+
+            if (source.Contains("LIS", StringComparison.OrdinalIgnoreCase))
+                return AcknowledgementSource.Lis;
+
+            if (source.Contains("Omission", StringComparison.OrdinalIgnoreCase) ||
+                source.Contains("Omitted", StringComparison.OrdinalIgnoreCase))
+                return AcknowledgementSource.Omission;
+
+            return AcknowledgementSource.Roll;
+        }
 
 
         static void RefRow(ColumnDescriptor col, string label, string? value)
@@ -906,6 +950,13 @@ public class NoticeService : INoticeService
                 .Text(string.IsNullOrWhiteSpace(text) ? "" : text)
                 .FontSize(8);
         }
+    }
+
+    private enum AcknowledgementSource
+    {
+        Roll,
+        Lis,
+        Omission
     }
     // ── Helper: renders one section's comparison table ────────────────────
     private static void SupportingDocumentsBlock(IContainer container, List<string> docs)
@@ -1096,11 +1147,6 @@ public class NoticeService : INoticeService
     int fileCount, List<string> fileNames)
     {
         var roll = _noticeSettings.For(rollSource);
-        if (rollSource.Equals("Objection_Query", StringComparison.OrdinalIgnoreCase) ||
-            rollSource.Equals("Query", StringComparison.OrdinalIgnoreCase))
-        {
-            roll.RollTitle = "SECTION 78 QUERY / REVIEW";
-        }
         var fileName = $"Attachment_{SanitiseName(objectionNo)}.pdf";
         var header = Path.Combine(_env.WebRootPath, HEADER_IMAGE);
 
@@ -1156,7 +1202,7 @@ public class NoticeService : INoticeService
                         {
                             box.Item().Text(t =>
                             {
-                                t.Span("Submission Reference: ").Bold();
+                                t.Span("Objection/Appeal Number: ").Bold();
                                 t.Span(objectionNo);
                             });
                             box.Item().Text(t =>
@@ -1596,8 +1642,7 @@ public class NoticeService : INoticeService
             await using var conn = new SqlConnection(connStr);
 
             var queries = await conn.QueryAsync(
-                @"SELECT q.Query_No, q.Query_Status, q.Sub_typ,
-                         s1.Old_Property_Description AS Property_Desc
+                @"SELECT q.Query_No, s1.Old_Property_Description AS Property_Desc
                   FROM   dbo.Que_Property_Info  q
                   JOIN   dbo.Obj_Section1        s1
                          ON s1.Objection_Ref_S1 = q.Query_No
@@ -1608,26 +1653,13 @@ public class NoticeService : INoticeService
             {
                 var queryNo = q.Query_No?.ToString() ?? "";
                 var propDesc = q.Property_Desc?.ToString() ?? "";
-                var status = q.Query_Status?.ToString() ?? "";
-                var isReview = Convert.ToInt32(q.Sub_typ ?? 0) == 1;
-
-                var isOutcomeStatus =
-                    status.Equals("Query-Finalized", StringComparison.OrdinalIgnoreCase) ||
-                    status.Equals("Review-Finalized", StringComparison.OrdinalIgnoreCase) ||
-                    status.Equals("Notice-Sent", StringComparison.OrdinalIgnoreCase);
-
-                if (!isOutcomeStatus)
-                    continue;
 
                 // Section 78 outcome — same pattern as Section 49
                 var outcome = FindNoticeFile(QueryRoot, propDesc);
                 if (outcome.exists)
                     vm.QueryNotices.Add(Notice(
                         queryNo, propDesc, "Query / Review",
-                        NoticeType.Section78Outcome,
-                        isReview
-                            ? "Section 78 Review Outcome"
-                            : "Section 78 Query Outcome",
+                        NoticeType.Section78Outcome, "Section 78 Query Outcome",
                         outcome.path, outcome.ext,
                         null, null, null));
             }
@@ -1689,3 +1721,4 @@ public class NoticeService : INoticeService
         };
     }
 }
+

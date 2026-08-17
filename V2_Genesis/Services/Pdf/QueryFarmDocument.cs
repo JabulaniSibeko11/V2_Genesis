@@ -10,39 +10,37 @@ namespace GV_Forms.Pdf
             InquiryAggregate data,
             Wording wording,
             IWebHostEnvironment environment)
-            : base(data, wording, environment) { }
+            : base(data, wording, environment)
+        {
+        }
 
         protected override string GetHeadingLeft()
             => "AGRICULTURAL HOLDINGS OR FARMS";
 
         protected override void BuildPropertyIntro(ColumnDescriptor col)
         {
-            dynamic main = Data.Main;
-
             RoundedBlock(col, c =>
             {
                 c.Column(x =>
                 {
-                    x.Item().Text("LODGING OF A QUERY AGAINSTS MATTERS PERTAINING TO A GENERAL / SUPPLEMENTARY VALUATION ON THE PROPERTY DESCRIBED BELOW:")
+                    x.Item().Text($"LODGING OF A {InquiryUpper} AGAINST MATTERS PERTAINING TO A GENERAL / SUPPLEMENTARY VALUATION ON THE PROPERTY DESCRIBED BELOW:")
                         .Bold().FontSize(8);
 
-                    x.Item().PaddingTop(4).Text("DESCRIPTION OF PROPERTY IN RESPECT OF WHICH THE QUERY IS MADE")
+                    x.Item().PaddingTop(4).Text($"DESCRIPTION OF PROPERTY IN RESPECT OF WHICH THE {InquiryUpper} IS MADE")
                         .Bold().FontSize(8);
 
                     x.Item().Text("(Complete a separate form for each property)").FontSize(8);
 
                     x.Item().PaddingTop(6).Row(r =>
                     {
-                        LineField(r, "ERF/PORTION/UNIT NO.",
-                            V(main, "ERF", "Erf", "PTN", "Ptn", "Unit_key", "Unit_Key", "Property_id"), 1);
-                        LineField(r, "SUBURB/SCHEME NAME",
-                            V(main, "Town", "Town_Name", "Property_Desc"), 2);
+                        LineField(r, "ERF/PORTION/UNIT NO.", ErfOrUnitNumber(), 1);
+                        LineField(r, "SUBURB/SCHEME NAME", PropertyDescription(), 2);
                     });
 
                     x.Item().Row(r =>
                     {
-                        LineField(r, "FARM NO.", V(main, "FarmNo", "Farm_No", "ERF", "Erf"), 1);
-                        LineField(r, "REG. DIV", V(main, "RegDiv", "Reg_Div"), 1);
+                        LineField(r, "FARM NO.", FarmNumber(), 1);
+                        LineField(r, "REG. DIV", RegistrationDivision(), 1);
                     });
                 });
             });
@@ -50,37 +48,13 @@ namespace GV_Forms.Pdf
 
         protected override void BuildRemainingSections(ColumnDescriptor col)
         {
-            BuildSection3Reasons(col);
             BuildSection4PropertyDetails(col);
             BuildSection5DwellingAndLand(col);
             BuildSection5Other(col);
             BuildSection6Market(col);
             BuildSection7ReviewDetails(col);
-            BuildDeclaration(col, "Section7");
+            BuildDeclaration(col, "Section7", 8);
             BuildAdminReceipt(col);
-        }
-        private void BuildSection3Reasons(ColumnDescriptor col)
-        {
-            var s = S("Section2Query");
-
-            RoundedBlock(col, c =>
-            {
-                c.Column(x =>
-                {
-                    x.Item()
-                        .Text("3.1 Reasons/Motivation why above supplementary is to be done")
-                        .Bold()
-                        .FontSize(11);
-
-                    x.Item()
-                        .PaddingTop(6)
-                        .Border(1)
-                        .MinHeight(520)
-                        .Padding(6)
-                        .Text((string?)Convert.ToString(V(s, "Motivation_for_Supp_Request")) ?? string.Empty)
-                        .FontSize(8);
-                });
-            });
         }
         private void BuildSection4PropertyDetails(ColumnDescriptor col)
         {
@@ -108,7 +82,7 @@ namespace GV_Forms.Pdf
                     x.Item().Row(r =>
                     {
                         LineField(r, "NAME OF BONDHOLDER", V(s, "BondHolder_Name"), 1);
-                        LineField(r, "REGISTERED AMOUNT OF BOND", V(s, "Registered_Amount"), 1);
+                        LineField(r, "REGISTERED AMOUNT OF BOND", Money(V(s, "Registered_Amount")), 1);
                     });
 
                     x.Item().Row(r =>
@@ -132,7 +106,7 @@ namespace GV_Forms.Pdf
                     {
                         LineField(r, "WAS COMPENSATION PAID?", V(s, "Compensation_Paid"), 1);
                         LineField(r, "DATE OF PAYMENT", V(s, "Payment_Date"), 1);
-                        LineField(r, "AMOUNT R", V(s, "Compensation_Amount"), 1);
+                        LineField(r, "AMOUNT", Money(V(s, "Compensation_Amount")), 1);
                     });
                 });
             });
@@ -171,28 +145,28 @@ namespace GV_Forms.Pdf
                         LineField(r, "LAUNDRY", V(s, "Agri_Laundry"), 1);
                         LineField(r, "SEPARATE TOILET", V(s, "Agri_Seperate_Toilet"), 1);
                         LineField(r, "OTHER", V(s, "Agri_Dwell_Other1"), 1);
-                        LineField(r, "OTHER", V(s, "Other2"), 1);
+                        LineField(r, "MAIN DWELLING SIZE", V(s, "Agri_Main_Dwelling_Size"), 1);
                     });
 
                     x.Item().PaddingTop(6).Text("5.2 OTHER BUILDINGS – ATTACH AS ANNEXURE A").SemiBold();
                     x.Item().Row(r =>
                     {
-                        LineField(r, "BUILDING NO.", V(s, "BuildingNo"), 1);
-                        LineField(r, "DESCRIPTION", V(s, "BuildingDescription"), 2);
-                        LineField(r, "SIZE (m²)", V(s, "BuildingSize"), 1);
-                        LineField(r, "CONDITION", V(s, "Condition"), 1);
+                        LineField(r, "BUILDING NO.", V(s, "Agri_Building_No"), 1);
+                        LineField(r, "DESCRIPTION", V(s, "Agri_Building_Description"), 2);
+                        LineField(r, "SIZE (m²)", V(s, "Agri_Building_Size"), 1);
+                        LineField(r, "CONDITION", V(s, "Agri_Building_Condition"), 1);
                     });
 
                     x.Item().Row(r =>
                     {
-                        LineField(r, "IS THE BUILDING FUNCTIONAL?", V(s, "IsFunctional"), 1);
+                        LineField(r, "IS THE BUILDING FUNCTIONAL?", V(s, "Agri_Building_Functional"), 1);
                     });
 
                     x.Item().PaddingTop(6).Text("5.3 IS ANY PORTION OF THE PROPERTY USED FOR ANY PURPOSE OTHER THAN AGRICULTURAL?").SemiBold();
                     x.Item().Row(r =>
                     {
-                        LineField(r, "YES / NO", V(s, "OtherUseYesNo", "IsUsedForOtherPurpose"), 1);
-                        LineField(r, "DESCRIBE THE USE(S)", V(s, "OtherUseDescription"), 2);
+                        LineField(r, "YES / NO", V(s, "Agri_Another_Purpose_Not_Agriculture"), 1);
+                        LineField(r, "DESCRIBE THE USE(S)", V(s, "Agri_Another_Purpose_Not_Agriculture_Desc"), 2);
                     });
 
                     x.Item().PaddingTop(6).Text("5.4 LAND ANALYSIS").SemiBold();
@@ -212,21 +186,24 @@ namespace GV_Forms.Pdf
 
                     x.Item().Row(r =>
                     {
-                        LineField(r, "TOTAL (ha)", V(s, "TotalHa"), 1);
-                        LineField(r, "CONDITION OF FENCES", V(s, "FencesCondition"), 1);
-                        LineField(r, "AREA GAME FENCED (ha)", V(s, "GameFencedHa"), 1);
+                        LineField(r, "OTHER 1 (ha)", V(s, "Agri_Other_ha_1"), 1);
+                        LineField(r, "OTHER 2 (ha)", V(s, "Agri_Other_ha_2"), 1);
+                        LineField(r, "OTHER 3 (ha)", V(s, "Agri_Other_ha_3"), 1);
+                        LineField(r, "CONDITION OF FENCES", V(s, "Agri_Fence_Condition"), 1);
+                        LineField(r, "AREA GAME FENCED (ha)", V(s, "Agri_Game_Area_Fenced"), 1);
                     });
 
                     x.Item().Row(r =>
                     {
-                        LineField(r, "NO. OF BOREHOLES", V(s, "NoOfBoreholes"), 1);
-                        LineField(r, "OUTPUT LITRES/HOUR", V(s, "OutputLitresPerHour"), 1);
-                        LineField(r, "DAMS CAPACITY", V(s, "DamsCapacity"), 1);
+                        LineField(r, "NO. OF BOREHOLES", V(s, "Agri_Num_of_Boreholes"), 1);
+                        LineField(r, "OUTPUT LITRES/HOUR", V(s, "Agri_Output_litres_Hours"), 1);
+                        LineField(r, "DAMS", V(s, "Agri_Dams"), 1);
+                        LineField(r, "CAPACITY", V(s, "Agri_Capacity"), 1);
                     });
 
                     x.Item().Row(r =>
                     {
-                        LineField(r, "IS THE PROPERTY EXPOSED TO A RIVER?", V(s, "ExposedToRiver"), 1);
+                        LineField(r, "IS THE PROPERTY EXPOSED TO A RIVER?", V(s, "Agri_Exposed_To_River"), 1);
                     });
                 });
             });
@@ -279,17 +256,18 @@ namespace GV_Forms.Pdf
 
                     x.Item().Row(r =>
                     {
-                        LineField(r, "NAME OF TENANT", V(s, "TenantName"), 2);
-                        LineField(r, "SIZE", V(s, "TenantSize"), 1);
-                        LineField(r, "RENTAL (EXCL VAT)", V(s, "RentalExclVat"), 1);
+                        LineField(r, "NAME OF TENANT", V(s, "Agri_Tenant_Name"), 2);
+                        LineField(r, "SIZE", V(s, "Agri_Rental_Land_Size"), 1);
+                        LineField(r, "RENTAL (EXCL VAT)", Money(V(s, "Agri_Rental")), 1);
                     });
 
                     x.Item().Row(r =>
                     {
-                        LineField(r, "ESCALATION", V(s, "Escalation"), 1);
-                        LineField(r, "OTHER CONTRIBUTIONS", V(s, "OtherContribution"), 1);
-                        LineField(r, "TERM OF LEASE", V(s, "LeaseTerm"), 1);
-                        LineField(r, "START DATE", V(s, "LeaseStartDate"), 1);
+                        LineField(r, "ESCALATION", V(s, "Agri_Escalation"), 1);
+                        LineField(r, "OTHER CONTRIBUTIONS", V(s, "Agri_Other_contribution"), 1);
+                        LineField(r, "TERM OF LEASE", V(s, "Agri_Lease_Term"), 1);
+                        LineField(r, "START DATE", V(s, "Agri_Start_Date"), 1);
+                        LineField(r, "USE", V(s, "Agri_Use"), 1);
                     });
                 });
             });
@@ -307,14 +285,14 @@ namespace GV_Forms.Pdf
 
                     x.Item().Row(r =>
                     {
-                        LineField(r, "CURRENT ASKING PRICE", V(s, "Current_Asking_price"), 1);
-                        LineField(r, "OFFER RECEIVED", V(s, "Current_Recieved_Offer"), 1);
+                        LineField(r, "CURRENT ASKING PRICE", Money(V(s, "Current_Asking_price")), 1);
+                        LineField(r, "OFFER RECEIVED", Money(V(s, "Current_Recieved_Offer")), 1);
                     });
 
                     x.Item().Row(r =>
                     {
-                        LineField(r, "ASKING PRICE IN LAST 3 YEARS", V(s, "Previous_Asking_price"), 1);
-                        LineField(r, "OFFER RECEIVED", V(s, "Previous_Recieved_Offer"), 1);
+                        LineField(r, "ASKING PRICE IN LAST 3 YEARS", Money(V(s, "Previous_Asking_price")), 1);
+                        LineField(r, "OFFER RECEIVED", Money(V(s, "Previous_Recieved_Offer")), 1);
                     });
 
                     x.Item().Row(r =>
@@ -339,30 +317,68 @@ namespace GV_Forms.Pdf
             {
                 c.Column(x =>
                 {
-                    x.Item().Text("SECTION 7: REVIEW DETAILS PARTICULARS TO BE REFLECTED IN VALUATION ROLL CHANGES REQUESTED BY OWNER").Bold();
+                    x.Item().Text($"SECTION 7: {InquiryUpper} DETAILS - PARTICULARS TO BE REFLECTED IN THE VALUATION ROLL AND CHANGES REQUESTED BY OWNER").Bold();
 
-                    x.Item().Row(r =>
+                    x.Item().PaddingTop(5).Row(r =>
                     {
-                        LineField(r, "DESCRIPTION OF THE PROPERTY / UNIT NO.", V(s, "New_Property_Description", "Old_Property_Description"), 1);
+                        r.RelativeItem()
+                            .Text("PARTICULARS AS REFLECTED IN VALUATION ROLL")
+                            .Bold()
+                            .FontSize(8)
+                            .AlignCenter();
+
+                        r.RelativeItem()
+                            .Text("CHANGES REQUESTED BY OWNER")
+                            .Bold()
+                            .FontSize(8)
+                            .AlignCenter();
                     });
 
-                    x.Item().Row(r =>
-                    {
-                        LineField(r, "PHYSICAL ADDRESS", V(s, "New_Address", "Old_Address"), 2);
-                        LineField(r, "CATEGORY", V(s, "New_Category", "Old_Category"), 1);
-                    });
+                    ComparisonLine(x, "DESCRIPTION OF THE PROPERTY / UNIT NO.: ",
+                        V(s, "Old_Property_Description"),
+                        V(s, "New_Property_Description"));
 
-                    x.Item().Row(r =>
-                    {
-                        LineField(r, "EXTENT", V(s, "New_Extent", "Old_Extent"), 1);
-                        LineField(r, "MARKET VALUE", V(s, "New_Market_Value", "Old_Market_Value"), 1);
-                        LineField(r, "WITH EFFECT DATE", V(s, "WithEffectDate", "EffectiveDate"), 1);
-                    });
+                    ComparisonLine(x, "CATEGORY: ",
+                        V(s, "Old_Category"),
+                        V(s, "New_Category"));
 
-                    x.Item().Row(r =>
+                    ComparisonLine(x, "PHYSICAL ADDRESS: ",
+                        V(s, "Old_Address"),
+                        V(s, "New_Address"));
+
+                    ComparisonLine(x, "EXTENT: ",
+                        V(s, "Old_Extent"),
+                        V(s, "New_Extent"));
+
+                    ComparisonLine(x, "MARKET VALUE: ",
+                        Money(V(s, "Old_Market_Value")),
+                        Money(V(s, "New_Market_Value")));
+
+                    ComparisonLine(x, "NAME OF OWNER: ",
+                        V(s, "Old_Owner"),
+                        V(s, "New_Owner"));
+
+                    if (!string.IsNullOrWhiteSpace(FirstValue(
+                            V(s, "Old2_Category"), V(s, "New2_Category"),
+                            V(s, "Old2_Extent"), V(s, "New2_Extent"),
+                            V(s, "Old2_Market_Value"), V(s, "New2_Market_Value"))))
                     {
-                        LineField(r, "NAME OF OWNER", V(s, "New_Owner", "Old_Owner"), 1);
-                    });
+                        x.Item().PaddingTop(8).Text("PURPOSE / CATEGORY SPLIT 2").SemiBold().AlignCenter();
+                        ComparisonLine(x, "CATEGORY: ", V(s, "Old2_Category"), V(s, "New2_Category"));
+                        ComparisonLine(x, "EXTENT: ", V(s, "Old2_Extent"), V(s, "New2_Extent"));
+                        ComparisonLine(x, "MARKET VALUE: ", Money(V(s, "Old2_Market_Value")), Money(V(s, "New2_Market_Value")));
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(FirstValue(
+                            V(s, "Old3_Category"), V(s, "New3_Category"),
+                            V(s, "Old3_Extent"), V(s, "New3_Extent"),
+                            V(s, "Old3_Market_Value"), V(s, "New3_Market_Value"))))
+                    {
+                        x.Item().PaddingTop(8).Text("PURPOSE / CATEGORY SPLIT 3").SemiBold().AlignCenter();
+                        ComparisonLine(x, "CATEGORY: ", V(s, "Old3_Category"), V(s, "New3_Category"));
+                        ComparisonLine(x, "EXTENT: ", V(s, "Old3_Extent"), V(s, "New3_Extent"));
+                        ComparisonLine(x, "MARKET VALUE: ", Money(V(s, "Old3_Market_Value")), Money(V(s, "New3_Market_Value")));
+                    }
 
                     x.Item().Row(r =>
                     {
@@ -370,24 +386,6 @@ namespace GV_Forms.Pdf
                     });
                 });
             });
-        }
-        private static string Rand(object? value)
-        {
-            var text = value?.ToString()?.Trim();
-
-            if (string.IsNullOrWhiteSpace(text))
-                return "";
-
-            text = text
-                .Replace("R", "", StringComparison.OrdinalIgnoreCase)
-                .Replace(",", "")
-                .Replace(" ", "")
-                .Trim();
-
-            if (!decimal.TryParse(text, out var amount))
-                return "R " + value;
-
-            return "R " + amount.ToString("N0", new System.Globalization.CultureInfo("en-ZA"));
         }
     }
 }

@@ -70,16 +70,24 @@ public class ObjectionController : Controller
 
     private bool IsAdminAppealRequest()
     {
-        var email =
-            User.FindFirstValue(ClaimTypes.Email)
-            ?? User.FindFirstValue(ClaimTypes.Name)
-            ?? HttpContext.Session.GetString("AdminAppEmail")
-            ?? string.Empty;
+        if (User.IsInRole("Admin"))
+            return true;
 
-        return email.Equals(
-                   "AdministrationEnquiries@Joburg.org.za",
-                   StringComparison.OrdinalIgnoreCase)
-               || AdminEmailRx.IsMatch(email);
+        var possibleAdminEmails = new[]
+        {
+        User.FindFirstValue("AdminAppEmail"),
+        HttpContext.Session.GetString("AdminAppEmail"),
+        User.FindFirstValue(ClaimTypes.Email),
+        User.FindFirstValue(ClaimTypes.Name)
+    };
+
+        return possibleAdminEmails
+            .Where(email => !string.IsNullOrWhiteSpace(email))
+            .Any(email =>
+                email!.Equals(
+                    "AdministrationEnquiries@Joburg.org.za",
+                    StringComparison.OrdinalIgnoreCase)
+                || AdminEmailRx.IsMatch(email));
     }
 
     private IActionResult RedirectAfterAppealBlock(string rollSource)
@@ -115,19 +123,44 @@ public class ObjectionController : Controller
         if (string.IsNullOrEmpty(userId))
             return RedirectToAction("Login", "Account");
 
-        rollSource = string.IsNullOrWhiteSpace(rollSource)
-            ? TempData.Peek("RollSource")?.ToString() ?? HttpContext.Session.GetString("RollSource") ?? ""
-            : rollSource.Trim();
+        // The URL/request values describe the process the admin is starting now.
+        // TempData may still contain Objection_Query from an earlier enquiry and
+        // must never override an explicitly supplied objection roll.
+        var hasRequestedRollSource = !string.IsNullOrWhiteSpace(rollSource);
+        var hasRequestedSourceTable = !string.IsNullOrWhiteSpace(sourceTable);
 
-        sourceTable = string.IsNullOrWhiteSpace(sourceTable)
-            ? TempData.Peek("SourceTable")?.ToString() ?? ResolveSourceTable(rollSource)
-            : sourceTable.Trim();
+        var previousRollSource = TempData.Peek("RollSource")?.ToString();
+        var previousSourceTable = TempData.Peek("SourceTable")?.ToString();
+        var previousPropertyFrom = TempData.Peek("PropertyFrom")?.ToString();
+
+        rollSource = hasRequestedRollSource
+            ? rollSource.Trim()
+            : previousRollSource
+                ?? HttpContext.Session.GetString("RollSource")
+                ?? "";
+
+        var expectedSourceTable = ResolveSourceTable(rollSource);
+
+        sourceTable = hasRequestedSourceTable
+            ? sourceTable.Trim()
+            : !hasRequestedRollSource &&
+              !string.IsNullOrWhiteSpace(previousSourceTable) &&
+              (previousSourceTable.Equals(expectedSourceTable, StringComparison.OrdinalIgnoreCase) ||
+               previousSourceTable.Equals(rollSource, StringComparison.OrdinalIgnoreCase))
+                ? previousSourceTable.Trim()
+                : expectedSourceTable;
+
+        PropertyFrom = !string.IsNullOrWhiteSpace(PropertyFrom)
+            ? PropertyFrom.Trim()
+            : !hasRequestedRollSource && !string.IsNullOrWhiteSpace(previousPropertyFrom)
+                ? previousPropertyFrom.Trim()
+                : sourceTable;
 
         // Always set these early so the next view/form has them
         TempData["AppealStatus"] = appealStatus ?? "False";
         TempData["RollSource"] = rollSource;
         TempData["SourceTable"] = sourceTable;
-        TempData["PropertyFrom"] = PropertyFrom ?? sourceTable ?? rollSource ?? "";
+        TempData["PropertyFrom"] = PropertyFrom;
 
         TempData.Keep("AppealStatus");
         TempData.Keep("RollSource");
@@ -255,15 +288,21 @@ public class ObjectionController : Controller
         // Only objection lodging uses RollDates OpenDate / VisibleUntil.
         // Appeal is checked later after property/MVD data is loaded.
         // ============================================================
-        if (!isQuery && !isLis && !isAppeal)
+        var isAdminRequest = IsAdminAppealRequest();
+
+        // Objection dates apply only to clients.
+        // Admin users may lodge objections at any time.
+        if (!isAdminRequest && !isQuery && !isLis && !isAppeal)
         {
-            var objectionWindow = await _objectionService.CheckObjectionWindowAsync(
-                rollSource,
-                sourceTable);
+            var objectionWindow =
+                await _objectionService.CheckObjectionWindowAsync(
+                    rollSource,
+                    sourceTable);
 
             if (!objectionWindow.IsOpen)
             {
-                TempData["LodgementWindowError"] = objectionWindow.Message;
+                TempData["LodgementWindowError"] =
+                    objectionWindow.Message;
 
                 return RedirectAfterAppealBlock(rollSource);
             }

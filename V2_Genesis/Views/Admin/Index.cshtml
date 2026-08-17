@@ -79,6 +79,40 @@
             _ => $"<span class='cd-pill cd-pill-completed'>{normalisedStatus}</span>"
         };
     }
+
+    bool IsLisPropertySource(string? propertyFrom) =>
+        string.Equals(propertyFrom?.Trim(), "LIS", StringComparison.OrdinalIgnoreCase);
+
+    bool IsOmissionPropertySource(string? propertyFrom)
+    {
+        var value = propertyFrom?.Trim() ?? string.Empty;
+        return value.Equals("Omission", StringComparison.OrdinalIgnoreCase) ||
+               value.Equals("Omitted", StringComparison.OrdinalIgnoreCase) ||
+               value.StartsWith("Omission_", StringComparison.OrdinalIgnoreCase) ||
+               value.StartsWith("Omitted_", StringComparison.OrdinalIgnoreCase);
+    }
+
+    string GetPropertySourceLabel(string? propertyFrom, string currentRollName)
+    {
+        var value = propertyFrom?.Trim() ?? string.Empty;
+        var normalised = value.Replace("-", "_").ToUpperInvariant();
+
+        if (IsLisPropertySource(value))
+            return "LIS";
+
+        if (IsOmissionPropertySource(value))
+            return $"Omitted from {currentRollName}";
+
+        if (normalised.Contains("SUP1")) return "Supplementary Valuation Roll 1";
+        if (normalised.Contains("SUP2")) return "Supplementary Valuation Roll 2";
+        if (normalised.Contains("SUP3")) return "Supplementary Valuation Roll 3";
+        if (normalised.Contains("SUP4")) return "Supplementary Valuation Roll 4";
+
+        if (normalised is "GV23" or "OBJECTION" or "VALUATION_ROLL")
+            return "Valuation Roll";
+
+        return string.IsNullOrWhiteSpace(value) ? currentRollName : value;
+    }
 }
  @{
     var _adminFullName = Model.AdminFullName ?? "";
@@ -99,6 +133,34 @@
  <link href="~/css/views/admin-dashboard-premium.css" rel="stylesheet" asp-append-version="true" />
   
     <link href="~/css/views/client-dashboard.css" rel="stylesheet" asp-append-version="true" />
+
+    <style>
+        .cd-source-value {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: .3rem;
+        }
+
+        .cd-source-badge {
+            display: inline-flex;
+            align-items: center;
+            width: fit-content;
+            padding: .2rem .55rem;
+            border: 1px solid rgba(0, 95, 110, .18);
+            border-radius: 999px;
+            font-size: .7rem;
+            font-weight: 800;
+            line-height: 1.2;
+            white-space: nowrap;
+        }
+
+        .cd-source-badge--roll { background: #e7f1f3; color: #123a40; }
+        .cd-source-badge--lis { background: #dff4f7; color: #006b78; }
+        .cd-source-badge--omitted { background: #fff1d2; color: #7b5200; }
+        .cd-source-context { color: #71808a; font-size: .72rem; line-height: 1.25; }
+        .cd-source-dash { font-weight: 800; }
+    </style>
 
 }
 @if (TempData["DuplicateLodgementError"] != null)
@@ -769,11 +831,41 @@
                                     <tbody>
                                         @foreach (var item in rd.LinkedProperties)
                                         {
+                                            var linkedIsLis = IsLisPropertySource(item.PropertyFrom);
+                                            var linkedIsOmission = IsOmissionPropertySource(item.PropertyFrom);
                                             <tr>
                                                 <td>@item.PropertyDesc</td>
-                                                <td>@item.CatDesc</td>
+                                                <td>
+                                                    @if (linkedIsLis || linkedIsOmission)
+                                                    {
+                                                        <span class="cd-source-value">
+                                                            <span class="cd-source-dash">-</span>
+                                                            <span class="cd-source-badge @(linkedIsLis ? "cd-source-badge--lis" : "cd-source-badge--omitted")">
+                                                                @(linkedIsLis ? "LIS" : "Omitted")
+                                                            </span>
+                                                        </span>
+                                                    }
+                                                    else
+                                                    {
+                                                        @item.CatDesc
+                                                    }
+                                                </td>
                                                 <td>@item.TownNameDesc</td>
-                                                <td>@FormatZAR(item.MarketValue)</td>
+                                                <td>
+                                                    @if (linkedIsLis || linkedIsOmission)
+                                                    {
+                                                        <span class="cd-source-value">
+                                                            <span class="cd-source-dash">-</span>
+                                                            <span class="cd-source-badge @(linkedIsLis ? "cd-source-badge--lis" : "cd-source-badge--omitted")">
+                                                                @(linkedIsLis ? "LIS" : "Omitted")
+                                                            </span>
+                                                        </span>
+                                                    }
+                                                    else
+                                                    {
+                                                        @FormatZAR(item.MarketValue)
+                                                    }
+                                                </td>
                                                 <td>@item.WefDate</td>
                                                 <td>
                                                     <div class="dropdown">
@@ -782,11 +874,17 @@
                                                             Actions
                                                         </button>
                                                         <ul class="dropdown-menu cd-action-menu">
-                                                            @if (roll.HasObjection)
+                                                            @if (roll.HasObjection && !linkedIsOmission)
                                                             {
+                                                                var propertyFrom = item.PropertyFrom?.Trim();
+                                                                var sourceTable = linkedIsLis
+                                                                    ? V2_Genesis.Services.Implementations.ObjectionService.RollSourceToSourceTable.GetValueOrDefault(roll.Source, roll.Source)
+                                                                    : propertyFrom;
+                                                                var propertyFromRoute = linkedIsLis ? "LIS" : sourceTable;
+
                                                                 <li>
                                                                     <a class="dropdown-item"
-                                                                           href="/objection/check?rollSource=@roll.Source&sourceTable=@item.PropertyFrom&unitKey=@item.UnitKey&valuationKey=@item.ValuationKey&appealStatus=False"
+                                                                           href="/objection/check?rollSource=@roll.Source&sourceTable=@sourceTable&unitKey=@item.UnitKey&valuationKey=@item.ValuationKey&appealStatus=False&PropertyFrom=@propertyFromRoute"
                                                                            onclick="logAction('Object', '@roll.Source', '@item.UnitKey')">
                                                                          Object
                                                                     </a>
@@ -836,6 +934,7 @@
                                                 <th>Category</th>
                                                 <th>️ Town</th>
                                                 <th>Market Value</th>
+                                                <th>Property Source</th>
                                                 <th>Objection Status</th>
                                                 <th> Options</th>
                                             </tr>
@@ -843,12 +942,32 @@
                                         <tbody>
                                             @foreach (var item in rd.ObjectedProperties)
                                             {
+                                                var objectionIsLis = IsLisPropertySource(item.PropertyFrom);
+                                                var objectionIsOmission = IsOmissionPropertySource(item.PropertyFrom);
+                                                var propertySourceLabel = GetPropertySourceLabel(item.PropertyFrom, roll.Name);
                                                 <tr>
                                                     <td>@item.Objection_No</td>
                                                     <td>@item.Property_Desc</td>
                                                     <td>@item.Old_Category</td>
                                                     <td>@item.Town_Name</td>
                                                     <td>@FormatZAR(item.Old_Market_Value)</td>
+                                                    <td>
+                                                        @if (objectionIsLis)
+                                                        {
+                                                            <span class="cd-source-value">
+                                                                <span class="cd-source-badge cd-source-badge--lis">LIS</span>
+                                                                <span class="cd-source-context">@roll.Name</span>
+                                                            </span>
+                                                        }
+                                                        else if (objectionIsOmission)
+                                                        {
+                                                            <span class="cd-source-badge cd-source-badge--omitted">@propertySourceLabel</span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="cd-source-badge cd-source-badge--roll">@propertySourceLabel</span>
+                                                        }
+                                                    </td>
                                                     <td>@Html.Raw(GetStatusPill(item.objection_Status))</td>
                                                     <td>
                                                         <div class="dropdown">

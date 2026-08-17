@@ -10,6 +10,7 @@ namespace V2_Genesis.Models
             {
                 "appeal" => new("APPEAL", "APPELLANT", "APPEAL NO", "MVD"),
                 "query" => new("QUERY", "OWNER", "QUERY NO", "SECTION 78 QUERY FORM"),
+                "review" => new("REVIEW", "OWNER", "REVIEW NO", "SECTION 78 REVIEW FORM"),
                 _ => new("OBJECTION", "OBJECTOR", "OBJECTION NO", "VALUATION ROLL")
             };
     }

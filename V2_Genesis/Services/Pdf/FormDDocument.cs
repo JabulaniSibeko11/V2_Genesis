@@ -13,7 +13,7 @@ namespace GV_Forms.Pdf
         private readonly InquiryAggregate _data;
         private readonly Wording _wording;
         private readonly IWebHostEnvironment _env;
-        public FormDDocument(InquiryAggregate data, Wording wording,IWebHostEnvironment env)
+        public FormDDocument(InquiryAggregate data, Wording wording, IWebHostEnvironment env)
         {
             _data = data;
             _wording = wording;
@@ -2067,13 +2067,13 @@ namespace GV_Forms.Pdf
                     {
                         r.AutoItem().Text("CATEGORY 1: ").FontSize(8);
                         r.RelativeColumn().BorderBottom(1).PaddingBottom(2)
-                         .Text((string)Str(s?.Old1_Category))
+                         .Text((string)Str(s?.Old2_Category))
                          .FontSize(8).AlignCenter();
                     });
                     row.RelativeColumn().PaddingLeft(10).Row(r =>
                     {
                         r.RelativeColumn().BorderBottom(1).PaddingBottom(2)
-                         .Text((string)Str(s?.New1_Category))
+                         .Text((string)Str(s?.New2_Category))
                          .FontSize(8).AlignCenter();
                     });
                 });
@@ -2084,13 +2084,13 @@ namespace GV_Forms.Pdf
                     {
                         r.AutoItem().Text("CATEGORY 2: ").FontSize(8);
                         r.RelativeColumn().BorderBottom(1).PaddingBottom(2)
-                         .Text((string)Str(s?.Old2_Category))
+                         .Text((string)Str(s?.Old3_Category))
                          .FontSize(8).AlignCenter();
                     });
                     row.RelativeColumn().PaddingLeft(10).Row(r =>
                     {
                         r.RelativeColumn().BorderBottom(1).PaddingBottom(2)
-                         .Text((string)Str(s?.New2_Category))
+                         .Text((string)Str(s?.New3_Category))
                          .FontSize(8).AlignCenter();
                     });
                 });
@@ -2133,13 +2133,13 @@ namespace GV_Forms.Pdf
                     {
                         r.AutoItem().Text("EXTENT 1: ").FontSize(8);
                         r.RelativeColumn().BorderBottom(1).PaddingBottom(2)
-                         .Text((string)Str(s?.Old1_Extent))
+                         .Text((string)Str(s?.Old2_Extent))
                          .FontSize(8).AlignCenter();
                     });
                     row.RelativeColumn().PaddingLeft(10).Row(r =>
                     {
                         r.RelativeColumn().BorderBottom(1).PaddingBottom(2)
-                         .Text((string)Str(s?.New1_Extent))
+                         .Text((string)Str(s?.New2_Extent))
                          .FontSize(8).AlignCenter();
                     });
                 });
@@ -2150,13 +2150,13 @@ namespace GV_Forms.Pdf
                     {
                         r.AutoItem().Text("EXTENT 2: ").FontSize(8);
                         r.RelativeColumn().BorderBottom(1).PaddingBottom(2)
-                         .Text((string)Str(s?.Old2_Extent))
+                         .Text((string)Str(s?.Old3_Extent))
                          .FontSize(8).AlignCenter();
                     });
                     row.RelativeColumn().PaddingLeft(10).Row(r =>
                     {
                         r.RelativeColumn().BorderBottom(1).PaddingBottom(2)
-                         .Text((string)Str(s?.New2_Extent))
+                         .Text((string)Str(s?.New3_Extent))
                          .FontSize(8).AlignCenter();
                     });
                 });
@@ -2185,13 +2185,13 @@ namespace GV_Forms.Pdf
                     {
                         r.AutoItem().Text("MARKET VALUE 1: ").FontSize(8);
                         r.RelativeColumn().BorderBottom(1).PaddingBottom(2)
-                         .Text((string)Rand(s?.Old1_Market_Value))
+                         .Text((string)Rand(s?.Old2_Market_Value))
                          .FontSize(8).AlignCenter();
                     });
                     row.RelativeColumn().PaddingLeft(10).Row(r =>
                     {
                         r.RelativeColumn().BorderBottom(1).PaddingBottom(2)
-                         .Text((string)Rand(s?.New1_Market_Value))
+                         .Text((string)Rand(s?.New2_Market_Value))
                          .FontSize(8).AlignCenter();
                     });
                 });
@@ -2202,13 +2202,13 @@ namespace GV_Forms.Pdf
                     {
                         r.AutoItem().Text("MARKET VALUE 2: ").FontSize(8);
                         r.RelativeColumn().BorderBottom(1).PaddingBottom(2)
-                         .Text((string)Rand(s?.Old2_Market_Value))
+                         .Text((string)Rand(s?.Old3_Market_Value))
                          .FontSize(8).AlignCenter();
                     });
                     row.RelativeColumn().PaddingLeft(10).Row(r =>
                     {
                         r.RelativeColumn().BorderBottom(1).PaddingBottom(2)
-                         .Text((string)Rand(s?.New2_Market_Value))
+                         .Text((string)Rand(s?.New3_Market_Value))
                          .FontSize(8).AlignCenter();
                     });
                 });
@@ -2549,16 +2549,40 @@ namespace GV_Forms.Pdf
             if (string.IsNullOrWhiteSpace(text))
                 return "";
 
-            text = text
-                .Replace("R", "", StringComparison.OrdinalIgnoreCase)
-                .Replace(",", "")
-                .Replace(" ", "")
-                .Trim();
+            var numericText = new string(
+                text.Where(character =>
+                    char.IsDigit(character) ||
+                    character == '.' ||
+                    character == ',' ||
+                    character == '-')
+                .ToArray());
 
-            if (!decimal.TryParse(text, out var amount))
-                return "R " + value;
+            numericText = numericText.Replace(",", "");
 
-            return "R " + amount.ToString("N0", new System.Globalization.CultureInfo("en-ZA"));
+            if (decimal.TryParse(
+                    numericText,
+                    System.Globalization.NumberStyles.Number |
+                    System.Globalization.NumberStyles.AllowLeadingSign,
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    out var amount))
+            {
+                return "R " + amount.ToString(
+                    "N0",
+                    new System.Globalization.CultureInfo("en-ZA"));
+            }
+
+            var displayText = text;
+
+            while (displayText.StartsWith(
+                "R",
+                StringComparison.OrdinalIgnoreCase))
+            {
+                displayText = displayText[1..].TrimStart();
+            }
+
+            return string.IsNullOrWhiteSpace(displayText)
+                ? ""
+                : "R " + displayText;
         }
     }
 }

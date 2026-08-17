@@ -1,0 +1,258 @@
+﻿@model V2_Genesis.Models.ViewModels.ValuerInspectionEvidence.UploadValuerInspectionEvidenceVm
+@{
+    ViewData["Title"] = "Upload Inspection Evidence";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<link href="~/css/Views/Valuer-Evidence.css" rel="stylesheet" asp-append-version="true" />
+
+<div class="vie-upload-page">
+    <div class="vie-upload-shell">
+        <header class="vie-upload-head">
+            <div class="vie-head-badge">
+                <i class="fa-solid fa-camera"></i> Physical inspection
+            </div>
+            <h1>Upload Inspection Evidence</h1>
+            <p>Confirm the outcome and attach the photographs captured at the property.</p>
+        </header>
+
+        <div class="vie-upload-body">
+            @if (TempData["Error"] != null)
+            {
+                <div class="vie-error">
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                    <span>@TempData["Error"]</span>
+                </div>
+            }
+
+            <section class="vie-inspection-summary">
+                <div>
+                    <span>Reference</span>
+                    <strong>@Model.AttrNo</strong>
+                </div>
+                <div>
+                    <span>Inspection date and time</span>
+                    <strong>@Model.ConfirmedDateTime?.ToString("dd MMMM yyyy HH:mm")</strong>
+                </div>
+                <div class="wide">
+                    <span>Property</span>
+                    <strong>@Model.PropertyDescription</strong>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(Model.InspectionAddress))
+                {
+                    <div class="wide">
+                        <span>Inspection address</span>
+                        <strong>@Model.InspectionAddress</strong>
+                    </div>
+                }
+            </section>
+
+            <form asp-controller="ValuerInspectionEvidence"
+                  asp-action="Upload"
+                  method="post"
+                  enctype="multipart/form-data"
+                  id="valuerEvidenceForm">
+                @Html.AntiForgeryToken()
+
+                <input asp-for="InspectionRequestId" type="hidden" />
+                <input asp-for="SapNumber" type="hidden" />
+
+                <div class="vie-upload-field">
+                    <label asp-for="InspectionOutcome">Inspection outcome <em>*</em></label>
+                    <select asp-for="InspectionOutcome" required>
+                        <option value="">-- Select outcome --</option>
+                        <option value="Completed">Inspection completed</option>
+                        <option value="NoAccess">No access to property</option>
+                        <option value="OwnerUnavailable">Owner/contact unavailable</option>
+                        <option value="PropertyNotFound">Property could not be located</option>
+                        <option value="RescheduleRequired">Reschedule required</option>
+                    </select>
+                </div>
+
+                <div class="vie-upload-field">
+                    <label asp-for="InspectionOutcomeComment">Inspection comments</label>
+                    <textarea asp-for="InspectionOutcomeComment"
+                              rows="4"
+                              maxlength="1000"
+                              placeholder="Add any relevant inspection notes"></textarea>
+                </div>
+
+                <div class="vie-upload-field">
+                    <label>Evidence photographs <em>*</em></label>
+                    <input asp-for="EvidenceFiles"
+                           id="valuerEvidenceFiles"
+                           type="file"
+                           accept=".jpg,.jpeg,.png,image/jpeg,image/png"
+                           multiple
+                           hidden />
+
+                    <div class="vie-evidence-dropzone"
+                         id="valuerEvidenceDropzone"
+                         role="button"
+                         tabindex="0"
+                         aria-label="Choose inspection photographs">
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                        <strong>Choose or drop photographs here</strong>
+                        <span>JPG, JPEG or PNG · maximum 10 files · 10 MB each</span>
+                        <button type="button" id="valuerEvidenceBrowse">
+                            <i class="fa-solid fa-folder-open"></i> Browse files
+                        </button>
+                    </div>
+
+                    <div class="vie-evidence-counter">
+                        <span id="valuerEvidenceCount">0 of 10 files added</span>
+                        <span class="vie-evidence-track">
+                            <span id="valuerEvidenceFill"></span>
+                        </span>
+                    </div>
+
+                    <div id="valuerEvidenceList" class="vie-evidence-list"></div>
+                </div>
+
+                <div class="vie-upload-actions">
+                    <a asp-controller="ValuerInspectionEvidence"
+                           asp-action="Today"
+                           asp-route-sapNumber="@Model.SapNumber"
+                           class="vie-upload-back">
+                        <i class="fa-solid fa-arrow-left"></i> Back
+                    </a>
+                    <button type="submit" class="vie-upload-submit" id="submitValuerEvidence">
+                        <i class="fa-solid fa-cloud-arrow-up"></i> Submit evidence
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            'use strict';
+
+            const maximumFiles = 10;
+            const maximumSize = 10 * 1024 * 1024;
+            const allowedExtensions = ['jpg', 'jpeg', 'png'];
+            const input = document.getElementById('valuerEvidenceFiles');
+            const dropzone = document.getElementById('valuerEvidenceDropzone');
+            const browse = document.getElementById('valuerEvidenceBrowse');
+            const list = document.getElementById('valuerEvidenceList');
+            const counter = document.getElementById('valuerEvidenceCount');
+            const fill = document.getElementById('valuerEvidenceFill');
+            const form = document.getElementById('valuerEvidenceForm');
+            let selectedFiles = new DataTransfer();
+
+            if (!input || !dropzone || !browse || !list || !form) return;
+
+            function key(file) {
+                return [file.name, file.size, file.lastModified].join('|');
+            }
+
+            function safeText(value) {
+                return String(value || '')
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#039;');
+            }
+
+            function addFiles(files) {
+                const existing = new Set(Array.from(selectedFiles.files).map(key));
+                const errors = [];
+
+                Array.from(files || []).forEach(function (file) {
+                    const extension = (file.name.split('.').pop() || '').toLowerCase();
+                    if (existing.has(key(file))) return;
+                    if (!allowedExtensions.includes(extension)) {
+                        errors.push(file.name + ' is not a JPG or PNG image.');
+                        return;
+                    }
+                    if (file.size > maximumSize) {
+                        errors.push(file.name + ' is larger than 10 MB.');
+                        return;
+                    }
+                    if (selectedFiles.files.length >= maximumFiles) {
+                        errors.push('Only 10 evidence photographs can be selected.');
+                        return;
+                    }
+
+                    selectedFiles.items.add(file);
+                    existing.add(key(file));
+                });
+
+                if (errors.length) alert(Array.from(new Set(errors)).join('\n'));
+                render();
+            }
+
+            function render() {
+                input.files = selectedFiles.files;
+                const total = selectedFiles.files.length;
+                counter.textContent = total + ' of ' + maximumFiles + ' files added';
+                fill.style.width = Math.min(total / maximumFiles * 100, 100) + '%';
+                dropzone.classList.toggle('full', total >= maximumFiles);
+                list.innerHTML = '';
+
+                Array.from(selectedFiles.files).forEach(function (file, index) {
+                    const item = document.createElement('div');
+                    item.className = 'vie-evidence-file';
+                    item.innerHTML =
+                        '<i class="fa-solid fa-image"></i>' +
+                        '<span class="name">' + safeText(file.name) + '</span>' +
+                        '<span class="size">' + (file.size / 1024 / 1024).toFixed(2) + ' MB</span>' +
+                        '<button type="button" data-remove-file="' + index + '" aria-label="Remove ' + safeText(file.name) + '">' +
+                        '<i class="fa-solid fa-xmark"></i></button>';
+                    list.appendChild(item);
+                });
+            }
+
+            function openBrowser(event) {
+                if (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                if (selectedFiles.files.length < maximumFiles) input.click();
+            }
+
+            browse.addEventListener('click', openBrowser);
+            dropzone.addEventListener('click', openBrowser);
+            dropzone.addEventListener('keydown', function (event) {
+                if (event.key === 'Enter' || event.key === ' ') openBrowser(event);
+            });
+            input.addEventListener('change', function () { addFiles(input.files); });
+            dropzone.addEventListener('dragover', function (event) {
+                event.preventDefault();
+                dropzone.classList.add('dragover');
+            });
+            dropzone.addEventListener('dragleave', function () {
+                dropzone.classList.remove('dragover');
+            });
+            dropzone.addEventListener('drop', function (event) {
+                event.preventDefault();
+                dropzone.classList.remove('dragover');
+                addFiles(event.dataTransfer && event.dataTransfer.files);
+            });
+            list.addEventListener('click', function (event) {
+                const button = event.target.closest('[data-remove-file]');
+                if (!button) return;
+
+                const replacement = new DataTransfer();
+                const removeIndex = Number(button.dataset.removeFile);
+                Array.from(selectedFiles.files).forEach(function (file, index) {
+                    if (index !== removeIndex) replacement.items.add(file);
+                });
+                selectedFiles = replacement;
+                render();
+            });
+            form.addEventListener('submit', function (event) {
+                if (!selectedFiles.files.length) {
+                    event.preventDefault();
+                    alert('Please add at least one evidence photograph.');
+                    openBrowser();
+                }
+            });
+
+            render();
+        })();
+    </script>
+}

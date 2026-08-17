@@ -666,27 +666,24 @@ $(document).ready(function () {
 
 $("input[data-type='currency']").on({ keyup: function () { formatCurrency($(this)); }, blur: function () { formatCurrency($(this), "blur"); } });
 
-function formatNumber(n) { return n.replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, ","); }
-function formatCurrency(input, blur) {
-    var input_val = input.val();
-    if (input_val === "") { return; }
-    var original_len = input_val.length;
-    var caret_pos = input.prop("selectionStart");
-    if (input_val.indexOf(".") >= 0) {
-        var decimal_pos = input_val.indexOf(".");
-        var left_side = formatNumber(input_val.substring(0, decimal_pos));
-        var right_side = formatNumber(input_val.substring(decimal_pos));
-        if (blur === "blur") right_side += "00";
-        right_side = right_side.substring(0, 2);
-        input_val = "R " + left_side + "." + right_side;
-    } else {
-        input_val = "R " + formatNumber(input_val);
-        if (blur === "blur") input_val += ".00";
+function formatNumber(n) { return n.replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, " "); }
+function formatCurrency(input) {
+    var text = String(input.val() || "")
+        .replace(/[Rr]/g, "")
+        .replace(/[\s,\u00a0\u202f]/g, "");
+    if (!text) { input.val(""); return; }
+
+    var amount = Number(text);
+    if (!Number.isFinite(amount) || amount < 0) { return; }
+
+    var formatted = "R " + Math.round(amount)
+        .toLocaleString("en-ZA", { minimumFractionDigits: 0, maximumFractionDigits: 0 })
+        .replace(/[,\u00a0\u202f]/g, " ");
+    input.val(formatted);
+
+    if (input[0] && input[0].setSelectionRange) {
+        input[0].setSelectionRange(formatted.length, formatted.length);
     }
-    input.val(input_val);
-    var updated_len = input_val.length;
-    caret_pos = updated_len - original_len + caret_pos;
-    input[0].setSelectionRange(caret_pos, caret_pos);
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -921,7 +918,7 @@ function section6HasAtLeastOneChange() {
 function section6FormatRandInput(input) {
     if (!input) return;
 
-    let raw = input.value.replace(/[^\d]/g, "");
+    let raw = normaliseMoney(input.value);
 
     if (!raw) {
         input.value = "";
@@ -935,7 +932,7 @@ function section6FormatRandInput(input) {
         return;
     }
 
-    input.value = "R " + amount.toLocaleString("en-ZA");
+    input.value = "R " + amount.toLocaleString("en-ZA").replace(/[,\u00a0\u202f]/g, " ");
 }
 
 function section6FormatOriginalMarketValue() {
@@ -943,11 +940,11 @@ function section6FormatOriginalMarketValue() {
 
     if (!oldMv || !oldMv.value) return;
 
-    let raw = oldMv.value.replace(/[^\d]/g, "");
+    let raw = normaliseMoney(oldMv.value);
 
     if (!raw) return;
 
-    oldMv.value = "R " + parseInt(raw, 10).toLocaleString("en-ZA");
+    oldMv.value = "R " + parseInt(raw, 10).toLocaleString("en-ZA").replace(/[,\u00a0\u202f]/g, " ");
 }
 
 function ensureLocusStandModalExists() {
@@ -1233,7 +1230,13 @@ style.textContent = `
 document.head.appendChild(style);
 function normaliseMoney(value) {
     if (!value) return "";
-    return value.toString().replace(/[^\d]/g, "");
+    const text = value.toString()
+        .replace(/[Rr]/g, "")
+        .replace(/[\s,\u00a0\u202f]/g, "");
+    const match = text.match(/^\d+(?:\.\d+)?/);
+    if (!match) return "";
+    const amount = Number(match[0]);
+    return Number.isFinite(amount) && amount >= 0 ? String(Math.round(amount)) : "";
 }
 
 function formatRand(value) {
@@ -1244,7 +1247,7 @@ function formatRand(value) {
     return "R " + Number(raw).toLocaleString("en-ZA", {
         minimumFractionDigits: 0,
         maximumFractionDigits: 0
-    }).replace(/,/g, " ");
+    }).replace(/[,\u00a0\u202f]/g, " ");
 }
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -1378,3 +1381,418 @@ function showCategorySameModal(dropdown) {
 
     resetCategoryDropdown(dropdown);
 }
+
+
+// ═══════════════════════════════════════════════════════════════════
+// GENESIS FRIENDLY VALIDATION + CONSISTENT RAND DISPLAY
+// Shared behaviour for Objection, Multi, Query and Query Multi forms.
+// Existing IDs, classes and navigation handlers remain unchanged.
+// ═══════════════════════════════════════════════════════════════════
+(function () {
+    "use strict";
+
+    if (window.__genesisFriendlyValidationInitialised) return;
+    window.__genesisFriendlyValidationInitialised = true;
+
+    var form = document.getElementById("myForm");
+    if (!form) return;
+
+    var emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+    var telephonePattern = /^0\d{9}$/;
+    var moneyIds = [
+        "Market_Value", "Market_Value1", "Market_Value2", "Market_Value3",
+        "market_Value",
+        "NewMarketValue", "NewMarketValue1", "NewMarketValue2", "NewMarketValue3"
+    ];
+
+    function element(id) {
+        return document.getElementById(id);
+    }
+
+    function cleanMoney(value) {
+        var text = String(value == null ? "" : value)
+            .replace(/[Rr]/g, "")
+            .replace(/[\s,\u00a0\u202f]/g, "")
+            .trim();
+
+        if (!text) return "";
+
+        var match = text.match(/^-?\d+(?:\.\d+)?/);
+        if (!match) return "";
+
+        var amount = Number(match[0]);
+        if (!Number.isFinite(amount) || amount < 0) return "";
+
+        return String(Math.round(amount));
+    }
+
+    function formatRand(value) {
+        var raw = cleanMoney(value);
+        if (!raw) return "";
+
+        return "R " + Number(raw)
+            .toLocaleString("en-ZA", {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            })
+            .replace(/[,\u00a0\u202f]/g, " ");
+    }
+
+    function syncRawMoney(visible) {
+        if (!visible || !visible.id) return;
+
+        var suffix = visible.id.replace("NewMarketValue", "");
+        var raw = element("NewMarketValueRaw" + suffix);
+
+        if (raw) raw.value = cleanMoney(visible.value);
+    }
+
+    function formatMoneyElement(target) {
+        if (!target) return;
+
+        var currentValue =
+            target.matches && target.matches("input, textarea")
+                ? target.value
+                : target.textContent;
+
+        var formatted = formatRand(currentValue);
+        if (!formatted) return;
+
+        if (target.matches && target.matches("input, textarea")) {
+            if ((target.type || "").toLowerCase() !== "number") {
+                target.value = formatted;
+            }
+        } else {
+            target.textContent = formatted;
+        }
+
+        syncRawMoney(target);
+    }
+
+    function initialiseMoneyFormatting() {
+        var seen = new Set();
+
+        moneyIds.forEach(function (id) {
+            var target = element(id);
+            if (target) seen.add(target);
+        });
+
+        form.querySelectorAll(
+            "input[data-type='currency'], [data-city-market-value], .city-market-value"
+        ).forEach(function (target) {
+            seen.add(target);
+        });
+
+        seen.forEach(function (target) {
+            formatMoneyElement(target);
+
+            if (target.matches && target.matches("input:not([readonly]):not([disabled])")) {
+                target.addEventListener("input", function () {
+                    formatMoneyElement(target);
+                });
+
+                target.addEventListener("blur", function () {
+                    formatMoneyElement(target);
+                });
+            }
+        });
+    }
+
+    function errorId(input) {
+        return input.id + "_friendly_error";
+    }
+
+    function clearFieldError(input) {
+        if (!input) return;
+
+        input.removeAttribute("aria-invalid");
+        input.style.borderColor = "";
+        input.style.backgroundColor = "";
+
+        var error = element(errorId(input));
+        if (error) error.remove();
+    }
+
+    function setFieldError(input, message) {
+        if (!input) return;
+
+        input.setAttribute("aria-invalid", "true");
+        input.style.borderColor = "#dc2626";
+        input.style.backgroundColor = "#fff7f7";
+
+        var id = errorId(input);
+        var error = element(id);
+
+        if (!error) {
+            error = document.createElement("span");
+            error.id = id;
+            error.setAttribute("role", "alert");
+            error.style.display = "block";
+            error.style.marginTop = "5px";
+            error.style.color = "#b91c1c";
+            error.style.fontSize = "12px";
+            error.style.fontWeight = "600";
+            input.insertAdjacentElement("afterend", error);
+        }
+
+        error.textContent = message;
+        input.setAttribute("aria-describedby", id);
+    }
+
+    function getValidationSummary() {
+        var summary = element("genesisFriendlyValidationSummary");
+
+        if (!summary) {
+            summary = document.createElement("div");
+            summary.id = "genesisFriendlyValidationSummary";
+            summary.setAttribute("role", "alert");
+            summary.setAttribute("aria-live", "assertive");
+            summary.style.display = "none";
+            summary.style.margin = "15px auto";
+            summary.style.maxWidth = "1500px";
+            summary.style.padding = "14px 18px";
+            summary.style.border = "1px solid #dc2626";
+            summary.style.borderLeft = "5px solid #dc2626";
+            summary.style.borderRadius = "8px";
+            summary.style.background = "#fff7f7";
+            summary.style.color = "#991b1b";
+
+            var modelSummary = form.querySelector("[asp-validation-summary], .validation-summary-errors");
+            if (modelSummary && modelSummary.parentNode) {
+                modelSummary.insertAdjacentElement("afterend", summary);
+            } else {
+                form.insertAdjacentElement("afterbegin", summary);
+            }
+        }
+
+        return summary;
+    }
+
+    function showValidationSummary(errors) {
+        var summary = getValidationSummary();
+
+        if (!errors.length) {
+            summary.style.display = "none";
+            summary.innerHTML = "";
+            return;
+        }
+
+        var uniqueMessages = [];
+        errors.forEach(function (error) {
+            if (!uniqueMessages.includes(error.message)) {
+                uniqueMessages.push(error.message);
+            }
+        });
+
+        summary.innerHTML =
+            "<strong>Please correct the following before continuing:</strong><ul style='margin:8px 0 0 20px;'>" +
+            uniqueMessages.map(function (message) {
+                return "<li>" + message.replace(/</g, "&lt;").replace(/>/g, "&gt;") + "</li>";
+            }).join("") +
+            "</ul>";
+        summary.style.display = "block";
+    }
+
+    function addError(errors, input, message) {
+        if (!input) return;
+        setFieldError(input, message);
+        errors.push({ input: input, message: message });
+    }
+
+    function validateRequiredName(id, label, errors) {
+        var input = element(id);
+        if (!input || input.disabled) return;
+
+        clearFieldError(input);
+
+        if (!input.value.trim()) {
+            addError(errors, input, label + " is required.");
+        }
+    }
+
+    function validateContactGroup(prefix, label, errors) {
+        var email = element(prefix + "_cd_5");
+        var phones = [
+            element(prefix + "_cd_1"),
+            element(prefix + "_cd_2"),
+            element(prefix + "_cd_3")
+        ].filter(function (input) {
+            return input && !input.disabled;
+        });
+
+        if ((!email || email.disabled) && !phones.length) return;
+
+        if (email && !email.disabled) {
+            clearFieldError(email);
+
+            if (!email.value.trim()) {
+                addError(errors, email, label + " email address is required.");
+            } else if (!emailPattern.test(email.value.trim())) {
+                addError(errors, email, "Enter a valid " + label.toLowerCase() + " email address.");
+            }
+        }
+
+        phones.forEach(clearFieldError);
+
+        var enteredPhones = phones.filter(function (input) {
+            return input.value.trim() !== "";
+        });
+
+        if (!enteredPhones.length && phones.length) {
+            addError(
+                errors,
+                phones[0],
+                "Enter at least one " + label.toLowerCase() +
+                " telephone number: Home, Work or Cell."
+            );
+        }
+
+        enteredPhones.forEach(function (input) {
+            var digits = input.value.replace(/\D/g, "");
+
+            if (!telephonePattern.test(digits)) {
+                addError(
+                    errors,
+                    input,
+                    "Telephone numbers must contain 10 digits and start with 0."
+                );
+            }
+        });
+
+        var groupMessage = element(prefix + "_cd_invalid");
+        if (groupMessage) {
+            groupMessage.textContent = enteredPhones.length
+                ? ""
+                : "Enter at least one telephone number: Home, Work or Cell.";
+            groupMessage.style.color = enteredPhones.length ? "" : "#b91c1c";
+        }
+    }
+
+    function objectorType() {
+        var hidden = element("Objector_Type");
+        return (
+            (hidden && hidden.value) ||
+            sessionStorage.getItem("objector_choice") ||
+            "Owner"
+        ).trim();
+    }
+
+    function validateSectionOne() {
+        var errors = [];
+        var type = objectorType();
+
+        if (type === "Third_Party") {
+            validateRequiredName("objector_name", "Third-party name", errors);
+            validateContactGroup("obj", "Third-party", errors);
+        } else if (type === "Representative") {
+            validateRequiredName("o_name", "Registered owner name", errors);
+            validateRequiredName("rep_name", "Representative name", errors);
+            validateContactGroup("o", "Owner", errors);
+            validateContactGroup("rep", "Representative", errors);
+        } else {
+            validateRequiredName("o_name", "Registered owner name", errors);
+            validateContactGroup("o", "Owner", errors);
+        }
+
+        showValidationSummary(errors);
+        return errors;
+    }
+
+    function validateDeclaration() {
+        var errors = [];
+        var name = element("sign_obj");
+        var signature = element("SignatureDataUrl") || element("signatureData");
+        var canvas = element("signature") || element("sigCanvas");
+
+        if (name) {
+            clearFieldError(name);
+            if (!name.value.trim()) {
+                addError(errors, name, "Enter the full name of the person signing the form.");
+            }
+        }
+
+        if (signature && !signature.value.trim()) {
+            if (canvas) {
+                canvas.setAttribute("aria-invalid", "true");
+                canvas.style.borderColor = "#dc2626";
+            }
+
+            errors.push({
+                input: canvas || signature,
+                message: "Draw your signature before submitting."
+            });
+        }
+
+        return errors;
+    }
+
+    function focusFirstError(errors) {
+        if (!errors.length) return;
+
+        var target = errors[0].input;
+        if (!target) return;
+
+        if (typeof target.scrollIntoView === "function") {
+            target.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+
+        setTimeout(function () {
+            if (typeof target.focus === "function") target.focus();
+        }, 350);
+    }
+
+    function stopAction(event, errors) {
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+        showValidationSummary(errors);
+        focusFirstError(errors);
+    }
+
+    document.addEventListener("click", function (event) {
+        var sectionOneNext = event.target.closest(".btn_n1");
+        if (sectionOneNext) {
+            var sectionErrors = validateSectionOne();
+            if (sectionErrors.length) stopAction(event, sectionErrors);
+            return;
+        }
+
+        var submitButton = event.target.closest("#submitForm");
+        if (!submitButton) return;
+
+        var errors = validateSectionOne().concat(validateDeclaration());
+        if (errors.length) stopAction(event, errors);
+    }, true);
+
+    form.addEventListener("submit", function (event) {
+        var errors = validateSectionOne().concat(validateDeclaration());
+
+        if (errors.length) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            showValidationSummary(errors);
+            focusFirstError(errors);
+            return false;
+        }
+
+        moneyIds.forEach(function (id) {
+            var target = element(id);
+            if (target) syncRawMoney(target);
+        });
+    }, true);
+
+    form.addEventListener("input", function (event) {
+        var target = event.target;
+        if (target && target.id) clearFieldError(target);
+    });
+
+    initialiseMoneyFormatting();
+
+    window.GenesisFriendlyValidation = {
+        validateSectionOne: validateSectionOne,
+        validateDeclaration: validateDeclaration,
+        cleanMoney: cleanMoney,
+        formatRand: formatRand,
+        initialiseMoneyFormatting: initialiseMoneyFormatting
+    };
+})();

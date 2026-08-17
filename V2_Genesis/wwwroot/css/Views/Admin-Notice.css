@@ -1,5 +1,4 @@
-﻿
-.adn-page {
+﻿.adn-page {
     font-family: 'Poppins',sans-serif;
     padding-bottom: 60px;
 }
@@ -360,4 +359,50 @@
     transition: transform .2s;
 }
 
+/* ── Responsive ──────────────────────────────────────────────── */
+@media (max-width: 700px) {
+    .adn-hero {
+        padding: 22px 16px 20px;
+    }
 
+    .adn-hero-inner {
+        flex-wrap: wrap;
+    }
+
+    .adn-back {
+        margin-left: 0;
+        order: 3;
+        width: 100%;
+        justify-content: center;
+    }
+
+    .adn-hero h1 {
+        font-size: 18px;
+    }
+
+    .adn-body {
+        margin: 16px auto;
+        padding: 0 12px;
+    }
+
+    .adn-search-body {
+        padding: 16px;
+    }
+
+    .adn-search-field {
+        min-width: 100%;
+    }
+
+    .adn-search-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .adn-client-strip {
+        flex-wrap: wrap;
+    }
+
+    .nt-table {
+        min-width: 620px;
+    }
+}

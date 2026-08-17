@@ -1,0 +1,42 @@
+﻿<div class="gen-upload" data-gen-upload>
+    <div class="gen-upload-heading">
+        <div>
+            <i class="fa-solid fa-paperclip"></i>
+            <strong>Supporting documents</strong>
+        </div>
+        <span class="gen-upload-summary" data-gen-upload-summary>0 files ready</span>
+    </div>
+
+    <p class="gen-upload-intro">
+        Add documents that support this submission. You may browse more than once;
+        every valid selection is kept until you remove it.
+    </p>
+
+    <div class="gen-upload-dropzone" data-gen-upload-dropzone tabindex="0"
+         role="button" aria-label="Choose supporting documents">
+        <i class="fa-solid fa-cloud-arrow-up"></i>
+        <strong>Drag files here to upload</strong>
+        <span>PDF, PNG, JPG, JPEG, HEIC or HEIF</span>
+        <button type="button" class="gen-upload-browse" data-gen-upload-browse>
+            <i class="fa-solid fa-folder-open"></i> Browse files
+        </button>
+    </div>
+
+    <input type="file" id="files" name="files" class="gen-upload-input"
+           accept=".pdf,.png,.jpeg,.jpg,.heic,.heif" multiple />
+
+    <div class="gen-upload-counter">
+        <span data-gen-upload-count>0 of 10 files added</span>
+        <div class="gen-upload-counter-track">
+            <div class="gen-upload-counter-fill" data-gen-upload-fill></div>
+        </div>
+    </div>
+
+    <div class="gen-upload-list" data-gen-upload-list></div>
+
+    <div class="gen-upload-note">
+        <i class="fa-solid fa-circle-info"></i>
+        Maximum 10 files and 10 MB per file. Selecting another folder will not
+        remove files already selected.
+    </div>
+</div>

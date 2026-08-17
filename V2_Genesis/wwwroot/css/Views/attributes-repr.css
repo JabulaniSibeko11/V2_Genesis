@@ -1,9 +1,29 @@
-﻿
+﻿/* ═══════════════════════════════════════════════════════════════
+   ATTRIBUTES — REPRESENTATIVE DETAILS
+   City of Johannesburg Valuation Portal
+   Poppins · Gold #e6b000 · Teal #1a2e35 (matches attribute-create.css)
+═══════════════════════════════════════════════════════════════ */
+
+:root {
+    --at-gold: #e6b000;
+    --at-gold-light: #fdf6d8;
+    --at-gold-border: rgba(230,176,0,.28);
+    --at-gold-dim: rgba(230,176,0,.12);
+    --at-teal: #006570;
+    --at-teal-mid: #36626d;
+    --at-teal-deep: #1a2e35;
+    --at-teal-pale: #e8f3f4;
+    --at-white: #ffffff;
+    --at-warm: #f7f5f2;
+    --at-border: #ede9e3;
+    --at-shadow: 0 4px 20px rgba(0,101,112,.1);
+}
+
 .rep-page {
-    background: #f4f4f4;
+    background: var(--at-warm);
     min-height: 100vh;
     padding: 32px 24px 56px;
-    font-family: 'Poppins',sans-serif;
+    font-family: 'Poppins', sans-serif;
 }
 
 .rep-inner {
@@ -14,7 +34,7 @@
     gap: 22px;
 }
 
-/* Progress steps */
+/* ── Progress steps ──────────────────────────────────────────── */
 .rep-steps {
     display: flex;
     align-items: center;
@@ -27,14 +47,15 @@
     font-size: 12.5px;
     font-weight: 600;
     color: #b0b0b0;
+    white-space: nowrap;
 }
 
     .rep-step.done {
-        color: #15803d;
+        color: var(--at-teal-mid);
     }
 
     .rep-step.active {
-        color: #1a1a1a;
+        color: var(--at-teal-deep);
     }
 
 .rep-step-num {
@@ -48,16 +69,17 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
 }
 
 .rep-step.done .rep-step-num {
-    background: #dcfce7;
-    color: #15803d;
+    background: var(--at-teal-pale);
+    color: var(--at-teal-mid);
 }
 
 .rep-step.active .rep-step-num {
-    background: #1a1a1a;
-    color: #e6b000;
+    background: var(--at-teal-deep);
+    color: var(--at-gold);
 }
 
 .rep-step-div {
@@ -65,29 +87,31 @@
     height: 2px;
     background: #e8e8e8;
     margin: 0 8px;
+    min-width: 16px;
 }
 
     .rep-step-div.done {
-        background: #15803d;
+        background: var(--at-teal-mid);
     }
 
-/* Property banner */
+/* ── Property banner ─────────────────────────────────────────── */
 .rep-prop-banner {
     padding: 14px 18px;
-    border-radius: 10px;
-    background: #1a1a1a;
-    color: #e6b000;
+    border-radius: 12px;
+    background: var(--at-teal-deep);
+    color: var(--at-gold);
     font-size: 13px;
     display: flex;
     align-items: center;
     gap: 10px;
+    border-bottom: 3px solid var(--at-gold);
 }
 
     .rep-prop-banner strong {
         color: #fff;
     }
 
-/* Heading */
+/* ── Heading ──────────────────────────────────────────────────── */
 .rep-heading {
     display: flex;
     align-items: center;
@@ -97,19 +121,21 @@
 .rep-heading-icon {
     width: 50px;
     height: 50px;
-    border-radius: 13px;
-    background: #1a1a1a;
-    color: #e6b000;
+    border-radius: 14px;
+    background: var(--at-gold-dim);
+    border: 1.5px solid var(--at-gold-border);
+    color: var(--at-gold);
     font-size: 20px;
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
 }
 
 .rep-title {
     font-size: 22px;
     font-weight: 800;
-    color: #1a1a1a;
+    color: var(--at-teal-deep);
     margin: 0;
 }
 
@@ -117,14 +143,15 @@
     font-size: 13px;
     color: #6b6b6b;
     margin: 0;
+    line-height: 1.5;
 }
 
-/* Card */
+/* ── Card ─────────────────────────────────────────────────────── */
 .rep-card {
     background: #fff;
-    border-radius: 14px;
-    border: 1.5px solid #e8e8e8;
-    box-shadow: 0 2px 14px rgba(0,0,0,.07);
+    border-radius: 16px;
+    border: 1px solid var(--at-border);
+    box-shadow: var(--at-shadow);
     overflow: hidden;
 }
 
@@ -133,9 +160,9 @@
     align-items: center;
     gap: 12px;
     padding: 15px 22px;
-    background: #1a1a1a;
-    border-bottom: 3px solid #e6b000;
-    color: #e6b000;
+    background: var(--at-teal-deep);
+    border-bottom: 3px solid var(--at-gold);
+    color: var(--at-gold);
     font-size: 14px;
     font-weight: 800;
 }
@@ -150,7 +177,7 @@
 .rep-field {
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    gap: 6px;
 }
 
 .rep-field-full {
@@ -160,16 +187,16 @@
 .rep-label {
     font-size: 11.5px;
     font-weight: 700;
-    color: #1a1a1a;
+    color: var(--at-teal-deep);
     text-transform: uppercase;
     letter-spacing: .4px;
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 6px;
 }
 
     .rep-label i {
-        color: #e6b000;
+        color: var(--at-gold);
     }
 
     .rep-label .req {
@@ -177,31 +204,31 @@
     }
 
 .rep-input {
-    padding: 10px 12px;
+    padding: 10px 13px;
     border: 1.5px solid #e0e0e0;
-    border-radius: 8px;
-    font-family: 'Poppins',sans-serif;
+    border-radius: 9px;
+    font-family: 'Poppins', sans-serif;
     font-size: 13.5px;
     color: #1a1a1a;
     background: #fafafa;
     outline: none;
     width: 100%;
-    transition: border-color .15s;
+    transition: border-color .15s, background .15s;
 }
 
     .rep-input:focus {
-        border-color: #e6b000;
+        border-color: var(--at-gold);
         background: #fff;
     }
 
-/* Auth letter notice */
+/* ── Auth letter reminder ────────────────────────────────────── */
 .rep-auth-notice {
     padding: 14px 18px;
-    border-radius: 10px;
-    background: #eff6ff;
-    border: 1px solid #bfdbfe;
+    border-radius: 12px;
+    background: var(--at-gold-light);
+    border: 1.5px solid var(--at-gold-border);
     font-size: 13px;
-    color: #1e3a5f;
+    color: #7a5800;
     line-height: 1.6;
     display: flex;
     align-items: flex-start;
@@ -209,12 +236,16 @@
 }
 
     .rep-auth-notice i {
-        color: #3b82f6;
+        color: #c49a00;
         flex-shrink: 0;
         margin-top: 2px;
     }
 
-/* Actions */
+    .rep-auth-notice strong {
+        color: var(--at-teal-deep);
+    }
+
+/* ── Actions ─────────────────────────────────────────────────── */
 .rep-actions {
     display: flex;
     gap: 12px;
@@ -226,19 +257,20 @@
     align-items: center;
     gap: 8px;
     padding: 13px 28px;
-    border-radius: 9px;
-    background: #e6b000;
-    color: #1a1a1a;
+    border-radius: 10px;
+    background: var(--at-gold);
+    color: var(--at-teal-deep);
     border: none;
     cursor: pointer;
-    font-family: 'Poppins',sans-serif;
+    font-family: 'Poppins', sans-serif;
     font-size: 14px;
-    font-weight: 700;
-    transition: background .15s;
+    font-weight: 800;
+    transition: background .15s, transform .15s;
 }
 
     .rep-btn-primary:hover {
         background: #f5c200;
+        transform: translateY(-1px);
     }
 
 .rep-btn-outline {
@@ -246,25 +278,44 @@
     align-items: center;
     gap: 8px;
     padding: 13px 22px;
-    border-radius: 9px;
+    border-radius: 10px;
     background: #fff;
-    color: #1a1a1a;
+    color: var(--at-teal-deep);
     border: 1.5px solid #e0e0e0;
     cursor: pointer;
-    font-family: 'Poppins',sans-serif;
+    font-family: 'Poppins', sans-serif;
     font-size: 14px;
-    font-weight: 600;
+    font-weight: 700;
     text-decoration: none;
     transition: all .15s;
 }
 
     .rep-btn-outline:hover {
-        border-color: #1a1a1a;
+        border-color: var(--at-teal-deep);
+        color: var(--at-teal-deep);
     }
 
-@media(max-width:640px) {
+/* ── Responsive ──────────────────────────────────────────────── */
+@media (max-width: 700px) {
+    .rep-page {
+        padding: 22px 16px 44px;
+    }
+
+    .rep-step span {
+        display: none;
+    }
+
+    .rep-step-num {
+        width: 24px;
+        height: 24px;
+        font-size: 11px;
+    }
+}
+
+@media (max-width: 640px) {
     .rep-form-grid {
         grid-template-columns: 1fr;
+        padding: 18px;
     }
 
     .rep-field-full {
@@ -275,12 +326,39 @@
         flex-direction: column;
     }
 
-    .rep-btn-primary, .rep-btn-outline {
+    .rep-btn-primary,
+    .rep-btn-outline {
         width: 100%;
         justify-content: center;
     }
 
+    .rep-heading {
+        align-items: flex-start;
+    }
+
+    .rep-heading-icon {
+        width: 42px;
+        height: 42px;
+        font-size: 17px;
+    }
+
+    .rep-title {
+        font-size: 18px;
+    }
+}
+
+@media (max-width: 420px) {
     .rep-steps {
-        display: none;
+        gap: 4px;
+    }
+
+    .rep-step-div {
+        margin: 0 4px;
+    }
+}
+
+@media (min-width: 1440px) {
+    .rep-inner {
+        max-width: 860px;
     }
 }

@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Options;
 using System.Data;
 using System.Net.Mime;
@@ -22,7 +21,6 @@ namespace V2_Genesis.Services.Implementations;
 public class ObjectionFormService : IObjectionFormService
 {
     private readonly ApplicationDbContext _db;
-    private readonly QueryDbContext _queryDb;
     private readonly ObjectionRollSettings _rollSettings;
     private readonly IConfiguration _config;
     private readonly ILogger<ObjectionFormService> _logger;
@@ -33,13 +31,11 @@ public class ObjectionFormService : IObjectionFormService
 
     public ObjectionFormService(
         ApplicationDbContext db,
-        QueryDbContext queryDb,
         IOptions<ObjectionRollSettings> rollOpts,
         IConfiguration config,
         ILogger<ObjectionFormService> logger, INoticeService noticeService, IEmailService emailService, ISubmittedFormPdfService submittedFormPdfService)
     {
         _db = db;
-        _queryDb = queryDb;
         _rollSettings = rollOpts.Value;
         _config = config;
         _noticeService = noticeService;
@@ -334,7 +330,6 @@ public class ObjectionFormService : IObjectionFormService
 
         obj7.Ref = objId;
         obj7.Objection_Ref_S7 = objRef;
-        obj7.Declaration_Date = EnsureDeclarationDate(obj7.Declaration_Date);
         obj7.RandomPin = GeneratePin();
         obj7.Section51Pin = GeneratePin();
         db.Obj_Section7.Add(obj7);
@@ -515,7 +510,6 @@ public class ObjectionFormService : IObjectionFormService
         obj7.Ref = appId;
         obj7.Appeal_Ref_S7 = appId;
         obj7.Objection_Ref_S7 = appNo;
-        obj7.Declaration_Date = EnsureDeclarationDate(obj7.Declaration_Date);
         obj7.RandomPin = GeneratePin();
         obj7.Section51Pin = GeneratePin();
         db.Obj_Section7.Add(obj7);
@@ -533,7 +527,7 @@ public class ObjectionFormService : IObjectionFormService
         objFile.Ref = appId;
         objFile.Objection_Ref_files = appNo;
         objFile.Evidence_count = count;
-        objFile.Appeal_Ref_files = appId;
+        objFile.Appeal_Ref_files = 1;
 
         db.Obj_Files.Add(objFile);
         await db.SaveChangesAsync();
@@ -708,6 +702,7 @@ public class ObjectionFormService : IObjectionFormService
                 ObjectionNo = pin,
                 ObjectionRef = referenceNo,
                 RollSource = rollSource,
+                PropertyFrom = propertyFrom,
                 SubmissionTime = DateTime.Now.ToString("dd MMMM yyyy HH:mm"),
                 IsMulti = isMulti,
                 IsAppeal = isAppeal,
@@ -835,15 +830,26 @@ public class ObjectionFormService : IObjectionFormService
                 }
             };
 
-            // 5. Generate Section 49 only for an objection against a property
-            // that exists on the valuation roll. LIS and Omission submissions
-            // must never generate a Section 49 notice.
-            if (!isAppeal && ShouldGenerateSection49(rollSource, propertyFrom))
+            // 5. Roll submissions must include Section 49 with the
+            // acknowledgement and populated form. LIS and Omission
+            // submissions must include acknowledgement + form only.
+            if (ShouldGenerateSection49(rollSource, propertyFrom))
             {
                 try
                 {
-                    var unitKey = FloatKeyHelper.Normalize(obj.Unit_key);
-                    var valuationKey = FloatKeyHelper.Normalize(obj.Valuation_Key);
+                    var unitKey = FloatKeyHelper.Normalize(
+                        isAppeal
+                            ? appeal?.A_Unit_key ?? obj.Unit_key
+                            : obj.Unit_key);
+
+                    var valuationKey = FloatKeyHelper.Normalize(
+                        isAppeal
+                            ? appeal?.A_Valuation_Key ?? obj.Valuation_Key
+                            : obj.Valuation_Key);
+
+                    var propertyDescription = isAppeal
+                        ? appeal?.A_Property_Desc ?? obj.Property_Desc
+                        : obj.Property_Desc;
 
                     var (section49Bytes, section49FileName) = await _noticeService
                         .GenerateSection49ForObjectionAsync(
@@ -851,7 +857,7 @@ public class ObjectionFormService : IObjectionFormService
                             unitKey,
                             valuationKey,
                             referenceNo,
-                            obj.Property_Desc ?? string.Empty);
+                            propertyDescription ?? string.Empty);
 
                     var section49Path = Path.Combine(folderPath, section49FileName);
                     await File.WriteAllBytesAsync(section49Path, section49Bytes);
@@ -876,6 +882,10 @@ public class ObjectionFormService : IObjectionFormService
                         referenceNo,
                         rollSource,
                         propertyFrom);
+
+                    throw new InvalidOperationException(
+                        $"Section 49 is required for roll submission {referenceNo}; the client email was not sent.",
+                        section49Ex);
                 }
             }
             else
@@ -923,9 +933,9 @@ public class ObjectionFormService : IObjectionFormService
             return false;
         }
 
-        if (propertyFrom.Equals("LIS", StringComparison.OrdinalIgnoreCase) ||
-            propertyFrom.Equals("Omission", StringComparison.OrdinalIgnoreCase) ||
-            propertyFrom.Equals("Omitted", StringComparison.OrdinalIgnoreCase))
+        if (propertyFrom.Contains("LIS", StringComparison.OrdinalIgnoreCase) ||
+            propertyFrom.Contains("Omission", StringComparison.OrdinalIgnoreCase) ||
+            propertyFrom.Contains("Omitted", StringComparison.OrdinalIgnoreCase))
         {
             return false;
         }
@@ -1006,17 +1016,6 @@ public class ObjectionFormService : IObjectionFormService
         return new string(pin);
     }
 
-    private static string EnsureDeclarationDate(string? declarationDate)
-    {
-        if (!string.IsNullOrWhiteSpace(declarationDate) &&
-            DateTime.TryParse(declarationDate, out var parsed))
-        {
-            return parsed.ToString("yyyy-MM-dd HH:mm:ss");
-        }
-
-        return DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-    }
-
     private static async Task<int> SaveFilesAsync(
         string rootPath,
         string folder,
@@ -1082,301 +1081,96 @@ public class ObjectionFormService : IObjectionFormService
         }
     }
     public async Task<AcknowledgementData?> GetAcknowledgementDataAsync(
-      string rollSource,
-      string referenceNo)
+        string rollSource,
+        string referenceNo)
     {
         if (string.IsNullOrWhiteSpace(referenceNo))
             return null;
 
-        var cleanReference = referenceNo.Trim();
-
-        // The reference number is the safest source for selecting the roll.
-        // This prevents a dashboard rollSource mismatch from querying the wrong DB.
-        var detectedRollSource = DetectRollSourceFromReference(cleanReference);
-
-        if (string.IsNullOrWhiteSpace(rollSource))
-        {
-            rollSource = detectedRollSource;
-        }
-        else
-        {
-            rollSource = NormalizeRollSource(rollSource);
-
-            // Objection and appeal reference numbers identify their actual roll.
-            if (cleanReference.StartsWith("GV23", StringComparison.OrdinalIgnoreCase) ||
-                cleanReference.StartsWith("OBJ-GV23", StringComparison.OrdinalIgnoreCase) ||
-                cleanReference.StartsWith("APP-GV23", StringComparison.OrdinalIgnoreCase))
-            {
-                rollSource = detectedRollSource;
-            }
-        }
+        rollSource = NormalizeRollSource(rollSource);
+        referenceNo = referenceNo.Trim();
 
         await using var db = CreateDbContextForRoll(rollSource);
 
-        var connectionString = db.Database.GetConnectionString();
-        if (string.IsNullOrWhiteSpace(connectionString))
-            throw new InvalidOperationException(
-                $"The database connection for roll '{rollSource}' is not configured.");
+        // Appeal references are stored in Obj_Property_Info_Appeal and the
+        // shared section tables use the Appeal_Ref_* columns.
+        var appeal = await db.Obj_Property_Info_Appeal
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Appeal_No == referenceNo);
 
-        await using var connection = new SqlConnection(connectionString);
-        await connection.OpenAsync();
-
-        var isAppealReference = cleanReference.StartsWith(
-            "APP-",
-            StringComparison.OrdinalIgnoreCase);
-
-        if (isAppealReference)
+        if (appeal is not null)
         {
-            var appeal = await db.Obj_Property_Info_Appeal
+            var appealPropertyFrom = await db.Obj_Property_Info
+                .AsNoTracking()
+                .Where(x => x.Objection_No == appeal.Obj_Ref)
+                .Select(x => x.PropertyFrom)
+                .FirstOrDefaultAsync();
+
+            var section6 = await db.Obj_Section6
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x =>
-                    x.Appeal_No != null &&
-                    x.Appeal_No.Trim() == cleanReference);
+                    x.Appeal_Ref_S6 == appeal.Appeal_ID ||
+                    x.Objection_Ref_S6 == referenceNo);
 
-            if (appeal == null)
-                return null;
+            var section7 = await db.Obj_Section7
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x =>
+                    x.Appeal_Ref_S7 == appeal.Appeal_ID ||
+                    x.Objection_Ref_S7 == referenceNo);
 
-            var section6 = await GetSection6Async(
-                connection,
-                cleanReference,
-                appeal.Appeal_ID,
-                isAppeal: true);
-
-            var section7 = await GetSection7Async(
-                connection,
-                cleanReference,
-                appeal.Appeal_ID,
-                isAppeal: true);
-
-            var files = await GetAcknowledgementFilesAsync(
-                connection,
-                cleanReference,
-                appeal.Appeal_ID,
-                isAppeal: true);
-
-            var submissionDate = section7?.Declaration_Date;
+            var files = await db.Obj_Files
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x =>
+                    x.Ref == appeal.Appeal_ID &&
+                    x.Objection_Ref_files == referenceNo);
 
             return BuildAcknowledgementData(
-                rollSource: rollSource,
-                referenceNo: cleanReference,
-                pin: section7?.RandomPin,
-                valuationKey: appeal.A_Valuation_Key,
-                propertyType: appeal.A_Property_Type,
+                rollSource,
+                referenceNo,
+                section7?.RandomPin,
+                appeal.A_Valuation_Key,
+                appealPropertyFrom,
+                appeal.A_Property_Type,
                 isAppeal: true,
-                section6: section6,
-                submissionTime: submissionDate,
-                files: files);
+                section6,
+                section7?.Declaration_Date,
+                files);
         }
 
         var objection = await db.Obj_Property_Info
             .AsNoTracking()
-            .FirstOrDefaultAsync(x =>
-                x.Objection_No != null &&
-                x.Objection_No.Trim() == cleanReference);
+            .FirstOrDefaultAsync(x => x.Objection_No == referenceNo);
 
-        if (objection == null)
+        if (objection is null)
             return null;
 
-        var objectionSection6 = await GetSection6Async(
-            connection,
-            cleanReference,
-            objection.Objection_ID,
-            isAppeal: false);
+        var objectionSection6 = await db.Obj_Section6
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x =>x.Objection_Ref_S6 == referenceNo);
 
-        var objectionSection7 = await GetSection7Async(
-            connection,
-            cleanReference,
-            objection.Objection_ID,
-            isAppeal: false);
+        var objectionSection7 = await db.Obj_Section7
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x =>
+                x.Ref == objection.Objection_ID ||
+                x.Objection_Ref_S7 == referenceNo);
 
-        var objectionFiles = await GetAcknowledgementFilesAsync(
-            connection,
-            cleanReference,
-            objection.Objection_ID,
-            isAppeal: false);
-
-        var objectionSubmissionDate =
-            objectionSection7?.Declaration_Date;
+        var objectionFiles = await db.Obj_Files
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x =>
+                x.Ref == objection.Objection_ID &&
+                x.Objection_Ref_files == referenceNo);
 
         return BuildAcknowledgementData(
-            rollSource: rollSource,
-            referenceNo: cleanReference,
-            pin: objectionSection7?.RandomPin,
-            valuationKey: objection.Valuation_Key,
-            propertyType: objection.Property_Type,
+            rollSource,
+            referenceNo,
+            objectionSection7?.RandomPin,
+            objection.Valuation_Key,
+            objection.PropertyFrom,
+            objection.Property_Type,
             isAppeal: false,
-            section6: objectionSection6,
-            submissionTime: objectionSubmissionDate,
-            files: objectionFiles);
-    }
-
-    private static async Task<Obj_Section6Model?> GetSection6Async(
-        SqlConnection connection,
-        string referenceNo,
-        long submissionId,
-        bool isAppeal)
-    {
-        const string columns = """
-            Ref,
-            Objection_Ref_S6,
-            Old_Property_Description,
-            Old_Category,
-            Old_Address,
-            Old_Extent,
-            Old_Market_Value,
-            Old_Owner,
-            New_Property_Description,
-            New_Category,
-            New_Address,
-            New_Extent,
-            New_Market_Value,
-            New_Owner,
-            Objection_Reasons,
-            Old2_Category,
-            Old2_Extent,
-            Old2_Market_Value,
-            New2_Category,
-            New2_Extent,
-            New2_Market_Value,
-            Old3_Category,
-            Old3_Extent,
-            Old3_Market_Value,
-            New3_Category,
-            New3_Extent,
-            New3_Market_Value
-            """;
-
-        var whereClause =
-            "LTRIM(RTRIM(ISNULL(Objection_Ref_S6, ''))) = @ReferenceNo";
-
-        var section = await connection.QueryFirstOrDefaultAsync<Obj_Section6Model>(
-            $"SELECT TOP (1) {columns} FROM dbo.Obj_Section6 WHERE {whereClause}",
-            new { ReferenceNo = referenceNo, SubmissionId = submissionId });
-
-        if (section != null)
-            return section;
-
-        // Some older records only contain the numeric ID in Ref. Convert Ref
-        // inside SQL because its data type differs between roll databases.
-        var idColumn = isAppeal ? "Appeal_Ref_S6" : "Ref";
-
-        return await connection.QueryFirstOrDefaultAsync<Obj_Section6Model>(
-            $"""
-            SELECT TOP (1) {columns}
-            FROM dbo.Obj_Section6
-            WHERE TRY_CONVERT(bigint, {idColumn}) = @SubmissionId
-            """,
-            new { SubmissionId = submissionId });
-    }
-
-    private static async Task<Obj_Section7Model?> GetSection7Async(
-        SqlConnection connection,
-        string referenceNo,
-        long submissionId,
-        bool isAppeal)
-    {
-        const string columns = """
-            Objection_Ref_S7,
-            Declaration_Date,
-            Signature_Picture,
-            Signature_Name,
-            RandomPin,
-            Section51Pin
-            """;
-
-        var whereClause =
-            "LTRIM(RTRIM(ISNULL(Objection_Ref_S7, ''))) = @ReferenceNo";
-
-        var section = await connection.QueryFirstOrDefaultAsync<Obj_Section7Model>(
-            $"SELECT TOP (1) {columns} FROM dbo.Obj_Section7 WHERE {whereClause}",
-            new { ReferenceNo = referenceNo, SubmissionId = submissionId });
-
-        if (section != null)
-            return section;
-
-        var idColumn = isAppeal ? "Appeal_Ref_S7" : "Ref";
-
-        return await connection.QueryFirstOrDefaultAsync<Obj_Section7Model>(
-            $"""
-            SELECT TOP (1) {columns}
-            FROM dbo.Obj_Section7
-            WHERE TRY_CONVERT(bigint, {idColumn}) = @SubmissionId
-            """,
-            new { SubmissionId = submissionId });
-    }
-
-    private static async Task<Obj_Files?> GetAcknowledgementFilesAsync(
-        SqlConnection connection,
-        string referenceNo,
-        long submissionId,
-        bool isAppeal)
-    {
-        const string columns = """
-            Objection_Ref_files,
-            Files1,
-            Files2,
-            Files3,
-            Files4,
-            Files5,
-            Files6,
-            Files7,
-            Files8,
-            Files9,
-            Files10,
-            Rep_letter,
-            TRY_CONVERT(float, Evidence_count) AS Evidence_count
-            """;
-
-        var files = await connection.QueryFirstOrDefaultAsync<Obj_Files>(
-            $"""
-            SELECT TOP (1) {columns}
-            FROM dbo.Obj_Files
-            WHERE LTRIM(RTRIM(ISNULL(Objection_Ref_files, ''))) = @ReferenceNo
-            """,
-            new { ReferenceNo = referenceNo });
-
-        if (files != null)
-            return files;
-
-        var idColumn = isAppeal ? "Appeal_Ref_files" : "Ref";
-
-        return await connection.QueryFirstOrDefaultAsync<Obj_Files>(
-            $"""
-            SELECT TOP (1) {columns}
-            FROM dbo.Obj_Files
-            WHERE TRY_CONVERT(bigint, {idColumn}) = @SubmissionId
-            """,
-            new { SubmissionId = submissionId });
-    }
-    private static string DetectRollSourceFromReference(string referenceNo)
-    {
-        var value = referenceNo
-            .Trim()
-            .ToUpperInvariant()
-            .Replace("_", "-")
-            .Replace(" ", string.Empty);
-
-        if (value.Contains("SUP5") || value.Contains("SUPP5") ||
-            value.Contains("SUP-5") || value.Contains("SUPP-5"))
-            return "Objection_Supp5";
-
-        if (value.Contains("SUP4") || value.Contains("SUPP4") ||
-            value.Contains("SUP-4") || value.Contains("SUPP-4"))
-            return "Objection_Supp4";
-
-        if (value.Contains("SUP3") || value.Contains("SUPP3") ||
-            value.Contains("SUP-3") || value.Contains("SUPP-3"))
-            return "Objection_Supp3";
-
-        if (value.Contains("SUP2") || value.Contains("SUPP2") ||
-            value.Contains("SUP-2") || value.Contains("SUPP-2"))
-            return "Objection_Supp2";
-
-        if (value.Contains("SUP1") || value.Contains("SUPP1") ||
-            value.Contains("SUP-1") || value.Contains("SUPP-1"))
-            return "Objection_Supp1";
-
-        return "Objection";
+            objectionSection6,
+            objection.Objection_Start_DateTime.ToString("dd MMMM yyyy HH:mm"),
+            objectionFiles);
     }
 
     private static AcknowledgementData BuildAcknowledgementData(
@@ -1384,6 +1178,7 @@ public class ObjectionFormService : IObjectionFormService
         string referenceNo,
         string? pin,
         string? valuationKey,
+        string? propertyFrom,
         string? propertyType,
         bool isAppeal,
         Obj_Section6Model? section6,
@@ -1395,6 +1190,7 @@ public class ObjectionFormService : IObjectionFormService
             ObjectionNo = pin ?? string.Empty,
             ObjectionRef = referenceNo,
             RollSource = rollSource,
+            PropertyFrom = propertyFrom ?? string.Empty,
             SubmissionTime = string.IsNullOrWhiteSpace(submissionTime)
                 ? DateTime.Now.ToString("dd MMMM yyyy HH:mm")
                 : submissionTime,
@@ -1470,10 +1266,6 @@ public class ObjectionFormService : IObjectionFormService
             || withdrawType.Contains("Section78", StringComparison.OrdinalIgnoreCase)
             || isReview;
 
-        var databaseReference = isReview
-            ? GetBaseQueryReference(objectionNo)
-            : objectionNo;
-
         string submissionType = isAppeal
             ? "Appeal"
             : isReview
@@ -1495,39 +1287,39 @@ public class ObjectionFormService : IObjectionFormService
         string spName = isAppeal
             ? "Obj_Withdraw_Appeal"
             : isQuery
-                ? "Obj_Withdraw"
+                ? "Que_Withdraw"
                 : "Obj_Withdraw";
 
         try
         {
+            await using var conn = new SqlConnection(connStr);
+            await using var withdrawalDb = new WithdrawalReadDbContext(connStr);
+
+            // 1. Execute withdrawal stored procedure
+            await conn.ExecuteAsync(
+                spName,
+                new { Objection_No = objectionNo },
+                commandType: CommandType.StoredProcedure);
+
+            // 2. Save withdrawal audit record
             if (isQuery)
             {
-                await ExecuteQueryWithdrawalAsync(
-                    spName,
-                    databaseReference,
-                    objectionNo,
-                    userId);
+                _db.Que_Withdrawals.Add(new Que_WithdrawalsModel
+                {
+                    Query_Withdrawn = objectionNo,
+                    User = userId,
+                });
             }
             else
             {
-                await using var conn = new SqlConnection(connStr);
-
-                await conn.ExecuteAsync(
-                    spName,
-                    new { Objection_No = databaseReference },
-                    commandType: CommandType.StoredProcedure);
-
                 _db.Obj_Withdrawals.Add(new Obj_WithdrawalsModel
                 {
                     Objection_Withdrawn = objectionNo,
                     User = userId,
                 });
-
-                await _db.SaveChangesAsync();
             }
 
-            await using var withdrawalDb =
-                new WithdrawalReadDbContext(connStr);
+            await _db.SaveChangesAsync();
 
             // 3. Send withdrawal email to client
             try
@@ -1603,74 +1395,19 @@ public class ObjectionFormService : IObjectionFormService
                 withdrawType,
                 rollSource);
 
-            return (
-                false,
-                isQuery
-                    ? "The Query/Review withdrawal could not be completed. Please check the Query withdrawal procedure and audit table configuration."
-                    : "An error occurred while processing the withdrawal. Please try again.");
+            return (false, "An error occurred while processing the withdrawal. Please try again.");
         }
     }
-
-    private async Task ExecuteQueryWithdrawalAsync(
-        string procedureName,
-        string databaseReference,
-        string auditReference,
-        string userId)
-    {
-        await using var transaction =
-            await _queryDb.Database.BeginTransactionAsync();
-
-        try
-        {
-            var connection =
-                _queryDb.Database.GetDbConnection();
-
-            await using var command =
-                connection.CreateCommand();
-
-            command.CommandText = procedureName;
-            command.CommandType = CommandType.StoredProcedure;
-            command.Transaction = transaction.GetDbTransaction();
-
-            var referenceParameter = command.CreateParameter();
-            referenceParameter.ParameterName = "@Objection_No";
-            referenceParameter.Value = databaseReference;
-            command.Parameters.Add(referenceParameter);
-
-            await command.ExecuteNonQueryAsync();
-
-            _queryDb.Que_Withdrawals.Add(
-                new Que_WithdrawalsModel
-                {
-                    Query_Withdrawn = auditReference,
-                    User = userId
-                });
-
-            await _queryDb.SaveChangesAsync();
-            await transaction.CommitAsync();
-        }
-        catch
-        {
-            await transaction.RollbackAsync();
-            throw;
-        }
-    }
-
     private async Task<List<EmailRecipient>> ResolveWithdrawalRecipientsAsync(
     WithdrawalReadDbContext db,
     string referenceNo,
     bool isAppeal,
     bool isQuery)
     {
-        var databaseReference = isQuery
-            ? GetBaseQueryReference(referenceNo)
-            : referenceNo;
-
         var row = await db.Section1
             .AsNoTracking()
             .Where(x =>
-                (x.ObjectionReference ?? string.Empty).Trim() == referenceNo ||
-                (x.ObjectionReference ?? string.Empty).Trim() == databaseReference)
+                (x.ObjectionReference ?? string.Empty).Trim() == referenceNo)
             .Select(x => new WithdrawalRecipientRow
             {
                 OwnerName = x.OwnerName,
@@ -1696,10 +1433,13 @@ public class ObjectionFormService : IObjectionFormService
             var query = await db.Queries
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x =>
-                    (x.QueryNo ?? string.Empty).Trim() == databaseReference);
+                    (x.QueryNo ?? string.Empty).Trim() == referenceNo ||
+                    (x.ReviewNo ?? string.Empty).Trim() == referenceNo);
 
             row.ObjectorType = FirstNotEmpty(
-                query?.QueryType);
+                query?.ObjectorType,
+                query?.QueryType,
+                query?.SubmissionType);
         }
         else if (isAppeal)
         {
@@ -1912,10 +1652,6 @@ public class ObjectionFormService : IObjectionFormService
     {
         try
         {
-            var databaseReference = isQuery
-                ? GetBaseQueryReference(referenceNo)
-                : referenceNo;
-
             string? premiseId;
 
             if (isAppeal)
@@ -1932,7 +1668,8 @@ public class ObjectionFormService : IObjectionFormService
                 premiseId = await db.Queries
                     .AsNoTracking()
                     .Where(x =>
-                        (x.QueryNo ?? string.Empty).Trim() == databaseReference)
+                        (x.QueryNo ?? string.Empty).Trim() == referenceNo ||
+                        (x.ReviewNo ?? string.Empty).Trim() == referenceNo)
                     .Select(x => x.PremiseId)
                     .FirstOrDefaultAsync();
             }
@@ -1954,48 +1691,19 @@ public class ObjectionFormService : IObjectionFormService
                 return;
             }
 
-            var cleanPremiseId = premiseId.Trim();
-            var releasedCount = 0;
+            var linkedRecords = await _db.LinkedProperties
+                .Where(x => x.UserID == userId && x.IDProperty == premiseId.Trim())
+                .ToListAsync();
 
-            if (isQuery)
-            {
-                var linkedRecords = await _queryDb.LinkedPropertiesQuery
-                    .Where(x =>
-                        x.UserID == userId &&
-                        x.IDProperty == cleanPremiseId)
-                    .ToListAsync();
-
-                releasedCount = linkedRecords.Count;
-
-                if (releasedCount > 0)
-                {
-                    _queryDb.LinkedPropertiesQuery.RemoveRange(linkedRecords);
-                    await _queryDb.SaveChangesAsync();
-                }
-            }
-            else
-            {
-                var linkedRecords = await _db.LinkedProperties
-                    .Where(x =>
-                        x.UserID == userId &&
-                        x.IDProperty == cleanPremiseId)
-                    .ToListAsync();
-
-                releasedCount = linkedRecords.Count;
-
-                if (releasedCount > 0)
-                {
-                    _db.LinkedProperties.RemoveRange(linkedRecords);
-                    await _db.SaveChangesAsync();
-                }
-            }
-
-            if (releasedCount == 0)
+            if (linkedRecords.Count == 0)
                 return;
+
+            _db.LinkedProperties.RemoveRange(linkedRecords);
+            await _db.SaveChangesAsync();
 
             _logger.LogInformation(
                 "Released {Count} linked-property record(s) for withdrawn submission {Ref}.",
-                releasedCount,
+                linkedRecords.Count,
                 referenceNo);
         }
         catch (Exception ex)
@@ -2067,17 +1775,6 @@ public class ObjectionFormService : IObjectionFormService
     private static string? FirstNotEmpty(params string?[] values) =>
         values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value))?.Trim();
 
-    private static string GetBaseQueryReference(string referenceNo)
-    {
-        var cleanReference = referenceNo.Trim();
-
-        return cleanReference.EndsWith(
-            "-R",
-            StringComparison.OrdinalIgnoreCase)
-                ? cleanReference[..^2]
-                : cleanReference;
-    }
-
     private sealed class WithdrawalReadDbContext : DbContext
     {
         private readonly string _connectionString;
@@ -2148,7 +1845,10 @@ public class ObjectionFormService : IObjectionFormService
                 entity.ToTable("QUE_Property_Info", "dbo");
                 entity.Property(x => x.QueryId).HasColumnName("Query_ID");
                 entity.Property(x => x.QueryNo).HasColumnName("Query_No");
+                entity.Property(x => x.ReviewNo).HasColumnName("Review_No");
+                entity.Property(x => x.ObjectorType).HasColumnName("Objector_Type");
                 entity.Property(x => x.QueryType).HasColumnName("Query_Type");
+                entity.Property(x => x.SubmissionType).HasColumnName("Submission_Type");
                 entity.Property(x => x.PremiseId).HasColumnName("Premise_id");
             });
         }
@@ -2186,7 +1886,10 @@ public class ObjectionFormService : IObjectionFormService
     {
         public long QueryId { get; set; }
         public string? QueryNo { get; set; }
+        public string? ReviewNo { get; set; }
+        public string? ObjectorType { get; set; }
         public string? QueryType { get; set; }
+        public string? SubmissionType { get; set; }
         public string? PremiseId { get; set; }
     }
 

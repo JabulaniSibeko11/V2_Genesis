@@ -1,4 +1,4 @@
-﻿var property_key = sessionStorage.getItem('property_choice');
+var property_key = sessionStorage.getItem('property_choice');
 var objector_key = sessionStorage.getItem('objector_choice');
 var AppealStatus = sessionStorage.getItem('AppealStatus');
 var SubType = sessionStorage.getItem('query_choice');
@@ -10,7 +10,9 @@ var fo_o = 0;
 
 var loader = document.getElementById("preloader");
 window.addEventListener("load", function () {
-    loader.style.display = "none";
+    if (loader) {
+        loader.style.display = "none";
+    }
 });
 
 var userEmailElement = document.getElementById('userEmail');
@@ -21,11 +23,15 @@ if (userEmailElement) {
     var regex = /^(val\.admin(1[0-9]?|[1-9])@joburg\.org\.za)$/i;
 
     if (regex.test(userEmail) || userEmail === 'AdministrationEnquiries@Joburg.org.za') {
-        document.getElementById('capturer').style.display = 'block';
-        document.getElementById('sapNo').setAttribute('required', 'required');
+        var capturer = document.getElementById('capturer');
+        var sapNo = document.getElementById('sapNo');
+        if (capturer) capturer.style.display = 'flex';
+        if (sapNo) sapNo.setAttribute('required', 'required');
     } else {
-        document.getElementById('capturer').style.display = 'none';
-        document.getElementById('sapNo').removeAttribute('required');
+        var hiddenCapturer = document.getElementById('capturer');
+        var optionalSapNo = document.getElementById('sapNo');
+        if (hiddenCapturer) hiddenCapturer.style.display = 'none';
+        if (optionalSapNo) optionalSapNo.removeAttribute('required');
     }
 } else {
     console.warn("Element with ID 'userEmail' not found in the document.");
@@ -153,6 +159,131 @@ input.addEventListener('change', (e) => {
     }
 });
 
+// Cumulative Multi-query upload: selections from different folders are retained.
+(function initialiseMultiQueryUpload() {
+    var evidenceInput = document.getElementById('objectionEvidenceInput');
+    var browseButton = document.getElementById('objectionBrowseFiles');
+    var dropzone = document.getElementById('objectionDropzone');
+    var fileList = document.getElementById('objectionFileList');
+    var fileCount = document.getElementById('objectionFileCount');
+    var fileFill = document.getElementById('objectionFileFill');
+
+    if (!evidenceInput || !browseButton || !dropzone || !fileList || !fileCount || !fileFill) return;
+
+    var maximumFiles = 10;
+    var maximumFileSize = 20 * 1024 * 1024;
+    var allowedExtensions = ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png', 'xls', 'xlsx'];
+    var selectedFiles = new DataTransfer();
+
+    function fileKey(file) {
+        return [file.name, file.size, file.lastModified].join('|');
+    }
+
+    function safeText(value) {
+        return String(value || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function renderFiles() {
+        evidenceInput.files = selectedFiles.files;
+        var total = selectedFiles.files.length;
+        fileCount.textContent = total + ' of ' + maximumFiles + ' files added';
+        fileFill.style.width = Math.min((total / maximumFiles) * 100, 100) + '%';
+        fileFill.classList.toggle('full', total >= maximumFiles);
+        dropzone.classList.toggle('full', total >= maximumFiles);
+        fileList.innerHTML = '';
+
+        Array.from(selectedFiles.files).forEach(function (file, index) {
+            var item = document.createElement('div');
+            item.className = 'obj-ev-file';
+            item.innerHTML =
+                '<i class="fa-solid fa-file"></i>' +
+                '<span class="obj-ev-name">' + safeText(file.name) + '</span>' +
+                '<span class="obj-ev-size">' + (file.size / 1024 / 1024).toFixed(2) + ' MB</span>' +
+                '<button type="button" class="obj-ev-remove" data-remove-query-file="' + index + '" title="Remove file">' +
+                '<i class="fa-solid fa-xmark"></i></button>';
+            fileList.appendChild(item);
+        });
+    }
+
+    function addFiles(files) {
+        var existing = new Set(Array.from(selectedFiles.files).map(fileKey));
+        var rejected = [];
+
+        Array.from(files || []).forEach(function (file) {
+            var extension = (file.name.split('.').pop() || '').toLowerCase();
+            var key = fileKey(file);
+
+            if (existing.has(key)) return;
+            if (!allowedExtensions.includes(extension)) {
+                rejected.push(file.name + ' is not a supported file type.');
+                return;
+            }
+            if (file.size > maximumFileSize) {
+                rejected.push(file.name + ' is larger than 20 MB.');
+                return;
+            }
+            if (selectedFiles.files.length >= maximumFiles) {
+                rejected.push('Only 10 supporting documents can be selected.');
+                return;
+            }
+
+            selectedFiles.items.add(file);
+            existing.add(key);
+        });
+
+        if (rejected.length) alert(Array.from(new Set(rejected)).join('\n'));
+        renderFiles();
+    }
+
+    function openBrowser(event) {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        evidenceInput.click();
+    }
+
+    browseButton.addEventListener('click', openBrowser);
+    dropzone.addEventListener('click', openBrowser);
+    dropzone.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter' || event.key === ' ') openBrowser(event);
+    });
+    dropzone.addEventListener('dragover', function (event) {
+        event.preventDefault();
+        dropzone.classList.add('dragover');
+    });
+    dropzone.addEventListener('dragleave', function () {
+        dropzone.classList.remove('dragover');
+    });
+    dropzone.addEventListener('drop', function (event) {
+        event.preventDefault();
+        dropzone.classList.remove('dragover');
+        addFiles(event.dataTransfer && event.dataTransfer.files);
+    });
+    evidenceInput.addEventListener('change', function () {
+        addFiles(evidenceInput.files);
+    });
+    fileList.addEventListener('click', function (event) {
+        var button = event.target.closest('[data-remove-query-file]');
+        if (!button) return;
+
+        var removeIndex = Number(button.dataset.removeQueryFile);
+        var replacement = new DataTransfer();
+        Array.from(selectedFiles.files).forEach(function (file, index) {
+            if (index !== removeIndex) replacement.items.add(file);
+        });
+        selectedFiles = replacement;
+        renderFiles();
+    });
+
+    renderFiles();
+})();
+
 function onlyNumberKey(evt) {
 
     // Only ASCII character in that range allowed
@@ -205,7 +336,7 @@ function showInput() {
     sessionStorage.setItem("desc", desc);
 
     desc = document.getElementById("Property_Type").value;
-    sessionStorage.setItem("Property_Type", property_type);
+    sessionStorage.setItem("Property_Type", desc);
 
     Market_value = document.getElementById("Market_Value").value;
     sessionStorage.setItem("Market_Value", Market_value);
@@ -1643,43 +1774,66 @@ $(document).ready(function () {
 
 
 $(function () {
-
-
     var canvas = document.querySelector('#signature');
+    if (!canvas) return;
+
+    // Match the drawing buffer to the rendered size so ink stays directly
+    // under the mouse/finger on desktop and responsive layouts.
+    var ratio = Math.max(window.devicePixelRatio || 1, 1);
+    var renderedWidth = canvas.getBoundingClientRect().width || 598;
+    var renderedHeight = 160;
+    canvas.width = Math.round(renderedWidth * ratio);
+    canvas.height = Math.round(renderedHeight * ratio);
+    canvas.getContext('2d').scale(ratio, ratio);
+
     var pad = new SignaturePad(canvas);
-    var data;
-    function checkCanvas() {
-        var canva = document.getElementById('signature');
-        if (isCanvasEmpty(canva)) {
-            document.getElementById("signature").style.border = "2px solid red";
-        } else {
-            data = pad.toDataURL();
-            pad.off();
+    var signatureData = document.getElementById('SignatureDataUrl');
+    var status = document.getElementById('signatureStatus');
+    var submit = document.getElementById('submitForm');
+
+    function captureSignature() {
+        window.requestAnimationFrame(function () {
+            if (pad.isEmpty()) {
+                if (signatureData) signatureData.value = '';
+                if (status) {
+                    status.textContent = 'No signature drawn';
+                    status.style.color = '#6b6b6b';
+                }
+                if (submit) submit.disabled = true;
+                return;
+            }
+
+            var data = pad.toDataURL('image/png');
+            if (signatureData) {
+                signatureData.value = data;
+                signatureData.dispatchEvent(new Event('change', { bubbles: true }));
+            }
             $('#savetarget').attr('src', data);
-            $('#SignatureDataUrl').val(data);
-            $('#submitForm').removeAttr('disabled');
-            document.getElementById("signature").style.border = "2px solid Black";
-        }
-    };
-    function isCanvasEmpty(canvas) {
-        const blankCanvas = document.createElement('canvas');
-        blankCanvas.width = canvas.width;
-        blankCanvas.height = canvas.height;
-        return canvas.toDataURL() === blankCanvas.toDataURL();
+            if (status) {
+                status.textContent = 'Signature captured';
+                status.style.color = '#0f766e';
+            }
+            if (submit) submit.disabled = false;
+        });
     }
+
+    canvas.addEventListener('pointerup', captureSignature);
+    canvas.addEventListener('mouseup', captureSignature);
+    canvas.addEventListener('touchend', captureSignature);
+
+    // Retained hidden compatibility control from the original Multi view.
     $('#accept').click(function () {
-
-
-        checkCanvas();
-
-
+        captureSignature();
     });
 
-
     $('#Clear').click(function () {
-        pad = new SignaturePad(canvas);
-        pad.on();
-        document.getElementById("submitForm").disabled = true;
+        pad.clear();
+        if (signatureData) signatureData.value = '';
+        if (status) {
+            status.textContent = 'No signature drawn';
+            status.style.color = '#6b6b6b';
+        }
+        if (submit) submit.disabled = true;
     });
 });
 
@@ -2230,76 +2384,27 @@ $("input[data-type='currency']").on({
 
 
 function formatNumber(n) {
-    // format number 1000000 to 1,234,567
-    return n.replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+    return n.replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 }
 
 
-function formatCurrency(input, blur) {
-    // appends $ to value, validates decimal side
-    // and puts cursor back in right position.
+function formatCurrency(input) {
+    var text = String(input.val() || "")
+        .replace(/[Rr]/g, "")
+        .replace(/[\s,\u00a0\u202f]/g, "");
+    if (!text) { input.val(""); return; }
 
-    // get input value
-    var input_val = input.val();
+    var amount = Number(text);
+    if (!Number.isFinite(amount) || amount < 0) { return; }
 
-    // don't validate empty input
-    if (input_val === "") { return; }
+    var formatted = "R " + Math.round(amount)
+        .toLocaleString("en-ZA", { minimumFractionDigits: 0, maximumFractionDigits: 0 })
+        .replace(/[,\u00a0\u202f]/g, " ");
+    input.val(formatted);
 
-    // original length
-    var original_len = input_val.length;
-
-    // initial caret position
-    var caret_pos = input.prop("selectionStart");
-
-    // check for decimal
-    if (input_val.indexOf(".") >= 0) {
-
-        // get position of first decimal
-        // this prevents multiple decimals from
-        // being entered
-        var decimal_pos = input_val.indexOf(".");
-
-        // split number by decimal point
-        var left_side = input_val.substring(0, decimal_pos);
-        var right_side = input_val.substring(decimal_pos);
-
-        // add commas to left side of number
-        left_side = formatNumber(left_side);
-
-        // validate right side
-        right_side = formatNumber(right_side);
-
-        // On blur make sure 2 numbers after decimal
-        if (blur === "blur") {
-            right_side += "00";
-        }
-
-        // Limit decimal to only 2 digits
-        right_side = right_side.substring(0, 2);
-
-        // join number by .
-        input_val = "R " + left_side + "." + right_side;
-
-    } else {
-        // no decimal entered
-        // add commas to number
-        // remove all non-digits
-        input_val = formatNumber(input_val);
-        input_val = "R " + input_val;
-
-        // final formatting
-        if (blur === "blur") {
-            input_val += ".00";
-        }
+    if (input[0] && input[0].setSelectionRange) {
+        input[0].setSelectionRange(formatted.length, formatted.length);
     }
-
-    // send updated string to input
-    input.val(input_val);
-
-    // put caret back in the right position
-    var updated_len = input_val.length;
-    caret_pos = updated_len - original_len + caret_pos;
-    input[0].setSelectionRange(caret_pos, caret_pos);
 }
 
 
@@ -2409,3 +2514,418 @@ async function generateObjectionPDF() {
 
     pdf.save('Objection_Form_A.pdf');
 }
+
+
+// ═══════════════════════════════════════════════════════════════════
+// GENESIS FRIENDLY VALIDATION + CONSISTENT RAND DISPLAY
+// Shared behaviour for Objection, Multi, Query and Query Multi forms.
+// Existing IDs, classes and navigation handlers remain unchanged.
+// ═══════════════════════════════════════════════════════════════════
+(function () {
+    "use strict";
+
+    if (window.__genesisFriendlyValidationInitialised) return;
+    window.__genesisFriendlyValidationInitialised = true;
+
+    var form = document.getElementById("myForm");
+    if (!form) return;
+
+    var emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+    var telephonePattern = /^0\d{9}$/;
+    var moneyIds = [
+        "Market_Value", "Market_Value1", "Market_Value2", "Market_Value3",
+        "market_Value",
+        "NewMarketValue", "NewMarketValue1", "NewMarketValue2", "NewMarketValue3"
+    ];
+
+    function element(id) {
+        return document.getElementById(id);
+    }
+
+    function cleanMoney(value) {
+        var text = String(value == null ? "" : value)
+            .replace(/[Rr]/g, "")
+            .replace(/[\s,\u00a0\u202f]/g, "")
+            .trim();
+
+        if (!text) return "";
+
+        var match = text.match(/^-?\d+(?:\.\d+)?/);
+        if (!match) return "";
+
+        var amount = Number(match[0]);
+        if (!Number.isFinite(amount) || amount < 0) return "";
+
+        return String(Math.round(amount));
+    }
+
+    function formatRand(value) {
+        var raw = cleanMoney(value);
+        if (!raw) return "";
+
+        return "R " + Number(raw)
+            .toLocaleString("en-ZA", {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            })
+            .replace(/[,\u00a0\u202f]/g, " ");
+    }
+
+    function syncRawMoney(visible) {
+        if (!visible || !visible.id) return;
+
+        var suffix = visible.id.replace("NewMarketValue", "");
+        var raw = element("NewMarketValueRaw" + suffix);
+
+        if (raw) raw.value = cleanMoney(visible.value);
+    }
+
+    function formatMoneyElement(target) {
+        if (!target) return;
+
+        var currentValue =
+            target.matches && target.matches("input, textarea")
+                ? target.value
+                : target.textContent;
+
+        var formatted = formatRand(currentValue);
+        if (!formatted) return;
+
+        if (target.matches && target.matches("input, textarea")) {
+            if ((target.type || "").toLowerCase() !== "number") {
+                target.value = formatted;
+            }
+        } else {
+            target.textContent = formatted;
+        }
+
+        syncRawMoney(target);
+    }
+
+    function initialiseMoneyFormatting() {
+        var seen = new Set();
+
+        moneyIds.forEach(function (id) {
+            var target = element(id);
+            if (target) seen.add(target);
+        });
+
+        form.querySelectorAll(
+            "input[data-type='currency'], [data-city-market-value], .city-market-value"
+        ).forEach(function (target) {
+            seen.add(target);
+        });
+
+        seen.forEach(function (target) {
+            formatMoneyElement(target);
+
+            if (target.matches && target.matches("input:not([readonly]):not([disabled])")) {
+                target.addEventListener("input", function () {
+                    formatMoneyElement(target);
+                });
+
+                target.addEventListener("blur", function () {
+                    formatMoneyElement(target);
+                });
+            }
+        });
+    }
+
+    function errorId(input) {
+        return input.id + "_friendly_error";
+    }
+
+    function clearFieldError(input) {
+        if (!input) return;
+
+        input.removeAttribute("aria-invalid");
+        input.style.borderColor = "";
+        input.style.backgroundColor = "";
+
+        var error = element(errorId(input));
+        if (error) error.remove();
+    }
+
+    function setFieldError(input, message) {
+        if (!input) return;
+
+        input.setAttribute("aria-invalid", "true");
+        input.style.borderColor = "#dc2626";
+        input.style.backgroundColor = "#fff7f7";
+
+        var id = errorId(input);
+        var error = element(id);
+
+        if (!error) {
+            error = document.createElement("span");
+            error.id = id;
+            error.setAttribute("role", "alert");
+            error.style.display = "block";
+            error.style.marginTop = "5px";
+            error.style.color = "#b91c1c";
+            error.style.fontSize = "12px";
+            error.style.fontWeight = "600";
+            input.insertAdjacentElement("afterend", error);
+        }
+
+        error.textContent = message;
+        input.setAttribute("aria-describedby", id);
+    }
+
+    function getValidationSummary() {
+        var summary = element("genesisFriendlyValidationSummary");
+
+        if (!summary) {
+            summary = document.createElement("div");
+            summary.id = "genesisFriendlyValidationSummary";
+            summary.setAttribute("role", "alert");
+            summary.setAttribute("aria-live", "assertive");
+            summary.style.display = "none";
+            summary.style.margin = "15px auto";
+            summary.style.maxWidth = "1500px";
+            summary.style.padding = "14px 18px";
+            summary.style.border = "1px solid #dc2626";
+            summary.style.borderLeft = "5px solid #dc2626";
+            summary.style.borderRadius = "8px";
+            summary.style.background = "#fff7f7";
+            summary.style.color = "#991b1b";
+
+            var modelSummary = form.querySelector("[asp-validation-summary], .validation-summary-errors");
+            if (modelSummary && modelSummary.parentNode) {
+                modelSummary.insertAdjacentElement("afterend", summary);
+            } else {
+                form.insertAdjacentElement("afterbegin", summary);
+            }
+        }
+
+        return summary;
+    }
+
+    function showValidationSummary(errors) {
+        var summary = getValidationSummary();
+
+        if (!errors.length) {
+            summary.style.display = "none";
+            summary.innerHTML = "";
+            return;
+        }
+
+        var uniqueMessages = [];
+        errors.forEach(function (error) {
+            if (!uniqueMessages.includes(error.message)) {
+                uniqueMessages.push(error.message);
+            }
+        });
+
+        summary.innerHTML =
+            "<strong>Please correct the following before continuing:</strong><ul style='margin:8px 0 0 20px;'>" +
+            uniqueMessages.map(function (message) {
+                return "<li>" + message.replace(/</g, "&lt;").replace(/>/g, "&gt;") + "</li>";
+            }).join("") +
+            "</ul>";
+        summary.style.display = "block";
+    }
+
+    function addError(errors, input, message) {
+        if (!input) return;
+        setFieldError(input, message);
+        errors.push({ input: input, message: message });
+    }
+
+    function validateRequiredName(id, label, errors) {
+        var input = element(id);
+        if (!input || input.disabled) return;
+
+        clearFieldError(input);
+
+        if (!input.value.trim()) {
+            addError(errors, input, label + " is required.");
+        }
+    }
+
+    function validateContactGroup(prefix, label, errors) {
+        var email = element(prefix + "_cd_5");
+        var phones = [
+            element(prefix + "_cd_1"),
+            element(prefix + "_cd_2"),
+            element(prefix + "_cd_3")
+        ].filter(function (input) {
+            return input && !input.disabled;
+        });
+
+        if ((!email || email.disabled) && !phones.length) return;
+
+        if (email && !email.disabled) {
+            clearFieldError(email);
+
+            if (!email.value.trim()) {
+                addError(errors, email, label + " email address is required.");
+            } else if (!emailPattern.test(email.value.trim())) {
+                addError(errors, email, "Enter a valid " + label.toLowerCase() + " email address.");
+            }
+        }
+
+        phones.forEach(clearFieldError);
+
+        var enteredPhones = phones.filter(function (input) {
+            return input.value.trim() !== "";
+        });
+
+        if (!enteredPhones.length && phones.length) {
+            addError(
+                errors,
+                phones[0],
+                "Enter at least one " + label.toLowerCase() +
+                " telephone number: Home, Work or Cell."
+            );
+        }
+
+        enteredPhones.forEach(function (input) {
+            var digits = input.value.replace(/\D/g, "");
+
+            if (!telephonePattern.test(digits)) {
+                addError(
+                    errors,
+                    input,
+                    "Telephone numbers must contain 10 digits and start with 0."
+                );
+            }
+        });
+
+        var groupMessage = element(prefix + "_cd_invalid");
+        if (groupMessage) {
+            groupMessage.textContent = enteredPhones.length
+                ? ""
+                : "Enter at least one telephone number: Home, Work or Cell.";
+            groupMessage.style.color = enteredPhones.length ? "" : "#b91c1c";
+        }
+    }
+
+    function objectorType() {
+        var hidden = element("Objector_Type");
+        return (
+            (hidden && hidden.value) ||
+            sessionStorage.getItem("objector_choice") ||
+            "Owner"
+        ).trim();
+    }
+
+    function validateSectionOne() {
+        var errors = [];
+        var type = objectorType();
+
+        if (type === "Third_Party") {
+            validateRequiredName("objector_name", "Third-party name", errors);
+            validateContactGroup("obj", "Third-party", errors);
+        } else if (type === "Representative") {
+            validateRequiredName("o_name", "Registered owner name", errors);
+            validateRequiredName("rep_name", "Representative name", errors);
+            validateContactGroup("o", "Owner", errors);
+            validateContactGroup("rep", "Representative", errors);
+        } else {
+            validateRequiredName("o_name", "Registered owner name", errors);
+            validateContactGroup("o", "Owner", errors);
+        }
+
+        showValidationSummary(errors);
+        return errors;
+    }
+
+    function validateDeclaration() {
+        var errors = [];
+        var name = element("sign_obj");
+        var signature = element("SignatureDataUrl") || element("signatureData");
+        var canvas = element("signature") || element("sigCanvas");
+
+        if (name) {
+            clearFieldError(name);
+            if (!name.value.trim()) {
+                addError(errors, name, "Enter the full name of the person signing the form.");
+            }
+        }
+
+        if (signature && !signature.value.trim()) {
+            if (canvas) {
+                canvas.setAttribute("aria-invalid", "true");
+                canvas.style.borderColor = "#dc2626";
+            }
+
+            errors.push({
+                input: canvas || signature,
+                message: "Draw your signature before submitting."
+            });
+        }
+
+        return errors;
+    }
+
+    function focusFirstError(errors) {
+        if (!errors.length) return;
+
+        var target = errors[0].input;
+        if (!target) return;
+
+        if (typeof target.scrollIntoView === "function") {
+            target.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+
+        setTimeout(function () {
+            if (typeof target.focus === "function") target.focus();
+        }, 350);
+    }
+
+    function stopAction(event, errors) {
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+        showValidationSummary(errors);
+        focusFirstError(errors);
+    }
+
+    document.addEventListener("click", function (event) {
+        var sectionOneNext = event.target.closest(".btn_n1");
+        if (sectionOneNext) {
+            var sectionErrors = validateSectionOne();
+            if (sectionErrors.length) stopAction(event, sectionErrors);
+            return;
+        }
+
+        var submitButton = event.target.closest("#submitForm");
+        if (!submitButton) return;
+
+        var errors = validateSectionOne().concat(validateDeclaration());
+        if (errors.length) stopAction(event, errors);
+    }, true);
+
+    form.addEventListener("submit", function (event) {
+        var errors = validateSectionOne().concat(validateDeclaration());
+
+        if (errors.length) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            showValidationSummary(errors);
+            focusFirstError(errors);
+            return false;
+        }
+
+        moneyIds.forEach(function (id) {
+            var target = element(id);
+            if (target) syncRawMoney(target);
+        });
+    }, true);
+
+    form.addEventListener("input", function (event) {
+        var target = event.target;
+        if (target && target.id) clearFieldError(target);
+    });
+
+    initialiseMoneyFormatting();
+
+    window.GenesisFriendlyValidation = {
+        validateSectionOne: validateSectionOne,
+        validateDeclaration: validateDeclaration,
+        cleanMoney: cleanMoney,
+        formatRand: formatRand,
+        initialiseMoneyFormatting: initialiseMoneyFormatting
+    };
+})();

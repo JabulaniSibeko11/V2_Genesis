@@ -94,109 +94,103 @@ namespace V2_Genesis.Services.Implementations
     string? scheme,
     string? unit)
         {
-            var plans = new List<LisSpPlan>();
+            var hasStand = stand != null;
+            var hasAddress = address != null;
+            var hasScheme = scheme != null;
+            var hasUnit = unit != null;
 
-            // Scheme + Unit
-            if (scheme != null && unit != null)
+            LisSpPlan? plan = null;
+
+            // Select one LIS stored procedure using the same decision order
+            // as PropertySearchService.ResolveSp. Previously every matching
+            // procedure was executed and TownOnly was always added, which
+            // widened a stand/address/scheme search to the whole township.
+            if (hasStand && !hasAddress && !hasScheme)
             {
-                plans.Add(new LisSpPlan(cfg.SchemeUnit, new
+                plan = new LisSpPlan(cfg.TownStand, new
+                {
+                    SearchTownName = Like(town),
+                    SearchStand = Like(stand)
+                });
+            }
+            else if (hasStand && hasAddress && !hasScheme)
+            {
+                plan = new LisSpPlan(cfg.TownStandAddress, new
+                {
+                    SearchTownName = Like(town),
+                    SearchStand = Like(stand),
+                    SearchAddress = Like(address)
+                });
+            }
+            else if (!hasStand && !hasAddress && hasScheme && !hasUnit)
+            {
+                plan = new LisSpPlan(cfg.TownScheme, new
+                {
+                    SearchTownName = Like(town),
+                    SearchScheme = Like(scheme)
+                });
+            }
+            else if (!hasStand && hasAddress && !hasScheme)
+            {
+                plan = new LisSpPlan(cfg.TownAddress, new
+                {
+                    SearchTownName = Like(town),
+                    SearchAddress = Like(address)
+                });
+            }
+            else if (!hasStand && !hasAddress && !hasScheme && hasUnit)
+            {
+                plan = new LisSpPlan(cfg.TownUnit, new
+                {
+                    SearchTownName = Like(town),
+                    SearchUnit = Like(unit)
+                });
+            }
+            else if (hasScheme && hasUnit)
+            {
+                plan = new LisSpPlan(cfg.SchemeUnit, new
                 {
                     SearchTownName = Like(town),
                     SearchScheme = Like(scheme),
                     SearchUnit = Like(unit)
-                }));
+                });
             }
-
-            // Stand + Address
-            if (stand != null && address != null)
+            else if (hasStand && !hasAddress && hasScheme)
             {
-                plans.Add(new LisSpPlan(cfg.TownStandAddress, new
-                {
-                    SearchTownName = Like(town),
-                    SearchStand = Like(stand),
-                    SearchAddress = Like(address)
-                }));
-            }
-
-            // Stand + Scheme
-            if (stand != null && scheme != null)
-            {
-                plans.Add(new LisSpPlan(cfg.TownErfScheme, new
+                plan = new LisSpPlan(cfg.TownErfScheme, new
                 {
                     SearchTownName = Like(town),
                     SearchStand = Like(stand),
                     SearchScheme = Like(scheme)
-                }));
+                });
             }
-
-            // Address + Scheme
-            if (address != null && scheme != null)
+            else if (!hasStand && hasAddress && hasScheme)
             {
-                plans.Add(new LisSpPlan(cfg.TownAddressScheme, new
+                plan = new LisSpPlan(cfg.TownAddressScheme, new
                 {
                     SearchTownName = Like(town),
                     SearchAddress = Like(address),
                     SearchScheme = Like(scheme)
-                }));
+                });
             }
-
-            // Stand only / stand-based search
-            if (stand != null)
+            else if (!hasStand && !hasAddress && !hasScheme && !hasUnit &&
+                     !string.IsNullOrWhiteSpace(town))
             {
-                plans.Add(new LisSpPlan(cfg.TownStand, new
-                {
-                    SearchTownName = Like(town),
-                    SearchStand = Like(stand)
-                }));
-            }
-
-            // Address only / address-based search
-            if (address != null)
-            {
-                plans.Add(new LisSpPlan(cfg.TownAddress, new
-                {
-                    SearchTownName = Like(town),
-                    SearchAddress = Like(address)
-                }));
-            }
-
-            // Scheme only / scheme-based search
-            if (scheme != null)
-            {
-                plans.Add(new LisSpPlan(cfg.TownScheme, new
-                {
-                    SearchTownName = Like(town),
-                    SearchScheme = Like(scheme)
-                }));
-            }
-
-            // Unit only / unit-based search
-            if (unit != null)
-            {
-                plans.Add(new LisSpPlan(cfg.TownUnit, new
-                {
-                    SearchTownName = Like(town),
-                    SearchUnit = Like(unit)
-                }));
-            }
-
-            // Town fallback
-            if (!string.IsNullOrWhiteSpace(town))
-            {
-                plans.Add(new LisSpPlan(cfg.TownOnly, new
+                // Township-only is valid only when the client searched using
+                // township alone. It must never be a fallback for a more
+                // specific search.
+                plan = new LisSpPlan(cfg.TownOnly, new
                 {
                     SearchTownName = Like(town)
-                }));
+                });
             }
 
-            // Remove empty/missing SP names and duplicates
-            return plans
-                .Where(x => !string.IsNullOrWhiteSpace(x.SpName))
-                .GroupBy(x => x.SpName.Trim(), StringComparer.OrdinalIgnoreCase)
-                .Select(g => g.First())
-                .ToList();
+            if (plan is null || string.IsNullOrWhiteSpace(plan.SpName))
+                return new();
+
+            return new List<LisSpPlan> { plan };
         }
-       
+
         private async Task<List<LisProperty>> ExecuteLisSpAsync(
     SqlConnection conn,
     string spName,
@@ -285,7 +279,7 @@ namespace V2_Genesis.Services.Implementations
             }
         }
 
-   
+
 
         // ── Helpers ───────────────────────────────────────────────────────
         private static string? Normalise(string? val)
@@ -487,7 +481,7 @@ namespace V2_Genesis.Services.Implementations
                 ? string.Join(", ", parts)
                 : null;
         }
-       
+
         public async Task<LisProperty?> GetPropertyByKeysAsync(
             string rollSource,
             string unitKey,

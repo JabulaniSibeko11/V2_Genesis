@@ -1,5 +1,4 @@
-﻿
-/* ── SARS toggle highlight ──────────────────────────────── */
+﻿/* ── SARS toggle highlight ──────────────────────────────── */
 .sars-yes {
     border-color: #36626d !important;
     background: #e8f3f4 !important;
@@ -58,3 +57,11 @@
         margin-right: 6px;
     }
 
+/* ── Responsive ──────────────────────────────────────────────── */
+@media (max-width: 480px) {
+    .rf-eligibility,
+    .rf-reject-warning {
+        padding: 12px 14px;
+        font-size: 13px;
+    }
+}

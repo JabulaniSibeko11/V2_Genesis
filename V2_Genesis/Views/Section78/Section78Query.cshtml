@@ -1,4 +1,4 @@
-﻿@{Layout = "~/Views/Shared/_ClientLayout.cshtml";}
+@{Layout = "~/Views/Shared/_ClientLayout.cshtml";}
 @using V2_Genesis.Models
 @model Prop_View_Model
 
@@ -18,13 +18,10 @@
     var messageS = TempData["CurrentFilter_S"];
     var messageProp = TempData["CurrentFilter_Prop"];
     var obj_Appeal = TempData["ObjectionNum"];
-}
+    var messageEX = messageRA;
+    var messageSA = messageLSA;
 
- @{
        TempData.Keep("CurrentFilter_Id");
-    }
-
-    @{
        TempData.Keep("CurrentFilter_PD");
        TempData.Keep("CurrentFilter_CD");
        TempData.Keep("CurrentFilter_LSA");
@@ -38,32 +35,62 @@
        TempData.Keep("CurrentFilter_VK");
        TempData.Keep("CurrentFilter_S");
        TempData.Keep("CurrentFilter_Prop");
-       var messageEX = messageRA;
-       var messageSA = messageLSA;
        TempData.Keep("CurrentFilter_LSA");
        TempData.Keep("CurrentFilter_RA");
        TempData.Keep("CurrentFilter_MV");
        TempData.Keep("ObjectionNum");
 
+    bool _isAdmin =
+        (ViewBag.IsAdmin as bool? ?? false)
+        || User.IsInRole("Admin")
+        || User.FindFirst("AdminAppEmail")?.Value?.Equals(
+            "AdministrationEnquiries@Joburg.org.za",
+            StringComparison.OrdinalIgnoreCase) == true
+        || Context.Session.GetString("AdminAppEmail")?.Equals(
+            "AdministrationEnquiries@Joburg.org.za",
+            StringComparison.OrdinalIgnoreCase) == true;
 
+    string _fullName =
+        User.FindFirst("FullName")?.Value
+        ?? Context.Session.GetString("AdminFullName")
+        ?? ViewBag.AdminFullName?.ToString()
+        ?? TempData.Peek("AdminFullName")?.ToString()
+        ?? "";
+
+    string _adminPosition =
+        User.FindFirst("Position")?.Value
+        ?? Context.Session.GetString("AdminPosition")
+        ?? ViewBag.AdminPosition?.ToString()
+        ?? TempData.Peek("AdminPosition")?.ToString()
+        ?? "";
+
+    string _sapFull =
+        User.FindFirst("SAPNumber")?.Value
+        ?? Context.Session.GetString("AdminSapNumber")
+        ?? ViewBag.SapFull?.ToString()
+        ?? TempData.Peek("SapFull")?.ToString()
+        ?? "";
+
+    string _sapNumeric =
+        User.FindFirst("SAPNumeric")?.Value
+        ?? Context.Session.GetString("AdminSapNumeric")
+        ?? ViewBag.SapNumeric?.ToString()
+        ?? TempData.Peek("SapNumber")?.ToString()
+        ?? "";
+
+    if (string.IsNullOrWhiteSpace(_sapNumeric) && !string.IsNullOrWhiteSpace(_sapFull))
+    {
+        _sapNumeric = _sapFull.Contains('\\')
+            ? _sapFull.Split('\\').Last()
+            : _sapFull;
     }
-@{
-    bool _isAdmin = ViewBag.IsAdmin is bool adminFlag && adminFlag;
-    string _fullName = ViewBag.AdminFullName?.ToString()
-                       ?? TempData.Peek("AdminFullName")?.ToString()
-                       ?? "";
-    string _adminPosition = ViewBag.AdminPosition?.ToString()
-                            ?? TempData.Peek("AdminPosition")?.ToString()
-                            ?? "";
-    string _sapFull = ViewBag.SapFull?.ToString()
-                      ?? TempData.Peek("SapFull")?.ToString()
-                      ?? "";
-    string _sapNumeric = ViewBag.SapNumeric?.ToString()
-                         ?? TempData.Peek("SapNumber")?.ToString()
-                         ?? "";
-    string _windowsUser = ViewBag.AdminWindowsUser?.ToString()
-                          ?? TempData.Peek("AdminWindowsUser")?.ToString()
-                          ?? "";
+
+    string _windowsUser =
+        User.FindFirst("WindowsUser")?.Value
+        ?? Context.Session.GetString("AdminWindowsUser")
+        ?? ViewBag.AdminWindowsUser?.ToString()
+        ?? TempData.Peek("AdminWindowsUser")?.ToString()
+        ?? "";
     bool _isAppeal = TempData.Peek("AppealStatus")?.ToString() == "True";
     string _propDesc = TempData.Peek("CurrentFilter_PD")?.ToString()
                        ?? TempData.Peek("CurrentFilter_Prop")?.ToString()
@@ -100,74 +127,15 @@
     TempData.Keep("SapNumber");
     TempData.Keep("AdminWindowsUser");
 }
-
-
 @section Styles {
-    <link href="~/css/views/objection-form.css"
-          rel="stylesheet"
-          asp-append-version="true" />
-
-    <link href="~/css/views/clientdashboardcss.css"
-          rel="stylesheet"
-          asp-append-version="true" />
-
-    <link href="~/css/views/property-search.css"
-          rel="stylesheet"
-          asp-append-version="true" />
-
-    <link href="~/css/views/searchpropertycss.css"
-          rel="stylesheet"
-          asp-append-version="true" />
-
-    <link href="~/css/views/objection-form-css.css"
-          rel="stylesheet"
-          asp-append-version="true" />
-
-    <link href="~/css/Views/Section78-forms-Responsive.css"
-          rel="stylesheet"
-          asp-append-version="true" />
+    <link href="~/css/views/objection-form.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/views/form-consistency.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/views/clientdashboardcss.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/views/property-search.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/views/searchpropertycss.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/views/objection-form-css.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/Views/Section78-forms-Responsive.css" rel="stylesheet" asp-append-version="true" />
 }
-
-<style>
-    .obj-section-heading-wrap {
-        width: 100%;
-        margin: 20px 0;
-        padding: 10px 0;
-        position: relative;
-    }
-
-    #myForm > [id^="section"] {
-        padding-inline: 16px;
-    }
-
-    #myForm .obj-form-card {
-        width: 100%;
-        max-width: 1050px;
-    }
-
-    #myForm .Div1-1,
-    #myForm .Div1-2,
-    #myForm .Div1-3 {
-        width: 100%;
-    }
-
-    #myForm .form-control,
-    #myForm .form-select {
-        font-family: "Poppins", sans-serif;
-    }
-
-    #myForm .obj-section-bar fieldset,
-    #myForm .obj-section-bar p {
-        margin-bottom: 0;
-    }
-
-    @@media (max-width: 768px) {
-        #myForm > [id^="section"] {
-            padding-inline: 8px;
-        }
-    }
-</style>
-
 <div class="obj-hero">
     <div class="obj-hero-inner">
         <div class="obj-hero-left">
@@ -185,7 +153,7 @@
                     <span>@_processName</span>
                 </h1>
 
-                <div class="obj-hero-sub">
+                <div class="obj-hero-sub" id="obj-hero-sub">
                     @if (_isReview)
                     {
                         @:Review of the outcome of a previously lodged Section 78 Query
@@ -199,12 +167,12 @@
         </div>
 
         <div class="obj-hero-right">
-            <div class="obj-hero-type-badge">
+            <div class="obj-hero-type-badge" id="obj-hero-badge">
                 <i class="fa-solid @(_isReview
                     ? "fa-magnifying-glass-chart"
                     : "fa-file-magnifying-glass")"></i>
 
-                Section 78 @_processName Form
+                <span id="obj-hero-badge-text">Section 78 @_processName Form</span>
             </div>
 
             @if (!string.IsNullOrWhiteSpace(_propDesc))
@@ -223,43 +191,22 @@
         </span>
     </div>
 </div>
-
-
 <form id="myForm" method="post" enctype="multipart/form-data" asp-controller="Section78" asp-action="Section78Query" style="margin-left: 0px">
-
     @Html.AntiForgeryToken()
-
-    <input type="hidden"
-           name="reviewStat"
-           id="reviewStat"
-           value="@(_isReview ? "R" : "Q")" />
-
-    <div asp-validation-summary="ModelOnly"
-         class="alert alert-danger"
-         role="alert"></div>
-
-
-    <div style="display:flex;justify-content:center;">
+   <div asp-validation-summary="ModelOnly" class="alert alert-danger"role="alert"></div>
+   <div style="display:flex;justify-content:center;">
         <div class="obj-form-card" style="margin-top:12px;">
 
             <div class="obj-form-banner">
                 <span class="obj-form-chip">
-                    <i class="fa-solid @(_isReview
-                        ? "fa-magnifying-glass-chart"
-                        : "fa-file-magnifying-glass")"></i>
-
-                    Section 78 @_processName Form
+                    <i class="fa-solid @(_isReview? "fa-magnifying-glass-chart": "fa-file-magnifying-glass")"></i>Section 78 @_processName Form
                 </span>
 
                 <h1>
-                    LODGING OF A SECTION 78
-                    <span>@_processNameUpper</span>
-                    RELATING TO THE PROPERTY DESCRIBED BELOW
+                    LODGING OF A SECTION 78 @_processNameUpper RELATING TO THE PROPERTY DESCRIBED BELOW
                 </h1>
 
-                <h2>
-                    CITY OF JOHANNESBURG · VALUATION SERVICES
-                </h2>
+                <h2>CITY OF JOHANNESBURG · VALUATION SERVICES</h2>
             </div>
 
             <div class="obj-prop-header-card">
@@ -308,14 +255,7 @@
 
         </div>
     </div>
-
-    @{
-        TempData.Keep("AppealStatus");
-        TempData.Keep("CurrentFilter_PD");
-    }
-
-   @*-----------------------------------------------------------------SECTION 1 -----------------------------------------------------------*@
-
+   <input type="hidden"name="reviewStat"id="reviewStat" value="@(_isReview ? "R" : "Q")" />
    <input type="text" hidden onpaste="return false;" ondrop="return false;" class="form-control" id="Objector_Type" asp-for="Objector_Type"/>
    <input type="text" hidden onpaste="return false;" ondrop="return false;" class="form-control" id="Property_Type" asp-for="Property_Type"/>
    <input type="text" hidden onpaste="return false;" ondrop="return false;" class="form-control" id="Premise_id" value="@messagePID" asp-for="Premise_id"/>
@@ -323,27 +263,26 @@
    <input type="text" hidden onpaste="return false;" ondrop="return false;" class="form-control" id="Property_id" value="@messagePI" asp-for="Property_id" />
    <input type="text" hidden onpaste="return false;" ondrop="return false;" class="form-control" id="Valuation_Key" value="@messageVK" asp-for="Valuation_Key" />
    <input type="text" hidden onpaste="return false;" ondrop="return false;" class="form-control" id="Sector_Type" value="@messageS" asp-for="Sector" />
-    <input type="text" hidden onpaste="return false;" ondrop="return false;" class="form-control" id="AppealStat" name="AppealStat" value="">
+   <input type="text" hidden onpaste="return false;" ondrop="return false;" class="form-control" id="AppealStat" name="AppealStat" value="">
    <input type="text" hidden onpaste="return false;" ondrop="return false;" class="form-control" id="obj_appeal" name="obj_appeal" value="@obj_Appeal">
- 
-     <input type="hidden" id="userEmail" value="@ViewData["UserEmail"]" />
-     <input type="hidden" id="isAdminFlag" value="@(_isAdmin ? "true" : "false")" />
-
-        <div id="section1" style="display:flex;justify-content:center;" >
+   <input type="hidden" id="userEmail" value="@ViewData["UserEmail"]" />
+   <input type="hidden" id="isAdminFlag" value="@(_isAdmin ? "true" : "false")" />
+    @*-----------------------------------------------------------------SECTION 1 -----------------------------------------------------------*@
+      <div id="section1" style="display:flex;justify-content:center;" >
     
         <div class="div1 obj-form-card">
 
-                 <div class="obj-section-heading-wrap">
-           
-                       <h4 class="obj-section-title" id="s_head"><strong>SECTION 1: @_applicantNameUpper INFORMATION</strong></h4>
+            <div style="width: 100%; margin: 20px 0; padding: 10px 0; position: relative;">
    
-                          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                                <div style="height: 2px; background-color: #e6b000; width: 45%;"></div>
-                                <div style="height: 8px; width: 8px; border-radius: 50%; background-color: #006570; border: 2px solid #e6b000;"></div>
-                                <div style="height: 2px; background-color: #e6b000; width: 45%;"></div>
-                         </div>
-                               @*  <h4 id="owner_head">1.1 OWNER</h4> *@
-                         </div>
+                <h4 class="obj-section-title" id="s_head"><strong>SECTION 1: @_applicantNameUpper INFORMATION</strong></h4>
+
+                <div class="obj-step-divider">
+                    <div class="line"></div>
+                    <div class="dot"></div>
+                    <div class="line"></div>
+                </div>
+                              
+            </div>
             <div class="Div1-1">
                 <div class="obj-section-bar">
                     <span class="obj-bar-num">1.1</span>
@@ -351,7 +290,7 @@
                 </div>
 
                 <div class="mb-4">
-                    <label for="o_name" class="form-label fw-semibold  text-dark">
+                    <label for="o_name" id="o_name_l" class="form-label fw-semibold  text-dark">
                         Registered Owner of Property<span style="color: red;">*</span>
                     </label>
                     <input name="owner_name" id="o_name"class="form-control border-2 rounded shadow-sm px-4 py-2"maxlength="80"type="text"onpaste="return false;"ondrop="return false;"asp-for="Owner_Name"placeholder="Enter full name of registered owner" />
@@ -432,18 +371,13 @@
                         <span>POSTAL ADDRESS OF OWNER</span>
                     </div>
 
-                     <div class="obj-section-bar">
-
-                        <fieldset class="col-md-6" style="width: 100%;">
-                            <p style="color:white;">
-                                <label class="form-label fw-semibold " style="color:white;">Postal Address is the same as Physical Address? &nbsp;</label>
-                                <span>
-                                    <label class="form-label fw-semibold " style="color:white;">No</label>
-                                    <input type="radio" name="add_pos" value="No" onclick="pos_no()" checked />
-                                    <label class="form-label fw-semibold " style="color:white;">Yes</label>
-                                    <input type="radio" name="add_pos" onclick="pos_yes()" value="Yes" />
-                                </span>
-                            </p>
+                    <div class="obj-section-bar">
+                        <fieldset class="col-md-6" style="width:100%;">
+                            <label class="gen-same-address">
+                                <input type="checkbox" id="samePostalAddress"
+                                       onchange="this.checked ? pos_yes() : pos_no()" />
+                                Physical address is the same as the postal address
+                            </label>
                         </fieldset>
                     </div>
 
@@ -524,6 +458,154 @@
                 </div>
 
             
+            </div>
+
+            <div class="Div1-2">
+                <div class="obj-section-bar">
+                    <span class="obj-bar-num">1.2</span>
+                    <span>@partyUpper IS NOT THE OWNER OR REPRESENTATIVE</span>
+                </div>
+
+                <div class="col-sm-12">
+                    <label class="form-label fw-semibold text-dark">
+                        <span id="TP_Name">NAME OF @partyUpper</span>
+                        <span style="color:red;">*</span>
+                    </label>
+                    <input id="objector_name" class="form-control rounded shadow-sm px-4 py-2"
+                           maxlength="80" type="text" onpaste="return false;" ondrop="return false;"
+                           asp-for="Objector_Name" />
+                </div>
+
+                <div class="row mb-2">
+                    <div class="col-sm-8">
+                        <div class="form-group">
+                            <label class="form-label fw-semibold text-dark">ID Number</label>
+                            <input type="radio" name="edit" value="true" onclick="enable_ID2()" checked="checked" />
+                            <label class="form-label fw-semibold text-dark">Passport Number</label>
+                            <input type="radio" name="edit" value="true" onclick="disable_ID2()" />
+                        </div>
+
+                        <div class="form-floating">
+                            <input asp-for="Objector_Identity" id="objector_id" class="form-control"
+                                   autocomplete="username" aria-required="true"
+                                   onkeypress="return onlyNumberKey(event)" />
+                            <label asp-for="Objector_Identity" id="id_L"
+                                   onpaste="return false;" ondrop="return false;">ID Number</label>
+                            <span id="obj_id_status" style="color:red;"></span>
+                        </div>
+
+                        <div class="form-floating">
+                            <input asp-for="Objector_Identity" id="objector_pass" class="form-control"
+                                   autocomplete="username" aria-required="true" />
+                            <label asp-for="Objector_Identity" id="pass_L"
+                                   onpaste="return false;" ondrop="return false;">Passport Number</label>
+                        </div>
+                    </div>
+
+                    <div class="col-sm-4">
+                        <label class="form-label fw-semibold text-dark">COMPANY OR CC REGISTRATION NO.</label>
+                        <input class="form-control rounded shadow-sm px-4 py-2" maxlength="20"
+                               type="text" onpaste="return false;" ondrop="return false;"
+                               asp-for="Objector_Company" />
+                    </div>
+                </div>
+
+                <div class="obj-section-bar">
+                    <span>POSTAL ADDRESS OF @partyUpper</span>
+                </div>
+
+                <div class="row mb-2">
+                    <div class="col-sm-3">
+                        <label class="form-label fw-semibold text-dark">STREET NUMBER <span style="color:red;">*</span></label>
+                        <input id="obj_p_1" class="form-control rounded shadow-sm px-4 py-2" maxlength="10"
+                               type="text" onpaste="return false;" ondrop="return false;"
+                               asp-for="Objector_Postal_1" />
+                    </div>
+                    <div class="col-sm-9">
+                        <label class="form-label fw-semibold text-dark">STREET NAME <span style="color:red;">*</span></label>
+                        <input id="obj_p_2" class="form-control rounded shadow-sm px-4 py-2" maxlength="80"
+                               type="text" onpaste="return false;" ondrop="return false;"
+                               asp-for="Objector_Postal_2" />
+                    </div>
+                    <div class="col-sm-12">
+                        <label class="form-label fw-semibold text-dark">SUBURB NAME <span style="color:red;">*</span></label>
+                        <input id="obj_p_3" class="form-control rounded shadow-sm px-4 py-2" maxlength="80"
+                               type="text" onpaste="return false;" ondrop="return false;"
+                               asp-for="Objector_Postal_3" />
+                    </div>
+                    <div class="col-sm-9">
+                        <label class="form-label fw-semibold text-dark">TOWN NAME <span style="color:red;">*</span></label>
+                        <input id="obj_p_4" class="form-control rounded shadow-sm px-4 py-2" maxlength="80"
+                               type="text" onpaste="return false;" ondrop="return false;"
+                               asp-for="Objector_Postal_4" />
+                    </div>
+                    <div class="col-sm-3">
+                        <label class="form-label fw-semibold text-dark">POSTAL CODE <span style="color:red;">*</span></label>
+                        <input id="obj_p_5" class="form-control rounded shadow-sm px-4 py-2" maxlength="10"
+                               type="text" onpaste="return false;" ondrop="return false;"
+                               asp-for="Objector_Postal_5" />
+                    </div>
+                </div>
+
+                <div class="obj-section-bar"><span>CONTACT DETAILS</span></div>
+
+                <div class="alert-notice">
+                    <div class="instruction-box">
+                        <p><span class="bullet">•</span>
+                            <span id="obj_cd_invalid"><strong>Please fill in at least one of the contact details fields.</strong></span>
+                        </p>
+                        <p><span class="bullet">•</span>
+                            <span><strong>Please ensure that all contact details provided are valid and accurate.</strong></span>
+                        </p>
+                    </div>
+                </div>
+
+                <div class="row mb-2">
+                    <div class="col-sm-6">
+                        <label class="form-label fw-semibold text-dark">HOME TELEPHONE</label>
+                        <input id="obj_cd_1" class="form-control rounded shadow-sm px-4 py-2" maxlength="13"
+                               onkeypress="return onlyNumberKey(event)" type="text"
+                               onpaste="return false;" ondrop="return false;"
+                               asp-for="Objector_Home" placeholder="0112345678" />
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label fw-semibold text-dark">WORK TELEPHONE</label>
+                        <input id="obj_cd_2" class="form-control rounded shadow-sm px-4 py-2" maxlength="13"
+                               onkeypress="return onlyNumberKey(event)" type="text"
+                               onpaste="return false;" ondrop="return false;"
+                               asp-for="Objector_Work" placeholder="0112345678" />
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label fw-semibold text-dark">CELL</label>
+                        <input id="obj_cd_3" class="form-control rounded shadow-sm px-4 py-2" maxlength="13"
+                               onkeypress="return onlyNumberKey(event)" type="text"
+                               onpaste="return false;" ondrop="return false;"
+                               asp-for="Objector_Cell" placeholder="0712345678" />
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label fw-semibold text-dark">FAX</label>
+                        <input id="obj_cd_4" class="form-control rounded shadow-sm px-4 py-2" maxlength="13"
+                               onkeypress="return onlyNumberKey(event)" type="text"
+                               onpaste="return false;" ondrop="return false;"
+                               asp-for="Objector_Fax" placeholder="0112345678" />
+                    </div>
+                    <div class="col-sm-12">
+                        <label class="form-label fw-semibold text-dark">E-MAIL ADDRESS <span style="color:red;">*</span></label>
+                        <input id="obj_cd_5" class="form-control rounded shadow-sm px-4 py-2" maxlength="80"
+                               type="email" onpaste="return false;" ondrop="return false;"
+                               asp-for="Objector_Email" placeholder="applicant@example.com" />
+                    </div>
+                    <div class="col-sm-12">
+                        <label class="form-label fw-semibold text-dark">
+                            <span id="tp_status">STATUS OF @partyUpper</span>
+                            <span style="color:red;">*</span>
+                            <small class="text-muted fst-italic ms-2">(e.g. Tenant, Pending Purchaser, Municipality)</small>
+                        </label>
+                        <input id="objector_stat" class="form-control rounded shadow-sm px-4 py-2" maxlength="80"
+                               type="text" onpaste="return false;" ondrop="return false;"
+                               asp-for="Objector_Status" />
+                    </div>
+                </div>
             </div>
 
           <div class="Div1-3">  
@@ -653,21 +735,18 @@
           <div>
                 
                 <br/>
-                <a asp-action="CheckProperty" id="form_back" class="form_back btn" style=" font-weight:bold;color:white;background-color:#006572;margin-left:5px;margin-top:5px;"><strong>Back</strong></a>
-
-                <button style=" margin-right: 2%; float:right; color:white; background-color:#006572;" type="button" class="btn_n1 btn"><strong>Next</strong></button><br/>
-          </div>
+                <a href="javascript:history.back()" id="form_back" class="form_back btn obj-nav-btn obj-nav-btn-prev">
+                    <i class="fa-solid fa-arrow-left"></i> <strong>Back</strong>
+                </a>
+                <button type="button" class="btn_n1 btn obj-nav-btn obj-nav-btn-next"><strong>Next</strong></button>
+            </div>
         </div>
     </div>
-
-        <div id="section78_1" style="display:flex;justify-content:center;">
-        <div class="div781" style="margin-top: 12px; border-radius: 25px; border: 2px solid #C69E63; padding: 20px; width: 1050px;">
-           @*  <h4 style="text-align:center">SELECT THE REASON FOR THE SUPPLEMENTARY REQUEST</h4>
+    @*-----------------------------------------------------------------SECTION 2 Table -----------------------------------------------------------*@
+      <div id="section78_1" style="display:flex;justify-content:center;">
+        <div class="div781 obj-form-card">
           
-           *@  <div class="obj-section-bar">
-
-                <span>SELECT THE REASON FOR THE SUPPLEMENTARY REQUEST</span>
-            </div>
+             <div class="obj-section-bar"><span>SELECT THE REASON FOR THE SUPPLEMENTARY REQUEST</span></div>
             <br />
              <div style="overflow-x: auto; margin-bottom: 30px;">
                 <table style="width: 100%; border-collapse: collapse; border: 2px solid #e6b000; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 10px rgba(0, 101, 112, 0.1);">
@@ -804,22 +883,22 @@
 
                     <span>Reasons/Motivation why above supplementary is to be done</span>
                 </div>
-           @*  <h4 style="text-align:center">Reasons/Motivation why above supplementary is to be done</h4> *@
+          
             <br />
             <div>
                 <textarea class="form-control" id="textarea" maxlength="1000" style="margin-top: -1px;" rows="10" cols="150" asp-for="Motivation_for_Supp_Request"></textarea>
             </div>
 
             <div>
-                    <button style="margin-top: 10px; margin-left: 2%;color:white; background-color:#006572;" type="button" class="btn_pS78 btn"><strong>Previous</strong></button>
+                    <button type="button" class="btn_pS78 btn obj-nav-btn obj-nav-btn-prev"><strong>Previous</strong></button>
 
-                <button style="margin-top: 10px; margin-right: 2%; float:right;color:white; background-color:#006572;" type="button" class="btn_nS782 btn"><strong>Next</strong></button><br />
+                <button type="button" class="btn_nS782 btn obj-nav-btn obj-nav-btn-next"><strong>Next</strong></button><br />
             </div>
         </div>
     </div>
     </div>
-  @*-----------------------------------------------------------------SECTION 2 -----------------------------------------------------------*@
-       <div id="section2" style="display:flex;justify-content: center;">
+    @*-----------------------------------------------------------------SECTION 2 -----------------------------------------------------------*@
+      <div id="section2" style="display:flex;justify-content: center;">
 
       <div class="div2 obj-form-card">        
           <div style="width: 100%; margin: 20px 0; padding: 10px 0; position: relative;">
@@ -976,8 +1055,8 @@
         </div>
 
     </div>
-     @*-----------------------------------------------------------------SECTION 3 RESIDENTIAL-----------------------------------------------------------*@
-        <div id="section3-res" style="display:flex;justify-content: center;">
+    @*-----------------------------------------------------------------SECTION 3 RESIDENTIAL-----------------------------------------------------------*@
+      <div id="section3-res" style="display:flex;justify-content: center;">
 
     <div class="div3_R obj-form-card">
         <div style="width: 100%; margin: 20px 0; padding: 10px 0; position: relative;">
@@ -1734,8 +1813,8 @@
 
 
 </div>
-        @*---------------------------------------- Section 3 Agricultural Section ---------------------------------------*@
-        <div id="section3-agric" style="display:flex;justify-content: center;">
+    @*---------------------------------------- Section 3 Agricultural Section ---------------------------------------*@
+      <div id="section3-agric" style="display:flex;justify-content: center;">
 
         <div class="div3_A obj-form-card">
             
@@ -2679,7 +2758,7 @@
        </div>
     </div>
     @*---------------------------------------------------------Section 3 Business -------------------------------------------------*@
-        <div id="section3-bus" style="display:flex;justify-content: center;">
+      <div id="section3-bus" style="display:flex;justify-content: center;">
 
 
        <div class="div3_B obj-form-card">
@@ -2806,8 +2885,8 @@
 
 
     </div>
-         @*---------------------------------------------------------Section 4 Business -------------------------------------------------*@
-          <div id="section4-bus" style="display:flex;justify-content: center;">
+    @*---------------------------------------------------------Section 4 Business -------------------------------------------------*@
+      <div id="section4-bus" style="display:flex;justify-content: center;">
         <div class="div4_B obj-form-card">
 
                  <div style="width: 100%; margin: 20px 0; padding: 10px 0; position: relative;">
@@ -3029,7 +3108,7 @@
      </div>
  </div>
     @*-----------------------------------------------------------------SECTION 4 RESIDENTIAL-----------------------------------------------------------*@
-          <div id="section4-res" style="display:flex;justify-content: center;">
+      <div id="section4-res" style="display:flex;justify-content: center;">
 
         <div class="div4_R obj-form-card">
 
@@ -3573,15 +3652,14 @@
             </div>
         </div>
     </div>
-
-      @*----------------------------------------Section 5  ---------------------------------------*@
-       <div id="section5" style="display:flex;justify-content: center;">
+    @*----------------------------------------Section 5  ---------------------------------------*@
+      <div id="section5" style="display:flex;justify-content: center;">
 
 
         <div class="div5 obj-form-card">
             <div>
                 <div style="width: 100%; margin: 20px 0; padding: 10px 0; position: relative;">
-                  <h4 class="obj-section-title" id="s_head"><strong>SECTION 5: MARKET INFORMATION</strong></h4>
+                  <h4 class="obj-section-title" id="s5" tabindex="-1"><strong>SECTION 5: MARKET INFORMATION</strong></h4>
                         <div class="obj-step-divider">
                             <div class="line"></div>
                             <div class="dot"></div>
@@ -3664,8 +3742,8 @@
         </div>
 
         </div>
-     @*----------------------------------------Section 6  ---------------------------------------*@
-        <div id="section6" style="display:flex;justify-content:center;">
+    @*----------------------------------------Section 6  ---------------------------------------*@
+      <div id="section6" style="display:flex;justify-content:center;">
             @{
                 var cat = TempData["Category"];
                 var mv = TempData["marketValue"];
@@ -3792,7 +3870,8 @@
                             <input style="width: 100%; padding: 12px 16px; margin-bottom: 15px; border: 2px solid #e6b000; border-radius: 8px; background: white; font-size: 14px; color: #333; transition: all 0.3s; box-shadow: 0 2px 8px rgba(230, 176, 0, 0.1);" id="NewExtent" class="form-control" min="0" type="text" onpaste="return false;" ondrop="return false;" maxlength="10" onkeypress="return onlyNumberKey(event)" asp-for="New_Extent">
 
                             <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #d4a000; font-size: 13px; text-transform: uppercase; letter-spacing: 0.3px;">MARKET VALUE</label>
-                            <input style="width: 100%; padding: 12px 16px; margin-bottom: 15px; border: 2px solid #e6b000; border-radius: 8px; background: white; font-size: 14px; color: #333; transition: all 0.3s; box-shadow: 0 2px 8px rgba(230, 176, 0, 0.1);" id="NewMarketValue" class="form-control" min="0" type="text" onpaste="return false;" ondrop="return false;" maxlength="19" onkeypress="return onlyNumberKey(event)" pattern="^\R\d{1,3}(,\d{3})*(\.\d+)?$" data-type="currency" asp-for="New_Market_Value">
+                            <input style="width: 100%; padding: 12px 16px; margin-bottom: 15px; border: 2px solid #e6b000; border-radius: 8px; background: white; font-size: 14px; color: #333; transition: all 0.3s; box-shadow: 0 2px 8px rgba(230, 176, 0, 0.1);" id="NewMarketValue" class="form-control" min="0" type="text" inputmode="numeric" onpaste="return false;" ondrop="return false;" maxlength="19" pattern="^\R\d{1,3}(,\d{3})*(\.\d+)?$" data-type="currency">
+                            <input type="hidden" id="NewMarketValueRaw" name="New_Market_Value" />
 
                             <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #d4a000; font-size: 13px; text-transform: uppercase; letter-spacing: 0.3px;">NAME OF OWNER</label>
                             <input style="width: 100%; padding: 12px 16px; margin-bottom: 15px; border: 2px solid #e6b000; border-radius: 8px; background: white; font-size: 14px; color: #333; transition: all 0.3s; box-shadow: 0 2px 8px rgba(230, 176, 0, 0.1);" id="NewOwner" class="form-control" maxlength="100" type="text" onpaste="return false;" ondrop="return false;" asp-for="New_Owner">
@@ -3824,8 +3903,8 @@
 
             </div>
     </div>
-    @*  ------------------------------------------- Document Upload -------------------------------------------  *@
-         <div id="sectionUpload" style="display:flex;justify-content: center;">
+    @*------------------------------------------- Document Upload -------------------------------------------  *@
+      <div id="sectionUpload" style="display:flex;justify-content: center;">
         <div class="divU obj-form-card">
 
             <div class="obj-section-bar">
@@ -3833,24 +3912,43 @@
                     <span >Upload Documents</span>
                   </div>
 
-            <div class="card shadow-sm border-0 mt-4">
-                 <div style="background: #f8f9fa; border: 2px solid #e6b000; border-radius: 10px; padding: 25px; margin-bottom: 20px;">
-                        <h6 class="fw-bold text-dark mb-3">Upload Supporting Document(s)</h6>
+            <p class="obj-ev-intro">
+                Attach anything that supports the information supplied in this @_processNameLower form.
+                You may browse more than once; files selected from another folder are
+                added to the files already selected.
+            </p>
 
-                   <div style="background: #fff3cd; border: 2px solid #e6b000; border-radius: 10px; padding: 15px; margin-bottom: 20px;">
-                <p style="font-size: 14px; color: #006570; font-weight: 600; margin: 0;">
-                    <strong>Note:</strong> Only PDF, PNG, JPEG, HEIC formats are allowed.
-                </p>
-                <p style="font-size: 14px; color: #006570; font-weight: 700; margin: 5px 0 0 0;">
-                    Max 10 PDF files • Max file size: 10MB
-                </p>
+            <div class="obj-ev-label">
+                <i class="fa-solid fa-folder-open"></i>
+                Other supporting documents
+                <span class="obj-ev-optional">(optional)</span>
             </div>
 
-                    <div style="margin-bottom: 15px;">
-                <label for="files" style="font-weight: 600; color: #006570; font-size: 14px; margin-bottom: 8px; display: block; text-transform: uppercase; letter-spacing: 0.5px;">Select File(s)</label>
-                <input style="width: 100%; padding: 10px; border: 2px solid #006570; border-radius: 5px; font-family: 'Poppins', sans-serif; background: white;" type="file" id="files" name="files" accept=".pdf, .png, .jpeg, .jpg, .heic" multiple />
+            <div class="obj-ev-dropzone" id="objectionDropzone" tabindex="0"
+                 role="button" aria-label="Choose supporting documents">
+                <div class="obj-ev-icon"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+                <div class="obj-ev-title">Drag files here to upload</div>
+                <div class="obj-ev-sub">PDF, Word, Excel and images</div>
+                <button type="button" class="obj-ev-browse" id="objectionBrowseFiles">
+                    <i class="fa-solid fa-folder-open"></i> Browse Files
+                </button>
             </div>
-                </div>
+
+            @* ObjectionQJS expects #files. Keep it as an unnamed compatibility
+               input while the cumulative input posts the selected files. *@
+            <input type="file" id="files" tabindex="-1" aria-hidden="true" />
+            <input type="file" id="objectionEvidenceInput" name="files" multiple
+                   accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xls,.xlsx" />
+
+            <div class="obj-ev-counter">
+                <span id="objectionFileCount">0 of 10 files added</span>
+                <div class="obj-ev-track"><div class="obj-ev-fill" id="objectionFileFill"></div></div>
+            </div>
+            <div class="obj-ev-list" id="objectionFileList"></div>
+            <div class="obj-ev-note">
+                <i class="fa-solid fa-circle-info"></i>
+                Supported: PDF, Word, Excel, JPG, PNG &nbsp;|&nbsp;
+                Max 10 files &nbsp;|&nbsp; Max 20 MB per file
             </div>
 
             <div>
@@ -3860,10 +3958,8 @@
             </div>
         </div>
     </div>
-
-       @*----------------------------------------Section 7  ---------------------------------------*@
-
-<div id="section7" style="display:flex;justify-content: center;">
+    @*----------------------------------------Section 7  ---------------------------------------*@
+      <div id="section7" style="display:flex;justify-content: center;">
 
     <div class="div7 obj-form-card">
         <div style="width: 100%; margin: 20px 0; padding: 10px 0; position: relative;">
@@ -3875,9 +3971,7 @@
             </div>
         </div>
 
-        <div class="obj-section-bar">
-            <span>Declaration &amp; @_processName Details</span>
-        </div>
+        <div class="obj-section-bar"><span>Declaration &amp; @_processName Details</span></div>
 
         <!-- ── Legal notice (Section 42(2)) ───────────────────────── -->
         <div class="obj-legal-box">
@@ -3975,24 +4069,24 @@
                id="signDate" required type="datetime-local" asp-for="Declaration_Date">
 
         <!-- ── Signature ───────────────────────────────────────────── -->
-        <div class="obj-signature-card">
-            <div class="obj-signature-label">
-                <i class="fa-solid fa-signature"></i>
-                Signature <span class="req">*</span>
+        <div class="obj-signature-card obj-auto-signature">
+            <div class="obj-auto-signature-title">
+                <i class="fa-solid fa-pen-nib"></i>
+                Draw signature below <span class="req">*</span>
+                <span style="font-weight:400;text-transform:none;color:#888;">(mouse or finger)</span>
             </div>
 
-            <canvas width="500" height="200" id="signature"></canvas>
-            <img width="500" height="200" id="savetarget"
-                 style="width:100%;max-width:500px;height:auto;border:2px solid #006570;border-radius:8px;display:block;margin-top:14px;"
-                 hidden="hidden">
+            <div class="obj-signature-canvas-wrap">
+                <canvas width="598" height="160" id="signature"></canvas>
+                <div class="obj-signature-line"></div>
+                <div class="obj-signature-hint">Sign here</div>
+            </div>
 
-            <div class="obj-signature-actions">
-                <button type="button" id="Clear" class="obj-sig-btn">
-                    <i class="fa-solid fa-eraser"></i> Clear
+            <div class="obj-signature-controls">
+                <button type="button" id="Clear" class="obj-signature-clear">
+                    <i class="fa-solid fa-rotate-left"></i> Clear
                 </button>
-                <button type="button" id="accept" class="obj-sig-btn obj-sig-btn-accept" onclick="checkCanvas()">
-                    <i class="fa-solid fa-check"></i> Accept Signature
-                </button>
+                <span id="signatureStatus">No signature drawn</span>
             </div>
 
             <input type="text" onpaste="return false;" ondrop="return false;"
@@ -4001,7 +4095,7 @@
 
         <!-- ── Navigation ──────────────────────────────────────────── -->
         <div style="margin-top:18px;">
-            <button type="button" class="btn_p4 btn obj-nav-btn obj-nav-btn-prev"><strong>Previous</strong></button>
+            <button type="button" class="btn_p7 btn obj-nav-btn obj-nav-btn-prev"><strong>Previous</strong></button>
             <button type="submit" class="btn obj-nav-btn obj-nav-btn-submit" disabled id="submitForm" onclick="return showInput()"><i class="fa-solid fa-paper-plane"></i> <strong>Submit @_processName</strong></button>
 
 
@@ -4010,10 +4104,8 @@
     </div>
 
 </div>
-        @{
-            TempData.Keep("CurrentFilter_MV");
-        }
-        <div id="objLoaderOverlay"
+    @*-----------------------------------------------------------------END Form -----------------------------------------------------------*@
+      <div id="objLoaderOverlay"
              class="obj-loader-overlay"
              role="dialog"
              aria-modal="true"
@@ -4032,27 +4124,200 @@
                 </span>
             </div>
         </div>
-
-        @section Scripts{
+</form>
+  @section Scripts{
             <script src="https://cdnjs.cloudflare.com/ajax/libs/signature_pad/1.5.3/signature_pad.min.js"></script>
             <script src="https://code.jquery.com/jquery-latest.min.js" type="text/javascript"></script>
             <script asp-append-version="true" src="~/js/ObjectionQJS.js" type="text/javascript"> </script>
-   @*  <script asp-append-version="true" src="~/js/ObjectionMulti_Section78.js" type="text/javascript"> </script> *@
+            <script asp-append-version="true" src="~/js/form-consistency.js"></script>
+            @*  <script asp-append-version="true" src="~/js/ObjectionMulti_Section78.js" type="text/javascript"> </script> *@
+        <script>
+            (function () {
+                'use strict';
+
+                const maximumFiles = 10;
+                const maximumFileSize = 20 * 1024 * 1024;
+                const allowedExtensions = ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png', 'xls', 'xlsx'];
+                let selectedQueryFiles = new DataTransfer();
+
+                function fileKey(file) {
+                    return [file.name, file.size, file.lastModified].join('|');
+                }
+
+                function safeText(value) {
+                    return String(value || '')
+                        .replace(/&/g, '&amp;')
+                        .replace(/</g, '&lt;')
+                        .replace(/>/g, '&gt;')
+                        .replace(/"/g, '&quot;')
+                        .replace(/'/g, '&#039;');
+                }
+
+                function addQueryFiles(files) {
+                    const existing = new Set(Array.from(selectedQueryFiles.files).map(fileKey));
+                    const rejected = [];
+
+                    Array.from(files || []).forEach(function (file) {
+                        const extension = (file.name.split('.').pop() || '').toLowerCase();
+                        const key = fileKey(file);
+
+                        if (existing.has(key)) return;
+                        if (!allowedExtensions.includes(extension)) {
+                            rejected.push(file.name + ' is not a supported file type.');
+                            return;
+                        }
+                        if (file.size > maximumFileSize) {
+                            rejected.push(file.name + ' is larger than 20 MB.');
+                            return;
+                        }
+                        if (selectedQueryFiles.files.length >= maximumFiles) {
+                            rejected.push('Only 10 supporting documents can be selected.');
+                            return;
+                        }
+
+                        selectedQueryFiles.items.add(file);
+                        existing.add(key);
+                    });
+
+                    if (rejected.length) {
+                        alert(Array.from(new Set(rejected)).join('\n'));
+                    }
+                }
+
+                function renderQueryFiles() {
+                    const input = document.getElementById('objectionEvidenceInput');
+                    const list = document.getElementById('objectionFileList');
+                    const count = document.getElementById('objectionFileCount');
+                    const fill = document.getElementById('objectionFileFill');
+                    const dropzone = document.getElementById('objectionDropzone');
+                    if (!input || !list || !count || !fill || !dropzone) return;
+
+                    input.files = selectedQueryFiles.files;
+                    const total = selectedQueryFiles.files.length;
+
+                    count.textContent = total + ' of ' + maximumFiles + ' files added';
+                    fill.style.width = Math.min((total / maximumFiles) * 100, 100) + '%';
+                    fill.classList.toggle('full', total >= maximumFiles);
+                    dropzone.classList.toggle('full', total >= maximumFiles);
+                    list.innerHTML = '';
+
+                    Array.from(selectedQueryFiles.files).forEach(function (file, index) {
+                        const item = document.createElement('div');
+                        item.className = 'obj-ev-file';
+                        item.innerHTML =
+                            '<i class="fa-solid fa-file"></i>' +
+                            '<span class="obj-ev-name">' + safeText(file.name) + '</span>' +
+                            '<span class="obj-ev-size">' + (file.size / 1024 / 1024).toFixed(2) + ' MB</span>' +
+                            '<button type="button" class="obj-ev-remove" data-remove-query-file="' + index + '" title="Remove file">' +
+                            '<i class="fa-solid fa-xmark"></i></button>';
+                        list.appendChild(item);
+                    });
+                }
+
+                function initialiseQueryUpload() {
+                    const input = document.getElementById('objectionEvidenceInput');
+                    const browse = document.getElementById('objectionBrowseFiles');
+                    const dropzone = document.getElementById('objectionDropzone');
+                    const list = document.getElementById('objectionFileList');
+                    if (!input || !browse || !dropzone || !list) return;
+
+                    function openBrowser(event) {
+                        if (event) {
+                            event.preventDefault();
+                            event.stopPropagation();
+                        }
+                        input.click();
+                    }
+
+                    browse.addEventListener('click', openBrowser);
+                    dropzone.addEventListener('click', openBrowser);
+                    dropzone.addEventListener('keydown', function (event) {
+                        if (event.key === 'Enter' || event.key === ' ') openBrowser(event);
+                    });
+                    dropzone.addEventListener('dragover', function (event) {
+                        event.preventDefault();
+                        dropzone.classList.add('dragover');
+                    });
+                    dropzone.addEventListener('dragleave', function () {
+                        dropzone.classList.remove('dragover');
+                    });
+                    dropzone.addEventListener('drop', function (event) {
+                        event.preventDefault();
+                        dropzone.classList.remove('dragover');
+                        addQueryFiles(event.dataTransfer && event.dataTransfer.files);
+                        renderQueryFiles();
+                    });
+                    input.addEventListener('change', function () {
+                        addQueryFiles(input.files);
+                        renderQueryFiles();
+                    });
+                    list.addEventListener('click', function (event) {
+                        const button = event.target.closest('[data-remove-query-file]');
+                        if (!button) return;
+
+                        const removeIndex = Number(button.dataset.removeQueryFile);
+                        const replacement = new DataTransfer();
+                        Array.from(selectedQueryFiles.files).forEach(function (file, index) {
+                            if (index !== removeIndex) replacement.items.add(file);
+                        });
+                        selectedQueryFiles = replacement;
+                        renderQueryFiles();
+                    });
+
+                    renderQueryFiles();
+                }
+
+                function initialiseAutomaticSignature() {
+                    const canvas = document.getElementById('signature');
+                    const signatureData = document.getElementById('SignatureDataUrl');
+                    const clear = document.getElementById('Clear');
+                    const status = document.getElementById('signatureStatus');
+                    const submit = document.getElementById('submitForm');
+                    if (!canvas || !signatureData || !clear || !status) return;
+
+                    function canvasHasInk() {
+                        const pixels = canvas.getContext('2d')
+                            .getImageData(0, 0, canvas.width, canvas.height).data;
+                        for (let index = 3; index < pixels.length; index += 4) {
+                            if (pixels[index] !== 0) return true;
+                        }
+                        return false;
+                    }
+
+                    function captureSignature() {
+                        window.requestAnimationFrame(function () {
+                            if (!canvasHasInk()) return;
+                            signatureData.value = canvas.toDataURL('image/png');
+                            signatureData.dispatchEvent(new Event('change', { bubbles: true }));
+                            status.textContent = 'Signature captured';
+                            status.style.color = '#0f766e';
+                            canvas.style.borderColor = '#006570';
+                            if (submit) submit.disabled = false;
+                        });
+                    }
+
+                    canvas.addEventListener('mouseup', captureSignature);
+                    canvas.addEventListener('touchend', captureSignature);
+                    canvas.addEventListener('pointerup', captureSignature);
+
+                    clear.addEventListener('click', function () {
+                        canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+                        signatureData.value = '';
+                        status.textContent = 'No signature drawn';
+                        status.style.color = '#6b6b6b';
+                        if (submit) submit.disabled = true;
+                    });
+                }
+
+                document.addEventListener('DOMContentLoaded', function () {
+                    initialiseQueryUpload();
+                    initialiseAutomaticSignature();
+                });
+            })();
+        </script>
             <script type="text/javascript">load();</script>
         
-        }
-
-        
-     
-</form>
-
-<script>
-
-    $(document).ready(function () {
-        setTimeout(function () {
-            $("#preloader").fadeOut(600);
-        }, 900);
-    });
+        <script>
 
 
     function showToaster(title, message, duration = 4000) {
@@ -4620,3 +4885,4 @@
 
     document.head.appendChild(style);
 </script>
+ }

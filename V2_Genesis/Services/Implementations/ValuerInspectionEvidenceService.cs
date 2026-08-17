@@ -23,6 +23,9 @@ namespace V2_Genesis.Services.Implementations
             ".jpg", ".jpeg", ".png"
         };
 
+        private const int MaximumEvidenceFiles = 10;
+        private const long MaximumEvidenceFileSize = 10 * 1024 * 1024;
+
         public ValuerInspectionEvidenceService(
             IConfiguration config,
             AttributesDbContext db,
@@ -59,6 +62,53 @@ namespace V2_Genesis.Services.Implementations
             };
         }
 
+        public async Task<UploadValuerInspectionEvidenceVm> GetInspectionForUploadAsync(
+            long inspectionRequestId,
+            string sapNumber)
+        {
+            if (inspectionRequestId <= 0)
+                throw new InvalidOperationException("Invalid inspection.");
+
+            if (string.IsNullOrWhiteSpace(sapNumber))
+                throw new InvalidOperationException("SAP number is required.");
+
+            var cleanSap = sapNumber.Trim();
+            var today = DateTime.Today;
+            var tomorrow = today.AddDays(1);
+
+            var inspection = await (
+                from request in _db.AttrInspectionRequests.AsNoTracking()
+                join property in _db.AttrPropertyInfo.AsNoTracking()
+                    on request.Attr_ID equals property.Attr_ID
+                join valuer in _db.AttrValuerInspectionDetails.AsNoTracking()
+                    on request.ValuerSapNumber equals valuer.SapNumber
+                where request.Id == inspectionRequestId
+                      && request.ValuerSapNumber == cleanSap
+                      && request.ConfirmedDateTime >= today
+                      && request.ConfirmedDateTime < tomorrow
+                      && request.Status == "InspectionDetailsSent"
+                      && property.IsActive
+                      && valuer.IsActive
+                select new UploadValuerInspectionEvidenceVm
+                {
+                    InspectionRequestId = request.Id,
+                    SapNumber = cleanSap,
+                    AttrNo = request.Attr_No,
+                    PropertyDescription = property.Property_Desc,
+                    InspectionAddress = property.Inspection_Address,
+                    ConfirmedDateTime = request.ConfirmedDateTime,
+                    ValuerName = valuer.ValuerName
+                }).FirstOrDefaultAsync();
+
+            if (inspection is null)
+            {
+                throw new InvalidOperationException(
+                    "This inspection is not available for evidence upload today.");
+            }
+
+            return inspection;
+        }
+
         public async Task UploadEvidenceAsync(
             UploadValuerInspectionEvidenceVm vm,
             string? uploadedByUserId,
@@ -72,6 +122,12 @@ namespace V2_Genesis.Services.Implementations
 
             if (vm.EvidenceFiles == null || !vm.EvidenceFiles.Any())
                 throw new InvalidOperationException("Please upload at least one evidence photo.");
+
+            if (vm.EvidenceFiles.Count > MaximumEvidenceFiles)
+            {
+                throw new InvalidOperationException(
+                    $"A maximum of {MaximumEvidenceFiles} evidence photos may be uploaded at once.");
+            }
 
             if (string.IsNullOrWhiteSpace(vm.InspectionOutcome))
                 throw new InvalidOperationException("Please select the inspection outcome.");
@@ -123,6 +179,12 @@ namespace V2_Genesis.Services.Implementations
             {
                 if (file.Length <= 0)
                     continue;
+
+                if (file.Length > MaximumEvidenceFileSize)
+                {
+                    throw new InvalidOperationException(
+                        $"{Path.GetFileName(file.FileName)} is larger than 10 MB.");
+                }
 
                 var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
 

@@ -1,4 +1,5 @@
 ﻿using QuestPDF.Fluent;
+using System.Globalization;
 using V2_Genesis.Models;
 
 namespace GV_Forms.Pdf
@@ -14,22 +15,25 @@ namespace GV_Forms.Pdf
         }
 
         protected override string GetHeadingLeft()
-            => "PROPERTIES OTHER THAN RESIDENTIAL OR AGRICULTURAL (EG. BUSINESSES, FACTORIES, OFFICES, SCHOOLS)";
+            => PropertyFormType switch
+            {
+                "Res" => "RESIDENTIAL (FULL TITLE AND SECTIONAL TITLE USED FOR RESIDENTIAL PURPOSES)",
+                "Multi" => "MULTIPLE PURPOSE (PROPERTY USED FOR MORE THAN ONE PURPOSE)",
+                _ => "PROPERTIES OTHER THAN RESIDENTIAL OR AGRICULTURAL (EG. BUSINESSES, FACTORIES, OFFICES, SCHOOLS)"
+            };
 
         protected override void BuildPropertyIntro(ColumnDescriptor col)
         {
-            dynamic main = Data.Main;
-
             RoundedBlock(col, c =>
             {
                 c.Column(x =>
                 {
-                    x.Item().Text("LODGING OF A QUERY AGAINSTS MATTERS PERTAINING TO A GENERAL / SUPPLEMENTARY VALUATION ON THE PROPERTY DESCRIBED BELOW:")
+                    x.Item().Text($"LODGING OF A {InquiryUpper} AGAINST MATTERS PERTAINING TO A GENERAL / SUPPLEMENTARY VALUATION ON THE PROPERTY DESCRIBED BELOW:")
                         .Bold()
                         .FontSize(8);
 
                     x.Item().PaddingTop(4)
-                        .Text("DESCRIPTION OF PROPERTY IN RESPECT OF WHICH THE QUERY IS MADE")
+                        .Text($"DESCRIPTION OF PROPERTY IN RESPECT OF WHICH THE {InquiryUpper} IS MADE")
                         .Bold()
                         .FontSize(8);
 
@@ -39,19 +43,11 @@ namespace GV_Forms.Pdf
                     x.Item().PaddingTop(6).Row(r =>
                     {
                         LineField(r, "ERF/UNIT NO.",
-                            V(main,
-                                "ERF",
-                                "Erf",
-                                "Unit_Key",
-                                "Unit_key",
-                                "Property_id"),
+                            ErfOrUnitNumber(),
                             1);
 
                         LineField(r, "SUBURB/SCHEME NAME",
-                            V(main,
-                                "Town",
-                                "Town_Name",
-                                "Property_Desc"),
+                            PropertyDescription(),
                             2);
                     });
                 });
@@ -60,38 +56,178 @@ namespace GV_Forms.Pdf
 
         protected override void BuildRemainingSections(ColumnDescriptor col)
         {
-            BuildSection3Reasons(col);
             BuildSection4PropertyDetails(col);
-            BuildSection5Buildings(col);
-            BuildSection6SectionalTitle(col);
+
+            if (PropertyFormType is "Res" or "Multi")
+            {
+                BuildSection5Residential(col);
+                BuildSection6ResidentialSectionalTitle(col);
+            }
+
+            if (PropertyFormType is "Bus" or "Multi")
+            {
+                BuildSection5Buildings(col);
+                BuildSection6SectionalTitle(col);
+            }
+
+            if (PropertyFormType == "Multi")
+                BuildSection5Agricultural(col);
+
             BuildSection7MarketInformation(col);
             BuildSection8QueryDetails(col);
-            BuildDeclaration(col, "Section7");
+
+            // Match the supplied municipal templates. Business Review uses
+            // SECTION 7: DECLARATION, while the supplied Residential Review
+            // template retains SECTION 9: DECLARATION.
+            var declarationSection = IsReview
+                ? (PropertyFormType == "Res" ? 9 : 7)
+                : 9;
+
+            BuildDeclaration(col, "Section7", declarationSection);
             BuildAdminReceipt(col);
         }
 
-        private void BuildSection3Reasons(ColumnDescriptor col)
+        private void BuildSection5Residential(ColumnDescriptor col)
         {
-            var s = S("Section2Query");
+            var s = S("Section3Res");
 
-            RoundedBlock(col, c =>
+            RoundedBlock(col, c => c.Column(x =>
             {
-                c.Column(x =>
-                {
-                    x.Item()
-                        .Text("3.1 Reasons/Motivation why above supplementary is to be done")
-                        .Bold()
-                        .FontSize(11);
+                x.Item().Text($"SECTION {FormSection(5, 3)}: DESCRIPTION OF RESIDENTIAL DWELLING").Bold();
+                x.Item().Text("5.1 MAIN DWELLING").SemiBold();
 
-                    x.Item()
-                        .PaddingTop(6)
-                        .Border(1)
-                        .MinHeight(520)
-                        .Padding(6)
-                       .Text((string?)Convert.ToString(V(s, "Motivation_for_Supp_Request")) ?? string.Empty)
-                        .FontSize(8);
+                x.Item().Row(r =>
+                {
+                    LineField(r, "BEDROOMS", V(s, "Res_No_of_Bedroom"));
+                    LineField(r, "BATHROOMS", V(s, "Res_No_of_BathRoom"));
+                    LineField(r, "KITCHEN", V(s, "Res_Kitchen"));
+                    LineField(r, "LOUNGE", V(s, "Res_Lounge"));
+                    LineField(r, "DINING ROOM", V(s, "Res_Dinning_Room"));
                 });
-            });
+
+                x.Item().Row(r =>
+                {
+                    LineField(r, "LOUNGE / DINING", V(s, "Res_Lounge_Dining_Room"));
+                    LineField(r, "STUDY", V(s, "Res_Study"));
+                    LineField(r, "PLAYROOM", V(s, "Res_Play_Room"));
+                    LineField(r, "TV ROOM", V(s, "Res_Television"));
+                    LineField(r, "LAUNDRY", V(s, "Res_Laundry"));
+                });
+
+                x.Item().Row(r =>
+                {
+                    LineField(r, "SEPARATE TOILET", V(s, "Res_Seperate_Toilet"));
+                    LineField(r, "OTHER", V(s, "Res_Dwell_Other1"));
+                    LineField(r, "OTHER", V(s, "Res_Dwell_Other2"));
+                    LineField(r, "OTHER", V(s, "Res_Dwell_Other3"));
+                    LineField(r, "OTHER", V(s, "Res_Dwell_Other4"));
+                });
+
+                x.Item().Text("OUTBUILDINGS").SemiBold();
+                x.Item().Row(r =>
+                {
+                    LineField(r, "GARAGES", V(s, "Res_No_of_Garages"));
+                    LineField(r, "GRANNY FLAT / ROOMS", V(s, "Res_Granny_Room"));
+                    LineField(r, "OTHER", V(s, "Res_Outbuild_Other"));
+                });
+
+                x.Item().Row(r =>
+                {
+                    LineField(r, "MAIN SIZE (m²)", V(s, "Res_Main_Dwelling_Size"));
+                    LineField(r, "OUTBUILDING SIZE (m²)", V(s, "Res_Outside_Building_Size"));
+                    LineField(r, "OTHER SIZE (m²)", V(s, "Res_Other_Building_Size"));
+                    LineField(r, "TOTAL SIZE (m²)", V(s, "Res_Total_Building_Size"));
+                });
+
+                x.Item().Row(r =>
+                {
+                    LineField(r, "POOL", V(s, "Res_Swimming_Pool"));
+                    LineField(r, "BOREHOLE", V(s, "Res_Bore_Hole"));
+                    LineField(r, "TENNIS COURT", V(s, "Res_Tennis_Court"));
+                    LineField(r, "GARDEN", V(s, "Res_Garden"));
+                });
+
+                x.Item().Row(r =>
+                {
+                    LineField(r, "DRIVEWAY", V(s, "Res_Drive_Way"));
+                    LineField(r, "BOOMED / SECURITY", V(s, "Res_Security_Boomed_Area"));
+                    LineField(r, "GENERAL CONDITION", V(s, "Res_General_Condition"));
+                });
+            }));
+        }
+
+        private void BuildSection6ResidentialSectionalTitle(ColumnDescriptor col)
+        {
+            var s = S("Section4Res");
+
+            RoundedBlock(col, c => c.Column(x =>
+            {
+                x.Item().Text($"SECTION {FormSection(6, 4)}: SECTIONAL TITLE UNITS").Bold();
+                x.Item().Row(r =>
+                {
+                    LineField(r, "SCHEME NO.", V(s, "Res4_Scheme_No"));
+                    LineField(r, "SCHEME NAME", V(s, "Res4_Scheme_Name"), 2);
+                    LineField(r, "FLAT / DOOR NO.", V(s, "Res4_Flat_No"));
+                    LineField(r, "UNIT SIZE (m²)", V(s, "Res4_Unit_Size"));
+                });
+
+                x.Item().Row(r =>
+                {
+                    LineField(r, "MANAGING AGENT", V(s, "Res4_Managing_Agent_Name"), 2);
+                    LineField(r, "TEL NO.", V(s, "Res4_Managing_Agent_Tel_No"));
+                    LineField(r, "MONTHLY LEVY", Money(V(s, "Res4_Monthly_Levy_Res")));
+                });
+
+                x.Item().Row(r =>
+                {
+                    LineField(r, "BEDROOMS", V(s, "Res4_No_of_Bedroom"));
+                    LineField(r, "BATHROOMS", V(s, "Res4_No_of_BathRoom"));
+                    LineField(r, "KITCHEN", V(s, "Res4_Kitchen"));
+                    LineField(r, "LOUNGE", V(s, "Res4_Lounge"));
+                    LineField(r, "DINING ROOM", V(s, "Res4_Dinning_Room"));
+                });
+
+                x.Item().Row(r =>
+                {
+                    LineField(r, "POOL (m²)", V(s, "Res4_Pool_Size"));
+                    LineField(r, "TENNIS COURT (m²)", V(s, "Res4_Tennis_Court_Size"));
+                    LineField(r, "GARAGE (m²)", V(s, "Res4_Garage_Size"));
+                    LineField(r, "CARPORT (m²)", V(s, "Res4_Carport_Size"));
+                });
+            }));
+        }
+
+        private void BuildSection5Agricultural(ColumnDescriptor col)
+        {
+            var s = S("Section3Agri");
+
+            RoundedBlock(col, c => c.Column(x =>
+            {
+                x.Item().Text($"SECTION {FormSection(5, 3)}: AGRICULTURAL USE DETAILS").Bold();
+                x.Item().Row(r =>
+                {
+                    LineField(r, "NON-AGRICULTURAL (ha)", V(s, "Agri_Non_Agricultural"));
+                    LineField(r, "GRAZING (ha)", V(s, "Agri_Grazing"));
+                    LineField(r, "IRRIGATION (ha)", V(s, "Agri_Under_Irrigation"));
+                    LineField(r, "DRY LAND (ha)", V(s, "Agri_Dry_Land"));
+                    LineField(r, "PERMANENT CROPS (ha)", V(s, "Agri_Permanent_Crop"));
+                });
+
+                x.Item().Row(r =>
+                {
+                    LineField(r, "TOTAL (ha)", V(s, "Agri_Total_ha"));
+                    LineField(r, "FENCE CONDITION", V(s, "Agri_Fence_Condition"));
+                    LineField(r, "BOREHOLES", V(s, "Agri_Num_of_Boreholes"));
+                    LineField(r, "DAMS", V(s, "Agri_Dams"));
+                });
+
+                x.Item().Row(r =>
+                {
+                    LineField(r, "TENANT", V(s, "Agri_Tenant_Name"), 2);
+                    LineField(r, "RENTAL", Money(V(s, "Agri_Rental")));
+                    LineField(r, "USE", V(s, "Agri_Use"));
+                });
+            }));
         }
 
         private void BuildSection4PropertyDetails(ColumnDescriptor col)
@@ -103,7 +239,7 @@ namespace GV_Forms.Pdf
                 c.Column(x =>
                 {
                     x.Item()
-                        .Text("SECTION 4: PROPERTY DETAILS (FOR SECTIONAL TITLES SEE SECTION 6)")
+                        .Text($"SECTION {FormSection(4, 2)}: PROPERTY DETAILS (FOR SECTIONAL TITLES SEE SECTION {FormSection(6, 4)})")
                         .Bold();
 
                     x.Item().Row(r =>
@@ -138,7 +274,7 @@ namespace GV_Forms.Pdf
                             1);
 
                         LineField(r, "REGISTERED AMOUNT OF BOND",
-                            V(s, "Registered_Amount"),
+                            Money(V(s, "Registered_Amount")),
                             1);
                     });
 
@@ -185,8 +321,8 @@ namespace GV_Forms.Pdf
                             V(s, "Payment_Date"),
                             1);
 
-                        LineField(r, "AMOUNT R",
-                            V(s, "Compensation_Amount"),
+                        LineField(r, "AMOUNT",
+                            Money(V(s, "Compensation_Amount")),
                             1);
                     });
                 });
@@ -203,7 +339,7 @@ namespace GV_Forms.Pdf
                 c.Column(x =>
                 {
                     x.Item()
-                        .Text("SECTION 5: DESCRIPTION OF BUILDINGS (FOR SECTIONAL TITLES SEE SECTION 6)")
+                        .Text($"SECTION {FormSection(5, 3)}: DESCRIPTION OF BUILDINGS (FOR SECTIONAL TITLES SEE SECTION {FormSection(6, 4)})")
                         .Bold();
 
                     x.Item().PaddingTop(6)
@@ -224,7 +360,7 @@ namespace GV_Forms.Pdf
                     x.Item().Row(r =>
                     {
                         LineField(r, "RENTAL (EXCL VAT)",
-                            V(s, "Bus_Rental"),
+                            Money(V(s, "Bus_Rental")),
                             1);
 
                         LineField(r, "ESCALATION OF RENTAL",
@@ -308,7 +444,7 @@ namespace GV_Forms.Pdf
                 c.Column(x =>
                 {
                     x.Item()
-                        .Text("SECTION 6: SECTIONAL TITLE UNITS")
+                        .Text($"SECTION {FormSection(6, 4)}: SECTIONAL TITLE UNITS")
                         .Bold();
 
                     x.Item().Row(r =>
@@ -341,20 +477,35 @@ namespace GV_Forms.Pdf
                             1);
                     });
 
-                    x.Item().Row(r =>
+                    if (IsReview)
                     {
-                        LineField(r, "SHOPS",
-                            V(s, "Bus4_Shops"),
-                            1);
-
-                        LineField(r, "OFFICES",
-                            V(s, "Bus4_Offices"),
-                            1);
-
-                        LineField(r, "FACTORIES",
-                            V(s, "Bus4_Factories"),
-                            1);
-                    });
+                        x.Item().Row(r =>
+                        {
+                            LineField(r,
+                                "DESCRIPTION OF USE OF UNIT INCLUSIVE OF SIZES (m²)",
+                                JoinValues(
+                                    s,
+                                    "Bus4_Shops",
+                                    "Bus4_Offices",
+                                    "Bus4_Factories",
+                                    "Bus4_Bus_Sect_Title_Other1_name",
+                                    "Bus4_Bus_Sect_Title_Other1",
+                                    "Bus4_Bus_Sect_Title_Other2_name",
+                                    "Bus4_Bus_Sect_Title_Other2",
+                                    "Bus4_Bus_Sect_Title_Other3_name",
+                                    "Bus4_Bus_Sect_Title_Other3"),
+                                1);
+                        });
+                    }
+                    else
+                    {
+                        x.Item().Row(r =>
+                        {
+                            LineField(r, "SHOPS", V(s, "Bus4_Shops"), 1);
+                            LineField(r, "OFFICES", V(s, "Bus4_Offices"), 1);
+                            LineField(r, "FACTORIES", V(s, "Bus4_Factories"), 1);
+                        });
+                    }
 
                     x.Item().PaddingTop(6)
                         .Text("COMMON PROPERTY CONSISTS OF: DETAILS OF EXCLUSIVE AREAS")
@@ -409,7 +560,7 @@ namespace GV_Forms.Pdf
                 c.Column(x =>
                 {
                     x.Item()
-                        .Text("SECTION 7: MARKET INFORMATION")
+                        .Text($"SECTION {FormSection(7, 5)}: MARKET INFORMATION")
                         .Bold();
 
                     x.Item()
@@ -418,12 +569,12 @@ namespace GV_Forms.Pdf
 
                     x.Item().Row(r =>
                     {
-                        LineField(r, "R",
-                            V(s, "Current_Asking_price"),
+                        LineField(r, "ASKING PRICE",
+                            Money(V(s, "Current_Asking_price")),
                             1);
 
-                        LineField(r, "OFFER RECEIVED R",
-                            V(s, "Current_Recieved_Offer"),
+                        LineField(r, "OFFER RECEIVED",
+                            Money(V(s, "Current_Recieved_Offer")),
                             1);
                     });
 
@@ -433,12 +584,12 @@ namespace GV_Forms.Pdf
 
                     x.Item().Row(r =>
                     {
-                        LineField(r, "R",
-                            V(s, "Previous_Asking_price"),
+                        LineField(r, "ASKING PRICE",
+                            Money(V(s, "Previous_Asking_price")),
                             1);
 
-                        LineField(r, "OFFER RECEIVED R",
-                            V(s, "Previous_Recieved_Offer"),
+                        LineField(r, "OFFER RECEIVED",
+                            Money(V(s, "Previous_Recieved_Offer")),
                             1);
                     });
 
@@ -475,7 +626,7 @@ namespace GV_Forms.Pdf
                             1);
 
                         LineField(r, "SELLING PRICE",
-                            V(s, "Selling_Price"),
+                            Money(V(s, "Selling_Price")),
                             1);
                     });
                 });
@@ -490,57 +641,85 @@ namespace GV_Forms.Pdf
                 c.Column(x =>
                 {
                     x.Item()
-                        .Text("SECTION 8: QUERY DETAILS PARTICULARS TO BE REFLECTED IN VALUATION ROLL CHANGES REQUESTED BY OWNER")
+                        .Text($"SECTION {FormSection(8, 6)}: {InquiryUpper} DETAILS - PARTICULARS TO BE REFLECTED IN THE VALUATION ROLL AND CHANGES REQUESTED BY OWNER")
                         .Bold();
 
-                    x.Item().Row(r =>
+                    x.Item().PaddingTop(5).Row(r =>
                     {
-                        LineField(r, "DESCRIPTION OF THE PROPERTY / UNIT NO.",
-                            V(s, "New_Property_Description", "Old_Property_Description"),
-                            1);
+                        r.RelativeItem()
+                            .Text("PARTICULARS AS REFLECTED IN VALUATION ROLL")
+                            .Bold()
+                            .FontSize(8)
+                            .AlignCenter();
+
+                        r.RelativeItem()
+                            .Text("CHANGES REQUESTED BY OWNER")
+                            .Bold()
+                            .FontSize(8)
+                            .AlignCenter();
                     });
 
-                    x.Item().Row(r =>
-                    {
-                        LineField(r, "CATEGORY",
-                            V(s, "New_Category", "Old_Category"),
-                            1);
-                    });
+                    ComparisonLine(x, "DESCRIPTION OF THE PROPERTY / UNIT NO.: ",
+                        V(s, "Old_Property_Description"),
+                        V(s, "New_Property_Description"));
 
-                    x.Item().Row(r =>
-                    {
-                        LineField(r, "PHYSICAL ADDRESS / DOOR NO. / FLAT NO.",
-                            V(s, "New_Address", "Old_Address"),
-                            1);
-                    });
+                    ComparisonLine(x, "CATEGORY: ",
+                        V(s, "Old_Category"),
+                        V(s, "New_Category"));
 
-                    x.Item().Row(r =>
-                    {
-                        LineField(r, "EXTENT",
-                            V(s, "New_Extent", "Old_Extent"),
-                            1);
+                    ComparisonLine(x, "PHYSICAL ADDRESS / DOOR NO. / FLAT NO.: ",
+                        V(s, "Old_Address"),
+                        V(s, "New_Address"));
 
-                        LineField(r, "MARKET VALUE",
-                            V(s, "New_Market_Value", "Old_Market_Value"),
-                            1);
-                    });
+                    ComparisonLine(x, "EXTENT: ",
+                        V(s, "Old_Extent"),
+                        V(s, "New_Extent"));
 
-                    x.Item().Row(r =>
+                    ComparisonLine(x, "MARKET VALUE: ",
+                        Money(V(s, "Old_Market_Value")),
+                        Money(V(s, "New_Market_Value")));
+
+                    ComparisonLine(x, "NAME OF OWNER: ",
+                        V(s, "Old_Owner"),
+                        V(s, "New_Owner"));
+
+                    if (!string.IsNullOrWhiteSpace(FirstValue(
+                            V(s, "Old2_Category"), V(s, "New2_Category"),
+                            V(s, "Old2_Extent"), V(s, "New2_Extent"),
+                            V(s, "Old2_Market_Value"), V(s, "New2_Market_Value"))))
                     {
-                        LineField(r, "NAME OF OWNER",
-                            V(s, "New_Owner", "Old_Owner"),
-                            1);
-                    });
+                        x.Item().PaddingTop(8).Text("PURPOSE / CATEGORY SPLIT 2").SemiBold().AlignCenter();
+                        ComparisonLine(x, "CATEGORY: ", V(s, "Old2_Category"), V(s, "New2_Category"));
+                        ComparisonLine(x, "EXTENT: ", V(s, "Old2_Extent"), V(s, "New2_Extent"));
+                        ComparisonLine(x, "MARKET VALUE: ", Money(V(s, "Old2_Market_Value")), Money(V(s, "New2_Market_Value")));
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(FirstValue(
+                            V(s, "Old3_Category"), V(s, "New3_Category"),
+                            V(s, "Old3_Extent"), V(s, "New3_Extent"),
+                            V(s, "Old3_Market_Value"), V(s, "New3_Market_Value"))))
+                    {
+                        x.Item().PaddingTop(8).Text("PURPOSE / CATEGORY SPLIT 3").SemiBold().AlignCenter();
+                        ComparisonLine(x, "CATEGORY: ", V(s, "Old3_Category"), V(s, "New3_Category"));
+                        ComparisonLine(x, "EXTENT: ", V(s, "Old3_Extent"), V(s, "New3_Extent"));
+                        ComparisonLine(x, "MARKET VALUE: ", Money(V(s, "Old3_Market_Value")), Money(V(s, "New3_Market_Value")));
+                    }
 
                     x.Item().PaddingTop(6)
-                        .Text("ADVERSE FEATURES AND/OR FURTHER REASONS IN SUPPORT OF THIS REVIEW")
+                        .Text($"ADVERSE FEATURES AND/OR FURTHER REASONS IN SUPPORT OF THIS {InquiryUpper}")
                         .SemiBold();
+
+                    string objectionReasons =
+     Convert.ToString(
+         (object?)V(s, "Objection_Reasons"),
+         CultureInfo.InvariantCulture)
+     ?? string.Empty;
 
                     x.Item()
                         .Border(1)
                         .MinHeight(70)
                         .Padding(4)
-                        .Text((string)Convert.ToString(V(s, "Objection_Reasons")) ?? string.Empty)
+                        .Text(objectionReasons)
                         .FontSize(8);
                 });
             });

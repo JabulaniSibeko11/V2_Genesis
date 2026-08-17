@@ -136,16 +136,17 @@
             }
 
             /* Nav links must always start at the left corner, right
-                                       after the logo — never centered. Kept here too (in
-                                       addition to site.css) since this is the layout that
-                                       every page shares, so the fix is visible right where
-                                       the nav itself is defined. */
+                                                   after the logo — never centered. Kept here too (in
+                                                   addition to site.css) since this is the layout that
+                                                   every page shares, so the fix is visible right where
+                                                   the nav itself is defined. */
             .cl-nav-links {
                 justify-content: flex-start !important;
             }
     </style>
 
     @await RenderSectionAsync("Styles", required: false)
+    <link rel="stylesheet" href="~/css/views/genesis-datatables.css" asp-append-version="true" />
 </head>
 
 <body>

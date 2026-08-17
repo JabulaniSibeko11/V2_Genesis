@@ -44,8 +44,6 @@ namespace V2_Genesis.Services.Implementations
             ["Objection_Supp3"] = "Sup3Connection",
             ["Objection_Supp4"] = "Sup4Connection",
             ["Objection_Supp5"] = "Sup5Connection",
-            ["Objection_Query"] = "QueryConnection",
-            ["Query"] = "QueryConnection",
         };
         private static readonly Dictionary<string, string> RollTitles = new()
         {
@@ -245,6 +243,13 @@ namespace V2_Genesis.Services.Implementations
                 var subject =
                     $"City of Johannesburg — {submissionType} Acknowledgement: {objectionRef} — {cleanPropertyDescription}";
 
+                var archiveHtmlBody = BuildHtmlBody(
+                    objectionRef,
+                    rollTitle,
+                    isAppeal,
+                    recipients[0],
+                    recipients);
+
                 foreach (var recipient in recipients)
                 {
                     var htmlBody = BuildHtmlBody(
@@ -253,17 +258,6 @@ namespace V2_Genesis.Services.Implementations
                         isAppeal,
                         recipient,
                         recipients);
-
-                    // Save one evidence email copy per recipient.
-                    // Representative = Owner copy + Representative copy.
-                    await SaveEmailCopyAsync(
-                        folderPath,
-                        objectionRef,
-                        submissionType,
-                        htmlBody,
-                        acknowledgementPdf,
-                        new List<EmailRecipient> { recipient },
-                        extraAttachments);
 
                     await SendMailAsync(
                         recipient,
@@ -274,6 +268,17 @@ namespace V2_Genesis.Services.Implementations
                         isAppeal,
                         extraAttachments);
                 }
+
+                await SaveEmailCopyAsync(
+                    folderPath,
+                    objectionRef,
+                    cleanPropertyDescription,
+                    subject,
+                    archiveHtmlBody,
+                    acknowledgementPdf,
+                    $"{submissionType}_Acknowledgement_{objectionRef}.pdf",
+                    recipients,
+                    extraAttachments);
 
                 _logger.LogInformation(
                     "[Email] Sent {Count} {SubmissionType} acknowledgement email(s) for {ObjRef}. AcknowledgementBytes={AcknowledgementBytes}, ExtraAttachments={ExtraAttachmentCount}",
@@ -346,6 +351,7 @@ namespace V2_Genesis.Services.Implementations
         public async Task SendSection78AcknowledgementAsync(
       string queryRef,
       bool isReview,
+      string propertyDescription,
       byte[] acknowledgementPdf,
       string folderPath,
       List<EmailAttachment>? extraAttachments = null)
@@ -372,16 +378,8 @@ namespace V2_Genesis.Services.Implementations
                     isReview,
                     recipients);
 
-                // 3. Save .eml copy to folder
-                _ = SaveEmailCopyAsync(
-                    folderPath,
-                    queryRef,
-                    $"S78_{actionWord}",
-                    htmlBody,
-                    acknowledgementPdf,
-                    recipients);
-
-                // 4. Send to each recipient
+                // 3. Send to each recipient.
+                var sentRecipients = new List<EmailRecipient>();
                 foreach (var recipient in recipients)
                 {
                     try
@@ -412,6 +410,7 @@ namespace V2_Genesis.Services.Implementations
 
                         using var smtp = BuildClient();
                         await smtp.SendMailAsync(msg);
+                        sentRecipients.Add(recipient);
 
                         _logger.LogInformation(
                             "[S78 Email] Sent {Action} acknowledgement to {Addr} for {Ref}",
@@ -426,6 +425,21 @@ namespace V2_Genesis.Services.Implementations
                             recipient.Address,
                             queryRef);
                     }
+                }
+
+                // 4. Save the .eml only after at least one email was sent.
+                if (sentRecipients.Count > 0)
+                {
+                    await SaveEmailCopyAsync(
+                        folderPath,
+                        queryRef,
+                        propertyDescription,
+                        subject,
+                        htmlBody,
+                        acknowledgementPdf,
+                        $"S78_{actionWord}_Acknowledgement_{queryRef}.pdf",
+                        sentRecipients,
+                        extraAttachments);
                 }
             }
             catch (Exception ex)
@@ -617,16 +631,7 @@ namespace V2_Genesis.Services.Implementations
                     $"No client email address was found in the submission for '{referenceNo}'.");
             }
 
-            var isQuery =
-                rollSource.Equals("Objection_Query", StringComparison.OrdinalIgnoreCase) ||
-                rollSource.Equals("Query", StringComparison.OrdinalIgnoreCase);
-            var submissionType = isAppeal
-                ? "Appeal"
-                : isQuery
-                    ? (referenceNo.EndsWith("-R", StringComparison.OrdinalIgnoreCase)
-                        ? "Section 78 Review"
-                        : "Section 78 Query")
-                    : "Objection";
+            var submissionType = isAppeal ? "Appeal" : "Objection";
             var subject = $"City of Johannesburg — Evidence Upload Confirmation: {referenceNo}";
 
             foreach (var recipient in recipients)
@@ -801,10 +806,6 @@ City of Johannesburg — Valuation Services Department<br>This is an automated m
             {
                 await using var conn = new SqlConnection(connStr);
 
-                var isQuery =
-                    rollSource.Equals("Objection_Query", StringComparison.OrdinalIgnoreCase) ||
-                    rollSource.Equals("Query", StringComparison.OrdinalIgnoreCase);
-
                 var sql = isAppeal
                     ? @"
                 SELECT TOP 1
@@ -823,20 +824,6 @@ City of Johannesburg — Valuation Services Department<br>This is an automated m
                        ON opia.Appeal_No = @Ref
                 LEFT JOIN dbo.Obj_Property_Info opi
                        ON opi.Objection_No = opia.Obj_Ref
-                WHERE s1.Objection_Ref_S1 = @Ref"
-                    : isQuery
-                    ? @"
-                SELECT TOP 1
-                    s1.Owner_Name,
-                    s1.Owner_Email,
-                    s1.Objector_Name,
-                    s1.Objector_Email,
-                    s1.Representative_name,
-                    s1.Rep_Email,
-                    q.Query_Type AS Objector_Type
-                FROM dbo.Obj_Section1 s1
-                LEFT JOIN dbo.Que_Property_Info q
-                       ON q.Query_No = @Ref
                 WHERE s1.Objection_Ref_S1 = @Ref"
                     : @"
                 SELECT TOP 1
@@ -1317,103 +1304,89 @@ City of Johannesburg — Valuation Services Department<br>This is an automated m
         //  SAVE PDF COPY TO FOLDER
         // ════════════════════════════════════════════════════════════
         private async Task SaveEmailCopyAsync(
-      string folderPath,
-      string reference,
-      string actionWord,
-      string htmlBody,
-      byte[] ackPdf,
-      List<EmailRecipient> recipients,
-      List<EmailAttachment>? extraAttachments = null)
+            string folderPath,
+            string reference,
+            string propertyDescription,
+            string subject,
+            string htmlBody,
+            byte[] acknowledgementPdf,
+            string acknowledgementFileName,
+            IReadOnlyCollection<EmailRecipient> recipients,
+            List<EmailAttachment>? extraAttachments = null)
         {
             try
             {
                 Directory.CreateDirectory(folderPath);
 
                 var safeReference = SanitizeFilePart(reference);
-                var datePart = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-
-                // Find the actual acknowledgement PDF name saved in the evidence folder.
-                var ackAttachmentFileName = FindAcknowledgementFileName(folderPath, reference);
-
-                // Try to get property description from the acknowledgement file name.
-                var propertyDescription = ExtractPropertyDescriptionFromAcknowledgementFileName(
-                    ackAttachmentFileName,
-                    reference);
-
                 var safePropertyDescription = SanitizeFilePart(propertyDescription);
+                var fileName =
+                    $"Email_{safeReference}_{safePropertyDescription}_Acknowledgement.eml";
+                var fullPath = Path.Combine(folderPath, fileName);
 
-                var subjectPropertyText = string.IsNullOrWhiteSpace(propertyDescription)
-                    ? ""
-                    : $" — {propertyDescription}";
-
-                foreach (var recipient in recipients)
+                using var msg = new MailMessage
                 {
-                    var safeRecipientType = SanitizeFilePart(recipient.RecipientType);
-                    var safeRecipientAddress = SanitizeFilePart(recipient.Address);
+                    From = new MailAddress(_cfg.FromAddress, _cfg.FromName),
+                    Subject = subject,
+                    IsBodyHtml = true,
+                    Body = htmlBody
+                };
 
-                    var fileName =
-                        $"email_{safeReference}_{safePropertyDescription}_{actionWord}_EmailNotification_{safeRecipientType}_{safeRecipientAddress}_{datePart}.eml";
-
-                    var fullPath = Path.Combine(folderPath, fileName);
-
-                    using var msg = new MailMessage();
-
-                    msg.From = new MailAddress(_cfg.FromAddress, _cfg.FromName);
+                foreach (var recipient in recipients
+                    .Where(x => !string.IsNullOrWhiteSpace(x.Address))
+                    .GroupBy(x => x.Address.Trim(), StringComparer.OrdinalIgnoreCase)
+                    .Select(x => x.First()))
+                {
                     msg.To.Add(new MailAddress(recipient.Address, recipient.Name));
+                }
 
-                    // Admin copy for evidence.
-                    msg.CC.Add(new MailAddress(
-                        _cfg.FromAddress,
-                        "Valuation Services (Copy)"));
+                if (msg.To.Count == 0)
+                    throw new InvalidOperationException(
+                        $"No recipient is available for the email copy of {reference}.");
 
-                    msg.Subject =
-                        $"City of Johannesburg — {actionWord} Acknowledgement: {reference}{subjectPropertyText}";
+                msg.Attachments.Add(new Attachment(
+                    new MemoryStream(acknowledgementPdf),
+                    BuildPdfFileName(
+                        acknowledgementFileName,
+                        $"{reference}_Acknowledgement.pdf"),
+                    MediaTypeNames.Application.Pdf));
 
-                    msg.IsBodyHtml = true;
-                    msg.Body = htmlBody;
+                AddExtraAttachments(msg, extraAttachments);
 
-                    // Attach acknowledgement PDF using the proper filename.
-                    msg.Attachments.Add(new Attachment(
-                        new MemoryStream(ackPdf),
-                        ackAttachmentFileName,
-                        MediaTypeNames.Application.Pdf));
+                var tmpDir = Path.Combine(
+                    Path.GetTempPath(),
+                    "eml_" + Guid.NewGuid().ToString("N"));
 
-                    // Attach populated Form A/B/C/D PDF too.
-                    AddExtraAttachments(msg, extraAttachments);
+                Directory.CreateDirectory(tmpDir);
 
-                    var tmpDir = Path.Combine(
-                        Path.GetTempPath(),
-                        "eml_" + Guid.NewGuid().ToString("N"));
-
-                    Directory.CreateDirectory(tmpDir);
-
-                    try
+                try
+                {
+                    using (var pickup = new SmtpClient
                     {
-                        using (var pickup = new SmtpClient
-                        {
-                            DeliveryMethod = SmtpDeliveryMethod.SpecifiedPickupDirectory,
-                            PickupDirectoryLocation = tmpDir
-                        })
-                        {
-                            pickup.Send(msg);
-                        }
-
-                        var generated = Directory.GetFiles(tmpDir).FirstOrDefault();
-
-                        if (generated is not null)
-                        {
-                            File.Move(generated, fullPath, overwrite: true);
-                        }
-
-                        _logger.LogInformation(
-                            "[Email] EML copy saved → {Path}",
-                            fullPath);
-                    }
-                    finally
+                        DeliveryMethod = SmtpDeliveryMethod.SpecifiedPickupDirectory,
+                        PickupDirectoryLocation = tmpDir
+                    })
                     {
-                        if (Directory.Exists(tmpDir))
-                            Directory.Delete(tmpDir, recursive: true);
+                        pickup.Send(msg);
                     }
+
+                    var generated = Directory.GetFiles(tmpDir).SingleOrDefault();
+                    if (generated is null)
+                        throw new InvalidOperationException(
+                            $"The .eml copy was not generated for {reference}.");
+
+                    File.Move(generated, fullPath, overwrite: true);
+
+                    _logger.LogInformation(
+                        "[Email] EML copy saved as {FileName} for {Reference}. Attachments={AttachmentCount}",
+                        fileName,
+                        reference,
+                        msg.Attachments.Count);
+                }
+                finally
+                {
+                    if (Directory.Exists(tmpDir))
+                        Directory.Delete(tmpDir, recursive: true);
                 }
             }
             catch (Exception ex)
@@ -1422,79 +1395,11 @@ City of Johannesburg — Valuation Services Department<br>This is an automated m
                     ex,
                     "[Email] Failed saving EML copy for {Ref}",
                     reference);
+
+                throw;
             }
         }
 
-        private static string ExtractPropertyDescriptionFromAcknowledgementFileName(
-    string fileName,
-    string reference)
-        {
-            if (string.IsNullOrWhiteSpace(fileName))
-                return "";
-
-            var name = Path.GetFileNameWithoutExtension(fileName);
-
-            if (string.IsNullOrWhiteSpace(name))
-                return "";
-
-            var safeReference = SanitizeFilePart(reference);
-
-            // Expected filename:
-            // GV23-Sup3-257_PROPERTY_DESC_Acknowledgement_20260611_103512
-            if (name.StartsWith(safeReference + "_", StringComparison.OrdinalIgnoreCase))
-            {
-                name = name[(safeReference.Length + 1)..];
-            }
-
-            var ackIndex = name.IndexOf("_Acknowledgement_", StringComparison.OrdinalIgnoreCase);
-
-            if (ackIndex >= 0)
-            {
-                name = name[..ackIndex];
-            }
-
-            return name
-                .Replace("_", " ")
-                .Trim();
-        }
-        private static string FindAcknowledgementFileName(
-    string folderPath,
-    string referenceNo)
-        {
-            try
-            {
-                if (!string.IsNullOrWhiteSpace(folderPath) && Directory.Exists(folderPath))
-                {
-                    var file = Directory.GetFiles(folderPath, "*Acknowledgement*.pdf")
-                        .OrderByDescending(File.GetLastWriteTime)
-                        .FirstOrDefault();
-
-                    if (!string.IsNullOrWhiteSpace(file))
-                        return Path.GetFileName(file);
-                }
-            }
-            catch
-            {
-                // fallback below
-            }
-
-            var safeRef = SanitiseEmailFilePart(referenceNo);
-            var datePart = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-
-            return $"{safeRef}_Acknowledgement_{datePart}.pdf";
-        }
-
-        private static string SanitiseEmailFilePart(string? value)
-        {
-            if (string.IsNullOrWhiteSpace(value))
-                return "Property";
-
-            var safe = string.Concat(value.Split(Path.GetInvalidFileNameChars()))
-                .Replace(" ", "_")
-                .Trim();
-
-            return safe.Length > 90 ? safe[..90] : safe;
-        }
         private static string SanitizeFilePart(string? value)
         {
             if (string.IsNullOrWhiteSpace(value))
@@ -1517,9 +1422,11 @@ City of Johannesburg — Valuation Services Department<br>This is an automated m
             while (cleaned.Contains("__"))
                 cleaned = cleaned.Replace("__", "_");
 
-            return string.IsNullOrWhiteSpace(cleaned)
-                ? "NA"
-                : cleaned.Trim('_');
+            if (string.IsNullOrWhiteSpace(cleaned))
+                return "NA";
+
+            cleaned = cleaned.Trim('_');
+            return cleaned.Length > 90 ? cleaned[..90] : cleaned;
         }
         public async Task SendEmailWithAttachmentsAsync(
         string toEmail,
@@ -1616,7 +1523,8 @@ City of Johannesburg — Valuation Services Department<br>This is an automated m
     byte[] acknowledgementPdf,
     byte[] submittedFormPdf,
     string acknowledgementFileName,
-    string submittedFormFileName)
+    string submittedFormFileName,
+    string folderPath)
         {
             if (string.IsNullOrWhiteSpace(recipientEmail))
             {
@@ -1673,21 +1581,23 @@ City of Johannesburg — Valuation Services Department<br>This is an automated m
                 evidencePin,
                 evidenceDeadline);
 
+            var submittedFormAttachment = new EmailAttachment
+            {
+                FileName = submittedFormFileName,
+                FileBytes = submittedFormPdf,
+                ContentType = MediaTypeNames.Application.Pdf
+            };
+
             var attachments = new List<EmailAttachment>
-    {
-        new()
-        {
-            FileName = acknowledgementFileName,
-            FileBytes = acknowledgementPdf,
-            ContentType = MediaTypeNames.Application.Pdf
-        },
-        new()
-        {
-            FileName = submittedFormFileName,
-            FileBytes = submittedFormPdf,
-            ContentType = MediaTypeNames.Application.Pdf
-        }
-    };
+            {
+                new()
+                {
+                    FileName = acknowledgementFileName,
+                    FileBytes = acknowledgementPdf,
+                    ContentType = MediaTypeNames.Application.Pdf
+                },
+                submittedFormAttachment
+            };
 
             await SendEmailWithAttachmentsAsync(
                 toEmail: recipientEmail.Trim(),
@@ -1695,6 +1605,23 @@ City of Johannesburg — Valuation Services Department<br>This is an automated m
                 body: body,
                 attachments: attachments,
                 isHtml: true);
+
+            await SaveEmailCopyAsync(
+                folderPath,
+                attributeNumber,
+                propertyDescription,
+                subject,
+                body,
+                acknowledgementPdf,
+                acknowledgementFileName,
+                new[]
+                {
+                    new EmailRecipient(
+                        clientName,
+                        recipientEmail.Trim(),
+                        "Client")
+                },
+                new List<EmailAttachment> { submittedFormAttachment });
 
             _logger.LogInformation(
                 "[Attributes Email] Acknowledgement sent to {Email} " +

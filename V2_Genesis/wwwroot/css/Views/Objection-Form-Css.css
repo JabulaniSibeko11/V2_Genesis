@@ -1414,3 +1414,252 @@
     #myForm .obj-section-bar fieldset > .form-label {
         color: #ffffff !important;
     }
+
+
+/* Objection supporting documents — same interaction as Attributes. */
+.obj-ev-intro {
+    margin: 0 0 16px;
+    color: #6b7280;
+    font: 12.5px/1.6 'Poppins', sans-serif;
+}
+
+.obj-ev-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    color: #006570;
+    font: 700 11.5px 'Poppins', sans-serif;
+    letter-spacing: .4px;
+    text-transform: uppercase;
+}
+
+    .obj-ev-label i {
+        color: #e6b000;
+    }
+
+.obj-ev-optional {
+    color: #9a9a9a;
+    font-weight: 400;
+    text-transform: none;
+}
+
+.obj-ev-dropzone {
+    margin-bottom: 12px;
+    padding: 36px 24px;
+    border: 2.5px dashed #e6b000;
+    border-radius: 12px;
+    background: #fff8dc;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+}
+
+    .obj-ev-dropzone:hover,
+    .obj-ev-dropzone.dragover {
+        border-color: #006570;
+        background: #eef8f8;
+    }
+
+    .obj-ev-dropzone.full {
+        opacity: .55;
+        pointer-events: none;
+    }
+
+.obj-ev-icon {
+    margin-bottom: 8px;
+    color: #006570;
+    font-size: 36px;
+}
+
+.obj-ev-title {
+    margin-bottom: 4px;
+    color: #006570;
+    font: 700 15px 'Poppins', sans-serif;
+}
+
+.obj-ev-sub {
+    margin-bottom: 14px;
+    color: #888;
+    font: 12.5px 'Poppins', sans-serif;
+}
+
+.obj-ev-browse {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 9px 20px;
+    border: 0;
+    border-radius: 8px;
+    background: #006570;
+    color: #fff;
+    cursor: pointer;
+    font: 700 13px 'Poppins', sans-serif;
+}
+
+#objectionEvidenceInput,
+#files {
+    display: none;
+}
+
+.obj-ev-counter {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+    color: #888;
+    font: 12px 'Poppins', sans-serif;
+}
+
+.obj-ev-track {
+    flex: 1;
+    height: 5px;
+    border-radius: 3px;
+    background: #e8e8e8;
+}
+
+.obj-ev-fill {
+    width: 0;
+    height: 100%;
+    border-radius: 3px;
+    background: #006570;
+    transition: width .25s;
+}
+
+    .obj-ev-fill.full {
+        background: #dc2626;
+    }
+
+.obj-ev-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+.obj-ev-file {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 14px;
+    border: 1px solid rgba(54,98,109,.2);
+    border-radius: 8px;
+    background: #eaf4f5;
+    font-family: 'Poppins', sans-serif;
+}
+
+    .obj-ev-file > i {
+        color: #006570;
+    }
+
+.obj-ev-name {
+    flex: 1;
+    overflow: hidden;
+    color: #1a1a1a;
+    font-size: 13px;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.obj-ev-size {
+    flex-shrink: 0;
+    color: #666;
+    font-size: 11.5px;
+}
+
+.obj-ev-remove {
+    padding: 2px 5px;
+    border: 0;
+    background: transparent;
+    color: #dc2626;
+    cursor: pointer;
+    font-size: 15px;
+}
+
+.obj-ev-note {
+    color: #888;
+    font: 12px 'Poppins', sans-serif;
+}
+
+    .obj-ev-note i {
+        margin-right: 4px;
+        color: #006570;
+    }
+
+/* Attributes-style signature: drawing is captured automatically. */
+.obj-auto-signature {
+    padding: 14px;
+}
+
+.obj-auto-signature-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    font: 700 11px 'Poppins', sans-serif;
+    letter-spacing: .5px;
+    text-transform: uppercase;
+}
+
+    .obj-auto-signature-title i {
+        color: #e6b000;
+    }
+
+.obj-signature-canvas-wrap {
+    position: relative;
+    max-width: 600px;
+    border: 2px solid #006570;
+    border-radius: 8px;
+    background: #fff;
+}
+
+#signature {
+    display: block;
+    width: 100%;
+    height: 160px;
+    border: 0 !important;
+    border-radius: 6px;
+    cursor: crosshair;
+    touch-action: none;
+}
+
+.obj-signature-line {
+    position: absolute;
+    right: 20px;
+    bottom: 40px;
+    left: 20px;
+    border-bottom: 1px dashed #d0d0d0;
+    pointer-events: none;
+}
+
+.obj-signature-hint {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    color: #ccc;
+    font: 11px 'Poppins', sans-serif;
+    pointer-events: none;
+}
+
+.obj-signature-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 10px;
+}
+
+.obj-signature-clear {
+    padding: 6px 16px;
+    border: 1px solid #d0d0d0;
+    border-radius: 6px;
+    background: #f7f7f7;
+    cursor: pointer;
+    font: 700 12px 'Poppins', sans-serif;
+}
+
+#signatureStatus {
+    color: #6b6b6b;
+    font: 12px 'Poppins', sans-serif;
+}
+

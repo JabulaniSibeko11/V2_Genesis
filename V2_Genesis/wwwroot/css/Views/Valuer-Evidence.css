@@ -16,29 +16,29 @@
     overflow: hidden;
 }
 
-/* Background texture */
-.vie-wrap::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    opacity: .04;
-    background: repeating-linear-gradient( 45deg, #fff 0, #fff 1px, transparent 0, transparent 50% );
-    background-size: 22px 22px;
-    pointer-events: none;
-}
+    /* Background texture */
+    .vie-wrap::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        opacity: .04;
+        background: repeating-linear-gradient( 45deg, #fff 0, #fff 1px, transparent 0, transparent 50% );
+        background-size: 22px 22px;
+        pointer-events: none;
+    }
 
-/* Gold radial glow */
-.vie-wrap::after {
-    content: '';
-    position: absolute;
-    top: -120px;
-    right: -120px;
-    width: 480px;
-    height: 480px;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(230,176,0,.1) 0%, transparent 65%);
-    pointer-events: none;
-}
+    /* Gold radial glow */
+    .vie-wrap::after {
+        content: '';
+        position: absolute;
+        top: -120px;
+        right: -120px;
+        width: 480px;
+        height: 480px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(230,176,0,.1) 0%, transparent 65%);
+        pointer-events: none;
+    }
 
 /* ── Logo strip ─────────────────────────────────── */
 .vie-logo-strip {
@@ -358,4 +358,288 @@
     }
 }
 
+/* ── Inspection evidence upload ─────────────────── */
+.vie-upload-page {
+    min-height: calc(100vh - 90px);
+    padding: 36px 16px;
+    background: #f7f5f2;
+    font-family: 'Poppins', sans-serif;
+}
 
+.vie-upload-shell {
+    width: min(820px, 100%);
+    margin: 0 auto;
+    overflow: hidden;
+    border: 1px solid #e6e0d8;
+    border-radius: 18px;
+    background: #fff;
+    box-shadow: 0 14px 40px rgba(15, 42, 48, .12);
+}
+
+.vie-upload-head {
+    padding: 26px 30px;
+    border-bottom: 4px solid #e6b000;
+    background: linear-gradient(135deg, #1e3a40, #0f2a30);
+    color: #fff;
+}
+
+    .vie-upload-head h1 {
+        margin: 0 0 5px;
+        font-size: 25px;
+        font-weight: 800;
+    }
+
+    .vie-upload-head p {
+        margin: 0;
+        color: rgba(255,255,255,.62);
+        font-size: 13px;
+    }
+
+.vie-upload-body {
+    padding: 28px 30px;
+}
+
+.vie-inspection-summary {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 24px;
+    padding: 16px;
+    border: 1px solid #cfe0e3;
+    border-radius: 12px;
+    background: #eef7f8;
+}
+
+    .vie-inspection-summary .wide {
+        grid-column: 1 / -1;
+    }
+
+    .vie-inspection-summary span {
+        display: block;
+        margin-bottom: 3px;
+        color: #6b7280;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: .7px;
+        text-transform: uppercase;
+    }
+
+    .vie-inspection-summary strong {
+        color: #1e3a40;
+        font-size: 13px;
+    }
+
+.vie-upload-field {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    margin-bottom: 20px;
+}
+
+    .vie-upload-field > label {
+        color: #1e3a40;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: .7px;
+        text-transform: uppercase;
+    }
+
+    .vie-upload-field label em {
+        color: #dc2626;
+    }
+
+    .vie-upload-field select,
+    .vie-upload-field textarea {
+        width: 100%;
+        padding: 12px 14px;
+        border: 1.5px solid #d8dde0;
+        border-radius: 9px;
+        background: #fff;
+        color: #1a1a1a;
+        font: 13px 'Poppins', sans-serif;
+        box-sizing: border-box;
+    }
+
+        .vie-upload-field select:focus,
+        .vie-upload-field textarea:focus {
+            border-color: #e6b000;
+            outline: 0;
+            box-shadow: 0 0 0 3px rgba(230,176,0,.15);
+        }
+
+.vie-evidence-dropzone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 30px 20px;
+    border: 2px dashed #e6b000;
+    border-radius: 12px;
+    background: #fff9e6;
+    text-align: center;
+    cursor: pointer;
+    transition: .15s ease;
+}
+
+    .vie-evidence-dropzone:hover,
+    .vie-evidence-dropzone.dragover {
+        border-color: #006570;
+        background: #eef8f8;
+    }
+
+    .vie-evidence-dropzone.full {
+        opacity: .55;
+        cursor: not-allowed;
+    }
+
+    .vie-evidence-dropzone > i {
+        color: #006570;
+        font-size: 34px;
+    }
+
+    .vie-evidence-dropzone > strong {
+        margin-top: 8px;
+        color: #006570;
+        font-size: 15px;
+    }
+
+    .vie-evidence-dropzone > span {
+        margin-top: 3px;
+        color: #7d8587;
+        font-size: 11px;
+    }
+
+    .vie-evidence-dropzone > button {
+        margin-top: 14px;
+        padding: 9px 18px;
+        border: 0;
+        border-radius: 8px;
+        background: #006570;
+        color: #fff;
+        font: 700 12px 'Poppins', sans-serif;
+        cursor: pointer;
+    }
+
+.vie-evidence-counter {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #777;
+    font-size: 11px;
+}
+
+.vie-evidence-track {
+    flex: 1;
+    height: 5px;
+    overflow: hidden;
+    border-radius: 5px;
+    background: #e5e7eb;
+}
+
+    .vie-evidence-track > span {
+        display: block;
+        width: 0;
+        height: 100%;
+        background: #006570;
+        transition: width .2s;
+    }
+
+.vie-evidence-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.vie-evidence-file {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    border: 1px solid #cfe0e3;
+    border-radius: 8px;
+    background: #eef7f8;
+    font-size: 12px;
+}
+
+    .vie-evidence-file > i {
+        color: #006570;
+    }
+
+    .vie-evidence-file .name {
+        flex: 1;
+        overflow: hidden;
+        font-weight: 700;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .vie-evidence-file .size {
+        color: #6b7280;
+        font-size: 10px;
+    }
+
+    .vie-evidence-file button {
+        border: 0;
+        background: transparent;
+        color: #dc2626;
+        cursor: pointer;
+    }
+
+.vie-upload-actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 26px;
+}
+
+.vie-upload-back,
+.vie-upload-submit {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    min-height: 44px;
+    padding: 10px 18px;
+    border-radius: 9px;
+    text-decoration: none;
+    font: 800 12px 'Poppins', sans-serif;
+}
+
+.vie-upload-back {
+    border: 1px solid #cfd6d8;
+    background: #fff;
+    color: #1e3a40;
+}
+
+.vie-upload-submit {
+    border: 0;
+    background: #e6b000;
+    color: #17292e;
+    cursor: pointer;
+}
+
+@media (max-width: 600px) {
+    .vie-upload-page {
+        padding: 16px 10px;
+    }
+
+    .vie-upload-body, .vie-upload-head {
+        padding: 22px 18px;
+    }
+
+    .vie-inspection-summary {
+        grid-template-columns: 1fr;
+    }
+
+        .vie-inspection-summary .wide {
+            grid-column: auto;
+        }
+
+    .vie-upload-actions {
+        flex-direction: column-reverse;
+    }
+
+    .vie-upload-back, .vie-upload-submit {
+        width: 100%;
+        box-sizing: border-box;
+    }
+}

@@ -1,5 +1,4 @@
-﻿
-.ps-btn-lis {
+﻿.ps-btn-lis {
     display: inline-flex;
     align-items: center;
     gap: 8px;
@@ -16,9 +15,9 @@
     transition: background .15s;
 }
 
-.ps-btn-lis:hover {
-    background: #243e48;
-}
+    .ps-btn-lis:hover {
+        background: #243e48;
+    }
 
 .lis-searching {
     display: flex;
@@ -47,3 +46,15 @@
     color: #b91c1c;
 }
 
+/* ── Responsive ──────────────────────────────────────────────── */
+@media (max-width: 480px) {
+    .ps-btn-lis {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .lis-searching,
+    .lis-fetch-error {
+        font-size: 12.5px;
+    }
+}

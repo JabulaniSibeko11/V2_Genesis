@@ -320,11 +320,17 @@ public class SubmittedFormPdfService : ISubmittedFormPdfService
 
         var submittedDate = dateSubmitted ?? DateTime.Now;
 
-        string referenceNumber = !string.IsNullOrWhiteSpace(que.Query_No)
-            ? que.Query_No
-            : isReview
-                ? $"Que-GV23-{que.Query_ID}-R"
-                : $"Que-GV23-{que.Query_ID}";
+        var baseQueryReference = !string.IsNullOrWhiteSpace(que.Query_No)
+            ? que.Query_No.Trim()
+            : $"Que-GV23-{que.Query_ID}";
+
+        // Reviews do not have a separate Review_No database column.
+        // Their reference is always the Query reference with the -R suffix.
+        string referenceNumber = isReview
+            ? (baseQueryReference.EndsWith("-R", StringComparison.OrdinalIgnoreCase)
+                ? baseQueryReference
+                : baseQueryReference + "-R")
+            : baseQueryReference;
 
         string submissionType = isReview
             ? "Section78Review"

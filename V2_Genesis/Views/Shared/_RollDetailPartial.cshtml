@@ -3,12 +3,75 @@
 @using V2_Genesis.Services.Interfaces
 @inject IObjectionService ObjectionRules
 @model V2_Genesis.Models.ViewModels.Dashboard.RollDetailViewModel
-@{
+@functions {
+    bool IsLisPropertySource(string? propertyFrom) =>
+        string.Equals(propertyFrom?.Trim(), "LIS", StringComparison.OrdinalIgnoreCase);
+
+    bool IsOmissionPropertySource(string? propertyFrom)
+    {
+        var value = propertyFrom?.Trim() ?? string.Empty;
+        return value.Equals("Omission", StringComparison.OrdinalIgnoreCase) ||
+               value.Equals("Omitted", StringComparison.OrdinalIgnoreCase) ||
+               value.StartsWith("Omission_", StringComparison.OrdinalIgnoreCase) ||
+               value.StartsWith("Omitted_", StringComparison.OrdinalIgnoreCase);
+    }
+
+    string GetPropertySourceLabel(string? propertyFrom, string currentRollName)
+    {
+        var value = propertyFrom?.Trim() ?? string.Empty;
+        var normalised = value.Replace("-", "_").ToUpperInvariant();
+
+        if (IsLisPropertySource(value))
+            return "LIS";
+
+        if (IsOmissionPropertySource(value))
+            return $"Omitted from {currentRollName}";
+
+        if (normalised.Contains("SUP1")) return "Supplementary Valuation Roll 1";
+        if (normalised.Contains("SUP2")) return "Supplementary Valuation Roll 2";
+        if (normalised.Contains("SUP3")) return "Supplementary Valuation Roll 3";
+        if (normalised.Contains("SUP4")) return "Supplementary Valuation Roll 4";
+
+        if (normalised is "GV23" or "OBJECTION" or "VALUATION_ROLL")
+            return "Valuation Roll";
+
+        return string.IsNullOrWhiteSpace(value) ? currentRollName : value;
+    }
+}
+@{ 
     // Loaded on demand — see DashboardController.RollDetail(...).
     // Used both for the Tiles slide-over panel and the List view
     // accordion's first-expand fetch.
     var rollKey = Model.Roll.Source.Replace("_", "");
 }
+
+<style>
+    .cd-source-value {
+        display: inline-flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: .3rem;
+    }
+
+    .cd-source-badge {
+        display: inline-flex;
+        align-items: center;
+        width: fit-content;
+        padding: .2rem .55rem;
+        border: 1px solid rgba(0, 95, 110, .18);
+        border-radius: 999px;
+        font-size: .7rem;
+        font-weight: 800;
+        line-height: 1.2;
+        white-space: nowrap;
+    }
+
+    .cd-source-badge--roll { background: #e7f1f3; color: #123a40; }
+    .cd-source-badge--lis { background: #dff4f7; color: #006b78; }
+    .cd-source-badge--omitted { background: #fff1d2; color: #7b5200; }
+    .cd-source-context { color: #71808a; font-size: .72rem; line-height: 1.25; }
+    .cd-source-dash { font-weight: 800; }
+</style>
 
 <!-- ── Roll info — dates, objection status, Search Property ─────────
      The client must always be able to see whether the objection
@@ -110,11 +173,41 @@
                     <tbody>
                         @foreach (var item in Model.Data.LinkedProperties)
                         {
+                            var linkedIsLis = IsLisPropertySource(item.PropertyFrom);
+                            var linkedIsOmission = IsOmissionPropertySource(item.PropertyFrom);
                             <tr>
                                 <td>@item.PropertyDesc</td>
-                                <td>@item.CatDesc</td>
+                                <td>
+                                    @if (linkedIsLis || linkedIsOmission)
+                                    {
+                                        <span class="cd-source-value">
+                                            <span class="cd-source-dash">-</span>
+                                            <span class="cd-source-badge @(linkedIsLis ? "cd-source-badge--lis" : "cd-source-badge--omitted")">
+                                                @(linkedIsLis ? "LIS" : "Omitted")
+                                            </span>
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        @item.CatDesc
+                                    }
+                                </td>
                                 <td>@item.TownNameDesc</td>
-                                <td>@DashboardDisplayHelpers.FormatZAR(item.MarketValue)</td>
+                                <td>
+                                    @if (linkedIsLis || linkedIsOmission)
+                                    {
+                                        <span class="cd-source-value">
+                                            <span class="cd-source-dash">-</span>
+                                            <span class="cd-source-badge @(linkedIsLis ? "cd-source-badge--lis" : "cd-source-badge--omitted")">
+                                                @(linkedIsLis ? "LIS" : "Omitted")
+                                            </span>
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        @DashboardDisplayHelpers.FormatZAR(item.MarketValue)
+                                    }
+                                </td>
                                 <td>
                                     @(DateTime.TryParse(item.WefDate, out var wefDate)
                                         ? wefDate.ToString("dd MMMM yyyy")
@@ -521,11 +614,41 @@ else
                     <tbody>
                         @foreach (var item in Model.Data.LinkedProperties)
                         {
+                            var linkedIsLis = IsLisPropertySource(item.PropertyFrom);
+                            var linkedIsOmission = IsOmissionPropertySource(item.PropertyFrom);
                             <tr>
                                 <td>@item.PropertyDesc</td>
-                                <td>@item.CatDesc</td>
+                                <td>
+                                    @if (linkedIsLis || linkedIsOmission)
+                                    {
+                                        <span class="cd-source-value">
+                                            <span class="cd-source-dash">-</span>
+                                            <span class="cd-source-badge @(linkedIsLis ? "cd-source-badge--lis" : "cd-source-badge--omitted")">
+                                                @(linkedIsLis ? "LIS" : "Omitted")
+                                            </span>
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        @item.CatDesc
+                                    }
+                                </td>
                                 <td>@item.TownNameDesc</td>
-                                <td>@DashboardDisplayHelpers.FormatZAR(item.MarketValue)</td>
+                                <td>
+                                    @if (linkedIsLis || linkedIsOmission)
+                                    {
+                                        <span class="cd-source-value">
+                                            <span class="cd-source-dash">-</span>
+                                            <span class="cd-source-badge @(linkedIsLis ? "cd-source-badge--lis" : "cd-source-badge--omitted")">
+                                                @(linkedIsLis ? "LIS" : "Omitted")
+                                            </span>
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        @DashboardDisplayHelpers.FormatZAR(item.MarketValue)
+                                    }
+                                </td>
                                 <td>
                                     @(DateTime.TryParse(item.WefDate, out var wefDate)
                                         ? wefDate.ToString("dd MMMM yyyy")
@@ -538,7 +661,7 @@ else
                                             Actions
                                         </button>
                                         <ul class="dropdown-menu cd-action-menu">
-                                            @if (Model.Roll.HasObjection && Model.CanLodgeObjectionForRoll)
+                                            @if (Model.Roll.HasObjection && Model.CanLodgeObjectionForRoll && !linkedIsOmission)
                                             {
                                                 <li>
                                                     @{
@@ -613,6 +736,7 @@ else
                                 <th>Property Description</th>
                                 <th>Category</th>
                                 <th>Market Value</th>
+                                <th>Property Source</th>
                                 <th>Status</th>
                                 <th>Options</th>
                             </tr>
@@ -620,11 +744,31 @@ else
                         <tbody>
                             @foreach (var item in objections)
                             {
+                                var objectionIsLis = IsLisPropertySource(item.PropertyFrom);
+                                var objectionIsOmission = IsOmissionPropertySource(item.PropertyFrom);
+                                var propertySourceLabel = GetPropertySourceLabel(item.PropertyFrom, Model.Roll.Name);
                                 <tr>
                                     <td><strong>@item.Objection_No</strong></td>
                                     <td>@item.Property_Desc</td>
                                     <td>@item.Old_Category</td>
                                     <td>@DashboardDisplayHelpers.FormatZAR(item.Old_Market_Value)</td>
+                                    <td>
+                                        @if (objectionIsLis)
+                                        {
+                                            <span class="cd-source-value">
+                                                <span class="cd-source-badge cd-source-badge--lis">LIS</span>
+                                                <span class="cd-source-context">@Model.Roll.Name</span>
+                                            </span>
+                                        }
+                                        else if (objectionIsOmission)
+                                        {
+                                            <span class="cd-source-badge cd-source-badge--omitted">@propertySourceLabel</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="cd-source-badge cd-source-badge--roll">@propertySourceLabel</span>
+                                        }
+                                    </td>
                                     <td>
                                         @Html.Raw(DashboardDisplayHelpers.GetStatusPill(item.objection_Status))
                                         @if (item.Evidence_Expires_At.HasValue)

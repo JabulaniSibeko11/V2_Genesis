@@ -6,6 +6,10 @@ namespace V2_Genesis.Services.Interfaces
     {
         Task<ValuerInspectionTodayVm> GetTodayInspectionsAsync(string sapNumber);
 
+        Task<UploadValuerInspectionEvidenceVm> GetInspectionForUploadAsync(
+            long inspectionRequestId,
+            string sapNumber);
+
         Task UploadEvidenceAsync(
             UploadValuerInspectionEvidenceVm vm,
             string? uploadedByUserId,

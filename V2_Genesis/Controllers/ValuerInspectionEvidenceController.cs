@@ -42,9 +42,65 @@ namespace V2_Genesis.Controllers
             }
         }
 
+        [HttpGet("upload")]
+        public async Task<IActionResult> Upload(
+            long inspectionId,
+            string? sapNumber)
+        {
+            var cleanSap = string.IsNullOrWhiteSpace(sapNumber)
+                ? TempData.Peek("SapNumber")?.ToString()
+                : sapNumber.Trim();
+
+            if (inspectionId <= 0 || string.IsNullOrWhiteSpace(cleanSap))
+            {
+                TempData["Error"] =
+                    "The inspection or SAP number was not supplied. Please verify your SAP number again.";
+                return RedirectToAction(nameof(Verify));
+            }
+
+            try
+            {
+                TempData["SapNumber"] = cleanSap;
+                var model = await _service.GetInspectionForUploadAsync(
+                    inspectionId,
+                    cleanSap);
+
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = ex.Message;
+                var model = await _service.GetTodayInspectionsAsync(cleanSap);
+                return View("Today", model);
+            }
+        }
+
+        [HttpGet("today")]
+        public async Task<IActionResult> Today(string? sapNumber)
+        {
+            var cleanSap = string.IsNullOrWhiteSpace(sapNumber)
+                ? TempData.Peek("SapNumber")?.ToString()
+                : sapNumber.Trim();
+
+            if (string.IsNullOrWhiteSpace(cleanSap))
+                return RedirectToAction(nameof(Verify));
+
+            try
+            {
+                TempData["SapNumber"] = cleanSap;
+                var model = await _service.GetTodayInspectionsAsync(cleanSap);
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = ex.Message;
+                return RedirectToAction(nameof(Verify));
+            }
+        }
+
         [HttpPost("upload")]
         [ValidateAntiForgeryToken]
-        [RequestSizeLimit(50_000_000)]
+        [RequestSizeLimit(110_000_000)]
         public async Task<IActionResult> Upload(UploadValuerInspectionEvidenceVm vm)
         {
             try

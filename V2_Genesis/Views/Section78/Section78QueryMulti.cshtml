@@ -1,8 +1,13 @@
-﻿@{Layout = "~/Views/Shared/_ClientLayout.cshtml";}
+@{Layout = "~/Views/Shared/_ClientLayout.cshtml";}
 
 @section Styles {
+    <link href="~/css/views/objection-form.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/views/form-consistency.css" rel="stylesheet" asp-append-version="true" />
     <link href="~/css/Views/Section78-forms-Responsive.css" rel="stylesheet" asp-append-version="true" />
     <link href="~/css/views/clientdashboardcss.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/Views/property-search.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/views/searchpropertycss.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/views/objection-form-css.css" rel="stylesheet" asp-append-version="true" />
     <link href="~/css/site.css" rel="stylesheet" asp-append-version="true" />
     <style>
 /* ── Objection Form Hero ─────────────────────────────────── */
@@ -251,6 +256,250 @@
     .obj-hero-prop   { text-align: left; white-space: normal; }
     .obj-form-head   { padding: 10px 20px; }
 }
+
+/* Multi-purpose Query alignment.
+   Existing section classes remain the JavaScript contract. */
+#myForm {
+    width: 100%;
+    overflow: visible;
+}
+
+#section1,
+#section78_1,
+#section2,
+#section3-res,
+#section3-agric,
+#section3-bus,
+#section4-bus,
+#section4-res,
+#section5,
+#section6,
+#sectionUpload,
+#section7 {
+    width: 100%;
+    padding: 0 24px;
+    box-sizing: border-box;
+    overflow: visible;
+}
+
+.div1,
+.div781,
+.div2,
+.div3_R,
+.div3_A,
+.div3_B,
+.div4_B,
+.div4_R,
+.div5,
+.div6,
+.divU,
+.div7 {
+    width: 100% !important;
+    max-width: 1500px !important;
+    margin-top: 12px !important;
+    padding: 36px !important;
+    border: 3px solid #e6b000 !important;
+    border-radius: 12px !important;
+    background: #fff !important;
+    box-shadow: 0 10px 40px rgba(0, 101, 112, .15) !important;
+    box-sizing: border-box;
+    overflow: visible !important;
+    font-family: 'Poppins', sans-serif;
+}
+
+.obj-form-intro-wrap {
+    display: flex;
+    justify-content: center;
+    padding: 0 24px;
+}
+
+.obj-form-intro-wrap > .obj-form-card {
+    width: 100%;
+    max-width: 1500px;
+}
+
+.obj-form-banner {
+    padding: 38px 32px;
+    border-bottom: 3px solid #e6b000;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #006570, #004d56);
+    color: #fff;
+    text-align: center;
+}
+
+.obj-form-banner h1 {
+    margin: 16px 0 8px;
+    color: #fff;
+    font-size: clamp(20px, 2vw, 29px);
+    font-weight: 800;
+}
+
+.obj-form-banner h2 {
+    margin: 0;
+    color: #e6b000;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.obj-form-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 18px;
+    border: 1px solid #e6b000;
+    border-radius: 999px;
+    color: #e6b000;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+}
+
+.obj-prop-header-card {
+    margin-top: 30px;
+    padding: 28px 30px;
+    border: 2px solid #e6b000;
+    border-radius: 12px;
+    background: #fffdf5;
+}
+
+.obj-prop-header-eyebrow,
+.obj-prop-label {
+    color: #408d97;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1.8px;
+    text-transform: uppercase;
+}
+
+.obj-prop-header-title {
+    margin: 14px 0 5px;
+    color: #006570;
+    font-size: 20px;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.obj-prop-header-title span { color: #e6b000; }
+.obj-prop-header-sub { color: #5b9aa2; font-weight: 600; }
+
+.obj-prop-header-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 14px;
+    margin-top: 18px;
+    padding: 12px 18px;
+    border: 1px solid #e6b000;
+    border-radius: 10px;
+    background: #fff;
+}
+
+.obj-prop-icon {
+    display: grid;
+    width: 48px;
+    height: 48px;
+    place-items: center;
+    border-radius: 10px;
+    background: #006570;
+    color: #e6b000;
+}
+
+.obj-prop-label,
+.obj-prop-value { display: block; }
+.obj-prop-value { color: #111827; font-size: 15px; font-weight: 800; }
+
+.obj-section-title {
+    color: #006570 !important;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+.obj-step-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 18px 0 28px;
+}
+
+.obj-step-divider .line { height: 2px; flex: 1; background: #e6b000; }
+.obj-step-divider .dot {
+    width: 8px;
+    height: 8px;
+    border: 2px solid #e6b000;
+    border-radius: 50%;
+    background: #006570;
+}
+
+.obj-section-bar {
+    margin-bottom: 20px;
+    padding: 13px 18px;
+    border-left: 5px solid #e6b000;
+    background: #006570;
+    color: #fff;
+    font-size: 15px;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.obj-nav-btn {
+    min-width: 120px;
+    margin-top: 18px !important;
+    padding: 10px 22px !important;
+    border: 0 !important;
+    border-radius: 8px !important;
+    background: #006570 !important;
+    color: #fff !important;
+    font-weight: 700 !important;
+}
+
+.obj-nav-btn-next,
+.obj-nav-btn-submit { float: right; }
+
+.obj-ev-intro { margin: 0 0 16px; color: #6b7280; font: 12.5px/1.6 'Poppins', sans-serif; }
+.obj-ev-label { display:flex; align-items:center; gap:8px; margin-bottom:10px; color:#006570; font:700 11.5px 'Poppins',sans-serif; letter-spacing:.4px; text-transform:uppercase; }
+.obj-ev-label i { color:#e6b000; }
+.obj-ev-optional { color:#9a9a9a; font-weight:400; text-transform:none; }
+.obj-ev-dropzone { margin-bottom:12px; padding:36px 24px; border:2.5px dashed #e6b000; border-radius:12px; background:#fff8dc; text-align:center; cursor:pointer; transition:.15s; }
+.obj-ev-dropzone:hover,.obj-ev-dropzone.dragover { border-color:#006570; background:#eef8f8; }
+.obj-ev-dropzone.full { opacity:.55; pointer-events:none; }
+.obj-ev-icon { margin-bottom:8px; color:#006570; font-size:36px; }
+.obj-ev-title { margin-bottom:4px; color:#006570; font:700 15px 'Poppins',sans-serif; }
+.obj-ev-sub { margin-bottom:14px; color:#888; font:12.5px 'Poppins',sans-serif; }
+.obj-ev-browse { display:inline-flex; align-items:center; gap:7px; padding:9px 20px; border:0; border-radius:8px; background:#006570; color:#fff; cursor:pointer; font:700 13px 'Poppins',sans-serif; }
+#objectionEvidenceInput,#files { display:none; }
+.obj-ev-counter { display:flex; align-items:center; gap:12px; margin-bottom:10px; color:#888; font:12px 'Poppins',sans-serif; }
+.obj-ev-track { flex:1; height:5px; border-radius:3px; background:#e8e8e8; }
+.obj-ev-fill { width:0; height:100%; border-radius:3px; background:#006570; transition:width .25s; }
+.obj-ev-fill.full { background:#dc2626; }
+.obj-ev-list { display:flex; flex-direction:column; gap:6px; margin-bottom:12px; }
+.obj-ev-file { display:flex; align-items:center; gap:10px; padding:9px 14px; border:1px solid rgba(54,98,109,.2); border-radius:8px; background:#eaf4f5; }
+.obj-ev-name { flex:1; overflow:hidden; color:#1a1a1a; font-size:13px; font-weight:600; text-overflow:ellipsis; white-space:nowrap; }
+.obj-ev-size { flex-shrink:0; color:#666; font-size:11.5px; }
+.obj-ev-remove { padding:2px 5px; border:0; background:transparent; color:#dc2626; cursor:pointer; font-size:15px; }
+.obj-ev-note { color:#888; font:12px 'Poppins',sans-serif; }
+
+.obj-legal-box { margin: 16px 0; padding: 20px; border: 1px solid #e6b000; border-radius: 10px; background: #fffdf5; color: #006570; }
+.obj-declaration-row { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin:18px 0; padding:16px; border:1px solid #e6b000; border-radius:10px; color:#006570; font-weight:700; }
+.obj-declaration-row input { min-width:260px; flex:1; padding:11px 14px; border:2px solid #e6b000; border-radius:8px; }
+.obj-auto-signature { margin-top:18px; padding:14px; border:1px solid #006570; border-radius:10px; background:#f8fafc; }
+.obj-auto-signature-title { display:flex; align-items:center; gap:8px; margin-bottom:10px; font:700 11px 'Poppins',sans-serif; letter-spacing:.5px; text-transform:uppercase; }
+.obj-auto-signature-title i { color:#e6b000; }
+.obj-signature-canvas-wrap { position:relative; width:100%; max-width:600px; border:2px solid #006570; border-radius:8px; background:#fff; }
+#signature { display:block; width:100%; height:160px; border:0 !important; border-radius:6px; cursor:crosshair; touch-action:none; }
+.obj-signature-line { position:absolute; right:20px; bottom:40px; left:20px; border-bottom:1px dashed #d0d0d0; pointer-events:none; }
+.obj-signature-hint { position:absolute; bottom:20px; left:20px; color:#ccc; font:11px 'Poppins',sans-serif; pointer-events:none; }
+.obj-signature-controls { display:flex; align-items:center; gap:12px; margin-top:10px; }
+.obj-signature-clear { padding:6px 16px; border:1px solid #d0d0d0; border-radius:6px; background:#f7f7f7; cursor:pointer; font:700 12px 'Poppins',sans-serif; }
+#signatureStatus { color:#6b6b6b; font:12px 'Poppins',sans-serif; }
+
+@@media (max-width: 768px) {
+    #section1,#section78_1,#section2,#section3-res,#section3-agric,#section3-bus,
+    #section4-bus,#section4-res,#section5,#section6,#sectionUpload,#section7,
+    .obj-form-intro-wrap { padding: 0 10px; }
+    .div1,.div781,.div2,.div3_R,.div3_A,.div3_B,.div4_B,.div4_R,.div5,.div6,.divU,.div7 { padding: 18px !important; }
+    .obj-form-banner,.obj-prop-header-card { padding: 22px 18px; }
+    .obj-prop-header-pill { width: 100%; }
+}
 </style>
 
 
@@ -430,40 +679,38 @@
          role="alert"></div>
 
 
-    <div style="display:flex; justify-content: center; margin-bottom: 20px;">
-        <div style="margin-top: 12px; border-radius: 12px; border: 3px solid #e6b000; padding: 30px; width: 1050px; background: linear-gradient(135deg, #006570 0%, #004d56 100%); box-shadow: 0 10px 40px rgba(0, 101, 112, 0.25);">
-            <h6 style="color: #ffffff; font-size: 20px; font-weight: 700; margin: 0 0 18px 0; line-height: 1.5; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.5px; text-align: center; border-bottom: 2px solid #e6b000; padding-bottom: 15px;">
-                📋 LODGING OF A SECTION 78 @_processNameUpper RELATING TO THE PROPERTY DESCRIBED BELOW
-            </h6>
+    <div class="obj-form-intro-wrap">
+        <div class="obj-form-card" style="margin-top:12px;">
+            <div class="obj-form-banner">
+                <span class="obj-form-chip">
+                    <i class="fa-solid @(_isReview ? "fa-magnifying-glass-chart" : "fa-file-magnifying-glass")"></i>
+                    Section 78 @_processName Form
+                </span>
+                <h1>LODGING OF A SECTION 78 @_processNameUpper RELATING TO THE PROPERTY DESCRIBED BELOW</h1>
+                <h2>CITY OF JOHANNESBURG · VALUATION SERVICES</h2>
+            </div>
 
-            <h6 style="color: #e6b000; font-size: 18px; font-weight: 600; margin: 15px 0 12px 0; line-height: 1.4; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.5px; text-align: center;">
-                🏘️ DESCRIPTION OF PROPERTY IN RESPECT OF WHICH THE @_processNameUpper IS MADE
-            </h6>
-
-            <h6 style="color: #ffffff; font-size: 15px; font-weight: 500; margin: 0; line-height: 1.4; font-family: 'Poppins', sans-serif; font-style: italic; text-align: center; opacity: 0.95;">
-                (Complete a separate form for each property)
-            </h6>
-        </div>
-    </div>
-
-    <div style="display:flex; justify-content: center;">
-        <div style="margin-top: 12px; border-radius: 12px; border: 3px solid #e6b000; padding: 25px; width: 1050px; background-color: #ffffff; box-shadow: 0 10px 40px rgba(0, 101, 112, 0.15);">
-            @{
-                <div style="display: flex; align-items: center; flex-wrap: wrap; background: linear-gradient(to right, #f8f9fa 0%, #ffffff 100%); padding: 20px 25px; border-radius: 10px; border-left: 5px solid #006570; box-shadow: 0 4px 15px rgba(0, 101, 112, 0.1);">
-                    <div style="display: flex; align-items: center; width: 100%; gap: 15px;">
-                        <span style="color: #006570; font-size: 18px; font-weight: 700; font-family: 'Poppins', sans-serif; white-space: nowrap; text-transform: uppercase; letter-spacing: 0.5px;">
-                            Property Description:
-                        </span>
-                        <span style="color: #006572; font-size: 17px; font-weight: 500; font-family: 'Poppins', sans-serif; flex: 1; background-color: #ffffff; padding: 12px 18px; border-radius: 8px; border: 2px solid #e6b000; box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.05);">
-                            @messagePD
-                        </span>
-                    </div>
-                    <input value="@messagePD" hidden name="Property_Desc" id="Property_Desc" asp-for="Property_Desc" />
+            <div class="obj-prop-header-card">
+                <div class="obj-prop-header-eyebrow">
+                    <i class="fa-solid @(_isReview ? "fa-magnifying-glass-chart" : "fa-file-magnifying-glass")"></i>
+                    Section 78 @_processName Form &nbsp;·&nbsp; Valuation Record
                 </div>
-                TempData.Keep("AppealStatus");
-            }
+                <h3 class="obj-prop-header-title">
+                    Description of Property in Respect of which the <span>@_processName</span> is Made
+                </h3>
+                <p class="obj-prop-header-sub">Complete a separate form for each property</p>
+                <div class="obj-prop-header-pill">
+                    <div class="obj-prop-icon"><i class="fa-solid fa-location-dot"></i></div>
+                    <div>
+                        <span class="obj-prop-label">Property</span>
+                        <span class="obj-prop-value">@messagePD</span>
+                    </div>
+                    <input value="@messagePD" type="hidden" name="Property_Desc" id="Property_Desc" asp-for="Property_Desc" />
+                </div>
+            </div>
         </div>
     </div>
+    @{ TempData.Keep("AppealStatus"); }
     @{
         TempData.Keep("CurrentFilter_PD");
     }
@@ -483,7 +730,7 @@
     
     <div id="section1" style="display:flex;justify-content: center;">
 
-        <div class="div1" style="margin-top: 12px;border-radius: 12px;border: 3px solid #e6b000;padding: 20px;width: 100%;max-width: 1050px;background-color: #ffffff;box-shadow: 0 10px 40px rgba(0, 101, 112, 0.15);font-family: 'Poppins' , sans-serif;">
+        <div class="div1 obj-form-card" style="margin-top: 12px;border-radius: 12px;border: 3px solid #e6b000;padding: 20px;width: 100%;max-width: 1050px;background-color: #ffffff;box-shadow: 0 10px 40px rgba(0, 101, 112, 0.15);font-family: 'Poppins' , sans-serif;">
 
             <div style="width: 100%; margin: 20px 0; padding: 10px 0; position: relative;">
 
@@ -807,13 +1054,13 @@
                 <br />
                 <a asp-action="Index" id="form_back" class="form_back btn" style=" font-weight:bold;color:white;background-color:#006572;margin-left:5px;margin-top:5px;"><strong>Back</strong></a>
 
-                <button style=" margin-right: 2%; float:right; color:white; background-color:#006572;" type="button" class="btn_n1 btn"><strong>Next</strong></button><br />
+                <button type="button" class="btn_n1 btn obj-nav-btn obj-nav-btn-next"><strong>Next</strong></button><br />
             </div>
         </div>
     </div>
 
     <div id="section78_1" style="display:flex;justify-content: center;">
-        <div class="div781" style="margin-top: 12px; border-radius: 25px; border: 2px solid #C69E63; padding: 20px; width: 1050px;">
+        <div class="div781 obj-form-card" style="margin-top: 12px; border-radius: 25px; border: 2px solid #C69E63; padding: 20px; width: 1050px;">
             @*  <h4 style="text-align:center">SELECT THE REASON FOR THE SUPPLEMENTARY REQUEST</h4>
           
            *@  <div style="border-left: 5px solid #e6b000; background-color: #006572; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
@@ -963,9 +1210,9 @@
             </div>
 
             <div>
-                <button style="margin-top: 10px; margin-left: 2%;color:white; background-color:#006572;" type="button" class="btn_pS78 btn"><strong>Previous</strong></button>
+                <button type="button" class="btn_pS78 btn obj-nav-btn obj-nav-btn-prev"><strong>Previous</strong></button>
 
-                <button style="margin-top: 10px; margin-right: 2%; float:right;color:white; background-color:#006572;" type="button" class="btn_nS782 btn"><strong>Next</strong></button><br />
+                <button type="button" class="btn_nS782 btn obj-nav-btn obj-nav-btn-next"><strong>Next</strong></button><br />
             </div>
         </div>
     </div>
@@ -974,7 +1221,7 @@
 @*-----------------------------------------------------------------SECTION 2 -----------------------------------------------------------*@
 <div id="section2" style="display:flex;justify-content: center;">
 
-    <div class="div2" style="margin-top: 12px;border-radius: 12px;border: 3px solid #e6b000;padding: 20px;width: 100%;max-width: 1050px;background-color: #ffffff;box-shadow: 0 10px 40px rgba(0, 101, 112, 0.15);font-family: 'Poppins' , sans-serif;">
+    <div class="div2 obj-form-card" style="margin-top: 12px;border-radius: 12px;border: 3px solid #e6b000;padding: 20px;width: 100%;max-width: 1050px;background-color: #ffffff;box-shadow: 0 10px 40px rgba(0, 101, 112, 0.15);font-family: 'Poppins' , sans-serif;">
 
 
 
@@ -1130,9 +1377,9 @@
 
         <input id="Compensation_Amount" asp-for="Compensation_Amount" hidden />
         <div>
-            <button style="margin-top: 10px; margin-left: 2%;color:white; background-color:#006572;" type="button" class="btn_p2 btn"><strong>Previous</strong></button>
+            <button type="button" class="btn_p2 btn obj-nav-btn obj-nav-btn-prev"><strong>Previous</strong></button>
 
-            <button style="margin-top: 10px; margin-right: 2%; float:right;color:white; background-color:#006572;" type="button" class="btn_n2 btn"><strong>Next</strong></button><br />
+            <button type="button" class="btn_n2 btn obj-nav-btn obj-nav-btn-next"><strong>Next</strong></button><br />
         </div>
     </div>
 
@@ -1144,7 +1391,7 @@
 <div id="section3-res" style="display:flex;justify-content: center;">
 
 
-    <div class="div3_R " style="margin-top: 12px;border-radius: 12px;border: 3px solid #e6b000;padding: 20px;width: 100%;max-width: 1050px;background-color: #ffffff;box-shadow: 0 10px 40px rgba(0, 101, 112, 0.15);font-family: 'Poppins' , sans-serif;">
+    <div class="div3_R obj-form-card" style="margin-top: 12px;border-radius: 12px;border: 3px solid #e6b000;padding: 20px;width: 100%;max-width: 1050px;background-color: #ffffff;box-shadow: 0 10px 40px rgba(0, 101, 112, 0.15);font-family: 'Poppins' , sans-serif;">
 
         <h4 style="text-align:center; color:#006572;"> <strong>---RESIDENTIAL---</strong> </h4>
 
@@ -1892,9 +2139,9 @@
         </div>
 
         <div>
-            <button style="margin-top: 10px; margin-left: 2%;color:white; background-color:#006572;" type="button" class="btn_R_p3 btn"><strong>Previous</strong></button>
+            <button type="button" class="btn_R_p3 btn obj-nav-btn obj-nav-btn-prev"><strong>Previous</strong></button>
 
-            <button style="margin-top: 10px; margin-right: 2%; float:right;color:white; background-color:#006572;" type="button" class="btn_R_n3 btn"><strong>Next</strong></button><br />
+            <button type="button" class="btn_R_n3 btn obj-nav-btn obj-nav-btn-next"><strong>Next</strong></button><br />
 
         </div>
     </div>
@@ -1906,7 +2153,7 @@
 @*---------------------------------------- Section 3 Agricultural Section ---------------------------------------*@
 <div id="section3-agric" style="display:flex;justify-content: center;">
 
-    <div class="div3_A " style="margin-top: 12px;border-radius: 12px;border: 3px solid #e6b000;padding: 20px;width: 100%;max-width: 1050px;background-color: #ffffff;box-shadow: 0 10px 40px rgba(0, 101, 112, 0.15);font-family: 'Poppins' , sans-serif;">
+    <div class="div3_A obj-form-card" style="margin-top: 12px;border-radius: 12px;border: 3px solid #e6b000;padding: 20px;width: 100%;max-width: 1050px;background-color: #ffffff;box-shadow: 0 10px 40px rgba(0, 101, 112, 0.15);font-family: 'Poppins' , sans-serif;">
 
 
         <h4 style="text-align:center;color:#006572;"><strong>---AGRICULTURAL HOLDINGS OR FARMS---</strong> </h4>
@@ -2850,9 +3097,9 @@
         </div>
 
         <div>
-            <button style="margin-top: 10px; margin-left: 2%;color:white; background-color:#006572;" type="button" class="btn_A_p3 btn"><strong>Previous</strong></button>
+            <button type="button" class="btn_A_p3 btn obj-nav-btn obj-nav-btn-prev"><strong>Previous</strong></button>
 
-            <button style="margin-top: 10px; margin-right: 2%; float:right;color:white; background-color:#006572;" type="button" class="btn_A_n3 btn"><strong>Next</strong></button><br />
+            <button type="button" class="btn_A_n3 btn obj-nav-btn obj-nav-btn-next"><strong>Next</strong></button><br />
         </div>
 
     </div>
@@ -2864,7 +3111,7 @@
 <div id="section3-bus" style="display:flex;justify-content: center;">
 
 
-    <div class="div3_B" style="margin-top: 12px;border-radius: 12px;border: 3px solid #e6b000;padding: 20px;width: 100%;max-width: 1050px;background-color: #ffffff;box-shadow: 0 10px 40px rgba(0, 101, 112, 0.15);font-family: 'Poppins' , sans-serif;">
+    <div class="div3_B obj-form-card" style="margin-top: 12px;border-radius: 12px;border: 3px solid #e6b000;padding: 20px;width: 100%;max-width: 1050px;background-color: #ffffff;box-shadow: 0 10px 40px rgba(0, 101, 112, 0.15);font-family: 'Poppins' , sans-serif;">
 
 
         <h4 style="text-align:center; color:#006572;"><strong>---BUSINESS,FACTORIES, OFFICES, SCHOOLS---</strong>  </h4>
@@ -2974,9 +3221,9 @@
         </div>
 
         <div>
-            <button style="margin-top: 10px; margin-left: 2%;color:white; background-color:#006572;" type="button" class="btn_B_p3 btn"><strong>Previous</strong></button>
+            <button type="button" class="btn_B_p3 btn obj-nav-btn obj-nav-btn-prev"><strong>Previous</strong></button>
 
-            <button style="margin-top: 10px; margin-right: 2%; float:right;color:white; background-color:#006572;" type="button" class="btn_B_n3 btn"><strong>Next</strong></button><br />
+            <button type="button" class="btn_B_n3 btn obj-nav-btn obj-nav-btn-next"><strong>Next</strong></button><br />
         </div>
     </div>
 
@@ -2988,7 +3235,7 @@
 <div id="section4-bus" style="display:flex;justify-content: center;">
 
 
-    <div class="div4_B " style="margin-top: 12px;border-radius: 12px;border: 3px solid #e6b000;padding: 20px;width: 100%;max-width: 1050px;background-color: #ffffff;box-shadow: 0 10px 40px rgba(0, 101, 112, 0.15);font-family: 'Poppins' , sans-serif;">
+    <div class="div4_B obj-form-card" style="margin-top: 12px;border-radius: 12px;border: 3px solid #e6b000;padding: 20px;width: 100%;max-width: 1050px;background-color: #ffffff;box-shadow: 0 10px 40px rgba(0, 101, 112, 0.15);font-family: 'Poppins' , sans-serif;">
 
         <div style="width: 100%; margin: 20px 0; padding: 10px 0; position: relative;">
             <h4 style="text-align: center;color:#006572"><strong>SECTION 4: SECTIONAL TITLE UNITS</strong></h4>
@@ -3226,9 +3473,9 @@
 
         <div>
 
-            <button style="margin-top: 10px; margin-left: 2%;color:white; background-color:#006572;" type="button" class="btn_B_p4 btn"><strong>Previous</strong></button>
+            <button type="button" class="btn_B_p4 btn obj-nav-btn obj-nav-btn-prev"><strong>Previous</strong></button>
 
-            <button style="margin-top: 10px; margin-right: 2%; float:right;color:white; background-color:#006572;" type="button" class="btn_B_n4 btn"><strong>Next</strong></button><br />
+            <button type="button" class="btn_B_n4 btn obj-nav-btn obj-nav-btn-next"><strong>Next</strong></button><br />
 
         </div>
     </div>
@@ -3237,7 +3484,7 @@
 
 <div id="section4-res" style="display:flex;justify-content: center;">
 
-    <div class="div4_R " style="margin-top: 12px;border-radius: 12px;border: 3px solid #e6b000;padding: 20px;width: 100%;max-width: 1050px;background-color: #ffffff;box-shadow: 0 10px 40px rgba(0, 101, 112, 0.15);font-family: 'Poppins' , sans-serif;">
+    <div class="div4_R obj-form-card" style="margin-top: 12px;border-radius: 12px;border: 3px solid #e6b000;padding: 20px;width: 100%;max-width: 1050px;background-color: #ffffff;box-shadow: 0 10px 40px rgba(0, 101, 112, 0.15);font-family: 'Poppins' , sans-serif;">
 
 
 
@@ -3769,9 +4016,9 @@
         </div>
 
         <div>
-            <button style="margin-top: 10px; margin-left: 2%;color:white; background-color:#006572;" type="button" class="btn_R_p4 btn"><strong>Previous</strong></button>
+            <button type="button" class="btn_R_p4 btn obj-nav-btn obj-nav-btn-prev"><strong>Previous</strong></button>
 
-            <button style="margin-top: 10px; margin-right: 2%; float:right;color:white; background-color:#006572;" type="button" class="btn_R_n4 btn"><strong>Next</strong></button><br />
+            <button type="button" class="btn_R_n4 btn obj-nav-btn obj-nav-btn-next"><strong>Next</strong></button><br />
         </div>
     </div>
 </div>
@@ -3780,7 +4027,7 @@
 <div id="section5" style="display:flex;justify-content: center;">
 
 
-    <div class="div5" style="margin-top: 12px;border-radius: 12px;border: 3px solid #e6b000;padding: 20px;width: 100%;max-width: 1050px;background-color: #ffffff;box-shadow: 0 10px 40px rgba(0, 101, 112, 0.15);font-family: 'Poppins' , sans-serif;">
+    <div class="div5 obj-form-card" style="margin-top: 12px;border-radius: 12px;border: 3px solid #e6b000;padding: 20px;width: 100%;max-width: 1050px;background-color: #ffffff;box-shadow: 0 10px 40px rgba(0, 101, 112, 0.15);font-family: 'Poppins' , sans-serif;">
 
         <div>
             <div style="width: 100%; margin: 20px 0; padding: 10px 0; position: relative;">
@@ -3860,9 +4107,9 @@
         </div>
         <div>
 
-            <button style="margin-top: 10px; margin-left: 2%;color:white; background-color:#006572;" type="button" class="btn_p5 btn">Previous</button>
+            <button type="button" class="btn_p5 btn obj-nav-btn obj-nav-btn-prev">Previous</button>
 
-            <button style="margin-top: 10px; margin-right: 2%; float:right;color:white; background-color:#006572;" type="button" class="btn_n5 btn">Next</button><br />
+            <button type="button" class="btn_n5 btn obj-nav-btn obj-nav-btn-next">Next</button><br />
 
         </div>
     </div>
@@ -3924,7 +4171,7 @@
         TempData.Keep("CurrentFilter_mult_Bus_MV");
     }
 
-    <div class="div6 " style="margin-top: 12px; border-radius: 12px; border: 3px solid #e6b000; padding: 20px; width: 100%; max-width: 1050px; background-color: #ffffff; box-shadow: 0 10px 40px rgba(0, 101, 112, 0.15); font-family: 'Poppins', sans-serif;">
+    <div class="div6 obj-form-card" style="margin-top: 12px; border-radius: 12px; border: 3px solid #e6b000; padding: 20px; width: 100%; max-width: 1050px; background-color: #ffffff; box-shadow: 0 10px 40px rgba(0, 101, 112, 0.15); font-family: 'Poppins', sans-serif;">
             
         @* <h5 style="text-align:center" id="section6_head">SECTION 6: QUERY DETAILS</h5> *@
 
@@ -4240,46 +4487,58 @@
         </div>
 
         <div>
-            <button type="button" class="btn_p6 btn" style="margin: 0 10px; padding: 10px 20px; background-color: #006572; color: white; border: none; border-radius: 8px; font-weight: bold;">Previous</button>
-            <button type="button" class="btn_n6 btn" style="margin: 0 10px; padding: 10px 20px; background-color: #006572; color: white; border: none; border-radius: 8px; font-weight: bold; float: right;">Next</button>
+            <button type="button" class="btn_p6 btn obj-nav-btn obj-nav-btn-prev">Previous</button>
+            <button type="button" class="btn_n6 btn obj-nav-btn obj-nav-btn-next">Next</button>
         </div>
 
     </div>
 </div>
 @*  ------------------------------------------- Document Upload -------------------------------------------  *@
 <div id="sectionUpload" style="display:flex;justify-content: center;">
-    <div class="divU " style="margin-top: 12px;border-radius: 12px;border: 3px solid #e6b000;padding: 20px;width: 100%;max-width: 1050px;background-color: #ffffff;box-shadow: 0 10px 40px rgba(0, 101, 112, 0.15);font-family: 'Poppins' , sans-serif;">
+    <div class="divU obj-form-card border-0">
+        <div class="obj-section-bar"><span>Upload Documents</span></div>
 
+        <p class="obj-ev-intro">
+            Attach anything that supports the information supplied in this @_processNameLower form.
+            You may browse more than once; files selected from another folder are added to the files already selected.
+        </p>
 
-        <div style="border-left: 5px solid #e6b000; background-color: #006572; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-
-            <span style="font-weight: bold; font-size: 16px;color:white; text-transform: uppercase; letter-spacing: 0.5px;">Upload Documents</span>
+        <div class="obj-ev-label">
+            <i class="fa-solid fa-folder-open"></i>
+            Other supporting documents
+            <span class="obj-ev-optional">(optional)</span>
         </div>
 
-        <div class="card shadow-sm border-0 mt-4">
-            <div style="background: #f8f9fa; border: 2px solid #e6b000; border-radius: 10px; padding: 25px; margin-bottom: 20px;">
-                <h6 class="fw-bold text-dark mb-3">Upload Supporting Document(s)</h6>
+        <div class="obj-ev-dropzone" id="objectionDropzone" tabindex="0"
+             role="button" aria-label="Choose supporting documents">
+            <div class="obj-ev-icon"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+            <div class="obj-ev-title">Drag files here to upload</div>
+            <div class="obj-ev-sub">PDF, Word, Excel and images</div>
+            <button type="button" class="obj-ev-browse" id="objectionBrowseFiles">
+                <i class="fa-solid fa-folder-open"></i> Browse Files
+            </button>
+        </div>
 
-                <div style="background: #fff3cd; border: 2px solid #e6b000; border-radius: 10px; padding: 15px; margin-bottom: 20px;">
-                    <p style="font-size: 14px; color: #006570; font-weight: 600; margin: 0;">
-                        <strong>Note:</strong> Only PDF, PNG, JPEG, HEIC formats are allowed.
-                    </p>
-                    <p style="font-size: 14px; color: #006570; font-weight: 700; margin: 5px 0 0 0;">
-                        Max 10 PDF files • Max file size: 10MB
-                    </p>
-                </div>
+        @* Preserve #files because the original Multi JavaScript uses it.
+           The cumulative input posts the selected file collection. *@
+        <input type="file" id="files" tabindex="-1" aria-hidden="true" />
+        <input type="file" id="objectionEvidenceInput" name="files" multiple
+               accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xls,.xlsx" />
 
-                <div style="margin-bottom: 15px;">
-                    <label for="files" style="font-weight: 600; color: #006570; font-size: 14px; margin-bottom: 8px; display: block; text-transform: uppercase; letter-spacing: 0.5px;">Select File(s)</label>
-                    <input style="width: 100%; padding: 10px; border: 2px solid #006570; border-radius: 5px; font-family: 'Poppins', sans-serif; background: white;" type="file" id="files" name="files" accept=".pdf, .png, .jpeg, .jpg, .heic" multiple />
-                </div>
-            </div>
+        <div class="obj-ev-counter">
+            <span id="objectionFileCount">0 of 10 files added</span>
+            <div class="obj-ev-track"><div class="obj-ev-fill" id="objectionFileFill"></div></div>
+        </div>
+        <div class="obj-ev-list" id="objectionFileList"></div>
+        <div class="obj-ev-note">
+            <i class="fa-solid fa-circle-info"></i>
+            Supported: PDF, Word, Excel, JPG, PNG &nbsp;|&nbsp;
+            Max 10 files &nbsp;|&nbsp; Max 20 MB per file
         </div>
 
         <div>
-            <button style="margin-top: 10px; margin-left: 2%;color:white; background-color:#006572;" type="button" class="btn_pU btn"><strong>Previous</strong></button>
-
-            <button style="margin-top: 10px; margin-right: 2%; float:right;color:white; background-color:#006572;" type="button" class="btn_nU btn"><strong>Next</strong></button><br />
+            <button type="button" class="btn_pU btn obj-nav-btn obj-nav-btn-prev"><strong>Previous</strong></button>
+            <button type="button" class="btn_nU btn obj-nav-btn obj-nav-btn-next"><strong>Next</strong></button>
         </div>
     </div>
 </div>
@@ -4287,117 +4546,98 @@
 @*----------------------------------------Section 7  ---------------------------------------*@
 
 <div id="section7" style="display:flex;justify-content: center;">
-
-    <div class="div7" style="margin-top: 12px;border-radius: 12px;border: 3px solid #e6b000;padding: 20px;width: 100%;max-width: 1050px;background-color: #ffffff;box-shadow: 0 10px 40px rgba(0, 101, 112, 0.15);font-family: 'Poppins' , sans-serif;">
-
-        <div style="width: 100%; margin: 20px 0; padding: 10px 0; position: relative;">
-
-            <h4 style="text-align: center;color:#006572" id="s_head"><strong>SECTION 7: DECLARATION</strong></h4>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <div style="height: 2px; background-color: #e6b000; width: 45%;"></div>
-                <div style="height: 8px; width: 8px; border-radius: 50%; background-color: #006570; border: 2px solid #e6b000;"></div>
-                <div style="height: 2px; background-color: #e6b000; width: 45%;"></div>
+    <div class="div7 obj-form-card">
+        <div style="width:100%; margin:20px 0; padding:10px 0; position:relative;">
+            <h4 class="obj-section-title" id="s_head"><strong>Section 7: Declaration</strong></h4>
+            <div class="obj-step-divider">
+                <div class="line"></div><div class="dot"></div><div class="line"></div>
             </div>
         </div>
 
-        <div style="border-left: 5px solid #e6b000; background-color: #006572; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-            <span style="font-weight: bold; font-size: 16px;color:white; text-transform: uppercase; letter-spacing: 0.5px;">DECLARATION &amp; @_processNameUpper DETAILS</span>
-        </div>
+        <div class="obj-section-bar"><span>Declaration &amp; @_processNameUpper Details</span></div>
 
-
-        <div class="form-control border-2 rounded shadow-sm px-4 py-2" style="overflow:hidden; margin-top: 15px; border:2px solid #e6b000 !important;background:#f8f9fa;border-radius:10px;padding:25px;">
-
-            <h6 style="margin-top: 15px;margin-bottom:2%;font-family: 'Poppins', sans-serif;color:#006570;font-weight:600;line-height:1.8;">
-
+        <div class="obj-legal-box">
+            <h6>
                 @if (_isReview)
                 {
-                    @:THIS REVIEW CONCERNS THE OUTCOME OF A PREVIOUSLY LODGED SECTION 78 QUERY. PLEASE ENSURE THAT ALL INFORMATION AND SUPPORTING DOCUMENTS RELEVANT TO THE REQUESTED REVIEW HAVE BEEN PROVIDED.
+                    @:This review concerns the outcome of a previously lodged Section 78 query. Please ensure that all information and supporting documents relevant to the requested review have been provided.
                 }
                 else
                 {
-                    @:THIS QUERY IS LODGED IN TERMS OF SECTION 78. PLEASE ENSURE THAT ALL INFORMATION AND SUPPORTING DOCUMENTS REQUIRED BY THE MUNICIPAL VALUER HAVE BEEN PROVIDED.
+                    @:This query is lodged in terms of Section 78. Please ensure that all information and supporting documents required by the Municipal Valuer have been provided.
                 }
             </h6>
-
-            <div class="declaration-text" style="color:#006572;font-weight:600;font-size:15px;line-height:1.8;">
-                I/WE <input style="margin-top: -1px; font-family: 'Poppins', sans-serif;border:2px solid #006570;border-radius:5px;padding:5px 10px;background:white;" id="sign_obj" maxlength="80" required asp-for="Signature_Name" type="text" onpaste="return false;" ondrop="return false;"> HEREBY DECLARE THAT THE INFORMATION AND PARTICULARS SUPPLIED ARE TRUE AND CORRECT.
-            </div>
-            @if (_isAdmin)
-            {
-                <div id="capturer" class="obj-capturer-card">
-                    <div class="obj-capturer-icon">
-                        <i class="fa-solid fa-id-badge"></i>
-                    </div>
-                    <div style="flex:1;">
-                        <div class="obj-capturer-label">Captured by Windows Authenticator</div>
-                        <div class="obj-capturer-name">
-                            @(!string.IsNullOrWhiteSpace(_fullName) ? _fullName : "Admin User")
-                        </div>
-                        @if (!string.IsNullOrWhiteSpace(_adminPosition))
-                        {
-                            <div class="obj-capturer-sap">@_adminPosition</div>
-                        }
-                        @if (!string.IsNullOrWhiteSpace(_windowsUser))
-                        {
-                            <div class="obj-capturer-sap">Windows: @_windowsUser</div>
-                        }
-                    </div>
-                    <div class="obj-capturer-sap">SAP: @_sapNumeric</div>
-                    <input type="hidden" id="sapNo" asp-for="Capturer" value="@_sapNumeric" />
-                    <input type="hidden" name="AdminCapturedFullName" value="@_fullName" />
-                    <input type="hidden" name="AdminCapturedPosition" value="@_adminPosition" />
-                    <input type="hidden" name="AdminCapturedWindowsUser" value="@_windowsUser" />
-                    <input type="hidden" name="AdminCapturedSapFull" value="@_sapFull" />
-                </div>
-            }
-            else
-            {
-                <input type="hidden" asp-for="Capturer" value="" />
-            }
-
-            <label hidden style="margin-top:1%"><span style="color: red;">*</span>DATE (<span style="color: red;">required</span>)</label>
-            <input hidden style="margin-top: -1px;" class="form-control border-2 rounded shadow-sm px-4 py-2" id="signDate" required type="datetime-local" asp-for="Declaration_Date">
-            <br>
-
-            <h5 style="margin-left:2%;font-family: 'Poppins', sans-serif;color:#006570;font-weight:700;">SIGNATURE:<span style="color: red;">*</span></h5>
-
-            <div style="max-width:100%;padding:10px;box-sizing:border-box;">
-                <canvas width="500" height="200" id="signature"
-                        style="width:100%;max-width:500px;height:auto;aspect-ratio:500/200;border:2px solid #006570;background-color:white;border-radius:5px;display:block;touch-action:none;"></canvas>
-                <img width="500" height="200" id="savetarget"
-                     style="width:100%;max-width:500px;height:auto;border:2px solid #006570;border-radius:5px;display:block;" hidden="hidden"><br>
-
-                <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:15px;justify-content:center;">
-                    <button style="flex:1;min-width:140px;max-width:200px;color:white;background:#006570;border:2px solid #e6b000;padding:12px 20px;font-size:14px;font-weight:600;border-radius:8px;cursor:pointer;transition:all 0.3s;font-family:'Poppins',sans-serif;white-space:nowrap;"
-                            type="button" id="Clear" class="btn"
-                            onmouseover="this.style.background='#004d56';this.style.transform='translateY(-2px)';this.style.boxShadow='0 5px 15px rgba(0,101,112,0.3)'"
-                            onmouseout="this.style.background='#006570';this.style.transform='translateY(0)';this.style.boxShadow='none'"
-                            ontouchstart="this.style.background='#004d56'"
-                            ontouchend="this.style.background='#006570'">
-                        Clear
-                    </button>
-
-                    <button type="button" id="accept" class="btn"
-                            style="flex:1;min-width:140px;max-width:200px;color:white;background:#006570;border:2px solid #e6b000;padding:12px 20px;font-size:14px;font-weight:600;border-radius:8px;cursor:pointer;transition:all 0.3s;font-family:'Poppins',sans-serif;white-space:nowrap;"
-                            onclick="checkCanvas()"
-                            onmouseover="this.style.background='#004d56';this.style.transform='translateY(-2px)';this.style.boxShadow='0 5px 15px rgba(0,101,112,0.3)'"
-                            onmouseout="this.style.background='#006570';this.style.transform='translateY(0)';this.style.boxShadow='none'"
-                            ontouchstart="this.style.background='#004d56'"
-                            ontouchend="this.style.background='#006570'">
-                        Accept signature
-                    </button>
-                </div>
-
-                <input type="text" onpaste="return false;" ondrop="return false;" id="SignatureDataUrl" asp-for="Signature_Picture" hidden="hidden">
-            </div>
-
         </div>
-        <div>
-            <button style="margin-top: 10px; margin-left: 2%;color:white; background-color:#006572;" type="button" class="btn_p7 btn"><strong>Previous</strong></button>
-            <button type="submit" class="btn" disabled id="submitForm" style="margin-top: 10px;float:right;margin-right: 2%;color:white; background-color:#006572;"><i class="fa-solid fa-paper-plane"></i> <strong>Submit @_processName</strong></button>
+
+        <div class="obj-declaration-row declaration-text">
+            <span>I / WE</span>
+            <input id="sign_obj" maxlength="80" required asp-for="Signature_Name"
+                   type="text" onpaste="return false;" ondrop="return false;" placeholder="Full name(s)" />
+            <span>hereby declare that the information and particulars supplied are true and correct.</span>
+        </div>
+
+        @if (_isAdmin)
+        {
+            <div id="capturer" class="obj-capturer-card">
+                <div class="obj-capturer-icon"><i class="fa-solid fa-id-badge"></i></div>
+                <div style="flex:1;">
+                    <div class="obj-capturer-label">Captured by Windows Authenticator</div>
+                    <div class="obj-capturer-name">@(!string.IsNullOrWhiteSpace(_fullName) ? _fullName : "Admin User")</div>
+                    @if (!string.IsNullOrWhiteSpace(_adminPosition))
+                    {
+                        <div class="obj-capturer-sap">@_adminPosition</div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(_windowsUser))
+                    {
+                        <div class="obj-capturer-sap">Windows: @_windowsUser</div>
+                    }
+                </div>
+                <div class="obj-capturer-sap">SAP: @_sapNumeric</div>
+                <input type="hidden" id="sapNo" asp-for="Capturer" value="@_sapNumeric" />
+                <input type="hidden" name="AdminCapturedFullName" value="@_fullName" />
+                <input type="hidden" name="AdminCapturedPosition" value="@_adminPosition" />
+                <input type="hidden" name="AdminCapturedWindowsUser" value="@_windowsUser" />
+                <input type="hidden" name="AdminCapturedSapFull" value="@_sapFull" />
+            </div>
+        }
+        else
+        {
+            <input type="hidden" asp-for="Capturer" value="" />
+        }
+
+        <input hidden class="form-control" id="signDate" required type="datetime-local" asp-for="Declaration_Date">
+
+        <div class="obj-signature-card obj-auto-signature">
+            <div class="obj-auto-signature-title">
+                <i class="fa-solid fa-pen-nib"></i>
+                Draw signature below <span class="req">*</span>
+                <span style="font-weight:400;text-transform:none;color:#888;">(mouse or finger)</span>
+            </div>
+            <div class="obj-signature-canvas-wrap">
+                <canvas width="598" height="160" id="signature"></canvas>
+                <div class="obj-signature-line"></div>
+                <div class="obj-signature-hint">Sign here</div>
+            </div>
+            <div class="obj-signature-controls">
+                <button type="button" id="Clear" class="btn obj-signature-clear">
+                    <i class="fa-solid fa-rotate-left"></i> Clear
+                </button>
+                <span id="signatureStatus">No signature drawn</span>
+            </div>
+
+            @* Hidden compatibility hooks retained for the original Multi script. *@
+            <img width="598" height="160" id="savetarget" hidden="hidden" alt="" />
+            <button type="button" id="accept" class="btn" hidden="hidden" tabindex="-1">Accept signature</button>
+            <input type="text" onpaste="return false;" ondrop="return false;"
+                   id="SignatureDataUrl" asp-for="Signature_Picture" hidden="hidden">
+        </div>
+
+        <div style="margin-top:18px;">
+            <button type="button" class="btn_p7 btn obj-nav-btn obj-nav-btn-prev"><strong>Previous</strong></button>
+            <button type="submit" class="btn obj-nav-btn obj-nav-btn-submit" disabled id="submitForm"
+                    onclick="return showInput()"><i class="fa-solid fa-paper-plane"></i> <strong>Submit @_processName</strong></button>
         </div>
     </div>
-
 </div>
 @{
     TempData.Keep("CurrentFilter_MV");
@@ -4433,6 +4673,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/signature_pad/1.5.3/signature_pad.min.js"></script>
     <script src="https://code.jquery.com/jquery-latest.min.js" type="text/javascript"></script>
     <script asp-append-version="true" src="~/js/ObjectionMulti_Section78.js" type="text/javascript"> </script>
+    <script asp-append-version="true" src="~/js/form-consistency.js"></script>
     <script type="text/javascript">load();</script>
 
 }
@@ -4735,13 +4976,15 @@
     // Hide preloader
     setTimeout(() => {
     const preloader = document.getElementById("preloader");
+    document.body.classList.remove('loading');
     if (preloader) {
     preloader.classList.add('fade-out');
-    document.body.classList.remove('loading');
     setTimeout(() => {
     preloader.style.display = "none";
     showToaster('Multipurpose @_processName Form Ready', 'Complete all required sections to submit your @_processNameLower', 5000);
     }, 600);
+    } else {
+    showToaster('Multipurpose @_processName Form Ready', 'Complete all required sections to submit your @_processNameLower', 5000);
     }
     }, 900);
 

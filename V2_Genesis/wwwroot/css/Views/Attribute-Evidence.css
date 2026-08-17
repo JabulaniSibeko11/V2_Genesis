@@ -613,3 +613,81 @@
         color: #888;
         cursor: not-allowed;
     }
+
+/* ── Responsive ──────────────────────────────────────────────── */
+@media (max-width: 700px) {
+    .ev-page {
+        padding: 24px 16px 44px;
+    }
+
+    .ev-card-header-row {
+        padding: 18px 18px 0;
+    }
+
+    .ev-form, .ev-body {
+        padding: 16px;
+    }
+}
+
+@media (max-width: 560px) {
+    .ev-form-actions {
+        flex-direction: column;
+    }
+
+    .ev-btn-primary,
+    .ev-btn-ghost,
+    .ev-btn,
+    .ev-btn-outline {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .ev-heading, .ev-card-header-row {
+        align-items: flex-start;
+    }
+
+    .ev-heading-icon, .ev-card-icon {
+        width: 42px;
+        height: 42px;
+        font-size: 18px;
+    }
+
+    .ev-title, .ev-card-title {
+        font-size: 17px;
+    }
+
+    .ev-dropzone {
+        padding: 22px 14px;
+    }
+
+    .ev-steps {
+        flex-wrap: wrap;
+        row-gap: 8px;
+    }
+
+    .ev-step span {
+        display: none;
+    }
+
+    .ev-step-line {
+        max-width: 20px;
+    }
+}
+
+@media (max-width: 400px) {
+    .ev-slots {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+
+    .ev-file-item {
+        flex-wrap: wrap;
+    }
+}
+
+@media (min-width: 1440px) {
+    .ev-inner {
+        max-width: 720px;
+    }
+}
