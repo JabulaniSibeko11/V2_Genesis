@@ -1,0 +1,55 @@
+@model V2_Genesis.Models.ViewModels.Attributes.InspectionDateModalVm
+
+<div id="inspectionModal_@Model.InstanceKey"
+     class="attr-insp-modal-backdrop"
+     style="display:@(Model.AutoOpen ? "flex" : "none");">
+    <div class="attr-insp-modal">
+        <div class="attr-insp-modal-head">
+            <div>Choose Inspection Date - @Model.AppointmentRef</div>
+            <button type="button" onclick="closeInspectionResponseModal('@Model.InstanceKey')">×</button>
+        </div>
+
+        <form action="@Model.FormAction" method="post">
+            @Html.AntiForgeryToken()
+            @if (Model.InspectionRequestId.HasValue)
+            {
+                <input type="hidden" name="InspectionRequestId" value="@Model.InspectionRequestId.Value" />
+            }
+
+            <div class="attr-insp-modal-body">
+                <p>The valuer has requested a physical inspection. Please choose one of the proposed dates below.</p>
+
+                @if (!string.IsNullOrWhiteSpace(Model.RequestComment))
+                {
+                    <div class="alert alert-info">@Model.RequestComment</div>
+                }
+
+                @if (Model.Slots.Any())
+                {
+                    @foreach (var slot in Model.Slots)
+                    {
+                        <label class="attr-insp-option">
+                            <input type="radio" name="@Model.SlotFieldName" value="@slot.Id" required />
+                            <span>Option @slot.SlotNo: <strong>@slot.ProposedDateTime.ToString("dd MMM yyyy HH:mm")</strong></span>
+                        </label>
+                    }
+                }
+                else
+                {
+                    <div class="alert alert-warning">No proposed inspection date options were found.</div>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(Model.CommentFieldName))
+                {
+                    <label class="fw-bold">Comment</label>
+                    <textarea name="@Model.CommentFieldName" class="form-control" placeholder="Optional comment..."></textarea>
+                }
+            </div>
+
+            <div class="attr-insp-modal-footer">
+                <button type="button" class="btn btn-light" onclick="closeInspectionResponseModal('@Model.InstanceKey')">Cancel</button>
+                <button type="submit" class="btn btn-warning fw-bold">Confirm Selected Date</button>
+            </div>
+        </form>
+    </div>
+</div>

@@ -1,0 +1,71 @@
+@model V2_Genesis.Models.ViewModels.Attributes.InspectionPinModalVm
+@{
+    var modalId = $"pinModal_{Model.InstanceKey}";
+    var inputId = $"pinHiddenInput_{Model.InstanceKey}";
+    var submitId = $"pinSubmitBtn_{Model.InstanceKey}";
+    var errorId = $"pinError_{Model.InstanceKey}";
+    var errorMsgId = $"pinErrorMsg_{Model.InstanceKey}";
+    var contextTitleId = $"pinContextTitle_{Model.InstanceKey}";
+}
+<div class="pin-backdrop @(Model.AutoOpen ? "open" : "")" id="@modalId" style="display:@(Model.AutoOpen ? "flex" : "none");">
+    <div class="pin-modal" role="dialog" aria-modal="true" aria-labelledby="@contextTitleId">
+        <div class="pin-handle"></div>
+        <div class="pin-head">
+            <div class="pin-head-icon"><i class="fa-solid fa-lock"></i></div>
+            <div class="pin-head-text">
+                <div class="pin-head-title">Enter Inspection PIN</div>
+                <div class="pin-head-sub">@Model.AppointmentRef</div>
+            </div>
+            <button type="button" class="pin-head-close" onclick="closePinModal('@Model.InstanceKey')" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <form action="@Model.FormAction" method="post" autocomplete="off">
+            @Html.AntiForgeryToken()
+            @if (Model.InspectionRequestId.HasValue)
+            {
+                <input type="hidden" name="InspectionRequestId" value="@Model.InspectionRequestId.Value" />
+            }
+            <div class="pin-body">
+                <div class="pin-lock-ring"><i class="fa-solid fa-shield-halved"></i></div>
+                <div class="pin-context">
+                    <div class="pin-context-title" id="@contextTitleId">Verify your inspection appointment</div>
+                    <div class="pin-context-sub">Enter the PIN sent to you by email.</div>
+                </div>
+                @if (Model.ConfirmedDateTime.HasValue)
+                {
+                    <div class="pin-confirmed-date">
+                        <i class="fa-solid fa-calendar-check"></i>
+                        <div>
+                            <span class="pin-confirmed-label">Confirmed inspection date</span>
+                            <span class="pin-confirmed-value">@Model.ConfirmedDateTime.Value.ToString("dd MMM yyyy HH:mm")</span>
+                        </div>
+                    </div>
+                }
+                <div class="pin-dots">
+                    <div class="pin-dot" id="dot_@(Model.InstanceKey)_0"></div>
+                    <div class="pin-dot" id="dot_@(Model.InstanceKey)_1"></div>
+                    <div class="pin-dot" id="dot_@(Model.InstanceKey)_2"></div>
+                    <div class="pin-dot" id="dot_@(Model.InstanceKey)_3"></div>
+                </div>
+                <input type="password" id="@inputId" name="@Model.PinFieldName" class="pin-input-hidden" maxlength="4" inputmode="numeric" pattern="[0-9]{4}" autocomplete="off" required />
+                <div class="pin-error @(string.IsNullOrWhiteSpace(Model.ErrorMessage) ? "" : "show")" id="@errorId">
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                    <span id="@errorMsgId">@(string.IsNullOrWhiteSpace(Model.ErrorMessage) ? "Incorrect PIN. Please try again." : Model.ErrorMessage)</span>
+                </div>
+                <div class="pin-keypad">
+                    @for (var n = 1; n <= 9; n++)
+                    {
+                        <button type="button" class="pin-key" onclick="pinKey('@Model.InstanceKey', '@n')"><span class="pin-key-num">@n</span></button>
+                    }
+                    <button type="button" class="pin-key" style="border:none;background:none;box-shadow:none;cursor:default;" disabled></button>
+                    <button type="button" class="pin-key pin-key-zero" onclick="pinKey('@Model.InstanceKey', '0')"><span class="pin-key-num">0</span></button>
+                    <button type="button" class="pin-key pin-key-del" onclick="pinDelete('@Model.InstanceKey')" aria-label="Delete"><i class="fa-solid fa-delete-left pin-key-icon"></i></button>
+                </div>
+            </div>
+            <div class="pin-foot">
+                <button type="submit" class="pin-submit-btn" id="@submitId" disabled><i class="fa-solid fa-unlock"></i> Confirm</button>
+                <div class="pin-forgot">PIN only works during the inspection security window.</div>
+            </div>
+        </form>
+    </div>
+</div>

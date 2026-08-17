@@ -1092,11 +1092,27 @@ public class ObjectionFormService : IObjectionFormService
 
         await using var db = CreateDbContextForRoll(rollSource);
 
-        // Appeal references are stored in Obj_Property_Info_Appeal and the
-        // shared section tables use the Appeal_Ref_* columns.
-        var appeal = await db.Obj_Property_Info_Appeal
-            .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Appeal_No == referenceNo);
+        // Only query the Appeal table when this is actually an Appeal reference.
+        // An Objection reference (OBJ-...) must not touch Obj_Property_Info_Appeal.
+        // Also project only the Appeal fields needed by the acknowledgement so EF
+        // does not SELECT unrelated mapped columns that may not exist on older rolls.
+        var isAppealReference = referenceNo.StartsWith(
+            "APP-",
+            StringComparison.OrdinalIgnoreCase);
+
+        var appeal = isAppealReference
+            ? await db.Obj_Property_Info_Appeal
+                .AsNoTracking()
+                .Where(x => x.Appeal_No == referenceNo)
+                .Select(x => new
+                {
+                    x.Appeal_ID,
+                    x.Obj_Ref,
+                    x.A_Valuation_Key,
+                    x.A_Property_Type
+                })
+                .FirstOrDefaultAsync()
+            : null;
 
         if (appeal is not null)
         {
@@ -1146,7 +1162,7 @@ public class ObjectionFormService : IObjectionFormService
 
         var objectionSection6 = await db.Obj_Section6
             .AsNoTracking()
-            .FirstOrDefaultAsync(x =>x.Objection_Ref_S6 == referenceNo);
+            .FirstOrDefaultAsync(x => x.Objection_Ref_S6 == referenceNo);
 
         var objectionSection7 = await db.Obj_Section7
             .AsNoTracking()

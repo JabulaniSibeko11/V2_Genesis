@@ -40,6 +40,7 @@ namespace V2_Genesis.Data
         public DbSet<AttrValuerReviewSection> AttrValuerReviewSections { get; set; } = null!;
         public DbSet<AttrValuerReviewFieldCorrection> AttrValuerReviewFieldCorrections { get; set; } = null!;
         public DbSet<AttrInspectionRequest> AttrInspectionRequests { get; set; } = null!;
+        public DbSet<AttrInspectionRequestSlot> AttrInspectionRequestSlots { get; set; } = null!;
         public DbSet<AttrValuerInspectionDetail> AttrValuerInspectionDetails { get; set; } = null!;
         public DbSet<AttrInspectionEvidence> AttrInspectionEvidence { get; set; } = null!;
 

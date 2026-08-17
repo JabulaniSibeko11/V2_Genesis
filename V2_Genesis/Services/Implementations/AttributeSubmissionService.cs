@@ -15,17 +15,21 @@ namespace V2_Genesis.Services.Implementations
         private readonly IAttributeDocumentService _documentService;
         private readonly IEmailService _emailService;
         private readonly ILogger<AttributeSubmissionService> _logger;
+        private readonly bool _bypassAdminEvidenceWindow;
         public AttributeSubmissionService(
             AttributesDbContext context,
            IAttributeDocumentService documentService,
            IEmailService emailService,
-           ILogger<AttributeSubmissionService> logger)
+           ILogger<AttributeSubmissionService> logger,
+           IConfiguration configuration)
         {
             _context = context;
 
             _documentService = documentService;
             _emailService = emailService;
             _logger = logger;
+            _bypassAdminEvidenceWindow = configuration.GetValue<bool>(
+                "AttributeRouting:BypassEvidenceWindow");
         }
 
         public AttributeSubmissionViewModel CreateNew(string formType)
@@ -99,8 +103,8 @@ namespace V2_Genesis.Services.Implementations
       string? userEmail,
       string? userPhone,
       string? capturerSapNumber = null)
-        
-            {
+
+        {
 
             ValidateAndCleanSubmission(model);
 
@@ -214,7 +218,17 @@ namespace V2_Genesis.Services.Implementations
             await SaveFormSpecificSectionsAsync(model, propertyDetails.Id, userId);
 
             var evidencePin = GenerateEvidencePin();
-            var evidenceDeadline = now.AddHours(48);
+            var isAdminCaptured = !string.IsNullOrWhiteSpace(capturerSapNumber);
+
+            // Demo/testing bypass:
+            // Admin-captured Attributes can be routed to AIVS immediately instead of
+            // waiting for the normal 48-hour client evidence window.
+            var bypassEvidenceWindow =
+                _bypassAdminEvidenceWindow && isAdminCaptured;
+
+            var evidenceDeadline = bypassEvidenceWindow
+                ? now
+                : now.AddHours(48);
 
             model.GeneratedEvidencePin = evidencePin;
             model.GeneratedEvidenceDeadline = evidenceDeadline;
@@ -347,7 +361,9 @@ namespace V2_Genesis.Services.Implementations
                 userId,
                 userName,
                 "Client",
-                "Client submitted attribute property information. Evidence upload window is open for 48 hours.");
+                bypassEvidenceWindow
+                    ? "Attribute captured by Administration. Demo evidence-window bypass enabled; submission will route to AIVS immediately."
+                    : "Client submitted attribute property information. Evidence upload window is open for 48 hours.");
 
             await AddAuditAsync(
                 propertyInfo.Attr_ID,
@@ -369,7 +385,9 @@ namespace V2_Genesis.Services.Implementations
                 userId,
                 userName,
                 "Client",
-                "Client accepted declaration and signature was captured. Evidence PIN generated for 48 hours.");
+                bypassEvidenceWindow
+                    ? "Declaration and signature captured. Administration demo bypass enabled; no 48-hour wait is required."
+                    : "Client accepted declaration and signature was captured. Evidence PIN generated for 48 hours.");
 
             var unitKey = model.PropertyDetails.UnitKey
                 ?? model.PropertyDetails.PropertyId
@@ -427,6 +445,22 @@ namespace V2_Genesis.Services.Implementations
                     ex,
                     "[Attributes] Attribute submission saved, but acknowledgement email failed for {AttrNo}",
                     propertyInfo.Attr_No);
+            }
+
+            if (bypassEvidenceWindow)
+            {
+                try
+                {
+                    await RouteExpiredEvidenceSubmissionsAsync(
+                        $"Administration Demo Bypass ({capturerSapNumber})");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(
+                        ex,
+                        "[Attributes] Admin demo bypass could not route {AttrNo} immediately. The routing worker will retry.",
+                        propertyInfo.Attr_No);
+                }
             }
 
             return propertyInfo.Attr_ID;

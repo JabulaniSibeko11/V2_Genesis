@@ -1,0 +1,189 @@
+﻿
+* {
+    box-sizing: border-box
+}
+
+body {
+    margin: 0;
+    background: #f5f5f2;
+    font-family: Arial,sans-serif;
+    color: #151515
+}
+
+.top {
+    background: #0d3036;
+    color: #fff;
+    padding: 18px 24px;
+    border-bottom: 5px solid #e8b600
+}
+
+    .top strong {
+        font-size: 20px
+    }
+
+.wrap {
+    max-width: 900px;
+    margin: 28px auto;
+    padding: 0 16px
+}
+
+.card {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    box-shadow: 0 3px 14px rgba(0,0,0,.08);
+    overflow: hidden;
+    margin-bottom: 18px
+}
+
+.head {
+    padding: 22px 24px;
+    border-bottom: 1px solid #eee
+}
+
+    .head h1 {
+        margin: 0 0 8px;
+        font-size: 27px
+    }
+
+.body {
+    padding: 22px 24px
+}
+
+.notice {
+    background: #fff6d6;
+    border-left: 5px solid #e8b600;
+    padding: 14px 16px;
+    margin-bottom: 18px
+}
+
+.success {
+    background: #e8f7ec;
+    border-left: 5px solid #16833f;
+    padding: 14px 16px;
+    margin-bottom: 18px
+}
+
+.error {
+    background: #fdeaea;
+    border-left: 5px solid #bd2222;
+    padding: 14px 16px;
+    margin-bottom: 18px
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px
+}
+
+.field {
+    border: 1px solid #e3e3e3;
+    border-radius: 8px;
+    padding: 12px
+}
+
+    .field span {
+        display: block;
+        font-size: 11px;
+        font-weight: bold;
+        color: #666;
+        text-transform: uppercase;
+        margin-bottom: 5px
+    }
+
+.slot {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    border: 1px solid #ddd;
+    border-radius: 9px;
+    padding: 14px;
+    margin: 10px 0
+}
+
+    .slot input {
+        width: 20px;
+        height: 20px
+    }
+
+.btn {
+    background: #e8b600;
+    color: #111;
+    border: 0;
+    border-radius: 7px;
+    padding: 13px 20px;
+    font-weight: 800;
+    cursor: pointer
+}
+
+.pinbox {
+    max-width: 520px;
+    margin: 18px auto 0;
+    background: #fffaf0;
+    border: 1px solid #e8c654;
+    border-radius: 10px;
+    padding: 18px
+}
+
+.pininput {
+    width: 100%;
+    font-size: 24px;
+    letter-spacing: 5px;
+    text-align: center;
+    font-weight: 800;
+    padding: 12px;
+    border: 2px solid #bbb;
+    border-radius: 7px;
+    margin: 8px 0 12px;
+    text-transform: uppercase
+}
+
+.pinmeta {
+    font-size: 12px;
+    color: #666;
+    margin-top: 10px
+}
+
+.valuer {
+    border-top: 5px solid #0d3036
+}
+
+.valuer-grid {
+    display: grid;
+    grid-template-columns: 180px 1fr;
+    gap: 20px
+}
+
+.photo {
+    width: 160px;
+    height: 190px;
+    object-fit: cover;
+    border-radius: 9px;
+    border: 1px solid #ddd
+}
+
+.muted {
+    color: #666;
+    font-size: 13px
+}
+
+.foot {
+    text-align: center;
+    color: #666;
+    font-size: 12px;
+    padding: 20px
+}
+
+@media(max-width:650px) {
+    .grid, .valuer-grid {
+        grid-template-columns: 1fr
+    }
+
+    .photo {
+        width: 140px;
+        height: 165px
+    }
+}
+
+

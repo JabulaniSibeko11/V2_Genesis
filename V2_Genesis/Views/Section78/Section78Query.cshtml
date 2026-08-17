@@ -128,13 +128,13 @@
     TempData.Keep("AdminWindowsUser");
 }
 @section Styles {
-    <link href="~/css/views/objection-form.css" rel="stylesheet" asp-append-version="true" />
-    <link href="~/css/views/form-consistency.css" rel="stylesheet" asp-append-version="true" />
-    <link href="~/css/views/clientdashboardcss.css" rel="stylesheet" asp-append-version="true" />
-    <link href="~/css/views/property-search.css" rel="stylesheet" asp-append-version="true" />
-    <link href="~/css/views/searchpropertycss.css" rel="stylesheet" asp-append-version="true" />
-    <link href="~/css/views/objection-form-css.css" rel="stylesheet" asp-append-version="true" />
-    <link href="~/css/Views/Section78-forms-Responsive.css" rel="stylesheet" asp-append-version="true" />
+            <link href="~/css/views/objection-form.css" rel="stylesheet" asp-append-version="true" />
+            <link href="~/css/views/form-consistency.css" rel="stylesheet" asp-append-version="true" />
+            <link href="~/css/views/clientdashboardcss.css" rel="stylesheet" asp-append-version="true" />
+            <link href="~/css/views/property-search.css" rel="stylesheet" asp-append-version="true" />
+            <link href="~/css/views/searchpropertycss.css" rel="stylesheet" asp-append-version="true" />
+            <link href="~/css/views/objection-form-css.css" rel="stylesheet" asp-append-version="true" />
+   
 }
 <div class="obj-hero">
     <div class="obj-hero-inner">
@@ -187,7 +187,7 @@
     <div class="obj-form-head">
         <span class="obj-form-head-label">Form Type</span>
         <span class="obj-form-head-title" id="form_head">
-            SECTION 78 @_processNameUpper FORM
+            SECTION 78 @_processNameUpper FORM · PROPERTY FORM
         </span>
     </div>
 </div>
@@ -4886,3 +4886,5 @@
     document.head.appendChild(style);
 </script>
  }
+
+<script asp-append-version="true" src="~/js/Section78QueryParity.js"></script>

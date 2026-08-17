@@ -3,506 +3,87 @@
 @section Styles {
     <link href="~/css/views/objection-form.css" rel="stylesheet" asp-append-version="true" />
     <link href="~/css/views/form-consistency.css" rel="stylesheet" asp-append-version="true" />
-    <link href="~/css/Views/Section78-forms-Responsive.css" rel="stylesheet" asp-append-version="true" />
     <link href="~/css/views/clientdashboardcss.css" rel="stylesheet" asp-append-version="true" />
-    <link href="~/css/Views/property-search.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/views/property-search.css" rel="stylesheet" asp-append-version="true" />
     <link href="~/css/views/searchpropertycss.css" rel="stylesheet" asp-append-version="true" />
     <link href="~/css/views/objection-form-css.css" rel="stylesheet" asp-append-version="true" />
-    <link href="~/css/site.css" rel="stylesheet" asp-append-version="true" />
     <style>
-/* ── Objection Form Hero ─────────────────────────────────── */
-.obj-hero {
-    background: linear-gradient(135deg, #1a2e35 0%, #2d4f58 55%, #36626d 100%);
-    border-bottom: 3px solid #e6b000;
-    padding: 0;
-    margin-bottom: 24px;
-    border-radius: 0 0 12px 12px;
-    overflow: hidden;
-    box-shadow: 0 4px 20px rgba(26,46,53,.2);
-    position: relative;
-}
+        /* Multipurpose supporting documents — same interaction as Attributes. */
+        .obj-ev-intro { margin: 0 0 16px; color: #6b7280; font: 12.5px/1.6 'Poppins', sans-serif; }
+        .obj-ev-label { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; color: #006570; font: 700 11.5px 'Poppins', sans-serif; letter-spacing: .4px; text-transform: uppercase; }
+        .obj-ev-label i { color: #e6b000; }
+        .obj-ev-optional { color: #9a9a9a; font-weight: 400; text-transform: none; }
 
-.obj-hero::before {
-    content: '';
-    position: absolute;
-    top: -60px; right: -60px;
-    width: 220px; height: 220px;
-    background: radial-gradient(circle, rgba(230,176,0,.12) 0%, transparent 70%);
-    pointer-events: none;
-}
+        .obj-ev-dropzone {
+            margin-bottom: 12px;
+            padding: 36px 24px;
+            border: 2.5px dashed #e6b000;
+            border-radius: 12px;
+            background: #fff8dc;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color .15s, background .15s;
+        }
 
-.obj-hero::after {
-    content: '';
-    position: absolute;
-    bottom: -30px; left: 30px;
-    width: 120px; height: 120px;
-    background: radial-gradient(circle, rgba(230,176,0,.06) 0%, transparent 70%);
-    pointer-events: none;
-}
+        .obj-ev-dropzone:hover,
+        .obj-ev-dropzone.dragover { border-color: #006570; background: #eef8f8; }
+        .obj-ev-dropzone.full { opacity: .55; pointer-events: none; }
+        .obj-ev-icon { margin-bottom: 8px; color: #006570; font-size: 36px; }
+        .obj-ev-title { margin-bottom: 4px; color: #006570; font: 700 15px 'Poppins', sans-serif; }
+        .obj-ev-sub { margin-bottom: 14px; color: #888; font: 12.5px 'Poppins', sans-serif; }
 
-.obj-hero-inner {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 20px;
-    padding: 22px 32px;
-    position: relative;
-    z-index: 1;
-    flex-wrap: wrap;
-}
+        .obj-ev-browse {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 9px 20px;
+            border: 0;
+            border-radius: 8px;
+            background: #006570;
+            color: #fff;
+            cursor: pointer;
+            font: 700 13px 'Poppins', sans-serif;
+        }
 
-.obj-hero-left {
-    display: flex;
-    align-items: center;
-    gap: 18px;
-    flex: 1;
-    min-width: 260px;
-}
+        #multipurposeEvidenceInput,
+        #files { display: none; }
 
-.obj-hero-logo {
-    width: 54px; height: 54px;
-    border-radius: 12px;
-    background: rgba(230,176,0,.15);
-    border: 2px solid rgba(230,176,0,.4);
-    display: flex; align-items: center; justify-content: center;
-    overflow: hidden; padding: 5px; flex-shrink: 0;
-}
+        .obj-ev-counter { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; color: #888; font: 12px 'Poppins', sans-serif; }
+        .obj-ev-track { flex: 1; height: 5px; border-radius: 3px; background: #e8e8e8; }
+        .obj-ev-fill { width: 0; height: 100%; border-radius: 3px; background: #006570; transition: width .25s; }
+        .obj-ev-fill.full { background: #dc2626; }
+        .obj-ev-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
 
-.obj-hero-logo img {
-    width: 100%; height: 100%; object-fit: contain;
-}
+        .obj-ev-file {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 14px;
+            border: 1px solid rgba(54,98,109,.2);
+            border-radius: 8px;
+            background: #eaf4f5;
+            font-family: 'Poppins', sans-serif;
+        }
 
-.obj-hero-text {}
+        .obj-ev-file > i { color: #006570; }
+        .obj-ev-name { flex: 1; overflow: hidden; color: #1a1a1a; font-size: 13px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+        .obj-ev-size { flex-shrink: 0; color: #666; font-size: 11.5px; }
+        .obj-ev-remove { padding: 2px 5px; border: 0; background: transparent; color: #dc2626; cursor: pointer; font-size: 15px; }
+        .obj-ev-note { color: #888; font: 12px 'Poppins', sans-serif; }
+        .obj-ev-note i { margin-right: 4px; color: #006570; }
 
-.obj-hero-org {
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 2px;
-    color: rgba(230,176,0,.7);
-    text-transform: uppercase;
-    margin-bottom: 2px;
-}
-
-.obj-hero-title {
-    font-size: 18px;
-    font-weight: 800;
-    color: #fff;
-    line-height: 1.2;
-    margin: 0;
-}
-
-.obj-hero-title span { color: #e6b000; }
-
-.obj-hero-sub {
-    font-size: 12px;
-    color: rgba(255,255,255,.55);
-    margin-top: 3px;
-    letter-spacing: .3px;
-}
-
-.obj-hero-right {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 8px;
-    flex-shrink: 0;
-}
-
-.obj-hero-type-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    padding: 6px 14px;
-    background: rgba(230,176,0,.18);
-    border: 1.5px solid rgba(230,176,0,.5);
-    border-radius: 100px;
-    font-size: 12px;
-    font-weight: 700;
-    color: #e6b000;
-    letter-spacing: .5px;
-    text-transform: uppercase;
-}
-
-.obj-hero-prop {
-    font-size: 12.5px;
-    color: rgba(255,255,255,.65);
-    text-align: right;
-    max-width: 340px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.obj-hero-prop strong { color: rgba(255,255,255,.9); }
-
-/* Form head bar below hero */
-.obj-form-head {
-    background: linear-gradient(90deg, #1a2e35, #243e48);
-    border-bottom: 2px solid #e6b000;
-    padding: 10px 32px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.obj-form-head-label {
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 1.5px;
-    color: rgba(255,255,255,.45);
-    text-transform: uppercase;
-    white-space: nowrap;
-}
-
-.obj-form-head-title {
-    font-size: 13px;
-    font-weight: 700;
-    color: #e6b000;
-    text-transform: uppercase;
-    letter-spacing: .3px;
-}
-
-/* Admin capturer card */
-.obj-capturer-card {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    background: linear-gradient(135deg, #1a2e35, #2d4f58);
-    border: 1.5px solid rgba(230,176,0,.4);
-    border-radius: 10px;
-    padding: 12px 18px;
-    margin-top: 16px;
-}
-
-.obj-capturer-icon {
-    width: 38px; height: 38px;
-    border-radius: 8px;
-    background: rgba(230,176,0,.15);
-    border: 1.5px solid rgba(230,176,0,.4);
-    display: flex; align-items: center; justify-content: center;
-    color: #e6b000; font-size: 16px; flex-shrink: 0;
-}
-
-.obj-capturer-label {
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 1.5px;
-    color: rgba(255,255,255,.45);
-    text-transform: uppercase;
-    margin-bottom: 2px;
-}
-
-.obj-capturer-name {
-    font-size: 15px;
-    font-weight: 700;
-    color: #fff;
-}
-
-.obj-capturer-sap {
-    font-size: 11px;
-    color: rgba(230,176,0,.75);
-    font-weight: 600;
-    margin-top: 1px;
-}
-
-.obj-loader-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 99999;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    gap: 20px;
-    padding: 20px;
-    background: rgba(26,46,53,.84);
-    backdrop-filter: blur(3px);
-    font-family: 'Poppins', sans-serif;
-}
-
-.obj-loader-overlay.show { display: flex; }
-
-.obj-loader-spinner {
-    width: 56px;
-    height: 56px;
-    border: 5px solid rgba(230,176,0,.25);
-    border-top-color: #e6b000;
-    border-radius: 50%;
-    animation: obj-spin .9s linear infinite;
-}
-
-.obj-loader-text {
-    max-width: 420px;
-    color: #fff;
-    font-size: 15px;
-    font-weight: 600;
-    line-height: 1.55;
-    text-align: center;
-}
-
-.obj-loader-text strong {
-    display: block;
-    margin-bottom: 6px;
-    color: #e6b000;
-    font-size: 17px;
-}
-
-@@keyframes obj-spin { to { transform: rotate(360deg); } }
-
-
-@@media (max-width: 680px) {
-    .obj-hero-inner  { flex-direction: column; align-items: flex-start; padding: 18px 20px; }
-    .obj-hero-right  { align-items: flex-start; }
-    .obj-hero-prop   { text-align: left; white-space: normal; }
-    .obj-form-head   { padding: 10px 20px; }
-}
-
-/* Multi-purpose Query alignment.
-   Existing section classes remain the JavaScript contract. */
-#myForm {
-    width: 100%;
-    overflow: visible;
-}
-
-#section1,
-#section78_1,
-#section2,
-#section3-res,
-#section3-agric,
-#section3-bus,
-#section4-bus,
-#section4-res,
-#section5,
-#section6,
-#sectionUpload,
-#section7 {
-    width: 100%;
-    padding: 0 24px;
-    box-sizing: border-box;
-    overflow: visible;
-}
-
-.div1,
-.div781,
-.div2,
-.div3_R,
-.div3_A,
-.div3_B,
-.div4_B,
-.div4_R,
-.div5,
-.div6,
-.divU,
-.div7 {
-    width: 100% !important;
-    max-width: 1500px !important;
-    margin-top: 12px !important;
-    padding: 36px !important;
-    border: 3px solid #e6b000 !important;
-    border-radius: 12px !important;
-    background: #fff !important;
-    box-shadow: 0 10px 40px rgba(0, 101, 112, .15) !important;
-    box-sizing: border-box;
-    overflow: visible !important;
-    font-family: 'Poppins', sans-serif;
-}
-
-.obj-form-intro-wrap {
-    display: flex;
-    justify-content: center;
-    padding: 0 24px;
-}
-
-.obj-form-intro-wrap > .obj-form-card {
-    width: 100%;
-    max-width: 1500px;
-}
-
-.obj-form-banner {
-    padding: 38px 32px;
-    border-bottom: 3px solid #e6b000;
-    border-radius: 12px;
-    background: linear-gradient(135deg, #006570, #004d56);
-    color: #fff;
-    text-align: center;
-}
-
-.obj-form-banner h1 {
-    margin: 16px 0 8px;
-    color: #fff;
-    font-size: clamp(20px, 2vw, 29px);
-    font-weight: 800;
-}
-
-.obj-form-banner h2 {
-    margin: 0;
-    color: #e6b000;
-    font-size: 15px;
-    font-weight: 700;
-}
-
-.obj-form-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 7px 18px;
-    border: 1px solid #e6b000;
-    border-radius: 999px;
-    color: #e6b000;
-    font-size: 11px;
-    font-weight: 800;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-}
-
-.obj-prop-header-card {
-    margin-top: 30px;
-    padding: 28px 30px;
-    border: 2px solid #e6b000;
-    border-radius: 12px;
-    background: #fffdf5;
-}
-
-.obj-prop-header-eyebrow,
-.obj-prop-label {
-    color: #408d97;
-    font-size: 10px;
-    font-weight: 800;
-    letter-spacing: 1.8px;
-    text-transform: uppercase;
-}
-
-.obj-prop-header-title {
-    margin: 14px 0 5px;
-    color: #006570;
-    font-size: 20px;
-    font-weight: 800;
-    text-transform: uppercase;
-}
-
-.obj-prop-header-title span { color: #e6b000; }
-.obj-prop-header-sub { color: #5b9aa2; font-weight: 600; }
-
-.obj-prop-header-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 14px;
-    margin-top: 18px;
-    padding: 12px 18px;
-    border: 1px solid #e6b000;
-    border-radius: 10px;
-    background: #fff;
-}
-
-.obj-prop-icon {
-    display: grid;
-    width: 48px;
-    height: 48px;
-    place-items: center;
-    border-radius: 10px;
-    background: #006570;
-    color: #e6b000;
-}
-
-.obj-prop-label,
-.obj-prop-value { display: block; }
-.obj-prop-value { color: #111827; font-size: 15px; font-weight: 800; }
-
-.obj-section-title {
-    color: #006570 !important;
-    text-align: center;
-    text-transform: uppercase;
-}
-
-.obj-step-divider {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin: 18px 0 28px;
-}
-
-.obj-step-divider .line { height: 2px; flex: 1; background: #e6b000; }
-.obj-step-divider .dot {
-    width: 8px;
-    height: 8px;
-    border: 2px solid #e6b000;
-    border-radius: 50%;
-    background: #006570;
-}
-
-.obj-section-bar {
-    margin-bottom: 20px;
-    padding: 13px 18px;
-    border-left: 5px solid #e6b000;
-    background: #006570;
-    color: #fff;
-    font-size: 15px;
-    font-weight: 800;
-    text-transform: uppercase;
-}
-
-.obj-nav-btn {
-    min-width: 120px;
-    margin-top: 18px !important;
-    padding: 10px 22px !important;
-    border: 0 !important;
-    border-radius: 8px !important;
-    background: #006570 !important;
-    color: #fff !important;
-    font-weight: 700 !important;
-}
-
-.obj-nav-btn-next,
-.obj-nav-btn-submit { float: right; }
-
-.obj-ev-intro { margin: 0 0 16px; color: #6b7280; font: 12.5px/1.6 'Poppins', sans-serif; }
-.obj-ev-label { display:flex; align-items:center; gap:8px; margin-bottom:10px; color:#006570; font:700 11.5px 'Poppins',sans-serif; letter-spacing:.4px; text-transform:uppercase; }
-.obj-ev-label i { color:#e6b000; }
-.obj-ev-optional { color:#9a9a9a; font-weight:400; text-transform:none; }
-.obj-ev-dropzone { margin-bottom:12px; padding:36px 24px; border:2.5px dashed #e6b000; border-radius:12px; background:#fff8dc; text-align:center; cursor:pointer; transition:.15s; }
-.obj-ev-dropzone:hover,.obj-ev-dropzone.dragover { border-color:#006570; background:#eef8f8; }
-.obj-ev-dropzone.full { opacity:.55; pointer-events:none; }
-.obj-ev-icon { margin-bottom:8px; color:#006570; font-size:36px; }
-.obj-ev-title { margin-bottom:4px; color:#006570; font:700 15px 'Poppins',sans-serif; }
-.obj-ev-sub { margin-bottom:14px; color:#888; font:12.5px 'Poppins',sans-serif; }
-.obj-ev-browse { display:inline-flex; align-items:center; gap:7px; padding:9px 20px; border:0; border-radius:8px; background:#006570; color:#fff; cursor:pointer; font:700 13px 'Poppins',sans-serif; }
-#objectionEvidenceInput,#files { display:none; }
-.obj-ev-counter { display:flex; align-items:center; gap:12px; margin-bottom:10px; color:#888; font:12px 'Poppins',sans-serif; }
-.obj-ev-track { flex:1; height:5px; border-radius:3px; background:#e8e8e8; }
-.obj-ev-fill { width:0; height:100%; border-radius:3px; background:#006570; transition:width .25s; }
-.obj-ev-fill.full { background:#dc2626; }
-.obj-ev-list { display:flex; flex-direction:column; gap:6px; margin-bottom:12px; }
-.obj-ev-file { display:flex; align-items:center; gap:10px; padding:9px 14px; border:1px solid rgba(54,98,109,.2); border-radius:8px; background:#eaf4f5; }
-.obj-ev-name { flex:1; overflow:hidden; color:#1a1a1a; font-size:13px; font-weight:600; text-overflow:ellipsis; white-space:nowrap; }
-.obj-ev-size { flex-shrink:0; color:#666; font-size:11.5px; }
-.obj-ev-remove { padding:2px 5px; border:0; background:transparent; color:#dc2626; cursor:pointer; font-size:15px; }
-.obj-ev-note { color:#888; font:12px 'Poppins',sans-serif; }
-
-.obj-legal-box { margin: 16px 0; padding: 20px; border: 1px solid #e6b000; border-radius: 10px; background: #fffdf5; color: #006570; }
-.obj-declaration-row { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin:18px 0; padding:16px; border:1px solid #e6b000; border-radius:10px; color:#006570; font-weight:700; }
-.obj-declaration-row input { min-width:260px; flex:1; padding:11px 14px; border:2px solid #e6b000; border-radius:8px; }
-.obj-auto-signature { margin-top:18px; padding:14px; border:1px solid #006570; border-radius:10px; background:#f8fafc; }
-.obj-auto-signature-title { display:flex; align-items:center; gap:8px; margin-bottom:10px; font:700 11px 'Poppins',sans-serif; letter-spacing:.5px; text-transform:uppercase; }
-.obj-auto-signature-title i { color:#e6b000; }
-.obj-signature-canvas-wrap { position:relative; width:100%; max-width:600px; border:2px solid #006570; border-radius:8px; background:#fff; }
-#signature { display:block; width:100%; height:160px; border:0 !important; border-radius:6px; cursor:crosshair; touch-action:none; }
-.obj-signature-line { position:absolute; right:20px; bottom:40px; left:20px; border-bottom:1px dashed #d0d0d0; pointer-events:none; }
-.obj-signature-hint { position:absolute; bottom:20px; left:20px; color:#ccc; font:11px 'Poppins',sans-serif; pointer-events:none; }
-.obj-signature-controls { display:flex; align-items:center; gap:12px; margin-top:10px; }
-.obj-signature-clear { padding:6px 16px; border:1px solid #d0d0d0; border-radius:6px; background:#f7f7f7; cursor:pointer; font:700 12px 'Poppins',sans-serif; }
-#signatureStatus { color:#6b6b6b; font:12px 'Poppins',sans-serif; }
-
-@@media (max-width: 768px) {
-    #section1,#section78_1,#section2,#section3-res,#section3-agric,#section3-bus,
-    #section4-bus,#section4-res,#section5,#section6,#sectionUpload,#section7,
-    .obj-form-intro-wrap { padding: 0 10px; }
-    .div1,.div781,.div2,.div3_R,.div3_A,.div3_B,.div4_B,.div4_R,.div5,.div6,.divU,.div7 { padding: 18px !important; }
-    .obj-form-banner,.obj-prop-header-card { padding: 22px 18px; }
-    .obj-prop-header-pill { width: 100%; }
-}
-</style>
-
-
+        /* Attributes-style signature: drawing is captured automatically. */
+        .obj-auto-signature { padding: 14px; }
+        .obj-auto-signature-title { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font: 700 11px 'Poppins', sans-serif; letter-spacing: .5px; text-transform: uppercase; }
+        .obj-auto-signature-title i { color: #e6b000; }
+        .obj-signature-canvas-wrap { position: relative; max-width: 600px; border: 2px solid #006570; border-radius: 8px; background: #fff; }
+        #signature { display: block; width: 100%; height: 160px; border: 0 !important; border-radius: 6px; cursor: crosshair; touch-action: none; }
+        .obj-signature-line { position: absolute; right: 20px; bottom: 40px; left: 20px; border-bottom: 1px dashed #d0d0d0; pointer-events: none; }
+        .obj-signature-hint { position: absolute; bottom: 20px; left: 20px; color: #ccc; font: 11px 'Poppins', sans-serif; pointer-events: none; }
+        .obj-signature-controls { display: flex; align-items: center; gap: 12px; margin-top: 10px; }
+        .obj-signature-clear { padding: 6px 16px; border: 1px solid #d0d0d0; border-radius: 6px; background: #f7f7f7; cursor: pointer; font: 700 12px 'Poppins', sans-serif; }
+        #signatureStatus { color: #6b6b6b; font: 12px 'Poppins', sans-serif; }
+    </style>
 }
 @using System.Text.RegularExpressions
 @using V2_Genesis.Models
@@ -660,7 +241,7 @@
     <div class="obj-form-head">
         <span class="obj-form-head-label">Form Type</span>
         <span class="obj-form-head-title" id="form_head">
-            SECTION 78 @_processNameUpper FORM
+            FORM D: MULTIPURPOSE · SECTION 78 @_processNameUpper
         </span>
     </div>
 </div>
@@ -679,7 +260,7 @@
          role="alert"></div>
 
 
-    <div class="obj-form-intro-wrap">
+    <div style="display:flex;justify-content:center;">
         <div class="obj-form-card" style="margin-top:12px;">
             <div class="obj-form-banner">
                 <span class="obj-form-chip">
@@ -791,9 +372,8 @@
 
 
 
-                    <div style="border-left: 5px solid #e6b000; background-color: #006572; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-
-                        <span style="font-weight: bold; color:white; font-size: 16px; text-transform: uppercase; letter-spacing: 0.5px;">PHYSICAL ADDRESS OF OWNER</span>
+                    <div class="obj-section-bar">
+                        <span>PHYSICAL ADDRESS OF OWNER</span>
                     </div>
 
                     <div class="row mb-2">
@@ -826,23 +406,17 @@
                         </div>
                     </div>
 
-                    <div style="border-left: 5px solid #e6b000; background-color: #006572; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-
-                        <span style="font-weight: bold; font-size: 16px;color:white; text-transform: uppercase; letter-spacing: 0.5px;">POSTAL ADDRESS OF OWNER</span>
+                    <div class="obj-section-bar">
+                        <span>POSTAL ADDRESS OF OWNER</span>
                     </div>
 
-                    <div style="border-left: 5px solid #e6b000; background-color: #006572; padding: 12px 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-
+                    <div class="obj-section-bar">
                         <fieldset class="col-md-6" style="width: 100%;">
-                            <p style="color:white;">
-                                <label class="form-label fw-semibold " style="color:white;">Postal Address is the same as Physical Address? &nbsp;</label>
-                                <span>
-                                    <label class="form-label fw-semibold " style="color:white;">No</label>
-                                    <input type="radio" name="add_pos" value="No" onclick="pos_no()" checked />
-                                    <label class="form-label fw-semibold " style="color:white;">Yes</label>
-                                    <input type="radio" name="add_pos" onclick="pos_yes()" value="Yes" />
-                                </span>
-                            </p>
+                            <label class="gen-same-address">
+                                <input type="checkbox" id="samePostalAddress"
+                                       onchange="this.checked ? pos_yes() : pos_no()" />
+                                Physical address is the same as the postal address
+                            </label>
                         </fieldset>
                     </div>
 
@@ -4171,23 +3745,23 @@
         TempData.Keep("CurrentFilter_mult_Bus_MV");
     }
 
-    <div class="div6 obj-form-card" style="margin-top: 12px; border-radius: 12px; border: 3px solid #e6b000; padding: 20px; width: 100%; max-width: 1050px; background-color: #ffffff; box-shadow: 0 10px 40px rgba(0, 101, 112, 0.15); font-family: 'Poppins', sans-serif;">
+    <div class="div6 obj-form-card">
             
         @* <h5 style="text-align:center" id="section6_head">SECTION 6: QUERY DETAILS</h5> *@
 
         <div style="width: 100%; margin: 20px 0; padding: 10px 0; position: relative;">
-            <h4 style="text-align: center; color: #006572;" id="section6_head"><strong>SECTION 6: @_processNameUpper DETAILS</strong></h4>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <div style="height: 2px; background-color: #e6b000; width: 45%;"></div>
-                <div style="height: 8px; width: 8px; border-radius: 50%; background-color: #006570; border: 2px solid #e6b000;"></div>
-                <div style="height: 2px; background-color: #e6b000; width: 45%;"></div>
+            <h4 class="obj-section-title" id="section6_head"><strong>SECTION 6: @_processNameUpper DETAILS</strong></h4>
+            <div class="obj-step-divider">
+                <div class="line"></div>
+                <div class="dot"></div>
+                <div class="line"></div>
             </div>
         </div>
 
 
         <div class="alert-notice">
             <div class="alert-header">
-                <span class="alert-icon">Instructions</span>
+                <span class="alert-icon">📋</span>
                 <h3 class="alert-title"><strong>Section 6 Instructions</strong></h3>
             </div>
             <div class="instruction-box">
@@ -4196,10 +3770,10 @@
             </div>
             <div class="warning-box">
                 <p>
-                    <span class="warning-icon">Warning</span>
+                    <span class="warning-icon">⚠️</span>
                     <span>
                         <strong>Important:</strong> Do not enter values <span class="highlight">identical to the original</span>.
-                        Unchanged values will be cleared after 5 seconds.
+                        The form will ask you to select or enter a different value before continuing.
                     </span>
                 </p>
             </div>
@@ -5464,3 +5038,5 @@
     `;
     document.head.appendChild(style);
 </script>
+
+<script asp-append-version="true" src="~/js/Section78QueryParity.js"></script>

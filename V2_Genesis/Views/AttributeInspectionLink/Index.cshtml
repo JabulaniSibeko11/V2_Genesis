@@ -1,0 +1,252 @@
+﻿@model V2_Genesis.Models.ViewModels.Attributes.PublicInspectionLinkVm
+@{
+    ViewData["Title"] = "Attribute Inspection";
+    Layout = null;
+    var instanceKey = Model.InspectionRequestId.ToString();
+}
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>City of Johannesburg - Attribute Inspection</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+    <link rel="stylesheet" href="~/css/views/client-dashboard.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/views/pin-entry.css" asp-append-version="true" />
+    <style>
+            * {
+                box-sizing: border-box
+            }
+
+            body {
+                margin: 0;
+                background: #f5f5f2;
+                font-family: Arial,sans-serif;
+                color: #151515
+            }
+
+            .top {
+                background: #0d3036;
+                color: #fff;
+                padding: 18px 24px;
+                border-bottom: 5px solid #e8b600
+            }
+
+                .top strong {
+                    font-size: 20px
+                }
+
+            .wrap {
+                max-width: 900px;
+                margin: 28px auto;
+                padding: 0 16px
+            }
+
+            .cardx {
+                background: #fff;
+                border: 1px solid #ddd;
+                border-radius: 12px;
+                box-shadow: 0 3px 14px rgba(0,0,0,.08);
+                overflow: hidden;
+                margin-bottom: 18px
+            }
+
+            .headx {
+                padding: 22px 24px;
+                border-bottom: 1px solid #eee
+            }
+
+                .headx h1 {
+                    margin: 0 0 8px;
+                    font-size: 27px
+                }
+
+            .bodyx {
+                padding: 22px 24px
+            }
+
+            .notice {
+                background: #fff6d6;
+                border-left: 5px solid #e8b600;
+                padding: 14px 16px;
+                margin-bottom: 18px
+            }
+
+            .successx {
+                background: #e8f7ec;
+                border-left: 5px solid #16833f;
+                padding: 14px 16px;
+                margin-bottom: 18px
+            }
+
+            .errorx {
+                background: #fdeaea;
+                border-left: 5px solid #bd2222;
+                padding: 14px 16px;
+                margin-bottom: 18px
+            }
+
+            .gridx {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 12px
+            }
+
+            .fieldx {
+                border: 1px solid #e3e3e3;
+                border-radius: 8px;
+                padding: 12px
+            }
+
+                .fieldx span {
+                    display: block;
+                    font-size: 11px;
+                    font-weight: bold;
+                    color: #666;
+                    text-transform: uppercase;
+                    margin-bottom: 5px
+                }
+
+            .valuer {
+                border-top: 5px solid #0d3036
+            }
+
+            .valuer-grid {
+                display: grid;
+                grid-template-columns: 180px 1fr;
+                gap: 20px
+            }
+
+            .photo {
+                width: 160px;
+                height: 190px;
+                object-fit: cover;
+                border-radius: 9px;
+                border: 1px solid #ddd
+            }
+
+            .muted {
+                color: #666;
+                font-size: 13px
+            }
+
+            .foot {
+                text-align: center;
+                color: #666;
+                font-size: 12px;
+                padding: 20px
+            }
+            @@media(max-width:650px)
+
+            {
+                .gridx, .valuer-grid {
+                    grid-template-columns: 1fr
+                }
+
+                .photo {
+                    width: 140px;
+                    height: 165px
+                }
+            }
+    </style>
+</head>
+<body>
+    <div class="top"><strong>City of Johannesburg</strong><br />Valuation Services - Property Attributes</div>
+    <div class="wrap">
+        @if (TempData["InspectionLinkSuccess"] != null)
+        {
+            <div class="successx">@TempData["InspectionLinkSuccess"]</div>
+        }
+        @if (!string.IsNullOrWhiteSpace(Model.Message))
+        {
+            <div class="notice">@Model.Message</div>
+        }
+        @if (Model.IsExpired)
+        {
+            <div class="errorx"><strong>This secure link has expired.</strong> Please contact Valuation Administration if assistance is required.</div>
+        }
+
+        <div class="cardx">
+            <div class="headx">
+                <h1>Physical Inspection</h1>
+                <div class="muted">Secure City of Johannesburg Valuation Administration link. You can complete this inspection action without signing in to the portal.</div>
+            </div>
+            <div class="bodyx">
+                <div class="gridx">
+                    <div class="fieldx"><span>Reference</span><strong>@Model.AttrNo</strong></div>
+                    <div class="fieldx"><span>Status</span><strong>@Model.Status</strong></div>
+                    <div class="fieldx"><span>Property</span><strong>@Model.PropertyDescription</strong></div>
+                    <div class="fieldx"><span>Client</span><strong>@Model.ClientName</strong></div>
+                </div>
+                @if (Model.ConfirmedDateTime.HasValue)
+                {
+                    <div class="successx" style="margin-top:18px"><strong>Inspection appointment confirmed</strong><br />@Model.ConfirmedDateTime.Value.ToString("dddd, dd MMMM yyyy 'at' HH:mm")</div>
+                }
+            </div>
+        </div>
+
+        @if (Model.ValuerDetailsAvailable && Model.Valuer != null)
+        {
+            <div class="cardx valuer">
+                <div class="headx"><h1>Authorised Valuer Details</h1><div class="muted">Use these details to verify the City official who arrives for the inspection.</div></div>
+                <div class="bodyx valuer-grid">
+                    <div>@if(Model.Valuer.HasPhoto){
+                        <img class="photo" src="@Url.Action("ValuerPhoto", new { token = Model.Token })" alt="Authorised valuer" />
+                    }
+                </div>
+                <div class="gridx">
+                    <div class="fieldx"><span>Valuer</span><strong>@Model.Valuer.ValuerName</strong></div>
+                    <div class="fieldx"><span>Cell</span><strong>@(Model.Valuer.CellNumber ?? "-")</strong></div>
+                    <div class="fieldx"><span>Email</span><strong>@(Model.Valuer.EmailAddress ?? "-")</strong></div>
+                    <div class="fieldx"><span>Vehicle Registration</span><strong>@(Model.Valuer.VehicleRegistration ?? "-")</strong></div>
+                    <div class="fieldx"><span>Vehicle Make</span><strong>@(Model.Valuer.VehicleMake ?? "-")</strong></div>
+                    <div class="fieldx"><span>Vehicle Colour</span><strong>@(Model.Valuer.VehicleColour ?? "-")</strong></div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <div class="foot">AdministrationEnquiries@joburg.org.za · Secure City of Johannesburg link. Do not forward this link to another person.</div>
+</div>
+
+@if (Model.CanSelectDate)
+{
+    var dateModal = new V2_Genesis.Models.ViewModels.Attributes.InspectionDateModalVm
+    {
+        InstanceKey = instanceKey,
+        AppointmentRef = Model.AttrNo,
+        FormAction = Url.Action("Confirm", "AttributeInspectionLink", new { token = Model.Token }) ?? $"/attributes/inspection/{Model.Token:D}/confirm",
+        SlotFieldName = "slotId",
+        RequestComment = Model.RequestComment,
+        AutoOpen = true,
+        Slots = Model.Slots
+            .Where(x => string.Equals(x.Status, "Offered", StringComparison.OrdinalIgnoreCase))
+            .Select(x => new V2_Genesis.Models.ViewModels.Attributes.InspectionDateModalSlotVm
+            {
+                Id = x.Id,
+                SlotNo = x.SlotNo,
+                ProposedDateTime = x.ProposedDateTime
+            }).ToList()
+    };
+    <partial name="Attributes/_InspectionDateModal" model="dateModal" />
+}
+
+@if (Model.RequiresPinVerification)
+{
+    var pinModal = new V2_Genesis.Models.ViewModels.Attributes.InspectionPinModalVm
+    {
+        InstanceKey = instanceKey,
+        AppointmentRef = Model.AttrNo,
+        FormAction = Url.Action("VerifyPin", "AttributeInspectionLink", new { token = Model.Token }) ?? $"/attributes/inspection/{Model.Token:D}/verify-pin",
+        PinFieldName = "inspectionPin",
+        ConfirmedDateTime = Model.ConfirmedDateTime,
+        ErrorMessage = TempData["InspectionPinError"]?.ToString(),
+        AutoOpen = true
+    };
+    <partial name="Attributes/_InspectionPinModal" model="pinModal" />
+}
+
+<script src="~/js/attribute-inspection-modals.js" asp-append-version="true"></script>
+</body>
+</html>
