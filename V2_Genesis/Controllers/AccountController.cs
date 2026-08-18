@@ -475,79 +475,120 @@ namespace V2_Genesis.Controllers
         [Route("login")]
         [AllowAnonymous]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Login(LoginViewModel model, string? returnUrl = null)
+        public async Task<IActionResult> Login(
+     LoginViewModel model,
+     string? returnUrl = null)
         {
             ViewBag.ReturnUrl = returnUrl;
             ViewBag.RecaptchaSiteKey = _captchaSiteKey;
+
             // 1. Validate email + password fields first
             if (!ModelState.IsValid)
                 return View(model);
 
-            // 2. reCAPTCHA — read from g-recaptcha-response (widget posts under this name)
-            var captchaToken = Request.Form["g-recaptcha-response"].ToString();
-            if (string.IsNullOrWhiteSpace(captchaToken) || !await _captcha.VerifyAsync(captchaToken))
+            // 2. reCAPTCHA
+            // IMPORTANT:
+            // Always let ReCaptchaService decide whether verification is required.
+            // This allows the UAT bypass to work.
+            var captchaToken =
+                Request.Form["g-recaptcha-response"].ToString();
+
+            var captchaValid =
+                await _captcha.VerifyAsync(captchaToken);
+
+            if (!captchaValid)
             {
-                ModelState.AddModelError(string.Empty, "Please complete the reCAPTCHA verification.");
+                ModelState.AddModelError(
+                    string.Empty,
+                    "Please complete the reCAPTCHA verification.");
+
                 return View(model);
             }
 
             // 3. Find user
-            var user = await _userManager.FindByEmailAsync(model.Email);
+            var user =
+                await _userManager.FindByEmailAsync(model.Email);
+
             if (user is null)
             {
-                ModelState.AddModelError(string.Empty, "Invalid email or password.");
+                ModelState.AddModelError(
+                    string.Empty,
+                    "Invalid email or password.");
+
                 return View(model);
             }
 
+            // 4. Check lockout BEFORE checking password
+            if (await _userManager.IsLockedOutAsync(user))
+            {
+                ModelState.AddModelError(
+                    string.Empty,
+                    "Your account has been temporarily locked due to multiple failed attempts. Please try again later.");
 
-            // 3. Verify password (without signing in yet — for both admin and client)
-            var passwordOk = await _userManager.CheckPasswordAsync(user, model.Password);
+                return View(model);
+            }
+
+            // 5. Verify password
+            var passwordOk =
+                await _userManager.CheckPasswordAsync(
+                    user,
+                    model.Password);
+
             if (!passwordOk)
             {
                 await _userManager.AccessFailedAsync(user);
-                ModelState.AddModelError(string.Empty, "Invalid email or password.");
+
+                ModelState.AddModelError(
+                    string.Empty,
+                    "Invalid email or password.");
+
                 return View(model);
             }
 
-            // 4. Check lockout
-            if (await _userManager.IsLockedOutAsync(user))
-            {
-                ModelState.AddModelError(string.Empty,
-                    "Your account has been temporarily locked due to multiple failed attempts. Please try again later.");
-                return View(model);
-            }
-
-            // 5. Admin detection — val.admin1@joburg.org.za … val.admin19@joburg.org.za
-            //    → Windows auth. Any other email → external client flow below.
+            // 6. Admin detection
             if (IsAdminLoginEmail(model.Email))
             {
                 await _userManager.ResetAccessFailedCountAsync(user);
 
-                // Keep the fixed app admin account.
-                // This is the account the app must use to pull admin data.
-                HttpContext.Session.SetString(PendingAdminLoginEmailKey, AdminAppEmail);
+                HttpContext.Session.SetString(
+                    PendingAdminLoginEmailKey,
+                    AdminAppEmail);
 
                 await _signInManager.SignOutAsync();
 
                 return RedirectToAction(nameof(WindowsLogin));
             }
 
-            // 6. Client flow — require confirmed email
+            // 7. Client must have confirmed email
             if (!await _userManager.IsEmailConfirmedAsync(user))
             {
-                ModelState.AddModelError(string.Empty,
+                ModelState.AddModelError(
+                    string.Empty,
                     "Your email address has not been confirmed. Please check your inbox for the confirmation link.");
+
                 return View(model);
             }
 
-            // 7. Sign client in
+            // 8. Sign client in
             await _userManager.ResetAccessFailedCountAsync(user);
-            await _signInManager.SignInAsync(user, isPersistent: true);
 
-            _logger.LogInformation("Client {Email} signed in.", user.Email);
-            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+            await _signInManager.SignInAsync(
+                user,
+                isPersistent: model.RememberMe);
+
+            _logger.LogInformation(
+                "Client {Email} signed in.",
+                user.Email);
+
+            if (!string.IsNullOrEmpty(returnUrl) &&
+                Url.IsLocalUrl(returnUrl))
+            {
                 return LocalRedirect(returnUrl);
-            return RedirectToAction("Index", "Dashboard");
+            }
+
+            return RedirectToAction(
+                "Index",
+                "Dashboard");
         }
 
         // ══════════════════════════════════════════════════════════════════════

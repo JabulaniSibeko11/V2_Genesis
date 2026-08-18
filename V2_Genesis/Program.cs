@@ -33,7 +33,13 @@ builder.Services.AddSession(o =>
     o.Cookie.Name = "V2Genesis.Session";
     o.Cookie.HttpOnly = true;
     o.Cookie.IsEssential = true;
-    o.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    // Secure-only cookies are silently dropped by the browser on a
+    // plain-HTTP connection — UAT is currently served over HTTP on a
+    // non-standard port with no working HTTPS binding, so this must
+    // relax outside Production or the session cookie never persists.
+    o.Cookie.SecurePolicy = builder.Environment.IsProduction()
+        ? CookieSecurePolicy.Always
+        : CookieSecurePolicy.SameAsRequest;
     o.Cookie.SameSite = SameSiteMode.Lax;
 });
 
@@ -82,7 +88,13 @@ builder.Services.ConfigureApplicationCookie(o =>
     o.Cookie.Name = "V2Genesis.Auth";
     o.Cookie.HttpOnly = true;
     o.Cookie.IsEssential = true;
-    o.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    // Same reasoning as the session cookie above — this is the cookie
+    // that actually proves someone is signed in. On Always+HTTP it
+    // never gets stored, so every request after a "successful" login
+    // looks unauthenticated again.
+    o.Cookie.SecurePolicy = builder.Environment.IsProduction()
+        ? CookieSecurePolicy.Always
+        : CookieSecurePolicy.SameAsRequest;
     o.Cookie.SameSite = SameSiteMode.Lax;
 });
 
