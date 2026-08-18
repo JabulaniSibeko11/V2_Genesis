@@ -39,7 +39,10 @@
     </div>
 
     <div class="rf-body">
-        <form id="rebateForm" method="post" enctype="multipart/form-data"
+        <form id="rebateForm"
+              data-submission-loader
+              data-submission-title="Submitting your Rebate application..."
+              data-submission-message="Please wait while the Valuation Department receives your Rebate application and prepares the acknowledgement. Do not close or refresh this page." method="post" enctype="multipart/form-data"
               asp-controller="Rebates" asp-action="HighDensity">
             @Html.AntiForgeryToken()
 

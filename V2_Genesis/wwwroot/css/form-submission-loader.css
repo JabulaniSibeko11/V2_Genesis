@@ -1,0 +1,60 @@
+﻿/* Reusable final-submission loader. Matches Objection / Query submission UX. */
+.submission-loader-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 100010;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 20px;
+    padding: 20px;
+    background: rgba(26, 46, 53, .82);
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+    font-family: 'Poppins', Arial, sans-serif;
+}
+
+.submission-loader-overlay.show { display: flex; }
+
+body.submission-is-loading {
+    overflow: hidden !important;
+    cursor: wait;
+}
+
+.submission-loader-spinner {
+    width: 56px;
+    height: 56px;
+    border: 5px solid rgba(230, 176, 0, .25);
+    border-top-color: #e6b000;
+    border-radius: 50%;
+    animation: submission-loader-spin .9s linear infinite;
+}
+
+.submission-loader-text {
+    max-width: 390px;
+    color: #fff;
+    text-align: center;
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.5;
+}
+
+.submission-loader-text strong,
+.submission-loader-text span { display: block; }
+
+.submission-loader-text strong {
+    margin-bottom: 4px;
+    font-size: 16px;
+}
+
+.submission-loader-text span {
+    font-weight: 500;
+    color: rgba(255,255,255,.92);
+}
+
+@keyframes submission-loader-spin { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+    .submission-loader-spinner { animation-duration: 1.8s; }
+}

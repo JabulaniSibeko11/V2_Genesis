@@ -51,6 +51,7 @@
 
     function classify(element) {
         if (!element || element.matches('[data-no-loader], [disabled]')) return null;
+        if (element.form?.matches('[data-submission-loader]')) return null;
 
         const explicit = element.dataset?.loader;
         if (explicit === 'none') return null;
@@ -127,8 +128,8 @@
         if (!elements.overlay) return;
 
         const config = Object.assign({}, configurations[type] || configurations.submit, custom || {});
-        elements.title.textContent = config.title;
-        elements.message.textContent = config.message;
+        if (elements.title) elements.title.textContent = config.title;
+        if (elements.message) elements.message.textContent = config.message;
         elements.overlay.classList.add('is-visible');
         elements.overlay.setAttribute('aria-hidden', 'false');
         document.body.classList.add('genesis-is-loading');

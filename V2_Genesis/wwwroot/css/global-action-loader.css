@@ -1,151 +1,68 @@
-﻿.genesis-loader {
+﻿/* Simple application loader. The page remains visible but blurred behind it. */
+.genesis-loader {
     position: fixed;
     inset: 0;
     z-index: 100000;
     display: none;
     align-items: center;
     justify-content: center;
-    padding: 20px;
-    background: rgba(10, 25, 31, .78);
-    backdrop-filter: blur(4px);
+    background: rgba(255, 255, 255, .42);
+    -webkit-backdrop-filter: blur(5px);
+    backdrop-filter: blur(5px);
 }
 
-    .genesis-loader.is-visible {
-        display: flex;
-    }
+.genesis-loader.is-visible { display: flex; }
 
 body.genesis-is-loading {
     overflow: hidden !important;
+    cursor: wait;
 }
 
-.genesis-loader-card {
-    width: min(470px, 94vw);
-    overflow: hidden;
-    border: 2px solid #e6b000;
-    border-radius: 18px;
-    background: #fff;
-    box-shadow: 0 28px 90px rgba(0, 0, 0, .38);
-    font-family: "Poppins", Arial, sans-serif;
-    animation: genesisLoaderEnter .22s ease-out;
+.genesis-app-spinner {
+    font-size: 48px;
+    position: relative;
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    filter: drop-shadow(0 2px 8px rgba(0,0,0,.12));
 }
 
-.genesis-loader-brand {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 17px 22px;
-    color: #fff;
-    background: linear-gradient(135deg, #172d35, #006572);
-    border-bottom: 4px solid #e6b000;
-    font-size: 13px;
-    font-weight: 700;
-    letter-spacing: .2px;
+.genesis-app-spinner .spinner-blade {
+    position: absolute;
+    left: .4629em;
+    bottom: 0;
+    width: .074em;
+    height: .2777em;
+    border-radius: .0555em;
+    background-color: transparent;
+    transform-origin: center -.2222em;
+    animation: genesis-spinner-fade 1s infinite linear;
 }
 
-.genesis-loader-logo {
-    display: grid;
-    width: 38px;
-    height: 38px;
-    flex: 0 0 38px;
-    place-items: center;
-    border-radius: 10px;
-    color: #e6b000;
-    background: rgba(255, 255, 255, .12);
-    font-size: 18px;
-}
+.genesis-app-spinner .spinner-blade:nth-child(1)  { animation-delay: 0s;     transform: rotate(0deg); }
+.genesis-app-spinner .spinner-blade:nth-child(2)  { animation-delay: .083s;  transform: rotate(30deg); }
+.genesis-app-spinner .spinner-blade:nth-child(3)  { animation-delay: .166s;  transform: rotate(60deg); }
+.genesis-app-spinner .spinner-blade:nth-child(4)  { animation-delay: .249s;  transform: rotate(90deg); }
+.genesis-app-spinner .spinner-blade:nth-child(5)  { animation-delay: .332s;  transform: rotate(120deg); }
+.genesis-app-spinner .spinner-blade:nth-child(6)  { animation-delay: .415s;  transform: rotate(150deg); }
+.genesis-app-spinner .spinner-blade:nth-child(7)  { animation-delay: .498s;  transform: rotate(180deg); }
+.genesis-app-spinner .spinner-blade:nth-child(8)  { animation-delay: .581s;  transform: rotate(210deg); }
+.genesis-app-spinner .spinner-blade:nth-child(9)  { animation-delay: .664s;  transform: rotate(240deg); }
+.genesis-app-spinner .spinner-blade:nth-child(10) { animation-delay: .747s;  transform: rotate(270deg); }
+.genesis-app-spinner .spinner-blade:nth-child(11) { animation-delay: .830s;  transform: rotate(300deg); }
+.genesis-app-spinner .spinner-blade:nth-child(12) { animation-delay: .913s;  transform: rotate(330deg); }
 
-.genesis-loader-body {
-    padding: 30px 28px 27px;
-    text-align: center;
+@keyframes genesis-spinner-fade {
+    0%   { background-color: #17323a; }
+    100% { background-color: transparent; }
 }
-
-.genesis-loader-spinner {
-    width: 54px;
-    height: 54px;
-    margin: 0 auto 18px;
-    border: 5px solid #dcebed;
-    border-top-color: #006572;
-    border-right-color: #e6b000;
-    border-radius: 50%;
-    animation: genesisLoaderSpin .8s linear infinite;
-}
-
-.genesis-loader h2 {
-    margin: 0 0 8px;
-    color: #17323a;
-    font-size: 22px;
-    font-weight: 750;
-}
-
-.genesis-loader p {
-    margin: 0;
-    color: #53676d;
-    font-size: 14px;
-    line-height: 1.55;
-}
-
-.genesis-loader small {
-    display: block;
-    margin-top: 14px;
-    color: #74868b;
-    font-size: 11px;
-}
-
-.genesis-loader-progress {
-    height: 5px;
-    margin-top: 22px;
-    overflow: hidden;
-    border-radius: 999px;
-    background: #e8eff0;
-}
-
-    .genesis-loader-progress span {
-        display: block;
-        width: 42%;
-        height: 100%;
-        border-radius: inherit;
-        background: linear-gradient(90deg, #006572, #e6b000);
-        animation: genesisLoaderProgress 1.15s ease-in-out infinite;
-    }
 
 .genesis-action-busy {
     cursor: wait !important;
-    opacity: .78;
+    opacity: .72;
     pointer-events: none;
 }
 
-@keyframes genesisLoaderSpin {
-    to {
-        transform: rotate(360deg);
-    }
-}
-
-@keyframes genesisLoaderProgress {
-    0% {
-        transform: translateX(-115%);
-    }
-
-    100% {
-        transform: translateX(250%);
-    }
-}
-
-@keyframes genesisLoaderEnter {
-    from {
-        opacity: 0;
-        transform: translateY(10px) scale(.98);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
-}
-
 @media (prefers-reduced-motion: reduce) {
-    .genesis-loader-card,
-    .genesis-loader-spinner,
-    .genesis-loader-progress span {
-        animation-duration: 1.8s;
-    }
+    .genesis-app-spinner .spinner-blade { animation-duration: 1.8s; }
 }

@@ -137,7 +137,10 @@
 @* ── FORM ─────────────────────────────────────────────────────────── *@
 <div class="attr-page">
     <form id="attributeCreateForm" asp-action="Create" asp-controller="Attributes"
-          method="post" enctype="multipart/form-data">
+          method="post" enctype="multipart/form-data"
+          data-submission-loader
+          data-submission-title="Submitting your Attribute application..."
+          data-submission-message="Please wait while the Valuation Department receives your Attribute submission and prepares the acknowledgement. Do not close or refresh this page.">
 
         @Html.AntiForgeryToken()
 
@@ -528,8 +531,8 @@
                                        class="same-postal-checkbox"
                                        data-index="@i"
                                 @(!string.IsNullOrWhiteSpace(Model.ContactInfos[i].PhysicalAddress) &&
-                                                                                                                                                                    Model.ContactInfos[i].PhysicalAddress == Model.ContactInfos[i].PostalAddress
-                                                                                                                                                                    ? "checked" : "") />
+                                                                                                                                                                                                    Model.ContactInfos[i].PhysicalAddress == Model.ContactInfos[i].PostalAddress
+                                                                                                                                                                                                    ? "checked" : "") />
                                 Postal address is the same as the physical address
                             </label>
                         </td>

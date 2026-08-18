@@ -262,7 +262,10 @@
     <form asp-controller="Attributes"
           asp-action="CorrectReturned"
           asp-route-attrId="@Model.AttrId"
-          method="post">
+          method="post"
+          data-submission-loader
+          data-submission-title="Resubmitting your Attribute correction..."
+          data-submission-message="Please wait while the corrected Attribute submission is being saved and returned for review. Do not close or refresh this page.">
         @Html.AntiForgeryToken()
 
         <input asp-for="AttrId" type="hidden" />

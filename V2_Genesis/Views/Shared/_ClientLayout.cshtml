@@ -72,6 +72,7 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/views/client-dashboard.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/global-action-loader.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/form-submission-loader.css" asp-append-version="true" />
 
     <style>
             .nav-brand {
@@ -150,7 +151,8 @@
 </head>
 
 <body>
-    @* <partial name="_GlobalActionLoader" /> *@
+    <partial name="_GlobalActionLoader" />
+    <partial name="_SubmissionActionLoader" />
 
     <!-- ══ NAVBAR ══════════════════════════════════════════════════ -->
     <nav class="cl-navbar" id="clientNav">
@@ -819,6 +821,7 @@
     </script>
 
     <script src="~/js/global-action-loader.js" asp-append-version="true"></script>
+    <script src="~/js/form-submission-loader.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
