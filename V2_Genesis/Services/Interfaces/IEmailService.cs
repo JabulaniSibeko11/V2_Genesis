@@ -84,5 +84,17 @@ namespace V2_Genesis.Services.Interfaces
             string acknowledgementFileName,
             string submittedFormFileName,
             string folderPath);
+
+
+        Task SendAttributeCorrectionAcknowledgementAsync(
+            string recipientEmail,
+            string clientName,
+            string attributeNumber,
+            string propertyDescription,
+            string correctionComment,
+            IReadOnlyCollection<string> correctedSections,
+            byte[] acknowledgementPdf,
+            string acknowledgementFileName,
+            string folderPath);
     }
 }

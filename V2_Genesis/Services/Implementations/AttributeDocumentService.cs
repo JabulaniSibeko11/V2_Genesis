@@ -704,6 +704,55 @@ namespace V2_Genesis.Services.Attributes
             };
         }
 
+        private static void AddCorrectionAcknowledgementIntro(
+            ColumnDescriptor col,
+            AttributeSubmissionViewModel model,
+            AttrPropertyInfo propertyInfo,
+            string correctionComment,
+            IReadOnlyCollection<string> correctedSections)
+        {
+            col.Item()
+                .Background("#EAF7EE")
+                .Border(0.5f)
+                .BorderColor("#218838")
+                .Padding(8)
+                .Column(box =>
+                {
+                    box.Item().Text("Corrections Received").Bold().FontSize(11);
+                    box.Item().PaddingTop(3).Text(
+                        "This document confirms receipt of the corrected property attribute information requested by the Valuer.");
+                    box.Item().PaddingTop(3).Text(
+                        "The original attribute reference remains unchanged. No new 48-hour evidence period or evidence PIN applies to this correction submission.");
+                    box.Item().PaddingTop(5)
+                        .Text($"Attribute Reference: {propertyInfo.Attr_No ?? model.AttrNo ?? ""}")
+                        .Bold();
+                });
+
+            var sections = (correctedSections ?? Array.Empty<string>())
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            col.Item().PaddingTop(8).Text("Correction Summary").Bold().FontSize(10);
+            col.Item().PaddingTop(3).Border(0.5f).BorderColor("#DDDDDD").Padding(7).Column(box =>
+            {
+                if (sections.Count == 0)
+                {
+                    box.Item().Text("Corrections submitted as requested by the Valuer.");
+                }
+                else
+                {
+                    foreach (var section in sections)
+                        box.Item().Text($"• {section}");
+                }
+
+                box.Item().PaddingTop(5).Text("Client correction note:").Bold();
+                box.Item().Text(string.IsNullOrWhiteSpace(correctionComment)
+                    ? "Corrections submitted."
+                    : correctionComment.Trim());
+            });
+        }
+
         private static void AddAcknowledgementIntro(
     ColumnDescriptor col,
     AttributeSubmissionViewModel model,
@@ -1310,6 +1359,114 @@ namespace V2_Genesis.Services.Attributes
                 }
             }
         }
+        public async Task<(byte[] Pdf, string FileName, string FullPath, string FolderPath)>
+            GenerateCorrectionAcknowledgementPdfAsync(
+                AttributeSubmissionViewModel model,
+                AttrPropertyInfo propertyInfo,
+                string correctionComment,
+                IReadOnlyCollection<string> correctedSections)
+        {
+            if (model == null)
+                throw new ArgumentNullException(nameof(model));
+
+            if (propertyInfo == null)
+                throw new ArgumentNullException(nameof(propertyInfo));
+
+            if (string.IsNullOrWhiteSpace(_options.BasePath))
+                throw new InvalidOperationException(
+                    "AttributeStorage:BasePath is not configured in appsettings.json.");
+
+            var attrNo = propertyInfo.Attr_No ?? model.AttrNo ?? $"ATTR-GV23-{propertyInfo.Attr_ID}";
+            var propertyDesc = model.PropertyDetails?.PropertyDesc ?? propertyInfo.Property_Desc ?? "Property";
+            var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+
+            var safeAttrNo = MakeSafeFileName(attrNo);
+            var safePropertyDesc = MakeSafeFileName(propertyDesc);
+            var attrFolder = Path.Combine(_options.BasePath, safeAttrNo);
+            Directory.CreateDirectory(attrFolder);
+
+            var fileName =
+                $"{safeAttrNo}_{safePropertyDesc}_{timestamp}_Correction_Acknowledgement.pdf";
+            var fullPath = Path.Combine(attrFolder, fileName);
+
+            GenerateCorrectionAcknowledgementReplicaPdf(
+                model,
+                propertyInfo,
+                correctionComment,
+                correctedSections,
+                fullPath);
+
+            var bytes = await File.ReadAllBytesAsync(fullPath);
+            return (bytes, fileName, fullPath, attrFolder);
+        }
+
+        private void GenerateCorrectionAcknowledgementReplicaPdf(
+            AttributeSubmissionViewModel model,
+            AttrPropertyInfo propertyInfo,
+            string correctionComment,
+            IReadOnlyCollection<string> correctedSections,
+            string pdfPath)
+        {
+            var headerPath = Path.Combine(_env.WebRootPath, "Images/Obj_Header.PNG");
+
+            Document.Create(container =>
+            {
+                container.Page(page =>
+                {
+                    page.Size(PageSizes.A4);
+                    page.Margin(22);
+                    page.DefaultTextStyle(x => x.FontSize(8));
+
+                    page.Header().Column(header =>
+                    {
+                        AddCojHeaderImage(header, headerPath);
+
+                        header.Item()
+                            .PaddingTop(6)
+                            .AlignCenter()
+                            .Text("Property Attribute Correction Acknowledgement")
+                            .Bold()
+                            .FontSize(13);
+
+                        header.Item()
+                            .AlignCenter()
+                            .Text(GetFormLabel(model.FormType))
+                            .FontSize(10)
+                            .FontColor(Colors.Grey.Darken2);
+
+                        header.Item().PaddingTop(6).LineHorizontal(0.5f);
+                    });
+
+                    page.Content().PaddingTop(10).Column(col =>
+                    {
+                        AddCorrectionAcknowledgementIntro(
+                            col,
+                            model,
+                            propertyInfo,
+                            correctionComment,
+                            correctedSections);
+
+                        // Intentionally no evidence PIN / 48-hour evidence window here.
+                        AddSubmittedPropertyDetails(col, model);
+                        AddSubmittedValuationDetails(col, model);
+                        AddSubmittedContactDetails(col, model);
+                        AddSubmittedFormSpecificDetails(col, model);
+                        AddSubmittedComments(col, model);
+                        AddSubmittedEvidenceSummary(col, model);
+                        AddSubmittedDeclaration(col, model);
+                    });
+
+                    page.Footer().AlignCenter().Text(text =>
+                    {
+                        text.Span("Corrections acknowledged on ");
+                        text.Span(DateTime.Now.ToString("dd MMMM yyyy HH:mm")).SemiBold();
+                        text.Span(" | Attribute Ref: ");
+                        text.Span(propertyInfo.Attr_No ?? model.AttrNo ?? "").SemiBold();
+                    });
+                });
+            }).GeneratePdf(pdfPath);
+        }
+
         private void GenerateAcknowledgementReplicaPdf(
          AttributeSubmissionViewModel model,
          AttrPropertyInfo propertyInfo,
@@ -1435,8 +1592,8 @@ namespace V2_Genesis.Services.Attributes
                 .Padding(4);
         }
 
-       
 
-       
+
+
     }
 }

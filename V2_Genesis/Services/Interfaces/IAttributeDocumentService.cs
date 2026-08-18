@@ -13,5 +13,12 @@ namespace V2_Genesis.Services.Interfaces
         Task<(byte[] Pdf, string FileName)> GenerateAcknowledgementPdfAsync(
             AttributeSubmissionViewModel model,
             AttrPropertyInfo propertyInfo);
+
+        Task<(byte[] Pdf, string FileName, string FullPath, string FolderPath)>
+            GenerateCorrectionAcknowledgementPdfAsync(
+                AttributeSubmissionViewModel model,
+                AttrPropertyInfo propertyInfo,
+                string correctionComment,
+                IReadOnlyCollection<string> correctedSections);
     }
 }

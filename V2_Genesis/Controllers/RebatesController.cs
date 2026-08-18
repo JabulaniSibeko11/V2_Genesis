@@ -94,24 +94,48 @@ public class RebatesController : Controller
     {
         try
         {
-            var root = _config["ObjectionRolls:Rebates:RebateRooTPath"]
-                        ?? throw new InvalidOperationException("RebateRooTPath missing.");
-            var path = Path.Combine(root, rebateNo, $"{rebateNo}_Acknowledgement.pdf");
-
-            if (!System.IO.File.Exists(path))
+            var reference = (rebateNo ?? string.Empty).Trim();
+            if (string.IsNullOrWhiteSpace(reference))
             {
-                TempData["NoticeError"] = "The rebate acknowledgement was not found.";
+                TempData["NoticeError"] = "The rebate reference number is missing.";
                 return RedirectAfterDownload(returnUrl, "Rebates");
             }
 
-            return new FileStreamResult(
-                new FileStream(path, FileMode.Open, FileAccess.Read),
-                "application/pdf")
+            var root = _config["ObjectionRolls:Rebates:RebateRooTPath"]
+                        ?? throw new InvalidOperationException("RebateRooTPath missing.");
+
+            var folder = Path.Combine(root, reference);
+            var expectedPath = Path.Combine(folder, $"{reference}_Acknowledgement.pdf");
+            string? path = System.IO.File.Exists(expectedPath) ? expectedPath : null;
+
+            // Older rebate folders may contain the acknowledgement with a
+            // slightly different/captured filename. The folder belongs to one
+            // rebate only, so use the acknowledgement PDF already stored there
+            // rather than failing the client download.
+            if (path == null && Directory.Exists(folder))
             {
-                FileDownloadName = $"{rebateNo}_Acknowledgement.pdf"
-            };
+                path = Directory
+                    .EnumerateFiles(folder, "*.pdf", SearchOption.TopDirectoryOnly)
+                    .FirstOrDefault(file =>
+                        Path.GetFileName(file).Contains(
+                            "Acknowledgement",
+                            StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (path == null || !System.IO.File.Exists(path))
+            {
+                TempData["NoticeError"] =
+                    $"The rebate acknowledgement for {reference} was not found.";
+                return RedirectAfterDownload(returnUrl, "Rebates");
+            }
+
+            return PhysicalFile(
+                path,
+                "application/pdf",
+                $"{reference}_Acknowledgement.pdf",
+                enableRangeProcessing: true);
         }
-        catch
+        catch (Exception)
         {
             TempData["NoticeError"] =
                 "The rebate acknowledgement could not be downloaded.";

@@ -51,7 +51,6 @@
 
     function classify(element) {
         if (!element || element.matches('[data-no-loader], [disabled]')) return null;
-        if (element.form?.matches('[data-submission-loader]')) return null;
 
         const explicit = element.dataset?.loader;
         if (explicit === 'none') return null;
@@ -64,7 +63,16 @@
 
         if (/logout|sign out/.test(combined)) return null;
 
-        if (/download|acknowledg|section 49|section49|section 51|section51|section 52|section52|section 53|section53|appeal decision|dear johnny|invalid objection|invalid omission|generate.*pdf|notice/.test(combined)) {
+        // A normal browser file download does not navigate away from the current
+        // page, so there is no reliable navigation event that can clear a
+        // full-page loader afterwards. Do not cover the page for direct
+        // downloads; the browser's own download indicator is the feedback.
+        if (element.matches('a') &&
+            (/download/.test(href) || /download/.test(text))) {
+            return null;
+        }
+
+        if (/acknowledg|section 49|section49|section 51|section51|section 52|section52|section 53|section53|appeal decision|dear johnny|invalid objection|invalid omission|generate.*pdf|notice/.test(combined)) {
             return 'document';
         }
 
@@ -128,8 +136,8 @@
         if (!elements.overlay) return;
 
         const config = Object.assign({}, configurations[type] || configurations.submit, custom || {});
-        if (elements.title) elements.title.textContent = config.title;
-        if (elements.message) elements.message.textContent = config.message;
+        elements.title.textContent = config.title;
+        elements.message.textContent = config.message;
         elements.overlay.classList.add('is-visible');
         elements.overlay.setAttribute('aria-hidden', 'false');
         document.body.classList.add('genesis-is-loading');

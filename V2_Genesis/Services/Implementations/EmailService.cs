@@ -1312,7 +1312,8 @@ City of Johannesburg — Valuation Services Department<br>This is an automated m
             byte[] acknowledgementPdf,
             string acknowledgementFileName,
             IReadOnlyCollection<EmailRecipient> recipients,
-            List<EmailAttachment>? extraAttachments = null)
+            List<EmailAttachment>? extraAttachments = null,
+            string copySuffix = "Acknowledgement")
         {
             try
             {
@@ -1320,8 +1321,9 @@ City of Johannesburg — Valuation Services Department<br>This is an automated m
 
                 var safeReference = SanitizeFilePart(reference);
                 var safePropertyDescription = SanitizeFilePart(propertyDescription);
+                var safeCopySuffix = SanitizeFilePart(copySuffix);
                 var fileName =
-                    $"Email_{safeReference}_{safePropertyDescription}_Acknowledgement.eml";
+                    $"Email_{safeReference}_{safePropertyDescription}_{safeCopySuffix}.eml";
                 var fullPath = Path.Combine(folderPath, fileName);
 
                 using var msg = new MailMessage
@@ -1630,6 +1632,80 @@ City of Johannesburg — Valuation Services Department<br>This is an automated m
                 attributeNumber);
         }
 
+        public async Task SendAttributeCorrectionAcknowledgementAsync(
+            string recipientEmail,
+            string clientName,
+            string attributeNumber,
+            string propertyDescription,
+            string correctionComment,
+            IReadOnlyCollection<string> correctedSections,
+            byte[] acknowledgementPdf,
+            string acknowledgementFileName,
+            string folderPath)
+        {
+            if (string.IsNullOrWhiteSpace(recipientEmail))
+                throw new ArgumentException("Recipient email address is required.", nameof(recipientEmail));
+
+            if (acknowledgementPdf == null || acknowledgementPdf.Length == 0)
+                throw new ArgumentException("Correction acknowledgement PDF is required.", nameof(acknowledgementPdf));
+
+            clientName = string.IsNullOrWhiteSpace(clientName) ? "Valued Client" : clientName.Trim();
+            attributeNumber = string.IsNullOrWhiteSpace(attributeNumber) ? "Attribute Submission" : attributeNumber.Trim();
+            propertyDescription = string.IsNullOrWhiteSpace(propertyDescription) ? "Property" : propertyDescription.Trim();
+            correctionComment = string.IsNullOrWhiteSpace(correctionComment) ? "Corrections submitted." : correctionComment.Trim();
+
+            acknowledgementFileName = BuildPdfFileName(
+                acknowledgementFileName,
+                $"{attributeNumber}_Correction_Acknowledgement.pdf");
+
+            var subject =
+                $"City of Johannesburg — Attribute Correction Acknowledgement: {attributeNumber}";
+
+            var body = BuildAttributeCorrectionAcknowledgementBody(
+                clientName,
+                attributeNumber,
+                propertyDescription,
+                correctionComment,
+                correctedSections);
+
+            var attachments = new List<EmailAttachment>
+            {
+                new()
+                {
+                    FileName = acknowledgementFileName,
+                    FileBytes = acknowledgementPdf,
+                    ContentType = MediaTypeNames.Application.Pdf
+                }
+            };
+
+            await SendEmailWithAttachmentsAsync(
+                toEmail: recipientEmail.Trim(),
+                subject: subject,
+                body: body,
+                attachments: attachments,
+                isHtml: true);
+
+            await SaveEmailCopyAsync(
+                folderPath,
+                attributeNumber,
+                propertyDescription,
+                subject,
+                body,
+                acknowledgementPdf,
+                acknowledgementFileName,
+                new[]
+                {
+                    new EmailRecipient(clientName, recipientEmail.Trim(), "Client")
+                },
+                extraAttachments: null,
+                copySuffix: "Correction_Acknowledgement");
+
+            _logger.LogInformation(
+                "[Attributes Email] Correction acknowledgement sent to {Email} for {AttributeNumber}",
+                recipientEmail,
+                attributeNumber);
+        }
+
         private static string BuildPdfFileName(
     string? fileName,
     string fallbackFileName)
@@ -1658,6 +1734,59 @@ City of Johannesburg — Valuation Services Department<br>This is an automated m
             }
 
             return value;
+        }
+
+        private static string BuildAttributeCorrectionAcknowledgementBody(
+            string clientName,
+            string attributeNumber,
+            string propertyDescription,
+            string correctionComment,
+            IReadOnlyCollection<string> correctedSections)
+        {
+            static string Encode(string? value) => WebUtility.HtmlEncode(value ?? string.Empty);
+
+            var sectionList = (correctedSections ?? Array.Empty<string>())
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Select(x => $"<li style='margin:0 0 6px 0;'>{Encode(x)}</li>")
+                .ToList();
+
+            var sectionsHtml = sectionList.Count == 0
+                ? "<li>Corrections submitted as requested by the Valuer.</li>"
+                : string.Join(string.Empty, sectionList);
+
+            return $@"
+<!DOCTYPE html>
+<html lang='en'>
+<body style='margin:0;padding:0;background:#f4f4f4;font-family:Arial,Helvetica,sans-serif;color:#222;'>
+<table width='100%' cellpadding='0' cellspacing='0' style='background:#f4f4f4;padding:30px 0;'>
+<tr><td align='center'>
+<table width='640' cellpadding='0' cellspacing='0' style='max-width:640px;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08);'>
+<tr><td style='background:#e6b000;padding:26px 32px;text-align:center;'>
+<div style='font-size:21px;font-weight:700;color:#1a1a1a;'>City of Johannesburg</div>
+<div style='margin-top:5px;font-size:13px;color:#333;'>Valuation Services — Attribute Corrections</div>
+</td></tr>
+<tr><td style='padding:30px 34px;'>
+<p>Dear {Encode(clientName)},</p>
+<p>Your corrected property attribute information has been received successfully.</p>
+<table width='100%' cellpadding='7' cellspacing='0' style='border-collapse:collapse;margin:18px 0;'>
+<tr><td style='font-weight:700;width:190px;border-bottom:1px solid #ddd;'>Attribute Reference</td><td style='border-bottom:1px solid #ddd;'>{Encode(attributeNumber)}</td></tr>
+<tr><td style='font-weight:700;border-bottom:1px solid #ddd;'>Property</td><td style='border-bottom:1px solid #ddd;'>{Encode(propertyDescription)}</td></tr>
+</table>
+<div style='background:#f8f8f8;border-left:4px solid #e6b000;padding:14px 16px;margin:18px 0;'>
+<div style='font-weight:700;margin-bottom:8px;'>Corrections confirmed</div>
+<ul style='margin:0;padding-left:20px;'>{sectionsHtml}</ul>
+</div>
+<p><strong>Your correction note:</strong><br/>{Encode(correctionComment)}</p>
+<p>This correction acknowledgement confirms receipt of the revised information requested by the Valuer. There is no new 48-hour evidence period and no evidence PIN for this correction submission.</p>
+<p>The corrected information will continue through the valuation review process.</p>
+<p style='margin-top:26px;'>Regards,<br/><strong>City of Johannesburg — Valuation Services</strong></p>
+</td></tr>
+</table>
+</td></tr>
+</table>
+</body>
+</html>";
         }
 
         private static string BuildAttributeAcknowledgementBody(

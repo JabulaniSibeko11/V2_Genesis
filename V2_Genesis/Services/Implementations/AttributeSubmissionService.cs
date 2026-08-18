@@ -1745,6 +1745,129 @@ namespace V2_Genesis.Services.Implementations
 
             await _context.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
+
+            // Correction acknowledgement is generated only after the correction data
+            // is committed successfully. It is separate from the original submission
+            // acknowledgement: no new evidence PIN and no new 48-hour window.
+            try
+            {
+                var correctedSubmission = await BuildSubmittedAttributeViewModelAsync(
+                    info.Attr_ID,
+                    cancellationToken);
+
+                if (correctedSubmission is null)
+                {
+                    _logger.LogWarning(
+                        "[Attributes] Corrections saved for {AttrNo}, but the corrected submission could not be rebuilt for acknowledgement generation.",
+                        info.Attr_No);
+                    return;
+                }
+
+                var correctedSections = allowedCodes
+                    .Select(GetCorrectionSectionDisplayName)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(x => x)
+                    .ToList();
+
+                var correctionAck = await _documentService
+                    .GenerateCorrectionAcknowledgementPdfAsync(
+                        correctedSubmission,
+                        info,
+                        model.RevisionComment.Trim(),
+                        correctedSections);
+
+                _context.AttrPropertyInfoAuditTrail.Add(new AttrPropertyInfoAuditTrail
+                {
+                    Attr_ID = info.Attr_ID,
+                    Attr_No = info.Attr_No,
+                    Action = "Correction Acknowledgement Generated",
+                    OldStatus = "Resubmitted",
+                    NewStatus = "Resubmitted",
+                    ActionByUserId = userId,
+                    ActionByName = userName,
+                    ActionRole = "Client",
+                    Comment = $"Correction acknowledgement saved as {correctionAck.FileName}.",
+                    ActionDateTime = DateTime.Now
+                });
+                await _context.SaveChangesAsync(cancellationToken);
+
+                if (!string.IsNullOrWhiteSpace(info.SubmittedByEmail))
+                {
+                    try
+                    {
+                        await _emailService.SendAttributeCorrectionAcknowledgementAsync(
+                            info.SubmittedByEmail,
+                            info.SubmittedByName ?? userName,
+                            info.Attr_No ?? $"ATTR-GV23-{info.Attr_ID}",
+                            info.Property_Desc ?? correctedSubmission.PropertyDetails?.PropertyDesc ?? "Property",
+                            model.RevisionComment.Trim(),
+                            correctedSections,
+                            correctionAck.Pdf,
+                            correctionAck.FileName,
+                            correctionAck.FolderPath);
+
+                        _context.AttrPropertyInfoAuditTrail.Add(new AttrPropertyInfoAuditTrail
+                        {
+                            Attr_ID = info.Attr_ID,
+                            Attr_No = info.Attr_No,
+                            Action = "Correction Acknowledgement Email Sent",
+                            OldStatus = "Resubmitted",
+                            NewStatus = "Resubmitted",
+                            ActionByUserId = userId,
+                            ActionByName = userName,
+                            ActionRole = "Client",
+                            Comment = $"Correction acknowledgement emailed to {info.SubmittedByEmail} and an .eml copy was saved in the attribute folder.",
+                            ActionDateTime = DateTime.Now
+                        });
+                        await _context.SaveChangesAsync(cancellationToken);
+                    }
+                    catch (Exception emailEx)
+                    {
+                        _logger.LogError(
+                            emailEx,
+                            "[Attributes] Corrections saved and acknowledgement generated, but correction acknowledgement email failed for {AttrNo}.",
+                            info.Attr_No);
+                    }
+                }
+                else
+                {
+                    _logger.LogWarning(
+                        "[Attributes] Corrections saved and acknowledgement generated for {AttrNo}, but no client email is available.",
+                        info.Attr_No);
+                }
+            }
+            catch (Exception ackEx)
+            {
+                // Do not undo a valid correction resubmission because document/email
+                // generation failed after the database transaction was committed.
+                _logger.LogError(
+                    ackEx,
+                    "[Attributes] Corrections were saved for {AttrNo}, but the correction acknowledgement could not be generated.",
+                    info.Attr_No);
+            }
+        }
+
+        private static string GetCorrectionSectionDisplayName(string sectionCode)
+        {
+            return sectionCode?.Trim().ToUpperInvariant() switch
+            {
+                "PROPERTY_DETAILS" => "Property Details",
+                "VALUATION_DETAILS" => "Valuation Details",
+                "CONTACT_INFORMATION" => "Contact Information",
+                "ACCESS_INFORMATION" => "Access Information",
+                "PRIMARY_ATTRIBUTES" => "Primary Attributes",
+                "SECONDARY_ATTRIBUTES" => "Secondary Attributes",
+                "BUSINESS_BUILDINGS" => "Business Buildings",
+                "BUSINESS_SECTIONS" => "Business Sections",
+                "BUSINESS_GENERAL" => "Business General",
+                "DRC_BUILDINGS" => "DRC Buildings",
+                "DRC_IMPROVEMENTS" => "DRC Improvements",
+                "DRC_VACANT_LAND" => "DRC Vacant Land",
+                "DRC_MARKET_VALUE" => "DRC Market Value",
+                "CALCULATIONS" => "Calculations",
+                "DECLARATION" => "Declaration",
+                _ => sectionCode?.Replace('_', ' ') ?? "Corrected Section"
+            };
         }
 
         private static void CopyMatchingValues<TSource, TTarget>(TSource source, TTarget target)

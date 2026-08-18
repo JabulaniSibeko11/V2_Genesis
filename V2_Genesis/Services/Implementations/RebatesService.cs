@@ -17,14 +17,15 @@ namespace V2_Genesis.Services.Implementations
         private readonly IConfiguration _config;
         private readonly string _connStr;
         private readonly IEmailService _email;
-       private readonly IWebHostEnvironment _env;
+        private readonly IWebHostEnvironment _env;
         private readonly ILogger<RebatesService> _logger;
-        public RebatesService(RebateDBContext db, IConfiguration config, IEmailService email, IWebHostEnvironment env, ILogger<RebatesService> logger) { 
-        _db= db;
-            _config= config;
-            _email= email;
-            _env= env;
-            _logger= logger;
+        public RebatesService(RebateDBContext db, IConfiguration config, IEmailService email, IWebHostEnvironment env, ILogger<RebatesService> logger)
+        {
+            _db = db;
+            _config = config;
+            _email = email;
+            _env = env;
+            _logger = logger;
             _connStr = config.GetConnectionString("DefaultConnection")
                   ?? throw new InvalidOperationException("DefaultConnection missing.");
         }
@@ -118,14 +119,26 @@ namespace V2_Genesis.Services.Implementations
                 RebateId = Convert.ToInt32(id),
                 status = info.Status,
                 FileCount = count,
-                SubmittedAt = s5.DateOfSubmission?.ToString("yyyy-MM-dd HH:mm"),
+                SubmittedAt = s5.DateOfSubmission?.ToString("dd MMMM yyyy HH:mm"),
+                RebateType = rebateType,
+                ApplicantName = string.Join(" ", new[] { s1.FirstNames, s1.Surname }
+                    .Where(x => !string.IsNullOrWhiteSpace(x))
+                    .Select(x => x!.Trim())),
+                AccountNumber = s1.AccountNumber,
+                Email = string.IsNullOrWhiteSpace(s3.Email) ? userEmail : s3.Email,
+                PropertyAddress = string.Join(", ", new[]
+                {
+                    s2.StreetAddress,
+                    s2.CitySuburb,
+                    s2.PostalCode
+                }.Where(x => !string.IsNullOrWhiteSpace(x)).Select(x => x!.Trim())),
                 files = new[]
                 {
-                rebateFiles.Files1, rebateFiles.Files2, rebateFiles.Files3,
-                rebateFiles.Files4, rebateFiles.Files5, rebateFiles.Files6,
-                rebateFiles.Files7, rebateFiles.Files8, rebateFiles.Files9,
-                rebateFiles.Files10
-            }
+                    rebateFiles.Files1, rebateFiles.Files2, rebateFiles.Files3,
+                    rebateFiles.Files4, rebateFiles.Files5, rebateFiles.Files6,
+                    rebateFiles.Files7, rebateFiles.Files8, rebateFiles.Files9,
+                    rebateFiles.Files10
+                }
             };
 
             // ── 4. Acknowledgement PDF to disk ───────────────────────
@@ -366,22 +379,40 @@ namespace V2_Genesis.Services.Implementations
         }
 
         // ── Write acknowledgement PDF to disk (QuestPDF) ─────────────
+        // Uses the same acknowledgement visual standard as the rest of Genesis.
+        // Rebate acknowledgements intentionally have NO 48-hour evidence window
+        // and NO evidence PIN. They simply confirm receipt of the application.
         public void WriteAcknowledgement(RebatesSubmitResult result)
         {
-           // var uploadRoot = _config["AppSettings:RebateRooTPath"] ?? "";
-            var uploadRoot = _config["ObjectionRolls:Rebates:RebateRooTPath"] 
-                    ?? throw new InvalidOperationException("RebateRooTPath missing.");
-            var folder = Path.Combine(uploadRoot, result.RebateNo);
+            var uploadRoot = _config["ObjectionRolls:Rebates:RebateRooTPath"]
+                ?? throw new InvalidOperationException("RebateRooTPath missing.");
 
-            if (!Directory.Exists(folder)) return;
+            var folder = Path.Combine(uploadRoot, result.RebateNo);
+            Directory.CreateDirectory(folder);
 
             var pdfPath = Path.Combine(folder, $"{result.RebateNo}_Acknowledgement.pdf");
-            // ── Header image — resolved from wwwroot ─────────────────────
-            var imgPath = Path.Combine(_env.WebRootPath, "Images", "Rebate_Header.PNG");
-            // Uploaded file list — only non-empty slots
+            var headerPath = Path.Combine(_env.WebRootPath, "Images", "Obj_Header.PNG");
+
             var uploadedFiles = result.files
                 .Where(f => !string.IsNullOrWhiteSpace(f))
+                .Select(f => f!.Trim())
                 .ToList();
+
+            static string ValueOrDash(string? value) =>
+                string.IsNullOrWhiteSpace(value) ? "Not supplied" : value.Trim();
+
+            static IContainer LabelCell(IContainer c) => c
+                .Border(0.5f)
+                .BorderColor("#BFD8D6")
+                .Background("#F3FAF9")
+                .Padding(5)
+                .DefaultTextStyle(x => x.Bold().FontSize(8));
+
+            static IContainer ValueCell(IContainer c) => c
+                .Border(0.5f)
+                .BorderColor("#BFD8D6")
+                .Padding(5)
+                .DefaultTextStyle(x => x.FontSize(8));
 
             QuestPDF.Settings.License = LicenseType.Community;
 
@@ -390,139 +421,155 @@ namespace V2_Genesis.Services.Implementations
                 container.Page(page =>
                 {
                     page.Size(PageSizes.A4);
-                    page.MarginTop(1.5f, Unit.Centimetre);
-                    page.MarginBottom(1.5f, Unit.Centimetre);
-                    page.MarginHorizontal(2f, Unit.Centimetre);
-                    page.DefaultTextStyle(t => t.FontFamily("Arial").FontSize(11));
+                    page.Margin(22);
+                    page.DefaultTextStyle(x => x.FontFamily("Arial").FontSize(8));
 
-                    page.Content().Column(col =>
+                    page.Header().Column(header =>
                     {
-                        col.Spacing(12);
-
-                        // ── Header image ──────────────────────────────
-                        if (File.Exists(imgPath))
+                        if (File.Exists(headerPath))
                         {
-                            col.Item()
-                               .Height(90)
-                               .Image(imgPath, ImageScaling.FitArea);
+                            header.Item()
+                                .Height(78)
+                                .Image(headerPath, ImageScaling.FitArea);
                         }
 
-                        // ── Divider ───────────────────────────────────
-                        col.Item()
-                           .BorderBottom(1)
-                           .BorderColor("#e6b000")
-                           .PaddingBottom(6)
-                           .Text("City of Johannesburg — Rates Rebates")
-                           .FontSize(9)
-                           .FontColor("#645a50")
-                           .Italic();
+                        header.Item()
+                            .PaddingTop(6)
+                            .AlignCenter()
+                            .Text("Rates Rebate Application Acknowledgement")
+                            .Bold()
+                            .FontSize(13);
 
-                        // ── Thank you block ───────────────────────────
-                        col.Item()
-                           .Background("#f7f5f2")
-                           .Border(1)
-                           .BorderColor("#e8e3dc").CornerRadius(6)
-                           .Padding(16)
-                           .Column(inner =>
-                           {
-                               inner.Item()
-                                    .Text("Thank you for applying.")
-                                    .FontSize(14)
-                                    .FontColor("#36626d")
-                                    .Bold();
+                        header.Item()
+                            .AlignCenter()
+                            .Text(ValueOrDash(result.RebateType))
+                            .FontSize(10)
+                            .FontColor(Colors.Grey.Darken2);
 
-                               inner.Item().Height(8);
-
-                               inner.Item().Row(row =>
-                               {
-                                   row.RelativeItem()
-                                      .Text(t =>
-                                      {
-                                          t.Span("Application Number: ").Bold();
-                                          t.Span(result.RebateNo);
-                                      });
-                                   row.RelativeItem()
-                                      .Text(t =>
-                                      {
-                                          t.Span("Date: ").Bold();
-                                          t.Span(result.SubmittedAt ?? "");
-                                      });
-                               });
-
-                               inner.Item().Height(4);
-
-                               inner.Item().Text(t =>
-                               {
-                                   t.Span("Status: ").Bold();
-                                   t.Span(result.status ?? "Acknowledge")
-                                    .FontColor(result.status == "Auto Reject"
-                                        ? "#bb4722" : "#36626d")
-                                    .Bold();
-                               });
-                           });
-
-                        // ── Documents uploaded ────────────────────────
-                        col.Item()
-                           .Text($"You have uploaded {result.FileCount} document(s).")
-                           .FontSize(11)
-                           .Bold();
-
-                        if (uploadedFiles.Any())
-                        {
-                            col.Item()
-                               .Border(1)
-                               .BorderColor("#e8e3dc").
-                               CornerRadius(6)
-                               .Padding(12)
-                               .Column(inner =>
-                               {
-                                   inner.Item()
-                                        .Text("Uploaded Documents")
-                                        .FontSize(10)
-                                        .FontColor("#645a50")
-                                        .Bold();
-
-                                   inner.Item().Height(6);
-
-                                   foreach (var fileName in uploadedFiles)
-                                   {
-                                       inner.Item().Row(row =>
-                                       {
-                                           row.ConstantItem(14)
-                                              .Text("•")
-                                              .FontColor("#e6b000")
-                                              .Bold();
-                                           row.RelativeItem()
-                                              .Text(fileName)
-                                              .FontSize(10);
-                                       });
-                                   }
-                               });
-                        }
-
-                        // ── Footer note ───────────────────────────────
-                        col.Item()
-                           .PaddingTop(8)
-                           .Text("Please keep this acknowledgement for your records. " +
-                                 "You will be contacted regarding the outcome of your application.")
-                           .FontSize(9)
-                           .FontColor("#645a50")
-                           .Italic();
+                        header.Item().PaddingTop(6).LineHorizontal(0.5f);
                     });
 
-                    // ── Page footer ───────────────────────────────────
-                    page.Footer()
-                        .AlignCenter()
-                        .Text(t =>
+                    page.Content().PaddingTop(10).Column(col =>
+                    {
+                        col.Spacing(8);
+
+                        // Standard acknowledgement intro.
+                        col.Item()
+                            .Background("#FFF8E1")
+                            .Border(0.5f)
+                            .BorderColor("#E6B000")
+                            .Padding(9)
+                            .Column(box =>
+                            {
+                                box.Item().Text("Application Received").Bold().FontSize(11);
+                                box.Item().PaddingTop(3).Text(
+                                    "This document confirms that the City of Johannesburg Valuation Portal received your rates rebate application.");
+                                box.Item().PaddingTop(3).Text(
+                                    "This acknowledgement is proof of submission only and does not imply that the application has been approved. The application remains subject to assessment by the Valuation Services Department.");
+                                box.Item().PaddingTop(5)
+                                    .Text($"Rebate Reference: {result.RebateNo}")
+                                    .Bold();
+                            });
+
+                        col.Item().PaddingTop(3)
+                            .Background("#D7ECEA")
+                            .Padding(5)
+                            .Text("Application Details")
+                            .Bold()
+                            .FontSize(9);
+
+                        col.Item().Table(table =>
                         {
-                            t.Span("City of Johannesburg Valuation Portal  |  ")
-                             .FontSize(8).FontColor("#999");
-                            t.Span("Ref: ").FontSize(8).FontColor("#999");
-                            t.Span(result.RebateNo).FontSize(8).FontColor("#36626d");
+                            table.ColumnsDefinition(columns =>
+                            {
+                                columns.RelativeColumn(1);
+                                columns.RelativeColumn(2);
+                                columns.RelativeColumn(1);
+                                columns.RelativeColumn(2);
+                            });
+
+                            void Row(string l1, string? v1, string l2, string? v2)
+                            {
+                                table.Cell().Element(LabelCell).Text(l1);
+                                table.Cell().Element(ValueCell).Text(ValueOrDash(v1));
+                                table.Cell().Element(LabelCell).Text(l2);
+                                table.Cell().Element(ValueCell).Text(ValueOrDash(v2));
+                            }
+
+                            Row("Application Number", result.RebateNo,
+                                "Application Type", result.RebateType);
+                            Row("Status", result.status ?? "Acknowledged",
+                                "Submitted On", result.SubmittedAt);
+                            Row("Applicant", result.ApplicantName,
+                                "Account Number", result.AccountNumber);
+                            Row("Email", result.Email,
+                                "Evidence Files", result.FileCount.ToString());
+
+                            table.Cell().Element(LabelCell).Text("Property Address");
+                            table.Cell().ColumnSpan(3).Element(ValueCell)
+                                .Text(ValueOrDash(result.PropertyAddress));
                         });
+
+                        col.Item().PaddingTop(3)
+                            .Background("#D7ECEA")
+                            .Padding(5)
+                            .Text("Evidence Submitted")
+                            .Bold()
+                            .FontSize(9);
+
+                        col.Item()
+                            .Border(0.5f)
+                            .BorderColor("#BFD8D6")
+                            .Padding(8)
+                            .Column(box =>
+                            {
+                                box.Item().Text($"{result.FileCount} supporting document(s) were submitted with this application.")
+                                    .FontSize(8);
+
+                                if (uploadedFiles.Count == 0)
+                                {
+                                    box.Item().PaddingTop(4)
+                                        .Text("No supporting document filenames were recorded.")
+                                        .FontColor(Colors.Grey.Darken2);
+                                }
+                                else
+                                {
+                                    foreach (var fileName in uploadedFiles)
+                                    {
+                                        box.Item().PaddingTop(3).Row(row =>
+                                        {
+                                            row.ConstantItem(12).Text("•").FontColor("#E6B000").Bold();
+                                            row.RelativeItem().Text(fileName).FontSize(8);
+                                        });
+                                    }
+                                }
+                            });
+
+                        col.Item()
+                            .Background("#F7F7F7")
+                            .Border(0.5f)
+                            .BorderColor("#DDDDDD")
+                            .Padding(8)
+                            .Column(box =>
+                            {
+                                box.Item().Text("Important").Bold().FontSize(9);
+                                box.Item().PaddingTop(3).Text(
+                                    "Please keep this acknowledgement for your records. The City will contact you regarding the outcome of your rebate application.");
+                                box.Item().PaddingTop(3).Text(
+                                    "No 48-hour evidence period and no evidence PIN apply to a rates rebate acknowledgement.")
+                                    .FontColor(Colors.Grey.Darken2);
+                            });
+                    });
+
+                    page.Footer().AlignCenter().Text(text =>
+                    {
+                        text.Span("Acknowledged on ");
+                        text.Span(DateTime.Now.ToString("dd MMMM yyyy HH:mm")).SemiBold();
+                        text.Span(" | Rebate Ref: ");
+                        text.Span(result.RebateNo).SemiBold();
+                    });
                 });
-            })
-            .GeneratePdf(pdfPath);
+            }).GeneratePdf(pdfPath);
         }
     }
 }
