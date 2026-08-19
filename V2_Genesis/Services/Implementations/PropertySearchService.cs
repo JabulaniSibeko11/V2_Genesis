@@ -1,6 +1,7 @@
 ﻿using Dapper;
 using GenesisV2.Services.PropertySearch;
 using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Caching.Memory;
 using System.Data;
 using V2_Genesis.Models;
 using V2_Genesis.Models.Results;
@@ -16,6 +17,7 @@ public class PropertySearchService : IPropertySearchService
 {
     private readonly IConfiguration _config;
     private readonly ILogger<PropertySearchService> _logger;
+    private readonly IMemoryCache _cache;
 
     // Used only for shared township and scheme procedures.
     private readonly string _defaultConn;
@@ -31,10 +33,12 @@ public class PropertySearchService : IPropertySearchService
 
     public PropertySearchService(
         IConfiguration config,
-        ILogger<PropertySearchService> logger)
+        ILogger<PropertySearchService> logger,
+        IMemoryCache cache)
     {
         _config = config;
         _logger = logger;
+        _cache = cache;
 
         _defaultConn =
             config.GetConnectionString("DefaultConnection")
@@ -70,6 +74,10 @@ public class PropertySearchService : IPropertySearchService
 
     public async Task<List<string>> GetTownshipsAsync(string? rollSource = null)
     {
+        var cacheKey = $"PropertySearch:Townships:{rollSource?.Trim() ?? "Default"}";
+        if (_cache.TryGetValue(cacheKey, out List<string>? cachedTownships) && cachedTownships is not null)
+            return cachedTownships;
+
         var connectionString = _defaultConn;
         var townshipProcedure = SP_TOWNSHIPS;
 
@@ -100,16 +108,23 @@ public class PropertySearchService : IPropertySearchService
             commandType: CommandType.StoredProcedure,
             commandTimeout: 60);
 
-        return rows
+        var result = rows
             .Where(x => !string.IsNullOrWhiteSpace(x))
             .Select(x => x.Trim())
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .OrderBy(x => x)
             .ToList();
+
+        _cache.Set(cacheKey, result, TimeSpan.FromMinutes(30));
+        return result;
     }
 
     public async Task<List<string>> GetSchemesAsync()
     {
+        const string cacheKey = "PropertySearch:Schemes";
+        if (_cache.TryGetValue(cacheKey, out List<string>? cachedSchemes) && cachedSchemes is not null)
+            return cachedSchemes;
+
         await using var conn =
             new SqlConnection(_defaultConn);
 
@@ -118,12 +133,15 @@ public class PropertySearchService : IPropertySearchService
             commandType: CommandType.StoredProcedure,
             commandTimeout: 60);
 
-        return rows
+        var result = rows
             .Where(x => !string.IsNullOrWhiteSpace(x))
             .Select(x => x.Trim())
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .OrderBy(x => x)
             .ToList();
+
+        _cache.Set(cacheKey, result, TimeSpan.FromMinutes(30));
+        return result;
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -155,7 +173,7 @@ public class PropertySearchService : IPropertySearchService
             ResolveSp(config, searchParams);
 
         var parameters =
-            BuildParams(searchParams);
+            BuildParams(searchParams, IsQueryRoll(rollSource, config));
 
         var connectionString =
             GetRollConnection(config);
@@ -406,41 +424,51 @@ public class PropertySearchService : IPropertySearchService
     }
 
     private static DynamicParameters BuildParams(
-        PropertySearchParams searchParams)
+        PropertySearchParams searchParams,
+        bool optimiseForQueryRoll)
     {
-        var parameters =
-            new DynamicParameters();
+        var parameters = new DynamicParameters();
 
+        // Township and Scheme are selected from dropdown lists. For the Query
+        // roll use exact matching so SQL can use an index seek instead of a
+        // leading-wildcard scan. Stand and Unit are also identifiers and are
+        // treated as exact values. Address remains a contains search because
+        // users commonly enter only part of the street address.
+        var town = searchParams.TownName.Trim();
         parameters.Add(
             "@SearchTownName",
-            $"%{searchParams.TownName.Trim()}%");
+            optimiseForQueryRoll ? town : $"%{town}%");
 
         if (searchParams.HasStand)
         {
+            var stand = searchParams.Stand!.Trim();
             parameters.Add(
                 "@SearchStand",
-                $"%{searchParams.Stand!.Trim()}%");
+                optimiseForQueryRoll ? stand : $"%{stand}%");
         }
 
         if (searchParams.HasAddress)
         {
+            var address = searchParams.Address!.Trim();
             parameters.Add(
                 "@SearchAddress",
-                $"%{searchParams.Address!.Trim()}%");
+                $"%{address}%");
         }
 
         if (searchParams.HasScheme)
         {
+            var scheme = searchParams.Scheme!.Trim();
             parameters.Add(
                 "@SearchScheme",
-                $"%{searchParams.Scheme!.Trim()}%");
+                optimiseForQueryRoll ? scheme : $"%{scheme}%");
         }
 
         if (searchParams.HasUnit)
         {
+            var unit = searchParams.Unit!.Trim();
             parameters.Add(
                 "@SearchUnit",
-                $"%{searchParams.Unit!.Trim()}%");
+                optimiseForQueryRoll ? unit : $"%{unit}%");
         }
 
         return parameters;

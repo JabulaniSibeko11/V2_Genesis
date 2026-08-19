@@ -1,11 +1,11 @@
 ﻿@model V2_Genesis.Models.PropertySearchParams
 @{
-    var roll     = ViewBag.Roll as V2_Genesis.Models.GvList;
+    var roll = ViewBag.Roll as V2_Genesis.Models.GvList;
     var townships = ViewBag.Townships as List<string> ?? new();
-    var schemes   = ViewBag.Schemes   as List<string> ?? new();
+    var schemes = ViewBag.Schemes as List<string> ?? new();
     ViewData["Title"] = $"Property Search – {roll?.Short}";
     Layout = "~/Views/Shared/_ClientLayout.cshtml";
-} 
+}
 
 @section Styles {
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" />
@@ -14,8 +14,8 @@
     <link href="~/css/views/clientdashboardcss.css" rel="stylesheet" asp-append-version="true" />
     <link href="~/css/views/client-dashboard.css" rel="stylesheet" asp-append-version="true" />
 
-    <link href="~/css/views/property-search.css"    rel="stylesheet" asp-append-version="true" />
-   @*  <link href="~/css/views/searchpropertycss.css"  rel="stylesheet" asp-append-version="true" /> *@
+    <link href="~/css/views/property-search.css" rel="stylesheet" asp-append-version="true" />
+    @*  <link href="~/css/views/searchpropertycss.css"  rel="stylesheet" asp-append-version="true" /> *@
 }
 
 
@@ -24,7 +24,7 @@
 
     <div class="srch-hero">
         <div class="srch-hero-inner">
-           @*  <div class="srch-hero-logo">
+            @*  <div class="srch-hero-logo">
                 <img src="~/images/joburg_logo.png" alt="City of Johannesburg" />
             </div> *@
             <div class="srch-hero-text">
@@ -240,80 +240,120 @@
         const unit   = document.getElementById('Unit');
 
         function updateFieldStates() {
-            if (stand.value.trim() !== '') {
-                scheme.disabled = true;
-                unit.disabled   = true;
-                scheme.value    = '';
-                unit.value      = '';
-            } else {
-                scheme.disabled = false;
-                unit.disabled   = scheme.value === '';
-                if (scheme.value.trim() !== '') {
-                    stand.disabled = true;
-                    stand.value    = '';
-                } else {
-                    stand.disabled = false;
-                }
-            }
+        if (stand.value.trim() !== '') {
+        scheme.disabled = true;
+        unit.disabled   = true;
+        scheme.value    = '';
+        unit.value      = '';
+        } else {
+        scheme.disabled = false;
+        unit.disabled   = scheme.value === '';
+        if (scheme.value.trim() !== '') {
+        stand.disabled = true;
+        stand.value    = '';
+        } else {
+        stand.disabled = false;
+        }
+        }
         }
         stand.addEventListener('input',   updateFieldStates);
         scheme.addEventListener('change', updateFieldStates);
         updateFieldStates();
 
         function openResultsModal() {
-            document.getElementById('psmBackdrop').classList.add('show');
-            document.getElementById('psmModal').classList.add('show');
-            document.body.style.overflow = 'hidden';
+        document.getElementById('psmBackdrop').classList.add('show');
+        document.getElementById('psmModal').classList.add('show');
+        document.body.style.overflow = 'hidden';
         }
 
         function closeResultsModal() {
-            document.getElementById('psmBackdrop').classList.remove('show');
-            document.getElementById('psmModal').classList.remove('show');
-            document.body.style.overflow = '';
-            if ($.fn.DataTable.isDataTable('#psResultsTable'))
-                $('#psResultsTable').DataTable().destroy();
+        document.getElementById('psmBackdrop').classList.remove('show');
+        document.getElementById('psmModal').classList.remove('show');
+        document.body.style.overflow = '';
+        if ($.fn.DataTable.isDataTable('#psResultsTable'))
+        $('#psResultsTable').DataTable().destroy();
         }
 
         document.getElementById('searchForm').addEventListener('submit', async function (e) {
-            e.preventDefault();
+        e.preventDefault();
 
-            const town = document.getElementById('TownName');
-            if (!town.value) {
-                document.getElementById('townErr').textContent = 'Please select a Township.';
-                town.focus();
-                return;
-            }
-            document.getElementById('townErr').textContent = '';
-            closeResultsModal();
+        const town = document.getElementById('TownName');
+        const address = document.getElementById('Address');
+        const standValue = stand.value.trim();
+        const addressValue = address.value.trim();
+        const schemeValue = scheme.value.trim();
+        const unitValue = unit.value.trim();
 
-            document.getElementById('psPreloader').classList.add('show');
+        if (!town.value) {
+        document.getElementById('townErr').textContent = 'Please select a Township.';
+        town.focus();
+        return;
+        }
 
-            const data  = new FormData(this);
-            const token = this.querySelector('input[name="__RequestVerificationToken"]').value;
+        // Township-only searches can return thousands of rows and make the
+        // Query database appear slow. Require one identifying criterion.
+        if (!standValue && !addressValue && !schemeValue && !unitValue) {
+        document.getElementById('townErr').textContent =
+        'Enter an Address, Stand Number, Scheme or Unit Number as well.';
+        address.focus();
+        return;
+        }
 
-            const response = await fetch('/search/@roll?.Source', {
-                method : 'POST',
-                headers: { 'RequestVerificationToken': token },
-                body   : data
-            });
+        document.getElementById('townErr').textContent = '';
+        closeResultsModal();
+        document.getElementById('psPreloader').classList.add('show');
 
-            document.getElementById('psPreloader').classList.remove('show');
+        const data  = new FormData(this);
+        const token = this.querySelector('input[name="__RequestVerificationToken"]').value;
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 12000);
 
-            document.getElementById('psmBody').innerHTML = await response.text();
-            document.getElementById('psmTitle').textContent =
-                'Results – @(roll?.Short ?? "Search")';
+        try {
+        const response = await fetch('/search/@roll?.Source', {
+        method : 'POST',
+        headers: {
+        'RequestVerificationToken': token,
+        'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: data,
+        signal: controller.signal
+        });
 
-            document.querySelectorAll('#psmBody script').forEach(s => {
-                const sc = document.createElement('script');
-                sc.textContent = s.textContent;
-                document.body.appendChild(sc);
-            });
+        if (!response.ok)
+        throw new Error(`Search failed with HTTP ${response.status}`);
 
-            openResultsModal();
+        document.getElementById('psmBody').innerHTML = await response.text();
+        document.getElementById('psmTitle').textContent =
+        'Results – @(roll?.Short ?? "Search")';
+
+        document.querySelectorAll('#psmBody script').forEach(s => {
+        const sc = document.createElement('script');
+        sc.textContent = s.textContent;
+        document.body.appendChild(sc);
+        });
+
+        openResultsModal();
+        }
+        catch (error) {
+        const timedOut = error?.name === 'AbortError';
+        document.getElementById('psmBody').innerHTML =
+        `<div class="alert alert-warning m-3">` +
+        (timedOut
+        ? 'The search is taking too long. Add a more specific Stand, Address, Scheme or Unit and try again.'
+        : 'The property search could not be completed. Please try again.') +
+        `</div>`;
+        document.getElementById('psmTitle').textContent = 'Search';
+        openResultsModal();
+        console.error('[Property Search]', error);
+        }
+        finally {
+        clearTimeout(timeoutId);
+        document.getElementById('psPreloader').classList.remove('show');
+        }
         });
 
         document.addEventListener('keydown', e => {
-            if (e.key === 'Escape') closeResultsModal();
+        if (e.key === 'Escape') closeResultsModal();
         });
     </script>
 }

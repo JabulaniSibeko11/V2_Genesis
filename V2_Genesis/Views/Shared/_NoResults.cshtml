@@ -6,6 +6,7 @@
 @model V2_Genesis.Models.GvList
 @{
     var originalSearch = ViewBag.Params as V2_Genesis.Models.PropertySearchParams;
+    var searchMessage = ViewBag.SearchMessage as string;
 }
 <link href="~/css/views/lis-noresult.css" rel="stylesheet" asp-append-version="true" />
 <div class="ps-card ps-no-results-card" id="rollNoResults">
@@ -15,13 +16,21 @@
             <i class="fa-solid fa-magnifying-glass"></i>
         </div>
 
-        <h3>No Properties Found on Roll</h3>
-        <p>
-            No properties matched your search on
-            <strong>@Model?.Name</strong>.
-            We can search the Land Information System (LIS)
-            using the same values — no need to type them again.
-        </p>
+        @if (!string.IsNullOrWhiteSpace(searchMessage))
+        {
+            <h3>More Search Information Required</h3>
+            <p>@searchMessage</p>
+        }
+        else
+        {
+            <h3>No Properties Found on Roll</h3>
+            <p>
+                No properties matched your search on
+                <strong>@Model?.Name</strong>.
+                We can search the Land Information System (LIS)
+                using the same values — no need to type them again.
+            </p>
+        }
 
         <div class="ps-no-results-tips">
             <p><strong>Before searching LIS, also try:</strong></p>

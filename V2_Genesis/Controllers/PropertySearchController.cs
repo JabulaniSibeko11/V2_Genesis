@@ -112,6 +112,7 @@ public class PropertySearchController : Controller
     {
         // Load the roll info from GV_LIST
         var roll = await _db.GvList
+            .AsNoTracking()
             .FirstOrDefaultAsync(r => r.Source == rollSource);
 
         if (roll is null)
@@ -121,15 +122,19 @@ public class PropertySearchController : Controller
         if (!RollSearchRegistry.Configs.ContainsKey(rollSource))
             return NotFound($"No search configuration found for '{rollSource}'.");
 
-        // Supplementary rolls use only their own townships. GV uses the
-        // complete list; LIS also keeps the complete list in SearchLis.
-        var townships = await _search.GetTownshipsAsync(rollSource);
-        var schemes = await _search.GetSchemesAsync();
+        // Townships and schemes use separate SQL connections and can be loaded
+        // in parallel. The service also caches these relatively static lists.
+        var townshipsTask = _search.GetTownshipsAsync(rollSource);
+        var schemesTask = _search.GetSchemesAsync();
+        await Task.WhenAll(townshipsTask, schemesTask);
 
         ViewBag.Roll = roll;
-        ViewBag.Townships = townships;
-        ViewBag.Schemes = schemes;
-        ViewBag.GvList = await _db.GvList.OrderBy(r => r.ID).ToListAsync();
+        ViewBag.Townships = townshipsTask.Result;
+        ViewBag.Schemes = schemesTask.Result;
+        ViewBag.GvList = await _db.GvList
+            .AsNoTracking()
+            .OrderBy(r => r.ID)
+            .ToListAsync();
 
         return View(new PropertySearchParams());
     }
@@ -141,12 +146,45 @@ public class PropertySearchController : Controller
     public async Task<IActionResult> Search(string rollSource, PropertySearchParams @params)
     {
         var roll = await _db.GvList
-            .FirstOrDefaultAsync(r => r.Source == rollSource);
+            .AsNoTracking()
+            .FirstOrDefaultAsync(r => r.Source == rollSource, HttpContext.RequestAborted);
 
         if (!ModelState.IsValid || roll is null)
             return PartialView("_NoResults", roll);
 
-        var results = await _search.SearchAsync(rollSource, @params);
+        // A township-only search can return thousands of rows and was the main
+        // cause of apparently "stuck" Query searches. Require one identifying
+        // criterion in addition to Township.
+        if (!@params.HasStand &&
+            !@params.HasAddress &&
+            !@params.HasScheme &&
+            !@params.HasUnit)
+        {
+            ViewBag.SearchMessage =
+                "Please enter an Address, Stand Number, Scheme or Unit Number in addition to Township.";
+            ViewBag.Params = @params;
+            ViewBag.Roll = roll;
+            return PartialView("_NoResults", roll);
+        }
+
+        var started = System.Diagnostics.Stopwatch.StartNew();
+
+        var results = await _search.SearchAsync(
+            rollSource,
+            @params,
+            HttpContext.RequestAborted);
+
+        started.Stop();
+        _logger.LogInformation(
+            "Property search completed in {ElapsedMs} ms. Roll={Roll}, Results={Count}, Town={Town}, Stand={Stand}, Address={Address}, Scheme={Scheme}, Unit={Unit}",
+            started.ElapsedMilliseconds,
+            rollSource,
+            results.Count,
+            @params.TownName,
+            @params.Stand,
+            @params.Address,
+            @params.Scheme,
+            @params.Unit);
 
         // Preserve the exact criteria used for the roll search so the LIS
         // fallback does not have to reconstruct them from the page DOM.
