@@ -187,17 +187,21 @@
 .pub-mobile-drawer {
     background: #1a2e35;
 }
+
 .pub-drawer-header {
     border-bottom-color: rgba(230, 176, 0, .25);
 }
+
 .pub-drawer-link {
     color: rgba(255, 255, 255, .7);
     border-bottom-color: rgba(255, 255, 255, .06);
 }
+
     .pub-drawer-link:hover {
         background: rgba(255, 255, 255, .06);
         color: #ffffff;
     }
+
     .pub-drawer-link i {
         color: #e6b000; /* gold ✓ */
     }
@@ -277,12 +281,14 @@
         background: #1a2e35; /* COJ dark teal (was #1a1a1a) */
         color: #e6b000;
     }
+
 .pub-nav-right {
     margin-left: auto; /* ← pushes Sign In/Register to far right */
     display: flex;
     align-items: center;
     gap: 8px;
 }
+
 .pub-btn-register {
     display: inline-flex;
     align-items: center;
@@ -369,10 +375,12 @@
         text-align: center;
         flex-shrink: 0;
     }
+
 .pub-user-menu {
     border-color: #e8ecef;
     box-shadow: 0 8px 24px rgba(26, 46, 53, .15); /* COJ tinted shadow */
 }
+
 .pub-dd-item:hover {
     background: #e8f3f4; /* COJ pale green hover (was #f7f7f7) */
 }
@@ -380,4 +388,55 @@
 /* Divider between items */
 .pub-nav-drop-menu li + li {
     border-top-color: #243e48;
+}
+
+/* GENESIS PUBLIC NAV RESPONSIVE FIX 2026-08-19 */
+@media (max-width: 1180px) {
+    .pub-nav-inner {
+        padding-left: 14px;
+        padding-right: 14px;
+        gap: 8px;
+    }
+
+    .pub-nav-links,
+    .pub-nav-actions,
+    .pub-nav-right {
+        display: none !important;
+    }
+
+    .pub-hamburger {
+        display: flex !important;
+        margin-left: auto;
+        min-width: 42px;
+        min-height: 42px;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .pub-brand {
+        min-width: 0;
+        margin-right: 8px;
+    }
+}
+
+@media (max-width: 600px) {
+    .pub-nav-inner {
+        height: 60px;
+    }
+
+    .pub-mobile-drawer {
+        width: min(88vw, 340px);
+        right: min(-88vw, -340px);
+    }
+
+    .pub-brand .nav-brand-mark {
+        width: 38px;
+        height: 38px;
+    }
+}
+
+.pub-nav-drop-menu {
+    max-height: calc(100vh - 84px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
 }

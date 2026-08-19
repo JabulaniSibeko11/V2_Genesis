@@ -1,4 +1,4 @@
-﻿@using V2_Genesis.Helpers
+﻿﻿@using V2_Genesis.Helpers
 @model V2_Genesis.Models.ViewModels.Dashboard.RebatesDetailViewModel
 @{
     // Loaded on demand — see DashboardController.RebatesDetail(...).
@@ -15,6 +15,28 @@
             "Index",
             "Dashboard",
             new { openRoll = "Rebates" }) ?? "/Dashboard?openRoll=Rebates";
+}
+
+@if (!isAdminDashboard)
+{
+    <div class="cd-detail-roll-info">
+        <div class="cd-detail-roll-info-left">
+            <div class="cd-detail-roll-icon">
+                <i class="fa-solid fa-percent"></i>
+            </div>
+            <div>
+                <h2 class="cd-detail-roll-name">Rebates</h2>
+                <span class="cd-detail-roll-short">Apply for or track your property rate rebate applications</span>
+            </div>
+        </div>
+
+        <div class="cd-detail-roll-info-right">
+            <span class="cd-roll-badge cd-badge-open">OPEN</span>
+            <a href="/Rebates/Index" class="cd-detail-search-btn">
+                <i class="fa-solid fa-file-pen"></i> New Application
+            </a>
+        </div>
+    </div>
 }
 
 @if (rebateCount == 0)
@@ -57,9 +79,6 @@ else
             You have <strong>@rebateCount</strong>
             rebate application@(rebateCount == 1 ? "" : "s") on record.
         </span>
-        <a href="/Rebates/Index" class="cd-add-btn">
-            <i class="fa-solid fa-plus"></i> New Application
-        </a>
     </div>
 
     <div class="cd-widget">

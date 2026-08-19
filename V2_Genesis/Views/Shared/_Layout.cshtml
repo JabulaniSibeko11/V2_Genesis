@@ -226,7 +226,7 @@
             </div>
 
             <!-- Hamburger -->
-            <button class="pub-hamburger" id="pubHamburger">
+            <button type="button" class="pub-hamburger" id="pubHamburger" aria-label="Open navigation" aria-controls="pubDrawer" aria-expanded="false">
                 <span></span><span></span><span></span>
             </button>
 
@@ -264,6 +264,19 @@
         <div class="pub-drawer-divider"></div>
         <a href="/Rebates/Index" class="pub-drawer-link">
             <i class="fa-solid fa-percent"></i> Rebates
+        </a>
+        <a href="/Home/Privacy" class="pub-drawer-link">
+            <i class="fa-solid fa-shield-halved"></i> Privacy
+        </a>
+        <div class="pub-drawer-divider"></div>
+        <a href="/Sup1/ViewGuide" class="pub-drawer-link">
+            <i class="fa-solid fa-book-open"></i> User Guidelines
+        </a>
+        <a href="/Home/FAQ" class="pub-drawer-link">
+            <i class="fa-solid fa-comments"></i> FAQ
+        </a>
+        <a href="/Home/Contact" class="pub-drawer-link">
+            <i class="fa-solid fa-headset"></i> Contact Support
         </a>
         @if (isAuth && !isAdmin)
         {
@@ -432,18 +445,36 @@
             function openPubDrawer() {
                 pubDrawer?.classList.add('open');
                 pubOverlay?.classList.add('open');
+                pubHam?.setAttribute('aria-expanded', 'true');
                 document.body.style.overflow = 'hidden';
             }
 
             function closePubDrawer() {
                 pubDrawer?.classList.remove('open');
                 pubOverlay?.classList.remove('open');
+                pubHam?.setAttribute('aria-expanded', 'false');
                 document.body.style.overflow = '';
             }
 
             pubHam?.addEventListener('click', openPubDrawer);
             pubClose?.addEventListener('click', closePubDrawer);
             pubOverlay?.addEventListener('click', closePubDrawer);
+
+            pubDrawer?.querySelectorAll('a, button[type="submit"]').forEach(function (item) {
+                item.addEventListener('click', closePubDrawer);
+            });
+
+            window.addEventListener('resize', function () {
+                if (window.innerWidth > 1180) {
+                    closePubDrawer();
+                }
+            });
+
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') {
+                    closePubDrawer();
+                }
+            });
 
             // ── Public nav dropdowns: Evidence / Help ──────────────────────
             function togglePubDrop(dropId) {

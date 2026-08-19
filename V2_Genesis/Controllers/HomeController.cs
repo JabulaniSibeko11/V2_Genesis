@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Diagnostics;
+using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using V2_Genesis.Models;
 using V2_Genesis.Models.Rates;
 using V2_Genesis.Models.ViewModels.Home;
 using V2_Genesis.Services;
@@ -32,8 +35,30 @@ public class HomeController : Controller
         _logger = logger;
         _rateCalculator = rateCalculator;
     }
-    public IActionResult Contact() { 
-    return View();
+    [HttpGet]
+    [Route("error")]
+    [AllowAnonymous]
+    public IActionResult Error()
+    {
+        var exceptionFeature = HttpContext.Features.Get<IExceptionHandlerPathFeature>();
+
+        if (exceptionFeature?.Error is not null)
+        {
+            _logger.LogError(
+                exceptionFeature.Error,
+                "Unhandled request error on {Path}",
+                exceptionFeature.Path);
+        }
+
+        return View("~/Views/Shared/Error.cshtml", new ErrorViewModel
+        {
+            RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier
+        });
+    }
+
+    public IActionResult Contact()
+    {
+        return View();
     }
     public IActionResult FAQ()
     {

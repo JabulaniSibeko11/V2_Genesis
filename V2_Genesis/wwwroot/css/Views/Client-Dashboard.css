@@ -3514,3 +3514,91 @@
     font-size: 10px;
     line-height: 1.35;
 }
+
+
+/* GENESIS NAV RESPONSIVE FIX 2026-08-19 */
+@media (max-width: 1180px) {
+    .cl-nav-inner {
+        padding-left: 14px;
+        padding-right: 14px;
+    }
+
+    .cl-nav-links,
+    .cl-user {
+        display: none !important;
+    }
+
+    .cl-hamburger {
+        display: flex !important;
+        margin-left: auto;
+        min-width: 42px;
+        min-height: 42px;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .nav-brand,
+    .cl-brand {
+        min-width: 0;
+        margin-right: 8px !important;
+    }
+
+    .nav-brand-text,
+    .cl-brand-text {
+        min-width: 0;
+    }
+
+    .nav-brand-name,
+    .cl-brand-name {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 260px;
+    }
+}
+
+@media (max-width: 600px) {
+    .cl-navbar,
+    .cl-nav-inner {
+        height: 60px;
+    }
+
+    .cl-main {
+        padding-top: 60px;
+    }
+
+    .nav-brand-mark,
+    .cl-brand-mark {
+        width: 36px !important;
+        height: 36px !important;
+    }
+
+    .nav-brand-name,
+    .cl-brand-name {
+        font-size: 11.5px !important;
+        letter-spacing: .8px !important;
+        max-width: 190px;
+    }
+
+    .nav-brand-sub,
+    .cl-brand-sub {
+        font-size: 8.5px !important;
+    }
+
+    .cl-mobile-drawer {
+        width: min(88vw, 340px);
+        right: min(-88vw, -340px);
+    }
+}
+
+/* Make dropdowns usable on touch/keyboard and prevent viewport clipping. */
+.cl-dropdown-menu {
+    max-height: calc(100vh - 84px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+.cl-dropdown-end .cl-dropdown-menu {
+    left: auto;
+    right: 0;
+}

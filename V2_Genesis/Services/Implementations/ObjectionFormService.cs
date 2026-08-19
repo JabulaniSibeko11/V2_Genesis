@@ -1122,11 +1122,13 @@ public class ObjectionFormService : IObjectionFormService
                 .Select(x => x.PropertyFrom)
                 .FirstOrDefaultAsync();
 
-            var section6 = await db.Obj_Section6
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x =>
-                    x.Appeal_Ref_S6 == appeal.Appeal_ID ||
-                    x.Objection_Ref_S6 == referenceNo);
+            // Obj_Section6 is not schema-consistent across the roll databases.
+            // GV / SUP1 / SUP2 / Query store Ref as BIGINT while SUP3 stores it as VARCHAR,
+            // and New_Extent / New3_Extent also vary between numeric and text types.
+            // Loading the EF entity directly therefore causes SqlDataReader.GetString()
+            // InvalidCastException on rolls where the physical column is numeric.
+            // Read only the acknowledgement fields and CAST them to text in SQL.
+            var section6 = await LoadSection6ForAcknowledgementAsync(db, referenceNo);
 
             var section7 = await db.Obj_Section7
                 .AsNoTracking()
@@ -1160,9 +1162,9 @@ public class ObjectionFormService : IObjectionFormService
         if (objection is null)
             return null;
 
-        var objectionSection6 = await db.Obj_Section6
-            .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Objection_Ref_S6 == referenceNo);
+        // Do not materialise Obj_Section6 through EF here. Its physical column
+        // types differ by roll (for example Ref is BIGINT on GV but VARCHAR on SUP3).
+        var objectionSection6 = await LoadSection6ForAcknowledgementAsync(db, referenceNo);
 
         var objectionSection7 = await db.Obj_Section7
             .AsNoTracking()
@@ -1187,6 +1189,51 @@ public class ObjectionFormService : IObjectionFormService
             objectionSection6,
             objection.Objection_Start_DateTime.ToString("dd MMMM yyyy HH:mm"),
             objectionFiles);
+    }
+
+    private static async Task<Obj_Section6Model?> LoadSection6ForAcknowledgementAsync(
+        ApplicationDbContext db,
+        string referenceNo)
+    {
+        var connectionString = db.Database.GetConnectionString();
+        if (string.IsNullOrWhiteSpace(connectionString))
+            throw new InvalidOperationException("The roll database connection string could not be resolved.");
+
+        const string sql = @"
+SELECT TOP (1)
+    CAST(Objection_Ref_S6        AS nvarchar(100)) AS Objection_Ref_S6,
+    CAST(Old_Property_Description AS nvarchar(100)) AS Old_Property_Description,
+    CAST(Old_Category             AS nvarchar(100)) AS Old_Category,
+    CAST(Old_Address              AS nvarchar(250)) AS Old_Address,
+    CAST(Old_Extent               AS nvarchar(255)) AS Old_Extent,
+    CAST(Old_Market_Value         AS nvarchar(255)) AS Old_Market_Value,
+    CAST(Old_Owner                AS nvarchar(100)) AS Old_Owner,
+    CAST(New_Property_Description AS nvarchar(100)) AS New_Property_Description,
+    CAST(New_Category             AS nvarchar(100)) AS New_Category,
+    CAST(New_Address              AS nvarchar(250)) AS New_Address,
+    CAST(New_Extent               AS nvarchar(255)) AS New_Extent,
+    CAST(New_Market_Value         AS nvarchar(255)) AS New_Market_Value,
+    CAST(New_Owner                AS nvarchar(100)) AS New_Owner,
+    CAST(Objection_Reasons        AS nvarchar(550)) AS Objection_Reasons,
+    CAST(Old2_Category            AS nvarchar(100)) AS Old2_Category,
+    CAST(Old2_Extent              AS nvarchar(255)) AS Old2_Extent,
+    CAST(Old2_Market_Value        AS nvarchar(255)) AS Old2_Market_Value,
+    CAST(New2_Category            AS nvarchar(100)) AS New2_Category,
+    CAST(New2_Extent              AS nvarchar(255)) AS New2_Extent,
+    CAST(New2_Market_Value        AS nvarchar(255)) AS New2_Market_Value,
+    CAST(Old3_Category            AS nvarchar(100)) AS Old3_Category,
+    CAST(Old3_Extent              AS nvarchar(255)) AS Old3_Extent,
+    CAST(Old3_Market_Value        AS nvarchar(255)) AS Old3_Market_Value,
+    CAST(New3_Category            AS nvarchar(100)) AS New3_Category,
+    CAST(New3_Extent              AS nvarchar(255)) AS New3_Extent,
+    CAST(New3_Market_Value        AS nvarchar(255)) AS New3_Market_Value
+FROM dbo.Obj_Section6
+WHERE LTRIM(RTRIM(Objection_Ref_S6)) = @ReferenceNo;";
+
+        await using var connection = new SqlConnection(connectionString);
+        return await connection.QueryFirstOrDefaultAsync<Obj_Section6Model>(
+            sql,
+            new { ReferenceNo = referenceNo.Trim() });
     }
 
     private static AcknowledgementData BuildAcknowledgementData(

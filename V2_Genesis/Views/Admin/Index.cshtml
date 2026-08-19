@@ -1,4 +1,4 @@
-﻿@using System.Security.Claims
+﻿﻿﻿@using System.Security.Claims
 @using V2_Genesis.Helpers
 @model V2_Genesis.Models.ViewModels.Dashboard.AdminDashboardViewModel
 @{
@@ -457,14 +457,11 @@
  
                   
                     
-                    @if (!roll.IsQuery)
-                    {
-                        <a href="/search/@roll.Source"
-                               class="cd-roll-search-btn"
-                               onclick="event.stopPropagation()">
-                            <i class="fa-solid fa-magnifying-glass"></i> Search Property
-                        </a>
-                    }
+                    <a href="/search/@roll.Source"
+                           class="cd-roll-search-btn"
+                           onclick="event.stopPropagation()">
+                        <i class="fa-solid fa-magnifying-glass"></i> Search Property
+                    </a>
                     <i class="fa-solid fa-chevron-down cd-roll-chevron"
                        id="chevron-@rollKey"></i>
                 </div>
@@ -492,11 +489,6 @@
                id="wchev-@rollKey-linked"></i>
         </div>
         <div class="cd-widget-body" id="widget-@rollKey-linked">
-            <div class="cd-widget-toolbar">
-                <a href="/search/@roll.Source" class="cd-add-btn">
-                    <i class="fa-solid fa-plus"></i> Link New Property
-                </a>
-            </div>
             <div class="table-responsive">
                 <table class="cd-table table table-bordered"
                        id="tbl-@rollKey-linked">
@@ -810,11 +802,6 @@
                                id="wchev-@rollKey-linked"></i>
                         </div>
                         <div class="cd-widget-body" id="widget-@rollKey-linked">
-                            <div class="cd-widget-toolbar">
-                                <a href="/search/@roll.Source" class="cd-add-btn">
-                                    <i class="fa-solid fa-plus"></i> Link New Property
-                                </a>
-                            </div>
                             <div class="table-responsive">
                                 <table class="cd-table table table-bordered"
                                        id="tbl-@rollKey-linked">

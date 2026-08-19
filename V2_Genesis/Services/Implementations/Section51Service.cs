@@ -15,15 +15,25 @@ public class Section51Service : ISection51Service
     private readonly IConfiguration _config;
     private readonly ILogger<Section51Service> _logger;
     private readonly IReadOnlyDictionary<string, Section51RollConfig> _registry;
+    private readonly IWebHostEnvironment _environment;
 
     private const int MAX_FILES = 10;
     private const int MAX_FILE_MB = 3;
 
-    public Section51Service(IConfiguration config,
-        ILogger<Section51Service> logger)
+    private static readonly HashSet<string> AllowedExtensions =
+        new(StringComparer.OrdinalIgnoreCase)
+        {
+            ".pdf", ".jpg", ".jpeg", ".png"
+        };
+
+    public Section51Service(
+        IConfiguration config,
+        ILogger<Section51Service> logger,
+        IWebHostEnvironment environment)
     {
         _config = config;
         _logger = logger;
+        _environment = environment;
         _registry = Section51RollRegistry.Build(config);
     }
 
@@ -49,15 +59,36 @@ public class Section51Service : ISection51Service
                 return Section51ValidateResult.Fail(
                     "Invalid objection number or PIN. Please check and try again.");
 
-            // Step 2 — check if already uploaded OR past deadline
-            bool pastDeadline = DateTime.UtcNow > cfg.DeadlineUtc;
+            // Step 2 — check if evidence was already submitted.
+            //
+            // Do not use checkRows.Any() here. Some legacy Section51Check
+            // procedures return a status row even when the answer is "No",
+            // which caused Genesis to treat every reference as already done.
+            var alreadyDone = await conn.ExecuteScalarAsync<int?>(
+                @"SELECT TOP (1) 1
+                  FROM dbo.Obj_Section_51_Uploads
+                  WHERE LTRIM(RTRIM(Objection_Ref_51)) = @Objection_No;",
+                new { Objection_No = objectionNo.Trim() }) == 1;
 
-            var checkRows = await conn.QueryAsync(
-                cfg.CheckSp,
-                new { Objection_No = objectionNo.Trim() },
-                commandType: CommandType.StoredProcedure);
+            // UAT needs to exercise the full Section 51 workflow even when the
+            // statutory production deadline has passed. The bypass is explicit
+            // and is never honoured in Production.
+            var bypassDeadline =
+                _config.GetValue<bool>("Section51:BypassDeadline")
+                && !_environment.IsProduction();
 
-            bool alreadyDone = checkRows.Any();
+            var pastDeadline =
+                !bypassDeadline &&
+                DateTime.UtcNow > cfg.DeadlineUtc;
+
+            if (bypassDeadline)
+            {
+                _logger.LogWarning(
+                    "[Section51] Deadline bypass is enabled in {Environment} for {ObjNo} on {Roll}.",
+                    _environment.EnvironmentName,
+                    objectionNo,
+                    rollSource);
+            }
 
             if (alreadyDone || pastDeadline)
                 return Section51ValidateResult.Limit(alreadyDone, pastDeadline);
@@ -85,6 +116,24 @@ public class Section51Service : ISection51Service
             return (false,
                 $"Maximum {MAX_FILES} files allowed.", 0, new());
 
+        if (files.Any(f => f is null || f.Length == 0))
+            return (false, "One or more selected files are empty.", 0, new());
+
+        // Validate every file before creating anything on disk.
+        foreach (var file in files)
+        {
+            if (file.Length > MAX_FILE_MB * 1024 * 1024)
+                return (false,
+                    $"File '{file.FileName}' exceeds {MAX_FILE_MB} MB limit.",
+                    0, new());
+
+            var extension = Path.GetExtension(file.FileName);
+            if (!AllowedExtensions.Contains(extension))
+                return (false,
+                    $"File '{file.FileName}' is not an allowed file type. Allowed: PDF, JPG, JPEG, PNG.",
+                    0, new());
+        }
+
         // Build folder: FileRootPath\{ObjNo}\Section 51 Evidence
         var baseFolder = Path.Combine(
             cfg.FileRootPath, objectionNo.Trim());
@@ -95,14 +144,22 @@ public class Section51Service : ISection51Service
 
         foreach (var file in files)
         {
-            if (file.Length > MAX_FILE_MB * 1024 * 1024)
-                return (false,
-                    $"File '{file.FileName}' exceeds {MAX_FILE_MB} MB limit.",
-                    0, new());
-
             var fileName = Path.GetFileName(file.FileName);
             var path = Path.Combine(evidenceFolder, fileName);
-            await using var stream = File.Create(path);
+
+            if (System.IO.File.Exists(path))
+                return (false,
+                    $"A file named '{fileName}' has already been uploaded for this objection.",
+                    savedNames.Count, savedNames);
+
+            await using var stream = new FileStream(
+                path,
+                FileMode.CreateNew,
+                FileAccess.Write,
+                FileShare.None,
+                81920,
+                useAsync: true);
+
             await file.CopyToAsync(stream);
             savedNames.Add(fileName);
         }
@@ -143,9 +200,29 @@ public class Section51Service : ISection51Service
         {
             _logger.LogError(ex,
                 "[Section51] DB insert failed for {ObjNo}", objectionNo);
+
+            // Keep the database and physical evidence in sync.
+            foreach (var savedName in savedNames)
+            {
+                try
+                {
+                    var savedPath = Path.Combine(evidenceFolder, savedName);
+                    if (System.IO.File.Exists(savedPath))
+                        System.IO.File.Delete(savedPath);
+                }
+                catch (Exception cleanupEx)
+                {
+                    _logger.LogWarning(
+                        cleanupEx,
+                        "[Section51] Could not clean up {FileName} after DB failure for {ObjNo}.",
+                        savedName,
+                        objectionNo);
+                }
+            }
+
             return (false,
-                $"Files saved but database update failed: {ex.Message}",
-                savedNames.Count, savedNames);
+                "The Section 51 submission could not be recorded. Please try again.",
+                0, new());
         }
 
         return (true, null, savedNames.Count, savedNames);

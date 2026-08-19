@@ -32,6 +32,7 @@ public class Section51Controller : Controller
     private static string DetectRoll(string refNo)
     {
         var u = refNo.Trim().ToUpper();
+        if (u.Contains("SUP4") || u.Contains("SUPP4")) return "Objection_Supp4";
         if (u.Contains("SUP3") || u.Contains("SUPP3")) return "Objection_Supp3";
         if (u.Contains("SUP2") || u.Contains("SUPP2")) return "Objection_Supp2";
         if (u.Contains("SUP1") || u.Contains("SUPP1")) return "Objection_Supp1";
@@ -43,7 +44,7 @@ public class Section51Controller : Controller
     [Route("section51/verify")]
     public async Task<IActionResult> Verify()
     {
-        ViewBag.GvList = await _db.GvList.OrderBy(r => r.ID).ToListAsync();
+        ViewBag.GvList = await _db.GvList.AsNoTracking().OrderBy(r => r.ID).ToListAsync();
         return View();
     }
 
@@ -53,7 +54,7 @@ public class Section51Controller : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Verify(string objectionNo, string pin)
     {
-        ViewBag.GvList = await _db.GvList.OrderBy(r => r.ID).ToListAsync();
+        ViewBag.GvList = await _db.GvList.AsNoTracking().OrderBy(r => r.ID).ToListAsync();
 
         if (string.IsNullOrWhiteSpace(objectionNo) ||
             string.IsNullOrWhiteSpace(pin))
@@ -94,7 +95,7 @@ public class Section51Controller : Controller
     [Route("section51/limit")]
     public async Task<IActionResult> Limit()
     {
-        ViewBag.GvList = await _db.GvList.OrderBy(r => r.ID).ToListAsync();
+        ViewBag.GvList = await _db.GvList.AsNoTracking().OrderBy(r => r.ID).ToListAsync();
         ViewBag.Reason = TempData["s51_limit_reason"]?.ToString()
             ?? "Section 51 uploads are no longer available for this submission.";
         return View();
@@ -108,7 +109,7 @@ public class Section51Controller : Controller
         if (HttpContext.Session.GetString(S_VALIDATED) != "true")
             return RedirectToAction(nameof(Verify));
 
-        ViewBag.GvList = await _db.GvList.OrderBy(r => r.ID).ToListAsync();
+        ViewBag.GvList = await _db.GvList.AsNoTracking().OrderBy(r => r.ID).ToListAsync();
         ViewBag.ObjectionNo = HttpContext.Session.GetString(S_OBJ);
         ViewBag.RollSource = HttpContext.Session.GetString(S_ROLL);
         return View();
@@ -126,7 +127,7 @@ public class Section51Controller : Controller
         var objNo = HttpContext.Session.GetString(S_OBJ)!;
         var roll = HttpContext.Session.GetString(S_ROLL)!;
 
-        ViewBag.GvList = await _db.GvList.OrderBy(r => r.ID).ToListAsync();
+        ViewBag.GvList = await _db.GvList.AsNoTracking().OrderBy(r => r.ID).ToListAsync();
         ViewBag.ObjectionNo = objNo;
         ViewBag.RollSource = roll;
 
@@ -166,7 +167,7 @@ public class Section51Controller : Controller
             .Deserialize<List<string>>(
                 TempData["s51_files"]?.ToString() ?? "[]") ?? new();
 
-        ViewBag.GvList = await _db.GvList.OrderBy(r => r.ID).ToListAsync();
+        ViewBag.GvList = await _db.GvList.AsNoTracking().OrderBy(r => r.ID).ToListAsync();
         ViewBag.ObjectionNo = objNo;
         ViewBag.RollSource = TempData["s51_roll"]?.ToString();
         ViewBag.FileCount = TempData["s51_count"];

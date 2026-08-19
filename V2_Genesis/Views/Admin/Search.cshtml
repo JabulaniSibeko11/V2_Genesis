@@ -1,9 +1,9 @@
-﻿@{
-    ViewData["Title"] = "Search Enquiry";
-    Layout = "~/Views/Shared/_ClientLayout.cshtml";
-    var gvList = ViewBag.GvList as List<V2_Genesis.Models.GvList> ?? new();
-    var towns = ViewBag.Townships as List<string> ?? new();
-    var schemes = ViewBag.Schemes as List<string> ?? new();
+﻿﻿@{
+ViewData["Title"] = "Search Enquiry";
+Layout = "~/Views/Shared/_ClientLayout.cshtml";
+var gvList = ViewBag.GvList as List<V2_Genesis.Models.GvList> ?? new();
+var towns = ViewBag.Townships as List<string> ?? new();
+var schemes = ViewBag.Schemes as List<string> ?? new();
 }
 
 @section Styles {
@@ -126,7 +126,7 @@
                                 <label class="adms-label" for="TownName">
                                     <i class="fa-solid fa-map-pin"></i> Township
                                 </label>
-                                <select name="TownName" id="TownName" class="adms-input" required>
+                                <select name="TownName" id="TownName" class="adms-input coj-township-select" required>
                                     <option value="">— Select Township (required) —</option>
                                     @foreach (var t in towns)
                                     {
@@ -194,37 +194,37 @@
     <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
     <script>
         function switchTab(tab) {
-            ['ref','prop'].forEach(function(t) {
-                document.getElementById('tab-'  + t).classList.toggle('active', t === tab);
-                document.getElementById('pane-' + t).classList.toggle('active', t === tab);
-            });
+        ['ref','prop'].forEach(function(t) {
+        document.getElementById('tab-'  + t).classList.toggle('active', t === tab);
+        document.getElementById('pane-' + t).classList.toggle('active', t === tab);
+        });
         }
 
         function handleSubmit(e, form, btnId) {
-            var inputs = form.querySelectorAll('input[type="text"], select');
-            var hasValue = false;
-            inputs.forEach(function(el) {
-                if (el.name !== 'rollSource' && el.name !== '__RequestVerificationToken'
-                    && el.value.trim()) hasValue = true;
-            });
-            if (!hasValue) {
-                e.preventDefault();
-                showErr(form, 'Please enter at least one search field.');
-                return;
-            }
-            var btn = document.getElementById(btnId);
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Searching…';
-            btn.disabled = true;
+        var inputs = form.querySelectorAll('input[type="text"], select');
+        var hasValue = false;
+        inputs.forEach(function(el) {
+        if (el.name !== 'rollSource' && el.name !== '__RequestVerificationToken'
+        && el.value.trim()) hasValue = true;
+        });
+        if (!hasValue) {
+        e.preventDefault();
+        showErr(form, 'Please enter at least one search field.');
+        return;
+        }
+        var btn = document.getElementById(btnId);
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Searching…';
+        btn.disabled = true;
         }
 
         function showErr(form, msg) {
-            var ex = form.querySelector('.adms-err');
-            if (ex) ex.remove();
-            var d = document.createElement('div');
-            d.className = 'adms-err';
-            d.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> ' + msg;
-            form.insertBefore(d, form.firstChild);
-            setTimeout(function() { d.remove(); }, 5000);
+        var ex = form.querySelector('.adms-err');
+        if (ex) ex.remove();
+        var d = document.createElement('div');
+        d.className = 'adms-err';
+        d.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> ' + msg;
+        form.insertBefore(d, form.firstChild);
+        setTimeout(function() { d.remove(); }, 5000);
         }
     </script>
 }

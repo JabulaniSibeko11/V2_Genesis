@@ -1,4 +1,4 @@
-﻿@using V2_Genesis.Models
+﻿﻿@using V2_Genesis.Models
 @{
     ViewData["Title"] = "Search Property — Attributes";
     Layout = "~/Views/Shared/_ClientLayout.cshtml";
@@ -67,7 +67,7 @@
                         </label>
                         <select id="SearchTownName"
                                 name="SearchTownName"
-                                class="as-input">
+                                class="as-input coj-township-select">
                             <option value="">— Select Township —</option>
                             @foreach (var t in townships)
                             {
@@ -267,47 +267,47 @@
 
     <script>
         $(document).ready(function () {
-            if (!$.fn.DataTable.isDataTable('#attrResultsTable')) {
-                $('#attrResultsTable').DataTable({
-                    responsive : false,
-                    scrollX    : true,
-                    autoWidth  : false,
-                    destroy    : true,
-                    dom        : '<"as-dt-top"lf>rt<"as-dt-bottom"ip>',
-                    lengthMenu : [[10, 25, 50, -1], [10, 25, 50, 'All']],
-                    pageLength : 10,
-                    language: {
-                        search           : '_INPUT_',
-                        searchPlaceholder: 'Filter results…',
-                        emptyTable       : 'No properties found',
-                        info             : 'Showing _START_ to _END_ of _TOTAL_',
-                        infoEmpty        : 'No properties found',
-                        infoFiltered     : '(filtered from _MAX_ total)'
-                    },
-                    columnDefs: [
-                        { width: '150px', targets: 0 },
-                        { width: '180px', targets: 1 },
-                        { width: '55px',  targets: [2,3] },
-                        { width: '120px', targets: 4 },
-                        { width: '120px', targets: 6 },
-                        { orderable: false, targets: 9 }
-                    ],
-                    drawCallback : function () { formatAttrValues(); },
-                    initComplete : function () { formatAttrValues(); }
-                });
-            }
+        if (!$.fn.DataTable.isDataTable('#attrResultsTable')) {
+        $('#attrResultsTable').DataTable({
+        responsive : false,
+        scrollX    : true,
+        autoWidth  : false,
+        destroy    : true,
+        dom        : '<"as-dt-top"lf>rt<"as-dt-bottom"ip>',
+        lengthMenu : [[10, 25, 50, -1], [10, 25, 50, 'All']],
+        pageLength : 10,
+        language: {
+        search           : '_INPUT_',
+        searchPlaceholder: 'Filter results…',
+        emptyTable       : 'No properties found',
+        info             : 'Showing _START_ to _END_ of _TOTAL_',
+        infoEmpty        : 'No properties found',
+        infoFiltered     : '(filtered from _MAX_ total)'
+        },
+        columnDefs: [
+        { width: '150px', targets: 0 },
+        { width: '180px', targets: 1 },
+        { width: '55px',  targets: [2,3] },
+        { width: '120px', targets: 4 },
+        { width: '120px', targets: 6 },
+        { orderable: false, targets: 9 }
+        ],
+        drawCallback : function () { formatAttrValues(); },
+        initComplete : function () { formatAttrValues(); }
+        });
+        }
         });
 
         function formatAttrValues() {
-            document.querySelectorAll('.as-value').forEach(function (el) {
-                var raw = parseFloat(el.textContent.replace(/[^0-9.-]+/g, ''));
-                if (!isNaN(raw) && raw > 0) {
-                    el.textContent = raw.toLocaleString('en-ZA', {
-                        style: 'currency', currency: 'ZAR',
-                        minimumFractionDigits: 0, maximumFractionDigits: 0
-                    });
-                }
-            });
+        document.querySelectorAll('.as-value').forEach(function (el) {
+        var raw = parseFloat(el.textContent.replace(/[^0-9.-]+/g, ''));
+        if (!isNaN(raw) && raw > 0) {
+        el.textContent = raw.toLocaleString('en-ZA', {
+        style: 'currency', currency: 'ZAR',
+        minimumFractionDigits: 0, maximumFractionDigits: 0
+        });
+        }
+        });
         }
     </script>
 }

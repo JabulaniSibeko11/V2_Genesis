@@ -1,4 +1,4 @@
-﻿@model V2_Genesis.Models.PropertySearchParams
+﻿﻿@model V2_Genesis.Models.PropertySearchParams
 @{
     var roll = ViewBag.Roll as V2_Genesis.Models.GvList;
     var townships = ViewBag.Townships as List<string> ?? new();
@@ -71,7 +71,7 @@
                         <i class="fa-solid fa-map-pin"></i>
                         Township <span class="req">*</span>
                     </label>
-                    <select name="TownName" id="TownName" class="srch-select" required>
+                    <select name="TownName" id="TownName" class="srch-select coj-township-select" required>
                         <option value="">Select Township…</option>
                         @foreach (var t in townships)
                         {

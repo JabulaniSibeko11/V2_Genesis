@@ -16,6 +16,28 @@
             new { openRoll = "Attributes" }) ?? "/Dashboard?openRoll=Attributes";
 }
 
+@if (!isAdminDashboard)
+{
+    <div class="cd-detail-roll-info">
+        <div class="cd-detail-roll-info-left">
+            <div class="cd-detail-roll-icon">
+                <i class="fa-solid fa-clipboard-list"></i>
+            </div>
+            <div>
+                <h2 class="cd-detail-roll-name">Property Attributes</h2>
+                <span class="cd-detail-roll-short">Submit or track your property attribute information</span>
+            </div>
+        </div>
+
+        <div class="cd-detail-roll-info-right">
+            <span class="cd-roll-badge cd-badge-open">OPEN</span>
+            <a href="/attributes/search" class="cd-detail-search-btn">
+                <i class="fa-solid fa-magnifying-glass"></i> Search Property
+            </a>
+        </div>
+    </div>
+}
+
 <!-- ── 1. Linked Properties ──────────────────────────── -->
 <div class="cd-widget">
     <div class="cd-widget-toggle"
@@ -29,11 +51,6 @@
            id="wchev-attr-linked"></i>
     </div>
     <div class="cd-widget-body" id="widget-attr-linked">
-        <div class="cd-widget-toolbar">
-            <a href="/attributes/search" class="cd-add-btn">
-                <i class="fa-solid fa-magnifying-glass"></i> Search Property
-            </a>
-        </div>
         <div class="table-responsive">
             <table class="cd-table table table-bordered"
                    id="tbl-attr-linked">
