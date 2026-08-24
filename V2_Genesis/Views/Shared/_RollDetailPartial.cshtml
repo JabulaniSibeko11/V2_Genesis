@@ -331,6 +331,9 @@
                                                 <a class="dropdown-item"
                                                        asp-controller="Notice"
                                                        asp-action="DownloadAcknowledgement"
+                                                       data-no-loader
+                                                       target="_blank"
+                                                       rel="noopener"
                                                        asp-route-objectionNo="@item.DisplayReference"
                                                        asp-route-rollSource="Objection_Query"
                                                        asp-route-returnUrl="@("/Dashboard?openRoll=" + Uri.EscapeDataString(Model.Roll.Source ?? ""))">
@@ -500,6 +503,9 @@
                                                     <a class="dropdown-item"
                                                            asp-controller="Notice"
                                                            asp-action="DownloadAcknowledgement"
+                                                       data-no-loader
+                                                       target="_blank"
+                                                       rel="noopener"
                                                            asp-route-objectionNo="@item.DisplayReference"
                                                            asp-route-rollSource="Objection_Query"
                                                            asp-route-returnUrl="@("/Dashboard?openRoll=" + Uri.EscapeDataString(Model.Roll.Source ?? ""))">
@@ -798,6 +804,9 @@ else
                                                     <a class="dropdown-item"
                                                            asp-controller="Notice"
                                                            asp-action="DownloadAcknowledgement"
+                                                       data-no-loader
+                                                       target="_blank"
+                                                       rel="noopener"
                                                            asp-route-objectionNo="@item.Objection_No"
                                                            asp-route-rollSource="@Model.Roll.Source"
                                                            asp-route-returnUrl="@("/Dashboard?openRoll=" + Uri.EscapeDataString(Model.Roll.Source ?? ""))">
@@ -1010,6 +1019,9 @@ else
                                                     <a class="dropdown-item"
                                                            asp-controller="Notice"
                                                            asp-action="DownloadAcknowledgement"
+                                                       data-no-loader
+                                                       target="_blank"
+                                                       rel="noopener"
                                                            asp-route-objectionNo="@appealAckRef"
                                                            asp-route-rollSource="@Model.Roll.Source"
                                                            asp-route-returnUrl="@("/Dashboard?openRoll=" + Uri.EscapeDataString(Model.Roll.Source ?? ""))">

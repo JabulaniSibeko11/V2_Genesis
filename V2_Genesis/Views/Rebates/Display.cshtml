@@ -157,7 +157,10 @@
                 {
                     <a asp-controller="Rebates" asp-action="Download"
                            asp-route-rebateNo="@rebateNo"
-                           class="disp-btn disp-btn-gold">
+                           class="disp-btn disp-btn-gold"
+                           data-no-loader
+                           target="_blank"
+                           rel="noopener">
                         <i class="fa-solid fa-file-pdf"></i>
                         Download Acknowledgement
                     </a>

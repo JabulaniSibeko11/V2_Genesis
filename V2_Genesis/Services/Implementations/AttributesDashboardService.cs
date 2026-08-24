@@ -39,7 +39,10 @@ public class AttributesDashboardService : IAttributesDashboardService
             {
                 var linked = await conn.QueryAsync<AttributeLinkedProperty>(
                     "Attr_DashboardLinked",
-                    new { UserId = userId },
+                    // SQL procedure expects @userName (not @UserId).
+                    // The value is still the ASP.NET Identity user id used by
+                    // AttrLinkedProperties.UserID.
+                    new { userName = userId },
                     commandType: CommandType.StoredProcedure);
 
                 data.LinkedProperties = linked.ToList();

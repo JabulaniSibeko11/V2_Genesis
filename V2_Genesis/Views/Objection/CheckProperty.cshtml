@@ -41,7 +41,6 @@
     <link href="~/css/views/objection.css" rel="stylesheet" asp-append-version="true" />
     <link href="~/css/views/property-search.css" rel="stylesheet" asp-append-version="true" />
     <link href="~/css/views/clientdashboardcss.css" rel="stylesheet" asp-append-version="true" />
-    <link href="~/css/views/site.css" rel="stylesheet" asp-append-version="true" />
     <link href="~/css/views/check-property.css" rel="stylesheet" asp-append-version="true" />
 }
 
@@ -145,10 +144,10 @@
                     <i class="fa-solid fa-circle-check"></i>
                     <span id="continueBtnText">
                         Continue to @(isQuery
-                                                    ? section78ProcessName
-                                            : Model.IsAppeal
-                                                ? "Appeal"
-                                                : "Objection") Form
+                                                                                                    ? section78ProcessName
+                                                                                    : Model.IsAppeal
+                                                                                        ? "Appeal"
+                                                                                        : "Objection") Form
                     </span>
                 </button>
             </div>
@@ -471,8 +470,8 @@
                     <div class="cp-card-hdr">
                         <i class="fa-solid
                             @(isReview
-                                                                          ? "fa-magnifying-glass-chart"
-                                                                          : "fa-file-magnifying-glass")">
+                                                                                                                                ? "fa-magnifying-glass-chart"
+                                                                                                                                : "fa-file-magnifying-glass")">
                         </i>
 
                         Section 78 @section78ProcessName
@@ -684,14 +683,19 @@
     </div>
 </div>
 
-<script asp-append-version="true" src="~/js/QueryIndex.js" type="text/javascript"></script>
-
 @section Scripts {
+    <script asp-append-version="true" src="~/js/QueryIndex.js" type="text/javascript"></script>
+
     <script>
         var CONTROLLER = '@Model.ControllerName';
-        var SOURCE     = '@Model.SourceTable';
-        var IS_LIS     = SOURCE === 'LIS';
-        var IS_QUERY   = @(Model.IsQuery ? "true" : "false");
+
+        // SOURCE is the actual roll/source table (e.g. GV23-SUP3).
+        // PROPERTY_FROM is the origin of the selected property:
+        // LIS / Omission / roll table.
+        var SOURCE        = '@Model.SourceTable';
+        var PROPERTY_FROM = '@Model.PropertyFrom';
+        var IS_LIS        = PROPERTY_FROM.toUpperCase() === 'LIS';
+        var IS_QUERY      = @(Model.IsQuery ? "true" : "false");
 
         var IS_APPEAL = (function () {
             var fromRazor = '@Model.AppealStatus';
@@ -766,8 +770,12 @@
         }
 
                 function buildLodgeUrl(isMulti) {
+                    // IMPORTANT:
+                    // PropertyFrom must describe where the property came from.
+                    // For a property found through LIS while lodging against SUP3,
+                    // SOURCE remains GV23-SUP3 but PropertyFrom must remain LIS.
                     var qs =
-                        '?PropertyFrom=' + encodeURIComponent(SOURCE) +
+                        '?PropertyFrom=' + encodeURIComponent(PROPERTY_FROM) +
                         '&objectorType=' + encodeURIComponent(selectedObjector) +
                         '&appeal=' + (IS_APPEAL ? 'True' : 'False');
 

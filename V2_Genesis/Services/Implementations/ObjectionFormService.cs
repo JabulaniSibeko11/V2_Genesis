@@ -265,7 +265,19 @@ public class ObjectionFormService : IObjectionFormService
      bool isMulti)
     {
         // ── 1. Property Info ─────────────────────────────────────────
-        obj.PropertyFrom = propertyFrom;
+        // PropertyFrom stores ORIGIN, not the roll being objected to.
+        // Examples:
+        //   property found on SUP3 roll -> GV23-SUP3
+        //   property found through LIS  -> LIS
+        //   omitted property            -> Omission
+        obj.PropertyFrom =
+            propertyFrom.Equals("LIS", StringComparison.OrdinalIgnoreCase)
+                ? "LIS"
+                : propertyFrom.Equals("Omission", StringComparison.OrdinalIgnoreCase) ||
+                  propertyFrom.Equals("Omitted", StringComparison.OrdinalIgnoreCase)
+                    ? "Omission"
+                    : propertyFrom;
+
         obj.UserID = userId;
         obj.objection_Status = "Obj-Lodging";
 

@@ -141,8 +141,12 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
     var messageON = TempData.Peek("CurrentFilter_ON")?.ToString() ?? "";
     if (isOmissionProperty)
     {
-        messagePD = "";
-        messageProp = "";
+        // There's no roll record for an omitted property, so the roll-based
+        // fields are correctly blank — but the property description itself
+        // should still show what the client originally reported when they
+        // lodged the omission, not go blank along with everything else.
+        messagePD = omissionRequestedDescription;
+        messageProp = omissionRequestedDescription;
         messageCD = "";
         messageLSA = "";
         messageRA = "";
@@ -166,6 +170,10 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
 
         old3MarketValueRaw = "";
         old3MarketValueDisplay = "";
+
+        // propertyDescription was computed above from the pre-fallback
+        // messagePD/messageProp, so it needs the same correction here.
+        propertyDescription = omissionRequestedDescription;
     }
 
     

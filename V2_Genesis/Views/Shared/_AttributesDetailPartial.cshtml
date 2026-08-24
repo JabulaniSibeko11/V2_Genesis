@@ -75,7 +75,7 @@
                             <td>@item.MarketValue</td>
                             <td>
                                 <span class="attr-form-pill attr-pill-@(item.FormType.ToLower()
-                                                                                                                                                                                                                                                                                                                                                                                                            .Replace(" ", "").Replace("&", "").Replace("/", ""))">
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      .Replace(" ", "").Replace("&", "").Replace("/", ""))">
                                     @item.FormType
                                 </span>
                             </td>
@@ -250,7 +250,9 @@
                                         <li>
                                             <a class="dropdown-item"
                                                    href="/attributes/acknowledgement/download?attrNo=@item.SubmissionRef"
-                                                   target="_blank">
+                                                   data-no-loader
+                                                   target="_blank"
+                                                   rel="noopener">
                                                 <i class="fa-solid fa-file-pdf" style="color:#dc2626;"></i>
                                                 Download Acknowledgement
                                             </a>

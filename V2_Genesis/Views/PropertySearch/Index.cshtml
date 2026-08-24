@@ -12,6 +12,7 @@
 @section Styles {
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" />
     <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.dataTables.min.css" />
 
     <link href="~/css/views/clientdashboardcss.css" rel="stylesheet" asp-append-version="true" />
     <link href="~/css/views/client-dashboard.css" rel="stylesheet" asp-append-version="true" />
@@ -61,7 +62,7 @@
                     <i class="fa-solid fa-magnifying-glass" style="color:#e6b000;margin-right:8px;font-size:16px;"></i>
                     Search Criteria
                 </h2>
-                <p>Select a township to search. Address, Stand Number, Scheme and Unit are optional filters.</p>
+                <p>Select a township and fill in at least one field below.</p>
             </div>
 
             <form id="searchForm">
@@ -165,9 +166,9 @@
                 <div class="srch-step">
                     <div class="srch-step-num">2</div>
                     <div class="srch-step-body">
-                        <div class="srch-step-title">Optional search filters</div>
+                        <div class="srch-step-title">Fill in at least one field</div>
                         <p class="srch-step-desc">
-                            Township alone is enough to search. You can narrow the results using:
+                            Provide one or more of:
                             <ul>
                                 <li>Street address</li>
                                 <li>Stand number</li>
@@ -223,13 +224,9 @@
     <div class="psm-body" id="psmBody"></div>
 </div>
 
-<div class="ps-preloader" id="psPreloader">
-    <div class="ps-spinner"></div>
-    <span>Searching the valuation roll…</span>
-</div>
-
 @section Scripts {
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
@@ -269,152 +266,78 @@
         }
 
         function closeResultsModal() {
-        document.getElementById('psmBackdrop')?.classList.remove('show');
-        document.getElementById('psmModal')?.classList.remove('show');
+        document.getElementById('psmBackdrop').classList.remove('show');
+        document.getElementById('psmModal').classList.remove('show');
         document.body.style.overflow = '';
-
-        if (window.jQuery &&
-        window.jQuery.fn &&
-        window.jQuery.fn.DataTable &&
-        window.jQuery.fn.DataTable.isDataTable('#psResultsTable')) {
-        window.jQuery('#psResultsTable').DataTable().destroy();
-        }
+        if ($.fn.DataTable.isDataTable('#psResultsTable'))
+        $('#psResultsTable').DataTable().destroy();
         }
 
         document.getElementById('searchForm').addEventListener('submit', async function (e) {
         e.preventDefault();
 
-        const townElement = document.getElementById('TownName');
-        const addressElement = document.getElementById('Address');
-        const standElement = document.getElementById('Stand');
-        const schemeElement = document.getElementById('Scheme');
-        const unitElement = document.getElementById('Unit');
+        const town = document.getElementById('TownName');
+        const address = document.getElementById('Address');
 
-        const town = townElement?.value.trim() ?? '';
-        const address = addressElement?.value.trim() ?? '';
-        const standValue = standElement?.value.trim() ?? '';
-        const schemeValue = schemeElement?.value.trim() ?? '';
-        const unitValue = unitElement?.value.trim() ?? '';
-
-        // Same business rule as before:
-        // Township is the ONLY required field.
-        if (!town) {
-        document.getElementById('townErr').textContent =
-        'Please select a Township.';
-        townElement?.focus();
+        if (!town.value) {
+        document.getElementById('townErr').textContent = 'Please select a Township.';
+        town.focus();
         return;
         }
 
         document.getElementById('townErr').textContent = '';
-
-        const tokenElement =
-        this.querySelector('input[name="__RequestVerificationToken"]');
-
-        if (!tokenElement || !tokenElement.value) {
-        console.error('[Property Search] Anti-forgery token is missing.');
-        document.getElementById('psmBody').innerHTML =
-        '<div class="alert alert-warning m-3">' +
-        'The search security token is missing. Refresh the page and try again.' +
-        '</div>';
-        document.getElementById('psmTitle').textContent = 'Search';
-        openResultsModal();
-        return;
-        }
-
         closeResultsModal();
-        document.getElementById('psPreloader').classList.add('show');
 
-        /*
-        * IMPORTANT:
-        * Use the SAME POST pattern as the working Home Index search:
-        *   - URLSearchParams request body
-        *   - application/x-www-form-urlencoded
-        *   - RequestVerificationToken header
-        *
-        * [ValidateAntiForgeryToken] runs BEFORE the controller action.
-        * If that validation fails, a breakpoint inside Search(...) will
-        * never be hit.
-        */
-        const requestBody = new URLSearchParams({
-        TownName: town,
-        Stand: standValue,
-        Address: address,
-        Scheme: schemeValue,
-        Unit: unitValue
-        });
-
-        const searchUrl = '/search/@(roll?.Source)';
+        const data  = new FormData(this);
+        const token = this.querySelector('input[name="__RequestVerificationToken"]').value;
+        const controller = new AbortController();
+        // Server-side SQL command timeout (PropertySearchService) is 45s
+        // for a township-only search and 15s for a narrowed one — this
+        // must stay above the LONGER of those two, or the client gives up
+        // before the server even has a chance to respond for exactly the
+        // broad township searches this page is meant to support.
+        const timeoutId = setTimeout(() => controller.abort(), 50000);
 
         try {
-        console.log('[Property Search] POST', searchUrl, requestBody.toString());
-
-        const response = await fetch(searchUrl, {
-        method: 'POST',
+        const response = await fetch('/search/@(roll?.Source)', {
+        method : 'POST',
         headers: {
-        'Content-Type':
-        'application/x-www-form-urlencoded;charset=UTF-8',
-        'RequestVerificationToken': tokenElement.value,
+        'RequestVerificationToken': token,
         'X-Requested-With': 'XMLHttpRequest'
         },
-        body: requestBody.toString(),
-        credentials: 'same-origin'
+        body: data,
+        signal: controller.signal
         });
 
-        const html = await response.text();
+        if (!response.ok)
+        throw new Error(`Search failed with HTTP ${response.status}`);
 
-        console.log(
-        '[Property Search] response',
-        response.status,
-        response.statusText
-        );
-
-        if (!response.ok) {
-        console.error('[Property Search] response body:', html);
-
-        document.getElementById('psmBody').innerHTML =
-        '<div class="alert alert-warning m-3">' +
-        'Search request failed with HTTP ' + response.status +
-        '. Check the browser console and server log.' +
-        '</div>';
-
-        document.getElementById('psmTitle').textContent = 'Search';
-        openResultsModal();
-        return;
-        }
-
-        document.getElementById('psmBody').innerHTML = html;
+        document.getElementById('psmBody').innerHTML = await response.text();
         document.getElementById('psmTitle').textContent =
         'Results – @(roll?.Short ?? "Search")';
 
         document.querySelectorAll('#psmBody script').forEach(s => {
         const sc = document.createElement('script');
-
-        if (s.src) {
-        sc.src = s.src;
-        } else {
         sc.textContent = s.textContent;
-        }
-
         document.body.appendChild(sc);
-        sc.remove();
         });
 
         openResultsModal();
         }
         catch (error) {
-        console.error('[Property Search] fetch failed:', error);
-
+        const timedOut = error?.name === 'AbortError';
         document.getElementById('psmBody').innerHTML =
-        '<div class="alert alert-warning m-3">' +
-        'The browser could not send the property search request. ' +
-        'Check the browser console for the exact error.' +
-        '</div>';
-
+        `<div class="alert alert-warning m-3">` +
+        (timedOut
+        ? 'The search is taking longer than expected. Please try again — if this keeps happening, adding a Stand, Address, Scheme or Unit can help narrow a very large township.'
+        : 'The property search could not be completed. Please try again.') +
+        `</div>`;
         document.getElementById('psmTitle').textContent = 'Search';
         openResultsModal();
+        console.error('[Property Search]', error);
         }
         finally {
-        document.getElementById('psPreloader').classList.remove('show');
+        clearTimeout(timeoutId);
         }
         });
 

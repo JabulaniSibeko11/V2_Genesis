@@ -90,8 +90,12 @@
     $(document).ready(function () {
         if (!$.fn.DataTable.isDataTable('#psResultsTable')) {
             $('#psResultsTable').DataTable({
-                responsive : false,
-                scrollX    : true,
+                responsive : {
+                    details: {
+                        type: 'column',
+                        target: 'tr'
+                    }
+                },
                 autoWidth  : false,
                 destroy    : true,
                 dom        : '<"ps-dt-top"lBf>rt<"ps-dt-bottom"ip>',
@@ -123,6 +127,11 @@
                     { width: '190px', targets: 1  },
                     { width: '65px',  targets: [2, 3, 4] },
                     { width: '120px', targets: 5  },
+                    // Property description and the action button always
+                    // stay visible on a phone — everything else collapses
+                    // behind the "+" control instead of forcing a
+                    // horizontal scroll to reach the button.
+                    { className: 'all', targets: [0, 13] },
                     { orderable: false, targets: 13 }
                 ],
                 drawCallback : function () { formatMarketValues(); },

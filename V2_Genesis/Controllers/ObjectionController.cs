@@ -162,6 +162,13 @@ public class ObjectionController : Controller
         TempData["SourceTable"] = sourceTable;
         TempData["PropertyFrom"] = PropertyFrom;
 
+        // Keep the same property context in Session as a second source of truth.
+        // TempData is request-oriented and may be read by Razor views; Session
+        // prevents LIS/Omission origin from being lost before final POST.
+        HttpContext.Session.SetString("RollSource", rollSource);
+        HttpContext.Session.SetString("SourceTable", sourceTable);
+        HttpContext.Session.SetString("PropertyFrom", PropertyFrom ?? sourceTable);
+
         TempData.Keep("AppealStatus");
         TempData.Keep("RollSource");
         TempData.Keep("SourceTable");
@@ -180,8 +187,26 @@ public class ObjectionController : Controller
         TempData["RollDisplayName"] = rollDisplayName;
         TempData.Keep("RollDisplayName");
 
+        // A resolved roll property always has both keys — only a genuine
+        // omission (or a mid-flow continuation of one) is missing both.
+        // Without this guard, TempData.Keep("OmissionStatus") below makes
+        // the flag survive indefinitely, so a completely unrelated,
+        // resolved property checked afterwards would still be treated as
+        // an omission and show stale data from the earlier submission.
+        var looksLikeOmissionContinuation =
+            string.IsNullOrWhiteSpace(unitKey) &&
+            string.IsNullOrWhiteSpace(valuationKey);
+
         bool isOmission = omission ||
-            TempData.Peek("OmissionStatus")?.ToString() == "True";
+            (looksLikeOmissionContinuation &&
+             TempData.Peek("OmissionStatus")?.ToString() == "True");
+
+        if (!isOmission)
+        {
+            // This request is explicitly not an omission — clear any
+            // leftover flag so it cannot leak into a later request either.
+            TempData.Remove("OmissionStatus");
+        }
 
         bool isAppeal = appealStatus == "True";
         var isSection78Review =
@@ -389,6 +414,7 @@ public class ObjectionController : Controller
 
             TempData["PropertyFrom"] = "LIS";
             TempData.Keep("PropertyFrom");
+            HttpContext.Session.SetString("PropertyFrom", "LIS");
         }
         else
         {
@@ -807,6 +833,12 @@ public class ObjectionController : Controller
         TempData["PropertyFrom"] = resolvedPropertyFrom;
         TempData["SourceTable"] = resolvedSourceTable;
 
+        HttpContext.Session.SetString("PropertyFrom", resolvedPropertyFrom);
+        HttpContext.Session.SetString("SourceTable", resolvedSourceTable);
+
+        if (!string.IsNullOrWhiteSpace(tempRollSource))
+            HttpContext.Session.SetString("RollSource", tempRollSource);
+
         TempData.Keep("PropertyFrom");
         TempData.Keep("SourceTable");
         TempData.Keep("RollSource");
@@ -897,20 +929,34 @@ public class ObjectionController : Controller
     string? tempSourceTable,
     string? tempRollSource)
     {
-        var value =
-            FirstNotEmpty(routePropertyFrom, tempPropertyFrom, tempSourceTable, tempRollSource)
-            ?? "";
+        // Property origin is more important than the roll table.
+        // If either the route or the persisted request context says LIS /
+        // Omission, never allow GV23-SUPx to overwrite that origin.
+        var candidates = new[]
+        {
+            routePropertyFrom,
+            tempPropertyFrom
+        };
 
-        value = value.Trim();
-
-        if (value.Equals("LIS", StringComparison.OrdinalIgnoreCase))
+        if (candidates.Any(x =>
+            x?.Trim().Equals("LIS", StringComparison.OrdinalIgnoreCase) == true))
+        {
             return "LIS";
+        }
 
-        if (value.Equals("Omission", StringComparison.OrdinalIgnoreCase) ||
-            value.Equals("Omitted", StringComparison.OrdinalIgnoreCase))
+        if (candidates.Any(x =>
+            x?.Trim().Equals("Omission", StringComparison.OrdinalIgnoreCase) == true ||
+            x?.Trim().Equals("Omitted", StringComparison.OrdinalIgnoreCase) == true))
+        {
             return "Omission";
+        }
 
-        return value;
+        return FirstNotEmpty(
+                   routePropertyFrom,
+                   tempPropertyFrom,
+                   tempSourceTable,
+                   tempRollSource)
+               ?? "";
     }
 
     private static string ResolveSourceTableForForm(
@@ -1152,10 +1198,15 @@ public class ObjectionController : Controller
             ? SourceTable.Trim()
             : ResolveSourceTable(rollSource);
 
+        var persistedPropertyFrom =
+            TempData.Peek("PropertyFrom")?.ToString()
+            ?? HttpContext.Session.GetString("PropertyFrom");
+
         var propertyFrom = ResolveSubmittedPropertyFrom(
             PropertyFrom,
             SourceTable,
-            rollSource);
+            rollSource,
+            persistedPropertyFrom);
 
         HttpContext.Session.SetString("RollSource", rollSource);
         HttpContext.Session.SetString("SourceTable", sourceTable);
@@ -1310,16 +1361,32 @@ public class ObjectionController : Controller
     private static string ResolveSubmittedPropertyFrom(
     string? propertyFrom,
     string? sourceTable,
-    string? rollSource)
+    string? rollSource,
+    string? persistedPropertyFrom = null)
     {
-        var value = propertyFrom?.Trim();
+        // LIS/Omission must survive all the way to Obj_Property_Info.PropertyFrom.
+        // Check both the posted form and the persisted server-side context.
+        var origins = new[]
+        {
+            propertyFrom,
+            persistedPropertyFrom
+        };
 
-        if (value?.Equals("LIS", StringComparison.OrdinalIgnoreCase) == true)
+        if (origins.Any(x =>
+            x?.Trim().Equals("LIS", StringComparison.OrdinalIgnoreCase) == true))
+        {
             return "LIS";
+        }
 
-        if (value?.Equals("Omission", StringComparison.OrdinalIgnoreCase) == true ||
-            value?.Equals("Omitted", StringComparison.OrdinalIgnoreCase) == true)
+        if (origins.Any(x =>
+            x?.Trim().Equals("Omission", StringComparison.OrdinalIgnoreCase) == true ||
+            x?.Trim().Equals("Omitted", StringComparison.OrdinalIgnoreCase) == true))
+        {
             return "Omission";
+        }
+
+        if (!string.IsNullOrWhiteSpace(propertyFrom))
+            return propertyFrom.Trim();
 
         if (!string.IsNullOrWhiteSpace(sourceTable))
             return sourceTable.Trim();
