@@ -154,33 +154,70 @@ public class PropertySearchController : Controller
 
         var started = System.Diagnostics.Stopwatch.StartNew();
 
-        var results = await _search.SearchAsync(
-            rollSource,
-            @params,
-            HttpContext.RequestAborted);
-
-        started.Stop();
-        _logger.LogInformation(
-            "Property search completed in {ElapsedMs} ms. Roll={Roll}, Results={Count}, Town={Town}, Stand={Stand}, Address={Address}, Scheme={Scheme}, Unit={Unit}",
-            started.ElapsedMilliseconds,
-            rollSource,
-            results.Count,
-            @params.TownName,
-            @params.Stand,
-            @params.Address,
-            @params.Scheme,
-            @params.Unit);
-
-        // Preserve the exact criteria used for the roll search so the LIS
-        // fallback does not have to reconstruct them from the page DOM.
+        // Preserve the exact criteria used for the roll search before doing
+        // any database work. If the selected roll search fails, the client
+        // must still be able to continue to LIS / Omission with the same
+        // criteria instead of being trapped by an HTTP 500 response.
         ViewBag.Params = @params;
-
-        if (!results.Any())
-            return PartialView("_NoResults", roll);
-
         ViewBag.Roll = roll;
-        return PartialView("_Results", results);
+
+        try
+        {
+            var results = await _search.SearchAsync(
+                rollSource,
+                @params,
+                HttpContext.RequestAborted);
+
+            started.Stop();
+
+            _logger.LogInformation(
+                "Property search completed in {ElapsedMs} ms. Roll={Roll}, Results={Count}, Town={Town}, Stand={Stand}, Address={Address}, Scheme={Scheme}, Unit={Unit}",
+                started.ElapsedMilliseconds,
+                rollSource,
+                results.Count,
+                @params.TownName,
+                @params.Stand,
+                @params.Address,
+                @params.Scheme,
+                @params.Unit);
+
+            if (results.Any())
+                return PartialView("_Results", results);
+
+            // A valid search with no roll match must continue through the
+            // existing LIS / Omission flow.
+            return PartialView("_NoResults", roll);
+        }
+        catch (OperationCanceledException) when (HttpContext.RequestAborted.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            started.Stop();
+
+            _logger.LogError(
+                ex,
+                "Property roll search failed after {ElapsedMs} ms. Roll={Roll}, Town={Town}, Stand={Stand}, Address={Address}, Scheme={Scheme}, Unit={Unit}. Returning LIS fallback.",
+                started.ElapsedMilliseconds,
+                rollSource,
+                @params.TownName,
+                @params.Stand,
+                @params.Address,
+                @params.Scheme,
+                @params.Unit);
+
+            // Do not return HTTP 500 here. The roll databases are legacy and
+            // can fail independently. The business flow requires the user to
+            // continue to LIS and, when applicable, Omission.
+            ViewBag.SearchMessage =
+                "The selected valuation roll could not return a match. You can continue by searching the Land Information System (LIS) using the same Township and search values.";
+
+            return PartialView("_NoResults", roll);
+        }
     }
+   
+    
     [HttpGet]
     [Route("property/view")]
     [AllowAnonymous]

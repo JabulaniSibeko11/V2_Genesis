@@ -136,8 +136,16 @@
         if (!elements.overlay) return;
 
         const config = Object.assign({}, configurations[type] || configurations.submit, custom || {});
-        elements.title.textContent = config.title;
-        elements.message.textContent = config.message;
+
+        // Defensive: title/message are optional decoration on top of the
+        // spinner. If either is missing from the DOM (markup drift, a
+        // future edit, etc.) this must never throw — this function runs
+        // synchronously inside the global fetch() wrapper below, so an
+        // uncaught error here silently blocks every fetch() call in the
+        // entire app, not just the loader.
+        if (elements.title) elements.title.textContent = config.title;
+        if (elements.message) elements.message.textContent = config.message;
+
         elements.overlay.classList.add('is-visible');
         elements.overlay.setAttribute('aria-hidden', 'false');
         document.body.classList.add('genesis-is-loading');
@@ -215,11 +223,21 @@
     if (nativeFetch) {
         window.fetch = function () {
             const intent = recentIntent();
-            if (intent && !state.visible) show(intent.type, intent.element);
+
+            // The actual network request must never be blocked by a loader
+            // UI error — this call is decoration, not a precondition for
+            // sending the request.
+            if (intent && !state.visible) {
+                try { show(intent.type, intent.element); }
+                catch (err) { console.error('[GenesisLoader] show() failed:', err); }
+            }
 
             return nativeFetch.apply(this, arguments)
                 .finally(function () {
-                    if (intent) hide();
+                    if (intent) {
+                        try { hide(); }
+                        catch (err) { console.error('[GenesisLoader] hide() failed:', err); }
+                    }
                 });
         };
     }

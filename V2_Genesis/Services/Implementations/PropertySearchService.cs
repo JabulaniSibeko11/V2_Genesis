@@ -446,13 +446,16 @@ public class PropertySearchService : IPropertySearchService
         // users commonly enter only part of the street address.
         var town = searchParams.TownName.Trim();
 
-        // Township comes from a controlled dropdown, so it is already a
-        // complete township value. Do not wrap it in leading/trailing %
-        // wildcards. Township-only searches can return many rows and the
-        // wildcard forced SQL Server to scan the roll table unnecessarily.
+        // IMPORTANT BUSINESS RULE:
+        // Township is the only required search field.
+        //
+        // The existing SearchTown stored procedures across GV, supplementary
+        // rolls and Query were built around LIKE-style matching, so preserve
+        // the original wildcard parameter contract. This also tolerates legacy
+        // data with spacing / description differences between roll databases.
         parameters.Add(
             "@SearchTownName",
-            town);
+            $"%{town}%");
 
         if (searchParams.HasStand)
         {
