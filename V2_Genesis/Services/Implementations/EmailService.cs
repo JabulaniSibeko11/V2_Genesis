@@ -654,8 +654,8 @@ namespace V2_Genesis.Services.Implementations
             DateTime uploadedAt,
             int remainingSlots)
         {
-            var recipients = await ResolveAttributeRecipientsAsync(attributeNo);
-            if (!recipients.Any())
+            var delivery = await ResolveAttributeDeliveryAsync(attributeNo);
+            if (delivery is null)
             {
                 _logger.LogWarning(
                     "[Attribute Evidence Email] No recipient found for {AttributeNo}",
@@ -665,66 +665,246 @@ namespace V2_Genesis.Services.Implementations
             }
 
             var subject = $"City of Johannesburg — Evidence Upload Confirmation: {attributeNo}";
+            var body = BuildEvidenceUploadBody(
+                delivery.To.Name,
+                attributeNo,
+                "Attribute",
+                uploadedFileNames,
+                uploadedAt,
+                remainingSlots);
 
-            foreach (var recipient in recipients)
-            {
-                var body = BuildEvidenceUploadBody(
-                    recipient.Name,
-                    attributeNo,
-                    "Attribute",
-                    uploadedFileNames,
-                    uploadedAt,
-                    remainingSlots);
-
-                await SendEmailAsync(recipient.Address, subject, body);
-            }
+            body = ApplyAttributeTestModeBanner(body, delivery);
+            await SendAttributeMessageAsync(delivery, subject, body, attachments: null);
         }
 
-        private async Task<List<EmailRecipient>> ResolveAttributeRecipientsAsync(string attributeNo)
+        private sealed record AttributeDelivery(
+            EmailRecipient To,
+            IReadOnlyList<EmailRecipient> Cc);
+
+        private async Task<AttributeDelivery?> ResolveAttributeDeliveryAsync(
+            string attributeNo,
+            string? fallbackEmail = null,
+            string? fallbackName = null)
         {
+            attributeNo = attributeNo?.Trim() ?? string.Empty;
+
             var info = await _attributesDb.AttrPropertyInfo
                 .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.Attr_No == attributeNo.Trim());
+                .FirstOrDefaultAsync(x => x.Attr_No == attributeNo);
 
             if (info is null)
-                return new List<EmailRecipient>();
+            {
+                if (!string.IsNullOrWhiteSpace(fallbackEmail))
+                {
+                    return new AttributeDelivery(
+                        new EmailRecipient(
+                            string.IsNullOrWhiteSpace(fallbackName) ? "Valued Client" : fallbackName.Trim(),
+                            fallbackEmail.Trim(),
+                            "Client"),
+                        Array.Empty<EmailRecipient>());
+                }
 
-            var recipients = new List<EmailRecipient>();
+                return null;
+            }
+
+            var ownerRecipients = new List<EmailRecipient>();
 
             if (info.Attr_PropertyDetailsId.HasValue)
             {
                 var contacts = await _attributesDb.AttrContactInfo
                     .AsNoTracking()
                     .Where(x => x.PropertyDetailsId == info.Attr_PropertyDetailsId.Value)
+                    .OrderBy(x => x.Id)
                     .ToListAsync();
 
                 foreach (var contact in contacts)
                 {
                     var name = string.Join(" ", new[] { contact.FirstNames, contact.LastName }
                         .Where(x => !string.IsNullOrWhiteSpace(x)));
+
                     if (string.IsNullOrWhiteSpace(name))
                         name = contact.CompanyName;
 
-                    TryAdd(recipients, name, contact.Email, contact.ContactType ?? "Contact");
+                    if (string.IsNullOrWhiteSpace(name))
+                        name = "Owner";
+
+                    TryAdd(
+                        ownerRecipients,
+                        name,
+                        contact.Email,
+                        contact.IsCompany ? "Company / Owner" : "Owner");
                 }
             }
 
-            if (info.Objector_Type?.Equals("Representative", StringComparison.OrdinalIgnoreCase) == true)
+            var representativeSubmission =
+                info.Objector_Type?.Equals(
+                    "Representative",
+                    StringComparison.OrdinalIgnoreCase) == true;
+
+            if (representativeSubmission)
             {
                 var representative = await _attributesDb.AttrRepresentatives
                     .AsNoTracking()
-                    .FirstOrDefaultAsync(x => x.Attr_No == attributeNo.Trim());
+                    .Where(x => x.Attr_No == attributeNo)
+                    .OrderByDescending(x => x.Id)
+                    .FirstOrDefaultAsync();
 
-                if (representative is not null)
-                    TryAdd(recipients, representative.Representative_Name,
-                        representative.Rep_Email, "Representative");
+                EmailRecipient? repRecipient = null;
+
+                if (representative is not null &&
+                    !string.IsNullOrWhiteSpace(representative.Rep_Email))
+                {
+                    repRecipient = new EmailRecipient(
+                        string.IsNullOrWhiteSpace(representative.Representative_Name)
+                            ? "Representative"
+                            : representative.Representative_Name.Trim(),
+                        representative.Rep_Email.Trim(),
+                        "Representative");
+                }
+                else if (!string.IsNullOrWhiteSpace(fallbackEmail))
+                {
+                    repRecipient = new EmailRecipient(
+                        string.IsNullOrWhiteSpace(fallbackName)
+                            ? "Representative"
+                            : fallbackName.Trim(),
+                        fallbackEmail.Trim(),
+                        "Representative");
+                }
+                else if (!string.IsNullOrWhiteSpace(info.SubmittedByEmail))
+                {
+                    repRecipient = new EmailRecipient(
+                        string.IsNullOrWhiteSpace(info.SubmittedByName)
+                            ? "Representative"
+                            : info.SubmittedByName.Trim(),
+                        info.SubmittedByEmail.Trim(),
+                        "Representative");
+                }
+
+                if (repRecipient is null)
+                    return null;
+
+                var cc = ownerRecipients
+                    .Where(x => !x.Address.Equals(
+                        repRecipient.Address,
+                        StringComparison.OrdinalIgnoreCase))
+                    .GroupBy(x => x.Address, StringComparer.OrdinalIgnoreCase)
+                    .Select(x => x.First())
+                    .ToList();
+
+                return new AttributeDelivery(repRecipient, cc);
             }
 
-            // Submission email is a final fallback only when Contact Details has no usable address.
-            if (!recipients.Any())
-                TryAdd(recipients, info.SubmittedByName, info.SubmittedByEmail, "Submitter");
+            var owner = ownerRecipients.FirstOrDefault();
 
-            return recipients;
+            if (owner is null && !string.IsNullOrWhiteSpace(fallbackEmail))
+            {
+                owner = new EmailRecipient(
+                    string.IsNullOrWhiteSpace(fallbackName) ? "Valued Client" : fallbackName.Trim(),
+                    fallbackEmail.Trim(),
+                    "Owner");
+            }
+            else if (owner is null && !string.IsNullOrWhiteSpace(info.SubmittedByEmail))
+            {
+                owner = new EmailRecipient(
+                    string.IsNullOrWhiteSpace(info.SubmittedByName) ? "Valued Client" : info.SubmittedByName.Trim(),
+                    info.SubmittedByEmail.Trim(),
+                    "Owner");
+            }
+
+            return owner is null
+                ? null
+                : new AttributeDelivery(owner, Array.Empty<EmailRecipient>());
+        }
+
+        private string ApplyAttributeTestModeBanner(
+            string htmlBody,
+            AttributeDelivery delivery)
+        {
+            if (!_cfg.TestMode)
+                return htmlBody;
+
+            var intendedCc = delivery.Cc.Count == 0
+                ? "None"
+                : string.Join(", ", delivery.Cc.Select(x => x.Address));
+
+            var banner = $@"
+<div style='margin:0 0 18px;padding:12px 14px;border:2px solid #b45309;background:#fff7ed;color:#7c2d12;font-family:Arial,sans-serif;font-size:13px;line-height:1.5;'>
+  <strong>TEST MODE — no client email was sent.</strong><br/>
+  Intended To: {WebUtility.HtmlEncode(delivery.To.Address)}<br/>
+  Intended CC: {WebUtility.HtmlEncode(intendedCc)}<br/>
+  Actual UAT recipient: {WebUtility.HtmlEncode(_cfg.TestRecipient)}
+</div>";
+
+            return banner + htmlBody;
+        }
+
+        private async Task SendAttributeMessageAsync(
+            AttributeDelivery delivery,
+            string subject,
+            string htmlBody,
+            List<EmailAttachment>? attachments)
+        {
+            using var smtp = BuildClient();
+            using var msg = new MailMessage
+            {
+                From = new MailAddress(
+                    string.IsNullOrWhiteSpace(_cfg.FromAddress) ? _cfg.Username : _cfg.FromAddress,
+                    _cfg.FromName),
+                Subject = subject,
+                Body = htmlBody,
+                IsBodyHtml = true
+            };
+
+            if (_cfg.TestMode)
+            {
+                if (string.IsNullOrWhiteSpace(_cfg.TestRecipient))
+                    throw new InvalidOperationException(
+                        "Email:TestRecipient must be configured while Email:TestMode is enabled.");
+
+                msg.To.Add(_cfg.TestRecipient.Trim());
+            }
+            else
+            {
+                msg.To.Add(new MailAddress(delivery.To.Address, delivery.To.Name));
+
+                foreach (var recipient in delivery.Cc
+                    .Where(x => !string.IsNullOrWhiteSpace(x.Address))
+                    .Where(x => !x.Address.Equals(
+                        delivery.To.Address,
+                        StringComparison.OrdinalIgnoreCase))
+                    .GroupBy(x => x.Address.Trim(), StringComparer.OrdinalIgnoreCase)
+                    .Select(x => x.First()))
+                {
+                    msg.CC.Add(new MailAddress(recipient.Address, recipient.Name));
+                }
+            }
+
+            if (attachments is not null)
+            {
+                foreach (var item in attachments)
+                {
+                    if (item?.FileBytes == null || item.FileBytes.Length == 0 ||
+                        string.IsNullOrWhiteSpace(item.FileName))
+                        continue;
+
+                    msg.Attachments.Add(new Attachment(
+                        new MemoryStream(item.FileBytes),
+                        item.FileName,
+                        string.IsNullOrWhiteSpace(item.ContentType)
+                            ? "application/octet-stream"
+                            : item.ContentType));
+                }
+            }
+
+            await smtp.SendMailAsync(msg);
+
+            _logger.LogInformation(
+                "[Attributes Email] {Mode} message sent for intended To={To}; CC={Cc}",
+                _cfg.TestMode ? "TEST MODE" : "LIVE",
+                delivery.To.Address,
+                delivery.Cc.Count == 0
+                    ? "None"
+                    : string.Join(",", delivery.Cc.Select(x => x.Address)));
         }
 
         private static string BuildEvidenceUploadBody(
@@ -1313,7 +1493,8 @@ City of Johannesburg — Valuation Services Department<br>This is an automated m
             string acknowledgementFileName,
             IReadOnlyCollection<EmailRecipient> recipients,
             List<EmailAttachment>? extraAttachments = null,
-            string copySuffix = "Acknowledgement")
+            string copySuffix = "Acknowledgement",
+            IReadOnlyCollection<EmailRecipient>? ccRecipients = null)
         {
             try
             {
@@ -1340,6 +1521,19 @@ City of Johannesburg — Valuation Services Department<br>This is an automated m
                     .Select(x => x.First()))
                 {
                     msg.To.Add(new MailAddress(recipient.Address, recipient.Name));
+                }
+
+                if (ccRecipients is not null)
+                {
+                    foreach (var recipient in ccRecipients
+                        .Where(x => !string.IsNullOrWhiteSpace(x.Address))
+                        .Where(x => !msg.To.Cast<MailAddress>().Any(to =>
+                            to.Address.Equals(x.Address.Trim(), StringComparison.OrdinalIgnoreCase)))
+                        .GroupBy(x => x.Address.Trim(), StringComparer.OrdinalIgnoreCase)
+                        .Select(x => x.First()))
+                    {
+                        msg.CC.Add(new MailAddress(recipient.Address, recipient.Name));
+                    }
                 }
 
                 if (msg.To.Count == 0)
@@ -1528,13 +1722,6 @@ City of Johannesburg — Valuation Services Department<br>This is an automated m
     string submittedFormFileName,
     string folderPath)
         {
-            if (string.IsNullOrWhiteSpace(recipientEmail))
-            {
-                throw new ArgumentException(
-                    "Recipient email address is required.",
-                    nameof(recipientEmail));
-            }
-
             if (acknowledgementPdf == null ||
                 acknowledgementPdf.Length == 0)
             {
@@ -1576,12 +1763,21 @@ City of Johannesburg — Valuation Services Department<br>This is an automated m
                 $"City of Johannesburg — Attribute Submission Acknowledgement: " +
                 $"{attributeNumber}";
 
+            var delivery = await ResolveAttributeDeliveryAsync(
+                attributeNumber,
+                recipientEmail,
+                clientName)
+                ?? throw new InvalidOperationException(
+                    $"No Attribute email recipient could be resolved for '{attributeNumber}'.");
+
             var body = BuildAttributeAcknowledgementBody(
-                clientName,
+                delivery.To.Name,
                 attributeNumber,
                 propertyDescription,
                 evidencePin,
                 evidenceDeadline);
+
+            body = ApplyAttributeTestModeBanner(body, delivery);
 
             var submittedFormAttachment = new EmailAttachment
             {
@@ -1601,12 +1797,11 @@ City of Johannesburg — Valuation Services Department<br>This is an automated m
                 submittedFormAttachment
             };
 
-            await SendEmailWithAttachmentsAsync(
-                toEmail: recipientEmail.Trim(),
-                subject: subject,
-                body: body,
-                attachments: attachments,
-                isHtml: true);
+            await SendAttributeMessageAsync(
+                delivery,
+                subject,
+                body,
+                attachments);
 
             await SaveEmailCopyAsync(
                 folderPath,
@@ -1616,19 +1811,14 @@ City of Johannesburg — Valuation Services Department<br>This is an automated m
                 body,
                 acknowledgementPdf,
                 acknowledgementFileName,
-                new[]
-                {
-                    new EmailRecipient(
-                        clientName,
-                        recipientEmail.Trim(),
-                        "Client")
-                },
-                new List<EmailAttachment> { submittedFormAttachment });
+                new[] { delivery.To },
+                new List<EmailAttachment> { submittedFormAttachment },
+                ccRecipients: delivery.Cc);
 
             _logger.LogInformation(
                 "[Attributes Email] Acknowledgement sent to {Email} " +
                 "for {AttributeNumber}",
-                recipientEmail,
+                delivery.To.Address,
                 attributeNumber);
         }
 
@@ -1643,9 +1833,6 @@ City of Johannesburg — Valuation Services Department<br>This is an automated m
             string acknowledgementFileName,
             string folderPath)
         {
-            if (string.IsNullOrWhiteSpace(recipientEmail))
-                throw new ArgumentException("Recipient email address is required.", nameof(recipientEmail));
-
             if (acknowledgementPdf == null || acknowledgementPdf.Length == 0)
                 throw new ArgumentException("Correction acknowledgement PDF is required.", nameof(acknowledgementPdf));
 
@@ -1661,12 +1848,21 @@ City of Johannesburg — Valuation Services Department<br>This is an automated m
             var subject =
                 $"City of Johannesburg — Attribute Correction Acknowledgement: {attributeNumber}";
 
+            var delivery = await ResolveAttributeDeliveryAsync(
+                attributeNumber,
+                recipientEmail,
+                clientName)
+                ?? throw new InvalidOperationException(
+                    $"No Attribute email recipient could be resolved for '{attributeNumber}'.");
+
             var body = BuildAttributeCorrectionAcknowledgementBody(
-                clientName,
+                delivery.To.Name,
                 attributeNumber,
                 propertyDescription,
                 correctionComment,
                 correctedSections);
+
+            body = ApplyAttributeTestModeBanner(body, delivery);
 
             var attachments = new List<EmailAttachment>
             {
@@ -1678,12 +1874,11 @@ City of Johannesburg — Valuation Services Department<br>This is an automated m
                 }
             };
 
-            await SendEmailWithAttachmentsAsync(
-                toEmail: recipientEmail.Trim(),
-                subject: subject,
-                body: body,
-                attachments: attachments,
-                isHtml: true);
+            await SendAttributeMessageAsync(
+                delivery,
+                subject,
+                body,
+                attachments);
 
             await SaveEmailCopyAsync(
                 folderPath,
@@ -1693,16 +1888,14 @@ City of Johannesburg — Valuation Services Department<br>This is an automated m
                 body,
                 acknowledgementPdf,
                 acknowledgementFileName,
-                new[]
-                {
-                    new EmailRecipient(clientName, recipientEmail.Trim(), "Client")
-                },
+                new[] { delivery.To },
                 extraAttachments: null,
-                copySuffix: "Correction_Acknowledgement");
+                copySuffix: "Correction_Acknowledgement",
+                ccRecipients: delivery.Cc);
 
             _logger.LogInformation(
                 "[Attributes Email] Correction acknowledgement sent to {Email} for {AttributeNumber}",
-                recipientEmail,
+                delivery.To.Address,
                 attributeNumber);
         }
 

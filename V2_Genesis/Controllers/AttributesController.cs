@@ -860,11 +860,21 @@ public class AttributesController : Controller
                         contact.Email = d.Email;
                         contact.CellNo = d.CellNo;
                         contact.HomePhoneNo = d.TelNo;
-                        contact.ContactType = isCompany
-                            ? "Company"
-                            : declaration == "Representative"
-                                ? "Representative"
-                                : "Owner";
+
+                        // Privacy: owner/company identity and addresses are still carried
+                        // in the backend model and persisted, but the Create view does not
+                        // display them. Only email and cell number are visible/editable.
+                        contact.PhysicalAddress = d.LisStreetAddress;
+                        contact.PostalAddress = string.Join(", ", new[]
+                        {
+                            d.ADDR1,
+                            d.ADDR2,
+                            d.ADDR3,
+                            d.ADDR4,
+                            d.ADDR5
+                        }.Where(x => !string.IsNullOrWhiteSpace(x)).Select(x => x!.Trim()));
+
+                        contact.ContactType = isCompany ? "Company" : "Owner";
                     }
                 }
             }

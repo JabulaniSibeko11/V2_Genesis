@@ -130,9 +130,19 @@ namespace V2_Genesis.Services.Implementations
                     !string.IsNullOrWhiteSpace(x.HomePhoneNo) ||
                     !string.IsNullOrWhiteSpace(x.WorkPhoneNo));
 
-            var submittedByEmail = !string.IsNullOrWhiteSpace(firstContact?.Email)
-                ? firstContact.Email.Trim()
-                : userEmail?.Trim();
+            var isRepresentativeSubmission =
+                model.RepresentativeDetails?.IsRepresentative == true;
+
+            // The submitter email reflects the party who submitted the form.
+            // Owner submissions use the owner contact email. Representative
+            // submissions use the representative email; the owner remains a CC
+            // recipient for Attribute notifications.
+            var submittedByEmail = isRepresentativeSubmission &&
+                                   !string.IsNullOrWhiteSpace(model.RepresentativeDetails?.Rep_Email)
+                ? model.RepresentativeDetails.Rep_Email!.Trim()
+                : !string.IsNullOrWhiteSpace(firstContact?.Email)
+                    ? firstContact.Email.Trim()
+                    : userEmail?.Trim();
 
             var submittedByPhone =
                 !string.IsNullOrWhiteSpace(firstContact?.CellNo)
@@ -175,10 +185,11 @@ namespace V2_Genesis.Services.Implementations
             {
                 Attr_PropertyDetailsId = propertyDetails.Id,
 
-                Objector_Type = model.ContactInfos != null &&
-                     model.ContactInfos.Count > 0
-         ? model.ContactInfos[0].ContactType
-         : null,
+                Objector_Type = isRepresentativeSubmission
+                    ? "Representative"
+                    : model.ContactInfos != null && model.ContactInfos.Count > 0
+                        ? model.ContactInfos[0].ContactType
+                        : "Owner",
 
                 Property_Type = model.FormType,
                 Property_Desc = model.PropertyDetails.PropertyDesc,
@@ -2141,32 +2152,18 @@ namespace V2_Genesis.Services.Implementations
                 var contact = contacts[i];
                 var label = $"Contact {i + 1}";
 
+                // Owner/company identity is intentionally hidden on the online
+                // Attributes Create form. Preserve any backend values that were
+                // loaded from LIS/SAP, but never make a hidden identity field a
+                // client-side submission requirement.
                 if (contact.IsCompany)
                 {
-                    if (IsBlank(contact.CompanyName))
-                    {
-                        contact.CompanyName = string.Join(
-                            " ",
-                            new[] { contact.FirstNames, contact.LastName }
-                                .Where(x => !string.IsNullOrWhiteSpace(x)))
-                            .Trim();
-                    }
-
-                    if (IsBlank(contact.CompanyName))
-                        errors.Add($"{label}: Company name or the contact person's first names and surname are required.");
-
                     contact.ContactType = "Company";
                 }
-                else
+                else if (IsBlank(contact.ContactType) ||
+                         contact.ContactType.Equals("Representative", StringComparison.OrdinalIgnoreCase))
                 {
-                    if (IsBlank(contact.FirstNames))
-                        errors.Add($"{label}: First name is required.");
-
-                    if (IsBlank(contact.LastName))
-                        errors.Add($"{label}: Surname is required.");
-
-                    if (IsBlank(contact.ContactType))
-                        contact.ContactType = "Owner";
+                    contact.ContactType = "Owner";
                 }
 
                 if (IsBlank(contact.Email))

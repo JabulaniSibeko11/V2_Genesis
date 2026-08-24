@@ -87,6 +87,15 @@
 }
 <link href="~/css/views/attribute-create.css" rel="stylesheet" asp-append-version="true" />
 
+<style>
+    .attr-contact-privacy-note {
+        display:flex; align-items:center; gap:8px; margin:0 0 14px; padding:10px 12px;
+        border:1px solid #d8e8e4; border-left:4px solid #0b6f62; border-radius:8px;
+        background:#f5fbf9; color:#34534d; font-size:12px; line-height:1.45;
+    }
+    .attr-contact-privacy-note i { color:#0b6f62; }
+</style>
+
 @* ── HERO ────────────────────────────────────────────────────────── *@
 <div class="attr-hero">
     <div class="attr-hero-inner">
@@ -148,6 +157,21 @@
         <input asp-for="FormType" type="hidden" />
         <input asp-for="AttrId" type="hidden" />
         <input asp-for="AttrNo" type="hidden" />
+
+        @* Representative details were captured on the previous step. Keep them
+           server-bound here without displaying personal information on Create. *@
+        <input asp-for="RepresentativeDetails.IsRepresentative" type="hidden" />
+        <input asp-for="RepresentativeDetails.Representative_Name" type="hidden" />
+        <input asp-for="RepresentativeDetails.Rep_Postal_1" type="hidden" />
+        <input asp-for="RepresentativeDetails.Rep_Postal_2" type="hidden" />
+        <input asp-for="RepresentativeDetails.Rep_Postal_3" type="hidden" />
+        <input asp-for="RepresentativeDetails.Rep_Postal_4" type="hidden" />
+        <input asp-for="RepresentativeDetails.Rep_Postal_5" type="hidden" />
+        <input asp-for="RepresentativeDetails.Rep_Home_Phone" type="hidden" />
+        <input asp-for="RepresentativeDetails.Rep_Cell_Phone" type="hidden" />
+        <input asp-for="RepresentativeDetails.Rep_Work_Phone" type="hidden" />
+        <input asp-for="RepresentativeDetails.Rep_Fax_Phone" type="hidden" />
+        <input asp-for="RepresentativeDetails.Rep_Email" type="hidden" />
         <input asp-for="PropertyDetails.PropertyId" type="hidden" />
         <input asp-for="PropertyDetails.PropertyDesc" type="hidden" />
         <input asp-for="PropertyDetails.PremiseId" type="hidden" />
@@ -426,142 +450,53 @@
             {
                 <div class="attr-section-title">
                     <span class="num">@(i + 1)</span>
-                    <span id="contactHeading-@i" class="contact-heading-label">
-                        @(Model.ContactInfos[i].IsCompany ? "Company Details" : "Individual Details")
-                    </span>
+                    <span>Contact Details</span>
                 </div>
 
-                @* Hidden fields kept for backend/PDF structure *@
-                <input asp-for="ContactInfos[i].ContactType" type="hidden" class="contact-type-hidden" />
+                @* Privacy requirement:
+                   Owner/company identity and address information remains in the form model
+                   and is posted back to the server, but is not displayed to the client. *@
+                <input asp-for="ContactInfos[i].ContactType" type="hidden" />
+                <input asp-for="ContactInfos[i].IsCompany" type="hidden" />
+                <input asp-for="ContactInfos[i].CompanyName" type="hidden" />
+                <input asp-for="ContactInfos[i].CompanyRegistrationNumber" type="hidden" />
+                <input asp-for="ContactInfos[i].FirstNames" type="hidden" />
+                <input asp-for="ContactInfos[i].LastName" type="hidden" />
                 <input asp-for="ContactInfos[i].MaidenName" type="hidden" />
                 <input asp-for="ContactInfos[i].IDNumber" type="hidden" />
                 <input asp-for="ContactInfos[i].DateOfBirth" type="hidden" />
                 <input asp-for="ContactInfos[i].Gender" type="hidden" />
                 <input asp-for="ContactInfos[i].MaritalStatus" type="hidden" />
                 <input asp-for="ContactInfos[i].Citizenship" type="hidden" />
+                <input asp-for="ContactInfos[i].PhysicalAddress" type="hidden" />
+                <input asp-for="ContactInfos[i].PostalAddress" type="hidden" />
+                <input asp-for="ContactInfos[i].PostalCode" type="hidden" />
+                <input asp-for="ContactInfos[i].HomePhoneNo" type="hidden" />
+                <input asp-for="ContactInfos[i].WorkPhoneNo" type="hidden" />
                 <input asp-for="ContactInfos[i].FaxNo" type="hidden" />
                 <input asp-for="ContactInfos[i].Interviewed" type="hidden" />
                 <input asp-for="ContactInfos[i].Comments" type="hidden" />
 
+                <div class="attr-contact-privacy-note">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    For privacy, only your contact email and cell number are shown here.
+                    You may update either value before submitting.
+                </div>
+
                 <table class="attr-table contact-table" data-contact-index="@i">
-                    <tr>
-                        <td class="attr-label">Contact Type</td>
-                        <td colspan="3">
-                            <div class="attr-radio-row">
-                                <label>
-                                    <input type="radio"
-                                           name="ContactInfos[@i].IsCompany"
-                                           value="false"
-                                           class="contact-type-radio"
-                                           data-index="@i"
-                                    @(Model.ContactInfos[i].IsCompany ? "" : "checked") />
-                                    Individual
-                                </label>
-
-                                <label>
-                                    <input type="radio"
-                                           name="ContactInfos[@i].IsCompany"
-                                           value="true"
-                                           class="contact-type-radio"
-                                           data-index="@i"
-                                    @(Model.ContactInfos[i].IsCompany ? "checked" : "") />
-                                    Company
-                                </label>
-                            </div>
-                        </td>
-                    </tr>
-
-                    <tr class="owner-fields owner-fields-@i">
-                        <td class="attr-label">First Names</td>
-                        <td>
-                            <input asp-for="ContactInfos[i].FirstNames"
-                                   class="attr-input"
-                                   maxlength="255"
-                                   data-owner-required="@i"
-                                   placeholder="Individual first names" />
-                            <span asp-validation-for="ContactInfos[i].FirstNames" class="attr-field-error"></span>
-                        </td>
-
-                        <td class="attr-label">Surname</td>
-                        <td>
-                            <input asp-for="ContactInfos[i].LastName"
-                                   class="attr-input"
-                                   maxlength="255"
-                                   data-owner-required="@i"
-                                   placeholder="Individual surname" />
-                            <span asp-validation-for="ContactInfos[i].LastName" class="attr-field-error"></span>
-                        </td>
-                    </tr>
-
-                    <tr class="company-fields company-fields-@i" style="display:none;">
-                        <td class="attr-label">Company Name</td>
-                        <td>
-                            <input asp-for="ContactInfos[i].CompanyName"
-                                   class="attr-input"
-                                   maxlength="255"
-                                   data-company-required="@i"
-                                   placeholder="Registered company name" />
-                            <span asp-validation-for="ContactInfos[i].CompanyName" class="attr-field-error"></span>
-                        </td>
-
-                        <td class="attr-label">Registration No.</td>
-                        <td>
-                            <input asp-for="ContactInfos[i].CompanyRegistrationNumber"
-                                   class="attr-input"
-                                   placeholder="Company registration number" />
-                        </td>
-                    </tr>
-
-                    <tr>
-                        <td class="attr-label">Physical Address</td>
-                        <td colspan="3">
-                            <textarea asp-for="ContactInfos[i].PhysicalAddress"
-                                      id="physicalAddress-@i"
-                                      class="attr-textarea"
-                                      placeholder="Physical address"></textarea>
-                        </td>
-                    </tr>
-
-                    <tr>
-                        <td class="attr-label"></td>
-                        <td colspan="3">
-                            <label class="attr-same-address-toggle">
-                                <input type="checkbox"
-                                       id="samePostalAddress-@i"
-                                       class="same-postal-checkbox"
-                                       data-index="@i"
-                                @(!string.IsNullOrWhiteSpace(Model.ContactInfos[i].PhysicalAddress) &&
-                                                                                                                                                                                                    Model.ContactInfos[i].PhysicalAddress == Model.ContactInfos[i].PostalAddress
-                                                                                                                                                                                                    ? "checked" : "") />
-                                Postal address is the same as the physical address
-                            </label>
-                        </td>
-                    </tr>
-
-                    <tr>
-                        <td class="attr-label">Postal Address</td>
-                        <td>
-                            <textarea asp-for="ContactInfos[i].PostalAddress"
-                                      id="postalAddress-@i"
-                                      class="attr-textarea"
-                                      placeholder="Postal address"></textarea>
-                        </td>
-                        <td class="attr-label">Postal Code</td>
-                        <td>
-                            <input asp-for="ContactInfos[i].PostalCode"
-                                   class="attr-input"
-                                   maxlength="10"
-                                   inputmode="numeric"
-                                   placeholder="e.g. 2001" />
-                        </td>
-                    </tr>
-
                     <tr>
                         <td class="attr-label">Email <span class="req">*</span></td>
                         <td>
-                            <input asp-for="ContactInfos[i].Email"
-                                   type="email"
-                                   class="attr-input"
+                            <input type="hidden"
+                                   asp-for="ContactInfos[i].Email"
+                                   class="masked-contact-real"
+                                   data-mask-kind="email"
+                                   data-index="@i" />
+                            <input type="text"
+                                   class="attr-input masked-contact-display"
+                                   data-mask-kind="email"
+                                   data-index="@i"
+                                   autocomplete="email"
                                    maxlength="255"
                                    required
                                    placeholder="email@example.co.za" />
@@ -570,43 +505,25 @@
 
                         <td class="attr-label">Cell No <span class="req">*</span></td>
                         <td>
-                            <input asp-for="ContactInfos[i].CellNo"
-                                   class="attr-input"
-                                   maxlength="15"
+                            <input type="hidden"
+                                   asp-for="ContactInfos[i].CellNo"
+                                   class="masked-contact-real"
+                                   data-mask-kind="phone"
+                                   data-index="@i" />
+                            <input type="text"
+                                   class="attr-input masked-contact-display"
+                                   data-mask-kind="phone"
+                                   data-index="@i"
+                                   autocomplete="tel"
                                    inputmode="tel"
-                                   pattern="[0-9+ ]{10,15}"
+                                   maxlength="15"
                                    required
                                    placeholder="0712345678" />
                             <span asp-validation-for="ContactInfos[i].CellNo" class="attr-field-error"></span>
                         </td>
                     </tr>
-
-                    <tr>
-                        <td class="attr-label">Home Phone</td>
-                        <td>
-                            <input asp-for="ContactInfos[i].HomePhoneNo"
-                                   class="attr-input"
-                                   maxlength="15"
-                                   inputmode="tel"
-                                   pattern="[0-9+ ]{10,15}"
-                                   placeholder="0112345678" />
-                            <span asp-validation-for="ContactInfos[i].HomePhoneNo" class="attr-field-error"></span>
-                        </td>
-
-                        <td class="attr-label">Work Phone</td>
-                        <td>
-                            <input asp-for="ContactInfos[i].WorkPhoneNo"
-                                   class="attr-input"
-                                   maxlength="15"
-                                   inputmode="tel"
-                                   pattern="[0-9+ ]{10,15}"
-                                   placeholder="0112345678" />
-                            <span asp-validation-for="ContactInfos[i].WorkPhoneNo" class="attr-field-error"></span>
-                        </td>
-                    </tr>
                 </table>
             }
-        </div>
 
         @* ════════════════════════════════════════════════
        SECTION 4 — FORM-SPECIFIC ATTRIBUTES
@@ -1370,7 +1287,7 @@
         </div>
 
         @* ── Submit actions ── *@
-        <div class="attr-actions">
+     <div class="attr-actions">
             <a asp-action="Create" asp-controller="Attributes"
                    asp-route-formType="@Model.FormType"
                    class="btn-attr-secondary">
@@ -1391,8 +1308,7 @@
         document.addEventListener('DOMContentLoaded', function () {
             initialiseDeclarationDate();
             initialiseMixedUse();
-            initialiseContactTypeToggle();
-            initialiseSameAddressToggle();
+            initialiseMaskedContacts();
             initialiseEvidenceUpload();
             initialiseSignaturePad();
             initialiseSubmitValidation();
@@ -1445,6 +1361,82 @@
 
             category.addEventListener('change', updateMixedUse);
             updateMixedUse();
+        }
+
+        // ─────────────────────────────────────────────
+        // Privacy-masked contact fields
+        // The real value lives in a hidden bound input. The display input
+        // reveals it only while the client is editing, then masks on blur.
+        // ─────────────────────────────────────────────
+        function maskAttributeEmail(value) {
+            value = (value || '').trim();
+            if (!value) return '';
+
+          const at = value.indexOf(String.fromCharCode(64));
+            if (at <= 0) return '***';
+
+            const local = value.substring(0, at);
+            const domain = value.substring(at);
+            const visible = local.substring(0, Math.min(2, local.length));
+            return visible + '*'.repeat(Math.max(3, local.length - visible.length)) + domain;
+        }
+
+        function maskAttributePhone(value) {
+            value = (value || '').trim();
+            if (!value) return '';
+            if (value.length <= 4) return '*'.repeat(value.length);
+
+            return value.substring(0, 1)
+                + '*'.repeat(Math.max(1, value.length - 4))
+                + value.substring(value.length - 3);
+        }
+
+        function initialiseMaskedContacts() {
+            document.querySelectorAll('.masked-contact-display').forEach(function (display) {
+                const kind = display.dataset.maskKind;
+                const index = display.dataset.index;
+                const real = document.querySelector(
+                    '.masked-contact-real[data-mask-kind="' + kind + '"][data-index="' + index + '"]'
+                );
+
+                if (!real) return;
+
+                const applyMask = function () {
+                    display.value = kind === 'email'
+                        ? maskAttributeEmail(real.value)
+                        : maskAttributePhone(real.value);
+                };
+
+                display.addEventListener('focus', function () {
+                    display.value = real.value || '';
+                });
+
+                display.addEventListener('input', function () {
+                    real.value = display.value;
+                });
+
+                display.addEventListener('blur', function () {
+                    real.value = display.value.trim();
+                    applyMask();
+                });
+
+                applyMask();
+            });
+
+            const form = document.getElementById('attributeCreateForm');
+            form?.addEventListener('submit', function () {
+                document.querySelectorAll('.masked-contact-display').forEach(function (display) {
+                    const kind = display.dataset.maskKind;
+                    const index = display.dataset.index;
+                    const real = document.querySelector(
+                        '.masked-contact-real[data-mask-kind="' + kind + '"][data-index="' + index + '"]'
+                    );
+
+                    if (real && document.activeElement === display) {
+                        real.value = display.value.trim();
+                    }
+                });
+            });
         }
 
         // ─────────────────────────────────────────────

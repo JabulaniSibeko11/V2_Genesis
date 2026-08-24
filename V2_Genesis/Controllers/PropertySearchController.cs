@@ -152,21 +152,6 @@ public class PropertySearchController : Controller
         if (!ModelState.IsValid || roll is null)
             return PartialView("_NoResults", roll);
 
-        // A township-only search can return thousands of rows and was the main
-        // cause of apparently "stuck" Query searches. Require one identifying
-        // criterion in addition to Township.
-        if (!@params.HasStand &&
-            !@params.HasAddress &&
-            !@params.HasScheme &&
-            !@params.HasUnit)
-        {
-            ViewBag.SearchMessage =
-                "Please enter an Address, Stand Number, Scheme or Unit Number in addition to Township.";
-            ViewBag.Params = @params;
-            ViewBag.Roll = roll;
-            return PartialView("_NoResults", roll);
-        }
-
         var started = System.Diagnostics.Stopwatch.StartNew();
 
         var results = await _search.SearchAsync(

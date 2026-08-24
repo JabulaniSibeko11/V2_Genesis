@@ -183,12 +183,22 @@ public class PropertySearchService : IPropertySearchService
             await using var conn =
                 new SqlConnection(connectionString);
 
+            // Township-only searching is a supported business flow because it
+            // allows a client to continue to LIS/Omission when the property is
+            // not on the selected valuation roll. Give that broader search a
+            // little more SQL time while keeping narrowed searches fast.
+            var isTownshipOnly =
+                !searchParams.HasStand &&
+                !searchParams.HasAddress &&
+                !searchParams.HasScheme &&
+                !searchParams.HasUnit;
+
             var results = await conn.QueryAsync<PropertySearchResult>(
                 new CommandDefinition(
                     storedProcedure,
                     parameters,
                     commandType: CommandType.StoredProcedure,
-                    commandTimeout: 15,
+                    commandTimeout: isTownshipOnly ? 45 : 15,
                     cancellationToken: cancellationToken));
 
             /*
@@ -435,9 +445,14 @@ public class PropertySearchService : IPropertySearchService
         // treated as exact values. Address remains a contains search because
         // users commonly enter only part of the street address.
         var town = searchParams.TownName.Trim();
+
+        // Township comes from a controlled dropdown, so it is already a
+        // complete township value. Do not wrap it in leading/trailing %
+        // wildcards. Township-only searches can return many rows and the
+        // wildcard forced SQL Server to scan the roll table unnecessarily.
         parameters.Add(
             "@SearchTownName",
-            optimiseForQueryRoll ? town : $"%{town}%");
+            town);
 
         if (searchParams.HasStand)
         {
