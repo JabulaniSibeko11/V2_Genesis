@@ -144,10 +144,10 @@
                     <i class="fa-solid fa-circle-check"></i>
                     <span id="continueBtnText">
                         Continue to @(isQuery
-                                                                                                    ? section78ProcessName
-                                                                                    : Model.IsAppeal
-                                                                                        ? "Appeal"
-                                                                                        : "Objection") Form
+                                                                                                                            ? section78ProcessName
+                                                                                                        : Model.IsAppeal
+                                                                                                            ? "Appeal"
+                                                                                                            : "Objection") Form
                     </span>
                 </button>
             </div>
@@ -470,8 +470,8 @@
                     <div class="cp-card-hdr">
                         <i class="fa-solid
                             @(isReview
-                                                                                                                                ? "fa-magnifying-glass-chart"
-                                                                                                                                : "fa-file-magnifying-glass")">
+                                                                                                                                                           ? "fa-magnifying-glass-chart"
+                                                                                                                                                           : "fa-file-magnifying-glass")">
                         </i>
 
                         Section 78 @section78ProcessName
@@ -579,11 +579,11 @@
                         }
                         else
                         {
-                            <a href="#" id="btn_choice" class="obj-lodge-btn" hidden>
+                            <a href="#" id="btn_choice" class="obj-lodge-btn" data-loader="none" hidden>
                                 <i class="fa-solid fa-file-signature"></i>
                                 <span id="lodgeBtnText">@(Model.IsAppeal ? "Lodge Appeal" : "Lodge Objection")</span>
                             </a>
-                            <a href="#" id="btn_choice1" class="obj-lodge-btn" hidden>
+                            <a href="#" id="btn_choice1" class="obj-lodge-btn" data-loader="none" hidden>
                                 <i class="fa-solid fa-layer-group"></i>
                                 <span id="lodgeBtnText1">@(Model.IsAppeal ? "Lodge Appeal (Multi)" : "Lodge Multi-Purpose Objection")</span>
                             </a>
@@ -689,13 +689,25 @@
     <script>
         var CONTROLLER = '@Model.ControllerName';
 
-        // SOURCE is the actual roll/source table (e.g. GV23-SUP3).
-        // PROPERTY_FROM is the origin of the selected property:
-        // LIS / Omission / roll table.
+        // SOURCE is the selected valuation roll/source table, for example:
+        // GV23, GV23-SUP1, GV23-SUP2, GV23-SUP3.
+        //
+        // PROPERTY_FROM is where the selected property actually came from:
+        // LIS, Omission, or the roll itself.
+        //
+        // These two values must NOT be treated as the same thing.
         var SOURCE        = '@Model.SourceTable';
         var PROPERTY_FROM = '@Model.PropertyFrom';
-        var IS_LIS        = PROPERTY_FROM.toUpperCase() === 'LIS';
-        var IS_QUERY      = @(Model.IsQuery ? "true" : "false");
+
+        var IS_LIS =
+            (PROPERTY_FROM || '').toUpperCase() === 'LIS';
+
+        var IS_OMISSION =
+            @(Model.IsOmission ? "true" : "false")
+            || (PROPERTY_FROM || '').toUpperCase() === 'OMISSION'
+            || (PROPERTY_FROM || '').toUpperCase() === 'OMITTED';
+
+        var IS_QUERY = @(Model.IsQuery ? "true" : "false");
 
         var IS_APPEAL = (function () {
             var fromRazor = '@Model.AppealStatus';
@@ -770,18 +782,50 @@
         }
 
                 function buildLodgeUrl(isMulti) {
-                    // IMPORTANT:
-                    // PropertyFrom must describe where the property came from.
-                    // For a property found through LIS while lodging against SUP3,
-                    // SOURCE remains GV23-SUP3 but PropertyFrom must remain LIS.
+                    /*
+                     * IMPORTANT BUSINESS RULE
+                     * -----------------------
+                     * PropertyFrom stores the ORIGIN of the property.
+                     *
+                     * Example:
+                     *   Selected roll : GV23-SUP3
+                     *   Property found: LIS
+                     *
+                     * Correct:
+                     *   SOURCE        = GV23-SUP3
+                     *   PROPERTY_FROM = LIS
+                     *
+                     * PropertyFrom must therefore remain LIS when opening the
+                     * Objection form.  Otherwise Genesis later treats the LIS
+                     * property as a normal roll property and incorrectly tries
+                     * to generate Section 49.
+                     */
+                    var propertyFromValue;
+
+                    if (IS_OMISSION) {
+                        propertyFromValue = 'Omission';
+                    }
+                    else if (IS_LIS) {
+                        propertyFromValue = 'LIS';
+                    }
+                    else if (PROPERTY_FROM && PROPERTY_FROM.trim()) {
+                        propertyFromValue = PROPERTY_FROM.trim();
+                    }
+                    else {
+                        propertyFromValue = SOURCE;
+                    }
+
+                    // Keep both concepts available on the client side.
+                    // sourceTable = roll being objected against
+                    // propertyFrom = actual property origin
+                    sessionStorage.setItem('sourceTable', SOURCE || '');
+                    sessionStorage.setItem('propertyFrom', propertyFromValue || '');
+
                     var qs =
-                        '?PropertyFrom=' + encodeURIComponent(PROPERTY_FROM) +
+                        '?PropertyFrom=' + encodeURIComponent(propertyFromValue) +
                         '&objectorType=' + encodeURIComponent(selectedObjector) +
                         '&appeal=' + (IS_APPEAL ? 'True' : 'False');
 
-                    // Do not hard-code Sup3 here.
-                    // LIS/Omission must still go through the same Objection form route
-                    // and keep PropertyFrom=LIS/Omission in TempData/form hidden fields.
                     return isMulti
                         ? '/objection/multipurpose' + qs
                         : '/objection/form' + qs;
@@ -791,7 +835,12 @@
             if (!selectedProperty || !selectedObjector) return;
             var isMulti = selectedProperty === 'Multi';
             var url = buildLodgeUrl(isMulti);
-            localStorage.setItem('propertyType', selectedProperty); localStorage.setItem('sourceTable', SOURCE);
+            localStorage.setItem('propertyType', selectedProperty);
+            localStorage.setItem('sourceTable', SOURCE);
+            localStorage.setItem(
+                'propertyFrom',
+                IS_OMISSION ? 'Omission' : (IS_LIS ? 'LIS' : (PROPERTY_FROM || SOURCE))
+            );
             document.getElementById('lodgeSection').style.display = 'block';
             var propLabels = {Res:'Residential',Agric:'Agricultural',Bus:'Business / Other',Multi:'Multiple Purposes'};
             var objLabels  = {Owner:'Owner',Third_Party:'Third Party',Representative:'Representative'};
@@ -824,7 +873,13 @@
 
         function onInstrAgree(cb) { document.getElementById('startFormBtn').disabled = !cb.checked; }
         function closeInstrModal() { document.getElementById('instrBackdrop').classList.remove('show'); document.getElementById('instrModal').classList.remove('show'); document.body.style.overflow=''; pendingUrl=''; }
-        function proceedToForm() { if (pendingUrl) window.location.href = pendingUrl; }
+        function proceedToForm() {
+            if (!pendingUrl) return;
+            if (window.GenesisLoader) {
+                window.GenesisLoader.show('property', document.getElementById('startFormBtn'));
+            }
+            window.location.href = pendingUrl;
+        }
         document.getElementById('instrBackdrop')?.addEventListener('click', closeInstrModal);
         document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeInstrModal(); });
 

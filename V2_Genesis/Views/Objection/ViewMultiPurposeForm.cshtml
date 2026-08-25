@@ -3823,26 +3823,26 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
         @{
                     var cat = TempData["Category"];
                     var mv = TempData["marketValue"];
-                    var pa = TempData["physicalAddress"];
-                    var on = TempData["Owner"];
+                    var pa = TempData.Peek("physicalAddress");
+                    var on = TempData.Peek("Owner");
 
 
                     //Multiple Purpose
-                    var mult_purp_CAT = TempData["CurrentFilter_mult_purp_CAT"];
-                    var mult_purp_PA = TempData["CurrentFilter_mult_purp_PA"];
-                    var mult_purp_EXT = TempData["CurrentFilter_mult_purp_EXT"];
-                    var mult_purp_MV = TempData["CurrentFilter_mult_purp_MV"];
+                    var mult_purp_CAT = TempData.Peek("CurrentFilter_mult_purp_CAT");
+                    var mult_purp_PA = TempData.Peek("CurrentFilter_mult_purp_PA");
+                    var mult_purp_EXT = TempData.Peek("CurrentFilter_mult_purp_EXT");
+                    var mult_purp_MV = TempData.Peek("CurrentFilter_mult_purp_MV");
 
                     TempData.Keep("CurrentFilter_mult_purp_CAT");
                     TempData.Keep("CurrentFilter_mult_purp_PA");
                     TempData.Keep("CurrentFilter_mult_purp_EXT");
-                    TempData.Keep("CurrentFilter_mult_purp_CAT");
+                    TempData.Keep("CurrentFilter_mult_purp_MV");
 
                     //Res Multipurpose
-                    var mult_Res_CAT = TempData["CurrentFilter_mult_Res_CAT"];
-                    var mult_Res_PA = TempData["CurrentFilter_mult_Res_PA"];
-                    var mult_Res_EXT = TempData["CurrentFilter_mult_Res_EXT"];
-                    var mult_Res_MV = TempData["CurrentFilter_mult_Res_MV"];
+                    var mult_Res_CAT = TempData.Peek("CurrentFilter_mult_Res_CAT");
+                    var mult_Res_PA = TempData.Peek("CurrentFilter_mult_Res_PA");
+                    var mult_Res_EXT = TempData.Peek("CurrentFilter_mult_Res_EXT");
+                    var mult_Res_MV = TempData.Peek("CurrentFilter_mult_Res_MV");
                     var mult_Res_OwnerName = TempData["CurrentFilter_mult_Res_OwnerName"];
 
                     TempData.Keep("CurrentFilter_mult_Res_CAT");
@@ -3852,10 +3852,10 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
                     TempData.Keep("CurrentFilter_mult_Res_OwnerName");
 
                     //Bus Multipurpose
-                    var mult_Bus_CAT = TempData["CurrentFilter_mult_Bus_CAT"];
-                    var mult_Bus_PA = TempData["CurrentFilter_mult_Bus_PA"];
-                    var mult_Bus_EXT = TempData["CurrentFilter_mult_Bus_EXT"];
-                    var mult_Bus_MV = TempData["CurrentFilter_mult_Bus_MV"];
+                    var mult_Bus_CAT = TempData.Peek("CurrentFilter_mult_Bus_CAT");
+                    var mult_Bus_PA = TempData.Peek("CurrentFilter_mult_Bus_PA");
+                    var mult_Bus_EXT = TempData.Peek("CurrentFilter_mult_Bus_EXT");
+                    var mult_Bus_MV = TempData.Peek("CurrentFilter_mult_Bus_MV");
 
                     TempData.Keep("CurrentFilter_mult_Bus_CAT");
                     TempData.Keep("CurrentFilter_mult_Bus_PA");
@@ -3922,7 +3922,7 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
                         <input style="width: 100%; padding: 12px 16px; margin-bottom: 15px; border: 2px solid #006570; border-radius: 8px; background: white; font-size: 14px; color: #333; box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);" id="Market_Value" type="text" onpaste="return false;" ondrop="return false;" disabled value="@mult_purp_MV" asp-for="Old_Market_Value">
 
                         <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #006570; font-size: 13px; text-transform: uppercase; letter-spacing: 0.3px;"> NAME OF OWNER</label>
-                        <input style="width: 100%; padding: 12px 16px; margin-bottom: 15px; border: 2px solid #006570; border-radius: 8px; background: white; font-size: 14px; color: #333; box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);" id="owner" type="text" onpaste="return false;" ondrop="return false;" disabled value="" asp-for="Old_Owner">
+                        <input style="width: 100%; padding: 12px 16px; margin-bottom: 15px; border: 2px solid #006570; border-radius: 8px; background: white; font-size: 14px; color: #333; box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);" id="owner" type="text" onpaste="return false;" ondrop="return false;" disabled value="@messageON" asp-for="Old_Owner">
 
                         <hr />
                         <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #006570; font-size: 13px; text-transform: uppercase; letter-spacing: 0.3px;"> CATEGORY </label>
@@ -3956,7 +3956,7 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
                             TempData.Keep("CurrentFilter_mult_purp_CAT");
                             TempData.Keep("CurrentFilter_mult_purp_PA");
                             TempData.Keep("CurrentFilter_mult_purp_EXT");
-                            TempData.Keep("CurrentFilter_mult_purp_CAT");
+                            TempData.Keep("CurrentFilter_mult_purp_MV");
                             TempData.Keep("CurrentFilter_mult_Res_CAT");
                             TempData.Keep("CurrentFilter_mult_Res_PA");
                             TempData.Keep("CurrentFilter_mult_Res_EXT");
