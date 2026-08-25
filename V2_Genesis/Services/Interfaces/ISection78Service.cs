@@ -11,6 +11,9 @@ namespace V2_Genesis.Services.Interfaces
         Task<Section78PropertyDetail?> GetPropertyDetailAsync(
             string unitKey, string? valuationKey);
 
+        Task<List<Section78PropertyDetail>> GetPropertyDetailsAsync(
+            string unitKey, string? valuationKey);
+
         // ── Submit a query/review ────────────────────────────────────────
 
 

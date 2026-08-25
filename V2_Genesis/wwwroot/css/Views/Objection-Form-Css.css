@@ -1663,3 +1663,73 @@
     font: 12px 'Poppins', sans-serif;
 }
 
+
+
+/* =====================================================================
+   FINAL RADIO CONTRAST FIX
+   Applies to:
+   - Objection form
+   - Multipurpose objection form
+   - Section 78 Query form
+   - Section 78 Query Multipurpose form
+
+   Earlier rules intentionally use the COJ teal colour for radio option
+   labels on white backgrounds.  That colour becomes unreadable when a
+   Yes/No radio group is placed inside a dark .obj-section-bar.
+
+   Keep normal radio labels teal on light backgrounds, but force high
+   contrast white/gold styling inside the dark section bars.
+   ===================================================================== */
+
+/* Question heading inside a dark section bar */
+#myForm .obj-section-bar fieldset > label.form-label,
+#myForm .obj-section-bar fieldset > .form-label,
+#myForm .obj-section-bar .form-label {
+    color: #ffffff !important;
+}
+
+/* Yes / No / Good / Average / Poor option text inside dark bars */
+#myForm .obj-section-bar fieldset label.btn,
+#myForm .obj-section-bar fieldset label.btn.px-0,
+#myForm .obj-section-bar fieldset label.btn.fw-semibold,
+#myForm .obj-section-bar label.btn,
+#myForm .obj-section-bar label.btn.px-0,
+#myForm .obj-section-bar label.btn.fw-semibold {
+    color: #ffffff !important;
+    opacity: 1 !important;
+    text-shadow: none !important;
+}
+
+    /* Keep hover readable instead of changing to teal-on-teal */
+    #myForm .obj-section-bar fieldset label.btn:hover,
+    #myForm .obj-section-bar label.btn:hover {
+        color: #ffffff !important;
+        background: rgba(255, 255, 255, 0.10) !important;
+    }
+
+/* Radio circle contrast on the dark teal background */
+#myForm .obj-section-bar input[type="radio"] {
+    background: #ffffff !important;
+    border-color: #ffffff !important;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.12);
+}
+
+    /* Selected radio: gold outer circle + teal centre */
+    #myForm .obj-section-bar input[type="radio"]:checked {
+        background: #e6b000 !important;
+        border-color: #e6b000 !important;
+    }
+
+        #myForm .obj-section-bar input[type="radio"]:checked::after {
+            background: #006570 !important;
+        }
+
+/* Keyboard accessibility on both light and dark radio groups */
+#myForm input[type="radio"]:focus-visible {
+    outline: 3px solid rgba(230, 176, 0, 0.38) !important;
+    outline-offset: 2px;
+}
+
+#myForm .obj-section-bar input[type="radio"]:focus-visible {
+    outline-color: rgba(255, 255, 255, 0.75) !important;
+}

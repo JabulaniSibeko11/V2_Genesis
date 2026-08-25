@@ -24,6 +24,7 @@ namespace V2_Genesis.Controllers;
 public class ObjectionController : Controller
 {
     private readonly IObjectionService _objectionService;
+    private readonly IPropertySearchService _propertySearchService;
     private readonly ApplicationDbContext _db;
     private readonly QueryDbContext _queryDb;
     private readonly IObjectionFormService _objectionFormService;
@@ -39,6 +40,7 @@ public class ObjectionController : Controller
 
     public ObjectionController(
         IObjectionService objectionService,
+        IPropertySearchService propertySearchService,
         ApplicationDbContext db,
         QueryDbContext queryDb,
         IObjectionFormService objectionFormService, ISection78Service section78Service, INoticeService noticeService
@@ -48,6 +50,7 @@ public class ObjectionController : Controller
         , ILogger<ObjectionController> logger)
     {
         _objectionService = objectionService;
+        _propertySearchService = propertySearchService;
         _db = db;
         _queryDb = queryDb;
         _objectionFormService = objectionFormService;
@@ -539,7 +542,46 @@ public class ObjectionController : Controller
             TempData["CurrentFilter_S"] = d.Sector;
             TempData["AppealStatus"] = appealStatus ?? "False";
 
-            foreach (var item in items)
+            var splitItems = items;
+
+            // LIS and Omission properties have no roll record to split —
+            // only a genuine roll property can have multiple valuation
+            // splits (e.g. one erf split across Residential/Business/
+            // Multiple Purposes categories). For LIS/Omission this
+            // correctly leaves the extra Category/Extent/Market Value
+            // blocks blank, same as a normal single-property objection.
+            if (!isLis && !isOmission)
+            {
+                try
+                {
+                    var allSplits = await _propertySearchService.GetPropertyDetailsAsync(
+                        rollSource,
+                        d.UnitKey ?? unitKey ?? "",
+                        d.ValuationKey ?? valuationKey ?? "");
+
+                    if (allSplits.Any())
+                    {
+                        splitItems = allSplits
+                            .Select(p => new CheckPropertyResult
+                            {
+                                CatDesc = p.CatDesc,
+                                LisStreetAddress = p.LisStreetAddress,
+                                RateableArea = p.RateableArea,
+                                MarketValue = p.MarketValue
+                            })
+                            .ToList();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(
+                        ex,
+                        "Could not fetch all valuation splits for multipurpose objection. Roll={Roll}, UnitKey={UnitKey}, ValuationKey={ValuationKey}. Falling back to the single-property result.",
+                        rollSource, d.UnitKey ?? unitKey, d.ValuationKey ?? valuationKey);
+                }
+            }
+
+            foreach (var item in splitItems)
             {
                 if (item.IsMultiPurpose)
                 {

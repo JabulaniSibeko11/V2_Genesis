@@ -102,7 +102,7 @@ public class EvidenceService : IEvidenceService
             // Step 3: get current file count
             var countRows = await conn.QueryAsync<dynamic>(
                 cfg.EvidenceCountSp,
-                new { Objection_No1 = objectionNo.Trim() },
+                new { Objection_No = objectionNo.Trim() },
                 commandType: CommandType.StoredProcedure);
 
             int currentCount = 0;

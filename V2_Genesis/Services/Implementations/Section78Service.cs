@@ -48,20 +48,100 @@ namespace V2_Genesis.Services.Implementations
         public async Task<Section78PropertyDetail?> GetPropertyDetailAsync(
             string unitKey, string? valuationKey)
         {
+            var rows = await GetPropertyDetailsAsync(unitKey, valuationKey);
+            return rows.FirstOrDefault();
+        }
+
+        public async Task<List<Section78PropertyDetail>> GetPropertyDetailsAsync(
+            string unitKey, string? valuationKey)
+        {
+            unitKey = unitKey?.Trim() ?? string.Empty;
+            valuationKey = valuationKey?.Trim() ?? string.Empty;
+
+            if (string.IsNullOrWhiteSpace(unitKey) &&
+                string.IsNullOrWhiteSpace(valuationKey))
+            {
+                return new List<Section78PropertyDetail>();
+            }
+
             try
             {
                 await using var conn = new SqlConnection(_queryConn);
-                return await conn.QueryFirstOrDefaultAsync<Section78PropertyDetail>(
+
+                var exactRows = (await conn.QueryAsync<Section78PropertyDetail>(
                     SP_DETAIL,
-                    new { UnitKey = unitKey, ValuationKey = valuationKey ?? "" },
+                    new
+                    {
+                        UnitKey = unitKey,
+                        ValuationKey = valuationKey
+                    },
                     commandType: CommandType.StoredProcedure,
-                    commandTimeout: 30);
+                    commandTimeout: 30))
+                    .ToList();
+
+                /*
+                 * Multiple-purpose Query properties must carry ALL valuation
+                 * splits into Section 6.  The Query SP can narrow to one row
+                 * when ValuationKey is supplied, so retry using UnitKey only.
+                 */
+                if (!string.IsNullOrWhiteSpace(unitKey) &&
+                    exactRows.Count <= 1)
+                {
+                    try
+                    {
+                        var splitRows = (await conn.QueryAsync<Section78PropertyDetail>(
+                            SP_DETAIL,
+                            new
+                            {
+                                UnitKey = unitKey,
+                                ValuationKey = string.Empty
+                            },
+                            commandType: CommandType.StoredProcedure,
+                            commandTimeout: 30))
+                            .ToList();
+
+                        if (splitRows.Count > exactRows.Count)
+                        {
+                            _logger.LogInformation(
+                                "[Section78] Expanded property detail from {ExactCount} to {SplitCount} split rows. UnitKey={UnitKey}",
+                                exactRows.Count,
+                                splitRows.Count,
+                                unitKey);
+
+                            exactRows = splitRows;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(
+                            ex,
+                            "[Section78] Split expansion failed; using exact property detail. UnitKey={UnitKey}, ValuationKey={ValuationKey}",
+                            unitKey,
+                            valuationKey);
+                    }
+                }
+
+                return exactRows
+                    .GroupBy(x => new
+                    {
+                        UnitKey = x.UnitKey?.Trim() ?? string.Empty,
+                        ValuationKey = x.ValuationKey?.Trim() ?? string.Empty,
+                        Category = x.CatDesc?.Trim() ?? string.Empty,
+                        Extent = x.RateableArea?.Trim() ?? string.Empty,
+                        MarketValue = x.MarketValue?.Trim() ?? string.Empty
+                    })
+                    .Select(g => g.First())
+                    .ToList();
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine(
-                    $"[Section78] GetPropertyDetail failed: {ex.Message}");
-                return null;
+                _logger.LogError(
+                    ex,
+                    "[Section78] GetPropertyDetails failed. UnitKey={UnitKey}, ValuationKey={ValuationKey}",
+                    unitKey,
+                    valuationKey);
+
+                return new List<Section78PropertyDetail>();
             }
         }
 

@@ -267,7 +267,7 @@ public class PropertySearchService : IPropertySearchService
             await using var conn =
                 new SqlConnection(connectionString);
 
-            var results = await conn.QueryAsync<PropertyDetailResult>(
+            var results = (await conn.QueryAsync<PropertyDetailResult>(
                 new CommandDefinition(
                     config.DetailSp,
                     new
@@ -277,7 +277,65 @@ public class PropertySearchService : IPropertySearchService
                     },
                     commandType: CommandType.StoredProcedure,
                     commandTimeout: 15,
-                    cancellationToken: cancellationToken));
+                    cancellationToken: cancellationToken)))
+                .ToList();
+
+            /*
+             * SECTION 78 / QUERY SPLITS
+             * -------------------------
+             * A multiple-purpose property can have several valuation split
+             * rows for the same UnitKey.  The Query version of IndexObjection
+             * can return only the selected valuation row when ValuationKey is
+             * supplied, while the objection roll detail procedures return the
+             * complete split set.
+             *
+             * For the Query roll, retry the same detail SP with the UnitKey
+             * only.  If that returns more rows, use the broader result so the
+             * pre-link Property View shows every split and the Query form can
+             * receive the same values.
+             */
+            if (config.IsQuery &&
+                !string.IsNullOrWhiteSpace(unitKey) &&
+                results.Count <= 1)
+            {
+                try
+                {
+                    var splitRows = (await conn.QueryAsync<PropertyDetailResult>(
+                        new CommandDefinition(
+                            config.DetailSp,
+                            new
+                            {
+                                UnitKey = unitKey,
+                                ValuationKey = string.Empty
+                            },
+                            commandType: CommandType.StoredProcedure,
+                            commandTimeout: 30,
+                            cancellationToken: cancellationToken)))
+                        .ToList();
+
+                    if (splitRows.Count > results.Count)
+                    {
+                        _logger.LogInformation(
+                            "Query property detail expanded from {OriginalCount} to {SplitCount} valuation rows. UnitKey={UnitKey}",
+                            results.Count,
+                            splitRows.Count,
+                            unitKey);
+
+                        results = splitRows;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // The broader split lookup is a fallback only.  Keep the
+                    // original exact detail row if the legacy SP does not
+                    // accept an empty ValuationKey.
+                    _logger.LogWarning(
+                        ex,
+                        "Query split expansion failed. Keeping exact property detail. UnitKey={UnitKey}, ValuationKey={ValuationKey}",
+                        unitKey,
+                        valuationKey);
+                }
+            }
 
             /*
              * For the Query roll, the detail stored procedure must
@@ -286,8 +344,7 @@ public class PropertySearchService : IPropertySearchService
              * Dapper maps it directly to:
              * PropertyDetailResult.Review_Close_Date
              */
-            return DeduplicatePropertyDetails(
-                results.ToList());
+            return DeduplicatePropertyDetails(results);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {

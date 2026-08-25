@@ -16,7 +16,12 @@
     bool isReview = TempData.Peek("ReviewStat")?.ToString() == "R";
     string typeWord = isReview ? "Review" : "Query";
 
-    var queryRef = TempData["id"]?.ToString() ?? "—";
+    var queryRef = TempData["ObjectionNum"]?.ToString()
+        ?? TempData["id"]?.ToString()
+        ?? "—";
+    var displayRollSource = TempData["RollSource"]?.ToString()
+        ?? TempData["SourceTable"]?.ToString()
+        ?? "Query";
     var pin = TempData["pin"]?.ToString() ?? "—";
     var count = TempData["Count"]?.ToString() ?? "0";
     var reason = TempData["objection_reason"]?.ToString();
@@ -284,24 +289,11 @@
                                         </tr>
                                         <tr class="dp-total-row">
                                             <td>Total Extent</td>
-                                            <td>@FormatExtentTotal(oldExtent, oldExt2, oldExt3)</td>
+                                            <td>@FormatExtentTotal(oldExt2, oldExt3)</td>
                                         </tr>
                                         <tr class="dp-total-row">
                                             <td>Total Market Value</td>
-                                            <td>@FormatMarketValueTotal(oldMV, oldMV2, oldMV3)</td>
-                                        </tr>
-
-                                        <tr class="dp-split-start">
-                                            <td class="dp-split-label">Category Split 1</td>
-                                            <td>@(string.IsNullOrWhiteSpace(oldCat) ? "–" : oldCat)</td>
-                                        </tr>
-                                        <tr>
-                                            <td class="dp-split-label">Extent Split 1</td>
-                                            <td>@FormatExtent(oldExtent)</td>
-                                        </tr>
-                                        <tr>
-                                            <td class="dp-split-label">Market Value Split 1</td>
-                                            <td>@FormatRand(oldMV)</td>
+                                            <td>@FormatMarketValueTotal(oldMV2, oldMV3)</td>
                                         </tr>
 
                                         @if (!string.IsNullOrWhiteSpace(oldCat2) ||
@@ -312,15 +304,15 @@
                                              !string.IsNullOrWhiteSpace(newMV2))
                                         {
                                             <tr class="dp-split-start">
-                                                <td class="dp-split-label">Category Split 2</td>
+                                                <td class="dp-split-label">Category Split 1</td>
                                                 <td>@(string.IsNullOrWhiteSpace(oldCat2) ? "–" : oldCat2)</td>
                                             </tr>
                                             <tr>
-                                                <td class="dp-split-label">Extent Split 2</td>
+                                                <td class="dp-split-label">Extent Split 1</td>
                                                 <td>@FormatExtent(oldExt2)</td>
                                             </tr>
                                             <tr>
-                                                <td class="dp-split-label">Market Value Split 2</td>
+                                                <td class="dp-split-label">Market Value Split 1</td>
                                                 <td>@FormatRand(oldMV2)</td>
                                             </tr>
                                         }
@@ -333,15 +325,15 @@
                                              !string.IsNullOrWhiteSpace(newMV3))
                                         {
                                             <tr class="dp-split-start">
-                                                <td class="dp-split-label">Category Split 3</td>
+                                                <td class="dp-split-label">Category Split 2</td>
                                                 <td>@(string.IsNullOrWhiteSpace(oldCat3) ? "–" : oldCat3)</td>
                                             </tr>
                                             <tr>
-                                                <td class="dp-split-label">Extent Split 3</td>
+                                                <td class="dp-split-label">Extent Split 2</td>
                                                 <td>@FormatExtent(oldExt3)</td>
                                             </tr>
                                             <tr>
-                                                <td class="dp-split-label">Market Value Split 3</td>
+                                                <td class="dp-split-label">Market Value Split 2</td>
                                                 <td>@FormatRand(oldMV3)</td>
                                             </tr>
                                         }
@@ -410,7 +402,6 @@
                                 <td>Total Proposed Extent</td>
                                 <td>
                                     @FormatExtentTotal(
-                            RequestedOrCurrent(newExtent, oldExtent),
                             RequestedOrCurrent(newExt2, oldExt2),
                             RequestedOrCurrent(newExt3, oldExt3))
                                 </td>
@@ -419,29 +410,9 @@
                                 <td>Total Proposed Market Value</td>
                                 <td>
                                     @FormatMarketValueTotal(
-                            RequestedOrCurrent(newMV, oldMV),
                             RequestedOrCurrent(newMV2, oldMV2),
                             RequestedOrCurrent(newMV3, oldMV3))
                                 </td>
-                            </tr>
-
-                            <tr class="dp-split-start">
-                                <td class="dp-split-label">Category Split 1</td>
-                                @{
-                                    NewVal(newCat);
-                                }
-                            </tr>
-                            <tr>
-                                <td class="dp-split-label">Extent Split 1</td>
-                                @{
-                                    NewVal(newExtent, isExtent: true);
-                                }
-                            </tr>
-                            <tr>
-                                <td class="dp-split-label">Market Value Split 1</td>
-                                @{
-                                    NewVal(newMV, true);
-                                }
                             </tr>
 
                             @if (!string.IsNullOrWhiteSpace(oldCat2) ||
@@ -452,19 +423,19 @@
                                  !string.IsNullOrWhiteSpace(newMV2))
                             {
                                 <tr class="dp-split-start">
-                                    <td class="dp-split-label">Category Split 2</td>
+                                    <td class="dp-split-label">Category Split 1</td>
                                     @{
                                         NewVal(newCat2);
                                     }
                                 </tr>
                                 <tr>
-                                    <td class="dp-split-label">Extent Split 2</td>
+                                    <td class="dp-split-label">Extent Split 1</td>
                                     @{
                                         NewVal(newExt2, isExtent: true);
                                     }
                                 </tr>
                                 <tr>
-                                    <td class="dp-split-label">Market Value Split 2</td>
+                                    <td class="dp-split-label">Market Value Split 1</td>
                                     @{
                                         NewVal(newMV2, true);
                                     }
@@ -479,19 +450,19 @@
                                  !string.IsNullOrWhiteSpace(newMV3))
                             {
                                 <tr class="dp-split-start">
-                                    <td class="dp-split-label">Category Split 3</td>
+                                    <td class="dp-split-label">Category Split 2</td>
                                     @{
                                         NewVal(newCat3);
                                     }
                                 </tr>
                                 <tr>
-                                    <td class="dp-split-label">Extent Split 3</td>
+                                    <td class="dp-split-label">Extent Split 2</td>
                                     @{
                                         NewVal(newExt3, isExtent: true);
                                     }
                                 </tr>
                                 <tr>
-                                    <td class="dp-split-label">Market Value Split 3</td>
+                                    <td class="dp-split-label">Market Value Split 2</td>
                                     @{
                                         NewVal(newMV3, true);
                                     }
@@ -576,7 +547,7 @@
 </div>
 
 <div class="dp-actions">
-    <a href="@Url.Action("DownloadAcknowledgement", "Notice", new { objectionNo = queryRef, rollSource = "Query" })"
+    <a href="@Url.Action("DownloadAcknowledgement", "Notice", new { objectionNo = queryRef, rollSource = displayRollSource })"
            class="dp-btn-primary"
            onclick="showDlToast()">
         <i class="fa-solid fa-download"></i>

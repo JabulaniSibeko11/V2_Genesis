@@ -63,30 +63,102 @@ public class Section78Controller : Controller
         TempData["PropertyType"] = Direct;
         TempData["objector_choice"] = objectorType;
 
-        // ── Multi-purpose property data from DB ─────────────────────
-        if (!string.IsNullOrWhiteSpace(UKey) && !string.IsNullOrWhiteSpace(VKey))
+        // ── Property data / multi-purpose valuation splits from DB ──
+        if (!string.IsNullOrWhiteSpace(UKey))
         {
-            var detail = await _section78.GetPropertyDetailAsync(
-                UKey.Trim(), VKey.Trim());
+            var details = await _section78.GetPropertyDetailsAsync(
+                UKey.Trim(),
+                VKey?.Trim());
 
-            if (detail is not null)
+            if (details.Count > 0)
             {
-                TempData["CurrentFilter_RA"] = detail.RateableArea;
-                TempData["CurrentFilter_MV"] = detail.MarketValue;
-                TempData["CurrentFilter_ON"] = detail.OwnerName;
-                TempData["CurrentFilter_TN"] = detail.TownNameDesc;
-                TempData["CurrentFilter_P_ID"] = detail.PremiseId;
-                TempData["CurrentFilter_P_I"] = detail.PropertyId;
-                TempData["CurrentFilter_S"] = detail.Sector;
+                var primary = details
+                    .FirstOrDefault(x =>
+                        x.CatDesc?.Contains(
+                            "Multiple Purposes",
+                            StringComparison.OrdinalIgnoreCase) == true)
+                    ?? details[0];
 
-                // Multi-purpose split values
-                if (cat?.Contains("Multiple Purposes",
-                        StringComparison.OrdinalIgnoreCase) == true)
+                TempData["CurrentFilter_RA"] = primary.RateableArea;
+                TempData["CurrentFilter_MV"] = primary.MarketValue;
+                TempData["CurrentFilter_ON"] = primary.OwnerName;
+                TempData["CurrentFilter_TN"] = primary.TownNameDesc;
+                TempData["CurrentFilter_P_ID"] = primary.PremiseId;
+                TempData["CurrentFilter_P_I"] = primary.PropertyId;
+                TempData["CurrentFilter_S"] = primary.Sector;
+
+                // Clear values left by a previously opened Query property.
+                var splitKeys = new[]
                 {
-                    TempData["CurrentFilter_mult_purp_CAT"] = cat;
-                    TempData["CurrentFilter_mult_purp_PA"] = addr;
-                    TempData["CurrentFilter_mult_purp_EXT"] = detail.RateableArea;
-                    TempData["CurrentFilter_mult_purp_MV"] = detail.MarketValue;
+                    "CurrentFilter_mult_purp_CAT",
+                    "CurrentFilter_mult_purp_PA",
+                    "CurrentFilter_mult_purp_EXT",
+                    "CurrentFilter_mult_purp_MV",
+
+                    "CurrentFilter_mult_Res_CAT",
+                    "CurrentFilter_mult_Res_PA",
+                    "CurrentFilter_mult_Res_EXT",
+                    "CurrentFilter_mult_Res_MV",
+
+                    "CurrentFilter_mult_Bus_CAT",
+                    "CurrentFilter_mult_Bus_PA",
+                    "CurrentFilter_mult_Bus_EXT",
+                    "CurrentFilter_mult_Bus_MV"
+                };
+
+                foreach (var key in splitKeys)
+                    TempData.Remove(key);
+
+                /*
+                 * Section 6 has three "as reflected on the roll" slots.
+                 * Preserve Multiple Purposes first, then keep the remaining
+                 * split rows in the order returned by the Query detail SP.
+                 */
+                var splitRows = details
+                    .Select((row, index) => new { row, index })
+                    .OrderByDescending(x =>
+                        x.row.CatDesc?.Contains(
+                            "Multiple Purposes",
+                            StringComparison.OrdinalIgnoreCase) == true)
+                    .ThenBy(x => x.index)
+                    .Select(x => x.row)
+                    .Take(3)
+                    .ToList();
+
+                if (splitRows.Count > 0)
+                {
+                    TempData["CurrentFilter_mult_purp_CAT"] =
+                        splitRows[0].CatDesc;
+                    TempData["CurrentFilter_mult_purp_PA"] =
+                        splitRows[0].LisStreetAddress ?? addr;
+                    TempData["CurrentFilter_mult_purp_EXT"] =
+                        splitRows[0].RateableArea;
+                    TempData["CurrentFilter_mult_purp_MV"] =
+                        splitRows[0].MarketValue;
+                }
+
+                if (splitRows.Count > 1)
+                {
+                    TempData["CurrentFilter_mult_Res_CAT"] =
+                        splitRows[1].CatDesc;
+                    TempData["CurrentFilter_mult_Res_PA"] =
+                        splitRows[1].LisStreetAddress ?? addr;
+                    TempData["CurrentFilter_mult_Res_EXT"] =
+                        splitRows[1].RateableArea;
+                    TempData["CurrentFilter_mult_Res_MV"] =
+                        splitRows[1].MarketValue;
+                }
+
+                if (splitRows.Count > 2)
+                {
+                    TempData["CurrentFilter_mult_Bus_CAT"] =
+                        splitRows[2].CatDesc;
+                    TempData["CurrentFilter_mult_Bus_PA"] =
+                        splitRows[2].LisStreetAddress ?? addr;
+                    TempData["CurrentFilter_mult_Bus_EXT"] =
+                        splitRows[2].RateableArea;
+                    TempData["CurrentFilter_mult_Bus_MV"] =
+                        splitRows[2].MarketValue;
                 }
             }
         }
