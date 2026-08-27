@@ -3602,3 +3602,361 @@
     left: auto;
     right: 0;
 }
+/* ==========================================================
+   CLIENT DASHBOARD DATATABLE
+   MATCH HOME INDEX RESULTS
+   ========================================================== */
+
+.cd-table,
+table.dataTable.cd-table {
+    width: 100% !important;
+    font-family: var(--coj-font);
+    font-size: 12.5px;
+    border-collapse: collapse !important;
+}
+
+    .cd-table thead,
+    table.dataTable.cd-table thead {
+        background: var(--coj-dark);
+        color: var(--coj-gold);
+    }
+
+        .cd-table thead th,
+        table.dataTable.cd-table thead th {
+            background: var(--coj-dark) !important;
+            color: var(--coj-gold) !important;
+            padding: 11px 13px !important;
+            border: none !important;
+            font-size: 11px !important;
+            font-weight: 700 !important;
+            letter-spacing: .5px;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+    .cd-table tbody td,
+    table.dataTable.cd-table tbody td {
+        padding: 10px 13px !important;
+        border-bottom: 1px solid var(--coj-border) !important;
+        vertical-align: middle;
+        background: #fff;
+    }
+
+    .cd-table tbody tr:hover td {
+        background: #fffaf0 !important;
+    }
+
+/* Top controls */
+.hs-dt-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding-bottom: 10px;
+}
+
+/* Bottom controls */
+.hs-dt-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding-top: 10px;
+}
+
+/* Search */
+.dataTables_wrapper .dataTables_filter input {
+    min-height: 36px;
+    padding: 6px 11px;
+    border: 1px solid #ded8d0;
+    border-radius: 7px;
+    font-family: var(--coj-font);
+}
+
+    .dataTables_wrapper .dataTables_filter input:focus {
+        border-color: var(--coj-gold);
+        box-shadow: 0 0 0 3px rgba(230,176,0,.12);
+        outline: none;
+    }
+
+/* Entries dropdown */
+.dataTables_wrapper .dataTables_length select {
+    min-height: 36px;
+    border: 1px solid #ded8d0;
+    border-radius: 7px;
+    font-family: var(--coj-font);
+}
+
+/* ==========================================================
+   PAGINATION — GOLD NUMBERS
+   ========================================================== */
+
+.dataTables_wrapper
+.dataTables_paginate
+.paginate_button {
+    min-width: 35px;
+    min-height: 35px;
+    margin: 0 2px !important;
+    padding: 6px 11px !important;
+    border: 1px solid #ded8d0 !important;
+    border-radius: 7px !important;
+    background: #fff !important;
+    color: var(--coj-gold) !important;
+    font-family: var(--coj-font) !important;
+    font-weight: 700 !important;
+}
+
+    /* Hover */
+    .dataTables_wrapper
+    .dataTables_paginate
+    .paginate_button:hover {
+        background: var(--coj-gold-light) !important;
+        border-color: var(--coj-gold) !important;
+        color: var(--coj-dark) !important;
+    }
+
+    /* CURRENT PAGE */
+    .dataTables_wrapper
+    .dataTables_paginate
+    .paginate_button.current,
+    .dataTables_wrapper
+    .dataTables_paginate
+    .paginate_button.current:hover {
+        background: var(--coj-gold) !important;
+        border-color: var(--coj-gold) !important;
+        color: var(--coj-dark) !important;
+        font-weight: 800 !important;
+    }
+
+    /* Disabled Previous / Next */
+    .dataTables_wrapper
+    .dataTables_paginate
+    .paginate_button.disabled,
+    .dataTables_wrapper
+    .dataTables_paginate
+    .paginate_button.disabled:hover {
+        background: #f5f5f5 !important;
+        border-color: #e7e7e7 !important;
+        color: #aaa !important;
+    }
+
+table.dataTable.dtr-inline.collapsed > tbody > tr > td.dtr-control::before {
+    background: var(--coj-gold) !important;
+    color: var(--coj-dark) !important;
+    border: none !important;
+    border-radius: 50% !important;
+    width: 22px !important;
+    height: 22px !important;
+    line-height: 22px !important;
+    content: "+" !important;
+    font-weight: 800 !important;
+    text-align: center !important;
+}
+
+table.dataTable.dtr-inline.collapsed > tbody > tr.parent > td.dtr-control::before {
+    content: "−" !important;
+    background: var(--coj-dark) !important;
+    color: var(--coj-gold) !important;
+}
+
+@media (max-width: 767.98px) {
+
+    .table-responsive {
+        overflow-x: visible !important;
+    }
+
+    .hs-dt-top,
+    .hs-dt-bottom {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .dataTables_wrapper
+    .dataTables_filter,
+    .dataTables_wrapper
+    .dataTables_length,
+    .dataTables_wrapper
+    .dataTables_info,
+    .dataTables_wrapper
+    .dataTables_paginate {
+        width: 100%;
+    }
+
+        .dataTables_wrapper
+        .dataTables_filter input {
+            width: 100% !important;
+            min-width: 0 !important;
+        }
+}
+
+
+/* =========================================================
+   CLIENT DASHBOARD TABLES
+   SAME LOOK AS HOME INDEX RESULTS
+   ========================================================= */
+
+.cd-table,
+table.dataTable.cd-table {
+    width: 100% !important;
+    font-family: 'Poppins', sans-serif !important;
+    font-size: 12.5px;
+}
+
+    .cd-table thead,
+    table.dataTable.cd-table thead {
+        background: var(--p-dark);
+    }
+
+        .cd-table thead th,
+        table.dataTable.cd-table thead th {
+            background: var(--p-dark) !important;
+            color: var(--p-gold) !important;
+            border: 0 !important;
+            padding: 11px 13px !important;
+            font-size: 11px !important;
+            font-weight: 700 !important;
+            letter-spacing: .5px;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+    .cd-table tbody td,
+    table.dataTable.cd-table tbody td {
+        padding: 10px 13px !important;
+        border-bottom: 1px solid var(--p-border) !important;
+        vertical-align: middle;
+    }
+
+    .cd-table tbody tr:hover td {
+        background: #fffaf0 !important;
+    }
+
+/* Same Home top/bottom layout */
+.hs-dt-top,
+.hs-dt-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.hs-dt-top {
+    padding-bottom: 10px;
+}
+
+.hs-dt-bottom {
+    padding-top: 10px;
+}
+
+/* Pagination numbers = GOLD */
+.dataTables_wrapper
+.dataTables_paginate
+.paginate_button {
+    color: var(--p-gold) !important;
+    background: #fff !important;
+    border: 1px solid #ded8d0 !important;
+    border-radius: 7px !important;
+    font-weight: 700 !important;
+    margin: 0 2px !important;
+    min-width: 36px;
+}
+
+    /* Current page */
+    .dataTables_wrapper
+    .dataTables_paginate
+    .paginate_button.current,
+    .dataTables_wrapper
+    .dataTables_paginate
+    .paginate_button.current:hover {
+        background: var(--p-gold) !important;
+        border-color: var(--p-gold) !important;
+        color: var(--p-dark) !important;
+    }
+
+    /* Hover */
+    .dataTables_wrapper
+    .dataTables_paginate
+    .paginate_button:hover {
+        background: #fdf6d8 !important;
+        border-color: var(--p-gold) !important;
+        color: var(--p-dark) !important;
+    }
+
+    /* Previous / Next disabled */
+    .dataTables_wrapper
+    .dataTables_paginate
+    .paginate_button.disabled,
+    .dataTables_wrapper
+    .dataTables_paginate
+    .paginate_button.disabled:hover {
+        color: #aaa !important;
+        background: #f5f5f5 !important;
+        border-color: #e7e7e7 !important;
+    }
+
+/* =========================================================
+   MOBILE + EXPANDER
+   ========================================================= */
+
+table.dataTable.dtr-inline.collapsed > tbody > tr > td.dtr-control::before {
+    background: var(--p-gold) !important;
+    color: var(--p-dark) !important;
+    border: 0 !important;
+    border-radius: 50% !important;
+    box-shadow: none !important;
+    font-weight: 800 !important;
+}
+
+table.dataTable.dtr-inline.collapsed > tbody > tr.parent > td.dtr-control::before {
+    background: var(--p-dark) !important;
+    color: var(--p-gold) !important;
+}
+
+/* Expanded details */
+table.dataTable > tbody > tr.child ul.dtr-details {
+    width: 100%;
+    margin: 0;
+}
+
+    table.dataTable > tbody > tr.child ul.dtr-details > li {
+        display: grid;
+        grid-template-columns: minmax(110px, 38%) 1fr;
+        gap: 10px;
+        padding: 8px 4px;
+    }
+
+table.dataTable > tbody > tr.child span.dtr-title {
+    color: var(--p-dark);
+    font-weight: 700;
+}
+
+@media (max-width: 767.98px) {
+
+    /* No sideways scrolling - use + instead */
+    .cd-widget .table-responsive {
+        overflow-x: visible !important;
+    }
+
+    .hs-dt-top,
+    .hs-dt-bottom {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .dataTables_wrapper .dataTables_length,
+    .dataTables_wrapper .dataTables_filter,
+    .dataTables_wrapper .dataTables_info,
+    .dataTables_wrapper .dataTables_paginate {
+        width: 100%;
+        float: none !important;
+        text-align: left !important;
+    }
+
+        .dataTables_wrapper .dataTables_filter input {
+            width: 100% !important;
+            margin-left: 0 !important;
+        }
+}

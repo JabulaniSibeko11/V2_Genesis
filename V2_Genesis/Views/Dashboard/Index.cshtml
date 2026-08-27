@@ -280,7 +280,6 @@
 @section Styles {
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" />
     <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css" />
-    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.dataTables.min.css" />
 
     @*   <link href="~/css/views/clientdashboardcss.css" rel="stylesheet" asp-append-version="true" /> *@
     <link href="~/css/site.css" rel="stylesheet" asp-append-version="true" />
@@ -698,9 +697,13 @@
 }
 
 @section Scripts {
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+
 
     <script>
         // ============================================================
@@ -967,36 +970,70 @@
 
         // ── Init DataTables ─────────────────────────────────────────
         function initDataTable(selector) {
-        if (!selector || !$(selector).length) return;
-        if ($.fn.DataTable.isDataTable(selector)) return;
 
-        const colCount = $(selector + ' thead th').length;
+        if (!selector || !$(selector).length)
+        return;
+
+        if ($.fn.DataTable.isDataTable(selector))
+        return;
+
+        const colCount =
+        $(selector + ' thead th').length;
 
         $(selector).DataTable({
+
         responsive: {
-        // Default breakpoints start collapsing columns below
-        // 1024px, which also catches ordinary desktop/laptop
-        // windows that just aren't maximised. Only a true
-        // smartphone width should get the "+" expander.
-        breakpoints: [
-        { name: 'desktop', width: Infinity },
-        { name: 'phone', width: 640 }
-        ]
+        details: {
+        type: 'inline',
+        target: 0
+        }
         },
-        dom: '\u003C"cd-dt-top"lf\u003Ert\u003C"cd-dt-bottom"ip\u003E',
-        lengthMenu: [[5, 10, 25, -1], [5, 10, 25, 'All']],
-        // The Options/Actions column is always last and must
-        // never collapse behind the "+" expander — that's the
-        // whole reason someone opens the row on a phone.
-        columnDefs: colCount ? [
-        { targets: -1, className: 'all' },
-        { targets: 0, className: 'all' }
-        ] : [],
+
+        autoWidth: false,
+        scrollX: false,
+
+        dom:
+        '<"hs-dt-top"lf>' +
+        'rt' +
+        '<"hs-dt-bottom"ip>',
+
+        lengthMenu: [
+        [5, 10, 25, 50, -1],
+        [5, 10, 25, 50, 'All']
+        ],
+
+        pageLength: 5,
+
         language: {
         search: '_INPUT_',
         searchPlaceholder: 'Search...',
-        lengthMenu: '_MENU_ per page'
+        lengthMenu: '_MENU_ per page',
+        emptyTable: 'No records found',
+        zeroRecords: 'No matching records found',
+        info: 'Showing _START_ to _END_ of _TOTAL_ entries',
+        infoEmpty: 'No records found',
+        infoFiltered: '(filtered from _MAX_ total)',
+        paginate: {
+        previous: 'Previous',
+        next: 'Next'
         }
+        },
+
+        columnDefs: colCount
+        ? [
+        {
+        targets: 0,
+        className: 'all dtr-control',
+        responsivePriority: 1
+        },
+        {
+        targets: -1,
+        className: 'all',
+        responsivePriority: 2,
+        orderable: false
+        }
+        ]
+        : []
         });
         }
 
