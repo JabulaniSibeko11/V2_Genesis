@@ -1,0 +1,593 @@
+﻿/* ==========================================================================
+   GENESIS V2 - GLOBAL RESPONSIVE SAFETY NET
+   Load LAST in both _Layout.cshtml and _ClientLayout.cshtml.
+   Purpose:
+   - consistent behaviour on small/large phones, tablets and desktops
+   - responsive Bootstrap and custom modals
+   - prevent accidental page-wide horizontal overflow
+   - preserve intentional horizontal scrolling inside tables
+   ========================================================================== */
+
+:root {
+    --gen-mobile-gutter: 14px;
+    --gen-touch-target: 44px;
+}
+
+/* --------------------------------------------------------------------------
+   1. GLOBAL BOX / MEDIA / CONTENT SAFETY
+   -------------------------------------------------------------------------- */
+html,
+body {
+    width: 100%;
+    max-width: 100%;
+}
+
+html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
+
+body {
+    overflow-x: clip;
+}
+
+main,
+.main-content,
+.cl-main,
+.container,
+.container-fluid,
+.row,
+[class*="col-"] {
+    min-width: 0;
+}
+
+img,
+svg,
+video,
+canvas,
+iframe {
+    max-width: 100%;
+}
+
+img,
+video,
+canvas {
+    height: auto;
+}
+
+pre,
+code,
+.long-text,
+.word-break,
+.text-break {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+/* Prevent long IDs, email addresses and reference numbers breaking cards. */
+td,
+th,
+.card,
+.modal-body,
+.cl-main,
+.main-content {
+    overflow-wrap: anywhere;
+}
+
+/* --------------------------------------------------------------------------
+   2. FORMS
+   -------------------------------------------------------------------------- */
+input,
+select,
+textarea,
+button {
+    max-width: 100%;
+}
+
+textarea {
+    resize: vertical;
+}
+
+/* iOS Safari zooms form fields below 16px. */
+@media (max-width: 767.98px) {
+    input:not([type="checkbox"]):not([type="radio"]),
+    select,
+    textarea {
+        font-size: 16px !important;
+    }
+
+    .form-control,
+    .form-select,
+    .f-input {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    fieldset {
+        min-width: 0;
+        max-width: 100%;
+    }
+}
+
+/* --------------------------------------------------------------------------
+   3. BUTTONS / ACTION ROWS
+   -------------------------------------------------------------------------- */
+@media (max-width: 575.98px) {
+    .btn,
+    button,
+    [role="button"] {
+        min-height: var(--gen-touch-target);
+    }
+
+    .btn-group,
+    .btn-toolbar,
+    .form-actions,
+    .action-row,
+    .modal-footer,
+    .attr-insp-modal-footer,
+    .status-modal-footer {
+        flex-wrap: wrap !important;
+        gap: 8px;
+    }
+
+        .form-actions > .btn,
+        .action-row > .btn,
+        .modal-footer > .btn,
+        .attr-insp-modal-footer > button,
+        .status-modal-footer > button {
+            flex: 1 1 140px;
+            max-width: 100%;
+        }
+}
+
+/* --------------------------------------------------------------------------
+   4. BOOTSTRAP TABLES / DATATABLES
+   -------------------------------------------------------------------------- */
+.table-responsive {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+}
+
+.dataTables_wrapper,
+.dt-container {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+}
+
+    .dataTables_wrapper .row,
+    .dt-container .row {
+        min-width: 0;
+    }
+
+@media (max-width: 767.98px) {
+    .dataTables_wrapper .dataTables_length,
+    .dataTables_wrapper .dataTables_filter,
+    .dataTables_wrapper .dataTables_info,
+    .dataTables_wrapper .dataTables_paginate {
+        float: none !important;
+        width: 100%;
+        max-width: 100%;
+        text-align: left !important;
+        margin: 0 0 10px;
+    }
+
+        .dataTables_wrapper .dataTables_filter label,
+        .dataTables_wrapper .dataTables_length label {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .dataTables_wrapper .dataTables_filter input {
+            flex: 1 1 180px;
+            min-width: 0 !important;
+            width: auto !important;
+            max-width: 100% !important;
+            margin-left: 0 !important;
+        }
+
+    .dataTables_wrapper .dataTables_paginate {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        justify-content: flex-start;
+    }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button {
+            margin: 0 !important;
+        }
+
+    .dt-buttons {
+        display: flex !important;
+        flex-wrap: wrap;
+        gap: 6px;
+        width: 100%;
+    }
+}
+
+/* --------------------------------------------------------------------------
+   5. BOOTSTRAP MODALS
+   -------------------------------------------------------------------------- */
+.modal {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+
+.modal-dialog {
+    width: auto;
+    max-width: min(96vw, var(--bs-modal-width, 500px));
+    margin: 1rem auto;
+}
+
+.modal-content {
+    max-width: 100%;
+    max-height: calc(100dvh - 2rem);
+    overflow: hidden;
+}
+
+.modal-header,
+.modal-footer {
+    flex-shrink: 0;
+}
+
+.modal-body {
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+.modal-footer {
+    display: flex;
+}
+
+@media (max-width: 575.98px) {
+    .modal-dialog,
+    .modal-dialog-centered,
+    .modal-dialog-scrollable {
+        width: calc(100vw - 16px);
+        max-width: calc(100vw - 16px) !important;
+        margin: 8px auto;
+        min-height: calc(100dvh - 16px);
+    }
+
+    .modal-dialog-centered {
+        display: flex;
+        align-items: center;
+    }
+
+    .modal-content {
+        width: 100%;
+        max-height: calc(100dvh - 16px);
+        border-radius: 12px;
+    }
+
+    .modal-header,
+    .modal-body,
+    .modal-footer {
+        padding-left: 14px;
+        padding-right: 14px;
+    }
+}
+
+/* --------------------------------------------------------------------------
+   6. GENESIS CUSTOM MODALS
+   -------------------------------------------------------------------------- */
+.status-modal-backdrop,
+.attr-insp-modal-backdrop {
+    padding: 12px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+.status-modal,
+.attr-insp-modal {
+    width: min(100%, 620px);
+    max-width: 100%;
+    max-height: calc(100dvh - 24px);
+    display: flex;
+    flex-direction: column;
+}
+
+.status-modal-body,
+.attr-insp-modal-body {
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+.cd-notification-panel {
+    max-width: calc(100vw - 20px) !important;
+}
+
+.cl-mobile-drawer,
+.pub-mobile-drawer,
+.mobile-nav {
+    height: 100dvh !important;
+    max-height: 100dvh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+@media (max-width: 559.98px) {
+    .status-modal-backdrop,
+    .attr-insp-modal-backdrop {
+        align-items: flex-end;
+        padding: 0;
+    }
+
+    .status-modal,
+    .attr-insp-modal {
+        width: 100%;
+        max-width: 100%;
+        max-height: 92dvh;
+        border-radius: 18px 18px 0 0;
+    }
+
+    .status-modal-header,
+    .status-modal-body,
+    .status-modal-footer,
+    .attr-insp-modal-head,
+    .attr-insp-modal-body,
+    .attr-insp-modal-footer {
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+
+    .cd-notification-panel {
+        position: fixed !important;
+        top: 68px !important;
+        right: 10px !important;
+        left: 10px !important;
+        width: auto !important;
+        max-width: none !important;
+        max-height: calc(100dvh - 84px) !important;
+    }
+}
+
+/* PIN modal already uses a mobile bottom sheet. Add safe viewport sizing. */
+.pin-backdrop {
+    min-height: 100dvh;
+}
+
+.pin-modal {
+    max-height: 95dvh !important;
+}
+
+.pin-body {
+    min-height: 0;
+    overflow-y: auto;
+}
+
+/* --------------------------------------------------------------------------
+   7. CLIENT / PUBLIC NAVIGATION
+   -------------------------------------------------------------------------- */
+.cl-nav-inner,
+.pub-nav-inner {
+    width: 100%;
+    min-width: 0;
+}
+
+.nav-brand,
+.pub-brand {
+    min-width: 0;
+}
+
+.nav-brand-text,
+.pub-brand-text {
+    min-width: 0;
+}
+
+@media (max-width: 1180px) {
+    .cl-nav-links,
+    .cl-user {
+        display: none !important;
+    }
+
+    .cl-hamburger {
+        display: flex !important;
+        margin-left: auto;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .pub-nav-links,
+    .pub-nav-actions,
+    .pub-btn-signin,
+    .pub-btn-register {
+        display: none !important;
+    }
+
+    .pub-hamburger {
+        display: flex !important;
+        margin-left: auto;
+    }
+
+    .pub-nav-right {
+        margin-left: auto;
+    }
+
+    .pub-nav-inner,
+    .cl-nav-inner {
+        padding-left: 12px !important;
+        padding-right: 12px !important;
+    }
+}
+
+@media (max-width: 479.98px) {
+    .nav-brand-name,
+    .pub-brand-name {
+        max-width: 175px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .nav-brand-sub,
+    .pub-brand-sub {
+        max-width: 175px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .cl-mobile-drawer,
+    .pub-mobile-drawer,
+    .mobile-nav {
+        width: min(90vw, 340px) !important;
+    }
+}
+
+/* --------------------------------------------------------------------------
+   8. CARDS / GRIDS / FLEX SECTIONS
+   -------------------------------------------------------------------------- */
+.card,
+.cd-roll-section,
+.cd-widget,
+.cd-tile,
+.form-header-container,
+.obj-form-card {
+    min-width: 0;
+    max-width: 100%;
+}
+
+@media (max-width: 767.98px) {
+    .row {
+        --bs-gutter-x: 1rem;
+    }
+
+    .card-body {
+        padding: 1rem;
+    }
+
+    .cd-body {
+        padding-left: var(--gen-mobile-gutter) !important;
+        padding-right: var(--gen-mobile-gutter) !important;
+    }
+
+    .cd-hero {
+        padding-left: var(--gen-mobile-gutter) !important;
+        padding-right: var(--gen-mobile-gutter) !important;
+    }
+}
+
+@media (max-width: 479.98px) {
+    .card-body {
+        padding: 12px;
+    }
+
+    .cd-welcome-left,
+    .cd-detail-roll-info-left,
+    .cd-detail-roll-info-right {
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    .cd-detail-roll-info-right {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .cd-detail-search-btn,
+    .cd-roll-search-btn {
+        justify-content: center;
+        width: 100%;
+    }
+}
+
+/* --------------------------------------------------------------------------
+   9. LONG / FIXED-WIDTH LEGACY FORM CONTENT
+   This does NOT change desktop width; it only prevents overflow on mobile.
+   -------------------------------------------------------------------------- */
+@media (max-width: 767.98px) {
+    main [style*="width: 1050px"],
+    main [style*="width:1050px"],
+    .cl-main [style*="width: 1050px"],
+    .cl-main [style*="width:1050px"],
+    .form-header-container,
+    .div1,
+    .div2,
+    .div3_R,
+    .div3_A,
+    .div3_B,
+    .div4_R,
+    .div4_B,
+    .div5,
+    .div6,
+    .div7,
+    .div781,
+    .divU {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    main [style*="min-width:"],
+    .cl-main [style*="min-width:"] {
+        max-width: 100%;
+    }
+
+    .d-flex {
+        min-width: 0;
+    }
+}
+
+/* --------------------------------------------------------------------------
+   10. VERY SMALL PHONES
+   -------------------------------------------------------------------------- */
+@media (max-width: 359.98px) {
+    :root {
+        --gen-mobile-gutter: 10px;
+    }
+
+    .modal-header,
+    .modal-body,
+    .modal-footer,
+    .status-modal-header,
+    .status-modal-body,
+    .status-modal-footer,
+    .attr-insp-modal-head,
+    .attr-insp-modal-body,
+    .attr-insp-modal-footer {
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+
+    .nav-brand-name,
+    .pub-brand-name {
+        max-width: 145px;
+    }
+
+    .nav-brand-sub,
+    .pub-brand-sub {
+        max-width: 145px;
+    }
+}
+
+/* --------------------------------------------------------------------------
+   11. LANDSCAPE PHONES / SHORT VIEWPORTS
+   -------------------------------------------------------------------------- */
+@media (max-height: 520px) and (orientation: landscape) {
+    .modal-dialog,
+    .status-modal,
+    .attr-insp-modal,
+    .pin-modal {
+        max-height: calc(100dvh - 12px) !important;
+    }
+
+    .modal-body,
+    .status-modal-body,
+    .attr-insp-modal-body,
+    .pin-body {
+        overflow-y: auto !important;
+    }
+
+    .cl-mobile-drawer,
+    .pub-mobile-drawer {
+        overflow-y: auto;
+    }
+}

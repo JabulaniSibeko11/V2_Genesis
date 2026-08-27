@@ -74,6 +74,10 @@
     <link rel="stylesheet" href="~/css/global-action-loader.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/form-submission-loader.css" asp-append-version="true" />
 
+    @await RenderSectionAsync("Styles", required: false)
+
+    <link rel="stylesheet" href="~/css/genesis-responsive.css" asp-append-version="true" />
+
     <style>
             .nav-brand {
                 display: flex;
@@ -146,7 +150,7 @@
             }
     </style>
 
-    @await RenderSectionAsync("Styles", required: false)
+    
 </head>
 
 <body>
