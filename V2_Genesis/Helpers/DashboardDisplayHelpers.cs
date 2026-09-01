@@ -5,31 +5,36 @@ namespace V2_Genesis.Helpers;
 
 /// <summary>
 /// Display helpers shared between Views/Dashboard/Index.cshtml and
-/// Views/Dashboard/_RollDetailPartial.cshtml. Razor @functions blocks
-/// aren't shared across views, so this logic — previously duplicated
-/// inline in Index.cshtml — now lives in one place both can call.
+/// Views/Dashboard/_RollDetailPartial.cshtml.
 /// </summary>
 public static class DashboardDisplayHelpers
 {
-    public static string Enc(string? value) => WebUtility.HtmlEncode(value ?? "");
+    public static string Enc(string? value) =>
+        WebUtility.HtmlEncode(value ?? "");
 
     public static string FormatZAR(string? val)
     {
         if (string.IsNullOrWhiteSpace(val))
             return "–";
 
-        var clean = val.Replace("R", "").Replace(",", "").Trim();
+        var clean = val
+            .Replace("R", "", StringComparison.OrdinalIgnoreCase)
+            .Replace(",", "")
+            .Trim();
 
         if (!decimal.TryParse(
                 clean,
                 NumberStyles.Any,
                 CultureInfo.InvariantCulture,
-                out var num) || num <= 0)
+                out var num) ||
+            num < 0)
         {
             return "–";
         }
 
-        return "R " + num.ToString("N0", new CultureInfo("en-ZA"));
+        return "R " + num.ToString(
+            "N0",
+            new CultureInfo("en-ZA"));
     }
 
     public static string GetStatusDisplayText(string? status) => status switch

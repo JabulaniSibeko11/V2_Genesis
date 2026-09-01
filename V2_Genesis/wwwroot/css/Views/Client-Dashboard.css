@@ -4110,3 +4110,41 @@ ul.dtr-details > li:last-child {
         color: var(--p-gold-dark) !important;
     }
 }
+
+.cl-mobile-drawer {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    max-height: 100dvh;
+    overflow: hidden;
+}
+
+.cl-drawer-header {
+    flex: 0 0 auto;
+    position: relative;
+    z-index: 2;
+}
+
+.cl-drawer-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    padding-bottom: 24px;
+}
+
+    /* Optional but useful — makes desktop/device-emulation scrollbar visible */
+    .cl-drawer-scroll::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .cl-drawer-scroll::-webkit-scrollbar-thumb {
+        background: rgba(30, 58, 64, .28);
+        border-radius: 10px;
+    }
+
+    .cl-drawer-scroll::-webkit-scrollbar-track {
+        background: transparent;
+    }

@@ -154,13 +154,51 @@
             }
 
             /* Nav links must always start at the left corner, right
-                                                                           after the logo — never centered. Kept here too (in
-                                                                           addition to site.css) since this is the layout that
-                                                                           every page shares, so the fix is visible right where
-                                                                           the nav itself is defined. */
+                                                                                       after the logo — never centered. Kept here too (in
+                                                                                       addition to site.css) since this is the layout that
+                                                                                       every page shares, so the fix is visible right where
+                                                                                       the nav itself is defined. */
             .cl-nav-links {
                 justify-content: flex-start !important;
             }
+
+            /* Mobile drawer: fixed header + dedicated scroll area */
+            .cl-mobile-drawer {
+                display: flex;
+                flex-direction: column;
+                height: 100dvh;
+                max-height: 100dvh;
+                overflow: hidden;
+            }
+
+            .cl-drawer-header {
+                flex: 0 0 auto;
+            }
+
+            .cl-drawer-scroll {
+                flex: 1 1 auto;
+                min-height: 0;
+                overflow-y: auto;
+                overflow-x: hidden;
+                -webkit-overflow-scrolling: touch;
+                overscroll-behavior: contain;
+                padding-bottom: 24px;
+                scrollbar-width: thin;
+                scrollbar-color: rgba(30,58,64,.28) transparent;
+            }
+
+                .cl-drawer-scroll::-webkit-scrollbar {
+                    width: 6px;
+                }
+
+                .cl-drawer-scroll::-webkit-scrollbar-thumb {
+                    background: rgba(30,58,64,.28);
+                    border-radius: 10px;
+                }
+
+                .cl-drawer-scroll::-webkit-scrollbar-track {
+                    background: transparent;
+                }
     </style>
 
     
@@ -287,13 +325,6 @@
                                 <a class="cl-dd-item" href="/search/Objection_Supp4">
                                     <i class="fa-solid fa-scroll"></i>
                                     Supplementary Roll 4
-                                </a>
-                            </li>
-
-                            <li>
-                                <a class="cl-dd-item" href="/search/Objection_Supp5">
-                                    <i class="fa-solid fa-scroll"></i>
-                                    Supplementary Roll 5
                                 </a>
                             </li>
 
@@ -526,186 +557,185 @@
             </button>
         </div>
 
-        @if (isAuth)
-        {
-            <div style="padding:14px 20px; background:#f7f5f2; border-bottom:1px solid #ede9e3;">
-                <div style="font-size:11px; color:#888; margin-bottom:2px;">
-                    Signed in as
+        <div class="cl-drawer-scroll">
+
+            @if (isAuth)
+            {
+                <div style="padding:14px 20px; background:#f7f5f2; border-bottom:1px solid #ede9e3;">
+                    <div style="font-size:11px; color:#888; margin-bottom:2px;">
+                        Signed in as
+                    </div>
+
+                    <div style="font-size:13px; font-weight:600; color:#1a1a1a; word-break:break-all;">
+                        @User.Identity?.Name
+                    </div>
                 </div>
+            }
 
-                <div style="font-size:13px; font-weight:600; color:#1a1a1a; word-break:break-all;">
-                    @User.Identity?.Name
-                </div>
-            </div>
-        }
+            <!-- Navigation -->
+            <div class="cl-drawer-section-title">Navigation</div>
 
-        <!-- Navigation -->
-        <div class="cl-drawer-section-title">Navigation</div>
-
-        <a href="@(isAdmin ? "/admin" : "/dashboard")"
-               class="cl-drawer-link @(isAdmin ? (reqPath == "/admin" ? "active" : "") : (reqPath == "/dashboard" ? "active" : ""))">
-            <i class="fa-solid fa-gauge-high"></i>
-            @(isAdmin ? "Admin Dashboard" : "Dashboard")
-        </a>
-
-        @if (isAdmin)
-        {
-            <div class="cl-drawer-section-title">Admin</div>
-
-            <a href="/admin"
-                   class="cl-drawer-link @(reqPath == "/admin" ? "active" : "")">
-                <i class="fa-solid fa-shield-halved"></i>
-                Admin Dashboard
+            <a href="@(isAdmin ? "/admin" : "/dashboard")"
+                   class="cl-drawer-link @(isAdmin ? (reqPath == "/admin" ? "active" : "") : (reqPath == "/dashboard" ? "active" : ""))">
+                <i class="fa-solid fa-gauge-high"></i>
+                @(isAdmin ? "Admin Dashboard" : "Dashboard")
             </a>
 
-            <a href="/admin/search" class="cl-drawer-link">
-                <i class="fa-solid fa-magnifying-glass"></i>
-                Search Enquiry
+            @if (isAdmin)
+            {
+                <div class="cl-drawer-section-title">Admin</div>
+
+                <a href="/admin"
+                       class="cl-drawer-link @(reqPath == "/admin" ? "active" : "")">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    Admin Dashboard
+                </a>
+
+                <a href="/admin/search" class="cl-drawer-link">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    Search Enquiry
+                </a>
+
+                <a href="/admin/notices" class="cl-drawer-link">
+                    <i class="fa-solid fa-bell"></i>
+                    Client Notices
+                </a>
+            }
+            else
+            {
+                <!-- Property Search via one Dashboard -->
+                <div class="cl-drawer-section-title">Property Search</div>
+
+                <a href="/Dashboard?openRoll=Objection"
+                       class="cl-drawer-link @(openRoll == "Objection" ? "active" : "")">
+                    <i class="fa-solid fa-landmark"></i>
+                    General Valuation Roll
+                </a>
+
+                <a href="/Dashboard?openRoll=Objection_Supp1"
+                       class="cl-drawer-link @(openRoll == "Objection_Supp1" ? "active" : "")">
+                    <i class="fa-solid fa-scroll"></i>
+                    Supplementary Roll 1
+                </a>
+
+                <a href="/Dashboard?openRoll=Objection_Supp2"
+                       class="cl-drawer-link @(openRoll == "Objection_Supp2" ? "active" : "")">
+                    <i class="fa-solid fa-scroll"></i>
+                    Supplementary Roll 2
+                </a>
+
+                <a href="/Dashboard?openRoll=Objection_Supp3"
+                       class="cl-drawer-link @(openRoll == "Objection_Supp3" ? "active" : "")">
+                    <i class="fa-solid fa-scroll"></i>
+                    Supplementary Roll 3
+                </a>
+
+                <a href="/Dashboard?openRoll=Objection_Supp4"
+                       class="cl-drawer-link @(openRoll == "Objection_Supp4" ? "active" : "")">
+                    <i class="fa-solid fa-scroll"></i>
+                    Supplementary Roll 4
+                </a>
+
+          
+
+                <a href="/Dashboard?openRoll=Query"
+                       class="cl-drawer-link @(openRoll == "Query" ? "active" : "")">
+                    <i class="fa-solid fa-magnifying-glass-chart"></i>
+                    Section 78 Query / Review
+                </a>
+
+                <a href="/Dashboard?openRoll=attributes"
+                       class="cl-drawer-link @(openRoll == "attributes" ? "active" : "")">
+                    <i class="fa-solid fa-clipboard-list"></i>
+                    Property Attributes
+                </a>
+            }
+
+            <!-- Services -->
+            <div class="cl-drawer-section-title">Services</div>
+
+            @if (!isAdmin)
+            {
+                <a href="/notices"
+                       class="cl-drawer-link @(reqPath.StartsWith("/notices") ? "active" : "")">
+                    <i class="fa-solid fa-bell"></i>
+                    Notices
+                </a>
+            }
+
+            <a href="@(isAttr ? "/attributes/evidence" : "/evidence/verifyObj")"
+                   class="cl-drawer-link cl-drawer-evidence">
+                <i class="fa-solid fa-paperclip"></i>
+                Add Evidence
             </a>
 
-            <a href="/admin/notices" class="cl-drawer-link">
-                <i class="fa-solid fa-bell"></i>
-                Client Notices
-            </a>
-        }
-        else
-        {
-            <!-- Property Search via one Dashboard -->
-            <div class="cl-drawer-section-title">Property Search</div>
-
-            <a href="/Dashboard?openRoll=Objection"
-                   class="cl-drawer-link @(openRoll == "Objection" ? "active" : "")">
-                <i class="fa-solid fa-landmark"></i>
-                General Valuation Roll
+            <a href="/Rebates/Index"
+                   class="cl-drawer-link @(reqPath.StartsWith("/rebates") ? "active" : "")">
+                <i class="fa-solid fa-percent"></i>
+                Rebates
             </a>
 
-            <a href="/Dashboard?openRoll=Objection_Supp1"
-                   class="cl-drawer-link @(openRoll == "Objection_Supp1" ? "active" : "")">
-                <i class="fa-solid fa-scroll"></i>
-                Supplementary Roll 1
-            </a>
-
-            <a href="/Dashboard?openRoll=Objection_Supp2"
-                   class="cl-drawer-link @(openRoll == "Objection_Supp2" ? "active" : "")">
-                <i class="fa-solid fa-scroll"></i>
-                Supplementary Roll 2
-            </a>
-
-            <a href="/Dashboard?openRoll=Objection_Supp3"
-                   class="cl-drawer-link @(openRoll == "Objection_Supp3" ? "active" : "")">
-                <i class="fa-solid fa-scroll"></i>
-                Supplementary Roll 3
-            </a>
-
-            <a href="/Dashboard?openRoll=Objection_Supp4"
-                   class="cl-drawer-link @(openRoll == "Objection_Supp4" ? "active" : "")">
-                <i class="fa-solid fa-scroll"></i>
-                Supplementary Roll 4
-            </a>
-
-            <a href="/Dashboard?openRoll=Objection_Supp5"
-                   class="cl-drawer-link @(openRoll == "Objection_Supp5" ? "active" : "")">
-                <i class="fa-solid fa-scroll"></i>
-                Supplementary Roll 5
-            </a>
-
-            <a href="/Dashboard?openRoll=Query"
-                   class="cl-drawer-link @(openRoll == "Query" ? "active" : "")">
-                <i class="fa-solid fa-magnifying-glass-chart"></i>
-                Section 78 Query / Review
-            </a>
-
-            <a href="/Dashboard?openRoll=attributes"
-                   class="cl-drawer-link @(openRoll == "attributes" ? "active" : "")">
+            <a href="/attributes/about"
+                   class="cl-drawer-link @(reqPath.StartsWith("/attributes") ? "active" : "")">
                 <i class="fa-solid fa-clipboard-list"></i>
                 Property Attributes
             </a>
-        }
 
-        <!-- Services -->
-        <div class="cl-drawer-section-title">Services</div>
+            <!-- Support -->
+            <div class="cl-drawer-section-title">Support</div>
 
-        @if (!isAdmin)
-        {
-            <a href="/notices"
-                   class="cl-drawer-link @(reqPath.StartsWith("/notices") ? "active" : "")">
-                <i class="fa-solid fa-bell"></i>
-                Notices
-            </a>
-        }
-
-        <a href="@(isAttr ? "/attributes/evidence" : "/evidence/verifyObj")"
-               class="cl-drawer-link cl-drawer-evidence">
-            <i class="fa-solid fa-paperclip"></i>
-            Add Evidence
-        </a>
-
-        <a href="/Rebates/Index"
-               class="cl-drawer-link @(reqPath.StartsWith("/rebates") ? "active" : "")">
-            <i class="fa-solid fa-percent"></i>
-            Rebates
-        </a>
-
-        <a href="/attributes/about"
-               class="cl-drawer-link @(reqPath.StartsWith("/attributes") ? "active" : "")">
-            <i class="fa-solid fa-clipboard-list"></i>
-            Property Attributes
-        </a>
-
-        <!-- Support -->
-        <div class="cl-drawer-section-title">Support</div>
-
-        <a href="/Sup1/ViewGuide" class="cl-drawer-link @(reqPath.StartsWith("/sup1/viewguide") ? "active" : "")">
-            <i class="fa-solid fa-book-open"></i>
-            User Guidelines
-        </a>
-
-        <a href="/Home/FAQ" class="cl-drawer-link @(reqPath == "/home/faq" ? "active" : "")">
-            <i class="fa-solid fa-comments"></i>
-            FAQ
-        </a>
-
-        <a href="/Home/Contact" class="cl-drawer-link @(reqPath == "/home/contact" ? "active" : "")">
-            <i class="fa-solid fa-headset"></i>
-            Contact Support
-        </a>
-
-        <a href="/Home/Privacy" class="cl-drawer-link @(reqPath == "/home/privacy" ? "active" : "")">
-            <i class="fa-solid fa-shield-halved"></i>
-            Privacy Policy
-        </a>
-
-        <div class="cl-dd-divider" style="margin:8px 0;"></div>
-
-        @if (isAuth)
-        {
-            <a href="/my-profile" class="cl-drawer-link">
-                <i class="fa-solid fa-user"></i>
-                My Profile
+            <a href="/Sup1/ViewGuide" class="cl-drawer-link @(reqPath.StartsWith("/sup1/viewguide") ? "active" : "")">
+                <i class="fa-solid fa-book-open"></i>
+                User Guidelines
             </a>
 
-            <form asp-action="Logout" asp-controller="Account" method="post">
-                @Html.AntiForgeryToken()
-
-                <button type="submit" class="cl-drawer-link cl-drawer-logout">
-                    <i class="fa-solid fa-right-from-bracket"></i>
-                    Sign Out
-                </button>
-            </form>
-        }
-        else
-        {
-            <a href="/account/login" class="cl-drawer-link">
-                <i class="fa-solid fa-right-to-bracket"></i>
-                Sign In
+            <a href="/Home/FAQ" class="cl-drawer-link @(reqPath == "/home/faq" ? "active" : "")">
+                <i class="fa-solid fa-comments"></i>
+                FAQ
             </a>
 
-            <a href="/account/register" class="cl-drawer-link cl-drawer-evidence">
-                <i class="fa-solid fa-user-plus"></i>
-                Register
+            <a href="/Home/Contact" class="cl-drawer-link @(reqPath == "/home/contact" ? "active" : "")">
+                <i class="fa-solid fa-headset"></i>
+                Contact Support
             </a>
-        }
 
+            <a href="/Home/Privacy" class="cl-drawer-link @(reqPath == "/home/privacy" ? "active" : "")">
+                <i class="fa-solid fa-shield-halved"></i>
+                Privacy Policy
+            </a>
+
+            <div class="cl-dd-divider" style="margin:8px 0;"></div>
+
+            @if (isAuth)
+            {
+                <a href="/my-profile" class="cl-drawer-link">
+                    <i class="fa-solid fa-user"></i>
+                    My Profile
+                </a>
+
+                <form asp-action="Logout" asp-controller="Account" method="post">
+                    @Html.AntiForgeryToken()
+
+                    <button type="submit" class="cl-drawer-link cl-drawer-logout">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                        Sign Out
+                    </button>
+                </form>
+            }
+            else
+            {
+                <a href="/account/login" class="cl-drawer-link">
+                    <i class="fa-solid fa-right-to-bracket"></i>
+                    Sign In
+                </a>
+
+                <a href="/account/register" class="cl-drawer-link cl-drawer-evidence">
+                    <i class="fa-solid fa-user-plus"></i>
+                    Register
+                </a>
+            }
+
+        </div>
     </div>
 
     <!-- ══ MAIN ════════════════════════════════════════════════════ -->

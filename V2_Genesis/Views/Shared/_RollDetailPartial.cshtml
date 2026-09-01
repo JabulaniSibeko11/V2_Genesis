@@ -84,7 +84,11 @@
             <i class="fa-solid @(Model.Roll.IsQuery ? "fa-magnifying-glass-chart" : Model.Roll.IsGv ? "fa-landmark" : "fa-scroll")"></i>
         </div>
         <div>
-            <h2 class="cd-detail-roll-name">@Model.Roll.Name</h2>
+            <h2 class="cd-detail-roll-name">
+    @(Model.Roll.IsQuery
+        ? "Section 78 Query/Review"
+        : Model.Roll.Name)
+</h2>
             <span class="cd-detail-roll-short">@Model.Roll.Short &nbsp;&middot;&nbsp; @Model.Roll.Main_Roll</span>
         </div>
     </div>

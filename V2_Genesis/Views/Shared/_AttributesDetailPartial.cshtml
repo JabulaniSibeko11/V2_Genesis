@@ -59,7 +59,7 @@
                         <th>Property Description</th>
                         <th>Category</th>
                         <th>Town</th>
-                        <th>Market Value</th>
+                        <th>Market Value (R)</th>
                         <th>Form Type</th>
                         <th>Options</th>
                     </tr>
@@ -72,10 +72,10 @@
                             <td>@item.PropertyDesc</td>
                             <td>@item.CatDesc</td>
                             <td>@item.TownNameDesc</td>
-                            <td>@item.MarketValue</td>
+                            <td>@DashboardDisplayHelpers.FormatZAR(item.MarketValue)</td>
                             <td>
                                 <span class="attr-form-pill attr-pill-@(item.FormType.ToLower()
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      .Replace(" ", "").Replace("&", "").Replace("/", ""))">
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                .Replace(" ", "").Replace("&", "").Replace("/", ""))">
                                     @item.FormType
                                 </span>
                             </td>
