@@ -362,12 +362,13 @@
     font-weight: 700;
     color: var(--at-teal);
     text-transform: uppercase;
-    letter-spacing: .8px;
-    padding: 10px 14px 10px 0;
-    vertical-align: top;
-    white-space: nowrap;
+    letter-spacing: .55px;
+    padding: 8px 8px 5px 0;
+    vertical-align: middle;
+    white-space: normal;
     font-family: 'Poppins', sans-serif;
-    width: 200px;
+    width: 135px;
+    line-height: 1.35;
 }
 
 .attr-input,
@@ -380,9 +381,10 @@
     width: 100%;
     border: 1.5px solid #d8dde0;
     border-radius: 8px;
-    padding: 9px 14px;
+    padding: 9px 12px;
     margin: 0;
-    transition: border-color .15s, box-shadow .15s;
+    min-height: 42px;
+    transition: border-color .15s, box-shadow .15s, background .15s;
     box-sizing: border-box;
 }
 
@@ -446,17 +448,24 @@
 .attr-table {
     width: 100%;
     border-collapse: separate;
-    border-spacing: 0 6px;
+    border-spacing: 0 7px;
+    table-layout: fixed;
     font-family: 'Poppins', sans-serif;
 }
 
     .attr-table td {
-        padding: 4px 8px 4px 0;
+        padding: 3px 10px 3px 0;
         vertical-align: middle;
     }
 
     .attr-table .attr-label {
-        padding-right: 16px;
+        width: 135px;
+        padding-right: 8px;
+    }
+
+    .attr-table td:not(.attr-label) {
+        width: auto;
+        min-width: 0;
     }
 
     .attr-table .attr-input-cell {
@@ -1110,7 +1119,7 @@
     }
 
     .attr-label {
-        width: 140px;
+        width: 120px;
         font-size: 10px;
     }
 
@@ -1809,4 +1818,316 @@
 
 .ev-counter-fill.danger {
     background: #dc2626 !important;
+}
+
+.attr-contact-privacy-note {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 14px;
+    padding: 10px 12px;
+    border: 1px solid #d8e8e4;
+    border-left: 4px solid #0b6f62;
+    border-radius: 8px;
+    background: #f5fbf9;
+    color: #34534d;
+    font-size: 12px;
+    line-height: 1.45;
+}
+
+    .attr-contact-privacy-note i {
+        color: #0b6f62;
+    }
+
+/* ── Create-form readability ─────────────────────────────────── */
+.attr-table {
+    width: 100%;
+    table-layout: fixed;
+}
+
+    .attr-table .attr-label {
+        width: 18%;
+        padding: 10px 10px 6px 0;
+        text-align: left !important;
+        vertical-align: middle;
+        line-height: 1.35;
+    }
+
+    .attr-table td:not(.attr-label) {
+        width: 32%;
+        padding: 6px 18px 6px 0;
+        vertical-align: middle;
+    }
+
+    .attr-table .attr-input,
+    .attr-table .attr-select,
+    .attr-table .attr-textarea {
+        width: 100%;
+        margin: 0;
+    }
+
+/* ── Evidence type selector ──────────────────────────────────── */
+.ev-type-panel {
+    margin: 4px 0 16px;
+    padding: 14px 16px;
+    border: 1px solid #d7e6e4;
+    border-left: 4px solid #006570;
+    border-radius: 10px;
+    background: #f7fbfb;
+}
+
+.ev-type-label {
+    display: block;
+    margin-bottom: 7px;
+    color: #23464a;
+    font: 700 12px 'Poppins', sans-serif;
+}
+
+.ev-type-help {
+    margin-top: 6px;
+    color: #64748b;
+    font: 11.5px/1.45 'Poppins', sans-serif;
+}
+
+.ev-type-badge {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+    padding: 4px 9px;
+    border-radius: 999px;
+    background: #e4f2f1;
+    color: #006570;
+    font: 700 10.5px 'Poppins', sans-serif;
+    white-space: nowrap;
+}
+
+.ev-file-item {
+    gap: 9px;
+}
+
+.attr-email-confirm-status {
+    display: block;
+    min-height: 18px;
+    margin-top: 5px;
+    font: 11.5px/1.4 'Poppins', sans-serif;
+}
+
+    .attr-email-confirm-status.valid {
+        color: #0f766e;
+        font-weight: 600;
+    }
+
+    .attr-email-confirm-status.invalid {
+        color: #dc2626;
+        font-weight: 600;
+    }
+
+.attr-input.is-valid-email {
+    border-color: #0f766e !important;
+}
+
+.attr-input.is-invalid-email {
+    border-color: #dc2626 !important;
+}
+
+@media (max-width: 768px) {
+    .attr-table,
+    .attr-table tbody,
+    .attr-table tr,
+    .attr-table td {
+        display: block;
+        width: 100% !important;
+    }
+
+        .attr-table tr {
+            margin-bottom: 12px;
+        }
+
+        .attr-table .attr-label {
+            padding: 8px 0 4px;
+        }
+
+        .attr-table td:not(.attr-label) {
+            padding: 0 0 8px;
+        }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ATTRIBUTE CREATE — READABILITY / ANSWER FIELDS
+   Used by Residential and Sectional Title primary/secondary fields.
+   The question stays directly above the answer control.
+═══════════════════════════════════════════════════════════════ */
+.attr-answer-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 28px;
+    row-gap: 16px;
+    padding: 4px 10px 18px;
+}
+
+.attr-answer-field {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 5px;
+}
+
+    .attr-answer-field > label,
+    .attr-answer-label {
+        display: block;
+        margin: 0;
+        color: var(--at-teal);
+        font-family: 'Poppins', sans-serif;
+        font-size: 11px;
+        font-weight: 800;
+        line-height: 1.4;
+        text-align: left;
+        text-transform: uppercase;
+        letter-spacing: .55px;
+    }
+
+    .attr-answer-field .attr-input,
+    .attr-answer-field .attr-select {
+        width: 100%;
+        margin: 0;
+    }
+
+    .attr-answer-field .attr-field-error {
+        margin-top: 0;
+    }
+
+.attr-unit {
+    color: #64748b;
+    font-size: 10.5px;
+    font-weight: 600;
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+.attr-help-text {
+    display: block;
+    margin: 1px 0 0;
+    color: #667085;
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1.5;
+}
+
+.attr-answer-field .attr-radio-row {
+    min-height: 42px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 7px 10px;
+    border: 1.5px solid #d8dde0;
+    border-radius: 8px;
+    background: #fff;
+}
+
+    .attr-answer-field .attr-radio-row label {
+        margin: 0;
+        padding: 2px 5px;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        color: #172b34;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+/* Highlight glossary items where the client needs a calculation rule. */
+.attr-glossary-grid .attr-glossary-important {
+    border-left: 4px solid var(--at-gold);
+    background: #fffdf5;
+    padding-left: 12px;
+}
+
+    .attr-glossary-grid .attr-glossary-important strong {
+        color: #005d66;
+    }
+
+/* Keep evidence type close to its selector. */
+.ev-type-panel {
+    margin: 6px 0 16px;
+    padding: 14px 16px;
+}
+
+.ev-type-label {
+    margin-bottom: 6px;
+}
+
+/* Confirmation email feedback. */
+.attr-email-confirm-status {
+    display: block;
+    min-height: 18px;
+    margin-top: 5px;
+    font: 11.5px/1.4 'Poppins', sans-serif;
+}
+
+    .attr-email-confirm-status.valid {
+        color: #0f766e;
+        font-weight: 600;
+    }
+
+    .attr-email-confirm-status.invalid {
+        color: #dc2626;
+        font-weight: 600;
+    }
+
+.attr-input.is-valid-email {
+    border-color: #0f766e !important;
+    box-shadow: 0 0 0 2px rgba(15,118,110,.07);
+}
+
+.attr-input.is-invalid-email {
+    border-color: #dc2626 !important;
+    box-shadow: 0 0 0 2px rgba(220,38,38,.07);
+}
+
+/* Medium screens: keep two columns but reduce wasted space. */
+@media (max-width: 1100px) {
+    .attr-label,
+    .attr-table .attr-label {
+        width: 120px;
+    }
+
+    .attr-answer-grid {
+        column-gap: 20px;
+    }
+}
+
+/* Mobile/tablet: every label sits immediately above its own control. */
+@media (max-width: 768px) {
+    .attr-answer-grid {
+        grid-template-columns: 1fr;
+        gap: 13px;
+        padding: 4px 4px 16px;
+    }
+
+    .attr-table,
+    .attr-table tbody,
+    .attr-table tr,
+    .attr-table td {
+        display: block;
+        width: 100% !important;
+    }
+
+        .attr-table tr {
+            margin-bottom: 12px;
+        }
+
+        .attr-table .attr-label {
+            width: 100% !important;
+            padding: 7px 0 4px;
+        }
+
+        .attr-table td:not(.attr-label) {
+            padding: 0 0 7px;
+        }
+
+    .attr-answer-field .attr-radio-row {
+        flex-wrap: wrap;
+    }
 }

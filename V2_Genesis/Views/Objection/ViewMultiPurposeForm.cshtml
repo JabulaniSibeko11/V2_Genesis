@@ -1,4 +1,4 @@
-﻿@using V2_Genesis.Models
+@using V2_Genesis.Models
 @model Prop_View_Model
 
 @{
@@ -674,9 +674,35 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
                     </div>
                 </div>
 
-                <div class="col-sm-12">
-                    <label class="form-label fw-semibold  text-dark">E-MAIL ADDRESS <span style="color: red;">*</span></label>
-                    <input  id="o_cd_5" class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Owner_Email"placeholder="@(_isAppeal ? "appeal@mail.com" : "objection@mail.com")">
+                                <div class="row mb-3 gen-email-confirm-group">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold text-dark">
+                            E-MAIL ADDRESS <span class="text-danger">*</span>
+                        </label>
+                        <input id="o_cd_5"
+                               class="form-control border-2 rounded shadow-sm px-4 py-2"
+                               maxlength="100"
+                               type="email"
+                               autocomplete="email"
+                               asp-for="Owner_Email"
+                               data-email-primary="Owner_Email"
+                               placeholder="@(_isAppeal ? "appeal@mail.com" : "objection@mail.com")" />
+                        <div class="form-text">Please enter the email address that must receive City of Johannesburg communication.</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold text-dark">
+                            CONFIRM E-MAIL ADDRESS <span class="text-danger">*</span>
+                        </label>
+                        <input id="o_cd_5_confirm"
+                               name="Owner_Email_Confirm"
+                               class="form-control border-2 rounded shadow-sm px-4 py-2"
+                               maxlength="100"
+                               type="email"
+                               autocomplete="off"
+                               data-email-confirm="Owner_Email"
+                               placeholder="Re-enter the same email address" />
+                        <div class="gen-email-status small mt-1" data-email-status="Owner_Email"></div>
+                    </div>
                 </div>
 
 
@@ -803,11 +829,36 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
                         <input  id="obj_cd_4" class="form-control rounded shadow-sm px-4 py-2" maxlength="13" onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;" asp-for="Objector_Fax" placeholder="0112345678">
  
                           </div>
-                           <div class="col-sm-12">
-                                 <label class="form-label fw-semibold  text-dark">E-MAIL ADDRESS <span style="color: red;">*</span></label>
-                        <input  id="obj_cd_5" class="form-control rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Objector_Email" placeholder="@(_isAppeal ? "appeal@mail.com" : "objection@mail.com")">
-
-                           </div>
+                                           <div class="row mb-3 gen-email-confirm-group">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold text-dark">
+                            E-MAIL ADDRESS <span class="text-danger">*</span>
+                        </label>
+                        <input id="obj_cd_5"
+                               class="form-control border-2 rounded shadow-sm px-4 py-2"
+                               maxlength="100"
+                               type="email"
+                               autocomplete="email"
+                               asp-for="Objector_Email"
+                               data-email-primary="Objector_Email"
+                               placeholder="@(_isAppeal ? "appeal@mail.com" : "objection@mail.com")" />
+                        <div class="form-text">Please enter the email address that must receive City of Johannesburg communication.</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold text-dark">
+                            CONFIRM E-MAIL ADDRESS <span class="text-danger">*</span>
+                        </label>
+                        <input id="obj_cd_5_confirm"
+                               name="Objector_Email_Confirm"
+                               class="form-control border-2 rounded shadow-sm px-4 py-2"
+                               maxlength="100"
+                               type="email"
+                               autocomplete="off"
+                               data-email-confirm="Objector_Email"
+                               placeholder="Re-enter the same email address" />
+                        <div class="gen-email-status small mt-1" data-email-status="Objector_Email"></div>
+                    </div>
+                </div>
                           <div class="col-sm-12">
                                <label class="form-label fw-semibold  text-dark"> <span id="tp_status">STATUS OF @partyUpper</span><span style="color: red;">*</span><small class="text-muted fst-italic ms-2">(e.g. Tenant, Pending Purchaser, Municipality, etc)</small>  </label>
                                  <input  id="objector_stat"  class="form-control rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Objector_Status">
@@ -909,11 +960,36 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
                         <input  id="rep_cd_4" class="form-control rounded shadow-sm px-4 py-2" maxlength="13" onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;" asp-for="Rep_Fax_Phone" placeholder="0112345678">
  
                     </div>
-                    <div class="col-sm-12">
-                         <label class="form-label fw-semibold  text-dark">E-MAIL ADDRESS <span style="color: red;">*</span></label>
-                        <input  id="rep_cd_5" class="form-control rounded shadow-sm px-4 py-2" maxlength="80" type="text" onpaste="return false;" ondrop="return false;" asp-for="Rep_Email" placeholder="objectionRep@mail.com"><br />
-
+                                    <div class="row mb-3 gen-email-confirm-group">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold text-dark">
+                            E-MAIL ADDRESS <span class="text-danger">*</span>
+                        </label>
+                        <input id="rep_cd_5"
+                               class="form-control border-2 rounded shadow-sm px-4 py-2"
+                               maxlength="100"
+                               type="email"
+                               autocomplete="email"
+                               asp-for="Rep_Email"
+                               data-email-primary="Rep_Email"
+                               placeholder="representative@example.com" />
+                        <div class="form-text">Please enter the email address that must receive City of Johannesburg communication.</div>
                     </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold text-dark">
+                            CONFIRM E-MAIL ADDRESS <span class="text-danger">*</span>
+                        </label>
+                        <input id="rep_cd_5_confirm"
+                               name="Rep_Email_Confirm"
+                               class="form-control border-2 rounded shadow-sm px-4 py-2"
+                               maxlength="100"
+                               type="email"
+                               autocomplete="off"
+                               data-email-confirm="Rep_Email"
+                               placeholder="Re-enter the same email address" />
+                        <div class="gen-email-status small mt-1" data-email-status="Rep_Email"></div>
+                    </div>
+                </div>
                 </div>
                
         
@@ -4410,6 +4486,8 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
         <script src="https://code.jquery.com/jquery-latest.min.js" type="text/javascript"></script>
         <script asp-append-version="true" src="~/js/objectionmulti.js" type="text/javascript"></script>
         <script asp-append-version="true" src="~/js/form-consistency.js"></script>
+        <script asp-append-version="true" src="~/js/genesis-form-guard.js"></script>
+        <script asp-append-version="true" src="~/js/genesis-signature.js"></script>
         <script>
             (function () {
                 'use strict';
