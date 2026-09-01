@@ -278,12 +278,8 @@
 
 
 @section Styles {
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" />
-    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css" />
-
-    @*   <link href="~/css/views/clientdashboardcss.css" rel="stylesheet" asp-append-version="true" /> *@
-    <link href="~/css/site.css" rel="stylesheet" asp-append-version="true" />
-    <link href="~/css/views/client-dashboard.css" rel="stylesheet" asp-append-version="true" />
+    @* DataTables / Responsive vendor CSS is loaded once in _ClientLayout.
+       Keep this view free of duplicate DataTables CSS to avoid conflicts. *@
 }
 
 <!-- ── Welcome strip ──────────────────────────────────────────────────── -->
@@ -297,20 +293,7 @@
 
        
         <span class="ann-text">
-            <span>
-                @ann.Message
-                @if (ann.DaysLeft > 0)
-                {
-                    <span style="margin-left:24px;opacity:.75;">
-                        &nbsp;·&nbsp;
-                        <i class="fa-solid fa-calendar-days"></i>
-                        @ann.DaysLeft @(ann.DaysLeft == 1 ? "day" : "days") remaining
-                    </span>
-                }
-               
-                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                @ann.Message
-            </span>
+            <span>@ann.Message</span>
         </span>
 
         
@@ -436,19 +419,19 @@
 
     <div class="dash-link-alert
         @(string.Equals(
-                                                                                                               reviewStatus,
-                                                                                                               "Open",
-                                                                                                               StringComparison.OrdinalIgnoreCase)
-                                                                                                               ? "dash-link-success"
-                                                                                                               : "dash-link-error")">
+                                                                                                                        reviewStatus,
+                                                                                                                        "Open",
+                                                                                                                        StringComparison.OrdinalIgnoreCase)
+                                                                                                                        ? "dash-link-success"
+                                                                                                                        : "dash-link-error")">
 
         <i class="fa-solid
             @(string.Equals(
-                                                                                                                                         reviewStatus,
-                                                                                                                                         "Open",
-                                                                                                                                         StringComparison.OrdinalIgnoreCase)
-                                                                                                                                         ? "fa-unlock"
-                                                                                                                                         : "fa-lock")">
+                                                                                                                                                    reviewStatus,
+                                                                                                                                                    "Open",
+                                                                                                                                                    StringComparison.OrdinalIgnoreCase)
+                                                                                                                                                    ? "fa-unlock"
+                                                                                                                                                    : "fa-lock")">
         </i>
 
         <div>
@@ -697,14 +680,7 @@
 }
 
 @section Scripts {
-    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
-    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
-
-
+    @* DataTables / Responsive / Buttons scripts are loaded once by _ClientLayout. *@
     <script>
         // ============================================================
         // Dashboard JS - Combined
@@ -937,9 +913,23 @@
         }
 
         function initTablesWithin(container) {
-        container.querySelectorAll('.cd-table').forEach(function (t) {
-        if (t.id) initDataTable('#' + t.id);
-        });
+
+            if (!container)
+                return;
+
+            // Dashboard partial tables are normally inside collapsed widgets.
+            // Do not initialise display:none tables because DataTables Responsive
+            // cannot calculate the correct phone width while the parent is hidden.
+            container
+                .querySelectorAll('.cd-widget-body.open .cd-table')
+                .forEach(function (tableElement) {
+
+                    if (!tableElement.id)
+                        return;
+
+                    initDataTable('#' + tableElement.id);
+                    adjustDataTable('#' + tableElement.id);
+                });
         }
 
         // ── Move full-screen modals out of the detail area ───────────
@@ -956,86 +946,203 @@
 
         // ── Widget sub-section toggle ───────────────────────────────
         function toggleWidget(key) {
-        const body = document.getElementById('widget-' + key);
-        const chevron = document.getElementById('wchev-' + key);
 
-        if (!body) return;
+            const body =
+                document.getElementById('widget-' + key);
 
-        const isOpen = body.classList.toggle('open');
+            const chevron =
+                document.getElementById('wchev-' + key);
 
-        if (chevron) {
-        chevron.style.transform = isOpen ? 'rotate(180deg)' : 'rotate(0deg)';
+            if (!body)
+                return;
+
+            const isOpen =
+                body.classList.toggle('open');
+
+            if (chevron) {
+                chevron.style.transform =
+                    isOpen
+                        ? 'rotate(180deg)'
+                        : 'rotate(0deg)';
+            }
+
+            if (!isOpen)
+                return;
+
+            // Initialise the table only AFTER the widget becomes visible.
+            // This is what allows DataTables Responsive to hide lower-priority
+            // columns and display the + child-row control on narrow phones.
+            requestAnimationFrame(function () {
+
+                body
+                    .querySelectorAll('.cd-table')
+                    .forEach(function (tableElement) {
+
+                        if (!tableElement.id)
+                            return;
+
+                        const selector =
+                            '#' + tableElement.id;
+
+                        if (!$.fn.DataTable.isDataTable(selector)) {
+                            initDataTable(selector);
+                        }
+
+                        adjustDataTable(selector);
+                    });
+            });
         }
+
+        // ── DataTable responsive recalculation ──────────────────────
+        function adjustDataTable(selector) {
+
+            if (
+                !selector
+                || !$(selector).length
+                || !$.fn.DataTable.isDataTable(selector)
+            ) {
+                return;
+            }
+
+            const table =
+                $(selector).DataTable();
+
+            table.columns.adjust();
+
+            if (
+                table.responsive
+                && typeof table.responsive.recalc === 'function'
+            ) {
+                table.responsive.recalc();
+            }
         }
 
         // ── Init DataTables ─────────────────────────────────────────
         function initDataTable(selector) {
 
-        if (!selector || !$(selector).length)
-        return;
+            if (
+                !selector
+                || !$(selector).length
+                || $.fn.DataTable.isDataTable(selector)
+            ) {
+                return;
+            }
 
-        if ($.fn.DataTable.isDataTable(selector))
-        return;
+            const colCount =
+                $(selector + ' thead th').length;
 
-        const colCount =
-        $(selector + ' thead th').length;
+            if (!colCount)
+                return;
 
-        $(selector).DataTable({
+            $(selector).DataTable({
 
-        responsive: {
-        details: {
-        type: 'inline',
-        target: 0
+                responsive: {
+                    details: {
+                        type: 'inline',
+                        target: 0
+                    }
+                },
+
+                autoWidth: false,
+                scrollX: false,
+
+                // Match Home Index result controls.
+                dom:
+                    '<"hs-dt-top"lf>' +
+                    'rt' +
+                    '<"hs-dt-bottom"ip>',
+
+                lengthMenu: [
+                    [5, 10, 25, 50, -1],
+                    [5, 10, 25, 50, 'All']
+                ],
+
+                pageLength: 5,
+
+                language: {
+                    search: '_INPUT_',
+                    searchPlaceholder: 'Search...',
+                    lengthMenu: '_MENU_ per page',
+                    emptyTable: 'No records found',
+                    zeroRecords: 'No matching records found',
+                    info: 'Showing _START_ to _END_ of _TOTAL_ entries',
+                    infoEmpty: 'No records found',
+                    infoFiltered: '(filtered from _MAX_ total)',
+                    paginate: {
+                        previous: 'Previous',
+                        next: 'Next'
+                    }
+                },
+
+                columnDefs: [
+                    {
+                        targets: 0,
+                        className: 'dtr-control',
+                        responsivePriority: 1
+                    },
+                    {
+                        targets: colCount - 1,
+                        responsivePriority: 2,
+                        orderable: false
+                    }
+                ],
+
+                initComplete: function () {
+
+                    const api =
+                        this.api();
+
+                    requestAnimationFrame(function () {
+
+                        api.columns.adjust();
+
+                        if (
+                            api.responsive
+                            && typeof api.responsive.recalc === 'function'
+                        ) {
+                            api.responsive.recalc();
+                        }
+                    });
+                },
+
+                drawCallback: function () {
+
+                    const api =
+                        this.api();
+
+                    if (
+                        api.responsive
+                        && typeof api.responsive.recalc === 'function'
+                    ) {
+                        api.responsive.recalc();
+                    }
+                }
+            });
         }
-        },
 
-        autoWidth: false,
-        scrollX: false,
+        // Recalculate visible Dashboard tables when phone orientation
+        // or viewport width changes.
+        let dashboardTableResizeTimer = null;
 
-        dom:
-        '<"hs-dt-top"lf>' +
-        'rt' +
-        '<"hs-dt-bottom"ip>',
+        window.addEventListener('resize', function () {
 
-        lengthMenu: [
-        [5, 10, 25, 50, -1],
-        [5, 10, 25, 50, 'All']
-        ],
+            window.clearTimeout(dashboardTableResizeTimer);
 
-        pageLength: 5,
+            dashboardTableResizeTimer =
+                window.setTimeout(function () {
 
-        language: {
-        search: '_INPUT_',
-        searchPlaceholder: 'Search...',
-        lengthMenu: '_MENU_ per page',
-        emptyTable: 'No records found',
-        zeroRecords: 'No matching records found',
-        info: 'Showing _START_ to _END_ of _TOTAL_ entries',
-        infoEmpty: 'No records found',
-        infoFiltered: '(filtered from _MAX_ total)',
-        paginate: {
-        previous: 'Previous',
-        next: 'Next'
-        }
-        },
+                    document
+                        .querySelectorAll('.cd-widget-body.open .cd-table')
+                        .forEach(function (tableElement) {
 
-        columnDefs: colCount
-        ? [
-        {
-        targets: 0,
-        className: 'all dtr-control',
-        responsivePriority: 1
-        },
-        {
-        targets: -1,
-        className: 'all',
-        responsivePriority: 2,
-        orderable: false
-        }
-        ]
-        : []
+                            if (!tableElement.id)
+                                return;
+
+                            adjustDataTable(
+                                '#' + tableElement.id);
+                        });
+                }, 150);
         });
-        }
 
         // ── Open roll after redirect ────────────────────────────────
         function openLinkedRollFromQueryString() {
@@ -1465,7 +1572,6 @@
         initStatusExplanationModal();
         });
 
-        // ── Re-open PIN modal if server returned PIN error ─────────
         // ── Re-open PIN modal if server returned PIN error ─────────
         const serverPinError = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["PinError"]?.ToString()));
 

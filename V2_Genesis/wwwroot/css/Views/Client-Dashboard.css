@@ -3960,3 +3960,153 @@ table.dataTable > tbody > tr.child span.dtr-title {
             margin-left: 0 !important;
         }
 }
+
+.cd-detail-closed-notice {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    width: 100%;
+    min-width: 0;
+    background: #fef2f2;
+    border-bottom: 1.5px solid #fca5a5;
+    padding: 12px 22px;
+    font-size: 12.5px;
+    color: #7a2020;
+    line-height: 1.6;
+    word-break: normal !important;
+    overflow-wrap: normal !important;
+}
+
+    .cd-detail-closed-notice i {
+        flex: 0 0 auto;
+    }
+
+@media (max-width: 640px) {
+
+    .cd-detail-closed-notice {
+        padding: 12px 14px;
+        gap: 9px;
+        font-size: 12px;
+        line-height: 1.55;
+    }
+}
+
+/* =========================================================
+   DATATABLE RESPONSIVE CHILD ROW - MOBILE READABILITY
+   ========================================================= */
+
+/* Give the + / - control its own space */
+table.dataTable.dtr-inline.collapsed > tbody > tr > td.dtr-control {
+    position: relative !important;
+    padding-left: 46px !important;
+    min-width: 0 !important;
+}
+
+    /* + / - position */
+    table.dataTable.dtr-inline.collapsed > tbody > tr > td.dtr-control::before {
+        left: 10px !important;
+        top: 50% !important;
+        transform: translateY(-50%) !important;
+        width: 22px !important;
+        height: 22px !important;
+        line-height: 22px !important;
+        margin: 0 !important;
+    }
+
+/* =========================================================
+   EXPANDED DETAILS
+   ========================================================= */
+
+table.dataTable > tbody > tr.child > td.child {
+    padding: 0 !important;
+    background: #fff !important;
+}
+
+table.dataTable > tbody > tr.child
+ul.dtr-details {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 6px 12px 10px !important;
+}
+
+    /* Each hidden column becomes:
+   LABEL | VALUE
+*/
+    table.dataTable > tbody > tr.child
+    ul.dtr-details > li {
+        display: grid !important;
+        grid-template-columns: minmax(105px, 38%) minmax(0, 1fr) !important;
+        column-gap: 12px !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        padding: 9px 0 !important;
+        border-bottom: 1px solid #eee9e2 !important;
+        align-items: start !important;
+    }
+
+/* Label */
+table.dataTable > tbody > tr.child
+span.dtr-title {
+    display: block !important;
+    width: auto !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    color: var(--p-dark) !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    line-height: 1.35 !important;
+    white-space: normal !important;
+    word-break: normal !important;
+    overflow-wrap: break-word !important;
+}
+
+/* Value */
+table.dataTable > tbody > tr.child
+span.dtr-data {
+    display: block !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    color: #4b5563 !important;
+    font-size: 11.5px !important;
+    line-height: 1.45 !important;
+    white-space: normal !important;
+    word-break: normal !important;
+    overflow-wrap: anywhere !important;
+}
+
+/* Last detail row */
+table.dataTable > tbody > tr.child
+ul.dtr-details > li:last-child {
+    border-bottom: 0 !important;
+}
+
+
+/* =========================================================
+   SMALL PHONES
+   ========================================================= */
+
+@media (max-width: 420px) {
+
+    table.dataTable > tbody > tr.child
+    ul.dtr-details > li {
+        grid-template-columns: 105px minmax(0, 1fr) !important;
+        column-gap: 9px !important;
+    }
+}
+
+
+/* Very narrow phones */
+@media (max-width: 340px) {
+
+    table.dataTable > tbody > tr.child
+    ul.dtr-details > li {
+        grid-template-columns: 1fr !important;
+        row-gap: 4px !important;
+    }
+
+    table.dataTable > tbody > tr.child
+    span.dtr-title {
+        color: var(--p-gold-dark) !important;
+    }
+}

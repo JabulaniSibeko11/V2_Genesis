@@ -65,13 +65,25 @@ code,
 }
 
 /* Prevent long IDs, email addresses and reference numbers breaking cards. */
+/* Allow long technical values to wrap,
+   but NEVER force normal application text
+   to break in the middle of words. */
 td,
 th,
+.long-text,
+.word-break,
+.text-break {
+    overflow-wrap: break-word;
+    word-break: normal;
+}
+
+.cl-main,
+.main-content,
 .card,
 .modal-body,
-.cl-main,
-.main-content {
-    overflow-wrap: anywhere;
+.cd-detail-closed-notice {
+    word-break: normal !important;
+    overflow-wrap: normal !important;
 }
 
 /* --------------------------------------------------------------------------
