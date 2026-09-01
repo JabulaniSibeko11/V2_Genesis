@@ -1873,12 +1873,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             }
 
-            const submitButton = form.querySelector('button[type="submit"]');
-            if (submitButton) {
-                submitButton.disabled = true;
-                submitButton.setAttribute('aria-busy', 'true');
-                submitButton.innerHTML =
-                    '<i class="fa-solid fa-spinner fa-spin"></i> Submitting...';
-            }
+            
         });
     }
