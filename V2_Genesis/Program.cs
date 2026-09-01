@@ -3,26 +3,87 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Query;
 using QuestPDF.Infrastructure;
+using Serilog;
+using Serilog.Events;
 using V2_Genesis.Data;
-
+using V2_Genesis.Filters;
 using V2_Genesis.Models;
 using V2_Genesis.Models.Configuration;
 using V2_Genesis.Models.Emails;
 using V2_Genesis.Models.Entities;
+using V2_Genesis.Middleware;
 using V2_Genesis.Services;
 using V2_Genesis.Services.Attributes;
 using V2_Genesis.Services.Implementations;
 using V2_Genesis.Services.Interfaces;
+using V2_Genesis.Services.Logging;
 using V2_Genesis.Services.Notice;
 using V2_Genesis.Services.Objection;
 using V2_Genesis.Services.PropertySearch;
+
 
 var builder = WebApplication.CreateBuilder(args);
 var cfg = builder.Configuration;
 
 QuestPDF.Settings.License = LicenseType.Community;
+
+var genesisLogging =
+    cfg.GetSection("GenesisLogging")
+       .Get<GenesisLoggingSettings>()
+    ?? new GenesisLoggingSettings();
+
+if (genesisLogging.Enabled)
+{
+    Directory.CreateDirectory(
+        genesisLogging.RootPath);
+
+    Log.Logger =
+        new LoggerConfiguration()
+            .MinimumLevel.Information()
+
+            .MinimumLevel.Override(
+                "Microsoft",
+                LogEventLevel.Warning)
+
+            .MinimumLevel.Override(
+                "Microsoft.AspNetCore",
+                LogEventLevel.Warning)
+
+            .MinimumLevel.Override(
+                "Microsoft.EntityFrameworkCore",
+                LogEventLevel.Warning)
+
+            .Enrich.FromLogContext()
+
+            .Enrich.WithProperty(
+                "Application",
+                "Genesis")
+
+            .Enrich.WithProperty(
+                "Environment",
+                builder.Environment.EnvironmentName)
+
+            .Enrich.WithProperty(
+                "MachineName",
+                Environment.MachineName)
+
+            .WriteTo.Console()
+
+            .WriteTo.Sink(
+                new YearMonthFileSink(
+                    genesisLogging.RootPath,
+                    genesisLogging.FileSizeLimitMB))
+
+            .CreateLogger();
+
+    builder.Host.UseSerilog();
+}
 // ── MVC ───────────────────────────────────────────────────────────────────────
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews(options =>
+{
+    options.Filters.Add<
+        GenesisActionLoggingFilter>();
+});
 
 // ── Session ───────────────────────────────────────────────────────────────────
 var sessionMins = cfg.GetValue<int>("Session:TimeoutMinutes", 480);
@@ -111,7 +172,7 @@ builder.Services.Configure<NoticeRollSettings>(opts => builder.Configuration.Get
 builder.Services.Configure<AttributeStorageOptions>(builder.Configuration.GetSection("AttributeStorage"));
 builder.Services.Configure<ValuerPhotoStorageSettings>(builder.Configuration.GetSection("ValuerPhotoStorage"));
 builder.Services.Configure<AttributeStorageSettings>(builder.Configuration.GetSection("AttributeStorage"));
-
+builder.Services.Configure<GenesisLoggingSettings>(cfg.GetSection("GenesisLogging"));
 // ── Custom Services ───────────────────────────────────────────────────────────
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IUserManagementService, UserManagementService>();
@@ -157,6 +218,8 @@ builder.Services.AddScoped<IAcknowledgementDownloadService, AcknowledgementDownl
 builder.Services.AddScoped<ISubmissionViewService, SubmissionViewService>();
 builder.Services.AddScoped<IAdminClientAccountService, AdminClientAccountService>();
 builder.Services.AddScoped<IAdminPropertyEnquiryService, AdminPropertyEnquiryService>();
+builder.Services.AddScoped<GenesisActionLoggingFilter>();
+
 builder.Services.AddDataProtection();
 
 // ── App Pipeline ──────────────────────────────────────────────────────────────
@@ -170,7 +233,26 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+
+// ── Serilog HTTP request logging ─────────────────────────────────────────────
+if (genesisLogging.Enabled &&
+    genesisLogging.LogRequests)
+{
+    app.UseSerilogRequestLogging(options =>
+    {
+        options.MessageTemplate =
+            "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms";
+    });
+}
+
 app.UseRouting();
+
+// ── Correlation ID ────────────────────────────────────────────────────────────
+if (genesisLogging.Enabled)
+{
+    app.UseMiddleware<CorrelationIdMiddleware>();
+}
+
 app.UseSession();
 app.UseForwardedHeaders();
 app.UseAuthentication();
@@ -181,4 +263,25 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
-app.Run();
+// ── Application lifetime logging ─────────────────────────────────────────────
+try
+{
+    Log.Information(
+        "Genesis application started. Environment={Environment}, Machine={Machine}",
+        app.Environment.EnvironmentName,
+        Environment.MachineName);
+
+    app.Run();
+}
+catch (Exception ex)
+{
+    Log.Fatal(
+        ex,
+        "Genesis application terminated unexpectedly.");
+
+    throw;
+}
+finally
+{
+    Log.CloseAndFlush();
+}
