@@ -1733,3 +1733,41 @@
 #myForm .obj-section-bar input[type="radio"]:focus-visible {
     outline-color: rgba(255, 255, 255, 0.75) !important;
 }
+
+
+.obj-green-bar {
+    background: #198754;
+    color: #fff;
+}
+
+    .obj-green-bar,
+    .obj-green-bar label,
+    .obj-green-bar .form-label,
+    .obj-green-bar .btn,
+    .obj-green-bar span,
+    .obj-green-bar strong,
+    .obj-green-bar small {
+        color: #fff !important;
+    }
+
+        .obj-green-bar .form-check-input {
+            border: 2px solid #fff;
+            background-color: #fff;
+        }
+
+            .obj-green-bar .form-check-input:checked {
+                background-color: #0d6efd;
+                border-color: #fff;
+            }
+
+            .obj-green-bar .form-check-input:focus {
+                box-shadow: 0 0 0 .2rem rgba(255, 255, 255, .35);
+            }
+
+        .obj-green-bar label {
+            font-weight: 600;
+        }
+
+        .obj-green-bar .form-check-input {
+            margin-right: 6px;
+        }
