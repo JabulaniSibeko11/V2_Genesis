@@ -69,6 +69,7 @@ string.Equals(Context?.Session?.GetString("PropertyFrom"), "LIS", StringComparis
     <link href="~/css/views/property-search.css" rel="stylesheet" asp-append-version="true" />
     <link href="~/css/views/searchpropertycss.css" rel="stylesheet" asp-append-version="true" />
     <link href="~/css/views/viewpropertysearch.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/attribute-link-verification.css" rel="stylesheet" asp-append-version="true" />
 }
 
 
@@ -340,8 +341,12 @@ string.Equals(Context?.Session?.GetString("PropertyFrom"), "LIS", StringComparis
                     @Html.AntiForgeryToken()
                     <input type="hidden" name="idProperty" value="@(d.UnitKey ?? d.ValuationKey.ToString())" />
                     <input type="hidden" name="propertyFrom" value="Attributes" />
-                    <button type="submit" class="ppd-btn ppd-btn-primary">
-                        <i class="fa-solid fa-link"></i> Link to My Attributes
+                    <button type="button"
+                            class="ppd-btn ppd-btn-primary"
+                            data-attr-secure-link
+                            data-unit-key="@(d.UnitKey ?? d.ValuationKey?.ToString())">
+                        <i class="fa-solid fa-link"></i>
+                        Link to My Attributes
                     </button>
                 </form>
             }
@@ -455,6 +460,10 @@ string.Equals(Context?.Session?.GetString("PropertyFrom"), "LIS", StringComparis
 
     </div>
 </div>
+@if (isAuth && isAttributes)
+{
+    <partial name="_AttributeLinkVerificationModal" />
+}
 
 @section Scripts {
     <script>
@@ -484,4 +493,5 @@ string.Equals(Context?.Session?.GetString("PropertyFrom"), "LIS", StringComparis
             });
         });
     </script>
+    <script src="~/js/attribute-link-verification.js" asp-append-version="true"></script>
     }

@@ -20,5 +20,13 @@ namespace V2_Genesis.Models.Attributes
 
         [MaxLength(20)]
         public string? PropertyFrom { get; set; }
+
+        [MaxLength(50)]
+        public string? VerifiedAccountNumber { get; set; }
+
+        public DateTime? AccountVerifiedAt { get; set; }
+
+        [MaxLength(30)]
+        public string? VerificationMethod { get; set; }
     }
 }

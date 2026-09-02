@@ -12,10 +12,23 @@ namespace V2_Genesis.Services.Interfaces
         Task<List<string>> GetTownshipsAsync();
         Task<List<string>> GetSchemesAsync();
 
-        Task<LinkResult> LinkPropertyAsync(string idProperty, string userId, string propertyFrom);
+        Task<LinkResult> LinkPropertyAsync(
+     string idProperty,
+     string userId,
+     string propertyFrom,
+     string? verifiedAccountNumber = null);
+
         Task<LisPropertyDetail?> GetPropertyDetailAsync(string unitKey);
 
+        Task<bool> VerifyAccountStatementPinAsync(
+    string unitKey,
+    string accountNumber,
+    string statementPin,
+    CancellationToken cancellationToken = default);
 
       
+
+
+
     }
 }

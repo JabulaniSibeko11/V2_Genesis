@@ -238,24 +238,79 @@ public class AttributesController : Controller
     [HttpPost]
     [Route("attributes/link")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> LinkProperty(string idProperty, string propertyFrom)
+    public async Task<IActionResult> LinkProperty(
+    AttributePropertyLinkVerificationViewModel model,
+    CancellationToken cancellationToken)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (string.IsNullOrWhiteSpace(userId))
+            return Unauthorized(new { success = false, message = "Please sign in before linking a property." });
+
+        if (!ModelState.IsValid)
+            return BadRequest(new { success = false, message = "Enter both the Account Number and Statement PIN." });
+
         try
         {
-            var result = await _attrSearch.LinkPropertyAsync(idProperty, userId, propertyFrom);
-            TempData[result.IsDuplicate ? "AttrLinkInfo" : "AttrLinkSuccess"] =
-                result.IsDuplicate
+            var verified = await _attrSearch.VerifyAccountStatementPinAsync(
+                model.IdProperty,
+                model.AccountNumber,
+                model.StatementPin,
+                cancellationToken);
+
+            if (!verified)
+            {
+                // Never log StatementPin.
+                _logger.LogWarning(
+                    "[Attributes] Account verification failed. User={UserId}, UnitKey={UnitKey}, Account={Account}",
+                    userId, model.IdProperty, model.AccountNumber);
+
+                return BadRequest(new
+                {
+                    success = false,
+                    message = "The Account Number or Statement PIN does not match this property. Please check the municipal account statement."
+                });
+            }
+
+            var result = await _attrSearch.LinkPropertyAsync(
+                model.IdProperty,
+                userId,
+                "Attributes",
+                model.AccountNumber.Trim());
+
+            _logger.LogInformation(
+                "[Attributes] Property account verified and link processed. User={UserId}, UnitKey={UnitKey}, Account={Account}, Duplicate={Duplicate}",
+                userId, model.IdProperty, model.AccountNumber, result.IsDuplicate);
+
+            return Ok(new
+            {
+                success = true,
+                duplicate = result.IsDuplicate,
+                message = result.IsDuplicate
                     ? "This property is already linked to your profile."
-                    : "Property linked. You can now submit attributes from your dashboard.";
+                    : "Property verified and linked successfully.",
+                redirectUrl = Url.Action("Index", "Dashboard", new { openRoll = "attributes" })
+            });
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "[Attributes] Link failed — {P} {U}", idProperty, userId);
-            TempData["AttrLinkError"] = "Could not link this property. Please try again.";
+            _logger.LogError(
+                ex,
+                "[Attributes] Secure property link failed. User={UserId}, UnitKey={UnitKey}",
+                userId, model.IdProperty);
+
+            return StatusCode(StatusCodes.Status500InternalServerError, new
+            {
+                success = false,
+                message = "The property could not be linked at this time. Please try again."
+            });
         }
-        return RedirectToAttributesWorkspace();
     }
+
 
     // AttributesController.cs — updated Check + CheckConfirm + Form actions
 

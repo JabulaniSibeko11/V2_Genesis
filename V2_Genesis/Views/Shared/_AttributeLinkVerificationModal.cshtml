@@ -1,0 +1,88 @@
+<div class="attr-link-backdrop" id="attrLinkBackdrop" hidden>
+    <div class="attr-link-modal"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="attrLinkTitle">
+
+        <div class="attr-link-head">
+            <div>
+                <div class="attr-link-kicker">Property Security Verification</div>
+                <h2 id="attrLinkTitle">Verify Before Linking</h2>
+            </div>
+
+            <button type="button"
+                    class="attr-link-close"
+                    id="attrLinkClose"
+                    aria-label="Close verification">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <form id="attrLinkForm" method="post" action="/attributes/link" autocomplete="off">
+            @Html.AntiForgeryToken()
+
+            <input type="hidden" id="attrLinkIdProperty" name="IdProperty" />
+            <input type="hidden" id="attrLinkPropertyFrom" name="PropertyFrom" value="Attributes" />
+
+            <div class="attr-link-body">
+                <div class="attr-link-info">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    <div>
+                        Enter the <strong>Account Number</strong> and
+                        <strong>Statement PIN</strong> shown on the municipal account statement.
+                        You may be the owner or an authorised representative,
+                        provided you have the correct statement details.
+                    </div>
+                </div>
+
+                <div class="attr-link-error" id="attrLinkError" hidden></div>
+
+                <div class="attr-link-field">
+                    <label for="attrAccountNumber">Account Number</label>
+                    <input type="text"
+                           id="attrAccountNumber"
+                           name="AccountNumber"
+                           maxlength="50"
+                           inputmode="numeric"
+                           autocomplete="off"
+                           required />
+                </div>
+
+                <div class="attr-link-field">
+                    <label for="attrStatementPin">Statement PIN</label>
+                    <div class="attr-pin-wrap">
+                        <input type="password"
+                               id="attrStatementPin"
+                               name="StatementPin"
+                               maxlength="100"
+                               inputmode="numeric"
+                               autocomplete="new-password"
+                               required />
+                        <button type="button"
+                                class="attr-pin-toggle"
+                                id="attrPinToggle"
+                                aria-label="Show or hide Statement PIN">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="attr-link-privacy">
+                    <i class="fa-solid fa-lock"></i>
+                    The Statement PIN is used only to verify access. It must not be stored
+                    in the linked-property record or written to application logs.
+                </div>
+            </div>
+
+            <div class="attr-link-actions">
+                <button type="button" class="attr-link-btn attr-link-cancel" id="attrLinkCancel">
+                    Cancel
+                </button>
+                <button type="submit" class="attr-link-btn attr-link-verify" id="attrLinkSubmit">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    Verify &amp; Link Property
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

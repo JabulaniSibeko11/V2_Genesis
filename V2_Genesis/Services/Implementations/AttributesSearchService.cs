@@ -122,8 +122,39 @@ public class AttributesSearchService : IAttributesSearchService
     }
 
     // ── Link property — EF Core, LinkedProperties_Attr ───────────
+
+    public async Task<bool> VerifyAccountStatementPinAsync(
+     string unitKey,
+     string accountNumber,
+     string statementPin,
+     CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(unitKey) ||
+            string.IsNullOrWhiteSpace(accountNumber) ||
+            string.IsNullOrWhiteSpace(statementPin))
+        {
+            return false;
+        }
+
+        await using var conn = new SqlConnection(_attrConn);
+
+        var verified = await conn.QueryFirstOrDefaultAsync<bool?>(
+            new CommandDefinition(
+                "Attr_VerifyAccountStatementPin",
+                new
+                {
+                    UnitKey = unitKey.Trim(),
+                    AccountNumber = accountNumber.Trim(),
+                    StatementPin = statementPin.Trim()
+                },
+                commandType: CommandType.StoredProcedure,
+                cancellationToken: cancellationToken));
+
+        return verified == true;
+    }
+
     public async Task<LinkResult> LinkPropertyAsync(
-        string idProperty, string userId, string propertyFrom)
+        string idProperty, string userId, string propertyFrom, string? verifiedAccountNumber = null)
     {
         var exists = await _attrDb.LinkedProperties
             .AnyAsync(p => p.IDProperty == idProperty && p.UserID == userId);
@@ -134,7 +165,10 @@ public class AttributesSearchService : IAttributesSearchService
         {
             IDProperty = idProperty,
             UserID = userId,
-            PropertyFrom = propertyFrom
+            PropertyFrom = propertyFrom,
+            VerifiedAccountNumber = verifiedAccountNumber,
+            AccountVerifiedAt = DateTime.UtcNow,
+            VerificationMethod = "AccountStatementPin"
         });
 
         await _attrDb.SaveChangesAsync();

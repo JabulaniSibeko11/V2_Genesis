@@ -15,6 +15,7 @@
     <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css" />
     <link href="~/css/views/clientdashboardcss.css" rel="stylesheet" asp-append-version="true" />
     <link href="~/css/views/atrributes-search.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/attribute-link-verification.css" rel="stylesheet" asp-append-version="true" />
 }
 
 <div class="as-page">
@@ -229,11 +230,15 @@
                                                         <input type="hidden" name="idProperty" value="@item.UnitKey" />
                                                         <input type="hidden" name="propertyFrom" value="Attributes" />
 
-                                                        <button type="submit"
+                                                        <button type="button"
                                                                 class="as-btn as-btn-link"
-                                                            @(string.IsNullOrWhiteSpace(item.UnitKey) ? "disabled" : "")>
+                                                                data-attr-secure-link
+                                                                data-unit-key="@item.UnitKey"
+                                                            @(string.IsNullOrWhiteSpace(item.UnitKey) ? "disabled" : null)>
                                                             <i class="fa-solid fa-link"></i> Link
                                                         </button>
+
+
                                                     </form>
                                                 }
                                                 else
@@ -256,8 +261,14 @@
 
     </div>
 </div>
+@if (ViewBag.IsAuth as bool? == true)
+{
+    <partial name="_AttributeLinkVerificationModal" />
+}
 
 @section Scripts {
+    <script src="~/js/attribute-link-verification.js" asp-append-version="true"></script>
+
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
