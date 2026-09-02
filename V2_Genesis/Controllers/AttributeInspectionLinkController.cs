@@ -693,4 +693,19 @@ public sealed class AttributeInspectionLinkController : Controller
 
         return full;
     }
+    private void ApplySecureLinkHeaders()
+    {
+        Response.Headers.CacheControl =
+            "no-store, no-cache, must-revalidate, max-age=0";
+
+        Response.Headers.Pragma = "no-cache";
+        Response.Headers.Expires = "0";
+
+        Response.Headers["Referrer-Policy"] = "no-referrer";
+        Response.Headers["X-Content-Type-Options"] = "nosniff";
+        Response.Headers["X-Frame-Options"] = "DENY";
+        Response.Headers["Permissions-Policy"] =
+            "camera=(), microphone=(), geolocation=(), payment=(), usb=()";
+    }
+
 }

@@ -1,55 +1,276 @@
 @model V2_Genesis.Models.ViewModels.Attributes.InspectionDateModalVm
 
+@{
+    var availableSlots = Model.Slots
+        .OrderBy(x => x.ProposedDateTime)
+        .ToList();
+
+    var dayGroups = availableSlots
+        .GroupBy(x => x.ProposedDateTime.Date)
+        .OrderBy(x => x.Key)
+        .ToList();
+}
+
 <div id="inspectionModal_@Model.InstanceKey"
      class="attr-insp-modal-backdrop"
      style="display:@(Model.AutoOpen ? "flex" : "none");">
-    <div class="attr-insp-modal">
+
+    <div class="attr-insp-modal attr-insp-calendar-modal"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="inspectionModalTitle_@Model.InstanceKey">
+
         <div class="attr-insp-modal-head">
-            <div>Choose Inspection Date - @Model.AppointmentRef</div>
-            <button type="button" onclick="closeInspectionResponseModal('@Model.InstanceKey')">×</button>
+            <div id="inspectionModalTitle_@Model.InstanceKey">
+                Choose Inspection Date &amp; Time
+            </div>
+
+            <button type="button"
+                    aria-label="Close inspection calendar"
+                    onclick="closeInspectionResponseModal('@Model.InstanceKey')">
+                ×
+            </button>
         </div>
 
-        <form action="@Model.FormAction" method="post">
+        <form action="@Model.FormAction"
+              method="post"
+              autocomplete="off"
+              id="inspectionCalendarModalForm_@Model.InstanceKey">
+
             @Html.AntiForgeryToken()
+
             @if (Model.InspectionRequestId.HasValue)
             {
-                <input type="hidden" name="InspectionRequestId" value="@Model.InspectionRequestId.Value" />
+                <input type="hidden"
+                       name="InspectionRequestId"
+                       value="@Model.InspectionRequestId.Value" />
             }
 
+            <input type="hidden"
+                   name="@Model.SlotFieldName"
+                   id="selectedInspectionSlot_@Model.InstanceKey" />
+
             <div class="attr-insp-modal-body">
-                <p>The valuer has requested a physical inspection. Please choose one of the proposed dates below.</p>
+                <p>
+                    Select a suitable available inspection date and time.
+                    The system will verify the appointment again before confirmation.
+                </p>
 
                 @if (!string.IsNullOrWhiteSpace(Model.RequestComment))
                 {
-                    <div class="alert alert-info">@Model.RequestComment</div>
+                    <div class="alert alert-info">
+                        @Model.RequestComment
+                    </div>
                 }
 
-                @if (Model.Slots.Any())
+                @if (availableSlots.Any())
                 {
-                    @foreach (var slot in Model.Slots)
-                    {
-                        <label class="attr-insp-option">
-                            <input type="radio" name="@Model.SlotFieldName" value="@slot.Id" required />
-                            <span>Option @slot.SlotNo: <strong>@slot.ProposedDateTime.ToString("dd MMM yyyy HH:mm")</strong></span>
-                        </label>
-                    }
+                    <div class="attr-cal-mobile-list">
+                        @foreach (var dayGroup in dayGroups)
+                        {
+                            <section class="attr-cal-day-card">
+                                <h4>
+                                    @dayGroup.Key.ToString("dddd, dd MMMM yyyy")
+                                </h4>
+
+                                <div class="attr-cal-time-grid">
+                                    @foreach (var slot in dayGroup)
+                                    {
+                                        <button type="button"
+                                                class="attr-cal-time"
+                                                data-slot-id="@slot.Id"
+                                                data-label="@slot.ProposedDateTime.ToString("dddd, dd MMMM yyyy 'at' HH:mm")"
+                                                onclick="selectInspectionCalendarSlot_@Model.InstanceKey(this)">
+                                            @slot.ProposedDateTime.ToString("HH:mm")
+                                        </button>
+                                    }
+                                </div>
+                            </section>
+                        }
+                    </div>
+
+                    <div class="attr-cal-selected"
+                         id="selectedInspectionLabel_@Model.InstanceKey"
+                         style="display:none;">
+                    </div>
                 }
                 else
                 {
-                    <div class="alert alert-warning">No proposed inspection date options were found.</div>
+                    <div class="alert alert-warning">
+                        No inspection appointments are currently available.
+                    </div>
                 }
 
                 @if (!string.IsNullOrWhiteSpace(Model.CommentFieldName))
                 {
                     <label class="fw-bold">Comment</label>
-                    <textarea name="@Model.CommentFieldName" class="form-control" placeholder="Optional comment..."></textarea>
+                    <textarea name="@Model.CommentFieldName"
+                              class="form-control"
+                              maxlength="500"
+                              placeholder="Optional comment..."></textarea>
                 }
             </div>
 
             <div class="attr-insp-modal-footer">
-                <button type="button" class="btn btn-light" onclick="closeInspectionResponseModal('@Model.InstanceKey')">Cancel</button>
-                <button type="submit" class="btn btn-warning fw-bold">Confirm Selected Date</button>
+                <button type="button"
+                        class="btn btn-light"
+                        onclick="closeInspectionResponseModal('@Model.InstanceKey')">
+                    Cancel
+                </button>
+
+                <button type="submit"
+                        class="btn btn-warning fw-bold"
+                        id="confirmInspectionModal_@Model.InstanceKey"
+                        disabled>
+                    Confirm Appointment
+                </button>
             </div>
         </form>
     </div>
 </div>
+
+<style>
+    .attr-insp-calendar-modal{
+        width:min(760px,calc(100vw - 24px));
+        max-height:calc(100dvh - 24px);
+        overflow:hidden;
+        display:flex;
+        flex-direction:column;
+    }
+
+    .attr-insp-calendar-modal .attr-insp-modal-body{
+        overflow-y:auto;
+        -webkit-overflow-scrolling:touch;
+    }
+
+    .attr-cal-day-card{
+        border:1px solid #e4e7ec;
+        border-radius:10px;
+        padding:12px;
+        margin-bottom:12px;
+        background:#fff;
+    }
+
+    .attr-cal-day-card h4{
+        margin:0 0 10px;
+        font-size:15px;
+        font-weight:800;
+        color:#0d3036;
+    }
+
+    .attr-cal-time-grid{
+        display:grid;
+        grid-template-columns:repeat(4,minmax(0,1fr));
+        gap:8px;
+    }
+
+    .attr-cal-time{
+        min-height:44px;
+        border:1px solid #d0d5dd;
+        background:#fff;
+        border-radius:7px;
+        font-weight:800;
+        cursor:pointer;
+        touch-action:manipulation;
+    }
+
+    .attr-cal-time.selected{
+        background:#0d3036;
+        border-color:#0d3036;
+        color:#fff;
+    }
+
+    .attr-cal-selected{
+        position:sticky;
+        bottom:0;
+        margin-top:12px;
+        padding:11px 12px;
+        background:#fff6d6;
+        border-left:4px solid #e8b600;
+        font-weight:800;
+    }
+
+    @@media(max-width:600px){
+        .attr-insp-calendar-modal{
+            width:calc(100vw - 12px);
+            max-height:calc(100dvh - 12px);
+        }
+
+        .attr-cal-time-grid{
+            grid-template-columns:repeat(2,minmax(0,1fr));
+        }
+
+        .attr-cal-time{
+            min-height:48px;
+            font-size:15px;
+        }
+
+        .attr-insp-modal-footer{
+            position:sticky;
+            bottom:0;
+            background:#fff;
+        }
+
+        .attr-insp-modal-footer .btn{
+            min-height:46px;
+        }
+    }
+
+    @@media(max-width:340px){
+        .attr-cal-time-grid{
+            grid-template-columns:1fr;
+        }
+    }
+</style>
+
+<script>
+    function selectInspectionCalendarSlot_@Model.InstanceKey(button) {
+        const modal =
+            document.getElementById('inspectionModal_@Model.InstanceKey');
+
+        modal.querySelectorAll('.attr-cal-time.selected')
+            .forEach(x => x.classList.remove('selected'));
+
+        button.classList.add('selected');
+
+        document.getElementById(
+            'selectedInspectionSlot_@Model.InstanceKey'
+        ).value = button.dataset.slotId;
+
+        const label =
+            document.getElementById(
+                'selectedInspectionLabel_@Model.InstanceKey'
+            );
+
+        label.textContent =
+            'Selected: ' + button.dataset.label;
+
+        label.style.display = 'block';
+
+        document.getElementById(
+            'confirmInspectionModal_@Model.InstanceKey'
+        ).disabled = false;
+    }
+
+    document.getElementById(
+        'inspectionCalendarModalForm_@Model.InstanceKey'
+    )?.addEventListener('submit', function(e) {
+
+        const value = document.getElementById(
+            'selectedInspectionSlot_@Model.InstanceKey'
+        ).value;
+
+        if (!value) {
+            e.preventDefault();
+            alert('Please select an inspection date and time.');
+            return;
+        }
+
+        const button = document.getElementById(
+            'confirmInspectionModal_@Model.InstanceKey'
+        );
+
+        button.disabled = true;
+        button.textContent = 'Confirming...';
+    });
+</script>
