@@ -2,34 +2,54 @@
 @{
     ViewData["Title"] = "Attribute Inspection";
     Layout = null;
+
     var instanceKey = Model.InspectionRequestId.ToString();
 
     var availableSlots = Model.Slots
-        .Where(x => string.Equals(x.Status, "Available", StringComparison.OrdinalIgnoreCase))
+        .Where(x =>
+            string.Equals(
+                x.Status,
+                "Available",
+                StringComparison.OrdinalIgnoreCase))
         .OrderBy(x => x.ProposedDateTime)
-        .ToList();
-
-    var monthGroups = availableSlots
-        .GroupBy(x => new { x.ProposedDateTime.Year, x.ProposedDateTime.Month })
-        .OrderBy(x => x.Key.Year)
-        .ThenBy(x => x.Key.Month)
         .ToList();
 
     var dayGroups = availableSlots
         .GroupBy(x => x.ProposedDateTime.Date)
         .OrderBy(x => x.Key)
         .ToList();
+
+    var monthStart = Model.CurrentMonth;
+    var daysInMonth =
+        DateTime.DaysInMonth(
+            monthStart.Year,
+            monthStart.Month);
+
+    var leading =
+        ((int)monthStart.DayOfWeek + 6) % 7;
+
+    var byDate = availableSlots
+        .GroupBy(x => x.ProposedDateTime.Date)
+        .ToDictionary(
+            x => x.Key,
+            x => x.OrderBy(s => s.ProposedDateTime).ToList());
 }
 <!doctype html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1, viewport-fit=cover" />
+
     <meta name="referrer" content="no-referrer" />
     <meta name="robots" content="noindex,nofollow,noarchive,nosnippet" />
 
     <title>City of Johannesburg - Attribute Inspection</title>
-    <link href="~/css/views/calendar-css.css" rel="stylesheet" asp-append-version="true"/>
+
+    <link href="~/css/views/calendar-css.css"
+          rel="stylesheet"
+          asp-append-version="true" />
 </head>
 
 <body>
@@ -41,12 +61,16 @@
     <main class="wrap">
         @if (TempData["InspectionLinkSuccess"] != null)
         {
-            <div class="successx" role="status">@TempData["InspectionLinkSuccess"]</div>
+            <div class="successx" role="status">
+                @TempData["InspectionLinkSuccess"]
+            </div>
         }
 
         @if (!string.IsNullOrWhiteSpace(Model.Message))
         {
-            <div class="notice" role="status">@Model.Message</div>
+            <div class="notice" role="status">
+                @Model.Message
+            </div>
         }
 
         @if (Model.IsExpired)
@@ -60,6 +84,7 @@
         <section class="cardx" aria-labelledby="inspection-heading">
             <div class="headx">
                 <h1 id="inspection-heading">Physical Inspection</h1>
+
                 <div class="muted">
                     Secure City of Johannesburg Valuation Administration appointment link.
                 </div>
@@ -67,26 +92,39 @@
 
             <div class="bodyx">
                 <div class="gridx">
-                    <div class="fieldx"><span>Reference</span><strong>@Model.AttrNo</strong></div>
-                    <div class="fieldx"><span>Status</span><strong>@Model.Status</strong></div>
-                    <div class="fieldx"><span>Property</span><strong>@Model.PropertyDescription</strong></div>
+                    <div class="fieldx">
+                        <span>Reference</span>
+                        <strong>@Model.AttrNo</strong>
+                    </div>
+
+                    <div class="fieldx">
+                        <span>Status</span>
+                        <strong>@Model.Status</strong>
+                    </div>
+
+                    <div class="fieldx">
+                        <span>Property</span>
+                        <strong>@Model.PropertyDescription</strong>
+                    </div>
                 </div>
 
                 <div class="secure-note">
                     <span class="secure-badge" aria-hidden="true">✓</span>
+
                     <div>
                         <strong>Security notice</strong><br />
                         This link is unique to this inspection request.
-                        Do not forward or share it. Valuer personal details are not displayed
-                        until the authorised PIN stage.
+                        Do not forward or share it. Valuer personal details are
+                        not displayed until the authorised PIN stage.
                     </div>
                 </div>
 
                 @if (Model.ConfirmedDateTime.HasValue)
                 {
-                    <div class="successx" style="margin-top:18px" role="status">
+                    <div class="successx calendar-top-gap" role="status">
                         <strong>Inspection appointment confirmed</strong><br />
-                        @Model.ConfirmedDateTime.Value.ToString("dddd, dd MMMM yyyy 'at' HH:mm")
+                        @Model.ConfirmedDateTime.Value.ToString(
+                            "dddd, dd MMMM yyyy 'at' HH:mm")
                     </div>
                 }
             </div>
@@ -96,25 +134,102 @@
         {
             <section class="cardx" aria-labelledby="calendar-heading">
                 <div class="headx">
-                    <h1 id="calendar-heading">Select Inspection Date &amp; Time</h1>
+                    <h1 id="calendar-heading">
+                        Select Inspection Date &amp; Time
+                    </h1>
+
                     <div class="muted">
-                        Only currently available inspection slots are displayed.
+                        Choose from the available times for the month shown below.
                     </div>
                 </div>
 
                 <div class="bodyx">
+                    <div class="month-nav" aria-label="Inspection calendar month navigation">
+                        <div class="month-nav-side">
+                            @if (Model.HasPreviousMonth &&
+                                 Model.PreviousMonth.HasValue)
+                            {
+                                <a class="month-nav-btn"
+                                       asp-controller="AttributeInspectionLink"
+                                       asp-action="Index"
+                                       asp-route-token="@Model.Token"
+                                       asp-route-year="@Model.PreviousMonth.Value.Year"
+                                       asp-route-month="@Model.PreviousMonth.Value.Month">
+                                    ← Previous
+                                </a>
+                            }
+                            else
+                            {
+                                <span class="month-nav-btn disabled">
+                                    ← Previous
+                                </span>
+                            }
+                        </div>
+
+                        <div class="month-nav-title">
+                            @Model.CurrentMonth.ToString("MMMM yyyy")
+                        </div>
+
+                        <div class="month-nav-side month-nav-right">
+                            @if (Model.HasNextMonth &&
+                                 Model.NextMonth.HasValue)
+                            {
+                                <a class="month-nav-btn"
+                                       asp-controller="AttributeInspectionLink"
+                                       asp-action="Index"
+                                       asp-route-token="@Model.Token"
+                                       asp-route-year="@Model.NextMonth.Value.Year"
+                                       asp-route-month="@Model.NextMonth.Value.Month">
+                                    Next →
+                                </a>
+                            }
+                            else
+                            {
+                                <span class="month-nav-btn disabled">
+                                    Next →
+                                </span>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="calendar-range-note">
+                        Online booking is available from
+                        <strong>@Model.MinimumMonth.ToString("MMMM yyyy")</strong>
+                        to
+                        <strong>@Model.MaximumMonth.ToString("MMMM yyyy")</strong>.
+                    </div>
+
                     @if (!availableSlots.Any())
                     {
                         <div class="notice" role="status">
-                            There are currently no inspection appointments available.
-                            Please try again later or contact Valuation Administration.
+                            <strong>
+                                No inspection appointments are currently available
+                                for @Model.CurrentMonth.ToString("MMMM yyyy").
+                            </strong>
+
+                            @if (Model.HasNextMonth)
+                            {
+                                <div class="small-gap">
+                                    You can move to the next month or tell us that
+                                    you are unavailable for this whole month.
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="small-gap">
+                                    This is the final online booking month.
+                                    If no suitable appointment is available,
+                                    request assistance from Valuation Administration.
+                                </div>
+                            }
                         </div>
                     }
                     else
                     {
                         <div class="cal-help">
-                            Choose one suitable date and time. Your selection will be checked
-                            again before the appointment is confirmed.
+                            Choose one suitable date and time.
+                            Your selection will be checked again before
+                            the appointment is confirmed.
                         </div>
 
                         <form asp-controller="AttributeInspectionLink"
@@ -123,82 +238,100 @@
                               method="post"
                               id="inspectionCalendarForm"
                               autocomplete="off">
+
                             @Html.AntiForgeryToken()
 
                             <input type="hidden"
                                    name="selectedDateTime"
                                    id="selectedDateTime" />
 
-                            <div class="calendar-desktop" aria-label="Available inspection calendar">
-                                @foreach (var monthGroup in monthGroups)
-                                {
-                                    var monthStart = new DateTime(monthGroup.Key.Year, monthGroup.Key.Month, 1);
-                                    var daysInMonth = DateTime.DaysInMonth(monthGroup.Key.Year, monthGroup.Key.Month);
-                                    var leading = ((int)monthStart.DayOfWeek + 6) % 7;
+                            <div class="calendar-desktop"
+                                 aria-label="Available inspection calendar">
 
-                                    var byDate = monthGroup
-                                        .GroupBy(x => x.ProposedDateTime.Date)
-                                        .ToDictionary(x => x.Key, x => x.OrderBy(s => s.ProposedDateTime).ToList());
+                                <div class="cal-month">
+                                    <div class="cal-grid">
+                                        @foreach (var dow in new[]
+                                        {
+                                            "Mon", "Tue", "Wed",
+                                            "Thu", "Fri", "Sat", "Sun"
+                                        })
+                                        {
+                                            <div class="cal-dow">@dow</div>
+                                        }
 
-                                    <div class="cal-month">
-                                        <div class="cal-month-title">@monthStart.ToString("MMMM yyyy")</div>
+                                        @for (var i = 0; i < leading; i++)
+                                        {
+                                            <div class="cal-day empty"
+                                                 aria-hidden="true">
+                                            </div>
+                                        }
 
-                                        <div class="cal-grid">
-                                            @foreach (var dow in new[] { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" })
-                                            {
-                                                <div class="cal-dow">@dow</div>
-                                            }
+                                        @for (var day = 1;
+                                              day <= daysInMonth;
+                                              day++)
+                                        {
+                                            var date =
+                                                new DateTime(
+                                                    monthStart.Year,
+                                                    monthStart.Month,
+                                                    day);
 
-                                            @for (var i = 0; i < leading; i++)
-                                            {
-                                                <div class="cal-day empty" aria-hidden="true"></div>
-                                            }
+                                            byDate.TryGetValue(
+                                                date,
+                                                out var daySlots);
 
-                                            @for (var day = 1; day <= daysInMonth; day++)
-                                            {
-                                                var date = new DateTime(monthGroup.Key.Year, monthGroup.Key.Month, day);
-                                                byDate.TryGetValue(date, out var daySlots);
+                                            <div class="cal-day @(daySlots?.Any() == true ? "available-day" : "")">
+                                                <div class="cal-date">@day</div>
 
-                                                <div class="cal-day @(daySlots?.Any() == true ? "available-day" : "")">
-                                                    <div class="cal-date">@day</div>
-
-                                                    @if (daySlots?.Any() == true)
+                                                @if (daySlots?.Any() == true)
+                                                {
+                                                    @foreach (var slot in daySlots)
                                                     {
-                                                        @foreach (var slot in daySlots)
-                                                        {
-                                                            var iso = slot.ProposedDateTime.ToString("yyyy-MM-ddTHH:mm:ss");
-                                                            var label = slot.ProposedDateTime.ToString("dddd, dd MMMM yyyy 'at' HH:mm");
+                                                        var iso =
+                                                            slot.ProposedDateTime
+                                                                .ToString("yyyy-MM-ddTHH:mm:ss");
 
-                                                            <button type="button"
-                                                                    class="time-btn"
-                                                                    data-slot="@iso"
-                                                                    data-label="@label"
-                                                                    aria-label="Select @label"
-                                                                    onclick="chooseInspectionSlot(this)">
-                                                                @slot.ProposedDateTime.ToString("HH:mm")
-                                                            </button>
-                                                        }
+                                                        var label =
+                                                            slot.ProposedDateTime
+                                                                .ToString("dddd, dd MMMM yyyy 'at' HH:mm");
+
+                                                        <button type="button"
+                                                                class="time-btn"
+                                                                data-slot="@iso"
+                                                                data-label="@label"
+                                                                aria-label="Select @label"
+                                                                onclick="chooseInspectionSlot(this)">
+                                                            @slot.ProposedDateTime.ToString("HH:mm")
+                                                        </button>
                                                     }
-                                                </div>
-                                            }
-                                        </div>
+                                                }
+                                            </div>
+                                        }
                                     </div>
-                                }
+                                </div>
                             </div>
 
-                            <div class="calendar-mobile" aria-label="Available inspection dates and times">
+                            <div class="calendar-mobile"
+                                 aria-label="Available inspection dates and times">
+
                                 @foreach (var dayGroup in dayGroups)
                                 {
                                     <div class="mobile-day-card">
                                         <div class="mobile-day-title">
-                                            @dayGroup.Key.ToString("dddd, dd MMMM yyyy")
+                                            @dayGroup.Key.ToString(
+                                                "dddd, dd MMMM yyyy")
                                         </div>
 
                                         <div class="mobile-time-grid">
-                                            @foreach (var slot in dayGroup.OrderBy(x => x.ProposedDateTime))
+                                            @foreach (var slot in dayGroup)
                                             {
-                                                var iso = slot.ProposedDateTime.ToString("yyyy-MM-ddTHH:mm:ss");
-                                                var label = slot.ProposedDateTime.ToString("dddd, dd MMMM yyyy 'at' HH:mm");
+                                                var iso =
+                                                    slot.ProposedDateTime
+                                                        .ToString("yyyy-MM-ddTHH:mm:ss");
+
+                                                var label =
+                                                    slot.ProposedDateTime
+                                                        .ToString("dddd, dd MMMM yyyy 'at' HH:mm");
 
                                                 <button type="button"
                                                         class="time-btn"
@@ -219,8 +352,11 @@
                                  role="region"
                                  aria-live="polite"
                                  aria-label="Confirm selected appointment">
+
                                 <div class="confirm-inner">
-                                    <span class="confirm-value" id="confirmValue"></span>
+                                    <span class="confirm-value"
+                                          id="confirmValue">
+                                    </span>
 
                                     <button type="submit"
                                             class="confirm-btn"
@@ -231,17 +367,114 @@
                             </div>
                         </form>
                     }
+
+                    <div class="calendar-actions">
+                        <form asp-controller="AttributeInspectionLink"
+                              asp-action="UnavailableThisMonth"
+                              asp-route-token="@Model.Token"
+                              method="post"
+                              class="calendar-action-form">
+
+                            @Html.AntiForgeryToken()
+
+                            <input type="hidden"
+                                   name="year"
+                                   value="@Model.CurrentMonth.Year" />
+
+                            <input type="hidden"
+                                   name="month"
+                                   value="@Model.CurrentMonth.Month" />
+
+                            <button type="submit"
+                                    class="secondary-action-btn"
+                                    onclick="return confirm('Confirm that you are unavailable for the whole of @Model.CurrentMonth.ToString("MMMM yyyy")?');">
+                                I'm unavailable this month
+                            </button>
+                        </form>
+
+                        @if (!Model.AdministrationAssistanceRequested)
+                        {
+                            <button type="button"
+                                    class="admin-action-btn"
+                                    onclick="toggleAdminAssistance()">
+                                Request Administration Assistance
+                            </button>
+                        }
+                        else
+                        {
+                            <div class="admin-requested">
+                                ✓ Administration assistance has already been requested.
+                            </div>
+                        }
+                    </div>
+
+                    @if (!Model.AdministrationAssistanceRequested)
+                    {
+                        <div class="admin-assistance-panel"
+                             id="adminAssistancePanel"
+                             hidden>
+
+                            <h3>Request Administration Assistance</h3>
+
+                            <p>
+                                Use this option if none of the online appointment
+                                months work for you. Your inspection request will
+                                remain open and Valuation Administration will be
+                                asked to assist.
+                            </p>
+
+                            <form asp-controller="AttributeInspectionLink"
+                                  asp-action="RequestAdministrationAssistance"
+                                  asp-route-token="@Model.Token"
+                                  method="post"
+                                  autocomplete="off">
+
+                                @Html.AntiForgeryToken()
+
+                                <input type="hidden"
+                                       name="year"
+                                       value="@Model.CurrentMonth.Year" />
+
+                                <input type="hidden"
+                                       name="month"
+                                       value="@Model.CurrentMonth.Month" />
+
+                                <label for="assistanceReason">
+                                    Reason / preferred arrangement
+                                </label>
+
+                                <textarea id="assistanceReason"
+                                          name="reason"
+                                          maxlength="500"
+                                          rows="4"
+                                          placeholder="Example: I am unavailable during the displayed months. Please contact me to arrange another date."></textarea>
+
+                                <button type="submit"
+                                        class="admin-submit-btn"
+                                        onclick="return confirm('Send this request to Valuation Administration?');">
+                                    Send Assistance Request
+                                </button>
+                            </form>
+                        </div>
+                    }
                 </div>
             </section>
         }
 
-        @if (Model.ValuerDetailsAvailable && Model.Valuer != null)
+        @if (Model.ValuerDetailsAvailable &&
+             Model.Valuer != null)
         {
-            <section class="cardx valuer" aria-labelledby="valuer-heading">
+            <section class="cardx valuer"
+                     aria-labelledby="valuer-heading">
+
                 <div class="headx">
-                    <h1 id="valuer-heading">Authorised Valuer Details</h1>
+                    <h1 id="valuer-heading">
+                        Authorised Valuer Details
+                    </h1>
+
                     <div class="muted">
-                        Use these details to verify the City official who arrives for the inspection.
+                        Use these details to verify the City official
+                        who arrives for the inspection.
                     </div>
                 </div>
 
@@ -250,18 +483,43 @@
                         @if (Model.Valuer.HasPhoto)
                         {
                             <img class="photo"
-                                 src="@Url.Action("ValuerPhoto", new { token = Model.Token })"
+                                 src="@Url.Action(
+                                                                                                  "ValuerPhoto",
+                                                                                                  new { token = Model.Token })"
                                  alt="Authorised valuer" />
                         }
                     </div>
 
                     <div class="gridx">
-                        <div class="fieldx"><span>Valuer</span><strong>@Model.Valuer.ValuerName</strong></div>
-                        <div class="fieldx"><span>Cell</span><strong>@(Model.Valuer.CellNumber ?? "-")</strong></div>
-                        <div class="fieldx"><span>Email</span><strong>@(Model.Valuer.EmailAddress ?? "-")</strong></div>
-                        <div class="fieldx"><span>Vehicle Registration</span><strong>@(Model.Valuer.VehicleRegistration ?? "-")</strong></div>
-                        <div class="fieldx"><span>Vehicle Make</span><strong>@(Model.Valuer.VehicleMake ?? "-")</strong></div>
-                        <div class="fieldx"><span>Vehicle Colour</span><strong>@(Model.Valuer.VehicleColour ?? "-")</strong></div>
+                        <div class="fieldx">
+                            <span>Valuer</span>
+                            <strong>@Model.Valuer.ValuerName</strong>
+                        </div>
+
+                        <div class="fieldx">
+                            <span>Cell</span>
+                            <strong>@(Model.Valuer.CellNumber ?? "-")</strong>
+                        </div>
+
+                        <div class="fieldx">
+                            <span>Email</span>
+                            <strong>@(Model.Valuer.EmailAddress ?? "-")</strong>
+                        </div>
+
+                        <div class="fieldx">
+                            <span>Vehicle Registration</span>
+                            <strong>@(Model.Valuer.VehicleRegistration ?? "-")</strong>
+                        </div>
+
+                        <div class="fieldx">
+                            <span>Vehicle Make</span>
+                            <strong>@(Model.Valuer.VehicleMake ?? "-")</strong>
+                        </div>
+
+                        <div class="fieldx">
+                            <span>Vehicle Colour</span>
+                            <strong>@(Model.Valuer.VehicleColour ?? "-")</strong>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -276,87 +534,134 @@
 
     @if (Model.RequiresPinVerification)
     {
-        var pinModal = new V2_Genesis.Models.ViewModels.Attributes.InspectionPinModalVm
-        {
-            InstanceKey = instanceKey,
-            AppointmentRef = Model.AttrNo,
-            FormAction = Url.Action(
-                "VerifyPin",
-                "AttributeInspectionLink",
-                new { token = Model.Token })
-                ?? $"/attributes/inspection/{Model.Token:D}/verify-pin",
-            PinFieldName = "inspectionPin",
-            ConfirmedDateTime = Model.ConfirmedDateTime,
-            ErrorMessage = TempData["InspectionPinError"]?.ToString(),
-            AutoOpen = true
-        };
+        var pinModal =
+            new V2_Genesis.Models.ViewModels.Attributes.InspectionPinModalVm
+            {
+                InstanceKey = instanceKey,
+                AppointmentRef = Model.AttrNo,
+                FormAction = Url.Action(
+                    "VerifyPin",
+                    "AttributeInspectionLink",
+                    new { token = Model.Token })
+                    ?? $"/attributes/inspection/{Model.Token:D}/verify-pin",
+                PinFieldName = "inspectionPin",
+                ConfirmedDateTime = Model.ConfirmedDateTime,
+                ErrorMessage =
+                    TempData["InspectionPinError"]?.ToString(),
+                AutoOpen = true
+            };
 
-        <partial name="Attributes/_InspectionPinModal" model="pinModal" />
+        <partial name="Attributes/_InspectionPinModal"
+                 model="pinModal" />
     }
 
     <script>
-        (function(){
-            'use strict';
+            (function () {
+                'use strict';
 
-            const hidden = document.getElementById('selectedDateTime');
-            const box = document.getElementById('confirmBox');
-            const value = document.getElementById('confirmValue');
-            const form = document.getElementById('inspectionCalendarForm');
-            const submitButton = document.getElementById('confirmAppointmentButton');
+                const hidden =
+                    document.getElementById('selectedDateTime');
 
-            window.chooseInspectionSlot = function(button){
-                if(!button || !hidden || !box || !value) return;
+                const box =
+                    document.getElementById('confirmBox');
 
-                document.querySelectorAll('.time-btn.selected')
-                    .forEach(x => x.classList.remove('selected'));
+                const value =
+                    document.getElementById('confirmValue');
 
-                const selected = button.dataset.slot;
+                const form =
+                    document.getElementById('inspectionCalendarForm');
 
-                document.querySelectorAll('.time-btn')
-                    .forEach(x => {
-                        if(x.dataset.slot === selected){
-                            x.classList.add('selected');
-                        }
-                    });
+                const submitButton =
+                    document.getElementById('confirmAppointmentButton');
 
-                hidden.value = selected || '';
+                window.chooseInspectionSlot = function (button) {
+                    if (!button || !hidden || !box || !value) {
+                        return;
+                    }
 
-                value.textContent =
-                    button.dataset.label
-                    ? 'Selected: ' + button.dataset.label
-                    : 'Selected inspection appointment';
+                    document
+                        .querySelectorAll('.time-btn.selected')
+                        .forEach(x =>
+                            x.classList.remove('selected'));
 
-                box.style.display = 'block';
+                    const selected =
+                        button.dataset.slot;
 
-                if(submitButton){
-                    submitButton.disabled = false;
+                    document
+                        .querySelectorAll('.time-btn')
+                        .forEach(x => {
+                            if (x.dataset.slot === selected) {
+                                x.classList.add('selected');
+                            }
+                        });
+
+                    hidden.value =
+                        selected || '';
+
+                    value.textContent =
+                        button.dataset.label
+                            ? 'Selected: ' + button.dataset.label
+                            : 'Selected inspection appointment';
+
+                    box.style.display = 'block';
+
+                    if (submitButton) {
+                        submitButton.disabled = false;
+                    }
+                };
+
+                if (form) {
+                    form.addEventListener(
+                        'submit',
+                        function (event) {
+                            if (!hidden || !hidden.value) {
+                                event.preventDefault();
+
+                                alert(
+                                    'Please select an inspection date and time.');
+
+                                return;
+                            }
+
+                            if (!confirm(
+                                'Confirm this inspection appointment? ' +
+                                'The City will re-check that this time is still available.')) {
+                                event.preventDefault();
+                                return;
+                            }
+
+                            if (submitButton) {
+                                submitButton.disabled = true;
+                                submitButton.textContent =
+                                    'Confirming...';
+                            }
+                        });
                 }
-            };
 
-            if(form){
-                form.addEventListener('submit', function(event){
-                    if(!hidden || !hidden.value){
-                        event.preventDefault();
-                        alert('Please select an inspection date and time.');
+                window.toggleAdminAssistance = function () {
+                    const panel =
+                        document.getElementById(
+                            'adminAssistancePanel');
+
+                    if (!panel) {
                         return;
                     }
 
-                    if(!confirm(
-                        'Confirm this inspection appointment? ' +
-                        'The City will re-check that this time is still available.')){
-                        event.preventDefault();
-                        return;
-                    }
+                    panel.hidden =
+                        !panel.hidden;
 
-                    if(submitButton){
-                        submitButton.disabled = true;
-                        submitButton.textContent = 'Confirming...';
+                    if (!panel.hidden) {
+                        panel.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'nearest'
+                        });
                     }
-                });
-            }
-        })();
+                };
+            })();
     </script>
 
-    <script src="~/js/attribute-inspection-modals.js" asp-append-version="true"></script>
+    <script src="~/js/attribute-inspection-modals.js"
+            asp-append-version="true">
+    </script>
 </body>
 </html>

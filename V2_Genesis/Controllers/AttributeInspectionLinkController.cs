@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.Net;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -7,6 +8,7 @@ using V2_Genesis.Models.Attributes;
 using V2_Genesis.Models.Configuration;
 using V2_Genesis.Models.ViewModels.Attributes;
 using V2_Genesis.Services.Attributes;
+using V2_Genesis.Services.Interfaces;
 
 namespace V2_Genesis.Controllers;
 
@@ -14,33 +16,49 @@ namespace V2_Genesis.Controllers;
 [Route("attributes/inspection")]
 public sealed class AttributeInspectionLinkController : Controller
 {
+    private const int OnlineBookingMonthCount = 3;
+    private const string AdministrationAssistanceEmail =
+        "AdministrationEnquiries@Joburg.org.za";
+
     private readonly AttributesDbContext _db;
     private readonly ValuerPhotoStorageSettings _photoSettings;
     private readonly ILogger<AttributeInspectionLinkController> _logger;
     private readonly IAttributeInspectionCalendarService _calendarService;
+    private readonly IEmailService _emailService;
 
     public AttributeInspectionLinkController(
         AttributesDbContext db,
         IOptions<ValuerPhotoStorageSettings> photoSettings,
         ILogger<AttributeInspectionLinkController> logger,
-        IAttributeInspectionCalendarService calendarService)
+        IAttributeInspectionCalendarService calendarService,
+        IEmailService emailService)
     {
         _db = db;
         _photoSettings = photoSettings.Value;
         _logger = logger;
         _calendarService = calendarService;
+        _emailService = emailService;
     }
 
     [HttpGet("{token:guid}")]
-    public async Task<IActionResult> Index(Guid token, string? view = null)
+    public async Task<IActionResult> Index(
+        Guid token,
+        string? view = null,
+        int? year = null,
+        int? month = null)
     {
         ApplySecureLinkHeaders();
-        var model = await BuildModelAsync(token);
+
+        var selectedMonth = ResolveRequestedMonth(year, month);
+        var model = await BuildModelAsync(token, selectedMonth);
 
         if (model == null)
             return View("Invalid");
 
-        if (string.Equals(view, "valuer", StringComparison.OrdinalIgnoreCase) &&
+        if (string.Equals(
+                view,
+                "valuer",
+                StringComparison.OrdinalIgnoreCase) &&
             !model.IsExpired)
         {
             if (model.RequiresPinVerification)
@@ -65,6 +83,7 @@ public sealed class AttributeInspectionLinkController : Controller
         DateTime selectedDateTime)
     {
         ApplySecureLinkHeaders();
+
         var request = await _db.AttrInspectionRequests
             .FirstOrDefaultAsync(x => x.EmailToken == token);
 
@@ -82,7 +101,9 @@ public sealed class AttributeInspectionLinkController : Controller
         if (request.EmailTokenExpiresAt.HasValue &&
             request.EmailTokenExpiresAt.Value < DateTime.Now)
         {
-            var expired = await BuildModelAsync(token);
+            var expired = await BuildModelAsync(
+                token,
+                ResolveRequestedMonth(null, null));
 
             if (expired != null)
                 expired.Message =
@@ -96,7 +117,9 @@ public sealed class AttributeInspectionLinkController : Controller
                 "PendingClientResponse",
                 StringComparison.OrdinalIgnoreCase))
         {
-            var current = await BuildModelAsync(token);
+            var current = await BuildModelAsync(
+                token,
+                ResolveRequestedMonth(null, null));
 
             if (current != null)
                 current.Message =
@@ -105,7 +128,6 @@ public sealed class AttributeInspectionLinkController : Controller
             return View("Index", current);
         }
 
-        // Normalise browser input, then validate the client-supplied value.
         selectedDateTime = new DateTime(
             selectedDateTime.Year,
             selectedDateTime.Month,
@@ -114,9 +136,16 @@ public sealed class AttributeInspectionLinkController : Controller
             selectedDateTime.Minute,
             0);
 
+        var selectedMonth =
+            new DateTime(
+                selectedDateTime.Year,
+                selectedDateTime.Month,
+                1);
+
         if (selectedDateTime <= DateTime.Now)
         {
-            var invalidPast = await BuildModelAsync(token);
+            var invalidPast =
+                await BuildModelAsync(token, selectedMonth);
 
             if (invalidPast != null)
                 invalidPast.Message =
@@ -125,28 +154,37 @@ public sealed class AttributeInspectionLinkController : Controller
             return View("Index", invalidPast);
         }
 
-        var horizonEnd = DateTime.Today.AddMonths(2);
+        var minMonth = GetMinimumMonth();
+        var maxMonth = GetMaximumMonth();
+        var bookingEndExclusive = maxMonth.AddMonths(1);
 
-        if (request.EmailTokenExpiresAt.HasValue &&
-            request.EmailTokenExpiresAt.Value < horizonEnd)
+        if (selectedMonth < minMonth ||
+            selectedMonth > maxMonth ||
+            selectedDateTime >= bookingEndExclusive)
         {
-            horizonEnd = request.EmailTokenExpiresAt.Value;
-        }
-
-        if (selectedDateTime > horizonEnd)
-        {
-            var invalid = await BuildModelAsync(token);
+            var invalid =
+                await BuildModelAsync(token, selectedMonth);
 
             if (invalid != null)
                 invalid.Message =
-                    "The selected inspection date is outside the available booking period.";
+                    "The selected inspection date is outside the available online booking period.";
 
             return View("Index", invalid);
         }
 
-        // Critical revalidation:
-        // the calendar displayed to the client may now be stale because another
-        // client could have booked the same processor while this page was open.
+        if (request.EmailTokenExpiresAt.HasValue &&
+            selectedDateTime > request.EmailTokenExpiresAt.Value)
+        {
+            var expiredSelection =
+                await BuildModelAsync(token, selectedMonth);
+
+            if (expiredSelection != null)
+                expiredSelection.Message =
+                    "The secure appointment link expires before the selected date. Please request Administration assistance.";
+
+            return View("Index", expiredSelection);
+        }
+
         var stillAvailable =
             await _calendarService.IsSlotAvailableAsync(
                 request.RequestedByUserId,
@@ -155,7 +193,8 @@ public sealed class AttributeInspectionLinkController : Controller
 
         if (!stillAvailable)
         {
-            var unavailable = await BuildModelAsync(token);
+            var unavailable =
+                await BuildModelAsync(token, selectedMonth);
 
             if (unavailable != null)
                 unavailable.Message =
@@ -169,7 +208,6 @@ public sealed class AttributeInspectionLinkController : Controller
 
         try
         {
-            // Recheck inside the transaction before saving.
             stillAvailable =
                 await _calendarService.IsSlotAvailableAsync(
                     request.RequestedByUserId,
@@ -177,11 +215,11 @@ public sealed class AttributeInspectionLinkController : Controller
                     request.Id);
 
             if (!stillAvailable)
+            {
                 throw new InvalidOperationException(
                     "The selected inspection time has just been booked. Please select another slot.");
+            }
 
-            // We save only the client's selected appointment.
-            // We do NOT persist all available calendar slots.
             var selectedSlot =
                 new AttrInspectionRequestSlot
                 {
@@ -204,7 +242,9 @@ public sealed class AttributeInspectionLinkController : Controller
             request.ClientResponseChannel =
                 "GenesisInspectionCalendar";
             request.ClientResponseComment =
-                "Inspection date and time selected from the assigned processor's AIVS inspection calendar.";
+                AppendClientResponseNote(
+                    request.ClientResponseComment,
+                    $"Appointment confirmed for {selectedDateTime:dd MMM yyyy HH:mm}.");
             request.ClientRespondedAt = DateTime.Now;
             request.UpdatedBy = "GenesisSecureEmailLink";
             request.UpdatedDate = DateTime.Now;
@@ -228,8 +268,10 @@ public sealed class AttributeInspectionLinkController : Controller
                         x.Attr_ID == property.Attr_ID);
 
                 if (review != null)
+                {
                     review.ReviewStatus =
                         "InspectionConfirmed";
+                }
             }
 
             _db.AttrPropertyInfoAuditTrail.Add(
@@ -263,7 +305,8 @@ public sealed class AttributeInspectionLinkController : Controller
                 request.Id,
                 ex.Message);
 
-            var refreshed = await BuildModelAsync(token);
+            var refreshed =
+                await BuildModelAsync(token, selectedMonth);
 
             if (refreshed != null)
                 refreshed.Message = ex.Message;
@@ -279,7 +322,8 @@ public sealed class AttributeInspectionLinkController : Controller
                 "Inspection appointment confirmation failed for request {InspectionRequestId}.",
                 request.Id);
 
-            var failed = await BuildModelAsync(token);
+            var failed =
+                await BuildModelAsync(token, selectedMonth);
 
             if (failed != null)
                 failed.Message =
@@ -293,7 +337,283 @@ public sealed class AttributeInspectionLinkController : Controller
 
         return RedirectToAction(
             nameof(Index),
-            new { token });
+            new
+            {
+                token,
+                year = selectedMonth.Year,
+                month = selectedMonth.Month
+            });
+    }
+
+    [HttpPost("{token:guid}/unavailable-this-month")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UnavailableThisMonth(
+        Guid token,
+        int year,
+        int month)
+    {
+        ApplySecureLinkHeaders();
+
+        var request = await _db.AttrInspectionRequests
+            .FirstOrDefaultAsync(x => x.EmailToken == token);
+
+        if (request == null)
+            return View("Invalid");
+
+        var property = await _db.AttrPropertyInfo
+            .FirstOrDefaultAsync(x =>
+                x.Attr_ID == request.Attr_ID &&
+                x.IsActive);
+
+        if (property == null)
+            return View("Invalid");
+
+        if (!CanClientStillBook(request))
+        {
+            TempData["InspectionLinkSuccess"] =
+                "This inspection request can no longer be changed.";
+
+            return RedirectToAction(
+                nameof(Index),
+                new { token });
+        }
+
+        var viewedMonth =
+            ResolveRequestedMonth(year, month);
+
+        var now = DateTime.Now;
+
+        request.ClientResponseChannel =
+            "GenesisInspectionCalendar";
+
+        request.ClientResponseComment =
+            AppendClientResponseNote(
+                request.ClientResponseComment,
+                $"Client indicated they are unavailable for {viewedMonth:MMMM yyyy}.");
+
+        request.UpdatedBy =
+            request.ClientEmail ??
+            "GenesisSecureEmailLink";
+
+        request.UpdatedDate = now;
+
+        _db.AttrPropertyInfoAuditTrail.Add(
+            new AttrPropertyInfoAuditTrail
+            {
+                Attr_ID = property.Attr_ID,
+                Attr_No = property.Attr_No,
+                Action = "Client Unavailable This Month",
+                OldStatus = property.Attr_Status,
+                NewStatus = property.Attr_Status,
+                ActionByUserId =
+                    request.ClientEmail ?? "Client",
+                ActionByName =
+                    request.ClientName ?? "Client",
+                ActionRole =
+                    "Client - Secure Email Link",
+                Comment =
+                    $"Client indicated that they are unavailable for the whole of {viewedMonth:MMMM yyyy}. The inspection request remains open.",
+                ActionDateTime = now
+            });
+
+        await _db.SaveChangesAsync();
+
+        if (viewedMonth < GetMaximumMonth())
+        {
+            var nextMonth = viewedMonth.AddMonths(1);
+
+            TempData["InspectionLinkSuccess"] =
+                $"No problem. Showing available appointments for {nextMonth:MMMM yyyy}.";
+
+            return RedirectToAction(
+                nameof(Index),
+                new
+                {
+                    token,
+                    year = nextMonth.Year,
+                    month = nextMonth.Month
+                });
+        }
+
+        TempData["InspectionLinkSuccess"] =
+            "You have reached the final online booking month. Please use Request Administration Assistance below.";
+
+        return RedirectToAction(
+            nameof(Index),
+            new
+            {
+                token,
+                year = viewedMonth.Year,
+                month = viewedMonth.Month
+            });
+    }
+
+    [HttpPost("{token:guid}/request-administration-assistance")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> RequestAdministrationAssistance(
+        Guid token,
+        int year,
+        int month,
+        string? reason)
+    {
+        ApplySecureLinkHeaders();
+
+        var request = await _db.AttrInspectionRequests
+            .FirstOrDefaultAsync(x => x.EmailToken == token);
+
+        if (request == null)
+            return View("Invalid");
+
+        var property = await _db.AttrPropertyInfo
+            .FirstOrDefaultAsync(x =>
+                x.Attr_ID == request.Attr_ID &&
+                x.IsActive);
+
+        if (property == null)
+            return View("Invalid");
+
+        if (!CanClientStillBook(request))
+        {
+            TempData["InspectionLinkSuccess"] =
+                "This inspection request can no longer be changed.";
+
+            return RedirectToAction(
+                nameof(Index),
+                new { token });
+        }
+
+        var viewedMonth =
+            ResolveRequestedMonth(year, month);
+
+        if (string.Equals(
+                request.ClientResponseChannel,
+                "AdministrationAssistanceRequested",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            TempData["InspectionLinkSuccess"] =
+                "Administration assistance has already been requested for this inspection.";
+
+            return RedirectToAction(
+                nameof(Index),
+                new
+                {
+                    token,
+                    year = viewedMonth.Year,
+                    month = viewedMonth.Month
+                });
+        }
+
+        var safeReason =
+            string.IsNullOrWhiteSpace(reason)
+                ? "Client could not find a suitable online inspection appointment."
+                : reason.Trim();
+
+        if (safeReason.Length > 500)
+            safeReason = safeReason[..500];
+
+        var now = DateTime.Now;
+
+        request.ClientResponseChannel =
+            "AdministrationAssistanceRequested";
+
+        request.ClientResponseComment =
+            AppendClientResponseNote(
+                request.ClientResponseComment,
+                $"Administration assistance requested while viewing {viewedMonth:MMMM yyyy}. Reason: {safeReason}");
+
+        request.UpdatedBy =
+            request.ClientEmail ??
+            "GenesisSecureEmailLink";
+
+        request.UpdatedDate = now;
+
+        _db.AttrPropertyInfoAuditTrail.Add(
+            new AttrPropertyInfoAuditTrail
+            {
+                Attr_ID = property.Attr_ID,
+                Attr_No = property.Attr_No,
+                Action = "Inspection Administration Assistance Requested",
+                OldStatus = property.Attr_Status,
+                NewStatus = property.Attr_Status,
+                ActionByUserId =
+                    request.ClientEmail ?? "Client",
+                ActionByName =
+                    request.ClientName ?? "Client",
+                ActionRole =
+                    "Client - Secure Email Link",
+                Comment =
+                    $"Client requested Administration assistance for inspection scheduling. Viewed month: {viewedMonth:MMMM yyyy}. Reason: {safeReason}",
+                ActionDateTime = now
+            });
+
+        await _db.SaveChangesAsync();
+
+        try
+        {
+            var subject =
+                $"Inspection scheduling assistance required - {request.Attr_No ?? property.Attr_No ?? "-"}";
+
+            var body = $@"
+<p>Good day,</p>
+
+<p>A client has requested assistance with scheduling a physical property attribute inspection.</p>
+
+<table style='border-collapse:collapse;width:100%;max-width:700px'>
+<tr>
+<td style='border:1px solid #ddd;padding:8px;font-weight:bold'>Reference</td>
+<td style='border:1px solid #ddd;padding:8px'>{WebUtility.HtmlEncode(request.Attr_No ?? property.Attr_No ?? "-")}</td>
+</tr>
+<tr>
+<td style='border:1px solid #ddd;padding:8px;font-weight:bold'>Property</td>
+<td style='border:1px solid #ddd;padding:8px'>{WebUtility.HtmlEncode(property.Property_Desc ?? "-")}</td>
+</tr>
+<tr>
+<td style='border:1px solid #ddd;padding:8px;font-weight:bold'>Client</td>
+<td style='border:1px solid #ddd;padding:8px'>{WebUtility.HtmlEncode(request.ClientName ?? "Client")}</td>
+</tr>
+<tr>
+<td style='border:1px solid #ddd;padding:8px;font-weight:bold'>Client Email</td>
+<td style='border:1px solid #ddd;padding:8px'>{WebUtility.HtmlEncode(request.ClientEmail ?? "-")}</td>
+</tr>
+<tr>
+<td style='border:1px solid #ddd;padding:8px;font-weight:bold'>Month Viewed</td>
+<td style='border:1px solid #ddd;padding:8px'>{viewedMonth:MMMM yyyy}</td>
+</tr>
+<tr>
+<td style='border:1px solid #ddd;padding:8px;font-weight:bold'>Reason</td>
+<td style='border:1px solid #ddd;padding:8px'>{WebUtility.HtmlEncode(safeReason)}</td>
+</tr>
+</table>
+
+<p>
+The inspection request remains open in AIVS/Genesis.
+Please contact the client and assist with arranging a suitable inspection appointment.
+</p>";
+
+            await _emailService.SendEmailAsync(
+                AdministrationAssistanceEmail,
+                subject,
+                body);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Administration assistance request was recorded but email delivery failed for inspection request {InspectionRequestId}.",
+                request.Id);
+        }
+
+        TempData["InspectionLinkSuccess"] =
+            "Your request has been sent to Valuation Administration. They will assist you with arranging a suitable inspection date.";
+
+        return RedirectToAction(
+            nameof(Index),
+            new
+            {
+                token,
+                year = viewedMonth.Year,
+                month = viewedMonth.Month
+            });
     }
 
     [HttpPost("{token:guid}/verify-pin")]
@@ -303,6 +623,7 @@ public sealed class AttributeInspectionLinkController : Controller
         string? inspectionPin)
     {
         ApplySecureLinkHeaders();
+
         var request = await _db.AttrInspectionRequests
             .FirstOrDefaultAsync(x => x.EmailToken == token);
 
@@ -421,6 +742,7 @@ public sealed class AttributeInspectionLinkController : Controller
     public async Task<IActionResult> ValuerPhoto(Guid token)
     {
         ApplySecureLinkHeaders();
+
         var context =
             await ResolveSecureRequestAsync(token);
 
@@ -475,7 +797,9 @@ public sealed class AttributeInspectionLinkController : Controller
     }
 
     private async Task<PublicInspectionLinkVm?>
-        BuildModelAsync(Guid token)
+        BuildModelAsync(
+            Guid token,
+            DateTime requestedMonth)
     {
         var context =
             await ResolveSecureRequestAsync(token);
@@ -492,6 +816,12 @@ public sealed class AttributeInspectionLinkController : Controller
             request.EmailTokenExpiresAt.HasValue &&
             request.EmailTokenExpiresAt.Value < now;
 
+        var minMonth = GetMinimumMonth();
+        var maxMonth = GetMaximumMonth();
+
+        requestedMonth =
+            ClampMonth(requestedMonth, minMonth, maxMonth);
+
         List<PublicInspectionSlotVm> slots;
 
         if (!expired &&
@@ -500,8 +830,13 @@ public sealed class AttributeInspectionLinkController : Controller
                 "PendingClientResponse",
                 StringComparison.OrdinalIgnoreCase))
         {
-            var from = DateTime.Now;
-            var to = DateTime.Today.AddMonths(2);
+            var from =
+                requestedMonth == minMonth
+                    ? now
+                    : requestedMonth;
+
+            var to =
+                requestedMonth.AddMonths(1);
 
             if (request.EmailTokenExpiresAt.HasValue &&
                 request.EmailTokenExpiresAt.Value < to)
@@ -509,27 +844,35 @@ public sealed class AttributeInspectionLinkController : Controller
                 to = request.EmailTokenExpiresAt.Value;
             }
 
-            var available =
-                await _calendarService.GetAvailableSlotsAsync(
-                    request.RequestedByUserId,
-                    from,
-                    to);
+            if (to > from)
+            {
+                var available =
+                    await _calendarService.GetAvailableSlotsAsync(
+                        request.RequestedByUserId,
+                        from,
+                        to);
 
-            slots = available
-                .Select((dateTime, index) =>
-                    new PublicInspectionSlotVm
-                    {
-                        Id = 0,
-                        SlotNo = index + 1,
-                        ProposedDateTime = dateTime,
-                        Status = "Available"
-                    })
-                .ToList();
+                slots = available
+                    .Where(x =>
+                        x.Year == requestedMonth.Year &&
+                        x.Month == requestedMonth.Month)
+                    .Select((dateTime, index) =>
+                        new PublicInspectionSlotVm
+                        {
+                            Id = 0,
+                            SlotNo = index + 1,
+                            ProposedDateTime = dateTime,
+                            Status = "Available"
+                        })
+                    .ToList();
+            }
+            else
+            {
+                slots = new List<PublicInspectionSlotVm>();
+            }
         }
         else
         {
-            // Historical/confirmed requests may still contain the old
-            // AttrInspectionRequestSlot records. Keep displaying them.
             slots =
                 await _db.AttrInspectionRequestSlots
                     .AsNoTracking()
@@ -631,6 +974,29 @@ public sealed class AttributeInspectionLinkController : Controller
                     request.Status,
                     "PendingClientResponse",
                     StringComparison.OrdinalIgnoreCase),
+            CurrentMonth =
+                requestedMonth,
+            MinimumMonth =
+                minMonth,
+            MaximumMonth =
+                maxMonth,
+            HasPreviousMonth =
+                requestedMonth > minMonth,
+            HasNextMonth =
+                requestedMonth < maxMonth,
+            PreviousMonth =
+                requestedMonth > minMonth
+                    ? requestedMonth.AddMonths(-1)
+                    : null,
+            NextMonth =
+                requestedMonth < maxMonth
+                    ? requestedMonth.AddMonths(1)
+                    : null,
+            AdministrationAssistanceRequested =
+                string.Equals(
+                    request.ClientResponseChannel,
+                    "AdministrationAssistanceRequested",
+                    StringComparison.OrdinalIgnoreCase),
             ValuerDetailsReleased =
                 !expired &&
                 valuerDetailsReleased,
@@ -682,6 +1048,108 @@ public sealed class AttributeInspectionLinkController : Controller
             return null;
 
         return (request, property);
+    }
+
+    private static bool CanClientStillBook(
+        AttrInspectionRequest request)
+    {
+        if (!string.Equals(
+                request.Status,
+                "PendingClientResponse",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        return !request.EmailTokenExpiresAt.HasValue ||
+               request.EmailTokenExpiresAt.Value >=
+               DateTime.Now;
+    }
+
+    private static DateTime GetMinimumMonth()
+    {
+        var today = DateTime.Today;
+
+        return new DateTime(
+            today.Year,
+            today.Month,
+            1);
+    }
+
+    private static DateTime GetMaximumMonth() =>
+        GetMinimumMonth()
+            .AddMonths(
+                OnlineBookingMonthCount - 1);
+
+    private static DateTime ResolveRequestedMonth(
+        int? year,
+        int? month)
+    {
+        var minMonth = GetMinimumMonth();
+        var maxMonth = GetMaximumMonth();
+
+        if (!year.HasValue ||
+            !month.HasValue ||
+            month.Value < 1 ||
+            month.Value > 12 ||
+            year.Value < 2000 ||
+            year.Value > 2100)
+        {
+            return minMonth;
+        }
+
+        var requested =
+            new DateTime(
+                year.Value,
+                month.Value,
+                1);
+
+        return ClampMonth(
+            requested,
+            minMonth,
+            maxMonth);
+    }
+
+    private static DateTime ClampMonth(
+        DateTime requested,
+        DateTime minMonth,
+        DateTime maxMonth)
+    {
+        var month =
+            new DateTime(
+                requested.Year,
+                requested.Month,
+                1);
+
+        if (month < minMonth)
+            return minMonth;
+
+        if (month > maxMonth)
+            return maxMonth;
+
+        return month;
+    }
+
+    private static string AppendClientResponseNote(
+        string? existing,
+        string note)
+    {
+        var entry =
+            $"[{DateTime.Now:yyyy-MM-dd HH:mm}] {note}";
+
+        if (string.IsNullOrWhiteSpace(existing))
+            return entry;
+
+        var combined =
+            existing.Trim() +
+            Environment.NewLine +
+            entry;
+
+        const int maxLength = 3900;
+
+        return combined.Length <= maxLength
+            ? combined
+            : combined[^maxLength..];
     }
 
     private static string PinSessionKey(Guid token) =>
@@ -740,7 +1208,7 @@ public sealed class AttributeInspectionLinkController : Controller
 
         return full;
     }
-    // Secure GUID email-link responses must never be cached, framed or leak referrers.
+
     private void ApplySecureLinkHeaders()
     {
         Response.Headers.CacheControl =
@@ -749,11 +1217,13 @@ public sealed class AttributeInspectionLinkController : Controller
         Response.Headers.Pragma = "no-cache";
         Response.Headers.Expires = "0";
 
-        Response.Headers["Referrer-Policy"] = "no-referrer";
-        Response.Headers["X-Content-Type-Options"] = "nosniff";
-        Response.Headers["X-Frame-Options"] = "DENY";
+        Response.Headers["Referrer-Policy"] =
+            "no-referrer";
+        Response.Headers["X-Content-Type-Options"] =
+            "nosniff";
+        Response.Headers["X-Frame-Options"] =
+            "DENY";
         Response.Headers["Permissions-Policy"] =
             "camera=(), microphone=(), geolocation=(), payment=(), usb=()";
     }
-
 }
