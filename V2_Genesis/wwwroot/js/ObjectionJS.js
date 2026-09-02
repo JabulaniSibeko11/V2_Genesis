@@ -584,9 +584,9 @@ $(document).ready(function () {
         if (!document.getElementById("phy_c").value) { document.getElementById("phy_c").style.border = "2px solid red"; return; }
         document.getElementById("phy_c").style.border = "";
         $(".div2").hide();
-        if (property_key == "Res") { $(".div3_R").show(); document.getElementById("s3r").focus(); }
-        if (property_key == "Agric") { $(".div3_A").show(); document.getElementById("s3a").focus(); }
-        if (property_key == "Bus") { $(".div3_B").show(); document.getElementById("s3b").focus(); }
+        if (property_key == "Res") { $(".div3_R").show(); focusIfExists("s3r"); }
+        if (property_key == "Agric") { $(".div3_A").show(); focusIfExists("s3a"); }
+        if (property_key == "Bus") { $(".div3_B").show(); focusIfExists("s3b"); }
     });
 
     $(".btn_p3").click(function () {
@@ -596,9 +596,9 @@ $(document).ready(function () {
         if (property_key == "Bus") $(".div3_B").hide();
     });
     $(".btn_n3").click(function () {
-        if (property_key == "Res") { $(".div3_R").hide(); $(".div4_R").show(); document.getElementById("sch_name").focus(); }
-        if (property_key == "Agric") { $(".div3_A").hide(); $(".div5").show(); document.getElementById("s5").focus(); }
-        if (property_key == "Bus") { $(".div3_B").hide(); $(".div4_B").show(); document.getElementById("sch_name_b").focus(); }
+        if (property_key == "Res") { $(".div3_R").hide(); $(".div4_R").show(); focusIfExists("sch_name"); }
+        if (property_key == "Agric") { $(".div3_A").hide(); $(".div5").show(); focusIfExists("s5"); }
+        if (property_key == "Bus") { $(".div3_B").hide(); $(".div4_B").show(); focusIfExists("sch_name_b"); }
     });
 
     $(".btn_p4").click(function () {
@@ -606,8 +606,8 @@ $(document).ready(function () {
         if (property_key == "Bus") { $(".div3_B").show(); $(".div4_B").hide(); }
     });
     $(".btn_n4").click(function () {
-        if (property_key == "Res") { $(".div4_R").hide(); $(".div5").show(); document.getElementById("s5").focus(); }
-        if (property_key == "Bus") { $(".div4_B").hide(); $(".div5").show(); document.getElementById("s5").focus(); }
+        if (property_key == "Res") { $(".div4_R").hide(); $(".div5").show(); focusIfExists("s5"); }
+        if (property_key == "Bus") { $(".div4_B").hide(); $(".div5").show(); focusIfExists("s5"); }
     });
 
     $(".btn_p5").click(function () {
@@ -615,7 +615,7 @@ $(document).ready(function () {
         if (property_key == "Agric") { $(".div3_A").show(); $(".div5").hide(); }
         if (property_key == "Bus") { $(".div4_B").show(); $(".div5").hide(); }
     });
-    $(".btn_n5").click(function () { $(".div5").hide(); $(".div6").show(); document.getElementById("NewPropDesc").focus(); });
+    $(".btn_n5").click(function () { $(".div5").hide(); $(".div6").show(); focusIfExists("NewPropDesc"); });
 
     $(".btn_p6").click(function () { $(".div5").show(); $(".div6").hide(); });
 
@@ -1767,6 +1767,13 @@ function showCategorySameModal(dropdown) {
         showValidationSummary(errors);
         focusFirstError(errors);
     }
+    function focusIfExists(id) {
+        const element = document.getElementById(id);
+        if (element) {
+            element.focus();
+        }
+    }
+
 
     document.addEventListener("click", function (event) {
         var sectionOneNext = event.target.closest(".btn_n1");

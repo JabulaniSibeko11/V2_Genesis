@@ -4148,3 +4148,65 @@ ul.dtr-details > li:last-child {
     .cl-drawer-scroll::-webkit-scrollbar-track {
         background: transparent;
     }
+
+/* ============================================================
+   DASHBOARD ACTION DROPDOWN - MOBILE FIX
+   ============================================================ */
+
+.cd-action-menu {
+    min-width: 220px;
+    max-width: calc(100vw - 24px);
+    box-sizing: border-box;
+}
+
+/* Keep desktop dropdown aligned normally */
+.cd-widget .dropdown {
+    position: relative;
+}
+
+/* ============================================================
+   PHONE / TABLET
+   ============================================================ */
+
+@media (max-width: 575.98px) {
+
+    /* Action button must stay inside the row */
+    .cd-action-btn {
+        width: auto;
+        min-width: 110px;
+        max-width: 100%;
+        padding: 9px 12px;
+        white-space: nowrap;
+    }
+
+    /*
+       Bootstrap normally calculates dropdown position.
+       Force the menu to open from the RIGHT edge of the button
+       instead of extending outside the left side of the phone.
+    */
+    .cd-widget .dropdown-menu.cd-action-menu {
+        left: auto !important;
+        right: 0 !important;
+        min-width: 200px !important;
+        width: max-content;
+        max-width: calc(100vw - 28px) !important;
+        transform: none;
+    }
+
+    .cd-action-menu .dropdown-item {
+        white-space: normal;
+        line-height: 1.4;
+        padding: 10px 12px;
+        font-size: 12px;
+    }
+
+    /*
+       Prevent long dropdown labels such as Lodge Objection
+       or Download Acknowledgement from forcing the menu wider.
+    */
+    .cd-action-menu a,
+    .cd-action-menu button,
+    .cd-action-menu form {
+        max-width: 100%;
+    }
+}

@@ -144,10 +144,10 @@
                     <i class="fa-solid fa-circle-check"></i>
                     <span id="continueBtnText">
                         Continue to @(isQuery
-                                                                                                                            ? section78ProcessName
-                                                                                                        : Model.IsAppeal
-                                                                                                            ? "Appeal"
-                                                                                                            : "Objection") Form
+                                                                                                                                                    ? section78ProcessName
+                                                                                                                            : Model.IsAppeal
+                                                                                                                                ? "Appeal"
+                                                                                                                                : "Objection") Form
                     </span>
                 </button>
             </div>
@@ -176,64 +176,54 @@
                     </span>
                 </div>
                 <div class="cp-card-body">
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <div class="cp-prop-grid">
 
                         @if (Model.IsOmission)
                         {
-                            <div style="grid-column:1/-1;display:inline-flex;align-items:center;gap:8px;
-                                padding:8px 14px;border-radius:8px;background:#fff7ed;
-                                border:1.5px solid #fed7aa;font-size:13px;font-weight:700;color:#c2410c;">
+                            <div class="cp-omission-badge">
                                 <i class="fa-solid fa-circle-exclamation"></i>
                                 Omitted Property — Not on Valuation Roll
                             </div>
                             @if (!string.IsNullOrWhiteSpace(Model.OmittedTownName))
                             {
-                                <div style="display:flex;flex-direction:column;gap:4px;padding:12px 14px;
-                                    border-radius:9px;background:#f8f9fa;border:1.5px solid #f0f0f0;">
-                                    <span style="font-size:10px;font-weight:700;letter-spacing:1px;color:#36626d;
-                                        text-transform:uppercase;display:flex;align-items:center;gap:5px;">
-                                        <i class="fa-solid fa-map-pin" style="color:#e6b000;"></i>Township
+                                <div class="cp-prop-item">
+                                    <span class="cp-prop-label">
+                                        <i class="fa-solid fa-map-pin"></i>Township
                                     </span>
-                                    <span style="font-size:13.5px;font-weight:600;color:#1a2e35;">
+                                    <span class="cp-prop-value">
                                         @Model.OmittedTownName
                                     </span>
                                 </div>
                             }
                             @if (!string.IsNullOrWhiteSpace(Model.OmittedPropertyDesc))
                             {
-                                <div style="display:flex;flex-direction:column;gap:4px;padding:12px 14px;
-                                    border-radius:9px;background:#f8f9fa;border:1.5px solid #f0f0f0;">
-                                    <span style="font-size:10px;font-weight:700;letter-spacing:1px;color:#36626d;
-                                        text-transform:uppercase;display:flex;align-items:center;gap:5px;">
-                                        <i class="fa-solid fa-file-alt" style="color:#e6b000;"></i>Property Description
+                                <div class="cp-prop-item">
+                                    <span class="cp-prop-label">
+                                        <i class="fa-solid fa-file-alt"></i>Property Description
                                     </span>
-                                    <span style="font-size:13.5px;font-weight:600;color:#1a2e35;">
+                                    <span class="cp-prop-value">
                                         @Model.OmittedPropertyDesc
                                     </span>
                                 </div>
                             }
                             @if (!string.IsNullOrWhiteSpace(Model.OmittedAddress))
                             {
-                                <div style="display:flex;flex-direction:column;gap:4px;padding:12px 14px;
-                                    border-radius:9px;background:#f8f9fa;border:1.5px solid #f0f0f0;">
-                                    <span style="font-size:10px;font-weight:700;letter-spacing:1px;color:#36626d;
-                                        text-transform:uppercase;display:flex;align-items:center;gap:5px;">
-                                        <i class="fa-solid fa-road" style="color:#e6b000;"></i>Address
+                                <div class="cp-prop-item">
+                                    <span class="cp-prop-label">
+                                        <i class="fa-solid fa-road"></i>Address
                                     </span>
-                                    <span style="font-size:13.5px;font-weight:600;color:#1a2e35;">
+                                    <span class="cp-prop-value">
                                         @Model.OmittedAddress
                                     </span>
                                 </div>
                             }
                             @if (!string.IsNullOrWhiteSpace(Model.OmittedStand))
                             {
-                                <div style="display:flex;flex-direction:column;gap:4px;padding:12px 14px;
-                                    border-radius:9px;background:#f8f9fa;border:1.5px solid #f0f0f0;">
-                                    <span style="font-size:10px;font-weight:700;letter-spacing:1px;color:#36626d;
-                                        text-transform:uppercase;display:flex;align-items:center;gap:5px;">
-                                        <i class="fa-solid fa-hashtag" style="color:#e6b000;"></i>ERF / Stand
+                                <div class="cp-prop-item">
+                                    <span class="cp-prop-label">
+                                        <i class="fa-solid fa-hashtag"></i>ERF / Stand
                                     </span>
-                                    <span style="font-size:13.5px;font-weight:600;color:#1a2e35;">
+                                    <span class="cp-prop-value">
                                         @Model.OmittedStand
                                     </span>
                                 </div>
@@ -241,86 +231,70 @@
                         }
                         else if (isQuery && q is not null)
                         {
-                            <div style="display:flex;flex-direction:column;gap:4px;padding:12px 14px;
-                                border-radius:9px;background:#f8f9fa;border:1.5px solid #f0f0f0;">
-                                <span style="font-size:10px;font-weight:700;letter-spacing:1px;color:#36626d;
-                                    text-transform:uppercase;display:flex;align-items:center;gap:5px;">
-                                    <i class="fa-solid fa-file-alt" style="color:#e6b000;"></i>Property Description
+                            <div class="cp-prop-item">
+                                <span class="cp-prop-label">
+                                    <i class="fa-solid fa-file-alt"></i>Property Description
                                 </span>
-                                <span style="font-size:13.5px;font-weight:600;color:#1a2e35;">
+                                <span class="cp-prop-value">
                                     @(q.PropertyDesc ?? "N/A")
                                 </span>
                             </div>
-                            <div style="display:flex;flex-direction:column;gap:4px;padding:12px 14px;
-                                border-radius:9px;background:#f8f9fa;border:1.5px solid #f0f0f0;">
-                                <span style="font-size:10px;font-weight:700;letter-spacing:1px;color:#36626d;
-                                    text-transform:uppercase;display:flex;align-items:center;gap:5px;">
-                                    <i class="fa-solid fa-home" style="color:#e6b000;"></i>Address
+                            <div class="cp-prop-item">
+                                <span class="cp-prop-label">
+                                    <i class="fa-solid fa-home"></i>Address
                                 </span>
-                                <span style="font-size:13.5px;font-weight:600;color:#1a2e35;">
+                                <span class="cp-prop-value">
                                     @(q.LisStreetAddress ?? "N/A")
                                 </span>
                             </div>
-                            <div style="display:flex;flex-direction:column;gap:4px;padding:12px 14px;
-                                border-radius:9px;background:#f8f9fa;border:1.5px solid #f0f0f0;">
-                                <span style="font-size:10px;font-weight:700;letter-spacing:1px;color:#36626d;
-                                    text-transform:uppercase;display:flex;align-items:center;gap:5px;">
-                                    <i class="fa-solid fa-tag" style="color:#e6b000;"></i>Category
+                            <div class="cp-prop-item">
+                                <span class="cp-prop-label">
+                                    <i class="fa-solid fa-tag"></i>Category
                                 </span>
-                                <span style="font-size:13.5px;font-weight:600;color:#1a2e35;">
+                                <span class="cp-prop-value">
                                     @(q.CatDesc ?? "N/A")
                                 </span>
                             </div>
-                            <div style="display:flex;flex-direction:column;gap:4px;padding:12px 14px;
-                                border-radius:9px;background:#f8f9fa;border:1.5px solid #f0f0f0;">
-                                <span style="font-size:10px;font-weight:700;letter-spacing:1px;color:#36626d;
-                                    text-transform:uppercase;display:flex;align-items:center;gap:5px;">
-                                    <i class="fa-solid fa-city" style="color:#e6b000;"></i>Township
+                            <div class="cp-prop-item">
+                                <span class="cp-prop-label">
+                                    <i class="fa-solid fa-city"></i>Township
                                 </span>
-                                <span style="font-size:13.5px;font-weight:600;color:#1a2e35;">
+                                <span class="cp-prop-value">
                                     @(q.TownNameDesc ?? "N/A")
                                 </span>
                             </div>
                         }
                         else if (d is not null)
                         {
-                            <div style="display:flex;flex-direction:column;gap:4px;padding:12px 14px;
-                                border-radius:9px;background:#f8f9fa;border:1.5px solid #f0f0f0;">
-                                <span style="font-size:10px;font-weight:700;letter-spacing:1px;color:#36626d;
-                                    text-transform:uppercase;display:flex;align-items:center;gap:5px;">
-                                    <i class="fa-solid fa-file-alt" style="color:#e6b000;"></i>Property Description
+                            <div class="cp-prop-item">
+                                <span class="cp-prop-label">
+                                    <i class="fa-solid fa-file-alt"></i>Property Description
                                 </span>
-                                <span style="font-size:13.5px;font-weight:600;color:#1a2e35;">
+                                <span class="cp-prop-value">
                                     @(d.PropertyDesc ?? "N/A")
                                 </span>
                             </div>
-                            <div style="display:flex;flex-direction:column;gap:4px;padding:12px 14px;
-                                border-radius:9px;background:#f8f9fa;border:1.5px solid #f0f0f0;">
-                                <span style="font-size:10px;font-weight:700;letter-spacing:1px;color:#36626d;
-                                    text-transform:uppercase;display:flex;align-items:center;gap:5px;">
-                                    <i class="fa-solid fa-home" style="color:#e6b000;"></i>Address
+                            <div class="cp-prop-item">
+                                <span class="cp-prop-label">
+                                    <i class="fa-solid fa-home"></i>Address
                                 </span>
-                                <span style="font-size:13.5px;font-weight:600;color:#1a2e35;">
+                                <span class="cp-prop-value">
                                     @(d.LisStreetAddress ?? "N/A")
                                 </span>
                             </div>
-                            <div style="display:flex;flex-direction:column;gap:4px;padding:12px 14px;
-                                border-radius:9px;background:#f8f9fa;border:1.5px solid #f0f0f0;">
-                                <span style="font-size:10px;font-weight:700;letter-spacing:1px;color:#36626d;
-                                    text-transform:uppercase;display:flex;align-items:center;gap:5px;">
-                                    <i class="fa-solid fa-tag" style="color:#e6b000;"></i>Category
+                            <div class="cp-prop-item">
+                                <span class="cp-prop-label">
+                                    <i class="fa-solid fa-tag"></i>Category
                                 </span>
-                                <span style="font-size:13.5px;font-weight:600;color:#1a2e35;">
+                                <span class="cp-prop-value">
                                     @(d.CatDesc ?? "N/A")
                                 </span>
                             </div>
-                            <div style="display:flex;flex-direction:column;gap:4px;padding:12px 14px;
-                                border-radius:9px;background:#f8f9fa;border:1.5px solid #f0f0f0;">
-                                <span style="font-size:10px;font-weight:700;letter-spacing:1px;color:#36626d;
-                                    text-transform:uppercase;display:flex;align-items:center;gap:5px;">
-                                    <i class="fa-solid fa-city" style="color:#e6b000;"></i>Township
+                            <div class="cp-prop-item">
+                                <span class="cp-prop-label">
+                                    <i class="fa-solid fa-city"></i>Township
                                 </span>
-                                <span style="font-size:13.5px;font-weight:600;color:#1a2e35;">
+                                <span class="cp-prop-value">
                                     @(d.TownNameDesc ?? "N/A")
                                 </span>
                             </div>
@@ -328,8 +302,7 @@
                         else
                         {
             
-                            <div style="grid-column:1/-1;padding:16px;text-align:center;
-                                color:#9aa3af;font-size:13px;font-style:italic;">
+                            <div class="cp-prop-empty">
                                 <i class="fa-solid fa-circle-exclamation" style="margin-right:6px;color:#e6b000;"></i>
                                 Property details could not be loaded. Please go back and try again.
                             </div>
@@ -442,7 +415,7 @@
                             </label>
                         }
 
-                        <label class="obj-radio-card">
+                        <label class="obj-radio-card cp-radio-representative">
                             <input type="radio" name="objectorType" value="Representative"
                                    onchange="onTypeSelect('objectorType','obj-feedback')" />
                             <div class="obj-radio-content">
@@ -470,8 +443,8 @@
                     <div class="cp-card-hdr">
                         <i class="fa-solid
                             @(isReview
-                                                                                                                                                           ? "fa-magnifying-glass-chart"
-                                                                                                                                                           : "fa-file-magnifying-glass")">
+                                                                                                                                                                                      ? "fa-magnifying-glass-chart"
+                                                                                                                                                                                      : "fa-file-magnifying-glass")">
                         </i>
 
                         Section 78 @section78ProcessName
@@ -500,7 +473,7 @@
                             {
                                 <br />
 
-                                <em style="font-size:12.5px;color:#9aa3af;">
+                                <em class="cp-s78-note">
                                     If you are not satisfied with the outcome of your
                                     query, a Review option will appear on your dashboard
                                     when the review period is open.
@@ -510,7 +483,7 @@
                             {
                                 <br />
 
-                                <em style="font-size:12.5px;color:#9aa3af;">
+                                <em class="cp-s78-note">
                                     You are reviewing the outcome of an existing
                                     Section 78 Query.
                                 </em>
@@ -684,8 +657,6 @@
 </div>
 
 @section Scripts {
-    <script asp-append-version="true" src="~/js/QueryIndex.js" type="text/javascript"></script>
-
     <script>
         var CONTROLLER = '@Model.ControllerName';
 
@@ -729,7 +700,6 @@
                     selectedProperty = '',
                     selectedObjector = '',
                     pendingUrl = '';
-            selectedProperty = '', selectedObjector = '', pendingUrl = '';
 
         function onTypeSelect(name, feedbackId) {
             var selected = document.querySelector('input[name="' + name + '"]:checked');
@@ -758,10 +728,14 @@
 
         function checkQueryFormCompletion() {
             if (property_type && objector_type) {
-                document.getElementById("lodgeSection").style.display = "block";
+                var lodge = document.getElementById("lodgeSection");
+                if (lodge) lodge.style.display = "block";
                 updateQueryButtonVisibility(); updateLodgeSummary();
                 setTimeout(function() { document.getElementById('lodgeSection').scrollIntoView({behavior:'smooth',block:'nearest'}); }, 150);
-            } else { document.getElementById("lodgeSection").style.display = "none"; }
+            } else {
+                var lodge = document.getElementById("lodgeSection");
+                if (lodge) lodge.style.display = "none";
+            }
         }
 
         function updateQueryButtonVisibility() {
@@ -778,7 +752,13 @@
         function updateLodgeSummary() {
             var propLabels = {Res:'Residential',Agric:'Agricultural',Bus:'Business / Other',Multi:'Multiple Purposes'};
             var el = document.getElementById('lodgeSummary');
-            if (el) el.innerHTML = '<i class="fa-solid fa-circle-check" style="color:#22c55e;margin-right:6px;"></i>Section 78 Query as <strong>' + (objector_type==='Owner'?'Owner':'Representative') + '</strong> on a <strong>' + (propLabels[property_type]||property_type) + '</strong> property';
+            if (el) el.innerHTML =
+                '<i class="fa-solid fa-circle-check" style="color:#22c55e;margin-right:6px;"></i>' +
+                'Section 78 ' + SECTION78_PROCESS + ' as <strong>' +
+                (objector_type === 'Owner' ? 'Owner' : 'Representative') +
+                '</strong> on a <strong>' +
+                (propLabels[property_type] || property_type) +
+                '</strong> property';
         }
 
                 function buildLodgeUrl(isMulti) {
@@ -841,10 +821,12 @@
                 'propertyFrom',
                 IS_OMISSION ? 'Omission' : (IS_LIS ? 'LIS' : (PROPERTY_FROM || SOURCE))
             );
-            document.getElementById('lodgeSection').style.display = 'block';
+            var lodge = document.getElementById('lodgeSection');
+            if (lodge) lodge.style.display = 'block';
             var propLabels = {Res:'Residential',Agric:'Agricultural',Bus:'Business / Other',Multi:'Multiple Purposes'};
             var objLabels  = {Owner:'Owner',Third_Party:'Third Party',Representative:'Representative'};
-            document.getElementById('lodgeSummary').innerHTML =
+            var lodgeSummary = document.getElementById('lodgeSummary');
+            if (lodgeSummary) lodgeSummary.innerHTML =
                 '<i class="fa-solid fa-circle-check" style="color:#22c55e;margin-right:6px;"></i>' +
                 (IS_APPEAL?'Appeal':'Objection') + ' as <strong>' + (objLabels[selectedObjector]||selectedObjector) +
                 '</strong> on a <strong>' + (propLabels[selectedProperty]||selectedProperty) + '</strong> property';
@@ -854,11 +836,17 @@
             setTimeout(function(){ document.getElementById('lodgeSection').scrollIntoView({behavior:'smooth',block:'nearest'}); }, 200);
         }
 
-        function onAgreeChange(cb) { document.getElementById('continueBtn').disabled = !cb.checked; }
+        function onAgreeChange(cb) {
+            var btn = document.getElementById('continueBtn');
+            if (btn) btn.disabled = !cb.checked;
+        }
 
         function showMainForm() {
-            document.getElementById('disclaimerSection').style.display = 'none';
-            var f = document.getElementById('mainForm'); f.style.display = 'flex';
+            var disclaimer = document.getElementById('disclaimerSection');
+            var form = document.getElementById('mainForm');
+
+            if (disclaimer) disclaimer.style.display = 'none';
+            if (form) form.style.display = 'flex';
         }
 
         document.addEventListener('click', function(e) {
@@ -978,30 +966,76 @@
 
         function setText(id, text) { var el=document.getElementById(id); if(el) el.textContent=text; }
 
-        document.addEventListener('DOMContentLoaded', function() {
-            updateAppealLabels(); updateQueryLabels();
-            document.querySelectorAll('.obj-radio-card').forEach(function(card) {
-                card.addEventListener('click', function() {
+        document.addEventListener('DOMContentLoaded', function () {
+            updateAppealLabels();
+            updateQueryLabels();
+
+            // The label itself is clickable, but this keeps keyboard/programmatic
+            // interaction consistent and applies the selected-card styling.
+            document.querySelectorAll('.obj-radio-card').forEach(function (card) {
+                card.addEventListener('click', function () {
                     var radio = card.querySelector('input[type="radio"]');
-                    if (radio) { radio.checked=true; radio.dispatchEvent(new Event('change',{bubbles:true})); }
+                    if (!radio) return;
+
+                    radio.checked = true;
+                    radio.dispatchEvent(new Event('change', { bubbles: true }));
                 });
             });
+
+            if (IS_QUERY) {
+                document.getElementById('sub_type')
+                    ?.setAttribute('value', SECTION78_PROCESS);
+
+                submission_type = SECTION78_PROCESS;
+                query_type = SECTION78_PROCESS;
+            }
+
+            var savedProp = sessionStorage.getItem('property_choice');
+            var savedObj = sessionStorage.getItem('objector_choice');
+
+            if (savedProp) {
+                var propRadio =
+                    document.querySelector(
+                        'input[name="propertyType"][value="' + savedProp + '"]'
+                    );
+
+                if (propRadio) {
+                    propRadio.checked = true;
+                    propRadio.closest('.obj-radio-card')?.classList.add('selected');
+
                     if (IS_QUERY) {
-                    document.getElementById('sub_type')
-                        ?.setAttribute(
-                            'value',
-                            SECTION78_PROCESS
-                        );
+                        property_type = savedProp;
+                        direction = savedProp === 'Multi' ? 'Multi' : 'Normal';
+                    } else {
+                        selectedProperty = savedProp;
+                    }
+                }
+            }
 
-                    submission_type =
-                        SECTION78_PROCESS;
+            if (savedObj) {
+                var objRadio =
+                    document.querySelector(
+                        'input[name="objectorType"][value="' + savedObj + '"]'
+                    );
 
-                    query_type =
-                        SECTION78_PROCESS;
-                var savedProp=sessionStorage.getItem('property_choice'), savedObj=sessionStorage.getItem('objector_choice');
-                if (savedProp) { var r=document.querySelector('input[name="propertyType"][value="'+savedProp+'"]'); if(r){r.checked=true;property_type=savedProp;direction=(savedProp==='Multi')?'Multi':'Normal';r.closest('.obj-radio-card')?.classList.add('selected');} }
-                if (savedObj)  { var r2=document.querySelector('input[name="objectorType"][value="'+savedObj+'"]'); if(r2){r2.checked=true;objector_type=savedObj;r2.closest('.obj-radio-card')?.classList.add('selected');} }
-                if (savedProp && savedObj) checkQueryFormCompletion();
+                if (objRadio) {
+                    objRadio.checked = true;
+                    objRadio.closest('.obj-radio-card')?.classList.add('selected');
+
+                    if (IS_QUERY) {
+                        objector_type = savedObj;
+                    } else {
+                        selectedObjector = savedObj;
+                    }
+                }
+            }
+
+            if (savedProp && savedObj) {
+                if (IS_QUERY) {
+                    checkQueryFormCompletion();
+                } else {
+                    checkBothSelected();
+                }
             }
         });
     </script>

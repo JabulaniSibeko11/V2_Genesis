@@ -656,34 +656,393 @@
     line-height: 1.7;
 }
 
-@@media (max-width: 680px) {
+/* ============================================================
+   RESPONSIVE / VIEWPORT SAFETY
+   ============================================================ */
+
+.cp-page,
+.cp-body,
+.cp-card,
+.cp-card-body,
+.cp-card-hdr,
+.cp-prop-grid,
+.cp-radio-grid,
+.cp-radio-grid-3,
+#mainForm,
+#lodgeSection {
+    box-sizing: border-box;
+    min-width: 0;
+    max-width: 100%;
+}
+
+    .cp-page *,
+    .cp-card * {
+        box-sizing: border-box;
+        min-width: 0;
+    }
+
+.cp-page {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: clip;
+}
+
+.cp-card-hdr {
+    flex-wrap: wrap;
+}
+
+.cp-card-sub,
+.cp-prop-value,
+.obj-radio-content,
+.obj-radio-content small,
+.obj-selection-feedback,
+.obj-lodge-summary,
+.cp-s78-info {
+    overflow-wrap: anywhere;
+    word-break: normal;
+}
+
+.cp-prop-empty {
+    grid-column: 1 / -1;
+    padding: 16px;
+    text-align: center;
+    color: #9aa3af;
+    font-size: 13px;
+    font-style: italic;
+}
+
+.cp-s78-note {
+    font-size: 12.5px;
+    color: #9aa3af;
+}
+
+/* ------------------------------------------------------------
+   TABLET / SMALL LAPTOP
+   ------------------------------------------------------------ */
+@media (max-width: 900px) {
     .cp-hero {
-        padding: 18px 16px;
+        padding: 20px 24px 18px;
     }
 
     .cp-body {
-        padding: 16px 12px 48px;
-    }
-
-    .cp-prop-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .cp-radio-grid {
-        grid-template-columns: 1fr;
+        padding: 22px 18px 54px;
     }
 
     .cp-radio-grid-3 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .cp-radio-representative {
+        grid-column: 1 / -1;
+    }
+}
+
+/* ------------------------------------------------------------
+   PHONE
+   ------------------------------------------------------------ */
+@media (max-width: 680px) {
+    .cp-hero {
+        padding: 16px 14px;
+    }
+
+    .cp-hero-inner {
+        display: grid;
+        grid-template-columns: 42px minmax(0, 1fr);
+        gap: 10px;
+        align-items: center;
+    }
+
+    .cp-hero-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 10px;
+        font-size: 17px;
+    }
+
+    .cp-hero-text {
+        min-width: 0;
+    }
+
+    .cp-hero-eyebrow {
+        font-size: 8.5px;
+        letter-spacing: 1.15px;
+        line-height: 1.35;
+    }
+
+    .cp-hero-title {
+        font-size: 17px;
+        line-height: 1.25;
+        overflow-wrap: anywhere;
+    }
+
+    .cp-hero-sub {
+        font-size: 11.5px;
+        line-height: 1.45;
+    }
+
+    .cp-body {
+        width: 100%;
+        padding: 14px 10px 42px;
+        gap: 14px;
+    }
+
+    #mainForm {
+        width: 100%;
+        gap: 14px !important;
+    }
+
+    .cp-card {
+        width: 100%;
+        border-radius: 11px;
+        overflow: hidden;
+    }
+
+    .cp-card-hdr {
+        padding: 11px 12px;
+        gap: 7px;
+        font-size: 11.5px;
+        line-height: 1.35;
+        letter-spacing: .3px;
+    }
+
+        .cp-card-hdr > i {
+            flex: 0 0 auto;
+        }
+
+    .cp-card-sub {
+        flex: 1 1 100%;
+        margin-left: 21px;
+        font-size: 10.5px;
+        line-height: 1.45;
+    }
+
+    .cp-card-body {
+        padding: 12px;
+    }
+
+    .cp-disclaimer-intro,
+    .cp-agree-label {
+        font-size: 12.5px;
+    }
+
+    .cp-dl-item {
+        padding: 10px 11px;
+        gap: 9px;
+        font-size: 11.5px;
+        line-height: 1.45;
+    }
+
+    .cp-disclaimer-note {
+        padding: 10px 11px;
+        font-size: 11px;
+    }
+
+    .cp-btn {
+        width: 100%;
+        justify-content: center;
+        white-space: normal;
+        text-align: center;
+        padding: 12px 14px;
+        font-size: 12.5px;
+    }
+
+    /* Property data is intentionally one card per row on a phone. */
+    .cp-prop-grid {
         grid-template-columns: 1fr;
+        gap: 9px;
+    }
+
+    .cp-prop-item {
+        padding: 10px 11px;
+    }
+
+    .cp-prop-label {
+        font-size: 9px;
+    }
+
+    .cp-prop-value {
+        font-size: 12.5px;
+    }
+
+    /* Property Type: clean 2 x 2 layout. */
+    .cp-radio-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 9px;
+    }
+
+    /* Objector/Appellant Type: two cards, then Representative full width. */
+    .cp-radio-grid-3 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 9px;
+    }
+
+    .cp-radio-representative {
+        grid-column: 1 / -1;
+    }
+
+    .obj-radio-card {
+        width: 100%;
+        min-height: 128px;
+        padding: 12px 10px;
+        gap: 8px;
+        align-items: flex-start;
+    }
+
+    .obj-radio-content {
+        min-width: 0;
+    }
+
+        .obj-radio-content i {
+            font-size: 17px;
+            margin-bottom: 3px;
+        }
+
+        .obj-radio-content strong {
+            font-size: 12px;
+            line-height: 1.35;
+        }
+
+        .obj-radio-content small {
+            font-size: 10px;
+            line-height: 1.4;
+        }
+
+    .obj-radio-check {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        width: 22px;
+        height: 22px;
+        font-size: 11px;
+    }
+
+    .obj-selection-feedback {
+        width: 100%;
+        min-height: 0;
+        margin-top: 10px;
+        padding: 9px 10px;
+        border-radius: 8px;
+        background: #f4f7f8;
+        border: 1px solid #d9e2e5;
+        font-size: 11px;
+        line-height: 1.4;
+    }
+
+    #lodgeSection {
+        width: 100%;
+    }
+
+    .cp-lodge-body {
+        width: 100%;
+        padding: 14px 12px;
+        gap: 12px;
+    }
+
+    .obj-lodge-summary {
+        width: 100%;
+        display: block;
+        text-align: center;
+        font-size: 11.5px;
+        line-height: 1.6;
+    }
+
+    .obj-lodge-btn {
+        width: 100%;
+        max-width: 100%;
+        justify-content: center;
+        text-align: center;
+        white-space: normal;
+        padding: 13px 12px;
+        font-size: 12.5px;
+        line-height: 1.35;
+    }
+
+    .cp-s78-info {
+        padding: 12px;
+        font-size: 12px;
+        line-height: 1.6;
+    }
+
+    /* Instruction modal */
+    .obj-modal {
+        width: calc(100vw - 20px);
+        max-height: calc(100dvh - 24px);
+        border-radius: 12px;
+    }
+
+    .obj-modal-header {
+        padding: 14px;
+    }
+
+        .obj-modal-header h2 {
+            font-size: 14px;
+            line-height: 1.35;
+        }
+
+        .obj-modal-header p {
+            font-size: 10.5px;
+            line-height: 1.45;
+        }
+
+    .obj-modal-body {
+        padding: 14px;
+        gap: 14px;
+    }
+
+    .obj-instr-section h3,
+    .obj-instr-section li,
+    .obj-instr-warning {
+        font-size: 11.5px;
     }
 
     .obj-modal-footer {
+        padding: 12px 14px;
         flex-direction: column;
         align-items: stretch;
     }
 
     .obj-modal-actions {
-        justify-content: flex-end;
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
     }
+
+        .obj-modal-actions .cp-btn {
+            width: 100%;
+            padding: 10px 8px;
+            font-size: 11.5px;
+        }
 }
 
+/* ------------------------------------------------------------
+   VERY SMALL PHONE
+   ------------------------------------------------------------ */
+@media (max-width: 390px) {
+    .cp-body {
+        padding-left: 8px;
+        padding-right: 8px;
+    }
+
+    .cp-radio-grid,
+    .cp-radio-grid-3 {
+        grid-template-columns: 1fr;
+    }
+
+    .cp-radio-representative {
+        grid-column: auto;
+    }
+
+    .obj-radio-card {
+        min-height: auto;
+        padding: 12px;
+    }
+
+    .obj-radio-content small {
+        font-size: 10.5px;
+    }
+
+    .obj-modal-actions {
+        grid-template-columns: 1fr;
+    }
+}
