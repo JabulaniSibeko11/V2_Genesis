@@ -8,6 +8,23 @@ var cd_rep = 'false';
 var NewChange = 'false';
 var fo_o = 0;
 
+
+// ============================================================
+// SAFE DOM HELPERS
+// Prevent form navigation from crashing when a field does not
+// exist for the current property/form type.
+// ============================================================
+function focusIfExists(id) {
+    const element = document.getElementById(id);
+    if (element && typeof element.focus === 'function') {
+        element.focus();
+    }
+}
+
+function getElementIfExists(id) {
+    return document.getElementById(id);
+}
+
 var loader = document.getElementById("preloader");
 window.addEventListener("load", function () {
     if (loader) {
@@ -37,9 +54,15 @@ if (userEmailElement) {
     console.warn("Element with ID 'userEmail' not found in the document.");
 }
 
-document.getElementById('Objector_Type').value = sessionStorage.getItem('objector_choice');
+const objectorTypeField = document.getElementById('Objector_Type');
+if (objectorTypeField) {
+    objectorTypeField.value = sessionStorage.getItem('objector_choice');
+}
 
-document.getElementById('Property_Type').value = sessionStorage.getItem('property_choice');
+const propertyTypeField = document.getElementById('Property_Type');
+if (propertyTypeField) {
+    propertyTypeField.value = sessionStorage.getItem('property_choice');
+}
 
 var temp_ot = sessionStorage.getItem('objector_choice');
 var temp_pt = sessionStorage.getItem('property_choice');
@@ -103,19 +126,22 @@ function disable_ID() {
 
 
 
-var mark = document.getElementById('extent').value;
+var extentElement = document.getElementById('extent');
+var mark = extentElement ? extentElement.value : '';
 //var valu = 'R '+'R '+new Intl.NumberFormat().format(mark);
 var valu = mark.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
-document.getElementById('extent').value = valu;
+if (extentElement) extentElement.value = valu;
 var date = new Date();
 var currentDate = date.toISOString().slice(0, 16);
 
-document.getElementById('signDate').value = currentDate;
+const signDateElement = document.getElementById('signDate');
+if (signDateElement) signDateElement.value = currentDate;
 
 var ext, ext2, fsize, fi;
 const input = document.querySelector('#files');
 
 // Listen for files selection
+if (input) {
 input.addEventListener('change', (e) => {
     // Retrieve all files
     const files = input.files;
@@ -158,6 +184,7 @@ input.addEventListener('change', (e) => {
         }
     }
 });
+}
 
 // Cumulative Multi-query upload: selections from different folders are retained.
 (function initialiseMultiQueryUpload() {
@@ -1118,7 +1145,7 @@ $(document).ready(function () {
 
             if ((document.getElementById("o_st_1").value) == '') {
                 document.getElementById("o_st_1").style.border = "2px solid red";
-                document.getElementById("o_st_1").focus();
+                focusIfExists("o_st_1");
             } else {
                 document.getElementById("o_st_1").style.border = "";
             }
@@ -1152,19 +1179,19 @@ $(document).ready(function () {
             }
 
             if (fo_o == 1) {
-                document.getElementById("o_id").focus();
+                focusIfExists("o_id");
             } if (fo_o == 2) {
-                document.getElementById("o_st_1").focus();
+                focusIfExists("o_st_1");
             } if (fo_o == 3) {
-                document.getElementById("o_p_1").focus();
+                focusIfExists("o_p_1");
             } if (fo_o == 4) {
-                document.getElementById("o_cd_5").focus();
+                focusIfExists("o_cd_5");
             }
 
 
             // if (LuhnAlgo() == 'Invalid ID Number') {
             //     document.getElementById("o_id").style.border = "2px solid red";
-            //     document.getElementById("o_id").focus();
+            //     focusIfExists("o_id");
             //     alert("Invalid ID Number");
 
             // }
@@ -1207,7 +1234,7 @@ $(document).ready(function () {
                 $(".div1").hide();
                 $(".div781").show();
                 $("#form_back").hide();
-                document.getElementById("phy_c").focus();
+                focusIfExists("phy_c");
             }
         }
 
@@ -1323,7 +1350,7 @@ $(document).ready(function () {
                 $(".div1").hide();
                 $(".div781").show();
                 $("#form_back").hide();
-                document.getElementById("phy_c").focus();
+                focusIfExists("phy_c");
             }
         }
 
@@ -1363,7 +1390,7 @@ $(document).ready(function () {
     //            document.getElementById("phy_c").style.border = "";
     //            $(".div2").hide();
     //            $(".div3_R").show();
-    //            document.getElementById("s3r").focus();
+    //            focusIfExists("s3r");
     //        }
 
     //    }
@@ -1374,7 +1401,7 @@ $(document).ready(function () {
     //            document.getElementById("phy_c").style.border = "";
     //            $(".div2").hide();
     //            $(".div3_A").show();
-    //            document.getElementById("s3a").focus();
+    //            focusIfExists("s3a");
     //        }
 
     //    }
@@ -1385,7 +1412,7 @@ $(document).ready(function () {
     //            document.getElementById("phy_c").style.border = "";
     //            $(".div2").hide();
     //            $(".div3_B").show();
-    //            document.getElementById("s3b").focus();
+    //            focusIfExists("s3b");
     //        }
 
 
@@ -1399,7 +1426,7 @@ $(document).ready(function () {
     //            document.getElementById("phy_c").style.border = "";
     //            $(".div2").hide();
     //            $(".div3_R").show();
-    //            document.getElementById("s3r").focus();
+    //            focusIfExists("s3r");
     //        }
     //    }
     //    btn_R_p3
@@ -1412,7 +1439,7 @@ $(document).ready(function () {
             document.getElementById("phy_c").style.border = "";
             $(".div2").hide();
             $(".div3_R").show();
-            document.getElementById("s3r").focus();
+            focusIfExists("s3r");
         }
     });
 
@@ -1435,19 +1462,19 @@ $(document).ready(function () {
     $(".btn_R_n3").click(function () {
         $(".div3_R").hide();
         $(".div3_B").show();
-        document.getElementById("s3b").focus();
+        focusIfExists("s3b");
     });
 
     $(".btn_B_n3").click(function () {
         $(".div3_B").hide();
         $(".div3_A").show();
-        document.getElementById("s3a").focus();
+        focusIfExists("s3a");
     });
 
     $(".btn_A_n3").click(function () {
         $(".div3_A").hide();
         $(".div4_R").show();
-        document.getElementById("sch_name").focus();
+        focusIfExists("sch_name");
     });
 
     //$(".btn_p3").click(function () {
@@ -1489,36 +1516,36 @@ $(document).ready(function () {
 
     //        $(".div3_R").hide();
     //        $(".div4_R").show();
-    //        document.getElementById("sch_name").focus();
+    //        focusIfExists("sch_name");
     //    }
     //    if (property_key == "Agric") {
 
     //        $(".div3_A").hide();
     //        $(".div5").show();
-    //        document.getElementById("s5").focus();
+    //        focusIfExists("s5");
     //    }
     //    if (property_key == "Bus") {
 
     //        $(".div3_B").hide();
     //        $(".div4_B").show();
-    //        document.getElementById("sch_name_b").focus();
+    //        focusIfExists("sch_name_b");
     //    }
     //    if (property_key == "Multi") {
 
     //        $(".btn_R_n3").click(function () {
     //            $(".div3_R").hide();
     //            $(".div3_B").show();
-    //            document.getElementById("s3b").focus();
+    //            focusIfExists("s3b");
     //        });
     //        $(".btn_B_n3").click(function () {
     //            $(".div3_B").hide();
     //            $(".div3_A").show();
-    //            document.getElementById("s3a").focus();
+    //            focusIfExists("s3a");
     //        });
     //        $(".btn_A_n3").click(function () {
     //            $(".div3_A").hide();
     //            $(".div4_R").show();
-    //            document.getElementById("sch_name").focus();
+    //            focusIfExists("sch_name");
     //        });
     //    }
     //});
@@ -1556,24 +1583,24 @@ $(document).ready(function () {
 
     //        $(".div4_R").hide();
     //        $(".div5").show();
-    //        document.getElementById("s5").focus();
+    //        focusIfExists("s5");
     //    }
     //    if (property_key == "Bus") {
     //        $(".div4_B").hide();
     //        $(".div5").show();
-    //        document.getElementById("s5").focus();
+    //        focusIfExists("s5");
     //    }
     //    if (property_key == "Multi") {
 
     //        $(".btn_R_n4").click(function () {
     //            $(".div4_R").hide();
     //            $(".div4_B").show();
-    //            document.getElementById("sch_name_b").focus();
+    //            focusIfExists("sch_name_b");
     //        });
     //        $(".btn_B_n4").click(function () {
     //            $(".div4_B").hide();
     //            $(".div5").show();
-    //            document.getElementById("s5").focus();
+    //            focusIfExists("s5");
     //        });
     //    }
     //});
@@ -1590,12 +1617,12 @@ $(document).ready(function () {
     $(".btn_R_n4").click(function () {
         $(".div4_R").hide();
         $(".div4_B").show();
-        document.getElementById("sch_name_b").focus();
+        focusIfExists("sch_name_b");
     });
     $(".btn_B_n4").click(function () {
         $(".div4_B").hide();
         $(".div5").show();
-        document.getElementById("s5").focus();
+        focusIfExists("s5");
     });
 
 
@@ -1628,7 +1655,7 @@ $(document).ready(function () {
     $(".btn_n5").click(function () {
         $(".div5").hide();
         $(".div6").show();
-        document.getElementById("desc_in").focus();
+        focusIfExists("desc_in");
     });
     //div6
     $(".btn_p6").click(function () {
@@ -1665,7 +1692,7 @@ $(document).ready(function () {
 
                 $(".div6").hide();
                 $(".divU").show();
-                document.getElementById("sectionUpload").focus();
+                focusIfExists("sectionUpload");
             }
         }
 
@@ -1698,7 +1725,7 @@ $(document).ready(function () {
 
                 $(".div6").hide();
                 $(".divU").show();
-                document.getElementById("sectionUpload").focus();
+                focusIfExists("sectionUpload");
             }
         }
 
@@ -1731,7 +1758,7 @@ $(document).ready(function () {
 
                 $(".div6").hide();
                 $(".divU").show();
-                document.getElementById("sectionUpload").focus();
+                focusIfExists("sectionUpload");
             }
         }
 
@@ -1747,7 +1774,7 @@ $(document).ready(function () {
     $(".btn_nU").click(function () {
         $(".divU").hide();
         $(".div7").show();
-        document.getElementById("sign_obj").focus();
+        focusIfExists("sign_obj");
     });
     //div7
     $(".btn_p7").click(function () {

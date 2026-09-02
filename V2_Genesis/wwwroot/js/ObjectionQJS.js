@@ -7,6 +7,23 @@ var cd_obj = 'false';
 var cd_rep = 'false';
 var NewChange = 'false';
 var fo_o = 0;
+
+// ============================================================
+// SAFE DOM HELPERS
+// Prevent form navigation from crashing when a field does not
+// exist for the current property/form type.
+// ============================================================
+function focusIfExists(id) {
+    const element = document.getElementById(id);
+    if (element && typeof element.focus === 'function') {
+        element.focus();
+    }
+}
+
+function getElementIfExists(id) {
+    return document.getElementById(id);
+}
+
 var loader = document.getElementById("preloader");
 
 // ── Admin detection: server-side flag (no email regex needed here) ──
@@ -17,8 +34,14 @@ var userEmailElement = document.getElementById('userEmail');
 var userEmail = userEmailElement ? userEmailElement.value : '';
 var regex = /^(val\.admin(1[0-9]?|[1-9])@joburg\.org\.za)$/i;
 
-document.getElementById('Objector_Type').value = sessionStorage.getItem('objector_choice');
-document.getElementById('Property_Type').value = sessionStorage.getItem('property_choice');
+const objectorTypeField = document.getElementById('Objector_Type');
+if (objectorTypeField) {
+    objectorTypeField.value = sessionStorage.getItem('objector_choice');
+}
+const propertyTypeField = document.getElementById('Property_Type');
+if (propertyTypeField) {
+    propertyTypeField.value = sessionStorage.getItem('property_choice');
+}
 
 var temp_ot = sessionStorage.getItem('objector_choice');
 var temp_pt = sessionStorage.getItem('property_choice');
@@ -111,16 +134,19 @@ function disable_ID2() {
     document.getElementById("obj_id_status").innerHTML = '';
 }
 
-var mark = document.getElementById('extent').value;
+var extentElement = document.getElementById('extent');
+var mark = extentElement ? extentElement.value : '';
 var valu = mark.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
-document.getElementById('extent').value = valu;
+if (extentElement) extentElement.value = valu;
 
 var date = new Date();
-document.getElementById('signDate').value = date.toISOString().slice(0, 16);
+const signDateElement = document.getElementById('signDate');
+if (signDateElement) signDateElement.value = date.toISOString().slice(0, 16);
 
 var ext, ext2, fsize, fi;
 const input = document.querySelector('#files');
 
+if (input) {
 input.addEventListener('change', (e) => {
     const files = input.files;
     if (files.length > 10) {
@@ -145,6 +171,7 @@ input.addEventListener('change', (e) => {
         }
     }
 });
+}
 
 function onlyNumberKey(evt) {
     var ASCIICode = (evt.which) ? evt.which : evt.keyCode;
@@ -526,7 +553,7 @@ $(document).ready(function () {
             if (!document.getElementById("o_p_5").value || document.getElementById("o_p_5").value.length < 4) { document.getElementById("o_p_5").style.border = "2px solid red"; fo_o = 3; } else { document.getElementById("o_p_5").style.border = ""; fo_o = 0; }
             if (!document.getElementById("o_st_5").value || document.getElementById("o_st_5").value.length < 4) { document.getElementById("o_st_5").style.border = "2px solid red"; fo_o = 2; } else { document.getElementById("o_st_5").style.border = ""; fo_o = 0; }
 
-            if (LuhnAlgo() == 'Invalid ID Number') { document.getElementById("o_id").style.border = "2px solid red"; document.getElementById("o_id").focus(); alert("Invalid ID Number"); }
+            if (LuhnAlgo() == 'Invalid ID Number') { document.getElementById("o_id").style.border = "2px solid red"; focusIfExists("o_id"); alert("Invalid ID Number"); }
             else document.getElementById("o_id").style.border = "";
 
             if (!document.getElementById("o_cd_1").value && !document.getElementById("o_cd_2").value && !document.getElementById("o_cd_3").value && !document.getElementById("o_cd_4").value) {
@@ -542,7 +569,7 @@ $(document).ready(function () {
         }
 
         if (objector_key == "Third_Party") {
-            if (!document.getElementById("objector_name").value) { document.getElementById("objector_name").style.border = "2px solid red"; document.getElementById("objector_name").focus(); } else document.getElementById("objector_name").style.border = "";
+            if (!document.getElementById("objector_name").value) { document.getElementById("objector_name").style.border = "2px solid red"; focusIfExists("objector_name"); } else document.getElementById("objector_name").style.border = "";
             if (LuhnAlgo() == "Invalid ID Number") { alert("Invalid ID Number"); document.getElementById("objector_id").style.border = "2px solid red"; } else document.getElementById("objector_id").style.border = "";
             var tpFields = ["obj_p_1", "obj_p_2", "obj_p_3", "obj_p_4", "objector_stat"];
             tpFields.forEach(id => { var el = document.getElementById(id); if (!el.value) el.style.border = "2px solid red"; else el.style.border = ""; });
@@ -623,9 +650,9 @@ $(document).ready(function () {
         if (!document.getElementById("phy_c").value) { document.getElementById("phy_c").style.border = "2px solid red"; return; }
         document.getElementById("phy_c").style.border = "";
         $(".div2").hide();
-        if (property_key == "Res") { $(".div3_R").show(); document.getElementById("s3r").focus(); }
-        if (property_key == "Agric") { $(".div3_A").show(); document.getElementById("s3a").focus(); }
-        if (property_key == "Bus") { $(".div3_B").show(); document.getElementById("s3b").focus(); }
+        if (property_key == "Res") { $(".div3_R").show(); focusIfExists("s3r"); }
+        if (property_key == "Agric") { $(".div3_A").show(); focusIfExists("s3a"); }
+        if (property_key == "Bus") { $(".div3_B").show(); focusIfExists("s3b"); }
     });
 
     $(".btn_p3").click(function () {
@@ -635,9 +662,9 @@ $(document).ready(function () {
         if (property_key == "Bus") $(".div3_B").hide();
     });
     $(".btn_n3").click(function () {
-        if (property_key == "Res") { $(".div3_R").hide(); $(".div4_R").show(); document.getElementById("sch_name").focus(); }
-        if (property_key == "Agric") { $(".div3_A").hide(); $(".div5").show(); document.getElementById("s5").focus(); }
-        if (property_key == "Bus") { $(".div3_B").hide(); $(".div4_B").show(); document.getElementById("sch_name_b").focus(); }
+        if (property_key == "Res") { $(".div3_R").hide(); $(".div4_R").show(); focusIfExists("sch_name"); }
+        if (property_key == "Agric") { $(".div3_A").hide(); $(".div5").show(); focusIfExists("s5"); }
+        if (property_key == "Bus") { $(".div3_B").hide(); $(".div4_B").show(); focusIfExists("sch_name_b"); }
     });
 
     $(".btn_p4").click(function () {
@@ -645,8 +672,8 @@ $(document).ready(function () {
         if (property_key == "Bus") { $(".div3_B").show(); $(".div4_B").hide(); }
     });
     $(".btn_n4").click(function () {
-        if (property_key == "Res") { $(".div4_R").hide(); $(".div5").show(); document.getElementById("s5").focus(); }
-        if (property_key == "Bus") { $(".div4_B").hide(); $(".div5").show(); document.getElementById("s5").focus(); }
+        if (property_key == "Res") { $(".div4_R").hide(); $(".div5").show(); focusIfExists("s5"); }
+        if (property_key == "Bus") { $(".div4_B").hide(); $(".div5").show(); focusIfExists("s5"); }
     });
 
     $(".btn_p5").click(function () {
@@ -654,7 +681,7 @@ $(document).ready(function () {
         if (property_key == "Agric") { $(".div3_A").show(); $(".div5").hide(); }
         if (property_key == "Bus") { $(".div4_B").show(); $(".div5").hide(); }
     });
-    $(".btn_n5").click(function () { $(".div5").hide(); $(".div6").show(); document.getElementById("NewPropDesc").focus(); });
+    $(".btn_n5").click(function () { $(".div5").hide(); $(".div6").show(); focusIfExists("NewPropDesc"); });
 
     $(".btn_p6").click(function () { $(".div5").show(); $(".div6").hide(); });
 
@@ -669,7 +696,7 @@ $(document).ready(function () {
     //        NewChange = 'true';
     //        document.getElementById("new_change_invalid").innerHTML = "";
     //        ['NewCat', 'NewMarketValue', 'NewExtent', 'NewPropDesc', 'NewAddress', 'NewOwner'].forEach(id => { document.getElementById(id).style.border = ""; });
-    //        $(".div6").hide(); $(".divU").show(); document.getElementById("sectionUpload").focus();
+    //        $(".div6").hide(); $(".divU").show(); focusIfExists("sectionUpload");
     //    }
     //});
 
@@ -699,7 +726,7 @@ $(document).ready(function () {
     });
 
     $(".btn_pU").click(function () { $(".div6").show(); $(".divU").hide(); });
-    $(".btn_nU").click(function () { $(".divU").hide(); $(".div7").show(); document.getElementById("sign_obj").focus(); });
+    $(".btn_nU").click(function () { $(".divU").hide(); $(".div7").show(); focusIfExists("sign_obj"); });
     $(".btn_p7").click(function () { $(".divU").show(); $(".div7").hide(); });
 });
 

@@ -8,10 +8,28 @@ var NewChange = 'false';
 var fo_o = 0;
 
 
+
+// ============================================================
+// SAFE DOM HELPERS
+// Prevent form navigation from crashing when a field does not
+// exist for the current property/form type.
+// ============================================================
+function focusIfExists(id) {
+    const element = document.getElementById(id);
+    if (element && typeof element.focus === 'function') {
+        element.focus();
+    }
+}
+
+function getElementIfExists(id) {
+    return document.getElementById(id);
+}
+
 var loader = document.getElementById("preloader");
 window.addEventListener("load", function () {
-    loader.style.display = "none";
-
+    if (loader) {
+        loader.style.display = "none";
+    }
 });
 
 //var userEmailElement = document.getElementById('userEmail');
@@ -38,9 +56,15 @@ var userEmailElement = document.getElementById('userEmail');
 var userEmail = userEmailElement ? userEmailElement.value : '';
 var regex = /^(val\.admin(1[0-9]?|[1-9])@joburg\.org\.za)$/i;
 
-document.getElementById('Objector_Type').value = sessionStorage.getItem('objector_choice');
+const objectorTypeField = document.getElementById('Objector_Type');
+if (objectorTypeField) {
+    objectorTypeField.value = sessionStorage.getItem('objector_choice');
+}
 
-document.getElementById('Property_Type').value = sessionStorage.getItem('property_choice');
+const propertyTypeField = document.getElementById('Property_Type');
+if (propertyTypeField) {
+    propertyTypeField.value = sessionStorage.getItem('property_choice');
+}
 
 function pos_yes() {
     var a; var b; var c; var d; var e;
@@ -118,20 +142,23 @@ function disable_ID2() {
     $("#id_L").hide();
     document.getElementById("obj_id_status").innerHTML = '';
 }
-var mark = document.getElementById('extent').value;
+var extentElement = document.getElementById('extent');
+var mark = extentElement ? extentElement.value : '';
 //var valu = 'R '+'R '+new Intl.NumberFormat().format(mark);
 var valu = mark.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
-document.getElementById('extent').value = valu;
+if (extentElement) extentElement.value = valu;
 
 var date = new Date();
 var currentDate = date.toISOString().slice(0, 16);
 
-document.getElementById('signDate').value = currentDate;
+const signDateElement = document.getElementById('signDate');
+if (signDateElement) signDateElement.value = currentDate;
 
 var ext, ext2, fsize, fi;
 const input = document.querySelector('#files');
 
 // Listen for files selection
+if (input) {
 input.addEventListener('change', (e) => {
     // Retrieve all files
     const files = input.files;
@@ -175,6 +202,7 @@ input.addEventListener('change', (e) => {
         }
     }
 });
+}
 
 function onlyNumberKey(evt) {
 
@@ -1146,7 +1174,7 @@ $(document).ready(function () {
 
             if ((document.getElementById("o_st_1").value) == '') {
                 document.getElementById("o_st_1").style.border = "2px solid red";
-                document.getElementById("o_st_1").focus();
+                focusIfExists("o_st_1");
             } else {
                 document.getElementById("o_st_1").style.border = "";
             }
@@ -1180,19 +1208,19 @@ $(document).ready(function () {
             }
 
             if (fo_o == 1) {
-                document.getElementById("o_id").focus();
+                focusIfExists("o_id");
             } if (fo_o == 2) {
-                document.getElementById("o_st_1").focus();
+                focusIfExists("o_st_1");
             } if (fo_o == 3) {
-                document.getElementById("o_p_1").focus();
+                focusIfExists("o_p_1");
             } if (fo_o == 4) {
-                document.getElementById("o_cd_5").focus();
+                focusIfExists("o_cd_5");
             }
 
 
             if (LuhnAlgo() == 'Invalid ID Number') {
                 document.getElementById("o_id").style.border = "2px solid red";
-                document.getElementById("o_id").focus();
+                focusIfExists("o_id");
                 alert("Invalid ID Number");
 
             }
@@ -1242,7 +1270,7 @@ $(document).ready(function () {
                     messageElement.style.color = "red";
                     messageElement.id = "rep_cd_2_message";
                     document.getElementById("o_cd_2").parentNode.insertBefore(messageElement, document.getElementById("o_cd_2").nextSibling);
-                    document.getElementById("o_cd_2").focus();
+                    focusIfExists("o_cd_2");
                     setTimeout(function () {
                         if (messageElement) {
                             messageElement.remove();
@@ -1275,7 +1303,7 @@ $(document).ready(function () {
                     messageElement.style.color = "red";
                     messageElement.id = "rep_cd_2_message";
                     document.getElementById("o_cd_3").parentNode.insertBefore(messageElement, document.getElementById("o_cd_3").nextSibling);
-                    document.getElementById("o_cd_3").focus();
+                    focusIfExists("o_cd_3");
                     setTimeout(function () {
                         if (messageElement) {
                             messageElement.remove();
@@ -1305,7 +1333,7 @@ $(document).ready(function () {
                 $(".div1").hide();
                 $(".div2").show();
                 $("#form_back").hide();
-                document.getElementById("phy_c").focus();
+                focusIfExists("phy_c");
             }
         }
 
@@ -1313,7 +1341,7 @@ $(document).ready(function () {
         if (objector_key == "Third_Party") {
             if ((document.getElementById("objector_name").value) == '') {
                 document.getElementById("objector_name").style.border = "2px solid red";
-                document.getElementById("objector_name").focus();
+                focusIfExists("objector_name");
             } else {
                 document.getElementById("objector_name").style.border = "";
             }
@@ -1418,7 +1446,7 @@ $(document).ready(function () {
                     messageElement.style.color = "red";
                     messageElement.id = "rep_cd_2_message";
                     document.getElementById("obj_cd_2").parentNode.insertBefore(messageElement, document.getElementById("obj_cd_2").nextSibling);
-                    document.getElementById("obj_cd_2").focus();
+                    focusIfExists("obj_cd_2");
                     setTimeout(function () {
                         if (messageElement) {
                             messageElement.remove();
@@ -1452,7 +1480,7 @@ $(document).ready(function () {
                     messageElement.style.color = "red";
                     messageElement.id = "rep_cd_2_message";
                     document.getElementById("obj_cd_3").parentNode.insertBefore(messageElement, document.getElementById("obj_cd_3").nextSibling);
-                    document.getElementById("obj_cd_3").focus();
+                    focusIfExists("obj_cd_3");
                     setTimeout(function () {
                         if (messageElement) {
                             messageElement.remove();
@@ -1480,7 +1508,7 @@ $(document).ready(function () {
                 $(".div1").hide();
                 $(".div2").show();
                 $("#form_back").hide();
-                document.getElementById("phy_c").focus();
+                focusIfExists("phy_c");
             }
         }
 
@@ -1615,7 +1643,7 @@ $(document).ready(function () {
                     messageElement.style.color = "red";
                     messageElement.id = "rep_cd_2_message";
                     document.getElementById("rep_cd_2").parentNode.insertBefore(messageElement, document.getElementById("rep_cd_2").nextSibling);
-                    document.getElementById("rep_cd_2").focus();
+                    focusIfExists("rep_cd_2");
                     setTimeout(function () {
                         if (messageElement) {
                             messageElement.remove();
@@ -1650,7 +1678,7 @@ $(document).ready(function () {
                     messageElement.style.color = "red";
                     messageElement.id = "rep_cd_2_message";
                     document.getElementById("rep_cd_3").parentNode.insertBefore(messageElement, document.getElementById("rep_cd_3").nextSibling);
-                    document.getElementById("rep_cd_3").focus();
+                    focusIfExists("rep_cd_3");
                     setTimeout(function () {
                         if (messageElement) {
                             messageElement.remove();
@@ -1706,7 +1734,7 @@ $(document).ready(function () {
                     messageElement.style.color = "red";
                     messageElement.id = "rep_cd_2_message";
                     document.getElementById("o_cd_2").parentNode.insertBefore(messageElement, document.getElementById("o_cd_2").nextSibling);
-                    document.getElementById("o_cd_2").focus();
+                    focusIfExists("o_cd_2");
                     setTimeout(function () {
                         if (messageElement) {
                             messageElement.remove();
@@ -1740,7 +1768,7 @@ $(document).ready(function () {
                     messageElement.style.color = "red";
                     messageElement.id = "rep_cd_2_message";
                     document.getElementById("o_cd_3").parentNode.insertBefore(messageElement, document.getElementById("o_cd_3").nextSibling);
-                    document.getElementById("o_cd_3").focus();
+                    focusIfExists("o_cd_3");
                     setTimeout(function () {
                         if (messageElement) {
                             messageElement.remove();
@@ -1771,7 +1799,7 @@ $(document).ready(function () {
                 $(".div1").hide();
                 $(".div2").show();
                 $("#form_back").hide();
-                document.getElementById("phy_c").focus();
+                focusIfExists("phy_c");
             }
         }
 
@@ -1794,7 +1822,7 @@ $(document).ready(function () {
                     document.getElementById("phy_c").style.border = "";
                     $(".div2").hide();
                     $(".div3_R").show();
-                    document.getElementById("s3r").focus();
+                    focusIfExists("s3r");
                 }                
         });
 
@@ -1816,17 +1844,17 @@ $(document).ready(function () {
         $(".btn_R_n3").click(function () { 
                 $(".div3_R").hide();
                 $(".div3_A").show();
-                document.getElementById("s3a").focus();
+                focusIfExists("s3a");
         });
         $(".btn_A_n3").click(function () {
             $(".div3_A").hide();
             $(".div3_B").show();
-            document.getElementById("s3b").focus();
+            focusIfExists("s3b");
         });
         $(".btn_B_n3").click(function () {
             $(".div3_B").hide();
             $(".div4_R").show();
-            document.getElementById("sch_name").focus();
+            focusIfExists("sch_name");
         });
     
         //div4
@@ -1843,12 +1871,12 @@ $(document).ready(function () {
         $(".btn_R_n4").click(function () {
                 $(".div4_R").hide();
                 $(".div4_B").show();
-            document.getElementById("sch_name_b").focus();
+            focusIfExists("sch_name_b");
         });
         $(".btn_B_n4").click(function () {
                 $(".div4_B").hide();
                 $(".div5").show();
-                document.getElementById("s5").focus();
+                focusIfExists("s5");
         });
 
         //div5
@@ -1859,7 +1887,7 @@ $(document).ready(function () {
         $(".btn_n5").click(function () {
             $(".div5").hide();
             $(".div6").show();
-            document.getElementById("NewPropDesc").focus();
+            focusIfExists("NewPropDesc");
         });
         //div6
         $(".btn_p6").click(function () {
@@ -1924,7 +1952,7 @@ $(document).ready(function () {
 
         //            $(".div6").hide();
         //            $(".divU").show();
-        //            document.getElementById("sectionUpload").focus();
+        //            focusIfExists("sectionUpload");
         //        }
         //    }
 
@@ -1984,7 +2012,7 @@ $(document).ready(function () {
 
         //            $(".div6").hide();
         //            $(".divU").show();
-        //            document.getElementById("sectionUpload").focus();
+        //            focusIfExists("sectionUpload");
         //        }
         //    }
 
@@ -2044,7 +2072,7 @@ $(document).ready(function () {
 
         //            $(".div6").hide();
         //            $(".divU").show();
-        //            document.getElementById("sectionUpload").focus();
+        //            focusIfExists("sectionUpload");
         //        }
         //    }
 
@@ -2091,7 +2119,7 @@ $(document).ready(function () {
         $(".btn_nU").click(function () {
             $(".divU").hide();
             $(".div7").show();
-            document.getElementById("sign_obj").focus();
+            focusIfExists("sign_obj");
         });
         //div7
         $(".btn_p7").click(function () {
