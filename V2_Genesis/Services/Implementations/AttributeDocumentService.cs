@@ -68,10 +68,8 @@ namespace V2_Genesis.Services.Attributes
             };
 
             result.RepLetterFileName = await SaveOneFileAsync(
-                model.Files.RepLetter,
-                repFolder,
-                safeAttrNo,
-                "Representative_Letter");
+     model.Files.RepLetter,
+     repFolder);
             var evidenceFiles = model.Files.EvidenceFiles
                 .Where(f => f is { Length: > 0 })
                 .Take(10)
@@ -82,8 +80,11 @@ namespace V2_Genesis.Services.Attributes
             for (int i = 0; i < evidenceFiles.Count; i++)
             {
                 fileProps[i] = await SaveEvidenceFileAsync(
-                    evidenceFiles[i], evidenceFolder, safeAttrNo, $"Evidence_{i + 1}", result);
+                    evidenceFiles[i],
+                    evidenceFolder,
+                    result);
             }
+
 
             result.Files1 = fileProps[0];
             result.Files2 = fileProps[1];
@@ -99,13 +100,14 @@ namespace V2_Genesis.Services.Attributes
         }
 
         private static async Task<string?> SaveEvidenceFileAsync(
-            IFormFile? file,
-            string folder,
-            string attrNo,
-            string label,
-            AttributeDocumentSaveResult result)
+      IFormFile? file,
+      string folder,
+      AttributeDocumentSaveResult result)
         {
-            var saved = await SaveOneFileAsync(file, folder, attrNo, label);
+            var saved =
+                await SaveOneFileAsync(
+                    file,
+                    folder);
 
             if (!string.IsNullOrWhiteSpace(saved))
                 result.EvidenceCount++;
@@ -114,27 +116,39 @@ namespace V2_Genesis.Services.Attributes
         }
 
         private static async Task<string?> SaveOneFileAsync(
-            IFormFile? file,
-            string folder,
-            string attrNo,
-            string label)
+       IFormFile? file,
+       string folder)
         {
             if (file == null || file.Length == 0)
                 return null;
 
-            var originalExtension = Path.GetExtension(file.FileName);
-            var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmssfff");
+            var originalFileName =
+                Path.GetFileName(file.FileName);
 
-            var safeLabel = MakeSafeFileName(label);
-            var safeOriginalName = MakeSafeFileName(Path.GetFileNameWithoutExtension(file.FileName));
+            if (string.IsNullOrWhiteSpace(originalFileName))
+                return null;
 
-            var storedFileName = $"{attrNo}_{safeLabel}_{safeOriginalName}_{timestamp}{originalExtension}";
-            var fullPath = Path.Combine(folder, storedFileName);
+            var fullPath =
+                Path.Combine(
+                    folder,
+                    originalFileName);
 
-            await using var stream = new FileStream(fullPath, FileMode.Create);
+            if (File.Exists(fullPath))
+            {
+                throw new InvalidOperationException(
+                    $"The file '{originalFileName}' has already been uploaded.");
+            }
+
+            await using var stream =
+                new FileStream(
+                    fullPath,
+                    FileMode.CreateNew,
+                    FileAccess.Write,
+                    FileShare.None);
+
             await file.CopyToAsync(stream);
 
-            return storedFileName;
+            return originalFileName;
         }
 
         private void GeneratePdf(
