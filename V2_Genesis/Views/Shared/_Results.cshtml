@@ -88,102 +88,327 @@
 
 <script>
     $(document).ready(function () {
-        if (!$.fn.DataTable.isDataTable('#psResultsTable')) {
-            $('#psResultsTable').DataTable({
-                responsive : {
-                    details: {
-                        type: 'column',
-                        target: 'tr'
-                    }
-                },
-                autoWidth  : false,
-                destroy    : true,
-                dom        : '<"ps-dt-top"lBf>rt<"ps-dt-bottom"ip>',
-                lengthMenu : [[10, 25, 50, -1], [10, 25, 50, 'All']],
-                pageLength : 10,
-                buttons: [
-                    {
-                        extend   : 'excel',
-                        text     : '<i class="fa-solid fa-file-excel"></i> Excel',
-                        className: 'ps-dt-btn'
-                    },
-                    {
-                        extend   : 'pdf',
-                        text     : '<i class="fa-solid fa-file-pdf"></i> PDF',
-                        className: 'ps-dt-btn'
-                    }
-                ],
-                language: {
-                    search           : '_INPUT_',
-                    searchPlaceholder: 'Search results…',
-                    lengthMenu       : 'Show _MENU_ entries',
-                    info             : 'Showing _START_ to _END_ of _TOTAL_',
-                    infoEmpty        : 'No properties found',
-                    infoFiltered     : '(filtered from _MAX_ total)',
-                    emptyTable       : 'No properties found'
-                },
-                columnDefs: [
-                    { width: '160px', targets: 0  },
-                    { width: '190px', targets: 1  },
-                    { width: '65px',  targets: [2, 3, 4] },
-                    { width: '120px', targets: 5  },
-                    // Property description and the action button always
-                    // stay visible on a phone — everything else collapses
-                    // behind the "+" control instead of forcing a
-                    // horizontal scroll to reach the button.
-                    { className: 'all', targets: [0, 13] },
-                    { orderable: false, targets: 13 }
-                ],
-                drawCallback : function () { formatMarketValues(); },
-                initComplete : function () {
-                    formatMarketValues();
-                    var count = this.api().rows().count();
-                    var badge = document.getElementById('psmCount');
-                    if (badge)
-                        badge.textContent =
-                            count + ' ' + (count === 1 ? 'property' : 'properties');
-                    showSearchToaster(
-                        '@(isLis ? "LIS Search Complete 🗄️" : "Search Complete 🎉")',
-                        'Found ' + count + ' matching ' +
-                        (count === 1 ? 'property' : 'properties'),
-                        4000
-                    );
-                }
-            });
-        }
-    });
 
-    function formatMarketValues() {
-        document.querySelectorAll('.ps-market-val').forEach(function (el) {
-            var raw = parseFloat(el.textContent.replace(/[^0-9.-]+/g, ''));
-            if (!isNaN(raw) && raw > 0) {
-                el.textContent = raw.toLocaleString('en-ZA', {
-                    style: 'currency', currency: 'ZAR',
-                    minimumFractionDigits: 0, maximumFractionDigits: 0
-                });
+        const tableSelector = '#psResultsTable';
+
+        if (!$(tableSelector).length) {
+            return;
+        }
+
+        if ($.fn.DataTable.isDataTable(tableSelector)) {
+            return;
+        }
+
+        $(tableSelector).DataTable({
+
+            // =====================================================
+            // RESPONSIVE MOBILE TABLE
+            // Hidden columns are displayed under the + child row.
+            // =====================================================
+            responsive: {
+                details: {
+                    type: 'inline',
+                    target: 'tr'
+                }
+            },
+
+            scrollX: false,
+            scrollCollapse: false,
+            autoWidth: false,
+            destroy: true,
+
+            // =====================================================
+            // DATATABLE LAYOUT
+            // =====================================================
+            dom:
+                '<"ps-dt-top"lBf>' +
+                'rt' +
+                '<"ps-dt-bottom"ip>',
+
+            lengthMenu: [
+                [10, 25, 50, -1],
+                [10, 25, 50, 'All']
+            ],
+
+            pageLength: 10,
+
+            // =====================================================
+            // EXPORT BUTTONS
+            // =====================================================
+            buttons: [
+                {
+                    extend: 'excel',
+                    text:
+                        '<i class="fa-solid fa-file-excel"></i> Excel',
+                    className: 'ps-dt-btn'
+                },
+                {
+                    extend: 'pdf',
+                    text:
+                        '<i class="fa-solid fa-file-pdf"></i> PDF',
+                    className: 'ps-dt-btn'
+                }
+            ],
+
+            // =====================================================
+            // LANGUAGE
+            // =====================================================
+            language: {
+                search: '_INPUT_',
+                searchPlaceholder: 'Search results…',
+
+                lengthMenu:
+                    'Show _MENU_ entries',
+
+                info:
+                    'Showing _START_ to _END_ of _TOTAL_',
+
+                infoEmpty:
+                    'No properties found',
+
+                infoFiltered:
+                    '(filtered from _MAX_ total)',
+
+                emptyTable:
+                    'No properties found'
+            },
+
+            // =====================================================
+            // RESPONSIVE COLUMN PRIORITY
+            //
+            // 0  Township
+            // 1  Address
+            // 2  Erf
+            // 3  PTN
+            // 4  RE
+            // 5  Category
+            // 6  Extent
+            // 7  Market Value
+            // 8  Scheme Name
+            // 9  Scheme No
+            // 10 Scheme Year
+            // 11 Lease
+            // 12 Unit No
+            // 13 Remarks
+            // =====================================================
+            columnDefs: [
+
+                // Township must always remain visible.
+                {
+                    targets: 0,
+                    className: 'all',
+                    responsivePriority: 1
+                },
+
+                // Address must also remain visible.
+                {
+                    targets: 1,
+                    className: 'all',
+                    responsivePriority: 2
+                },
+
+                // ERF
+                {
+                    targets: 2,
+                    responsivePriority: 3
+                },
+
+                // PTN
+                {
+                    targets: 3,
+                    responsivePriority: 4
+                },
+
+                // Category
+                {
+                    targets: 5,
+                    responsivePriority: 5
+                },
+
+                // Market Value
+                {
+                    targets: 7,
+                    responsivePriority: 6
+                },
+
+                // RE
+                {
+                    targets: 4,
+                    responsivePriority: 7
+                },
+
+                // Extent
+                {
+                    targets: 6,
+                    responsivePriority: 8
+                },
+
+                // Unit
+                {
+                    targets: 12,
+                    responsivePriority: 9
+                },
+
+                // Scheme Name
+                {
+                    targets: 8,
+                    responsivePriority: 10
+                },
+
+                // Scheme Number
+                {
+                    targets: 9,
+                    responsivePriority: 11
+                },
+
+                // Scheme Year
+                {
+                    targets: 10,
+                    responsivePriority: 12
+                },
+
+                // Lease
+                {
+                    targets: 11,
+                    responsivePriority: 13
+                },
+
+                // Remarks collapses first.
+                {
+                    targets: 13,
+                    responsivePriority: 14
+                }
+            ],
+
+            // =====================================================
+            // REDRAW
+            // =====================================================
+            drawCallback: function () {
+
+                formatMarketValues();
+
+                const api = this.api();
+
+                if (api.responsive) {
+                    api.responsive.recalc();
+                }
+            },
+
+            // =====================================================
+            // INITIALISATION
+            // =====================================================
+            initComplete: function () {
+
+                const api = this.api();
+
+                formatMarketValues();
+
+                api.columns.adjust();
+
+                if (api.responsive) {
+                    api.responsive.recalc();
+                }
+
+                // Update result count only.
+                const count =
+                    api.rows().count();
+
+                const badge =
+                    document.getElementById('psmCount');
+
+                if (badge) {
+                    badge.textContent =
+                        count +
+                        ' ' +
+                        (
+                            count === 1
+                                ? 'property'
+                                : 'properties'
+                        );
+                }
+
+                // NO TOASTER.
             }
         });
-    }
 
-    function showSearchToaster(title, message, duration) {
-        var c = document.querySelector('.toaster-container');
-        if (!c) {
-            c = document.createElement('div');
-            c.className = 'toaster-container';
-            document.body.appendChild(c);
-        }
-        var t = document.createElement('div');
-        t.className = 'toaster';
-        t.innerHTML =
-            '<div class="toaster-icon">🎉</div>' +
-            '<div class="toaster-content">' +
-                '<div class="toaster-title">' + title + '</div>' +
-                '<div class="toaster-message">' + message + '</div>' +
-            '</div>' +
-            '<button class="toaster-close" ' +
-            'onclick="this.closest(\'.toaster\').remove()">×</button>';
-        c.appendChild(t);
-        setTimeout(function () { t.remove(); }, duration);
+
+        // =========================================================
+        // HANDLE SCREEN SIZE CHANGES
+        // Useful while testing in Edge DevTools.
+        // =========================================================
+        let resizeTimer = null;
+
+        $(window).on(
+            'resize.psResultsTable',
+            function () {
+
+                clearTimeout(resizeTimer);
+
+                resizeTimer =
+                    setTimeout(function () {
+
+                        if (
+                            !$.fn.DataTable
+                                .isDataTable(tableSelector)
+                        ) {
+                            return;
+                        }
+
+                        const table =
+                            $(tableSelector)
+                                .DataTable();
+
+                        table.columns.adjust();
+
+                        if (table.responsive) {
+                            table.responsive.recalc();
+                        }
+
+                    }, 150);
+            }
+        );
+    });
+
+
+    // =============================================================
+    // MARKET VALUE FORMATTING
+    // =============================================================
+    function formatMarketValues() {
+
+        document
+            .querySelectorAll('.ps-market-val')
+            .forEach(function (el) {
+
+                const text =
+                    (el.textContent || '')
+                        .replace(/\s/g, '')
+                        .replace(/R/gi, '')
+                        .replace(/,/g, '')
+                        .trim();
+
+                const raw =
+                    parseFloat(
+                        text.replace(
+                            /[^0-9.-]+/g,
+                            ''
+                        )
+                    );
+
+                if (isNaN(raw) || raw < 0) {
+                    return;
+                }
+
+                el.textContent =
+                    raw.toLocaleString(
+                        'en-ZA',
+                        {
+                            style: 'currency',
+                            currency: 'ZAR',
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 0
+                        }
+                    );
+            });
     }
 </script>
 

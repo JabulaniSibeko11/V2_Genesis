@@ -16,6 +16,7 @@
     <link href="~/css/views/clientdashboardcss.css" rel="stylesheet" asp-append-version="true" />
     <link href="~/css/views/atrributes-search.css" rel="stylesheet" asp-append-version="true" />
     <link href="~/css/attribute-link-verification.css" rel="stylesheet" asp-append-version="true" />
+    <link rel="stylesheet"href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.dataTables.min.css" />
 }
 
 <div class="as-page">
@@ -267,57 +268,280 @@
 }
 
 @section Scripts {
-    <script src="~/js/attribute-link-verification.js" asp-append-version="true"></script>
 
+    <!-- ============================================================
+         DATATABLES CORE
+         ============================================================ -->
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
-    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+
+    <!-- ============================================================
+         DATATABLES RESPONSIVE
+         Required for the mobile + expandable row
+         ============================================================ -->
+    <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+
+    <!-- ============================================================
+         ATTRIBUTE ACCOUNT / STATEMENT PIN VERIFICATION
+         ============================================================ -->
+    <script src="~/js/attribute-link-verification.js"
+            asp-append-version="true"></script>
 
     <script>
         $(document).ready(function () {
-        if (!$.fn.DataTable.isDataTable('#attrResultsTable')) {
-        $('#attrResultsTable').DataTable({
-        responsive : false,
-        scrollX    : true,
-        autoWidth  : false,
-        destroy    : true,
-        dom        : '<"as-dt-top"lf>rt<"as-dt-bottom"ip>',
-        lengthMenu : [[10, 25, 50, -1], [10, 25, 50, 'All']],
-        pageLength : 10,
-        language: {
-        search           : '_INPUT_',
-        searchPlaceholder: 'Filter results…',
-        emptyTable       : 'No properties found',
-        info             : 'Showing _START_ to _END_ of _TOTAL_',
-        infoEmpty        : 'No properties found',
-        infoFiltered     : '(filtered from _MAX_ total)'
+
+        // ========================================================
+        // ATTRIBUTE PROPERTY SEARCH RESULTS
+        // ========================================================
+        const tableSelector = '#attrResultsTable';
+
+        if (!$(tableSelector).length) {
+        return;
+        }
+
+        // Prevent duplicate DataTable initialisation.
+        if ($.fn.DataTable.isDataTable(tableSelector)) {
+        return;
+        }
+
+        $(tableSelector).DataTable({
+
+        // ====================================================
+        // MOBILE RESPONSIVE MODE
+        //
+        // Hidden columns collapse under the + control.
+        // The whole page must NOT scroll horizontally.
+        // ====================================================
+        responsive: {
+        details: {
+        type: 'inline',
+        target: 'tr'
+        }
         },
-        columnDefs: [
-        { width: '150px', targets: 0 },
-        { width: '180px', targets: 1 },
-        { width: '55px',  targets: [2,3] },
-        { width: '120px', targets: 4 },
-        { width: '120px', targets: 6 },
-        { orderable: false, targets: 9 }
+
+        scrollX: false,
+        scrollCollapse: false,
+        autoWidth: false,
+        destroy: true,
+
+        // ====================================================
+        // DATATABLE LAYOUT
+        // ====================================================
+        dom:
+        '<"as-dt-top"lf>' +
+        'rt' +
+        '<"as-dt-bottom"ip>',
+
+        lengthMenu: [
+        [10, 25, 50, -1],
+        [10, 25, 50, 'All']
         ],
-        drawCallback : function () { formatAttrValues(); },
-        initComplete : function () { formatAttrValues(); }
-        });
+
+        pageLength: 10,
+
+        // ====================================================
+        // LANGUAGE
+        // ====================================================
+        language: {
+        search: '_INPUT_',
+        searchPlaceholder: 'Filter results…',
+
+        lengthMenu: 'Show _MENU_ entries',
+
+        emptyTable: 'No properties found',
+
+        info: 'Showing _START_ to _END_ of _TOTAL_',
+
+        infoEmpty: 'No properties found',
+
+        infoFiltered: '(filtered from _MAX_ total)'
+        },
+
+        // ====================================================
+        // COLUMN RESPONSIVENESS
+        //
+        // Column indexes:
+        //
+        // 0 Township
+        // 1 Address
+        // 2 ERF
+        // 3 PTN
+        // 4 Category
+        // 5 Extent
+        // 6 Market Value
+        // 7 Scheme
+        // 8 Unit
+        // 9 Actions
+        // ====================================================
+        columnDefs: [
+
+        // Township - always visible
+        {
+        targets: 0,
+        className: 'all',
+        responsivePriority: 1
+        },
+
+        // ERF - always visible
+        {
+        targets: 2,
+        className: 'all',
+        responsivePriority: 2
+        },
+
+        // Actions - always visible
+        {
+        targets: 9,
+        className: 'all',
+        responsivePriority: 3,
+        orderable: false,
+        searchable: false
+        },
+
+        // Address
+        {
+        targets: 1,
+        responsivePriority: 4
+        },
+
+        // PTN
+        {
+        targets: 3,
+        responsivePriority: 5
+        },
+
+        // Category
+        {
+        targets: 4,
+        responsivePriority: 6
+        },
+
+        // Market Value
+        {
+        targets: 6,
+        responsivePriority: 7
+        },
+
+        // Unit
+        {
+        targets: 8,
+        responsivePriority: 8
+        },
+
+        // Extent
+        {
+        targets: 5,
+        responsivePriority: 9
+        },
+
+        // Scheme
+        {
+        targets: 7,
+        responsivePriority: 10
+        }
+        ],
+        // ====================================================
+        // DRAW
+        // Reformat Market Value whenever DataTables redraws.
+        // ====================================================
+        drawCallback: function () {
+
+        formatAttrValues();
+
+        // Recalculate responsive layout.
+        if (this.api().responsive) {
+        this.api().responsive.recalc();
+        }
+        },
+
+        // ====================================================
+        // INITIAL LOAD
+        // ====================================================
+        initComplete: function () {
+
+        const api = this.api();
+
+        formatAttrValues();
+
+        // Make sure responsive columns are calculated
+        // using the actual container width.
+        api.columns.adjust();
+
+        if (api.responsive) {
+        api.responsive.recalc();
+        }
         }
         });
 
-        function formatAttrValues() {
-        document.querySelectorAll('.as-value').forEach(function (el) {
-        var raw = parseFloat(el.textContent.replace(/[^0-9.-]+/g, ''));
-        if (!isNaN(raw) && raw > 0) {
-        el.textContent = raw.toLocaleString('en-ZA', {
-        style: 'currency', currency: 'ZAR',
-        minimumFractionDigits: 0, maximumFractionDigits: 0
-        });
+
+        // ========================================================
+        // WINDOW RESIZE
+        //
+        // Important when moving between:
+        // Desktop -> Tablet -> Mobile in Edge DevTools.
+        // ========================================================
+        let resizeTimer = null;
+
+        $(window).on('resize.attrResultsTable', function () {
+
+        clearTimeout(resizeTimer);
+
+        resizeTimer = setTimeout(function () {
+
+        if (!$.fn.DataTable.isDataTable(tableSelector)) {
+        return;
         }
+
+        const table =
+        $(tableSelector).DataTable();
+
+        table.columns.adjust();
+
+        if (table.responsive) {
+        table.responsive.recalc();
+        }
+
+        }, 150);
+        });
+        });
+
+
+        // ============================================================
+        // FORMAT ATTRIBUTE MARKET VALUES
+        // ============================================================
+        function formatAttrValues() {
+
+        document
+        .querySelectorAll('.as-value')
+        .forEach(function (el) {
+
+        // Prevent formatting an already-formatted value
+        // incorrectly.
+        const rawText =
+        (el.textContent || '')
+        .replace(/\s/g, '')
+        .replace(/R/gi, '')
+        .replace(/,/g, '')
+        .trim();
+
+        const raw =
+        parseFloat(
+        rawText.replace(/[^0-9.-]+/g, '')
+        );
+
+        if (isNaN(raw) || raw < 0) {
+        return;
+        }
+
+        el.textContent =
+        raw.toLocaleString(
+        'en-ZA',
+        {
+        style: 'currency',
+        currency: 'ZAR',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+        }
+        );
         });
         }
     </script>

@@ -419,7 +419,12 @@ function load() {
     // ── Objector type ─────────────────────────────────────────────
     if (objector_key == "Owner") {
         $(".Div1-2").hide(); $(".Div1-3").hide();
-        document.getElementById("o_name_l").innerHTML = 'REGISTERED OWNER OF PROPERTY';
+        const ownerLabel = document.getElementById("o_name_l");
+
+        if (ownerLabel) {
+            ownerLabel.innerHTML =
+                'REGISTERED OWNER OF PROPERTY';
+        }
     }
     if (objector_key == "Third_Party") {
         $(".Div1-1").hide(); $(".Div1-3").hide();
@@ -427,9 +432,23 @@ function load() {
     if (objector_key == "Representative") {
         $(".Div1-2").hide();
         $("#owner_details").hide();
-        document.getElementById("o_name_l").innerHTML =
-            '<span style="color:red;">*</span>REGISTERED OWNER OF PROPERTY (<span style="color:red;">required</span>)';
-        document.getElementById("owner_head").innerHTML = "1.1 OWNER DETAILS";
+        const ownerLabel =
+            document.getElementById("o_name_l");
+
+        const ownerHead =
+            document.getElementById("owner_head");
+
+        if (ownerLabel) {
+            ownerLabel.innerHTML =
+                '<span style="color:red;">*</span>' +
+                'REGISTERED OWNER OF PROPERTY ' +
+                '(<span style="color:red;">required</span>)';
+        }
+
+        if (ownerHead) {
+            ownerHead.innerHTML =
+                "1.1 OWNER DETAILS";
+        }
     }
 }
 
