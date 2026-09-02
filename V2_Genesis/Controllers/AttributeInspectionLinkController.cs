@@ -34,6 +34,7 @@ public sealed class AttributeInspectionLinkController : Controller
     [HttpGet("{token:guid}")]
     public async Task<IActionResult> Index(Guid token, string? view = null)
     {
+        ApplySecureLinkHeaders();
         var model = await BuildModelAsync(token);
 
         if (model == null)
@@ -63,6 +64,7 @@ public sealed class AttributeInspectionLinkController : Controller
         Guid token,
         DateTime selectedDateTime)
     {
+        ApplySecureLinkHeaders();
         var request = await _db.AttrInspectionRequests
             .FirstOrDefaultAsync(x => x.EmailToken == token);
 
@@ -103,6 +105,7 @@ public sealed class AttributeInspectionLinkController : Controller
             return View("Index", current);
         }
 
+        // Normalise browser input, then validate the client-supplied value.
         selectedDateTime = new DateTime(
             selectedDateTime.Year,
             selectedDateTime.Month,
@@ -110,6 +113,17 @@ public sealed class AttributeInspectionLinkController : Controller
             selectedDateTime.Hour,
             selectedDateTime.Minute,
             0);
+
+        if (selectedDateTime <= DateTime.Now)
+        {
+            var invalidPast = await BuildModelAsync(token);
+
+            if (invalidPast != null)
+                invalidPast.Message =
+                    "Please select a future inspection date and time.";
+
+            return View("Index", invalidPast);
+        }
 
         var horizonEnd = DateTime.Today.AddMonths(2);
 
@@ -240,10 +254,38 @@ public sealed class AttributeInspectionLinkController : Controller
             await _db.SaveChangesAsync();
             await tx.CommitAsync();
         }
-        catch
+        catch (InvalidOperationException ex)
         {
             await tx.RollbackAsync();
-            throw;
+
+            _logger.LogWarning(
+                "Inspection appointment confirmation could not be completed for request {InspectionRequestId}: {Reason}",
+                request.Id,
+                ex.Message);
+
+            var refreshed = await BuildModelAsync(token);
+
+            if (refreshed != null)
+                refreshed.Message = ex.Message;
+
+            return View("Index", refreshed);
+        }
+        catch (Exception ex)
+        {
+            await tx.RollbackAsync();
+
+            _logger.LogError(
+                ex,
+                "Inspection appointment confirmation failed for request {InspectionRequestId}.",
+                request.Id);
+
+            var failed = await BuildModelAsync(token);
+
+            if (failed != null)
+                failed.Message =
+                    "The appointment could not be confirmed. Please try again.";
+
+            return View("Index", failed);
         }
 
         TempData["InspectionLinkSuccess"] =
@@ -260,6 +302,7 @@ public sealed class AttributeInspectionLinkController : Controller
         Guid token,
         string? inspectionPin)
     {
+        ApplySecureLinkHeaders();
         var request = await _db.AttrInspectionRequests
             .FirstOrDefaultAsync(x => x.EmailToken == token);
 
@@ -377,6 +420,7 @@ public sealed class AttributeInspectionLinkController : Controller
     [HttpGet("{token:guid}/valuer-photo")]
     public async Task<IActionResult> ValuerPhoto(Guid token)
     {
+        ApplySecureLinkHeaders();
         var context =
             await ResolveSecureRequestAsync(token);
 
@@ -614,6 +658,9 @@ public sealed class AttributeInspectionLinkController : Controller
         AttrPropertyInfo Property)?>
         ResolveSecureRequestAsync(Guid token)
     {
+        if (token == Guid.Empty)
+            return null;
+
         var request =
             await _db.AttrInspectionRequests
                 .AsNoTracking()
@@ -693,6 +740,7 @@ public sealed class AttributeInspectionLinkController : Controller
 
         return full;
     }
+    // Secure GUID email-link responses must never be cached, framed or leak referrers.
     private void ApplySecureLinkHeaders()
     {
         Response.Headers.CacheControl =
