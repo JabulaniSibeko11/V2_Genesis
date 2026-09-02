@@ -80,14 +80,16 @@ public class NoticeService : INoticeService
 
 
 
-    // ── Section 49 ────────────────────────────────────────────────────
+    // ── Section 49 ──────────────────────────────────────────────────────────────
     public async Task<(byte[] Pdf, string FileName)> GenerateSection49Async(
         string rollSource,
         string unitKey,
         string valuationKey)
     {
         var items = await _search.GetPropertyDetailsAsync(
-            rollSource, unitKey, valuationKey);
+            rollSource,
+            unitKey,
+            valuationKey);
 
         if (!items.Any())
             throw new InvalidOperationException(
@@ -97,22 +99,32 @@ public class NoticeService : INoticeService
         var dates = _rollDates.For(rollSource);
         var main = items.First();
 
-        var fileName = $"Section49_{SanitiseName(main.PropertyDesc ?? unitKey)}.pdf";
+        var fileName =
+            $"Section49_{SanitiseName(main.PropertyDesc ?? unitKey)}.pdf";
 
-        var pdfBytes = GenerateSection49Pdf(items, main, roll, dates);
+        var pdfBytes =
+            GenerateSection49Pdf(
+                items,
+                main,
+                roll,
+                dates,
+                rollSource);
 
-        // ── Save copy to disk ─────────────────────────────────────────
-        await SaveToDiskAsync(roll.Section49Path, main.PropertyDesc, pdfBytes);
+        await SaveToDiskAsync(
+            roll.Section49Path,
+            main.PropertyDesc,
+            pdfBytes);
 
         return (pdfBytes, fileName);
     }
 
-    public async Task<(byte[] Pdf, string FileName)> GenerateSection49ForObjectionAsync(
-        string rollSource,
-        string unitKey,
-        string valuationKey,
-        string objectionNo,
-        string propertyDescription)
+    public async Task<(byte[] Pdf, string FileName)>
+        GenerateSection49ForObjectionAsync(
+            string rollSource,
+            string unitKey,
+            string valuationKey,
+            string objectionNo,
+            string propertyDescription)
     {
         if (!IsSupportedSection49Roll(rollSource))
         {
@@ -121,19 +133,27 @@ public class NoticeService : INoticeService
         }
 
         if (string.IsNullOrWhiteSpace(objectionNo))
-            throw new ArgumentException("Objection number is required.", nameof(objectionNo));
+            throw new ArgumentException(
+                "Objection number is required.",
+                nameof(objectionNo));
 
         unitKey = FloatKeyHelper.Normalize(unitKey);
         valuationKey = FloatKeyHelper.Normalize(valuationKey);
 
         if (string.IsNullOrWhiteSpace(unitKey))
-            throw new ArgumentException("A valid unit key is required.", nameof(unitKey));
+            throw new ArgumentException(
+                "A valid unit key is required.",
+                nameof(unitKey));
 
         if (string.IsNullOrWhiteSpace(valuationKey))
-            throw new ArgumentException("A valid valuation key is required.", nameof(valuationKey));
+            throw new ArgumentException(
+                "A valid valuation key is required.",
+                nameof(valuationKey));
 
         var items = await _search.GetPropertyDetailsAsync(
-            rollSource, unitKey, valuationKey);
+            rollSource,
+            unitKey,
+            valuationKey);
 
         if (items is null || items.Count == 0)
         {
@@ -145,21 +165,37 @@ public class NoticeService : INoticeService
         var dates = _rollDates.For(rollSource);
         var main = items.First();
 
-        var finalPropertyDescription = string.IsNullOrWhiteSpace(propertyDescription)
-            ? main.PropertyDesc ?? unitKey
-            : propertyDescription.Trim();
+        var finalPropertyDescription =
+            string.IsNullOrWhiteSpace(propertyDescription)
+                ? main.PropertyDesc ?? unitKey
+                : propertyDescription.Trim();
 
         var fileName =
-            $"{SanitiseName(objectionNo)}_{SanitiseName(finalPropertyDescription)}_Section49.pdf";
+            $"{SanitiseName(objectionNo)}_" +
+            $"{SanitiseName(finalPropertyDescription)}_Section49.pdf";
 
-        var pdfBytes = GenerateSection49Pdf(items, main, roll, dates);
+        var pdfBytes =
+            GenerateSection49Pdf(
+                items,
+                main,
+                roll,
+                dates,
+                rollSource);
 
         if (pdfBytes is null || pdfBytes.Length == 0)
-            throw new InvalidOperationException($"Section 49 PDF is empty for {objectionNo}.");
+        {
+            throw new InvalidOperationException(
+                $"Section 49 PDF is empty for {objectionNo}.");
+        }
 
         _logger.LogInformation(
-            "[Section49 Submission] Generated {FileName} for {ObjectionNo}. Roll={RollSource}, UnitKey={UnitKey}, ValuationKey={ValuationKey}",
-            fileName, objectionNo, rollSource, unitKey, valuationKey);
+            "[Section49 Submission] Generated {FileName} for {ObjectionNo}. " +
+            "Roll={RollSource}, UnitKey={UnitKey}, ValuationKey={ValuationKey}",
+            fileName,
+            objectionNo,
+            rollSource,
+            unitKey,
+            valuationKey);
 
         return (pdfBytes, fileName);
     }
@@ -177,312 +213,619 @@ public class NoticeService : INoticeService
         };
     }
 
-    // ── PDF build ─────────────────────────────────────────────────────
+    // ── Current official one-page Section 49 PDF ────────────────────────────────
     private byte[] GenerateSection49Pdf(
         List<PropertyDetailResult> items,
         PropertyDetailResult main,
         NoticeRollEntry roll,
-        RollDateEntry dates)
+        RollDateEntry dates,
+        string rollSource)
     {
-        var headerPath = Path.Combine(_env.WebRootPath, HEADER_IMAGE);
-        var signaturePath = Path.Combine(_env.ContentRootPath, roll.SignatureFile);
+        var headerPath =
+            Path.Combine(
+                _env.WebRootPath,
+                HEADER_IMAGE);
 
-        var periodText = $"{dates.OpenDate:dd MMMM yyyy} – {dates.VisibleUntil:dd MMMM yyyy} until 15:00";
+        var signaturePath =
+            ResolveSection49SignaturePath(
+                rollSource,
+                roll);
+
+        static string Safe(string? value) =>
+            string.IsNullOrWhiteSpace(value)
+                ? string.Empty
+                : value.Trim();
+
+        var culture =
+            System.Globalization.CultureInfo
+                .GetCultureInfo("en-ZA");
+
+        var title12 =
+            TextStyle.Default
+                .FontFamily("Arial")
+                .FontSize(12)
+                .SemiBold();
+
+        var sub10b =
+            TextStyle.Default
+                .FontFamily("Arial")
+                .FontSize(10)
+                .SemiBold();
+
+        var body9 =
+            TextStyle.Default
+                .FontFamily("Arial")
+                .FontSize(9);
+
+        var body9b =
+            TextStyle.Default
+                .FontFamily("Arial")
+                .FontSize(9)
+                .SemiBold();
+
+        var small7 =
+            TextStyle.Default
+                .FontFamily("Arial")
+                .FontSize(7)
+                .FontColor(Colors.Grey.Darken2);
+
+        // Genesis VisibleUntil already represents the final configured closing date
+        // for the selected roll, including an extension where applicable.
+        var closingDate =
+            dates.VisibleUntil;
+
+        var inspectionWindowText =
+            $"{dates.OpenDate:dd MMMM yyyy} – " +
+            $"{closingDate:dd MMMM yyyy} until 15:00";
+
+        var rollDisplayName =
+            Safe(roll.RollTitle).ToUpperInvariant();
+
+        var rollDisplayTitle =
+            Safe(roll.RollTitle);
+
+        var recipient =
+            Safe(main.ADDR1);
+
+        var greeting =
+            string.IsNullOrWhiteSpace(recipient)
+                ? "Dear Property Owner"
+                : $"Dear: {recipient}";
+
+        // The current notice application caters for compact split/multipurpose
+        // notices. Keep the Section 49 table to a maximum of four rows so the
+        // official notice remains on one A4 page.
+        var noticeRows =
+            items
+                .Take(4)
+                .ToList();
+
+        if (noticeRows.Count == 0)
+            noticeRows.Add(main);
 
         return Document.Create(container =>
         {
             container.Page(page =>
             {
                 page.Size(PageSizes.A4);
-                page.Margin(1.5f, Unit.Centimetre);
-                page.DefaultTextStyle(t => t.FontFamily("Arial").FontSize(9));
 
-                page.Content().Column(col =>
-                {
-                    // ══════════════ PAGE 1 ══════════════════════════
-                    // Header image
-                    if (File.Exists(headerPath))
-                        col.Item().Width(500).Image(headerPath);
+                // Match the current GV23_Notice compact layout.
+                page.MarginLeft(30);
+                page.MarginRight(30);
+                page.MarginTop(10);
+                page.MarginBottom(10);
 
-                    col.Item().Height(8);
+                page.DefaultTextStyle(
+                    x => x
+                        .FontFamily("Arial")
+                        .FontSize(9));
 
-                    // Owner address + date row
-                    col.Item().Row(row =>
+                page.Footer()
+                    .PaddingTop(5)
+                    .AlignCenter()
+                    .Text(t =>
                     {
-                        row.RelativeItem().Column(addr =>
-                        {
-                            foreach (var line in new[]
-                                { main.ADDR1, main.ADDR2, main.ADDR3,
-                                  main.ADDR4, main.ADDR5 }
-                                .Where(a => !string.IsNullOrWhiteSpace(a)))
-                            {
-                                addr.Item().Text(line!)
-                                    .FontSize(9).Bold();
-                            }
-                        });
-                        row.RelativeItem().AlignRight()
-                            .Text(DateTime.Now.ToString("dd MMMM yyyy"))
-                            .FontSize(10);
-                    });
+                        t.Line(
+                                "_______________________________________________")
+                            .Style(small7);
 
-                    col.Item().Height(10);
-
-                    // ── Title ─────────────────────────────────────
-                    col.Item().AlignCenter()
-                        .Text("CITY OF JOHANNESBURG")
-                        .FontSize(13).Bold();
-
-                    col.Item().Height(4);
-
-                    col.Item().AlignCenter()
-                        .Text($"PUBLIC NOTICE CALLING FOR INSPECTION OF THE {roll.RollTitle.ToUpper()} AND LODGING OF OBJECTIONS")
-                        .FontSize(10).Bold();
-
-                    col.Item().Height(6);
-
-                    col.Item().BorderBottom(1).BorderColor("#555555");
-
-                    col.Item().Height(8);
-
-                    // ── Notice paragraphs ──────────────────────────
-                    col.Item().PaddingBottom(6).Text(t =>
-                    {
-                        t.Justify();
-                        t.Span("Notice is hereby given in terms of Section 49(1)(a)(i) read together with section 78(2) of the ");
-                        t.Span("Local Government: Municipal Property Rates Act No. 6 of 2004").Bold();
-                        t.Span($" as amended, that the valuation roll for the financial years ");
-                        t.Span(roll.FinancialYears).Bold();
-                        t.Span(" is open for public inspection from ");
-                        t.Span(periodText).Bold();
-                        t.Span(".");
-                        if (!string.IsNullOrEmpty(dates.ExtendedPeriodText))
-                        {
-                            t.Span(" " + dates.ExtendedPeriodText).Bold();
-                        }
-                        t.Span(" In addition, the valuation roll is available on the City's website ");
-                        t.Span("www.joburg.org.za").Bold();
-                        t.Span(", under the GVR Online tile on the home page.");
-                    });
-
-                    col.Item().PaddingBottom(6).Text(
-                        "An invitation is hereby made in terms of section 49(1)(a)(ii) of the Act to any owner of property or other person " +
-                        "who so desires to lodge an objection with the Municipal Manager in respect of any matter reflected in, or omitted " +
-                        "from, the valuation roll within the above mentioned inspection period.")
-                        .Justify();
-
-                    col.Item().PaddingBottom(6).Text(t =>
-                    {
-                        t.Justify();
-                        t.Span("Attention is specifically drawn to the fact that in terms of section 50(2) of the Act an objection must be in relation to a ");
-                        t.Span("specific individual property").Bold();
-                        t.Span(" and not against the valuation roll as such. Objections can be submitted online at ");
-                        t.Span("www.joburg.org.za").Bold();
-                        t.Span(", under the GVR Online tile on the home page.");
-                    });
-
-                    col.Item().PaddingBottom(8).Text(
-                        "The completed forms could be returned to the following address or preferably submitted online.")
-                        .Justify();
-
-                    // ── Address box ────────────────────────────────
-                    col.Item().Background("#F0F0F0").Border(1).BorderColor("#888888")
-                        .Padding(8).Column(box =>
-                        {
-                            box.Item().Text("Valuation Services: Administration").Bold().FontSize(9);
-                            box.Item().Text("Jorissen Place, 66 Jorissen Street, Braamfontein, East Wing, 1st Floor").FontSize(9);
-                        });
-
-                    col.Item().Height(8);
-
-                    col.Item().Text(
-                        "The acknowledgement letter will be generated by the online system and should be kept as proof that the objection was submitted.")
-                        .Justify();
-
-                    // ══════════════ PAGE BREAK ═══════════════════════
-                    col.Item().PageBreak();
-
-                    // ══════════════ PAGE 2 ══════════════════════════
-                    col.Item().BorderBottom(1).BorderColor("#555555");
-                    col.Item().Height(6);
-
-                    col.Item().AlignCenter()
-                        .Text($"PROPERTY DETAILS AS LISTED IN {roll.RollTitle.ToUpper()}")
-                        .FontSize(10).Bold();
-
-                    col.Item().Height(6);
-
-                    // Property info box
-                    col.Item().Background("#F0F7FF").Border(1).BorderColor("#4682B4")
-                        .Padding(7).Row(r =>
-                        {
-                            r.RelativeItem().Column(c =>
-                            {
-                                c.Item().Text(t =>
-                                {
-                                    t.Span("Property Description: ").Bold();
-                                    t.Span(main.PropertyDesc ?? "–");
-                                });
-                                c.Item().Text(t =>
-                                {
-                                    t.Span("Physical Address: ").Bold();
-                                    t.Span(main.LisStreetAddress ?? "–");
-                                });
-                            });
-                        });
-
-                    col.Item().Height(6);
-
-                    // Property valuation table
-                    col.Item().Table(table =>
-                    {
-                        table.ColumnsDefinition(c =>
-                        {
-                            c.RelativeColumn(3);   // Market Value
-                            c.RelativeColumn(2);   // Extent
-                            c.RelativeColumn(3);   // Category
-                            c.RelativeColumn(4);   // Remarks
-                        });
-
-                        // Headers
-                        static IContainer HeaderCell(IContainer c) =>
-                            c.Background("#4682B4").Padding(5).AlignCenter();
-
-                        foreach (var h in new[] { "Market Value", "Extent", "Property Category", "Remarks" })
-                            table.Cell().Element(HeaderCell)
-                                .Text(h).FontColor(Colors.White).Bold().FontSize(8);
-
-                        // Rows
-                        bool alt = false;
-                        foreach (var item in items)
-                        {
-                            var bg = alt ? Colors.Grey.Lighten5 : Colors.White;
-                            alt = !alt;
-
-                            IContainer DataCell(IContainer c) =>
-                                c.Background(bg).Padding(4);
-
-                            table.Cell().Element(DataCell).AlignRight()
-                                .Text(FormatZAR(item.MarketValue)).FontSize(8);
-                            table.Cell().Element(DataCell).AlignCenter()
-                                .Text(item.RateableArea ?? "–").FontSize(8);
-                            table.Cell().Element(DataCell)
-                                .Text(item.CatDesc ?? "–").FontSize(8);
-                            table.Cell().Element(DataCell)
-                                .Text(item.Reason ?? "–").FontSize(8);
-                        }
-                    });
-
-                    col.Item().Height(8);
-
-                    // Closing date warning
-                    col.Item().Background("#FFF5E6").Border(1.5f).BorderColor("#FF8C00")
-                        .Padding(6).AlignCenter()
-                        .Text($"⚠ CLOSING DATE FOR OBJECTIONS IS 15:00 ON {dates.VisibleUntil:dd MMMM yyyy}")
-                        .Bold().FontSize(9);
-
-                    col.Item().Height(8);
-
-                    // Contact info
-                    col.Item().PaddingBottom(8).Text(t =>
-                    {
-                        t.Span("For further enquiries: ").Bold();
-                        t.Span("Tel. 011 407-6622 or 011 407-6597  |  valuationenquiries@joburg.org.za");
-                    });
-
-                    // NB title
-                    col.Item().AlignCenter()
-                        .Text("NB. REQUIRED DOCUMENTATION FOR OBJECTIONS")
-                        .FontSize(10).Bold();
-                    col.Item().Height(6);
-
-                    // Two-column requirements
-                    col.Item().Table(table =>
-                    {
-                        table.ColumnsDefinition(c =>
-                        {
-                            c.RelativeColumn();
-                            c.RelativeColumn();
-                        });
-
-                        // Residential cell
-                        table.Cell().Background("#F0F8FF").Border(1).BorderColor("#4682B4")
-                            .Padding(8).Column(c =>
-                            {
-                                c.Item().Text("Residential Properties").Bold().FontSize(9);
-                                c.Item().Height(4);
-                                foreach (var line in new[]
-                                {
-                                "• Market evidence (sold properties within immediate area)",
-                                "• Number of bedrooms and bathrooms",
-                                "• Improvements (swimming pool, etc.)",
-                                "• Age of improvements",
-                                "• Any adverse conditions affecting value",
-                                "• Building sizes and types (garage, granny flat)",
-                                "• Any other additional information",
-                                "",
-                                "OR",
-                                "• Motivated valuation report from registered Valuer"
-                            })
-                                    c.Item().Text(line).FontSize(8);
-                            });
-
-                        // Business cell
-                        table.Cell().Background("#FFF8F0").Border(1).BorderColor("#FF8C00")
-                            .Padding(8).Column(c =>
-                            {
-                                c.Item().Text("Business Properties").Bold().FontSize(9);
-                                c.Item().Height(4);
-                                foreach (var line in new[]
-                                {
-                                "• Rent Roll (if there are tenants)",
-                                "• Size of building (if no tenants)",
-                                "• Actual use of building",
-                                "• Income / Expenditure",
-                                "• Number of parking bays",
-                                "• Condition of the building (attach photos)",
-                                "• Any other additional information",
-                                "",
-                                "OR",
-                                "• Motivated valuation report from registered Valuer"
-                            })
-                                    c.Item().Text(line).FontSize(8);
-                            });
-                    });
-
-                    col.Item().Height(8);
-
-                    // Representatives warning
-                    col.Item().Background("#FFE0E0").Border(2).BorderColor("#DC143C")
-                        .Padding(8).Column(c =>
-                        {
-                            c.Item().Text("⚠ REPRESENTATIVES:").Bold().FontSize(9);
-                            c.Item().Height(4);
-                            c.Item().Text(
-                                "Letter of authorisation MUST be signed by the registered owner and attached to the objection form.")
-                                .FontSize(8);
-                        });
-
-                    col.Item().Height(10);
-
-                    // Signature
-                    if (File.Exists(signaturePath))
-                        col.Item().Width(150).Image(signaturePath);
-
-                    col.Item().Height(6);
-
-                    // Footer
-                    col.Item().BorderTop(1).BorderColor("#AAAAAA")
-                        .PaddingTop(6).AlignCenter().Column(f =>
-                        {
-                            f.Item().Text(
+                        t.Line(
                                 "This is an official document generated by the City of Johannesburg Valuation Services Department")
-                                .FontSize(7).FontColor("#666666");
-                            f.Item().Text($"Generated on: {DateTime.Now:dd MMMM yyyy}")
-                                .FontSize(7).FontColor("#666666");
-                        });
-                });
+                            .Style(small7);
+
+                        t.Line(
+                                $"Generated on: {DateTime.Now:dd MMMM yyyy}")
+                            .Style(small7);
+
+                        if (!string.IsNullOrWhiteSpace(main.ValuationKey))
+                        {
+                            t.Line(Safe(main.ValuationKey))
+                                .FontFamily("Arial")
+                                .FontSize(7)
+                                .SemiBold()
+                                .FontColor(Colors.Red.Medium);
+                        }
+                    });
+
+                page.Content()
+                    .Column(col =>
+                    {
+                        col.Spacing(4);
+
+                        // ── City header ────────────────────────────────────
+                        if (File.Exists(headerPath))
+                        {
+                            col.Item()
+                                .Image(
+                                    headerPath,
+                                    ImageScaling.FitWidth);
+                        }
+
+                        // ── Owner postal address + notice date ─────────────
+                        col.Item()
+                            .PaddingTop(3)
+                            .Row(row =>
+                            {
+                                row.RelativeItem()
+                                    .Text(t =>
+                                    {
+                                        foreach (var line in new[]
+                                        {
+                                            main.ADDR1,
+                                            main.ADDR2,
+                                            main.ADDR3,
+                                            main.ADDR4,
+                                            main.ADDR5
+                                        }.Where(x =>
+                                            !string.IsNullOrWhiteSpace(x)))
+                                        {
+                                            t.Span(
+                                                    Safe(line) +
+                                                    Environment.NewLine)
+                                                .Style(sub10b);
+                                        }
+                                    });
+
+                                row.ConstantItem(150)
+                                    .AlignRight()
+                                    .Text(
+                                        DateTime.Now.ToString(
+                                            "dd MMMM yyyy",
+                                            culture))
+                                    .Style(body9);
+                            });
+
+                        // ── Official title ─────────────────────────────────
+                        col.Item()
+                            .AlignCenter()
+                            .Text("CITY OF JOHANNESBURG")
+                            .Style(title12);
+
+                        col.Item()
+                            .AlignCenter()
+                            .Text(
+                                $"PUBLIC NOTICE CALLING FOR INSPECTION OF THE " +
+                                $"{rollDisplayName} AND LODGING OF OBJECTIONS")
+                            .Style(sub10b);
+
+                        col.Item()
+                            .LineHorizontal(1.5f)
+                            .LineColor(Colors.Grey.Darken2);
+
+                        col.Item()
+                            .PaddingTop(2)
+                            .Text(greeting)
+                            .Style(body9b);
+
+                        // ── Current legal wording from GV23_Notice ─────────
+                        col.Item()
+                            .Text(t =>
+                            {
+                                t.Span(
+                                        "Notice is hereby given in terms of Section 49(1)(a)(i) " +
+                                        "read together with section 78(2) of the ")
+                                    .Style(body9);
+
+                                t.Span(
+                                        "Local Government: Municipal Property Rates Act No. 6 of 2004")
+                                    .Style(body9b);
+
+                                t.Span(
+                                        $" as amended hereinafter referred to as the \"Act\", " +
+                                        $"that the {rollDisplayTitle} for the financial years ")
+                                    .Style(body9);
+
+                                t.Span(
+                                        Safe(roll.FinancialYears))
+                                    .Style(body9b);
+
+                                t.Span(
+                                        " is open for public inspection at the centre listed below, from ")
+                                    .Style(body9);
+
+                                t.Span(
+                                        inspectionWindowText)
+                                    .Style(body9b);
+
+                                t.Span(
+                                        ". In addition, the valuation roll is available on the City's website ")
+                                    .Style(body9);
+
+                                t.Span(
+                                        "www.joburg.org.za")
+                                    .Style(body9b);
+
+                                t.Span(
+                                        ", under the GVR Online tile on the home page.")
+                                    .Style(body9);
+                            });
+
+                        if (!string.IsNullOrWhiteSpace(
+                                dates.ExtendedPeriodText))
+                        {
+                            col.Item()
+                                .Text(
+                                    dates.ExtendedPeriodText.Trim())
+                                .Style(body9b);
+                        }
+
+                        col.Item()
+                            .Text(
+                                $"An invitation is hereby made in terms of section 49(1)(a)(ii) " +
+                                $"read together with section 78(2) of the Act to any owner of property " +
+                                $"or other person who so desires that may wish to lodge an objection " +
+                                $"with the Municipal Manager in respect of any matter reflected in, " +
+                                $"or omitted from, the {rollDisplayTitle}. The objection must be " +
+                                $"submitted within the above mentioned inspection period.")
+                            .Style(body9)
+                            .Justify();
+
+                        col.Item()
+                            .Text(t =>
+                            {
+                                t.Span(
+                                        "Attention is specifically drawn to the fact that in terms " +
+                                        "of section 50(2) of the Act an objection must be in relation to a ")
+                                    .Style(body9);
+
+                                t.Span(
+                                        "specific individual property")
+                                    .Style(body9b);
+
+                                t.Span(
+                                        $" and not against the {rollDisplayTitle} as such. " +
+                                        "The lodging of objections in terms of Chapter 4(d) of the " +
+                                        "Regulations to the Act can be done at the centre listed below " +
+                                        "or preferably online at ")
+                                    .Style(body9);
+
+                                t.Span(
+                                        "www.joburg.org.za")
+                                    .Style(body9b);
+
+                                t.Span(
+                                        ", under the GVR Online tile on the home page.")
+                                    .Style(body9);
+                            });
+
+                        col.Item()
+                            .Text(
+                                "The completed forms could be returned to the following address " +
+                                "or preferably submitted online on the online objection system.")
+                            .Style(body9);
+
+                        // ── Administration address ────────────────────────
+                        col.Item()
+                            .Background(
+                                Color.FromRGB(
+                                    240,
+                                    240,
+                                    240))
+                            .Padding(4)
+                            .Column(box =>
+                            {
+                                box.Item()
+                                    .Text(
+                                        "Valuation Services: Administration")
+                                    .Style(body9b);
+
+                                box.Item()
+                                    .Text(
+                                        "Jorissen Place, 66 Jorissen Street, Braamfontein, " +
+                                        "East Wing, 1st Floor")
+                                    .Style(body9);
+                            });
+
+                        col.Item()
+                            .Text(
+                                "The acknowledgement letter will be generated by the online system " +
+                                "and should be kept as proof that the objection was submitted.")
+                            .Style(body9);
+
+                        // IMPORTANT:
+                        // No PageBreak here. Property details stay on page 1.
+
+                        col.Item()
+                            .LineHorizontal(1.5f)
+                            .LineColor(Colors.Grey.Darken2);
+
+                        col.Item()
+                            .AlignCenter()
+                            .Text(
+                                $"PROPERTY DETAILS AS LISTED IN {rollDisplayName}")
+                            .Style(sub10b);
+
+                        // ── Blue property detail box ──────────────────────
+                        col.Item()
+                            .Background(
+                                Color.FromRGB(
+                                    245,
+                                    250,
+                                    255))
+                            .Border(1)
+                            .BorderColor(
+                                Color.FromRGB(
+                                    70,
+                                    130,
+                                    180))
+                            .Padding(5)
+                            .Column(box =>
+                            {
+                                box.Item()
+                                    .Text(t =>
+                                    {
+                                        t.Span(
+                                                "Property Description: ")
+                                            .Style(body9b);
+
+                                        t.Span(
+                                                Safe(main.PropertyDesc))
+                                            .Style(body9);
+                                    });
+
+                                box.Item()
+                                    .Text(t =>
+                                    {
+                                        t.Span(
+                                                "Physical Address: ")
+                                            .Style(body9b);
+
+                                        t.Span(
+                                                Safe(main.LisStreetAddress))
+                                            .Style(body9);
+                                    });
+                            });
+
+                        // ── Current blue Section 49 valuation table ───────
+                        col.Item()
+                            .Table(table =>
+                            {
+                                table.ColumnsDefinition(columns =>
+                                {
+                                    columns.RelativeColumn();
+                                    columns.ConstantColumn(75);
+                                    columns.ConstantColumn(105);
+                                    columns.RelativeColumn();
+                                });
+
+                                table.Header(header =>
+                                {
+                                    void HeaderCell(string text)
+                                    {
+                                        header.Cell()
+                                            .Border(1)
+                                            .BorderColor(
+                                                Colors.Grey.Lighten1)
+                                            .Background(
+                                                Color.FromRGB(
+                                                    70,
+                                                    130,
+                                                    180))
+                                            .PaddingVertical(3)
+                                            .PaddingHorizontal(5)
+                                            .Text(text)
+                                            .FontFamily("Arial")
+                                            .FontSize(8)
+                                            .SemiBold()
+                                            .FontColor(
+                                                Colors.White);
+                                    }
+
+                                    HeaderCell(
+                                        "Property Category");
+
+                                    HeaderCell(
+                                        "Area/m²");
+
+                                    HeaderCell(
+                                        "Market Value");
+
+                                    HeaderCell(
+                                        "With Effective Date");
+                                });
+
+                                void DataCell(
+                                    string? text,
+                                    bool right = false,
+                                    bool center = false)
+                                {
+                                    var cell =
+                                        table.Cell()
+                                            .Border(1)
+                                            .BorderColor(
+                                                Colors.Grey.Lighten1)
+                                            .PaddingVertical(3)
+                                            .PaddingHorizontal(5);
+
+                                    if (right)
+                                        cell = cell.AlignRight();
+                                    else if (center)
+                                        cell = cell.AlignCenter();
+
+                                    cell.Text(
+                                            string.IsNullOrWhiteSpace(text)
+                                                ? "-"
+                                                : text.Trim())
+                                        .FontFamily("Arial")
+                                        .FontSize(8);
+                                }
+
+                                foreach (var item in noticeRows)
+                                {
+                                    DataCell(
+                                        item.CatDesc);
+
+                                    DataCell(
+                                        item.RateableArea,
+                                        right: true);
+
+                                    DataCell(
+                                        FormatZAR(
+                                            item.MarketValue),
+                                        right: true);
+
+                                    DataCell(
+                                        item.WefDate,
+                                        center: true);
+                                }
+                            });
+
+                        // ── Closing date ──────────────────────────────────
+                        col.Item()
+                            .PaddingTop(4)
+                            .AlignCenter()
+                            .Text(
+                                $"⚠ CLOSING DATE FOR OBJECTIONS IS 15:00 ON " +
+                                $"{closingDate:dd MMMM yyyy}"
+                                    .ToUpperInvariant())
+                            .Style(body9b);
+
+                        // ── Roll-specific official signature ─────────────
+                        if (!string.IsNullOrWhiteSpace(
+                                signaturePath) &&
+                            File.Exists(signaturePath))
+                        {
+                            col.Item()
+                                .PaddingTop(3)
+                                .AlignLeft()
+                                .Width(185)
+                                .Height(55)
+                                .Image(
+                                    signaturePath,
+                                    ImageScaling.FitArea);
+                        }
+                        else
+                        {
+                            _logger.LogWarning(
+                                "[Section49] Signature image was not found for roll {RollSource}. " +
+                                "ResolvedPath={SignaturePath}",
+                                rollSource,
+                                signaturePath);
+                        }
+                    });
             });
         }).GeneratePdf();
+    }
+
+    // ── Roll-specific signature resolver ───────────────────────────────────────
+    // This deliberately resolves from wwwroot/Images by roll so an outdated
+    // appsettings SignatureFile cannot cause the wrong official to sign a notice.
+    private string ResolveSection49SignaturePath(
+        string rollSource,
+        NoticeRollEntry roll)
+    {
+        var imageFolder =
+            Path.Combine(
+                _env.WebRootPath,
+                "Images");
+
+        var expectedNames =
+            rollSource?.Trim() switch
+            {
+                "Objection" =>
+                    new[]
+                    {
+                        "Signature_Gv23.PNG",
+                        "Signature_Gv23.png",
+                        "Signature_GV23.PNG",
+                        "Signature_GV23.png"
+                    },
+
+                "Objection_Supp1" =>
+                    new[]
+                    {
+                        "Signature_Sup1.PNG",
+                        "Signature_Sup1.png"
+                    },
+
+                "Objection_Supp2" =>
+                    new[]
+                    {
+                        "Signature_Sup2.PNG",
+                        "Signature_Sup2.png"
+                    },
+
+                "Objection_Supp3" =>
+                    new[]
+                    {
+                        "Signature_Sup3.PNG",
+                        "Signature_Sup3.png"
+                    },
+
+                "Objection_Supp4" =>
+                    new[]
+                    {
+                        "Signature_Sup4.PNG",
+                        "Signature_Sup4.png"
+                    },
+
+                _ =>
+                    Array.Empty<string>()
+            };
+
+        foreach (var fileName in expectedNames)
+        {
+            var candidate =
+                Path.Combine(
+                    imageFolder,
+                    fileName);
+
+            if (File.Exists(candidate))
+                return candidate;
+        }
+
+        // Compatibility fallback only.
+        // New GV23-Sup4 notices should normally resolve above.
+        if (!string.IsNullOrWhiteSpace(
+                roll.SignatureFile))
+        {
+            var configured =
+                Path.Combine(
+                    _env.ContentRootPath,
+                    roll.SignatureFile);
+
+            if (File.Exists(configured))
+                return configured;
+        }
+
+        // Final legacy fallback.
+        foreach (var legacyName in new[]
+        {
+            "signature.png",
+            "Signature.png",
+            "Signature.PNG"
+        })
+        {
+            var legacy =
+                Path.Combine(
+                    imageFolder,
+                    legacyName);
+
+            if (File.Exists(legacy))
+                return legacy;
+        }
+
+        return string.Empty;
     }
 
     // ── Helpers ───────────────────────────────────────────────────────
