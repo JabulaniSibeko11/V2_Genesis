@@ -219,6 +219,7 @@ builder.Services.AddScoped<ISubmissionViewService, SubmissionViewService>();
 builder.Services.AddScoped<IAdminClientAccountService, AdminClientAccountService>();
 builder.Services.AddScoped<IAdminPropertyEnquiryService, AdminPropertyEnquiryService>();
 builder.Services.AddScoped<GenesisActionLoggingFilter>();
+builder.Services.AddScoped<IAttributeInspectionCalendarService,AttributeInspectionCalendarService>();
 
 builder.Services.AddDataProtection();
 

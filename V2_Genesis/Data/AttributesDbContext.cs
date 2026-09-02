@@ -43,6 +43,9 @@ namespace V2_Genesis.Data
         public DbSet<AttrInspectionRequestSlot> AttrInspectionRequestSlots { get; set; } = null!;
         public DbSet<AttrValuerInspectionDetail> AttrValuerInspectionDetails { get; set; } = null!;
         public DbSet<AttrInspectionEvidence> AttrInspectionEvidence { get; set; } = null!;
+        public DbSet<AttrInspectionCalendarBlock> AttrInspectionCalendarBlocks { get; set; } = null!;
+
+
 
         public DbSet<Sector> Sectors { get; set; } = null!;
 
