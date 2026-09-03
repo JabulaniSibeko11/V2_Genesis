@@ -62,16 +62,37 @@
 
     <meta name="referrer" content="no-referrer" />
     <meta name="robots" content="noindex,nofollow,noarchive,nosnippet" />
-    <link rel="icon" type="image/png" sizes="32x32" href="~/images/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="~/images/favicon-16x16.png">
+
+    <link rel="icon" type="image/png" sizes="32x32" href="~/images/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="~/images/favicon-16x16.png" />
+
     <title>City of Johannesburg - Attribute Inspection</title>
 
-    <link href="~/css/views/calendar-css.css"rel="stylesheet"asp-append-version="true" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap"
+          rel="stylesheet" />
 
-    <link href="~/css/views/calendar-link-css.css" rel="stylesheet" asp-append-version="true"/>
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link href="~/css/views/homeindex1.css" rel="stylesheet" asp-append-version="true" />
-    <link href="~/css/views/layout.css" rel="stylesheet" />
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+    <link href="~/css/views/calendar-css.css"
+          rel="stylesheet"
+          asp-append-version="true" />
+
+    <link href="~/css/views/calendar-link-css.css"
+          rel="stylesheet"
+          asp-append-version="true" />
+
+    <link href="~/css/views/Pin-Entry.css"
+          rel="stylesheet"
+          asp-append-version="true" />
+
+    <link rel="stylesheet"
+          href="~/css/site.css"
+          asp-append-version="true" />
+
+  
 </head>
 
 <body>
@@ -176,11 +197,11 @@
                                  Model.PreviousMonth.HasValue)
                             {
                                 <a class="month-nav-btn"
-                                       asp-controller="AttributeInspectionLink"
-                                       asp-action="Index"
-                                       asp-route-token="@Model.Token"
-                                       asp-route-year="@Model.PreviousMonth.Value.Year"
-                                       asp-route-month="@Model.PreviousMonth.Value.Month">
+                                   asp-controller="AttributeInspectionLink"
+                                   asp-action="Index"
+                                   asp-route-token="@Model.Token"
+                                   asp-route-year="@Model.PreviousMonth.Value.Year"
+                                   asp-route-month="@Model.PreviousMonth.Value.Month">
                                     ← Previous
                                 </a>
                             }
@@ -201,11 +222,11 @@
                                  Model.NextMonth.HasValue)
                             {
                                 <a class="month-nav-btn"
-                                       asp-controller="AttributeInspectionLink"
-                                       asp-action="Index"
-                                       asp-route-token="@Model.Token"
-                                       asp-route-year="@Model.NextMonth.Value.Year"
-                                       asp-route-month="@Model.NextMonth.Value.Month">
+                                   asp-controller="AttributeInspectionLink"
+                                   asp-action="Index"
+                                   asp-route-token="@Model.Token"
+                                   asp-route-year="@Model.NextMonth.Value.Year"
+                                   asp-route-month="@Model.NextMonth.Value.Month">
                                     Next →
                                 </a>
                             }
@@ -616,8 +637,8 @@
                         {
                             <img class="photo"
                                  src="@Url.Action(
-                                                                                                  "ValuerPhoto",
-                                                                                                  new { token = Model.Token })"
+                                     "ValuerPhoto",
+                                     new { token = Model.Token })"
                                  alt="Authorised valuer" />
                         }
                     </div>
@@ -675,7 +696,8 @@
                     "VerifyPin",
                     "AttributeInspectionLink",
                     new { token = Model.Token })
-                    ?? $"/attributes/inspection/{Model.Token:D}/verify-pin",
+                    ?? Url.Content(
+                        $"~/attributes/inspection/{Model.Token:D}/verify-pin"),
                 PinFieldName = "inspectionPin",
                 ConfirmedDateTime = Model.ConfirmedDateTime,
                 ErrorMessage =
@@ -688,216 +710,216 @@
     }
 
     <script>
-            (function () {
-                'use strict';
+        (function () {
+            'use strict';
 
-                const hidden =
-                    document.getElementById('selectedDateTime');
+            const hidden =
+                document.getElementById('selectedDateTime');
 
-                const box =
-                    document.getElementById('confirmBox');
+            const box =
+                document.getElementById('confirmBox');
 
-                const value =
-                    document.getElementById('confirmValue');
+            const value =
+                document.getElementById('confirmValue');
 
-                const form =
-                    document.getElementById('inspectionCalendarForm');
+            const form =
+                document.getElementById('inspectionCalendarForm');
 
-                const desktopSubmitButton =
-                    document.getElementById('confirmAppointmentButton');
+            const desktopSubmitButton =
+                document.getElementById('confirmAppointmentButton');
 
-                const mobileSubmitButton =
-                    document.getElementById('mobileConfirmAppointmentButton');
+            const mobileSubmitButton =
+                document.getElementById('mobileConfirmAppointmentButton');
 
-                const mobileSheet =
-                    document.getElementById('mobileTimeSheet');
+            const mobileSheet =
+                document.getElementById('mobileTimeSheet');
 
-                const mobileSheetDate =
-                    document.getElementById('mobileTimeSheetDate');
+            const mobileSheetDate =
+                document.getElementById('mobileTimeSheetDate');
 
-                const mobileSheetSelected =
-                    document.getElementById('mobileSheetSelected');
+            const mobileSheetSelected =
+                document.getElementById('mobileSheetSelected');
 
-                window.chooseInspectionSlot = function (button) {
-                    if (!button || !hidden || !box || !value) {
-                        return;
-                    }
+            window.chooseInspectionSlot = function (button) {
+                if (!button || !hidden || !box || !value) {
+                    return;
+                }
 
-                    document
-                        .querySelectorAll('.time-btn.selected')
-                        .forEach(x =>
-                            x.classList.remove('selected'));
+                document
+                    .querySelectorAll('.time-btn.selected')
+                    .forEach(x =>
+                        x.classList.remove('selected'));
 
-                    const selected =
-                        button.dataset.slot;
+                const selected =
+                    button.dataset.slot;
 
-                    document
-                        .querySelectorAll('.time-btn')
-                        .forEach(x => {
-                            if (x.dataset.slot === selected) {
-                                x.classList.add('selected');
-                            }
-                        });
+                document
+                    .querySelectorAll('.time-btn')
+                    .forEach(x => {
+                        if (x.dataset.slot === selected) {
+                            x.classList.add('selected');
+                        }
+                    });
 
-                    hidden.value =
-                        selected || '';
+                hidden.value =
+                    selected || '';
 
-                    value.textContent =
+                value.textContent =
+                    button.dataset.label
+                        ? 'Selected: ' + button.dataset.label
+                        : 'Selected inspection appointment';
+
+                box.style.display = 'block';
+
+                if (desktopSubmitButton) {
+                    desktopSubmitButton.disabled = false;
+                }
+            };
+
+            window.openMobileTimeSheet = function (dateKey, label) {
+                if (!mobileSheet) {
+                    return;
+                }
+
+                document
+                    .querySelectorAll('.mobile-time-day')
+                    .forEach(x => {
+                        x.style.display =
+                            x.dataset.date === dateKey
+                                ? 'block'
+                                : 'none';
+                    });
+
+                document
+                    .querySelectorAll('.mobile-sheet-time.selected')
+                    .forEach(x =>
+                        x.classList.remove('selected'));
+
+                if (hidden) {
+                    hidden.value = '';
+                }
+
+                if (mobileSubmitButton) {
+                    mobileSubmitButton.disabled = true;
+                    mobileSubmitButton.textContent =
+                        'Confirm Appointment';
+                }
+
+                if (mobileSheetSelected) {
+                    mobileSheetSelected.style.display = 'none';
+                    mobileSheetSelected.textContent = '';
+                }
+
+                if (mobileSheetDate) {
+                    mobileSheetDate.textContent = label || '';
+                }
+
+                mobileSheet.classList.add('open');
+                mobileSheet.setAttribute('aria-hidden', 'false');
+
+                document.body.style.overflow = 'hidden';
+            };
+
+            window.closeMobileTimeSheet = function () {
+                if (!mobileSheet) {
+                    return;
+                }
+
+                mobileSheet.classList.remove('open');
+                mobileSheet.setAttribute('aria-hidden', 'true');
+
+                document.body.style.overflow = '';
+            };
+
+            window.closeMobileTimeSheetFromBackdrop = function (event) {
+                if (event.target === mobileSheet) {
+                    closeMobileTimeSheet();
+                }
+            };
+
+            window.chooseMobileInspectionTime = function (button) {
+                if (!button || !hidden) {
+                    return;
+                }
+
+                document
+                    .querySelectorAll('.mobile-sheet-time.selected')
+                    .forEach(x =>
+                        x.classList.remove('selected'));
+
+                button.classList.add('selected');
+
+                hidden.value =
+                    button.dataset.slot || '';
+
+                if (mobileSheetSelected) {
+                    mobileSheetSelected.textContent =
                         button.dataset.label
                             ? 'Selected: ' + button.dataset.label
                             : 'Selected inspection appointment';
 
-                    box.style.display = 'block';
-
-                    if (desktopSubmitButton) {
-                        desktopSubmitButton.disabled = false;
-                    }
-                };
-
-                window.openMobileTimeSheet = function (dateKey, label) {
-                    if (!mobileSheet) {
-                        return;
-                    }
-
-                    document
-                        .querySelectorAll('.mobile-time-day')
-                        .forEach(x => {
-                            x.style.display =
-                                x.dataset.date === dateKey
-                                    ? 'block'
-                                    : 'none';
-                        });
-
-                    document
-                        .querySelectorAll('.mobile-sheet-time.selected')
-                        .forEach(x =>
-                            x.classList.remove('selected'));
-
-                    if (hidden) {
-                        hidden.value = '';
-                    }
-
-                    if (mobileSubmitButton) {
-                        mobileSubmitButton.disabled = true;
-                        mobileSubmitButton.textContent =
-                            'Confirm Appointment';
-                    }
-
-                    if (mobileSheetSelected) {
-                        mobileSheetSelected.style.display = 'none';
-                        mobileSheetSelected.textContent = '';
-                    }
-
-                    if (mobileSheetDate) {
-                        mobileSheetDate.textContent = label || '';
-                    }
-
-                    mobileSheet.classList.add('open');
-                    mobileSheet.setAttribute('aria-hidden', 'false');
-
-                    document.body.style.overflow = 'hidden';
-                };
-
-                window.closeMobileTimeSheet = function () {
-                    if (!mobileSheet) {
-                        return;
-                    }
-
-                    mobileSheet.classList.remove('open');
-                    mobileSheet.setAttribute('aria-hidden', 'true');
-
-                    document.body.style.overflow = '';
-                };
-
-                window.closeMobileTimeSheetFromBackdrop = function (event) {
-                    if (event.target === mobileSheet) {
-                        closeMobileTimeSheet();
-                    }
-                };
-
-                window.chooseMobileInspectionTime = function (button) {
-                    if (!button || !hidden) {
-                        return;
-                    }
-
-                    document
-                        .querySelectorAll('.mobile-sheet-time.selected')
-                        .forEach(x =>
-                            x.classList.remove('selected'));
-
-                    button.classList.add('selected');
-
-                    hidden.value =
-                        button.dataset.slot || '';
-
-                    if (mobileSheetSelected) {
-                        mobileSheetSelected.textContent =
-                            button.dataset.label
-                                ? 'Selected: ' + button.dataset.label
-                                : 'Selected inspection appointment';
-
-                        mobileSheetSelected.style.display = 'block';
-                    }
-
-                    if (mobileSubmitButton) {
-                        mobileSubmitButton.disabled = false;
-                    }
-                };
-
-                if (form) {
-                    form.addEventListener(
-                        'submit',
-                        function (event) {
-                            if (!hidden || !hidden.value) {
-                                event.preventDefault();
-
-                                alert(
-                                    'Please select an inspection date and time.');
-
-                                return;
-                            }
-
-                            if (!confirm(
-                                'Confirm this inspection appointment? ' +
-                                'The City will re-check that this time is still available.')) {
-                                event.preventDefault();
-                                return;
-                            }
-
-                            if (desktopSubmitButton) {
-                                desktopSubmitButton.disabled = true;
-                                desktopSubmitButton.textContent =
-                                    'Confirming...';
-                            }
-
-                            if (mobileSubmitButton) {
-                                mobileSubmitButton.disabled = true;
-                                mobileSubmitButton.textContent =
-                                    'Confirming...';
-                            }
-                        });
+                    mobileSheetSelected.style.display = 'block';
                 }
 
-                window.toggleAdminAssistance = function () {
-                    const panel =
-                        document.getElementById(
-                            'adminAssistancePanel');
+                if (mobileSubmitButton) {
+                    mobileSubmitButton.disabled = false;
+                }
+            };
 
-                    if (!panel) {
-                        return;
-                    }
+            if (form) {
+                form.addEventListener(
+                    'submit',
+                    function (event) {
+                        if (!hidden || !hidden.value) {
+                            event.preventDefault();
 
-                    panel.hidden =
-                        !panel.hidden;
+                            alert(
+                                'Please select an inspection date and time.');
 
-                    if (!panel.hidden) {
-                        panel.scrollIntoView({
-                            behavior: 'smooth',
-                            block: 'nearest'
-                        });
-                    }
-                };
-            })();
+                            return;
+                        }
+
+                        if (!confirm(
+                            'Confirm this inspection appointment? ' +
+                            'The City will re-check that this time is still available.')) {
+                            event.preventDefault();
+                            return;
+                        }
+
+                        if (desktopSubmitButton) {
+                            desktopSubmitButton.disabled = true;
+                            desktopSubmitButton.textContent =
+                                'Confirming...';
+                        }
+
+                        if (mobileSubmitButton) {
+                            mobileSubmitButton.disabled = true;
+                            mobileSubmitButton.textContent =
+                                'Confirming...';
+                        }
+                    });
+            }
+
+            window.toggleAdminAssistance = function () {
+                const panel =
+                    document.getElementById(
+                        'adminAssistancePanel');
+
+                if (!panel) {
+                    return;
+                }
+
+                panel.hidden =
+                    !panel.hidden;
+
+                if (!panel.hidden) {
+                    panel.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'nearest'
+                    });
+                }
+            };
+        })();
     </script>
 
     <script src="~/js/attribute-inspection-modals.js"
