@@ -75,7 +75,7 @@
                             <td>@DashboardDisplayHelpers.FormatZAR(item.MarketValue)</td>
                             <td>
                                 <span class="attr-form-pill attr-pill-@(item.FormType.ToLower()
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                .Replace(" ", "").Replace("&", "").Replace("/", ""))">
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          .Replace(" ", "").Replace("&", "").Replace("/", ""))">
                                     @item.FormType
                                 </span>
                             </td>
@@ -171,13 +171,12 @@
                    id="tbl-attr-submissions">
                 <thead>
                     <tr>
-                        <th> Reference</th>
-                        <th>Property Description</th>
+                        <th>Reference / Property</th>
                         <th>Form Type</th>
-                        <th> Submitted</th>
+                        <th>Submitted</th>
                         <th>Edit Window</th>
-                        <th> Status</th>
-                        <th> Options</th>
+                        <th>Status</th>
+                        <th>Options</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -211,8 +210,16 @@
                                 StringComparer.OrdinalIgnoreCase);
 
                         <tr>
-                            <td><strong>@item.SubmissionRef</strong></td>
-                            <td>@item.PropertyDesc</td>
+                            <td>
+                                <div class="attr-reference-block">
+                                    <strong class="attr-reference-number">
+                                        @item.SubmissionRef
+                                    </strong>
+                                    <span class="attr-reference-property">
+                                        @item.PropertyDesc
+                                    </span>
+                                </div>
+                            </td>
                             <td>@item.FormType</td>
                             <td>@item.SubmittedAt.ToString("dd MMM yyyy HH:mm")</td>
                             <td>
@@ -337,9 +344,8 @@
                    id="tbl-attr-appointments">
                 <thead>
                     <tr>
-                        <th>Reference</th>
-                        <th>Property</th>
-                        <th>Date Options</th>
+                        <th>Reference Number</th>
+                        <th>Appointment</th>
                         <th>Status</th>
                         <th>Options</th>
                     </tr>
@@ -352,11 +358,16 @@
                         {
                             <tr>
                                 <td>
-                                    <strong>@item.AppointmentRef</strong>
-                                </td>
-
-                                <td>
-                                    @item.PropertyDesc
+                                    <div class="attr-reference-block">
+                                        <strong class="attr-reference-number">
+                                            @(string.IsNullOrWhiteSpace(item.AppointmentRef)
+                                                ? $"ATTR-{item.AttrId}"
+                                                : item.AppointmentRef)
+                                        </strong>
+                                        <span class="attr-reference-property">
+                                            @item.PropertyDesc
+                                        </span>
+                                    </div>
                                 </td>
 
                                 <td>
@@ -371,7 +382,7 @@
                                     else if (item.Status == "Expired")
                                     {
                                         <span style="font-weight:700;color:#b91c1c;">
-                                            Date options expired
+                                            Appointment window expired
                                         </span>
                                     }
                                     else if (item.Slots != null && item.Slots.Any())
@@ -380,7 +391,7 @@
                                             @foreach (var slot in item.Slots)
                                             {
                                                 <li>
-                                                    Option @slot.SlotNo:
+                                                    Available:
                                                     @slot.ProposedDateTime.ToString("dd MMM yyyy HH:mm")
                                                 </li>
                                             }
@@ -479,4 +490,48 @@
                 
     </div>
 </div>
+
+
+<style>
+    .attr-reference-block {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        min-width: 0;
+    }
+
+    .attr-reference-number {
+        color: #0d3036;
+        font-weight: 800;
+        line-height: 1.2;
+    }
+
+    .attr-reference-property {
+        color: #667085;
+        font-size: 12px;
+        line-height: 1.25;
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
+
+    #tbl-attr-submissions td:first-child,
+    #tbl-attr-appointments td:first-child {
+        min-width: 220px;
+    }
+
+    @@media(max - width:768px) {
+        #tbl-attr-submissions td:first-child,
+        #tbl-attr-appointments td:first-child {
+            min-width: 0;
+        }
+
+        .attr-reference-number {
+            font-size: 13px;
+        }
+
+        .attr-reference-property {
+            font-size: 11px;
+        }
+    }
+</style>
 

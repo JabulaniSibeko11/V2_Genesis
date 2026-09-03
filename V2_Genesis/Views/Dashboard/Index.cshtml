@@ -419,19 +419,19 @@
 
     <div class="dash-link-alert
         @(string.Equals(
-                                                                                                                        reviewStatus,
-                                                                                                                        "Open",
-                                                                                                                        StringComparison.OrdinalIgnoreCase)
-                                                                                                                        ? "dash-link-success"
-                                                                                                                        : "dash-link-error")">
+                                                                                                                                 reviewStatus,
+                                                                                                                                 "Open",
+                                                                                                                                 StringComparison.OrdinalIgnoreCase)
+                                                                                                                                 ? "dash-link-success"
+                                                                                                                                 : "dash-link-error")">
 
         <i class="fa-solid
             @(string.Equals(
-                                                                                                                                                    reviewStatus,
-                                                                                                                                                    "Open",
-                                                                                                                                                    StringComparison.OrdinalIgnoreCase)
-                                                                                                                                                    ? "fa-unlock"
-                                                                                                                                                    : "fa-lock")">
+                                                                                                                                                               reviewStatus,
+                                                                                                                                                               "Open",
+                                                                                                                                                               StringComparison.OrdinalIgnoreCase)
+                                                                                                                                                               ? "fa-unlock"
+                                                                                                                                                               : "fa-lock")">
         </i>
 
         <div>
@@ -1018,6 +1018,18 @@
         }
 
         // ── Init DataTables ─────────────────────────────────────────
+        // IMPORTANT:
+        // Desktop must show every real table column, especially the
+        // reference number. Responsive child-row behaviour is only
+        // enabled on phone/tablet widths.
+        const dashboardResponsiveBreakpoint = 768;
+        let dashboardLastResponsiveMode =
+            window.innerWidth <= dashboardResponsiveBreakpoint;
+
+        function isDashboardResponsiveMode() {
+            return window.innerWidth <= dashboardResponsiveBreakpoint;
+        }
+
         function initDataTable(selector) {
 
             if (
@@ -1034,19 +1046,45 @@
             if (!colCount)
                 return;
 
+            const useResponsive =
+                isDashboardResponsiveMode();
+
+            const columnDefs = [
+                {
+                    targets: 0,
+                    // Only make the first cell the responsive + control
+                    // when we are actually on a narrow screen.
+                    className: useResponsive
+                        ? 'dtr-control'
+                        : '',
+                    responsivePriority: 1,
+                    visible: true
+                },
+                {
+                    targets: colCount - 1,
+                    responsivePriority: 2,
+                    orderable: false,
+                    visible: true
+                }
+            ];
+
             $(selector).DataTable({
 
-                responsive: {
-                    details: {
-                        type: 'inline',
-                        target: 0
+                // On desktop Responsive is OFF. This prevents DataTables
+                // from hiding the Attribute / Objection / Appeal / Query
+                // reference column on wide screens.
+                responsive: useResponsive
+                    ? {
+                        details: {
+                            type: 'inline',
+                            target: 'td.dtr-control'
+                        }
                     }
-                },
+                    : false,
 
                 autoWidth: false,
                 scrollX: false,
 
-                // Match Home Index result controls.
                 dom:
                     '<"hs-dt-top"lf>' +
                     'rt' +
@@ -1074,33 +1112,40 @@
                     }
                 },
 
-                columnDefs: [
-                    {
-                        targets: 0,
-                        className: 'dtr-control',
-                        responsivePriority: 1
-                    },
-                    {
-                        targets: colCount - 1,
-                        responsivePriority: 2,
-                        orderable: false
-                    }
-                ],
+                columnDefs: columnDefs,
 
                 initComplete: function () {
 
                     const api =
                         this.api();
 
+                    // Force every column visible on desktop.
+                    // This is the key protection for the reference column.
+                    if (!useResponsive) {
+                        api.columns().visible(true, false);
+                    }
+
                     requestAnimationFrame(function () {
 
                         api.columns.adjust();
 
                         if (
-                            api.responsive
+                            useResponsive
+                            && api.responsive
                             && typeof api.responsive.recalc === 'function'
                         ) {
                             api.responsive.recalc();
+
+                            // Attributes uses a combined Reference / Property
+                            // first column. Recalculate once more after the
+                            // browser has painted the wider first cell so that
+                            // Responsive correctly adds the + control.
+                            if (selector.indexOf('tbl-attr-') >= 0) {
+                                window.setTimeout(function () {
+                                    api.columns.adjust();
+                                    api.responsive.recalc();
+                                }, 50);
+                            }
                         }
                     });
                 },
@@ -1109,6 +1154,14 @@
 
                     const api =
                         this.api();
+
+                    // Desktop must never inherit a hidden-column state
+                    // from a previous narrow responsive render.
+                    if (!useResponsive) {
+                        api.columns().visible(true, false);
+                        api.columns.adjust();
+                        return;
+                    }
 
                     if (
                         api.responsive
@@ -1120,27 +1173,80 @@
             });
         }
 
+        function rebuildVisibleDashboardTablesForViewport() {
+
+            const currentMode =
+                isDashboardResponsiveMode();
+
+            // Only rebuild when crossing the desktop/mobile breakpoint.
+            if (currentMode === dashboardLastResponsiveMode) {
+
+                document
+                    .querySelectorAll('.cd-widget-body.open .cd-table')
+                    .forEach(function (tableElement) {
+
+                        if (!tableElement.id)
+                            return;
+
+                        adjustDataTable(
+                            '#' + tableElement.id);
+                    });
+
+                return;
+            }
+
+            dashboardLastResponsiveMode =
+                currentMode;
+
+            document
+                .querySelectorAll('.cd-widget-body.open .cd-table')
+                .forEach(function (tableElement) {
+
+                    if (!tableElement.id)
+                        return;
+
+                    const selector =
+                        '#' + tableElement.id;
+
+                    if ($.fn.DataTable.isDataTable(selector)) {
+                        $(selector)
+                            .DataTable()
+                            .destroy();
+                    }
+
+                    // Remove Responsive state/classes left by the previous mode.
+                    $(selector)
+                        .find('tbody tr')
+                        .removeClass('parent child');
+
+                    $(selector)
+                        .find('th, td')
+                        .removeClass('dtr-control dtr-hidden');
+
+                    $(selector)
+                        .find('tr.child')
+                        .remove();
+
+                    initDataTable(selector);
+                    adjustDataTable(selector);
+                });
+        }
+
         // Recalculate visible Dashboard tables when phone orientation
-        // or viewport width changes.
+        // or viewport width changes. Crossing 768px rebuilds the table
+        // so desktop can never keep mobile hidden-column state.
         let dashboardTableResizeTimer = null;
 
         window.addEventListener('resize', function () {
 
-            window.clearTimeout(dashboardTableResizeTimer);
+            window.clearTimeout(
+                dashboardTableResizeTimer);
 
             dashboardTableResizeTimer =
                 window.setTimeout(function () {
 
-                    document
-                        .querySelectorAll('.cd-widget-body.open .cd-table')
-                        .forEach(function (tableElement) {
+                    rebuildVisibleDashboardTablesForViewport();
 
-                            if (!tableElement.id)
-                                return;
-
-                            adjustDataTable(
-                                '#' + tableElement.id);
-                        });
                 }, 150);
         });
 
