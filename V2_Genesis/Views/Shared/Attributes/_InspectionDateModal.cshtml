@@ -9,10 +9,17 @@
         .GroupBy(x => x.ProposedDateTime.Date)
         .OrderBy(x => x.Key)
         .ToList();
-}
 
-<div id="inspectionModal_@Model.InstanceKey"
+    var modalId = $"inspectionModal_{Model.InstanceKey}";
+    var formId = $"inspectionCalendarModalForm_{Model.InstanceKey}";
+    var selectedSlotId = $"selectedInspectionSlot_{Model.InstanceKey}";
+    var selectedLabelId = $"selectedInspectionLabel_{Model.InstanceKey}";
+    var confirmButtonId = $"confirmInspectionModal_{Model.InstanceKey}";
+}
+<link href="~/css/views/calendar-modal.css" rel="stylesheet" asp-append-version="true"/>
+<div id="@modalId"
      class="attr-insp-modal-backdrop"
+     data-instance-key="@Model.InstanceKey"
      style="display:@(Model.AutoOpen ? "flex" : "none");">
 
     <div class="attr-insp-modal attr-insp-calendar-modal"
@@ -35,7 +42,8 @@
         <form action="@Model.FormAction"
               method="post"
               autocomplete="off"
-              id="inspectionCalendarModalForm_@Model.InstanceKey">
+              id="@formId"
+              onsubmit="return submitInspectionCalendarModal(this);">
 
             @Html.AntiForgeryToken()
 
@@ -48,7 +56,8 @@
 
             <input type="hidden"
                    name="@Model.SlotFieldName"
-                   id="selectedInspectionSlot_@Model.InstanceKey" />
+                   id="@selectedSlotId"
+                   class="js-selected-inspection-slot" />
 
             <div class="attr-insp-modal-body">
                 <p>
@@ -80,7 +89,7 @@
                                                 class="attr-cal-time"
                                                 data-slot-id="@slot.Id"
                                                 data-label="@slot.ProposedDateTime.ToString("dddd, dd MMMM yyyy 'at' HH:mm")"
-                                                onclick="selectInspectionCalendarSlot_@Model.InstanceKey(this)">
+                                                onclick="selectInspectionCalendarSlot(this)">
                                             @slot.ProposedDateTime.ToString("HH:mm")
                                         </button>
                                     }
@@ -89,8 +98,8 @@
                         }
                     </div>
 
-                    <div class="attr-cal-selected"
-                         id="selectedInspectionLabel_@Model.InstanceKey"
+                    <div class="attr-cal-selected js-selected-inspection-label"
+                         id="@selectedLabelId"
                          style="display:none;">
                     </div>
                 }
@@ -119,8 +128,8 @@
                 </button>
 
                 <button type="submit"
-                        class="btn btn-warning fw-bold"
-                        id="confirmInspectionModal_@Model.InstanceKey"
+                        class="btn btn-warning fw-bold js-confirm-inspection"
+                        id="@confirmButtonId"
                         disabled>
                     Confirm Appointment
                 </button>
@@ -129,148 +138,54 @@
     </div>
 </div>
 
-<style>
-    .attr-insp-calendar-modal{
-        width:min(760px,calc(100vw - 24px));
-        max-height:calc(100dvh - 24px);
-        overflow:hidden;
-        display:flex;
-        flex-direction:column;
-    }
 
-    .attr-insp-calendar-modal .attr-insp-modal-body{
-        overflow-y:auto;
-        -webkit-overflow-scrolling:touch;
-    }
-
-    .attr-cal-day-card{
-        border:1px solid #e4e7ec;
-        border-radius:10px;
-        padding:12px;
-        margin-bottom:12px;
-        background:#fff;
-    }
-
-    .attr-cal-day-card h4{
-        margin:0 0 10px;
-        font-size:15px;
-        font-weight:800;
-        color:#0d3036;
-    }
-
-    .attr-cal-time-grid{
-        display:grid;
-        grid-template-columns:repeat(4,minmax(0,1fr));
-        gap:8px;
-    }
-
-    .attr-cal-time{
-        min-height:44px;
-        border:1px solid #d0d5dd;
-        background:#fff;
-        border-radius:7px;
-        font-weight:800;
-        cursor:pointer;
-        touch-action:manipulation;
-    }
-
-    .attr-cal-time.selected{
-        background:#0d3036;
-        border-color:#0d3036;
-        color:#fff;
-    }
-
-    .attr-cal-selected{
-        position:sticky;
-        bottom:0;
-        margin-top:12px;
-        padding:11px 12px;
-        background:#fff6d6;
-        border-left:4px solid #e8b600;
-        font-weight:800;
-    }
-
-    @@media(max-width:600px){
-        .attr-insp-calendar-modal{
-            width:calc(100vw - 12px);
-            max-height:calc(100dvh - 12px);
-        }
-
-        .attr-cal-time-grid{
-            grid-template-columns:repeat(2,minmax(0,1fr));
-        }
-
-        .attr-cal-time{
-            min-height:48px;
-            font-size:15px;
-        }
-
-        .attr-insp-modal-footer{
-            position:sticky;
-            bottom:0;
-            background:#fff;
-        }
-
-        .attr-insp-modal-footer .btn{
-            min-height:46px;
-        }
-    }
-
-    @@media(max-width:340px){
-        .attr-cal-time-grid{
-            grid-template-columns:1fr;
-        }
-    }
-</style>
 
 <script>
-    function selectInspectionCalendarSlot_@Model.InstanceKey(button) {
-        const modal =
-            document.getElementById('inspectionModal_@Model.InstanceKey');
+    function selectInspectionCalendarSlot(button) {
+        const modal = button.closest('.attr-insp-modal-backdrop');
+
+        if (!modal) {
+            return;
+        }
 
         modal.querySelectorAll('.attr-cal-time.selected')
             .forEach(x => x.classList.remove('selected'));
 
         button.classList.add('selected');
 
-        document.getElementById(
-            'selectedInspectionSlot_@Model.InstanceKey'
-        ).value = button.dataset.slotId;
+        const hidden = modal.querySelector('.js-selected-inspection-slot');
+        const label = modal.querySelector('.js-selected-inspection-label');
+        const confirmButton = modal.querySelector('.js-confirm-inspection');
 
-        const label =
-            document.getElementById(
-                'selectedInspectionLabel_@Model.InstanceKey'
-            );
-
-        label.textContent =
-            'Selected: ' + button.dataset.label;
-
-        label.style.display = 'block';
-
-        document.getElementById(
-            'confirmInspectionModal_@Model.InstanceKey'
-        ).disabled = false;
-    }
-
-    document.getElementById(
-        'inspectionCalendarModalForm_@Model.InstanceKey'
-    )?.addEventListener('submit', function(e) {
-
-        const value = document.getElementById(
-            'selectedInspectionSlot_@Model.InstanceKey'
-        ).value;
-
-        if (!value) {
-            e.preventDefault();
-            alert('Please select an inspection date and time.');
-            return;
+        if (hidden) {
+            hidden.value = button.dataset.slotId || '';
         }
 
-        const button = document.getElementById(
-            'confirmInspectionModal_@Model.InstanceKey'
-        );
+        if (label) {
+            label.textContent =
+                'Selected: ' + (button.dataset.label || '');
+            label.style.display = 'block';
+        }
 
-        button.disabled = true;
-        button.textContent = 'Confirming...';
-    });
+        if (confirmButton) {
+            confirmButton.disabled = false;
+        }
+    }
+
+    function submitInspectionCalendarModal(form) {
+        const hidden = form.querySelector('.js-selected-inspection-slot');
+        const confirmButton = form.querySelector('.js-confirm-inspection');
+
+        if (!hidden || !hidden.value) {
+            alert('Please select an inspection date and time.');
+            return false;
+        }
+
+        if (confirmButton) {
+            confirmButton.disabled = true;
+            confirmButton.textContent = 'Confirming...';
+        }
+
+        return true;
+    }
 </script>

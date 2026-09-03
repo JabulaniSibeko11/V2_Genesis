@@ -1,0 +1,269 @@
+﻿
+.client-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 10px;
+    border-radius: 999px;
+    font-weight: 800;
+    font-size: 13px;
+    line-height: 1.2;
+}
+
+.client-status::before {
+    content: "";
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: currentColor;
+    flex: 0 0 auto;
+}
+
+.status-waiting {
+    color: #8a5a00;
+    background: #fff4ce;
+}
+
+.status-confirmed {
+    color: #075985;
+    background: #e0f2fe;
+}
+
+.status-ready,
+.status-complete {
+    color: #166534;
+    background: #dcfce7;
+}
+
+.status-neutral {
+    color: #475467;
+    background: #f2f4f7;
+}
+
+/* Mobile date-first calendar */
+.mobile-date-picker {
+    display: none;
+}
+
+.mobile-calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7,minmax(0,1fr));
+    gap: 4px;
+    margin-top: 10px;
+}
+
+.mobile-calendar-dow {
+    text-align: center;
+    font-size: 11px;
+    font-weight: 800;
+    color: #667085;
+    padding: 5px 0;
+}
+
+.mobile-calendar-empty {
+    min-height: 42px;
+}
+
+.mobile-date-btn,
+.mobile-date-disabled {
+    min-height: 44px;
+    border-radius: 50%;
+    border: 0;
+    display: grid;
+    place-items: center;
+    font-weight: 800;
+    background: transparent;
+    margin: auto;
+    width: 44px;
+    height: 44px;
+}
+
+.mobile-date-btn {
+    cursor: pointer;
+    color: #111827;
+    background: #eef8f2;
+    border: 1px solid #b7dec1;
+}
+
+    .mobile-date-btn:hover,
+    .mobile-date-btn:focus-visible {
+        background: #e8b600;
+        border-color: #e8b600;
+        outline: 3px solid rgba(232,182,0,.25);
+    }
+
+.mobile-date-disabled {
+    color: #b8bec7;
+}
+
+.mobile-calendar-legend {
+    margin-top: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: #667085;
+}
+
+.mobile-calendar-legend-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #eef8f2;
+    border: 1px solid #b7dec1;
+}
+
+/* Bottom sheet */
+.mobile-time-sheet-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: rgba(15,23,42,.45);
+    align-items: flex-end;
+    justify-content: center;
+}
+
+    .mobile-time-sheet-backdrop.open {
+        display: flex;
+    }
+
+.mobile-time-sheet {
+    width: 100%;
+    max-width: 520px;
+    max-height: 78dvh;
+    overflow: auto;
+    background: #fff;
+    border-radius: 22px 22px 0 0;
+    box-shadow: 0 -8px 30px rgba(0,0,0,.18);
+    padding: 18px max(16px,env(safe-area-inset-right)) calc(18px + env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));
+}
+
+.mobile-sheet-handle {
+    width: 42px;
+    height: 5px;
+    border-radius: 999px;
+    background: #d0d5dd;
+    margin: 0 auto 15px;
+}
+
+.mobile-sheet-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 15px;
+}
+
+.mobile-sheet-title {
+    font-size: 21px;
+    font-weight: 900;
+    color: #0d3036;
+}
+
+.mobile-sheet-date {
+    margin-top: 3px;
+    font-size: 13px;
+    color: #667085;
+}
+
+.mobile-sheet-close {
+    width: 42px;
+    height: 42px;
+    border: 1px solid #e4e7ec;
+    border-radius: 50%;
+    background: #fff;
+    font-size: 22px;
+    cursor: pointer;
+}
+
+.mobile-time-options {
+    display: grid;
+    grid-template-columns: repeat(2,minmax(0,1fr));
+    gap: 9px;
+}
+
+.mobile-sheet-time {
+    min-height: 48px;
+    border: 1px solid #d0d5dd;
+    border-radius: 9px;
+    background: #fff;
+    font-size: 16px;
+    font-weight: 850;
+    cursor: pointer;
+}
+
+    .mobile-sheet-time.selected {
+        background: #0d3036;
+        color: #fff;
+        border-color: #0d3036;
+    }
+
+.mobile-sheet-confirm {
+    width: 100%;
+    min-height: 50px;
+    border: 0;
+    border-radius: 10px;
+    margin-top: 16px;
+    background: #e8b600;
+    color: #111;
+    font-weight: 900;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+    .mobile-sheet-confirm:disabled {
+        opacity: .45;
+        cursor: not-allowed;
+    }
+
+.mobile-sheet-selected {
+    display: none;
+    margin-top: 13px;
+    padding: 10px 12px;
+    background: #fff6d6;
+    border-left: 4px solid #e8b600;
+    border-radius: 7px;
+    font-weight: 800;
+}
+
+@media(max-width:680px) {
+    .calendar-mobile {
+        display: none !important;
+    }
+
+    .calendar-desktop {
+        display: none !important;
+    }
+
+    .mobile-date-picker {
+        display: block;
+    }
+
+    .month-nav-title {
+        font-size: 19px;
+    }
+
+    .month-nav-btn {
+        min-height: 44px;
+    }
+
+    .confirm-box {
+        display: none !important;
+    }
+}
+
+@media(max-width:360px) {
+    .mobile-date-btn,
+    .mobile-date-disabled {
+        width: 39px;
+        height: 39px;
+        min-height: 39px;
+        font-size: 13px;
+    }
+
+    .mobile-time-options {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+

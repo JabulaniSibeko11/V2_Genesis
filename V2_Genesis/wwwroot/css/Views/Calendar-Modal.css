@@ -1,0 +1,93 @@
+﻿
+.attr-insp-calendar-modal {
+    width: min(760px,calc(100vw - 24px));
+    max-height: calc(100dvh - 24px);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.attr-insp-calendar-modal .attr-insp-modal-body {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.attr-cal-day-card {
+    border: 1px solid #e4e7ec;
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 12px;
+    background: #fff;
+}
+
+    .attr-cal-day-card h4 {
+        margin: 0 0 10px;
+        font-size: 15px;
+        font-weight: 800;
+        color: #0d3036;
+    }
+
+.attr-cal-time-grid {
+    display: grid;
+    grid-template-columns: repeat(4,minmax(0,1fr));
+    gap: 8px;
+}
+
+.attr-cal-time {
+    min-height: 44px;
+    border: 1px solid #d0d5dd;
+    background: #fff;
+    border-radius: 7px;
+    font-weight: 800;
+    cursor: pointer;
+    touch-action: manipulation;
+}
+
+    .attr-cal-time.selected {
+        background: #0d3036;
+        border-color: #0d3036;
+        color: #fff;
+    }
+
+.attr-cal-selected {
+    position: sticky;
+    bottom: 0;
+    margin-top: 12px;
+    padding: 11px 12px;
+    background: #fff6d6;
+    border-left: 4px solid #e8b600;
+    font-weight: 800;
+}
+
+@media(max-width:600px) {
+    .attr-insp-calendar-modal {
+        width: calc(100vw - 12px);
+        max-height: calc(100dvh - 12px);
+    }
+
+    .attr-cal-time-grid {
+        grid-template-columns: repeat(2,minmax(0,1fr));
+    }
+
+    .attr-cal-time {
+        min-height: 48px;
+        font-size: 15px;
+    }
+
+    .attr-insp-modal-footer {
+        position: sticky;
+        bottom: 0;
+        background: #fff;
+    }
+
+        .attr-insp-modal-footer .btn {
+            min-height: 46px;
+        }
+}
+
+@media(max-width:340px) {
+    .attr-cal-time-grid {
+        grid-template-columns: 1fr;
+    }
+}
+

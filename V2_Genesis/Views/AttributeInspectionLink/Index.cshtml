@@ -20,19 +20,37 @@
         .ToList();
 
     var monthStart = Model.CurrentMonth;
-    var daysInMonth =
-        DateTime.DaysInMonth(
-            monthStart.Year,
-            monthStart.Month);
+    var daysInMonth = DateTime.DaysInMonth(
+        monthStart.Year,
+        monthStart.Month);
 
-    var leading =
-        ((int)monthStart.DayOfWeek + 6) % 7;
+    var leading = ((int)monthStart.DayOfWeek + 6) % 7;
 
     var byDate = availableSlots
         .GroupBy(x => x.ProposedDateTime.Date)
         .ToDictionary(
             x => x.Key,
             x => x.OrderBy(s => s.ProposedDateTime).ToList());
+
+    var clientStatus = (Model.Status ?? string.Empty).Trim() switch
+    {
+        "PendingClientResponse" => "Awaiting Appointment Selection",
+        "Confirmed" => "Appointment Confirmed",
+        "InspectionConfirmed" => "Appointment Confirmed",
+        "InspectionDetailsSent" => "Valuer Details Available",
+        "InspectionCompleted" => "Inspection Completed",
+        _ => "Inspection In Progress"
+    };
+
+    var statusClass = (Model.Status ?? string.Empty).Trim() switch
+    {
+        "PendingClientResponse" => "status-waiting",
+        "Confirmed" => "status-confirmed",
+        "InspectionConfirmed" => "status-confirmed",
+        "InspectionDetailsSent" => "status-ready",
+        "InspectionCompleted" => "status-complete",
+        _ => "status-neutral"
+    };
 }
 <!doctype html>
 <html lang="en">
@@ -50,6 +68,8 @@
     <link href="~/css/views/calendar-css.css"
           rel="stylesheet"
           asp-append-version="true" />
+
+    <link href="~/css/views/calendar-link-css.css" rel="stylesheet" asp-append-version="true"/>
 </head>
 
 <body>
@@ -99,7 +119,9 @@
 
                     <div class="fieldx">
                         <span>Status</span>
-                        <strong>@Model.Status</strong>
+                        <strong class="client-status @statusClass">
+                            @clientStatus
+                        </strong>
                     </div>
 
                     <div class="fieldx">
@@ -139,12 +161,14 @@
                     </h1>
 
                     <div class="muted">
-                        Choose from the available times for the month shown below.
+                        On a phone, select a date first and then choose the time.
                     </div>
                 </div>
 
                 <div class="bodyx">
-                    <div class="month-nav" aria-label="Inspection calendar month navigation">
+                    <div class="month-nav"
+                         aria-label="Inspection calendar month navigation">
+
                         <div class="month-nav-side">
                             @if (Model.HasPreviousMonth &&
                                  Model.PreviousMonth.HasValue)
@@ -245,6 +269,7 @@
                                    name="selectedDateTime"
                                    id="selectedDateTime" />
 
+                            <!-- DESKTOP -->
                             <div class="calendar-desktop"
                                  aria-label="Available inspection calendar">
 
@@ -270,11 +295,10 @@
                                               day <= daysInMonth;
                                               day++)
                                         {
-                                            var date =
-                                                new DateTime(
-                                                    monthStart.Year,
-                                                    monthStart.Month,
-                                                    day);
+                                            var date = new DateTime(
+                                                monthStart.Year,
+                                                monthStart.Month,
+                                                day);
 
                                             byDate.TryGetValue(
                                                 date,
@@ -311,40 +335,68 @@
                                 </div>
                             </div>
 
-                            <div class="calendar-mobile"
-                                 aria-label="Available inspection dates and times">
+                            <!-- MOBILE: DATE FIRST -->
+                            <div class="mobile-date-picker"
+                                 aria-label="Select inspection date">
 
-                                @foreach (var dayGroup in dayGroups)
-                                {
-                                    <div class="mobile-day-card">
-                                        <div class="mobile-day-title">
-                                            @dayGroup.Key.ToString(
-                                                "dddd, dd MMMM yyyy")
-                                        </div>
+                                <div class="mobile-calendar-grid">
+                                    @foreach (var dow in new[]
+                                    {
+                                        "M", "T", "W", "T", "F", "S", "S"
+                                    })
+                                    {
+                                        <div class="mobile-calendar-dow">@dow</div>
+                                    }
 
-                                        <div class="mobile-time-grid">
-                                            @foreach (var slot in dayGroup)
-                                            {
-                                                var iso =
-                                                    slot.ProposedDateTime
-                                                        .ToString("yyyy-MM-ddTHH:mm:ss");
+                                    @for (var i = 0; i < leading; i++)
+                                    {
+                                        <div class="mobile-calendar-empty"
+                                             aria-hidden="true"></div>
+                                    }
 
-                                                var label =
-                                                    slot.ProposedDateTime
-                                                        .ToString("dddd, dd MMMM yyyy 'at' HH:mm");
+                                    @for (var day = 1;
+                                          day <= daysInMonth;
+                                          day++)
+                                    {
+                                        var date = new DateTime(
+                                            monthStart.Year,
+                                            monthStart.Month,
+                                            day);
 
-                                                <button type="button"
-                                                        class="time-btn"
-                                                        data-slot="@iso"
-                                                        data-label="@label"
-                                                        aria-label="Select @label"
-                                                        onclick="chooseInspectionSlot(this)">
-                                                    @slot.ProposedDateTime.ToString("HH:mm")
-                                                </button>
-                                            }
-                                        </div>
-                                    </div>
-                                }
+                                        byDate.TryGetValue(
+                                            date,
+                                            out var mobileDaySlots);
+
+                                        if (mobileDaySlots?.Any() == true)
+                                        {
+                                            var dateKey =
+                                                date.ToString("yyyy-MM-dd");
+
+                                            var fullDate =
+                                                date.ToString(
+                                                    "dddd, dd MMMM yyyy");
+
+                                            <button type="button"
+                                                    class="mobile-date-btn"
+                                                    aria-label="Select @fullDate"
+                                                    onclick="openMobileTimeSheet('@dateKey', '@fullDate')">
+                                                @day
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <span class="mobile-date-disabled"
+                                                  aria-label="@date.ToString("dd MMMM yyyy") unavailable">
+                                                @day
+                                            </span>
+                                        }
+                                    }
+                                </div>
+
+                                <div class="mobile-calendar-legend">
+                                    <span class="mobile-calendar-legend-dot"></span>
+                                    Selectable dates have available inspection times.
+                                </div>
                             </div>
 
                             <div class="confirm-box"
@@ -361,6 +413,84 @@
                                     <button type="submit"
                                             class="confirm-btn"
                                             id="confirmAppointmentButton">
+                                        Confirm Appointment
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- MOBILE TIME BOTTOM SHEET -->
+                            <div class="mobile-time-sheet-backdrop"
+                                 id="mobileTimeSheet"
+                                 aria-hidden="true"
+                                 onclick="closeMobileTimeSheetFromBackdrop(event)">
+
+                                <div class="mobile-time-sheet"
+                                     role="dialog"
+                                     aria-modal="true"
+                                     aria-labelledby="mobileTimeSheetTitle">
+
+                                    <div class="mobile-sheet-handle"></div>
+
+                                    <div class="mobile-sheet-head">
+                                        <div>
+                                            <div class="mobile-sheet-title"
+                                                 id="mobileTimeSheetTitle">
+                                                Select a time
+                                            </div>
+
+                                            <div class="mobile-sheet-date"
+                                                 id="mobileTimeSheetDate">
+                                            </div>
+                                        </div>
+
+                                        <button type="button"
+                                                class="mobile-sheet-close"
+                                                aria-label="Close time selection"
+                                                onclick="closeMobileTimeSheet()">
+                                            ×
+                                        </button>
+                                    </div>
+
+                                    @foreach (var dayGroup in dayGroups)
+                                    {
+                                        var dateKey =
+                                            dayGroup.Key.ToString("yyyy-MM-dd");
+
+                                        <div class="mobile-time-day"
+                                             data-date="@dateKey"
+                                             style="display:none;">
+
+                                            <div class="mobile-time-options">
+                                                @foreach (var slot in dayGroup)
+                                                {
+                                                    var iso =
+                                                        slot.ProposedDateTime
+                                                            .ToString("yyyy-MM-ddTHH:mm:ss");
+
+                                                    var label =
+                                                        slot.ProposedDateTime
+                                                            .ToString("dddd, dd MMMM yyyy 'at' HH:mm");
+
+                                                    <button type="button"
+                                                            class="mobile-sheet-time"
+                                                            data-slot="@iso"
+                                                            data-label="@label"
+                                                            onclick="chooseMobileInspectionTime(this)">
+                                                        @slot.ProposedDateTime.ToString("HH:mm")
+                                                    </button>
+                                                }
+                                            </div>
+                                        </div>
+                                    }
+
+                                    <div class="mobile-sheet-selected"
+                                         id="mobileSheetSelected">
+                                    </div>
+
+                                    <button type="submit"
+                                            class="mobile-sheet-confirm"
+                                            id="mobileConfirmAppointmentButton"
+                                            disabled>
                                         Confirm Appointment
                                     </button>
                                 </div>
@@ -571,8 +701,20 @@
                 const form =
                     document.getElementById('inspectionCalendarForm');
 
-                const submitButton =
+                const desktopSubmitButton =
                     document.getElementById('confirmAppointmentButton');
+
+                const mobileSubmitButton =
+                    document.getElementById('mobileConfirmAppointmentButton');
+
+                const mobileSheet =
+                    document.getElementById('mobileTimeSheet');
+
+                const mobileSheetDate =
+                    document.getElementById('mobileTimeSheetDate');
+
+                const mobileSheetSelected =
+                    document.getElementById('mobileSheetSelected');
 
                 window.chooseInspectionSlot = function (button) {
                     if (!button || !hidden || !box || !value) {
@@ -605,8 +747,98 @@
 
                     box.style.display = 'block';
 
-                    if (submitButton) {
-                        submitButton.disabled = false;
+                    if (desktopSubmitButton) {
+                        desktopSubmitButton.disabled = false;
+                    }
+                };
+
+                window.openMobileTimeSheet = function (dateKey, label) {
+                    if (!mobileSheet) {
+                        return;
+                    }
+
+                    document
+                        .querySelectorAll('.mobile-time-day')
+                        .forEach(x => {
+                            x.style.display =
+                                x.dataset.date === dateKey
+                                    ? 'block'
+                                    : 'none';
+                        });
+
+                    document
+                        .querySelectorAll('.mobile-sheet-time.selected')
+                        .forEach(x =>
+                            x.classList.remove('selected'));
+
+                    if (hidden) {
+                        hidden.value = '';
+                    }
+
+                    if (mobileSubmitButton) {
+                        mobileSubmitButton.disabled = true;
+                        mobileSubmitButton.textContent =
+                            'Confirm Appointment';
+                    }
+
+                    if (mobileSheetSelected) {
+                        mobileSheetSelected.style.display = 'none';
+                        mobileSheetSelected.textContent = '';
+                    }
+
+                    if (mobileSheetDate) {
+                        mobileSheetDate.textContent = label || '';
+                    }
+
+                    mobileSheet.classList.add('open');
+                    mobileSheet.setAttribute('aria-hidden', 'false');
+
+                    document.body.style.overflow = 'hidden';
+                };
+
+                window.closeMobileTimeSheet = function () {
+                    if (!mobileSheet) {
+                        return;
+                    }
+
+                    mobileSheet.classList.remove('open');
+                    mobileSheet.setAttribute('aria-hidden', 'true');
+
+                    document.body.style.overflow = '';
+                };
+
+                window.closeMobileTimeSheetFromBackdrop = function (event) {
+                    if (event.target === mobileSheet) {
+                        closeMobileTimeSheet();
+                    }
+                };
+
+                window.chooseMobileInspectionTime = function (button) {
+                    if (!button || !hidden) {
+                        return;
+                    }
+
+                    document
+                        .querySelectorAll('.mobile-sheet-time.selected')
+                        .forEach(x =>
+                            x.classList.remove('selected'));
+
+                    button.classList.add('selected');
+
+                    hidden.value =
+                        button.dataset.slot || '';
+
+                    if (mobileSheetSelected) {
+                        mobileSheetSelected.textContent =
+                            button.dataset.label
+                                ? 'Selected: ' + button.dataset.label
+                                : 'Selected inspection appointment';
+
+                        mobileSheetSelected.style.display = 'block';
+                    }
+
+                    if (mobileSubmitButton) {
+                        mobileSubmitButton.disabled = false;
                     }
                 };
 
@@ -630,9 +862,15 @@
                                 return;
                             }
 
-                            if (submitButton) {
-                                submitButton.disabled = true;
-                                submitButton.textContent =
+                            if (desktopSubmitButton) {
+                                desktopSubmitButton.disabled = true;
+                                desktopSubmitButton.textContent =
+                                    'Confirming...';
+                            }
+
+                            if (mobileSubmitButton) {
+                                mobileSubmitButton.disabled = true;
+                                mobileSubmitButton.textContent =
                                     'Confirming...';
                             }
                         });
