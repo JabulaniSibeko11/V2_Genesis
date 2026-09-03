@@ -15,8 +15,15 @@
     var selectedSlotId = $"selectedInspectionSlot_{Model.InstanceKey}";
     var selectedLabelId = $"selectedInspectionLabel_{Model.InstanceKey}";
     var confirmButtonId = $"confirmInspectionModal_{Model.InstanceKey}";
+    var timeSheetId = $"inspectionTimeSheet_{Model.InstanceKey}";
+    var timeSheetDateId = $"inspectionTimeSheetDate_{Model.InstanceKey}";
+    var timeSheetSelectedId = $"inspectionTimeSheetSelected_{Model.InstanceKey}";
 }
-<link href="~/css/views/calendar-modal.css" rel="stylesheet" asp-append-version="true"/>
+
+<link href="~/css/views/calendar-modal.css"
+      rel="stylesheet"
+      asp-append-version="true" />
+
 <div id="@modalId"
      class="attr-insp-modal-backdrop"
      data-instance-key="@Model.InstanceKey"
@@ -60,9 +67,10 @@
                    class="js-selected-inspection-slot" />
 
             <div class="attr-insp-modal-body">
-                <p>
-                    Select a suitable available inspection date and time.
-                    The system will verify the appointment again before confirmation.
+
+                <p class="attr-cal-intro">
+                    Select an available date first. The available times for that
+                    date will open immediately.
                 </p>
 
                 @if (!string.IsNullOrWhiteSpace(Model.RequestComment))
@@ -74,33 +82,110 @@
 
                 @if (availableSlots.Any())
                 {
-                    <div class="attr-cal-mobile-list">
+                    <div class="attr-date-list">
                         @foreach (var dayGroup in dayGroups)
                         {
-                            <section class="attr-cal-day-card">
-                                <h4>
-                                    @dayGroup.Key.ToString("dddd, dd MMMM yyyy")
-                                </h4>
+                            var dateKey =
+                                dayGroup.Key.ToString("yyyy-MM-dd");
 
-                                <div class="attr-cal-time-grid">
-                                    @foreach (var slot in dayGroup)
-                                    {
-                                        <button type="button"
-                                                class="attr-cal-time"
-                                                data-slot-id="@slot.Id"
-                                                data-label="@slot.ProposedDateTime.ToString("dddd, dd MMMM yyyy 'at' HH:mm")"
-                                                onclick="selectInspectionCalendarSlot(this)">
-                                            @slot.ProposedDateTime.ToString("HH:mm")
-                                        </button>
-                                    }
-                                </div>
-                            </section>
+                            var dateLabel =
+                                dayGroup.Key.ToString("dddd, dd MMMM yyyy");
+
+                            <button type="button"
+                                    class="attr-date-card"
+                                    data-date="@dateKey"
+                                    data-label="@dateLabel"
+                                    onclick="openDashboardInspectionTimeSheet(this)">
+                                <span class="attr-date-card-day">
+                                    @dayGroup.Key.ToString("ddd")
+                                </span>
+
+                                <span class="attr-date-card-number">
+                                    @dayGroup.Key.Day
+                                </span>
+
+                                <span class="attr-date-card-month">
+                                    @dayGroup.Key.ToString("MMM yyyy")
+                                </span>
+
+                                <span class="attr-date-card-count">
+                                    @dayGroup.Count() time@(dayGroup.Count() == 1 ? "" : "s") available
+                                </span>
+
+                                <i class="fa-solid fa-chevron-right"></i>
+                            </button>
                         }
                     </div>
 
                     <div class="attr-cal-selected js-selected-inspection-label"
                          id="@selectedLabelId"
                          style="display:none;">
+                    </div>
+
+                    <div id="@timeSheetId"
+                         class="attr-time-sheet-backdrop"
+                         aria-hidden="true"
+                         onclick="closeDashboardInspectionTimeSheetFromBackdrop(event, '@Model.InstanceKey')">
+
+                        <div class="attr-time-sheet"
+                             role="dialog"
+                             aria-modal="true"
+                             aria-labelledby="@timeSheetDateId">
+
+                            <div class="attr-time-sheet-handle"></div>
+
+                            <div class="attr-time-sheet-head">
+                                <div>
+                                    <h3>Select a time</h3>
+                                    <div id="@timeSheetDateId"
+                                         class="attr-time-sheet-date">
+                                    </div>
+                                </div>
+
+                                <button type="button"
+                                        class="attr-time-sheet-close"
+                                        aria-label="Close time selection"
+                                        onclick="closeDashboardInspectionTimeSheet('@Model.InstanceKey')">
+                                    ×
+                                </button>
+                            </div>
+
+                            @foreach (var dayGroup in dayGroups)
+                            {
+                                var dateKey =
+                                    dayGroup.Key.ToString("yyyy-MM-dd");
+
+                                <div class="attr-time-sheet-day"
+                                     data-date="@dateKey"
+                                     style="display:none;">
+
+                                    <div class="attr-cal-time-grid">
+                                        @foreach (var slot in dayGroup)
+                                        {
+                                            <button type="button"
+                                                    class="attr-cal-time"
+                                                    data-slot-id="@slot.Id"
+                                                    data-label="@slot.ProposedDateTime.ToString("dddd, dd MMMM yyyy 'at' HH:mm")"
+                                                    onclick="selectInspectionCalendarSlot(this)">
+                                                @slot.ProposedDateTime.ToString("HH:mm")
+                                            </button>
+                                        }
+                                    </div>
+                                </div>
+                            }
+
+                            <div id="@timeSheetSelectedId"
+                                 class="attr-time-sheet-selected"
+                                 style="display:none;">
+                            </div>
+
+                            <button type="button"
+                                    class="btn btn-warning fw-bold attr-time-sheet-done"
+                                    onclick="finishDashboardInspectionTimeSelection('@Model.InstanceKey')"
+                                    disabled>
+                                Use Selected Time
+                            </button>
+                        </div>
                     </div>
                 }
                 else
@@ -113,6 +198,7 @@
                 @if (!string.IsNullOrWhiteSpace(Model.CommentFieldName))
                 {
                     <label class="fw-bold">Comment</label>
+
                     <textarea name="@Model.CommentFieldName"
                               class="form-control"
                               maxlength="500"
@@ -138,52 +224,455 @@
     </div>
 </div>
 
+<style>
+    .attr-cal-intro {
+        margin-bottom: 14px;
+        color: #475467;
+    }
 
+    .attr-date-list {
+        display: grid;
+        gap: 10px;
+    }
+
+    .attr-date-card {
+        width: 100%;
+        display: grid;
+        grid-template-columns: auto auto 1fr auto auto;
+        gap: 10px;
+        align-items: center;
+        min-height: 64px;
+        padding: 10px 12px;
+        border: 1px solid #e4e7ec;
+        border-radius: 10px;
+        background: #fff;
+        text-align: left;
+        cursor: pointer;
+    }
+
+        .attr-date-card:hover,
+        .attr-date-card:focus-visible {
+            border-color: #e8b600;
+            background: #fffaf0;
+            outline: 3px solid rgba(232,182,0,.18);
+        }
+
+    .attr-date-card-day {
+        min-width: 40px;
+        font-size: 12px;
+        font-weight: 800;
+        color: #667085;
+        text-transform: uppercase;
+    }
+
+    .attr-date-card-number {
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        background: #eef8f2;
+        color: #0d3036;
+        font-size: 18px;
+        font-weight: 900;
+    }
+
+    .attr-date-card-month {
+        font-weight: 900;
+        color: #0d3036;
+    }
+
+    .attr-date-card-count {
+        font-size: 12px;
+        color: #667085;
+    }
+
+    .attr-date-card i {
+        color: #98a2b3;
+    }
+
+    .attr-time-sheet-backdrop {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 4000;
+        background: rgba(15,23,42,.48);
+        align-items: flex-end;
+        justify-content: center;
+    }
+
+        .attr-time-sheet-backdrop.open {
+            display: flex;
+        }
+
+    .attr-time-sheet {
+        width: 100%;
+        max-width: 520px;
+        max-height: 78dvh;
+        overflow: auto;
+        background: #fff;
+        border-radius: 22px 22px 0 0;
+        box-shadow: 0 -10px 34px rgba(0,0,0,.18);
+        padding: 18px 18px calc(18px + env(safe-area-inset-bottom));
+    }
+
+    .attr-time-sheet-handle {
+        width: 42px;
+        height: 5px;
+        border-radius: 999px;
+        background: #d0d5dd;
+        margin: 0 auto 14px;
+    }
+
+    .attr-time-sheet-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+
+        .attr-time-sheet-head h3 {
+            margin: 0;
+            color: #0d3036;
+            font-size: 21px;
+            font-weight: 900;
+        }
+
+    .attr-time-sheet-date {
+        margin-top: 4px;
+        color: #667085;
+        font-size: 13px;
+    }
+
+    .attr-time-sheet-close {
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        border: 1px solid #e4e7ec;
+        background: #fff;
+        font-size: 22px;
+        cursor: pointer;
+    }
+
+    .attr-cal-time-grid {
+        display: grid;
+        grid-template-columns: repeat(2,minmax(0,1fr));
+        gap: 9px;
+    }
+
+    .attr-cal-time {
+        min-height: 48px;
+        border: 1px solid #d0d5dd;
+        border-radius: 9px;
+        background: #fff;
+        font-weight: 900;
+        cursor: pointer;
+    }
+
+        .attr-cal-time.selected {
+            background: #0d3036;
+            border-color: #0d3036;
+            color: #fff;
+        }
+
+    .attr-time-sheet-selected {
+        margin-top: 14px;
+        padding: 10px 12px;
+        background: #fff6d6;
+        border-left: 4px solid #e8b600;
+        border-radius: 7px;
+        font-weight: 800;
+    }
+
+    .attr-time-sheet-done {
+        width: 100%;
+        min-height: 48px;
+        margin-top: 14px;
+    }
+
+    .attr-cal-selected {
+        margin-top: 12px;
+        padding: 11px 12px;
+        background: #eef8f2;
+        border-left: 4px solid #16833f;
+        border-radius: 7px;
+        font-weight: 800;
+    }
+
+    @@media(min-width:769px) {
+        .attr-date-list {
+            grid-template-columns: repeat(2,minmax(0,1fr));
+        }
+    }
+
+    @@media(max-width:600px) {
+        .attr-date-card {
+            grid-template-columns: auto auto 1fr auto;
+        }
+
+        .attr-date-card-count {
+            grid-column: 3 / 5;
+        }
+    }
+</style>
 
 <script>
-    function selectInspectionCalendarSlot(button) {
-        const modal = button.closest('.attr-insp-modal-backdrop');
+    function openDashboardInspectionTimeSheet(button) {
+        const modal =
+            button.closest('.attr-insp-modal-backdrop');
 
         if (!modal) {
             return;
         }
 
-        modal.querySelectorAll('.attr-cal-time.selected')
-            .forEach(x => x.classList.remove('selected'));
+        const instanceKey =
+            modal.dataset.instanceKey;
+
+        const sheet =
+            document.getElementById(
+                'inspectionTimeSheet_' + instanceKey);
+
+        const sheetDate =
+            document.getElementById(
+                'inspectionTimeSheetDate_' + instanceKey);
+
+        if (!sheet) {
+            return;
+        }
+
+        const dateKey =
+            button.dataset.date || '';
+
+        modal
+            .querySelectorAll('.attr-time-sheet-day')
+            .forEach(function (day) {
+                day.style.display =
+                    day.dataset.date === dateKey
+                        ? 'block'
+                        : 'none';
+            });
+
+        modal
+            .querySelectorAll('.attr-cal-time.selected')
+            .forEach(function (timeButton) {
+                timeButton.classList.remove('selected');
+            });
+
+        const hidden =
+            modal.querySelector(
+                '.js-selected-inspection-slot');
+
+        const selectedLabel =
+            modal.querySelector(
+                '.js-selected-inspection-label');
+
+        const sheetSelected =
+            document.getElementById(
+                'inspectionTimeSheetSelected_' + instanceKey);
+
+        const doneButton =
+            sheet.querySelector(
+                '.attr-time-sheet-done');
+
+        const confirmButton =
+            modal.querySelector(
+                '.js-confirm-inspection');
+
+        if (hidden) {
+            hidden.value = '';
+        }
+
+        if (selectedLabel) {
+            selectedLabel.textContent = '';
+            selectedLabel.style.display = 'none';
+        }
+
+        if (sheetSelected) {
+            sheetSelected.textContent = '';
+            sheetSelected.style.display = 'none';
+        }
+
+        if (doneButton) {
+            doneButton.disabled = true;
+        }
+
+        if (confirmButton) {
+            confirmButton.disabled = true;
+        }
+
+        if (sheetDate) {
+            sheetDate.textContent =
+                button.dataset.label || '';
+        }
+
+        sheet.classList.add('open');
+        sheet.setAttribute(
+            'aria-hidden',
+            'false');
+
+        document.body.style.overflow = 'hidden';
+    }
+
+    function selectInspectionCalendarSlot(button) {
+        const modal =
+            button.closest('.attr-insp-modal-backdrop');
+
+        if (!modal) {
+            return;
+        }
+
+        modal
+            .querySelectorAll('.attr-cal-time.selected')
+            .forEach(function (x) {
+                x.classList.remove('selected');
+            });
 
         button.classList.add('selected');
 
-        const hidden = modal.querySelector('.js-selected-inspection-slot');
-        const label = modal.querySelector('.js-selected-inspection-label');
-        const confirmButton = modal.querySelector('.js-confirm-inspection');
+        const hidden =
+            modal.querySelector(
+                '.js-selected-inspection-slot');
+
+        const sheet =
+            button.closest(
+                '.attr-time-sheet');
+
+        const doneButton =
+            sheet
+                ? sheet.querySelector(
+                    '.attr-time-sheet-done')
+                : null;
+
+        const instanceKey =
+            modal.dataset.instanceKey;
+
+        const sheetSelected =
+            document.getElementById(
+                'inspectionTimeSheetSelected_' +
+                instanceKey);
 
         if (hidden) {
-            hidden.value = button.dataset.slotId || '';
+            hidden.value =
+                button.dataset.slotId || '';
         }
 
-        if (label) {
-            label.textContent =
-                'Selected: ' + (button.dataset.label || '');
-            label.style.display = 'block';
+        if (sheetSelected) {
+            sheetSelected.textContent =
+                'Selected: ' +
+                (button.dataset.label || '');
+
+            sheetSelected.style.display =
+                'block';
+        }
+
+        if (doneButton) {
+            doneButton.disabled = false;
+        }
+    }
+
+    function finishDashboardInspectionTimeSelection(
+        instanceKey) {
+
+        const modal =
+            document.getElementById(
+                'inspectionModal_' + instanceKey);
+
+        if (!modal) {
+            return;
+        }
+
+        const hidden =
+            modal.querySelector(
+                '.js-selected-inspection-slot');
+
+        if (!hidden || !hidden.value) {
+            alert(
+                'Please select an inspection time.');
+            return;
+        }
+
+        const selectedTime =
+            modal.querySelector(
+                '.attr-cal-time.selected');
+
+        const selectedLabel =
+            modal.querySelector(
+                '.js-selected-inspection-label');
+
+        const confirmButton =
+            modal.querySelector(
+                '.js-confirm-inspection');
+
+        if (selectedLabel) {
+            selectedLabel.textContent =
+                'Selected: ' +
+                (selectedTime?.dataset.label || '');
+
+            selectedLabel.style.display =
+                'block';
         }
 
         if (confirmButton) {
             confirmButton.disabled = false;
         }
+
+        closeDashboardInspectionTimeSheet(
+            instanceKey);
+    }
+
+    function closeDashboardInspectionTimeSheet(
+        instanceKey) {
+
+        const sheet =
+            document.getElementById(
+                'inspectionTimeSheet_' + instanceKey);
+
+        if (!sheet) {
+            return;
+        }
+
+        sheet.classList.remove('open');
+        sheet.setAttribute(
+            'aria-hidden',
+            'true');
+
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeDashboardInspectionTimeSheetFromBackdrop(
+        event,
+        instanceKey) {
+
+        const sheet =
+            document.getElementById(
+                'inspectionTimeSheet_' + instanceKey);
+
+        if (sheet && event.target === sheet) {
+            closeDashboardInspectionTimeSheet(
+                instanceKey);
+        }
     }
 
     function submitInspectionCalendarModal(form) {
-        const hidden = form.querySelector('.js-selected-inspection-slot');
-        const confirmButton = form.querySelector('.js-confirm-inspection');
+        const hidden =
+            form.querySelector(
+                '.js-selected-inspection-slot');
+
+        const confirmButton =
+            form.querySelector(
+                '.js-confirm-inspection');
 
         if (!hidden || !hidden.value) {
-            alert('Please select an inspection date and time.');
+            alert(
+                'Please select an inspection date and time.');
             return false;
         }
 
         if (confirmButton) {
             confirmButton.disabled = true;
-            confirmButton.textContent = 'Confirming...';
+            confirmButton.textContent =
+                'Confirming...';
         }
 
         return true;
