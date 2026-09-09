@@ -43,8 +43,6 @@ namespace V2_Genesis.Models.ViewModels.Account
         [Compare(nameof(Password), ErrorMessage = "Passwords do not match.")]
         [Display(Name = "Confirm Password")]
         public string ConfirmPassword { get; set; } = string.Empty;
-
-        [Range(typeof(bool), "true", "true", ErrorMessage = "You must accept the Terms of Use and POPIA Notice.")]
         [Display(Name = "Accept Terms")]
         public bool AcceptTerms { get; set; }
     }
