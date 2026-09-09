@@ -16,6 +16,7 @@ namespace V2_Genesis.Services.Implementations
         private readonly IEmailService _emailService;
         private readonly ILogger<AttributeSubmissionService> _logger;
         private readonly bool _bypassAdminEvidenceWindow;
+        private readonly int _attributeEvidenceWindowMinutes;
         public AttributeSubmissionService(
             AttributesDbContext context,
            IAttributeDocumentService documentService,
@@ -30,6 +31,14 @@ namespace V2_Genesis.Services.Implementations
             _logger = logger;
             _bypassAdminEvidenceWindow = configuration.GetValue<bool>(
                 "AttributeRouting:BypassEvidenceWindow");
+
+
+            _attributeEvidenceWindowMinutes =
+                Math.Max(
+                    1,
+                    configuration.GetValue<int?>(
+                        "AttributeRouting:EvidenceWindowMinutes")
+                    ?? (48 * 60));
         }
 
         public AttributeSubmissionViewModel CreateNew(string formType)
@@ -238,8 +247,8 @@ namespace V2_Genesis.Services.Implementations
                 _bypassAdminEvidenceWindow && isAdminCaptured;
 
             var evidenceDeadline = bypassEvidenceWindow
-                ? now
-                : now.AddHours(48);
+      ? now
+      : now.AddMinutes(_attributeEvidenceWindowMinutes);
 
             model.GeneratedEvidencePin = evidencePin;
             model.GeneratedEvidenceDeadline = evidenceDeadline;

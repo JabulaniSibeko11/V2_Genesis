@@ -207,7 +207,10 @@
                         </div>
 
                         <label class="chk-wrap">
-                            <input asp-for="Individual.AcceptTerms" type="checkbox" />
+                            <input asp-for="Individual.AcceptTerms"
+                                   type="checkbox"
+                                   data-val="true"
+                                   data-val-required="You must accept the Terms of Use and POPIA Notice." />
                             <span class="chk-label">I agree to the <a href="#" target="_blank">Terms of Use</a> and <a href="#" target="_blank">POPIA Privacy Notice</a>. I understand my data will be processed under the MPRA.</span>
                         </label>
                         <span asp-validation-for="Individual.AcceptTerms" class="f-err" style="display:block;margin-bottom:.5rem"></span>
@@ -306,7 +309,10 @@
                         </div>
 
                         <label class="chk-wrap">
-                            <input asp-for="Company.AcceptTerms" type="checkbox" />
+                            <input asp-for="Company.AcceptTerms"
+                                   type="checkbox"
+                                   data-val="true"
+                                   data-val-required="You must accept the Terms of Use and POPIA Notice." />
                             <span class="chk-label">I agree to the <a href="#" target="_blank">Terms of Use</a> and <a href="#" target="_blank">POPIA Privacy Notice</a>.</span>
                         </label>
                         <span asp-validation-for="Company.AcceptTerms" class="f-err" style="display:block;margin-bottom:.5rem"></span>

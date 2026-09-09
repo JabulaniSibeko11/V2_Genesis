@@ -96,7 +96,45 @@ namespace V2_Genesis.Filters
                     await next();
 
                 sw.Stop();
+                var logValidationErrors = _config.GetValue<bool>(
+    "GenesisLogging:LogValidationErrors",
+    true);
 
+                if (logValidationErrors && !context.ModelState.IsValid)
+                {
+                    var validationErrors = context.ModelState
+                        .Where(x => x.Value?.Errors.Count > 0)
+                        .SelectMany(x => x.Value!.Errors.Select(error =>
+                        {
+                            var message = !string.IsNullOrWhiteSpace(error.ErrorMessage)
+                                ? error.ErrorMessage
+                                : error.Exception?.Message ?? "Validation failed.";
+
+                            var field = string.IsNullOrWhiteSpace(x.Key)
+                                ? "(general)"
+                                : x.Key;
+
+                            return $"{field}: {message}";
+                        }))
+                        .ToArray();
+
+                    logger.LogWarning(
+                        "Model validation failed. " +
+                        "Controller={Controller}, " +
+                        "Action={Action}, " +
+                        "Method={Method}, " +
+                        "Path={Path}, " +
+                        "User={User}, " +
+                        "IP={IP}, " +
+                        "ValidationErrors={ValidationErrors}",
+                        controller,
+                        action,
+                        method,
+                        path,
+                        user,
+                        ip,
+                        string.Join(" | ", validationErrors));
+                }
                 if (result.Exception != null &&
                     !result.ExceptionHandled)
                 {

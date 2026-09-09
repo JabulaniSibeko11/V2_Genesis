@@ -9,5 +9,6 @@ namespace V2_Genesis.Models.Configuration
         public bool LogRequests { get; set; } = true;
         public bool LogControllerActions { get; set; } = true;
         public bool AuditEnabled { get; set; } = true;
+        public bool LogValidationErrors { get; set; } = true;
     }
 }

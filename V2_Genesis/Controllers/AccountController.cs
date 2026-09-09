@@ -336,14 +336,24 @@ namespace V2_Genesis.Controllers
             model.ActiveTab = "individual";
             ViewBag.ReturnUrl = returnUrl;
 
+            
             // Validate only the Individual sub-model
             ClearCompanyErrors();
+
+            // Terms / POPIA
+            if (!model.Individual.AcceptTerms)
+            {
+                ModelState.AddModelError(
+                    "Individual.AcceptTerms",
+                    "You must accept the Terms of Use and POPIA Notice.");
+            }
 
             // Must have either ID or Passport
             if (string.IsNullOrWhiteSpace(model.Individual.IDNumber) &&
                 string.IsNullOrWhiteSpace(model.Individual.PassportNumber))
             {
-                ModelState.AddModelError("Individual.IDNumber",
+                ModelState.AddModelError(
+                    "Individual.IDNumber",
                     "Please provide either a South African ID number or a passport number.");
             }
 
@@ -394,6 +404,13 @@ namespace V2_Genesis.Controllers
 
             // Validate only the Company sub-model
             ClearIndividualErrors();
+
+            if (!model.Company.AcceptTerms)
+            {
+                ModelState.AddModelError(
+                    "Company.AcceptTerms",
+                    "You must accept the Terms of Use and POPIA Notice.");
+            }
 
             if (!ModelState.IsValid)
                 return View("Register", model);
