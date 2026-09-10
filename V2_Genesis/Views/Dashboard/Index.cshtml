@@ -1022,7 +1022,7 @@
         // Desktop must show every real table column, especially the
         // reference number. Responsive child-row behaviour is only
         // enabled on phone/tablet widths.
-        const dashboardResponsiveBreakpoint = 768;
+        const dashboardResponsiveBreakpoint = 1180;
         let dashboardLastResponsiveMode =
             window.innerWidth <= dashboardResponsiveBreakpoint;
 
@@ -1049,24 +1049,29 @@
             const useResponsive =
                 isDashboardResponsiveMode();
 
-            const columnDefs = [
-                {
-                    targets: 0,
-                    // Only make the first cell the responsive + control
-                    // when we are actually on a narrow screen.
-                    className: useResponsive
-                        ? 'dtr-control'
-                        : '',
-                    responsivePriority: 1,
-                    visible: true
-                },
-                {
-                    targets: colCount - 1,
-                    responsivePriority: 2,
-                    orderable: false,
-                    visible: true
-                }
-            ];
+                    const columnDefs = [
+            {
+                targets: 0,
+                // First column becomes the + / − responsive control.
+                className: useResponsive
+                    ? 'dtr-control'
+                    : '',
+                responsivePriority: 1,
+                visible: true
+            },
+            {
+                targets: colCount - 1,
+
+                // On half-screen/tablet/phone, always move
+                // the Actions/Options column into the + details row.
+                className: useResponsive
+                    ? 'none'
+                    : '',
+
+                orderable: false,
+                visible: true
+            }
+        ];
 
             $(selector).DataTable({
 

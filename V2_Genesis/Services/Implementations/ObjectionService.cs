@@ -446,7 +446,12 @@ public class ObjectionService : IObjectionService
      rollSource,
      sourceTable);
 
-        await using var db = new ObjectionReadDbContext(connectionString);
+        var mvdTableName = GetAppealMvdTableName();
+
+        await using var db =
+            new ObjectionReadDbContext(
+                connectionString,
+                mvdTableName);
 
         if (isAppeal)
         {
@@ -511,6 +516,22 @@ public class ObjectionService : IObjectionService
             PropertyDescription = objRow.PropertyDescription
         };
     }
+    private string GetAppealMvdTableName()
+    {
+        var tableName =
+            _config["AppealMvd:TableName"]?.Trim();
+
+        return tableName switch
+        {
+            null or "" => "Objection_MVD",
+            "Objection_MVD" => "Objection_MVD",
+            "Objection_MVD1" => "Objection_MVD1",
+            _ => throw new InvalidOperationException(
+                $"Unsupported AppealMvd table '{tableName}'. " +
+                "Allowed values are 'Objection_MVD' and 'Objection_MVD1'.")
+        };
+    }
+
     private static DateTime TodaySa()
     {
         try
@@ -596,8 +617,12 @@ public class ObjectionService : IObjectionService
             throw new InvalidOperationException(
                 $"Connection string '{connectionKey}' was not found.");
         }
+        var mvdTableName = GetAppealMvdTableName();
 
-        await using var db = new ObjectionReadDbContext(connectionString);
+        await using var db =
+            new ObjectionReadDbContext(
+                connectionString,
+                mvdTableName);
 
         var objection = await db.Objections
             .AsNoTracking()
@@ -608,7 +633,7 @@ public class ObjectionService : IObjectionService
 
         if (objection is not null)
         {
-            var mvd = await db.MvdRevised
+            var mvd = await db.MvdNotices
                 .AsNoTracking()
                 .Where(x =>
                     (x.ObjectionNo ?? string.Empty).Trim() == objectionNo)
@@ -733,7 +758,12 @@ public class ObjectionService : IObjectionService
                 $"Connection string '{connectionKey}' was not found.");
         }
 
-        await using var db = new ObjectionReadDbContext(connString);
+        var mvdTableName = GetAppealMvdTableName();
+
+        await using var db =
+            new ObjectionReadDbContext(
+                connString,
+                mvdTableName);
 
         var row = await db.MvdNotices
             .AsNoTracking()
@@ -803,17 +833,33 @@ public class ObjectionService : IObjectionService
 
     private sealed class ObjectionReadDbContext : DbContext
     {
-        private readonly string _connectionString;
 
-        public ObjectionReadDbContext(string connectionString)
+        private readonly string _connectionString;
+        private readonly string _mvdTableName;
+
+        public ObjectionReadDbContext(
+            string connectionString,
+            string mvdTableName)
         {
             _connectionString = connectionString;
+
+            _mvdTableName =
+                string.IsNullOrWhiteSpace(mvdTableName)
+                    ? "Objection_MVD"
+                    : mvdTableName.Trim();
         }
 
-        public DbSet<ObjectionReadEntity> Objections => Set<ObjectionReadEntity>();
-        public DbSet<AppealReadEntity> Appeals => Set<AppealReadEntity>();
-        public DbSet<MvdReadEntity> MvdNotices => Set<MvdReadEntity>();
-        public DbSet<MvdRevisedReadEntity> MvdRevised => Set<MvdRevisedReadEntity>();
+        public DbSet<ObjectionReadEntity> Objections =>
+            Set<ObjectionReadEntity>();
+
+        public DbSet<AppealReadEntity> Appeals =>
+            Set<AppealReadEntity>();
+
+        public DbSet<MvdReadEntity> MvdNotices =>
+            Set<MvdReadEntity>();
+
+
+
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -850,32 +896,42 @@ public class ObjectionService : IObjectionService
             });
 
             var mvd = modelBuilder.Entity<MvdReadEntity>();
-            mvd.HasNoKey();
-            mvd.ToTable("Objection_MVD", "dbo");
-            mvd.Property(x => x.ObjectionNo).HasColumnName("Objection_No");
-            mvd.Property(x => x.AppealStartDate).HasColumnName("Appeal_Start_Date");
-            mvd.Property(x => x.AppealCloseDate).HasColumnName("Appeal_Close_Date");
-            mvd.Property(x => x.RevisedAppealStartDate).HasColumnName("Appeal_Start_Date_ReviseMVD");
-            mvd.Property(x => x.RevisedAppealCloseDate).HasColumnName("Appeal_Close_Date_ReviseMVD");
-            mvd.Property(x => x.ReviseMvd).HasColumnName("Revise_MVD");
-            mvd.Property(x => x.UnitKey).HasColumnName("Unit_Key");
-            mvd.Property(x => x.ValuationKey).HasColumnName("valuation_Key");
-            mvd.Property(x => x.PropertyDescription).HasColumnName("Property_desc");
-            mvd.Property(x => x.BatchDate).HasColumnName("Batch_Date");
 
-            var revised = modelBuilder.Entity<MvdRevisedReadEntity>();
-            revised.HasNoKey();
-            revised.ToTable("Objection_MVD1", "dbo");
-            revised.Property(x => x.ObjectionNo).HasColumnName("Objection_No");
-            revised.Property(x => x.AppealStartDate).HasColumnName("Appeal_Start_Date");
-            revised.Property(x => x.AppealCloseDate).HasColumnName("Appeal_Close_Date");
-            revised.Property(x => x.RevisedAppealStartDate).HasColumnName("Appeal_Start_Date_ReviseMVD");
-            revised.Property(x => x.RevisedAppealCloseDate).HasColumnName("Appeal_Close_Date_ReviseMVD");
-            revised.Property(x => x.ReviseMvd).HasColumnName("Revise_MVD");
-            revised.Property(x => x.UnitKey).HasColumnName("Unit_Key");
-            revised.Property(x => x.ValuationKey).HasColumnName("valuation_Key");
-            revised.Property(x => x.PropertyDescription).HasColumnName("Property_desc");
-            revised.Property(x => x.BatchDate).HasColumnName("Batch_Date");
+            mvd.HasNoKey();
+
+            mvd.ToTable(_mvdTableName, "dbo");
+
+            mvd.Property(x => x.ObjectionNo)
+                .HasColumnName("Objection_No");
+
+            mvd.Property(x => x.AppealStartDate)
+                .HasColumnName("Appeal_Start_Date");
+
+            mvd.Property(x => x.AppealCloseDate)
+                .HasColumnName("Appeal_Close_Date");
+
+            mvd.Property(x => x.RevisedAppealStartDate)
+                .HasColumnName("Appeal_Start_Date_ReviseMVD");
+
+            mvd.Property(x => x.RevisedAppealCloseDate)
+                .HasColumnName("Appeal_Close_Date_ReviseMVD");
+
+            mvd.Property(x => x.ReviseMvd)
+                .HasColumnName("Revise_MVD");
+
+            mvd.Property(x => x.UnitKey)
+                .HasColumnName("Unit_Key");
+
+            mvd.Property(x => x.ValuationKey)
+                .HasColumnName("valuation_Key");
+
+            mvd.Property(x => x.PropertyDescription)
+                .HasColumnName("Property_desc");
+
+            mvd.Property(x => x.BatchDate)
+                .HasColumnName("Batch_Date");
+
+
         }
     }
 
@@ -914,19 +970,7 @@ public class ObjectionService : IObjectionService
         public DateTime? BatchDate { get; set; }
     }
 
-    private sealed class MvdRevisedReadEntity
-    {
-        public string? ObjectionNo { get; set; }
-        public DateTime? AppealStartDate { get; set; }
-        public DateTime? AppealCloseDate { get; set; }
-        public DateTime? RevisedAppealStartDate { get; set; }
-        public DateTime? RevisedAppealCloseDate { get; set; }
-        public string? ReviseMvd { get; set; }
-        public string? UnitKey { get; set; }
-        public string? ValuationKey { get; set; }
-        public string? PropertyDescription { get; set; }
-        public DateTime? BatchDate { get; set; }
-    }
+
 
     private sealed class AppealEligibilityRow
     {
