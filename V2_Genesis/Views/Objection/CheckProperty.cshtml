@@ -7,6 +7,31 @@
     var q = Model.Queitems?.FirstOrDefault();
     var src = Model.SourceTable;
 
+    // Township for an Appeal is passed from the Dashboard into
+    // /objection/check?township=...
+    //
+    // Prefer that explicit Appeal value first, then fall back to the
+    // model value populated by CheckProperty, then TempData.
+    var requestedTownship =
+        Context.Request.Query["township"].ToString()?.Trim();
+
+    var townshipDisplay =
+        Model.IsAppeal &&
+        !string.IsNullOrWhiteSpace(requestedTownship)
+            ? requestedTownship
+            : !string.IsNullOrWhiteSpace(d?.TownNameDesc)
+                ? d!.TownNameDesc!.Trim()
+                : TempData.Peek("CurrentFilter_TN")?.ToString()?.Trim();
+
+    // Keep the model aligned with what is displayed so the same township
+    // is available to the rest of this Check Property page.
+    if (Model.IsAppeal &&
+        d is not null &&
+        !string.IsNullOrWhiteSpace(townshipDisplay))
+    {
+        d.TownNameDesc = townshipDisplay;
+    }
+
     bool isQuery = Model.IsQuery;
 
     bool isReview =
@@ -144,10 +169,10 @@
                     <i class="fa-solid fa-circle-check"></i>
                     <span id="continueBtnText">
                         Continue to @(isQuery
-                                                                                                                                                    ? section78ProcessName
-                                                                                                                            : Model.IsAppeal
-                                                                                                                                ? "Appeal"
-                                                                                                                                : "Objection") Form
+                                                                                                                                                                                                    ? section78ProcessName
+                                                                                                                                                                    : Model.IsAppeal
+                                                                                                                                                                        ? "Appeal"
+                                                                                                                                                                        : "Objection") Form
                     </span>
                 </button>
             </div>
@@ -295,7 +320,9 @@
                                     <i class="fa-solid fa-city"></i>Township
                                 </span>
                                 <span class="cp-prop-value">
-                                    @(d.TownNameDesc ?? "N/A")
+                                    @(string.IsNullOrWhiteSpace(townshipDisplay)
+                                        ? "N/A"
+                                        : townshipDisplay)
                                 </span>
                             </div>
                         }
@@ -443,8 +470,8 @@
                     <div class="cp-card-hdr">
                         <i class="fa-solid
                             @(isReview
-                                                                                                                                                                                      ? "fa-magnifying-glass-chart"
-                                                                                                                                                                                      : "fa-file-magnifying-glass")">
+                                                                                                                                                                                                                                            ? "fa-magnifying-glass-chart"
+                                                                                                                                                                                                                                            : "fa-file-magnifying-glass")">
                         </i>
 
                         Section 78 @section78ProcessName
@@ -805,6 +832,16 @@
                         '?PropertyFrom=' + encodeURIComponent(propertyFromValue) +
                         '&objectorType=' + encodeURIComponent(selectedObjector) +
                         '&appeal=' + (IS_APPEAL ? 'True' : 'False');
+
+                    // Preserve Township through Check Property -> Appeal Form.
+                    // This is especially useful for Appeals because the MVD
+                    // record does not itself store the valuation-roll township.
+                    var townshipValue = '@(townshipDisplay ?? string.Empty)';
+
+                    if (townshipValue && townshipValue.trim()) {
+                        qs += '&township=' +
+                              encodeURIComponent(townshipValue.trim());
+                    }
 
                     return isMulti
                         ? '/objection/multipurpose' + qs

@@ -194,48 +194,195 @@ public class ObjectionService : IObjectionService
     }
 
     // ── Appeal property fetch ─────────────────────────────────────────
+    // The MVD table is used only for appeal-window dates.
+    // Appeal form values still come from the existing IndexAppeal stored
+    // procedure. The parent objection is used as a reliable fallback for
+    // PropertyDesc / UnitKey / ValuationKey when the dashboard/SP omits them.
     public async Task<List<CheckPropertyResult>> GetPropertyForAppealAsync(
-        string rollSource,
-        string objectionNo)
+     string rollSource,
+     string objectionNo)
     {
         rollSource = NormalizeRollSource(rollSource);
+        objectionNo = objectionNo?.Trim() ?? string.Empty;
 
-        if (!RollSearchRegistry.Configs.TryGetValue(rollSource, out var rollCfg))
+        if (string.IsNullOrWhiteSpace(objectionNo))
             return new List<CheckPropertyResult>();
 
-        var connString = _config.GetConnectionString(rollCfg.ConnectionKey)
-                         ?? _config.GetConnectionString(GetConnectionKeyFromRollSource(rollSource))
-                         ?? _config.GetConnectionString("DefaultConnection")!;
+        var connectionKey = GetConnectionKeyFromRollSource(rollSource);
 
-        await using var conn = new SqlConnection(connString);
+        var connectionString =
+            _config.GetConnectionString(connectionKey)
+            ?? _config.GetConnectionString("DefaultConnection");
 
-        var raw = await conn.QueryAsync(
-            SP_APPEAL,
-            new { Objection_No = objectionNo },
-            commandType: CommandType.StoredProcedure);
-
-        return raw.Select(r => new CheckPropertyResult
+        if (string.IsNullOrWhiteSpace(connectionString))
         {
-            PremiseId = r.Premise_id?.ToString(),
-            UnitKey = NormalizeKey(r.Unit_key),
-            PropertyId = r.Property_id?.ToString(),
-            ValuationKey = NormalizeKey(r.Valuation_Key),
-            Sector = r.Sector?.ToString(),
-            TownNameDesc = r.Town_Name?.ToString(),
-            MarketValue = r.New_Market_Value_MVD?.ToString(),
-            RateableArea = r.New_Extent_MVD?.ToString(),
-            LisStreetAddress = r.New_Address_MVD?.ToString(),
-            CatDesc = r.New_Category_MVD?.ToString(),
-            PropertyDesc = r.New_Property_Description_MVD?.ToString(),
-            OwnerName = r.New_Owner_MVD?.ToString(),
+            throw new InvalidOperationException(
+                $"Connection string '{connectionKey}' was not found.");
+        }
 
-            Re = r.New3_Market_Value_MVD?.ToString(),
-            Reason = r.New3_Extent_MVD?.ToString(),
-            ValuationDate = r.New3_Category_MVD?.ToString(),
-            SchemeYear = r.New2_Extent_MVD?.ToString(),
-            SchemeNumber = r.New2_Category_MVD?.ToString(),
-            SchemeName = r.Property_Desc?.ToString(),
-        }).ToList();
+        var mvdTableName = GetAppealMvdTableName();
+
+        await using var db =
+            new ObjectionReadDbContext(
+                connectionString,
+                mvdTableName);
+
+        var row = await db.Objections
+            .AsNoTracking()
+            .Where(x =>
+                (x.ObjectionNo ?? string.Empty).Trim() == objectionNo)
+            .OrderByDescending(x => x.ObjectionId)
+            .FirstOrDefaultAsync();
+
+        if (row == null)
+            return new List<CheckPropertyResult>();
+
+        // ============================================================
+        // TOWNSHIP
+        // ============================================================
+        // Obj_Property_Info stores the Municipal Valuer's Decision
+        // values, but it does not carry the roll township description.
+        //
+        // For an Appeal, keep ALL MVD values from Obj_Property_Info,
+        // then resolve only the township from the original valuation roll
+        // using the same roll lookup used for a normal Objection.
+        // ============================================================
+        string? township = null;
+
+        var resolvedUnitKey =
+            FloatKeyHelper.Normalize(row.UnitKey);
+
+        var resolvedValuationKey =
+            FloatKeyHelper.Normalize(row.ValuationKey);
+
+        if (!string.IsNullOrWhiteSpace(resolvedUnitKey) ||
+            !string.IsNullOrWhiteSpace(resolvedValuationKey))
+        {
+            var sourceTable =
+                NormalizeSourceTable(rollSource);
+
+            var rollProperty =
+                (await GetPropertyForObjectionAsync(
+                    sourceTable,
+                    resolvedUnitKey,
+                    resolvedValuationKey))
+                .FirstOrDefault();
+
+            township =
+                rollProperty?.TownNameDesc?.Trim();
+        }
+
+        var result = new CheckPropertyResult
+        {
+            // ============================================================
+            // PROPERTY IDENTIFIERS
+            // Always retained from the objection record.
+            // ============================================================
+            PremiseId = row.PremiseId,
+            UnitKey = resolvedUnitKey,
+            PropertyId = row.PropertyId,
+            ValuationKey = resolvedValuationKey,
+            Sector = row.Sector,
+
+            // Township comes from the valuation roll, not Obj_Property_Info.
+            TownNameDesc = township,
+
+            // ============================================================
+            // APPEAL PROPERTY VALUES
+            // Appeal is against the MVD decision, NOT the original roll.
+            // ============================================================
+
+            PropertyDesc =
+                !string.IsNullOrWhiteSpace(row.NewPropertyDescriptionMvd)
+                    ? row.NewPropertyDescriptionMvd.Trim()
+                    : row.PropertyDescription?.Trim(),
+
+            OwnerName =
+                row.NewOwnerMvd?.Trim(),
+
+            LisStreetAddress =
+                row.NewAddressMvd?.Trim(),
+
+            CatDesc =
+                row.NewCategoryMvd?.Trim(),
+
+            RateableArea =
+                row.NewExtentMvd?.Trim(),
+
+            MarketValue =
+                row.NewMarketValueMvd?.Trim(),
+
+            WefDate =
+                FormatDate(row.WefDateMvd),
+
+            // ============================================================
+            // EXISTING LEGACY / SECTION 6 MAPPINGS
+            // Keep these because the current forms use CheckPropertyResult
+            // for additional MVD values.
+            // ============================================================
+            Re =
+                row.New3MarketValueMvd?.Trim(),
+
+            Reason =
+                row.New3ExtentMvd?.Trim(),
+
+            ValuationDate =
+                row.New3CategoryMvd?.Trim(),
+
+            SchemeYear =
+                row.New2ExtentMvd?.Trim(),
+
+            SchemeNumber =
+                row.New2CategoryMvd?.Trim(),
+
+            SchemeName =
+                row.PropertyDescription?.Trim()
+        };
+
+        return new List<CheckPropertyResult>
+    {
+        result
+    };
+    }
+    private static string? GetDynamicString(
+        object? row,
+        params string[] names)
+    {
+        if (row is not IDictionary<string, object> values)
+            return null;
+
+        foreach (var name in names)
+        {
+            foreach (var pair in values)
+            {
+                if (!string.Equals(
+                        pair.Key,
+                        name,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                var value = pair.Value?.ToString()?.Trim();
+
+                if (!string.IsNullOrWhiteSpace(value))
+                    return value;
+            }
+        }
+
+        return null;
+    }
+
+    private static string? FirstNonBlank(
+        params string?[] values)
+    {
+        foreach (var value in values)
+        {
+            if (!string.IsNullOrWhiteSpace(value))
+                return value.Trim();
+        }
+
+        return null;
     }
 
     private static string NormalizeKey(object? value)
@@ -633,6 +780,23 @@ public class ObjectionService : IObjectionService
 
         if (objection is not null)
         {
+            var resolvedUnitKey =
+                !string.IsNullOrWhiteSpace(unitKey)
+                    ? unitKey
+                    : FloatKeyHelper.Normalize(
+                        objection.UnitKey);
+
+            var resolvedValuationKey =
+                !string.IsNullOrWhiteSpace(valuationKey)
+                    ? valuationKey
+                    : FloatKeyHelper.Normalize(
+                        objection.ValuationKey);
+
+            var resolvedPropertyDesc =
+                !string.IsNullOrWhiteSpace(propertyDesc)
+                    ? propertyDesc
+                    : objection.PropertyDescription?.Trim();
+
             var mvd = await db.MvdNotices
                 .AsNoTracking()
                 .Where(x =>
@@ -644,12 +808,13 @@ public class ObjectionService : IObjectionService
                 .AsNoTracking()
                 .Where(x =>
                     (x.ObjectReference ?? string.Empty).Trim() == objectionNo ||
-                    (!string.IsNullOrWhiteSpace(valuationKey) &&
-                     x.ValuationKey == valuationKey) ||
-                    (!string.IsNullOrWhiteSpace(unitKey) &&
-                     x.UnitKey == unitKey) ||
-                    (!string.IsNullOrWhiteSpace(propertyDesc) &&
-                     (x.PropertyDescription ?? string.Empty).Trim() == propertyDesc))
+                    (!string.IsNullOrWhiteSpace(resolvedValuationKey) &&
+                     x.ValuationKey == resolvedValuationKey) ||
+                    (!string.IsNullOrWhiteSpace(resolvedUnitKey) &&
+                     x.UnitKey == resolvedUnitKey) ||
+                    (!string.IsNullOrWhiteSpace(resolvedPropertyDesc) &&
+                     (x.PropertyDescription ?? string.Empty).Trim() ==
+                     resolvedPropertyDesc))
                 .OrderByDescending(x => x.AppealId)
                 .FirstOrDefaultAsync();
 
@@ -856,7 +1021,11 @@ public class ObjectionService : IObjectionService
             Set<AppealReadEntity>();
 
         public DbSet<MvdReadEntity> MvdNotices =>
-            Set<MvdReadEntity>();
+    Set<MvdReadEntity>();
+
+
+
+
 
 
 
@@ -873,13 +1042,90 @@ public class ObjectionService : IObjectionService
             modelBuilder.Entity<ObjectionReadEntity>(entity =>
             {
                 entity.HasKey(x => x.ObjectionId);
+
                 entity.ToTable("Obj_Property_Info", "dbo");
-                entity.Property(x => x.ObjectionId).HasColumnName("Objection_ID");
-                entity.Property(x => x.ObjectionNo).HasColumnName("Objection_No");
-                entity.Property(x => x.ObjectionStatus).HasColumnName("objection_Status");
-                entity.Property(x => x.PropertyDescription).HasColumnName("Property_Desc");
-                entity.Property(x => x.UnitKey).HasColumnName("Unit_key");
-                entity.Property(x => x.ValuationKey).HasColumnName("Valuation_Key");
+
+                entity.Property(x => x.ObjectionId)
+                    .HasColumnName("Objection_ID");
+
+                entity.Property(x => x.ObjectionNo)
+                    .HasColumnName("Objection_No");
+
+                entity.Property(x => x.ObjectionStatus)
+                    .HasColumnName("objection_Status");
+
+                // ------------------------------------------------------------
+                // Original property identifiers
+                // ------------------------------------------------------------
+
+                entity.Property(x => x.PropertyDescription)
+                    .HasColumnName("Property_Desc");
+
+                entity.Property(x => x.PremiseId)
+                    .HasColumnName("Premise_id");
+
+                entity.Property(x => x.UnitKey)
+                    .HasColumnName("Unit_key");
+
+                entity.Property(x => x.PropertyId)
+                    .HasColumnName("Property_id");
+
+                entity.Property(x => x.ValuationKey)
+                    .HasColumnName("Valuation_Key");
+
+                entity.Property(x => x.Sector)
+                    .HasColumnName("Sector");
+
+                // ------------------------------------------------------------
+                // MVD decision values
+                // These are the values used when lodging an Appeal.
+                // ------------------------------------------------------------
+
+                entity.Property(x => x.NewOwnerMvd)
+                    .HasColumnName("New_Owner_MVD");
+
+                entity.Property(x => x.NewMarketValueMvd)
+                    .HasColumnName("New_Market_Value_MVD");
+
+                entity.Property(x => x.NewExtentMvd)
+                    .HasColumnName("New_Extent_MVD");
+
+                entity.Property(x => x.NewAddressMvd)
+                    .HasColumnName("New_Address_MVD");
+
+                entity.Property(x => x.NewCategoryMvd)
+                    .HasColumnName("New_Category_MVD");
+
+                entity.Property(x => x.NewPropertyDescriptionMvd)
+                    .HasColumnName("New_Property_Description_MVD");
+
+                // ------------------------------------------------------------
+                // Additional MVD values
+                // ------------------------------------------------------------
+
+                entity.Property(x => x.New2MarketValueMvd)
+                    .HasColumnName("New2_Market_Value_MVD");
+
+                entity.Property(x => x.New2CategoryMvd)
+                    .HasColumnName("New2_Category_MVD");
+
+                entity.Property(x => x.New2ExtentMvd)
+                    .HasColumnName("New2_Extent_MVD");
+
+                entity.Property(x => x.New3MarketValueMvd)
+                    .HasColumnName("New3_Market_Value_MVD");
+
+                entity.Property(x => x.New3CategoryMvd)
+                    .HasColumnName("New3_Category_MVD");
+
+                entity.Property(x => x.New3ExtentMvd)
+                    .HasColumnName("New3_Extent_MVD");
+
+                entity.Property(x => x.WefDateMvd)
+                    .HasColumnName("wefDateMVD");
+
+                entity.Property(x => x.PropertyFrom)
+                    .HasColumnName("PropertyFrom");
             });
 
             modelBuilder.Entity<AppealReadEntity>(entity =>
@@ -930,19 +1176,44 @@ public class ObjectionService : IObjectionService
 
             mvd.Property(x => x.BatchDate)
                 .HasColumnName("Batch_Date");
-
-
         }
     }
 
     private sealed class ObjectionReadEntity
     {
         public long ObjectionId { get; set; }
+
         public string? ObjectionNo { get; set; }
         public string? ObjectionStatus { get; set; }
+
+        // Original property information
         public string? PropertyDescription { get; set; }
+        public string? PremiseId { get; set; }
         public string? UnitKey { get; set; }
+        public string? PropertyId { get; set; }
         public string? ValuationKey { get; set; }
+        public string? Sector { get; set; }
+
+        // MVD decision — this becomes the base data for an Appeal
+        public string? NewOwnerMvd { get; set; }
+        public string? NewMarketValueMvd { get; set; }
+        public string? NewExtentMvd { get; set; }
+        public string? NewAddressMvd { get; set; }
+        public string? NewCategoryMvd { get; set; }
+        public string? NewPropertyDescriptionMvd { get; set; }
+
+        public string? New2MarketValueMvd { get; set; }
+        public string? New2CategoryMvd { get; set; }
+        public string? New2ExtentMvd { get; set; }
+
+        public string? New3MarketValueMvd { get; set; }
+        public string? New3CategoryMvd { get; set; }
+        public string? New3ExtentMvd { get; set; }
+
+        public string? WefDateMvd { get; set; }
+
+        // Keep original source for audit/business context.
+        public string? PropertyFrom { get; set; }
     }
 
     private sealed class AppealReadEntity
@@ -969,8 +1240,6 @@ public class ObjectionService : IObjectionService
         public string? PropertyDescription { get; set; }
         public DateTime? BatchDate { get; set; }
     }
-
-
 
     private sealed class AppealEligibilityRow
     {

@@ -943,11 +943,26 @@ else
                                                 @if (canLodgeAppealForItem)
                                                 {
                                                     <li>
-                                                        <a class="dropdown-item"
-                                                               href="/objection/check?rollSource=@Model.Roll.Source&sourceTable=@item.PropertyFrom&unitKey=@item.Unit_key&valuationKey=@item.Valuation_Key&appealStatus=True&ObjectionNo=@item.Objection_No"
-                                                               onclick="logAction('Appeal', '@Model.Roll.Source', '@item.Unit_key')">
-                                                            Lodge Appeal
-                                                        </a>
+                                                     <a class="dropdown-item"
+   href="@Url.Action(
+       "CheckProperty",
+       "Objection",
+       new
+       {
+           rollSource = Model.Roll.Source,
+           sourceTable = item.PropertyFrom,
+           unitKey = item.Unit_key,
+           valuationKey = item.Valuation_Key,
+           appealStatus = "True",
+           objectionNo = item.Objection_No,
+           PropertyFrom = item.PropertyFrom,
+           township = item.Town_Name
+       })"
+   onclick="logAction('Appeal', '@Model.Roll.Source', '@item.Unit_key')">
+
+    <i class="fa-solid fa-gavel"></i>
+    Lodge Appeal
+</a>
                                                     </li>
                                                 }
                                                 @if (item.objection_Status == "Obj-Lodging" || item.objection_Status == "Obj-Unallocated")

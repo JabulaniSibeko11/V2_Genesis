@@ -109,18 +109,20 @@ public class ObjectionController : Controller
     [HttpGet]
     [Route("objection/check")]
     public async Task<IActionResult> CheckProperty(
-    string rollSource,
-    string sourceTable,
-    string? unitKey = null,
-    string? valuationKey = null,
-    string? objectionNo = null,
-    string appealStatus = "False",
-    string? PropertyFrom = null,
-    bool omission = false,
-    string? qtype = null)
+   string rollSource,
+   string sourceTable,
+   string? unitKey = null,
+   string? valuationKey = null,
+   string? objectionNo = null,
+   string appealStatus = "False",
+   string? PropertyFrom = null,
+   string? township = null,
+   bool omission = false,
+   string? qtype = null)
     {
         unitKey = FloatKeyHelper.Normalize(unitKey);
         valuationKey = FloatKeyHelper.Normalize(valuationKey);
+        township = township?.Trim();
 
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrEmpty(userId))
@@ -190,28 +192,47 @@ public class ObjectionController : Controller
         TempData["RollDisplayName"] = rollDisplayName;
         TempData.Keep("RollDisplayName");
 
-        // A resolved roll property always has both keys — only a genuine
-        // omission (or a mid-flow continuation of one) is missing both.
-        // Without this guard, TempData.Keep("OmissionStatus") below makes
-        // the flag survive indefinitely, so a completely unrelated,
-        // resolved property checked afterwards would still be treated as
-        // an omission and show stale data from the earlier submission.
+        // Determine the current process BEFORE checking omission state.
+        // PropertyFrom describes where the ORIGINAL objection/property came from.
+        // Once we are lodging an Appeal, the appeal must use the MVD values held
+        // on Obj_Property_Info regardless of whether PropertyFrom is LIS,
+        // Omission or a valuation roll.
+        bool isAppeal =
+            string.Equals(
+                appealStatus?.Trim(),
+                "True",
+                StringComparison.OrdinalIgnoreCase);
+
+        TempData["AppealStatus"] =
+            isAppeal ? "True" : "False";
+
+        TempData.Keep("AppealStatus");
+
         var looksLikeOmissionContinuation =
+            !isAppeal &&
             string.IsNullOrWhiteSpace(unitKey) &&
             string.IsNullOrWhiteSpace(valuationKey);
 
-        bool isOmission = omission ||
-            (looksLikeOmissionContinuation &&
-             TempData.Peek("OmissionStatus")?.ToString() == "True");
+        bool isOmission =
+            !isAppeal &&
+            (
+                omission ||
+                (
+                    looksLikeOmissionContinuation &&
+                    string.Equals(
+                        TempData.Peek("OmissionStatus")?.ToString(),
+                        "True",
+                        StringComparison.OrdinalIgnoreCase)
+                )
+            );
 
-        if (!isOmission)
+        // OmissionStatus is only valid while lodging an omission objection.
+        // An Appeal can originate from an omission, but it is no longer an
+        // omission-lodgement process.
+        if (isAppeal || !isOmission)
         {
-            // This request is explicitly not an omission — clear any
-            // leftover flag so it cannot leak into a later request either.
             TempData.Remove("OmissionStatus");
         }
-
-        bool isAppeal = appealStatus == "True";
         var isSection78Review =
     string.Equals(
         qtype,
@@ -346,7 +367,7 @@ public class ObjectionController : Controller
             Queitems = queItem != null
                 ? new List<Section78PropertyDetail>
                 {
-            queItem
+                queItem
                 }
                 : new List<Section78PropertyDetail>();
 
@@ -354,47 +375,21 @@ public class ObjectionController : Controller
             {
                 var q = Queitems.First();
 
-                TempData["CurrentFilter_PD"] =
-                    q.PropertyDesc;
+                TempData["CurrentFilter_PD"] = q.PropertyDesc;
+                TempData["CurrentFilter_Prop"] = q.PropertyDesc;
+                TempData["CurrentFilter_CD"] = q.CatDesc;
+                TempData["CurrentFilter_LSA"] = q.LisStreetAddress;
+                TempData["CurrentFilter_RA"] = q.RateableArea;
+                TempData["CurrentFilter_MV"] = q.MarketValue;
+                TempData["CurrentFilter_ON"] = q.OwnerName;
+                TempData["CurrentFilter_TN"] = q.TownNameDesc;
+                TempData["CurrentFilter_P_ID"] = q.PremiseId;
+                TempData["CurrentFilter_P_I"] = q.PropertyId;
+                TempData["CurrentFilter_UK"] = q.UnitKey;
+                TempData["CurrentFilter_VK"] = q.ValuationKey;
+                TempData["CurrentFilter_S"] = q.Sector;
 
-                TempData["CurrentFilter_Prop"] =
-                    q.PropertyDesc;
-
-                TempData["CurrentFilter_CD"] =
-                    q.CatDesc;
-
-                TempData["CurrentFilter_LSA"] =
-                    q.LisStreetAddress;
-
-                TempData["CurrentFilter_RA"] =
-                    q.RateableArea;
-
-                TempData["CurrentFilter_MV"] =
-                    q.MarketValue;
-
-                TempData["CurrentFilter_ON"] =
-                    q.OwnerName;
-
-                TempData["CurrentFilter_TN"] =
-                    q.TownNameDesc;
-
-                TempData["CurrentFilter_P_ID"] =
-                    q.PremiseId;
-
-                TempData["CurrentFilter_P_I"] =
-                    q.PropertyId;
-
-                TempData["CurrentFilter_UK"] =
-                    q.UnitKey;
-
-                TempData["CurrentFilter_VK"] =
-                    q.ValuationKey;
-
-                TempData["CurrentFilter_S"] =
-                    q.Sector;
-
-                TempData["AppealStatus"] =
-                    "False";
+                TempData["AppealStatus"] = "False";
 
                 TempData["ReviewStat"] =
                     isSection78Review ? "R" : "Q";
@@ -408,8 +403,195 @@ public class ObjectionController : Controller
                 KeepObjectionFormTempData();
             }
         }
+        else if (isAppeal)
+        {
+            // ============================================================
+            // APPEAL
+            // ============================================================
+            // Business rule:
+            // Every Appeal is lodged against the MVD decision already stored
+            // on Obj_Property_Info. PropertyFrom is only the origin/history
+            // of the original objection and must NOT determine the data source.
+            //
+            // Therefore:
+            //   LIS objection      -> Obj_Property_Info MVD values
+            //   Omission objection -> Obj_Property_Info MVD values
+            //   Roll objection     -> Obj_Property_Info MVD values
+            // ============================================================
+
+            if (string.IsNullOrWhiteSpace(objectionNo))
+            {
+                TempData["LodgementWindowError"] =
+                    "The objection reference number is required before an appeal can be lodged.";
+
+                return RedirectAfterAppealBlock(rollSource);
+            }
+
+            var eligibility =
+                await _objectionService.CheckAppealEligibilityAsync(
+                    rollSource: rollSource,
+                    objectionNo: objectionNo,
+                    unitKey: unitKey,
+                    valuationKey: valuationKey,
+                    propertyDesc: null);
+
+            if (!eligibility.CanLodge)
+            {
+                TempData["LodgementWindowError"] =
+                    eligibility.Message;
+
+                if (eligibility.AppealCloseDate.HasValue)
+                {
+                    TempData["AppealCloseDate"] =
+                        eligibility.AppealCloseDate.Value
+                            .ToString("dd MMMM yyyy");
+                }
+
+                if (eligibility.ExistingAppealFound)
+                {
+                    TempData["DuplicateLodgementError"] =
+                        eligibility.Message;
+
+                    TempData["DuplicateReferenceNo"] =
+                        eligibility.ExistingAppealNumber;
+
+                    TempData["DuplicateStatus"] =
+                        eligibility.ExistingAppealStatus;
+                }
+
+                return RedirectAfterAppealBlock(rollSource);
+            }
+
+            // Preserve the original objection reference through the complete
+            // Appeal flow. GetPropertyForAppealAsync resolves the MVD values
+            // from Obj_Property_Info by this Objection_No.
+            TempData["ObjectionNum"] =
+                objectionNo.Trim();
+
+            HttpContext.Session.SetString(
+                "ObjectionNum",
+                objectionNo.Trim());
+
+            TempData.Keep("ObjectionNum");
+
+            // ============================================================
+            // APPEAL PROPERTY + TOWNSHIP
+            // ============================================================
+            // Township is already available on the dashboard objection row
+            // and is passed into CheckProperty as the "township" parameter.
+            //
+            // Appeal/MVD values still come from Obj_Property_Info.
+            // We only merge Township onto the Appeal result.
+            //
+            // If township was not supplied, fall back to the same roll lookup
+            // used by a normal Objection.
+            // ============================================================
+            string? appealTownship =
+                string.IsNullOrWhiteSpace(township)
+                    ? null
+                    : township.Trim();
+
+            // Load the Municipal Valuer's Decision values for the Appeal.
+            items = await _objectionService
+                .GetPropertyForAppealAsync(
+                    rollSource,
+                    objectionNo);
+
+            if (!items.Any())
+            {
+                _logger.LogWarning(
+                    "Appeal MVD data could not be loaded from Obj_Property_Info. Roll={Roll}, ObjectionNo={ObjectionNo}",
+                    rollSource,
+                    objectionNo);
+
+                TempData["LodgementWindowError"] =
+                    "The valuation decision details for this objection could not be loaded. " +
+                    "Please contact the Valuation team.";
+
+                return RedirectAfterAppealBlock(rollSource);
+            }
+
+            var appealItem = items.First();
+
+            // If Dashboard did not pass Township, resolve it from the actual
+            // valuation roll using the same property lookup as an Objection.
+            if (string.IsNullOrWhiteSpace(appealTownship))
+            {
+                try
+                {
+                    var appealRollTable =
+                        ResolveSourceTable(rollSource);
+
+                    var townshipUnitKey =
+                        !string.IsNullOrWhiteSpace(unitKey)
+                            ? unitKey
+                            : appealItem.UnitKey;
+
+                    var townshipValuationKey =
+                        !string.IsNullOrWhiteSpace(valuationKey)
+                            ? valuationKey
+                            : appealItem.ValuationKey;
+
+                    var rollPropertyItems =
+                        await _objectionService.GetPropertyForObjectionAsync(
+                            appealRollTable,
+                            townshipUnitKey,
+                            townshipValuationKey);
+
+                    appealTownship =
+                        rollPropertyItems
+                            .FirstOrDefault(x =>
+                                !string.IsNullOrWhiteSpace(x.TownNameDesc))
+                            ?.TownNameDesc
+                            ?.Trim();
+
+                    _logger.LogInformation(
+                        "Appeal township resolved from valuation roll fallback. Roll={Roll}, SourceTable={SourceTable}, ObjectionNo={ObjectionNo}, UnitKey={UnitKey}, ValuationKey={ValuationKey}, Township={Township}",
+                        rollSource,
+                        appealRollTable,
+                        objectionNo,
+                        townshipUnitKey,
+                        townshipValuationKey,
+                        appealTownship ?? "(not found)");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(
+                        ex,
+                        "Appeal township fallback lookup failed. Roll={Roll}, ObjectionNo={ObjectionNo}",
+                        rollSource,
+                        objectionNo);
+                }
+            }
+            else
+            {
+                _logger.LogInformation(
+                    "Appeal township received from Dashboard. Roll={Roll}, ObjectionNo={ObjectionNo}, Township={Township}",
+                    rollSource,
+                    objectionNo,
+                    appealTownship);
+            }
+
+            // Merge ONLY Township into the Appeal item.
+            // All other fields remain the MVD values from Obj_Property_Info.
+            if (!string.IsNullOrWhiteSpace(appealTownship))
+            {
+                appealItem.TownNameDesc =
+                    appealTownship;
+
+                TempData["CurrentFilter_TN"] =
+                    appealTownship;
+
+                HttpContext.Session.SetString(
+                    "CurrentFilter_TN",
+                    appealTownship);
+
+                TempData.Keep("CurrentFilter_TN");
+            }
+        }
         else if (isLis)
         {
+            // Normal objection against a property sourced from LIS.
             items = await _objectionService.GetPropertyForLisAsync(
                 rollSource,
                 unitKey,
@@ -417,71 +599,19 @@ public class ObjectionController : Controller
 
             TempData["PropertyFrom"] = "LIS";
             TempData.Keep("PropertyFrom");
-            HttpContext.Session.SetString("PropertyFrom", "LIS");
+
+            HttpContext.Session.SetString(
+                "PropertyFrom",
+                "LIS");
         }
         else
         {
-            if (isAppeal)
-            {
-                if (string.IsNullOrWhiteSpace(objectionNo))
-                {
-                    TempData["LodgementWindowError"] =
-                        "The objection reference number is required before an appeal can be lodged.";
-
-                    return RedirectAfterAppealBlock(rollSource);
-                }
-
-                var eligibility =
-                    await _objectionService.CheckAppealEligibilityAsync(
-                        rollSource: rollSource,
-                        objectionNo: objectionNo,
-                        unitKey: unitKey,
-                        valuationKey: valuationKey,
-                        propertyDesc: null);
-
-                if (!eligibility.CanLodge)
-                {
-                    TempData["LodgementWindowError"] = eligibility.Message;
-
-                    if (eligibility.AppealCloseDate.HasValue)
-                    {
-                        TempData["AppealCloseDate"] =
-                            eligibility.AppealCloseDate.Value
-                                .ToString("dd MMMM yyyy");
-                    }
-
-                    if (eligibility.ExistingAppealFound)
-                    {
-                        TempData["DuplicateLodgementError"] =
-                            eligibility.Message;
-                        TempData["DuplicateReferenceNo"] =
-                            eligibility.ExistingAppealNumber;
-                        TempData["DuplicateStatus"] =
-                            eligibility.ExistingAppealStatus;
-                    }
-
-                    return RedirectAfterAppealBlock(rollSource);
-                }
-
-                // Preserve the original Objection reference through
-                // CheckProperty -> Appeal form -> Appeal submission.
-                TempData["ObjectionNum"] = objectionNo.Trim();
-                HttpContext.Session.SetString(
-                    "ObjectionNum",
-                    objectionNo.Trim());
-                TempData.Keep("ObjectionNum");
-
-                items = await _objectionService
-                    .GetPropertyForAppealAsync(rollSource, objectionNo);
-            }
-            else
-            {
-                items = await _objectionService
-                    .GetPropertyForObjectionAsync(
-                        sourceTable,
-                        unitKey,
-                        valuationKey);
-            }
+            // Normal objection against a valuation-roll property.
+            items = await _objectionService
+                .GetPropertyForObjectionAsync(
+                    sourceTable,
+                    unitKey,
+                    valuationKey);
         }
 
         if (items.Any())
@@ -540,17 +670,15 @@ public class ObjectionController : Controller
             TempData["CurrentFilter_UK"] = d.UnitKey;
             TempData["CurrentFilter_VK"] = d.ValuationKey;
             TempData["CurrentFilter_S"] = d.Sector;
-            TempData["AppealStatus"] = appealStatus ?? "False";
+            TempData["AppealStatus"] = isAppeal ? "True" : "False";
 
             var splitItems = items;
 
-            // LIS and Omission properties have no roll record to split —
-            // only a genuine roll property can have multiple valuation
-            // splits (e.g. one erf split across Residential/Business/
-            // Multiple Purposes categories). For LIS/Omission this
-            // correctly leaves the extra Category/Extent/Market Value
-            // blocks blank, same as a normal single-property objection.
-            if (!isLis && !isOmission)
+            // Only a NORMAL roll objection may reload valuation-roll splits.
+            // An Appeal must keep the MVD values loaded from Obj_Property_Info;
+            // re-querying the original roll here would replace the MVD decision
+            // with the pre-objection valuation values.
+            if (!isAppeal && !isLis && !isOmission)
             {
                 try
                 {
@@ -622,7 +750,7 @@ public class ObjectionController : Controller
             Queitems = Queitems,
             SourceTable = sourceTable,
             RollSource = rollSource,
-            AppealStatus = appealStatus ?? "False",
+            AppealStatus = isAppeal ? "True" : "False",
             IsAppeal = isAppeal,
             PropertyFrom = isLis ? "LIS" : PropertyFrom ?? sourceTable ?? rollSource,
             ControllerName = isQuery
@@ -634,6 +762,7 @@ public class ObjectionController : Controller
 
         return View(vm);
     }
+
 
     //[HttpGet]
     //[Route("objection/check")]
