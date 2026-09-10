@@ -836,62 +836,155 @@
         Actions
     </button>
                                             <ul class="dropdown-menu cd-action-menu">
-                                                <li>
-                                                  @{
-    var queryRefNo = !string.IsNullOrWhiteSpace(item.Query_No)
-        ? item.Query_No
-        : item.Query_No ?? item.Objection_No;
 
-    var viewQueryFormUrl =
-        "/admin/enquiry/form-view"
-        + "?referenceNo=" + Uri.EscapeDataString(queryRefNo ?? "")
-        + "&rollSource=Objection_Query"
-        + "&propertyType=" + Uri.EscapeDataString(item.Property_Type ?? "")
-        + "&appealStatus=False"
-        + "&isQuery=true";
-}
+    @{
+        // Review_No / DisplayReference must be used for Review actions.
+        // Example: GV23-Que-123-R
+        var reviewRefNo = item.DisplayReference;
 
-<a class="dropdown-item"
-   href="@viewQueryFormUrl"
-   target="_blank">
-    <i class="fa-solid fa-eye"></i> View Query Form
-</a>
-                                                </li>
-                                                <li>
-                                                    <a class="dropdown-item"
-                                                       href="/notice/acknowledgement/download?objectionNo=@Uri.EscapeDataString(item.DisplayReference)&rollSource=Objection_Query">
-                                                        <i class="fa-solid fa-download"></i> Download Acknowledgement
-                                                    </a>
-                                                </li>
-                                                @if (DashboardNoticeStatusHelper.CanDownloadSection78Outcome(item.objection_Status))
-                                                {
-                                                    <li>
-                                                        <a class="dropdown-item"
-                                                           asp-controller="Notice"
-                                                           asp-action="DownloadAvailable"
-                                                           asp-route-referenceNo="@item.DisplayReference"
-                                                           asp-route-type="Section78Outcome">
-                                                            <i class="fa-solid fa-file-magnifying-glass"></i>
-                                                            Download Section 78 Review Outcome
-                                                        </a>
-                                                    </li>
-                                                }
-                                                @if (item.objection_Status is "Query-Lodging" or "Query-Unallocated")
-                                                {
-                                                    <li>
-                                                        <a class="dropdown-item"
-                                                           href="/section78/verify?queryNo=@item.Objection_No">
-                                                            <i class="fa-solid fa-paperclip"></i> Add Evidence
-                                                        </a>
-                                                    </li>
-                                                    <li>
-                                                        <a class="dropdown-item"
-                                                           href="/@roll.ControllerName/Withdrawal?ObjectionNum=@item.Objection_No&Withdraw=O">
-                                                            <i class="fa-solid fa-ban"></i> Withdraw
-                                                        </a>
-                                                    </li>
-                                                }
-                                            </ul>
+        var reviewReturnUrl =
+            "/Admin?openRoll=" +
+            Uri.EscapeDataString(
+                roll.Source ?? "Objection_Query");
+
+        var viewReviewFormUrl = Url.RouteUrl(
+            "ViewSubmission",
+            new
+            {
+                submissionType = "Review",
+                referenceNumber = reviewRefNo,
+                rollSource = "Objection_Query",
+                returnUrl = reviewReturnUrl
+            }) ?? "#";
+    }
+
+
+    @* ─────────────────────────────────────────────
+       VIEW SUBMITTED SECTION 78 REVIEW
+       ───────────────────────────────────────────── *@
+    <li>
+        <a class="dropdown-item"
+           href="@viewReviewFormUrl">
+
+            <i class="fa-solid fa-eye"></i>
+            View Review Form
+        </a>
+    </li>
+
+
+    @* ─────────────────────────────────────────────
+       DOWNLOAD REVIEW ACKNOWLEDGEMENT
+       ───────────────────────────────────────────── *@
+    <li>
+        <a class="dropdown-item"
+           asp-controller="Notice"
+           asp-action="DownloadAcknowledgement"
+           asp-route-objectionNo="@reviewRefNo"
+           asp-route-rollSource="Objection_Query"
+           asp-route-returnUrl="@reviewReturnUrl"
+           data-no-loader
+           target="_blank"
+           rel="noopener">
+
+            <i class="fa-solid fa-download"></i>
+            Download Acknowledgement
+        </a>
+    </li>
+
+
+    @* ─────────────────────────────────────────────
+       SECTION 78 REVIEW OUTCOME
+       ───────────────────────────────────────────── *@
+    @if (DashboardNoticeStatusHelper
+        .CanDownloadSection78Outcome(item.objection_Status))
+    {
+        <li>
+            <a class="dropdown-item"
+               asp-controller="Notice"
+               asp-action="DownloadAvailable"
+               asp-route-referenceNo="@reviewRefNo"
+               asp-route-type="Section78Outcome"
+               asp-route-rollSource="Objection_Query"
+               asp-route-returnUrl="@reviewReturnUrl">
+
+                <i class="fa-solid fa-file-magnifying-glass"></i>
+                Download Section 78 Review Outcome
+            </a>
+        </li>
+    }
+
+
+    @* ─────────────────────────────────────────────
+       ADD REVIEW EVIDENCE
+       Uses same 48-hour rule as Client Dashboard
+       ───────────────────────────────────────────── *@
+    @if (item.Evidence_Window_Open)
+    {
+        <li>
+            <a class="dropdown-item"
+               href="/evidence/verify?objectionNo=@Uri.EscapeDataString(reviewRefNo ?? "")&rollSource=Objection_Query">
+
+                <i class="fa-solid fa-paperclip"></i>
+                Add Evidence
+            </a>
+        </li>
+    }
+    else if (item.objection_Status is
+             "Review-Lodging" or
+             "Review-Unallocated" or
+             "Que-Lodging" or
+             "Que-Unallocated" or
+             "Query-Lodging" or
+             "Query-Unallocated")
+    {
+        <li>
+            <span class="dropdown-item disabled"
+                  aria-disabled="true"
+                  title="The 48-hour evidence window has closed">
+
+                <i class="fa-solid fa-lock"></i>
+                Evidence Window Closed
+
+                @if (item.Evidence_Expires_At.HasValue)
+                {
+                    <small class="d-block text-muted">
+                        Closed
+                        @item.Evidence_Expires_At.Value
+                            .ToString("dd MMM yyyy HH:mm")
+                    </small>
+                }
+            </span>
+        </li>
+    }
+
+
+    @* ─────────────────────────────────────────────
+       WITHDRAW SECTION 78 REVIEW
+       ───────────────────────────────────────────── *@
+    @if (item.objection_Status is
+         "Review-Lodging" or
+         "Review-Unallocated" or
+         "Que-Lodging" or
+         "Que-Unallocated" or
+         "Query-Lodging" or
+         "Query-Unallocated")
+    {
+        <li>
+            <a class="dropdown-item"
+               asp-controller="Objection"
+               asp-action="Withdrawal"
+               asp-route-objectionNo="@reviewRefNo"
+               asp-route-withdrawType="Review"
+               asp-route-rollSource="Objection_Query"
+               asp-route-returnUrl="@reviewReturnUrl">
+
+                <i class="fa-solid fa-ban"></i>
+                Withdraw Review
+            </a>
+        </li>
+    }
+
+</ul>
                                         </div>
                                     </td>
                                 </tr>
