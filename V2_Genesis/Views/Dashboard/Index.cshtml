@@ -545,12 +545,20 @@
         {
             var rd = Model.RollData.GetValueOrDefault(roll.Source) ?? new();
 
-            <div class="cd-tile cd-tile-query"
-                 data-drawer-url="/dashboard/roll-detail/@roll.Source"
-                 data-roll-name="@roll.Name"
-                 onclick="openStandalone(this)">
-                <div class="cd-tile-icon"><i class="fa-solid fa-magnifying-glass-chart"></i></div>
-                <h3 class="cd-tile-name">@roll.Name</h3>
+           
+    var queryDisplayName = "Section 78 Query/Review";
+
+
+<div class="cd-tile cd-tile-query"
+     data-drawer-url="/dashboard/roll-detail/@roll.Source"
+     data-roll-name="@queryDisplayName"
+     onclick="openStandalone(this)">
+
+    <div class="cd-tile-icon">
+        <i class="fa-solid fa-magnifying-glass-chart"></i>
+    </div>
+
+    <h3 class="cd-tile-name">@queryDisplayName</h3>
                 <span class="cd-tile-short">@roll.Short</span>
                 <div class="cd-tile-stats">
                     <span title="Linked"><i class="fa-solid fa-link"></i> @rd.LinkedCount</span>

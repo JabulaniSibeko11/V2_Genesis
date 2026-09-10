@@ -847,6 +847,23 @@ else
                                                         </a>
                                                     </li>
                                                 }
+                                                @if (!objectionIsLis && !objectionIsOmission)
+{
+    <li>
+        <a class="dropdown-item"
+           asp-controller="Notice"
+           asp-action="DownloadSection49"
+           asp-route-rollSource="@Model.Roll.Source"
+           asp-route-unitKey="@item.Unit_key"
+           asp-route-valuationKey="@item.Valuation_Key"
+           data-no-loader
+           target="_blank"
+           rel="noopener">
+            <i class="fa-solid fa-envelope-open-text"></i>
+            Download Section 49 Notice
+        </a>
+    </li>
+}
                                                 @if (item.Evidence_Window_Open)
                                                 {
                                                     <li>

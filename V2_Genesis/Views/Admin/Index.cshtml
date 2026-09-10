@@ -350,12 +350,19 @@
             var rollKey = roll.Source.Replace("_", "");
             var rd = Model.DataFor(roll.Source);
 
-            <div class="cd-tile cd-tile-query"
-                 data-standalone-key="@rollKey"
-                 data-roll-name="@roll.Name"
-                 onclick="openAdminStandalone(this)">
-                <div class="cd-tile-icon"><i class="fa-solid fa-magnifying-glass-chart"></i></div>
-                <h3 class="cd-tile-name">@roll.Name</h3>
+          
+    var queryDisplayName = "Section 78 Query/Review";
+
+<div class="cd-tile cd-tile-query"
+     data-standalone-key="@rollKey"
+     data-roll-name="@queryDisplayName"
+     onclick="openAdminStandalone(this)">
+
+    <div class="cd-tile-icon">
+        <i class="fa-solid fa-magnifying-glass-chart"></i>
+    </div>
+
+    <h3 class="cd-tile-name">@queryDisplayName</h3>
                 <span class="cd-tile-short">@roll.Short</span>
                 <div class="cd-tile-stats">
                     <span title="Linked"><i class="fa-solid fa-link"></i> @rd.LinkedCount</span>
@@ -983,153 +990,310 @@
             aria-expanded="false">
         Actions
     </button>
-                                                            <ul class="dropdown-menu cd-action-menu">
-                                                                <li>
-                                                                    @{
-    var viewFormUrl =
-        "/admin/enquiry/form-view"
-        + "?referenceNo=" + Uri.EscapeDataString(item.Objection_No ?? "")
-        + "&rollSource=" + Uri.EscapeDataString(roll.Source ?? "")
-        + "&propertyType=" + Uri.EscapeDataString(item.Property_Type ?? "")
-        + "&appealStatus=False"
-        + "&isQuery=false";
-}
+                                                          <ul class="dropdown-menu cd-action-menu">
 
-<a class="dropdown-item"
-   href="@viewFormUrl"
-   target="_blank">
-    <i class="fa-solid fa-eye"></i> View Form
-</a>
-                                                                </li>
-                                                                <li>
-                                                                  
+    @* ─────────────────────────────────────────────
+       VIEW SUBMITTED OBJECTION
+       Same route as Client Dashboard
+       ───────────────────────────────────────────── *@
+    <li>
+        @{
+            var viewFormUrl = Url.RouteUrl(
+                "ViewSubmission",
+                new
+                {
+                    submissionType = "Objection",
+                    referenceNumber = item.Objection_No,
+                    rollSource = roll.Source,
+                    returnUrl =
+                        "/Admin?openRoll=" +
+                        Uri.EscapeDataString(roll.Source ?? "")
+                }) ?? "#";
+        }
 
-                                                                    <a class="dropdown-item"
-                                                                       href="/notice/acknowledgement/download?objectionNo=@item.Objection_No&rollSource=@roll.Source"
-                                                                       onclick="logAction('DownloadAck', '@roll.Source', '@item.Objection_No')">
-                                                                        <i class="fa-solid fa-download"></i> Download Acknowledgement
-                                                                    </a>
-                                                                </li>
-                                                                <li>
-                                                                    <a class="dropdown-item"
-                                                                       asp-controller="Notice"
-                                                                       asp-action="DownloadSection49"
-                                                                       asp-route-rollSource="@roll.Source"
-                                                                       asp-route-unitKey="@item.Unit_key"
-                                                                       asp-route-valuationKey="@item.Valuation_Key">
-                                                                        <i class="fa-solid fa-envelope-open-text"></i>
-                                                                        Download Section 49 Notice
-                                                                    </a>
-                                                                </li>
-                                                                @if (DashboardNoticeStatusHelper.CanDownloadSection51(item.objection_Status))
-                                                                {
-                                                                    <li>
-                                                                        <a class="dropdown-item"
-                                                                           asp-controller="Notice"
-                                                                           asp-action="DownloadAvailable"
-                                                                           asp-route-referenceNo="@item.Objection_No"
-                                                                           asp-route-type="Section51">
-                                                                            <i class="fa-solid fa-users"></i>
-                                                                            Download Section 51 Notice
-                                                                        </a>
-                                                                    </li>
-                                                                }
-                                                                @if (DashboardNoticeStatusHelper.Is(item.objection_Status, "Obj-Lodging"))
-                                                                {
-                                                                    <li>
-                                                                       @if (User.Identity?.IsAuthenticated == true)
-                                                                                            {
-                                                                                                <a class="dropdown-item"
-                                                                                                    href="/evidence/verify?objectionNo=@item.Objection_No&rollSource=@roll.Source">
-                                                                                                    <i class="fa-solid fa-upload"></i> Add Evidence
-                                                                                                </a>
-                                                                                            }
-                                                                    </li>
-                                                                }
-                                                                @if (DashboardNoticeStatusHelper.CanDownloadSection53(item.objection_Status))
-                                                                {
-                                                                    <li>
-                                                                        <a class="dropdown-item"
-                                                                               asp-controller="Notice"
-                                                                               asp-action="DownloadSection53"
-                                                                               asp-route-rollSource="@roll.Source"
-                                                                               asp-route-objectionNo="@item.Objection_No"
-                                                                               onclick="logAction('DownloadDecision', '@roll.Source', '@item.Objection_No')">
-                                                                            <i class="fa-solid fa-file-pdf"></i>
-                                                                            Download Section 53 – Valuer Decision
-                                                                        </a>
-                                                                    </li>
-                                                                    
-                                                                }
-                                                                @if (DashboardNoticeStatusHelper.CanDownloadDearOwner(item.objection_Status))
-                                                                {
-                                                                    <li>
-                                                                        <a class="dropdown-item"
-                                                                           asp-controller="Notice"
-                                                                           asp-action="DownloadPreviousProcessOutcome"
-                                                                           asp-route-rollSource="@roll.Source"
-                                                                           asp-route-objectionNo="@item.Objection_No">
-                                                                            <i class="fa-solid fa-file-circle-exclamation"></i>
-                                                                            Download Objection Outcome Notice
-                                                                        </a>
-                                                                    </li>
-                                                                }
-                                                                @if (DashboardNoticeStatusHelper.CanDownloadInvalid(item.objection_Status))
-                                                                {
-                                                                    var invalidNoticeLabel =
-                                                                        DashboardNoticeStatusHelper.IsInvalidOmission(item.objection_Status)
-                                                                            ? "Download Invalid Omission Notice"
-                                                                            : "Download Invalid Objection Notice";
+        <a class="dropdown-item"
+           href="@viewFormUrl">
+            <i class="fa-solid fa-eye"></i>
+            View Form
+        </a>
+    </li>
 
-                                                                    <li>
-                                                                        <a class="dropdown-item"
-                                                                           asp-controller="Notice"
-                                                                           asp-action="DownloadInvalidOutcome"
-                                                                           asp-route-rollSource="@roll.Source"
-                                                                           asp-route-objectionNo="@item.Objection_No">
-                                                                            <i class="fa-solid fa-triangle-exclamation"></i>
-                                                                            @invalidNoticeLabel
-                                                                        </a>
-                                                                    </li>
-                                                                }
-                                                                @if (DashboardNoticeStatusHelper.Is(item.objection_Status, "Notice-Sent"))
-                                                                {
-                                                             
-                                                                <li>
-                                                                   <a class="dropdown-item"
-   href="@Url.Action(
-       "CheckProperty",
-       "Objection",
-       new
-       {
-           rollSource = roll.Source,
-           sourceTable = item.PropertyFrom,
-           unitKey = item.Unit_key,
-           valuationKey = item.Valuation_Key,
-           appealStatus = "True",
-           objectionNo = item.Objection_No,
-           PropertyFrom = item.PropertyFrom,
-           township = item.Town_Name
-       })"
-   onclick="logAction('Appeal', '@roll.Source', '@item.Unit_key')">
 
-    <i class="fa-solid fa-gavel"></i>
-    Lodge Appeal
-</a>
-                                                                </li>
-                                                              
-                                                                
-                                                                }
-                                                                @if (DashboardNoticeStatusHelper.Is(item.objection_Status, "Obj-Lodging", "Obj-Unallocated"))
-                                                                {
-                                                                    <li>
-                                                                        <a class="dropdown-item"
-                                                                               href="/@roll.ControllerName/Withdrawal?ObjectionNum=@item.Objection_No&Withdraw=O">
-                                                                             Withdraw
-                                                                        </a>
-                                                                    </li>
-                                                                }
-                                                            </ul>
+    @* ─────────────────────────────────────────────
+       ACKNOWLEDGEMENT
+       ───────────────────────────────────────────── *@
+    <li>
+        <a class="dropdown-item"
+           asp-controller="Notice"
+           asp-action="DownloadAcknowledgement"
+           asp-route-objectionNo="@item.Objection_No"
+           asp-route-rollSource="@roll.Source"
+           asp-route-returnUrl="@(
+               "/Admin?openRoll=" +
+               Uri.EscapeDataString(roll.Source ?? "")
+           )"
+           data-no-loader
+           target="_blank"
+           rel="noopener"
+           onclick="logAction(
+               'DownloadAck',
+               '@roll.Source',
+               '@item.Objection_No')">
+
+            <i class="fa-solid fa-download"></i>
+            Download Acknowledgement
+        </a>
+    </li>
+
+
+    @* ─────────────────────────────────────────────
+       SECTION 49
+       Roll properties ONLY
+       No LIS / No Omission
+       ───────────────────────────────────────────── *@
+    @if (!objectionIsLis && !objectionIsOmission)
+    {
+        <li>
+            <a class="dropdown-item"
+               asp-controller="Notice"
+               asp-action="DownloadSection49"
+               asp-route-rollSource="@roll.Source"
+               asp-route-unitKey="@item.Unit_key"
+               asp-route-valuationKey="@item.Valuation_Key"
+               data-no-loader
+               target="_blank"
+               rel="noopener"
+               onclick="logAction(
+                   'DownloadSection49',
+                   '@roll.Source',
+                   '@item.Objection_No')">
+
+                <i class="fa-solid fa-envelope-open-text"></i>
+                Download Section 49 Notice
+            </a>
+        </li>
+    }
+
+
+    @* ─────────────────────────────────────────────
+       SECTION 51
+       ───────────────────────────────────────────── *@
+    @if (DashboardNoticeStatusHelper
+        .CanDownloadSection51(item.objection_Status))
+    {
+        <li>
+            <a class="dropdown-item"
+               asp-controller="Notice"
+               asp-action="DownloadAvailable"
+               asp-route-referenceNo="@item.Objection_No"
+               asp-route-type="Section51"
+               asp-route-rollSource="@roll.Source"
+               asp-route-returnUrl="@(
+                   "/Admin?openRoll=" +
+                   Uri.EscapeDataString(roll.Source ?? "")
+               )">
+
+                <i class="fa-solid fa-users"></i>
+                Download Section 51 Notice
+            </a>
+        </li>
+    }
+
+
+    @* ─────────────────────────────────────────────
+       EVIDENCE
+       Same 48-hour logic as Client
+       ───────────────────────────────────────────── *@
+    @if (item.Evidence_Window_Open)
+    {
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+            <li>
+                <a class="dropdown-item"
+                   href="/evidence/verify?objectionNo=@Uri.EscapeDataString(item.Objection_No ?? "")&rollSource=@roll.Source">
+
+                    <i class="fa-solid fa-upload"></i>
+                    Add Evidence
+                </a>
+            </li>
+        }
+    }
+    else if (item.objection_Status is
+             "Obj-Lodging" or
+             "Obj-Unallocated")
+    {
+        <li>
+            <span class="dropdown-item disabled"
+                  aria-disabled="true"
+                  title="The 48-hour evidence window has closed">
+
+                <i class="fa-solid fa-lock"></i>
+                Evidence Window Closed
+
+                @if (item.Evidence_Expires_At.HasValue)
+                {
+                    <small class="d-block text-muted">
+                        Closed
+                        @item.Evidence_Expires_At.Value
+                            .ToString("dd MMM yyyy HH:mm")
+                    </small>
+                }
+            </span>
+        </li>
+    }
+
+
+    @* ─────────────────────────────────────────────
+       SECTION 53
+       ───────────────────────────────────────────── *@
+    @if (DashboardNoticeStatusHelper
+        .CanDownloadSection53(item.objection_Status))
+    {
+        <li>
+            <a class="dropdown-item"
+               asp-controller="Notice"
+               asp-action="DownloadSection53"
+               asp-route-rollSource="@roll.Source"
+               asp-route-objectionNo="@item.Objection_No"
+               asp-route-returnUrl="@(
+                   "/Admin?openRoll=" +
+                   Uri.EscapeDataString(roll.Source ?? "")
+               )"
+               onclick="logAction(
+                   'DownloadDecision',
+                   '@roll.Source',
+                   '@item.Objection_No')">
+
+                <i class="fa-solid fa-file-pdf"></i>
+                Download Section 53 – Valuer Decision
+            </a>
+        </li>
+    }
+
+
+    @* ─────────────────────────────────────────────
+       DEAR OWNER / PREVIOUS PROCESS OUTCOME
+       ───────────────────────────────────────────── *@
+    @if (DashboardNoticeStatusHelper
+        .CanDownloadDearOwner(item.objection_Status))
+    {
+        <li>
+            <a class="dropdown-item"
+               asp-controller="Notice"
+               asp-action="DownloadPreviousProcessOutcome"
+               asp-route-rollSource="@roll.Source"
+               asp-route-objectionNo="@item.Objection_No"
+               asp-route-returnUrl="@(
+                   "/Admin?openRoll=" +
+                   Uri.EscapeDataString(roll.Source ?? "")
+               )"
+               onclick="logAction(
+                   'DownloadOutcomeNotice',
+                   '@roll.Source',
+                   '@item.Objection_No')">
+
+                <i class="fa-solid fa-file-circle-exclamation"></i>
+                Download Objection Outcome Notice
+            </a>
+        </li>
+    }
+
+
+    @* ─────────────────────────────────────────────
+       INVALID NOTICE
+       ───────────────────────────────────────────── *@
+    @if (DashboardNoticeStatusHelper
+        .CanDownloadInvalid(item.objection_Status))
+    {
+        var invalidNoticeLabel =
+            DashboardNoticeStatusHelper
+                .IsInvalidOmission(item.objection_Status)
+                    ? "Download Invalid Omission Notice"
+                    : "Download Invalid Objection Notice";
+
+        <li>
+            <a class="dropdown-item"
+               asp-controller="Notice"
+               asp-action="DownloadInvalidOutcome"
+               asp-route-rollSource="@roll.Source"
+               asp-route-objectionNo="@item.Objection_No"
+               asp-route-returnUrl="@(
+                   "/Admin?openRoll=" +
+                   Uri.EscapeDataString(roll.Source ?? "")
+               )"
+               onclick="logAction(
+                   'DownloadInvalidNotice',
+                   '@roll.Source',
+                   '@item.Objection_No')">
+
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                @invalidNoticeLabel
+            </a>
+        </li>
+    }
+
+
+    @* ─────────────────────────────────────────────
+       LODGE APPEAL
+       ───────────────────────────────────────────── *@
+    @if (DashboardNoticeStatusHelper
+        .Is(item.objection_Status, "Notice-Sent"))
+    {
+        <li>
+            <a class="dropdown-item"
+               href="@Url.Action(
+                   "CheckProperty",
+                   "Objection",
+                   new
+                   {
+                       rollSource = roll.Source,
+                       sourceTable = item.PropertyFrom,
+                       unitKey = item.Unit_key,
+                       valuationKey = item.Valuation_Key,
+                       appealStatus = "True",
+                       objectionNo = item.Objection_No,
+                       PropertyFrom = item.PropertyFrom,
+                       township = item.Town_Name
+                   })"
+               onclick="logAction(
+                   'Appeal',
+                   '@roll.Source',
+                   '@item.Unit_key')">
+
+                <i class="fa-solid fa-gavel"></i>
+                Lodge Appeal
+            </a>
+        </li>
+    }
+
+
+    @* ─────────────────────────────────────────────
+       WITHDRAW OBJECTION
+       Same controller/action as Client
+       ───────────────────────────────────────────── *@
+    @if (item.objection_Status is
+         "Obj-Lodging" or
+         "Obj-Unallocated")
+    {
+        <li>
+            <a class="dropdown-item"
+               asp-controller="Objection"
+               asp-action="Withdrawal"
+               asp-route-objectionNo="@item.Objection_No"
+               asp-route-withdrawType="O"
+               asp-route-rollSource="@roll.Source"
+               asp-route-returnUrl="@(
+                   "/Admin?openRoll=" +
+                   Uri.EscapeDataString(roll.Source ?? "")
+               )">
+
+                <i class="fa-solid fa-ban"></i>
+                Withdraw Objection
+            </a>
+        </li>
+    }
+
+</ul>
                                                         </div>
                                                     </td>
                                                 </tr>
@@ -1192,74 +1356,141 @@
         Actions
     </button>
                                                             <ul class="dropdown-menu cd-action-menu">
-                                                                <li>
-                                                                   @{
-    var refNo = !string.IsNullOrWhiteSpace(item.Appeal_No)
-        ? item.Appeal_No
-        : item.Objection_No;
 
-    var viewAppealFormUrl =
-        "/admin/enquiry/form-view"
-        + "?referenceNo=" + Uri.EscapeDataString(refNo ?? "")
-        + "&rollSource=" + Uri.EscapeDataString(roll.Source ?? "")
-        + "&propertyType=" + Uri.EscapeDataString(item.Property_Type ?? "")
-        + "&appealStatus=True"
-        + "&isQuery=false";
-}
+    @{
+        var appealRef =
+            !string.IsNullOrWhiteSpace(item.Appeal_No)
+                ? item.Appeal_No
+                : item.Objection_No;
 
-<a class="dropdown-item"
-   href="@viewAppealFormUrl"
-   target="_blank">
-    <i class="fa-solid fa-eye"></i> View Appeal Form
-</a>
-                                                                </li>
+        var viewAppealFormUrl = Url.RouteUrl(
+            "ViewSubmission",
+            new
+            {
+                submissionType = "Appeal",
+                referenceNumber = appealRef,
+                rollSource = roll.Source,
+                returnUrl =
+                    "/Admin?openRoll=" +
+                    Uri.EscapeDataString(roll.Source ?? "")
+            }) ?? "#";
+    }
 
-                                                                <li>
-                                                                    <a class="dropdown-item"
-                                                                       href="/notice/acknowledgement/download?objectionNo=@Uri.EscapeDataString(refNo ?? "")&rollSource=@roll.Source">
-                                                                        <i class="fa-solid fa-download"></i>
-                                                                        Download Acknowledgement
-                                                                    </a>
-                                                                </li>
+    <li>
+        <a class="dropdown-item"
+           href="@viewAppealFormUrl">
+            <i class="fa-solid fa-eye"></i>
+            View Appeal Form
+        </a>
+    </li>
 
-                                                                 @if (DashboardNoticeStatusHelper.Is(item.objection_Status, "App-Lodging", "App-Unallocated"))
-                                                                {
-                                                                    @if (User.Identity?.IsAuthenticated == true)
-                                                                    {
-                                                                        <li>
-                                                                            <a class="dropdown-item"
-                                                                               href="/evidence/verify?objectionNo=@item.Objection_No&rollSource=@roll.Source">
-                                                                                <i class="fa-solid fa-upload"></i> Add Evidence
-                                                                            </a>
-                                                                        </li>
-                                                                    }
-                                                                    
-                                                                }
-                                                                   @if (DashboardNoticeStatusHelper.CanDownloadAppealOutcome(item.objection_Status))
-                                                                {
-                                                                    <li>
-                                                                        <a class="dropdown-item"
-                                                                               asp-controller="Notice"
-                                                                               asp-action="DownloadAppealOutcome"
-                                                                               asp-route-rollSource="@roll.Source"
-                                                                               asp-route-referenceNumber="@refNo"
-                                                                               onclick="logAction('DownloadDecision', '@roll.Source', '@item.Objection_No')">
-                                                                            <i class="fa-solid fa-scale-balanced"></i>
-                                                                            Download Appeal Decision / Section 52 Review
-                                                                        </a>
-                                                                    </li>
-                     
-                                                                }
-                                                                @if (DashboardNoticeStatusHelper.Is(item.objection_Status, "App-Lodging", "App-Unallocated"))
-                                                                {
-                                                                    <li>
-                                                                        <a class="dropdown-item"
-                                                                               href="/@roll.ControllerName/Withdrawal?ObjectionNum=@item.Objection_No&Withdraw=AppealSup1">
-                                                                            Withdraw
-                                                                        </a>
-                                                                    </li>
-                                                                }
-                                                            </ul>
+    <li>
+        <a class="dropdown-item"
+           asp-controller="Notice"
+           asp-action="DownloadAcknowledgement"
+           asp-route-objectionNo="@appealRef"
+           asp-route-rollSource="@roll.Source"
+           asp-route-returnUrl="@(
+               "/Admin?openRoll=" +
+               Uri.EscapeDataString(roll.Source ?? "")
+           )"
+           data-no-loader
+           target="_blank"
+           rel="noopener">
+
+            <i class="fa-solid fa-download"></i>
+            Download Acknowledgement
+        </a>
+    </li>
+
+
+    @if (item.Evidence_Window_Open)
+    {
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+            <li>
+                <a class="dropdown-item"
+                   href="/evidence/verify?objectionNo=@Uri.EscapeDataString(appealRef ?? "")&rollSource=@roll.Source">
+
+                    <i class="fa-solid fa-upload"></i>
+                    Add Evidence
+                </a>
+            </li>
+        }
+    }
+    else if (item.objection_Status is
+             "App-Lodging" or
+             "App-Unallocated")
+    {
+        <li>
+            <span class="dropdown-item disabled"
+                  aria-disabled="true"
+                  title="The 48-hour evidence window has closed">
+
+                <i class="fa-solid fa-lock"></i>
+                Evidence Window Closed
+
+                @if (item.Evidence_Expires_At.HasValue)
+                {
+                    <small class="d-block text-muted">
+                        Closed
+                        @item.Evidence_Expires_At.Value
+                            .ToString("dd MMM yyyy HH:mm")
+                    </small>
+                }
+            </span>
+        </li>
+    }
+
+
+    @if (DashboardNoticeStatusHelper
+        .CanDownloadAppealOutcome(item.objection_Status))
+    {
+        <li>
+            <a class="dropdown-item"
+               asp-controller="Notice"
+               asp-action="DownloadAppealOutcome"
+               asp-route-rollSource="@roll.Source"
+               asp-route-referenceNumber="@appealRef"
+               asp-route-returnUrl="@(
+                   "/Admin?openRoll=" +
+                   Uri.EscapeDataString(roll.Source ?? "")
+               )"
+               onclick="logAction(
+                   'DownloadAppealOutcome',
+                   '@roll.Source',
+                   '@appealRef')">
+
+                <i class="fa-solid fa-scale-balanced"></i>
+                Download Appeal Decision / Section 52 Review
+            </a>
+        </li>
+    }
+
+
+    @if (item.objection_Status is
+         "App-Lodging" or
+         "App-Unallocated")
+    {
+        <li>
+            <a class="dropdown-item"
+               asp-controller="Objection"
+               asp-action="Withdrawal"
+               asp-route-objectionNo="@appealRef"
+               asp-route-withdrawType="Appeal"
+               asp-route-rollSource="@roll.Source"
+               asp-route-returnUrl="@(
+                   "/Admin?openRoll=" +
+                   Uri.EscapeDataString(roll.Source ?? "")
+               )">
+
+                <i class="fa-solid fa-ban"></i>
+                Withdraw Appeal
+            </a>
+        </li>
+    }
+
+</ul>
                                                         </div>
                                                     </td>
                                                 </tr>

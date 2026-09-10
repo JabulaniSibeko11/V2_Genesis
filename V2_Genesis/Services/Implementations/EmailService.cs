@@ -1300,12 +1300,20 @@ City of Johannesburg — Valuation Services Department<br>This is an automated m
             // Attach submitted form PDF or any extra PDFs
             AddExtraAttachments(msg, extraAttachments);
 
-            using var client = new SmtpClient(_cfg.Host, _cfg.Port)
+            using var client = new SmtpClient(
+     _cfg.Host,
+     _cfg.Port)
             {
                 EnableSsl = _cfg.EnableSsl,
-                Credentials = new NetworkCredential(_cfg.SmtpUser, _cfg.Password)
+                UseDefaultCredentials = _cfg.UseDefaultCredentials
             };
 
+            if (!_cfg.UseDefaultCredentials)
+            {
+                client.Credentials = new NetworkCredential(
+                    _cfg.Username,
+                    _cfg.Password);
+            }
             await client.SendMailAsync(msg);
 
             _logger.LogInformation(
