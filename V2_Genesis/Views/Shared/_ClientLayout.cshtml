@@ -31,10 +31,10 @@
         || reqPath.StartsWith("/notices");
 
     bool isSupportArea =
-         reqPath.StartsWith("/Home/viewguide")
-         || reqPath.StartsWith("/Home/faq")
-         || reqPath.StartsWith("/Home/contact")
-         || reqPath.StartsWith("/Home/privacy");
+     reqPath.StartsWith("/help/user-manual")
+     || reqPath.StartsWith("/home/faq")
+     || reqPath.StartsWith("/home/contact")
+     || reqPath.StartsWith("/home/privacy");
 }
 
 <!DOCTYPE html>
@@ -405,17 +405,20 @@
                     </button>
 
                     <ul class="cl-dropdown-menu">
+
                         <li>
-                            <a class="cl-dd-item" href="/Sup1/ViewGuide">
-                                <i class="fa-solid fa-book-open"></i>
-                                User Guidelines
+                            <a class="cl-dd-item"
+                                   href="/help/user-manual">
+                                <i class="fa-solid fa-book"></i>
+                                User Manual
                             </a>
                         </li>
 
                         <li class="cl-dd-divider"></li>
 
                         <li>
-                            <a class="cl-dd-item" href="/Home/FAQ">
+                            <a class="cl-dd-item"
+                                   href="/Home/FAQ">
                                 <i class="fa-solid fa-comments"></i>
                                 FAQ
                             </a>
@@ -424,7 +427,8 @@
                         <li class="cl-dd-divider"></li>
 
                         <li>
-                            <a class="cl-dd-item" href="/Home/Contact">
+                            <a class="cl-dd-item"
+                                   href="/Home/Contact">
                                 <i class="fa-solid fa-headset"></i>
                                 Contact Support
                             </a>
@@ -433,11 +437,13 @@
                         <li class="cl-dd-divider"></li>
 
                         <li>
-                            <a class="cl-dd-item @(reqPath == "/home/privacy" ? "active" : "")" href="/Home/Privacy">
+                            <a class="cl-dd-item"
+                                   href="/Home/Privacy">
                                 <i class="fa-solid fa-shield-halved"></i>
                                 Privacy Policy
                             </a>
                         </li>
+
                     </ul>
                 </li>
 

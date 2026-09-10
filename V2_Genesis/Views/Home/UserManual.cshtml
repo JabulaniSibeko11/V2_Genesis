@@ -1,0 +1,412 @@
+﻿@{
+    ViewData["Title"] = "User Manual";
+    Layout = "_Layout";
+
+    var manualUrl = Url.Content("~/manuals/Genesis_User_Manual.pdf");
+}
+
+<link rel="stylesheet"
+      href="~/css/views/user-manual.css"
+      asp-append-version="true" />
+
+<section class="manual-hero">
+    <div class="manual-hero-inner">
+        <div class="manual-hero-copy">
+            <span class="manual-badge">
+                <i class="fa-solid fa-book-open"></i>
+                Help Centre
+            </span>
+
+            <h1>
+                Valuation Portal
+                <span>User Manual</span>
+            </h1>
+
+            <p>
+                Select the service you need help with and Genesis will take you
+                directly to the relevant section of the User Manual.
+            </p>
+        </div>
+
+        <div class="manual-actions">
+            <a href="@manualUrl"
+                   target="_blank"
+                   rel="noopener"
+                   class="manual-btn manual-btn-secondary"
+                   data-no-loader>
+                <i class="fa-solid fa-up-right-from-square"></i>
+                Open Full PDF
+            </a>
+
+            <a href="@manualUrl"
+                   download="City_of_Johannesburg_Valuation_Portal_User_Manual.pdf"
+                   class="manual-btn manual-btn-primary"
+                   data-no-loader>
+                <i class="fa-solid fa-download"></i>
+                Download Manual
+            </a>
+        </div>
+    </div>
+</section>
+
+<main class="manual-page">
+
+    <section class="manual-navigation">
+        <div class="manual-navigation-heading">
+            <div>
+                <span class="manual-nav-label">QUICK HELP</span>
+                <h2>What do you need help with?</h2>
+                <p>
+                    Choose a service below to jump straight to the correct part
+                    of the manual.
+                </p>
+            </div>
+
+            <button type="button"
+                    class="manual-reset-btn"
+                    onclick="goToManualPage(1, 'Start of Manual')">
+                <i class="fa-solid fa-book"></i>
+                Start of Manual
+            </button>
+        </div>
+
+        <div class="manual-topic-grid manual-topic-grid-primary">
+
+            <article class="manual-topic-card manual-topic-card-primary"
+                     data-manual-card>
+                <div class="manual-topic-card-top">
+                    <span class="manual-topic-icon">
+                        <i class="fa-solid fa-scale-balanced"></i>
+                    </span>
+                    <div class="manual-topic-content">
+                        <strong>Lodge Objection or Appeal</strong>
+                        <small>
+                            Guidance for submitting an Objection or lodging an
+                            Appeal against an eligible decision.
+                        </small>
+                    </div>
+                </div>
+
+                <div class="manual-sub-actions">
+                    <button type="button"
+                            data-manual-link
+                            onclick="goToManualPage(15, 'Lodge Objection', this)">
+                        <i class="fa-solid fa-file-pen"></i>
+                        Lodge Objection
+                    </button>
+
+                    <button type="button"
+                            data-manual-link
+                            onclick="goToManualPage(22, 'Lodge Appeal', this)">
+                        <i class="fa-solid fa-gavel"></i>
+                        Lodge Appeal
+                    </button>
+                </div>
+            </article>
+
+            <article class="manual-topic-card manual-topic-card-primary"
+                     data-manual-card>
+                <div class="manual-topic-card-top">
+                    <span class="manual-topic-icon">
+                        <i class="fa-solid fa-magnifying-glass-chart"></i>
+                    </span>
+                    <div class="manual-topic-content">
+                        <strong>Section 78 Query / Review</strong>
+                        <small>
+                            Guidance for lodging a Section 78 Query or requesting
+                            a Review of an eligible Query outcome.
+                        </small>
+                    </div>
+                </div>
+
+                <div class="manual-sub-actions">
+                    <button type="button"
+                            data-manual-link
+                            onclick="goToManualPage(26, 'Section 78 Query', this)">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        Lodge Query
+                    </button>
+
+                    <button type="button"
+                            data-manual-link
+                            onclick="goToManualPage(33, 'Section 78 Review', this)">
+                        <i class="fa-solid fa-rotate"></i>
+                        Lodge Review
+                    </button>
+                </div>
+            </article>
+
+            <button type="button"
+                    class="manual-topic-card manual-topic-card-primary manual-topic-card-clickable"
+                    data-manual-card
+                    data-manual-link
+                    onclick="goToManualPage(34, 'Rates Rebates', this)">
+                <span class="manual-topic-icon">
+                    <i class="fa-solid fa-percent"></i>
+                </span>
+                <span class="manual-topic-content">
+                    <strong>Rates Rebates</strong>
+                    <small>
+                        Learn how to select and complete the applicable Rates
+                        Rebate application.
+                    </small>
+                    <span class="manual-topic-jump">
+                        View guidance
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </span>
+                </span>
+            </button>
+
+            <button type="button"
+                    class="manual-topic-card manual-topic-card-primary manual-topic-card-clickable"
+                    data-manual-card
+                    data-manual-link
+                    onclick="goToManualPage(38, 'Property Attributes', this)">
+                <span class="manual-topic-icon">
+                    <i class="fa-solid fa-clipboard-list"></i>
+                </span>
+                <span class="manual-topic-content">
+                    <strong>Property Attributes</strong>
+                    <small>
+                        Learn how to submit, correct and manage property
+                        attribute information.
+                    </small>
+                    <span class="manual-topic-jump">
+                        View guidance
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </span>
+                </span>
+            </button>
+
+        </div>
+    </section>
+
+    <section class="manual-secondary">
+        <div class="manual-secondary-heading">
+            <span class="manual-nav-label">OTHER GUIDANCE</span>
+            <h2>Account and Portal Help</h2>
+            <p>
+                Find guidance for searching properties, using the dashboard,
+                managing your account and downloading documents.
+            </p>
+        </div>
+
+        <div class="manual-topic-grid manual-topic-grid-secondary">
+
+            <button type="button"
+                    class="manual-topic-card manual-topic-card-clickable"
+                    data-manual-card data-manual-link
+                    onclick="goToManualPage(12, 'Search & Link Property', this)">
+                <span class="manual-topic-icon manual-topic-icon-small">
+                    <i class="fa-solid fa-magnifying-glass-location"></i>
+                </span>
+                <span class="manual-topic-content">
+                    <strong>Search & Link Property</strong>
+                    <small>Find a property and link it to your account.</small>
+                </span>
+            </button>
+
+            <button type="button"
+                    class="manual-topic-card manual-topic-card-clickable"
+                    data-manual-card data-manual-link
+                    onclick="goToManualPage(11, 'Client Dashboard', this)">
+                <span class="manual-topic-icon manual-topic-icon-small">
+                    <i class="fa-solid fa-gauge-high"></i>
+                </span>
+                <span class="manual-topic-content">
+                    <strong>Client Dashboard</strong>
+                    <small>Understand linked properties, submissions and statuses.</small>
+                </span>
+            </button>
+
+            <button type="button"
+                    class="manual-topic-card manual-topic-card-clickable"
+                    data-manual-card data-manual-link
+                    onclick="goToManualPage(48, 'Evidence, Acknowledgements & Notices', this)">
+                <span class="manual-topic-icon manual-topic-icon-small">
+                    <i class="fa-solid fa-folder-open"></i>
+                </span>
+                <span class="manual-topic-content">
+                    <strong>Evidence & Notices</strong>
+                    <small>Supporting evidence, acknowledgements and notices.</small>
+                </span>
+            </button>
+
+            <button type="button"
+                    class="manual-topic-card manual-topic-card-clickable"
+                    data-manual-card data-manual-link
+                    onclick="goToManualPage(51, 'My Profile & Account Details', this)">
+                <span class="manual-topic-icon manual-topic-icon-small">
+                    <i class="fa-solid fa-user-gear"></i>
+                </span>
+                <span class="manual-topic-content">
+                    <strong>My Profile</strong>
+                    <small>Update contact details or change your password.</small>
+                </span>
+            </button>
+
+            <button type="button"
+                    class="manual-topic-card manual-topic-card-clickable"
+                    data-manual-card data-manual-link
+                    onclick="goToManualPage(6, 'Client Registration', this)">
+                <span class="manual-topic-icon manual-topic-icon-small">
+                    <i class="fa-solid fa-user-plus"></i>
+                </span>
+                <span class="manual-topic-content">
+                    <strong>Registration</strong>
+                    <small>Create an individual or company Portal account.</small>
+                </span>
+            </button>
+
+            <button type="button"
+                    class="manual-topic-card manual-topic-card-clickable"
+                    data-manual-card data-manual-link
+                    onclick="goToManualPage(9, 'Login & Password Access', this)">
+                <span class="manual-topic-icon manual-topic-icon-small">
+                    <i class="fa-solid fa-key"></i>
+                </span>
+                <span class="manual-topic-content">
+                    <strong>Login & Password</strong>
+                    <small>Sign in or reset a forgotten password.</small>
+                </span>
+            </button>
+
+            @if (User.IsInRole("Admin"))
+            {
+                <button type="button"
+                        class="manual-topic-card manual-topic-card-clickable"
+                        data-manual-card data-manual-link
+                        onclick="goToManualPage(53, 'Genesis Administration / Search Enquiries', this)">
+                    <span class="manual-topic-icon manual-topic-icon-small">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </span>
+                    <span class="manual-topic-content">
+                        <strong>Administration</strong>
+                        <small>Administration and Search Enquiries guidance.</small>
+                    </span>
+                </button>
+            }
+
+        </div>
+    </section>
+
+    <div class="manual-current-section"
+         id="manualCurrentSection"
+         aria-live="polite">
+        <span class="manual-current-icon">
+            <i class="fa-solid fa-location-dot"></i>
+        </span>
+        <span>
+            Viewing:
+            <strong id="currentManualSection">Start of Manual</strong>
+        </span>
+        <span class="manual-current-page" id="currentManualPage">Page 1</span>
+    </div>
+
+    <section class="manual-viewer-card" id="manualViewerCard">
+        <div class="manual-viewer-header">
+            <div class="manual-viewer-title">
+                <i class="fa-solid fa-file-pdf"></i>
+                <span>City of Johannesburg Valuation Portal User Manual</span>
+            </div>
+
+            <div class="manual-viewer-actions">
+                <a id="manualFullScreenLink"
+                       href="@($"{manualUrl}#page=1")"
+                       target="_blank"
+                       rel="noopener"
+                       data-no-loader>
+                    <i class="fa-solid fa-expand"></i>
+                    <span>Full Screen</span>
+                </a>
+
+                <a href="@manualUrl"
+                       download="City_of_Johannesburg_Valuation_Portal_User_Manual.pdf"
+                       data-no-loader>
+                    <i class="fa-solid fa-download"></i>
+                    <span>Download</span>
+                </a>
+            </div>
+        </div>
+
+        <div class="manual-mobile-viewer-note">
+            <i class="fa-solid fa-mobile-screen-button"></i>
+            <span>
+                On some phones, the PDF may open in your browser's PDF viewer.
+                Use <strong>Full Screen</strong> if the embedded preview is not displayed.
+            </span>
+        </div>
+
+        <div class="manual-viewer">
+            <iframe id="manualPdf"
+                    src="@($"{manualUrl}#page=1&zoom=page-width")"
+                    title="City of Johannesburg Valuation Portal User Manual"
+                    class="manual-pdf-frame"
+                    loading="lazy">
+            </iframe>
+        </div>
+    </section>
+
+</main>
+
+<script>
+    (() => {
+        const manualUrl = '@manualUrl';
+
+        window.goToManualPage = function (page, sectionName, button) {
+            const pdf = document.getElementById('manualPdf');
+            const fullScreenLink = document.getElementById('manualFullScreenLink');
+            const currentSection = document.getElementById('currentManualSection');
+            const currentPage = document.getElementById('currentManualPage');
+            const viewerCard = document.getElementById('manualViewerCard');
+
+            const target = `${manualUrl}#page=${page}&zoom=page-width`;
+            const fullScreenTarget = `${manualUrl}#page=${page}`;
+
+            if (pdf) {
+                pdf.src = 'about:blank';
+                window.setTimeout(() => {
+                    pdf.src = target;
+                }, 10);
+            }
+
+            if (fullScreenLink) {
+                fullScreenLink.href = fullScreenTarget;
+            }
+
+            document.querySelectorAll('[data-manual-card]')
+                .forEach(card => card.classList.remove('active'));
+
+            document.querySelectorAll('[data-manual-link]')
+                .forEach(link => link.classList.remove('active'));
+
+            if (button) {
+                button.classList.add('active');
+
+                const card = button.closest('[data-manual-card]');
+                if (card) {
+                    card.classList.add('active');
+                }
+            }
+
+            if (currentSection) {
+                currentSection.textContent = sectionName || 'Start of Manual';
+            }
+
+            if (currentPage) {
+                currentPage.textContent = `Page ${page}`;
+            }
+
+            if (viewerCard) {
+                const top = viewerCard.getBoundingClientRect().top
+                    + window.pageYOffset
+                    - 82;
+
+                window.scrollTo({
+                    top: top,
+                    behavior: 'smooth'
+                });
+            }
+        };
+    })();
+</script>

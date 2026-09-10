@@ -280,6 +280,293 @@
 @section Styles {
     @* DataTables / Responsive vendor CSS is loaded once in _ClientLayout.
        Keep this view free of duplicate DataTables CSS to avoid conflicts. *@
+
+    <style>
+        /* ============================================================
+                   Pensioner Rates Rebate information modal
+                   Client Dashboard only
+                ============================================================ */
+
+        .rebate-notice-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 100000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: rgba(8, 25, 29, .84);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+        }
+
+            .rebate-notice-modal.is-open {
+                display: flex;
+            }
+
+        body.rebate-notice-modal-open {
+            overflow: hidden;
+        }
+
+        .rebate-notice-dialog {
+            position: relative;
+            width: min(780px, 96vw);
+            max-height: 95vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 24px 70px rgba(0, 0, 0, .38);
+            animation: rebateNoticeEnter .22s ease-out;
+        }
+
+        @@keyframes rebateNoticeEnter {
+            from {
+                opacity: 0;
+                transform: translateY(12px) scale(.985);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .rebate-notice-close {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            z-index: 10;
+            width: 42px;
+            height: 42px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 0;
+            border-radius: 50%;
+            background: #172f34;
+            color: #fff;
+            font-size: 19px;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, .25);
+            transition: background .2s ease, color .2s ease, transform .2s ease;
+        }
+
+            .rebate-notice-close:hover,
+            .rebate-notice-close:focus-visible {
+                background: #e6b000;
+                color: #172f34;
+                transform: scale(1.06);
+            }
+
+            .rebate-notice-close:focus-visible,
+            .rebate-notice-continue:focus-visible {
+                outline: 3px solid rgba(230, 176, 0, .55);
+                outline-offset: 2px;
+            }
+
+        .rebate-notice-header {
+            flex: 0 0 auto;
+            padding: 18px 70px 15px 20px;
+            border-bottom: 1px solid #e6eaeb;
+            background: #fff;
+        }
+
+        .rebate-notice-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 5px;
+            color: #9b7600;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: .8px;
+            text-transform: uppercase;
+        }
+
+        .rebate-notice-header h2 {
+            margin: 0;
+            color: #173a40;
+            font-size: 19px;
+            font-weight: 800;
+            line-height: 1.3;
+        }
+
+        .rebate-notice-header p {
+            margin: 4px 0 0;
+            color: #6c7b80;
+            font-size: 12px;
+            line-height: 1.45;
+        }
+
+        .rebate-notice-image-wrap {
+            flex: 1 1 auto;
+            min-height: 0;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            overflow: auto;
+            padding: 12px;
+            background: #eef2f3;
+            overscroll-behavior: contain;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .rebate-notice-image {
+            display: block;
+            width: auto;
+            max-width: 100%;
+            height: auto;
+            max-height: 70vh;
+            object-fit: contain;
+            border-radius: 5px;
+            background: #fff;
+        }
+
+        .rebate-notice-footer {
+            flex: 0 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 13px 18px;
+            border-top: 1px solid #e4e9ea;
+            background: #fff;
+        }
+
+            .rebate-notice-footer > span {
+                display: flex;
+                align-items: center;
+                gap: 7px;
+                color: #68777c;
+                font-size: 11px;
+                line-height: 1.4;
+            }
+
+                .rebate-notice-footer > span i {
+                    color: #e6b000;
+                }
+
+        .rebate-notice-continue {
+            flex: 0 0 auto;
+            min-height: 39px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 0 15px;
+            border: 0;
+            border-radius: 8px;
+            background: #e6b000;
+            color: #173a40;
+            font-size: 11px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: background .2s ease, transform .2s ease;
+        }
+
+            .rebate-notice-continue:hover {
+                background: #f2c21c;
+                transform: translateY(-1px);
+            }
+
+        /* Tablet / phone */
+        @@media (max-width: 767.98px) {
+            .rebate-notice-modal {
+                padding: 10px;
+            }
+
+            .rebate-notice-dialog {
+                width: 100%;
+                max-height: 96vh;
+                border-radius: 12px;
+            }
+
+            .rebate-notice-header {
+                padding: 15px 58px 13px 14px;
+            }
+
+                .rebate-notice-header h2 {
+                    font-size: 16px;
+                }
+
+                .rebate-notice-header p {
+                    font-size: 10.5px;
+                }
+
+            .rebate-notice-close {
+                top: 9px;
+                right: 9px;
+                width: 38px;
+                height: 38px;
+                font-size: 17px;
+            }
+
+            .rebate-notice-image-wrap {
+                padding: 7px;
+            }
+
+            .rebate-notice-image {
+                max-height: 72vh;
+            }
+
+            .rebate-notice-footer {
+                flex-direction: column;
+                align-items: stretch;
+                padding: 10px 12px;
+            }
+
+                .rebate-notice-footer > span {
+                    font-size: 10px;
+                }
+
+            .rebate-notice-continue {
+                width: 100%;
+                min-height: 42px;
+            }
+        }
+
+        /* Very small phones */
+        @@media (max-width: 420px) {
+            .rebate-notice-modal {
+                padding: 6px;
+            }
+
+            .rebate-notice-dialog {
+                max-height: 98vh;
+                border-radius: 10px;
+            }
+
+            .rebate-notice-header {
+                padding-top: 12px;
+                padding-bottom: 10px;
+            }
+
+                .rebate-notice-header h2 {
+                    font-size: 14px;
+                }
+
+            .rebate-notice-image {
+                max-height: 68vh;
+            }
+
+            .rebate-notice-footer {
+                padding: 8px 10px;
+            }
+        }
+
+        @@media (prefers-reduced-motion: reduce) {
+            .rebate-notice-dialog {
+                animation: none;
+            }
+
+            .rebate-notice-close,
+            .rebate-notice-continue {
+                transition: none;
+            }
+        }
+    </style>
 }
 
 <!-- ── Welcome strip ──────────────────────────────────────────────────── -->
@@ -419,19 +706,19 @@
 
     <div class="dash-link-alert
         @(string.Equals(
-                                                                                                                                 reviewStatus,
-                                                                                                                                 "Open",
-                                                                                                                                 StringComparison.OrdinalIgnoreCase)
-                                                                                                                                 ? "dash-link-success"
-                                                                                                                                 : "dash-link-error")">
+                                                                                                                                          reviewStatus,
+                                                                                                                                          "Open",
+                                                                                                                                          StringComparison.OrdinalIgnoreCase)
+                                                                                                                                          ? "dash-link-success"
+                                                                                                                                          : "dash-link-error")">
 
         <i class="fa-solid
             @(string.Equals(
-                                                                                                                                                               reviewStatus,
-                                                                                                                                                               "Open",
-                                                                                                                                                               StringComparison.OrdinalIgnoreCase)
-                                                                                                                                                               ? "fa-unlock"
-                                                                                                                                                               : "fa-lock")">
+                                                                                                                                                                          reviewStatus,
+                                                                                                                                                                          "Open",
+                                                                                                                                                                          StringComparison.OrdinalIgnoreCase)
+                                                                                                                                                                          ? "fa-unlock"
+                                                                                                                                                                          : "fa-lock")">
         </i>
 
         <div>
@@ -546,19 +833,19 @@
             var rd = Model.RollData.GetValueOrDefault(roll.Source) ?? new();
 
            
-    var queryDisplayName = "Section 78 Query/Review";
+            var queryDisplayName = "Section 78 Query/Review";
 
 
-<div class="cd-tile cd-tile-query"
-     data-drawer-url="/dashboard/roll-detail/@roll.Source"
-     data-roll-name="@queryDisplayName"
-     onclick="openStandalone(this)">
+            <div class="cd-tile cd-tile-query"
+                 data-drawer-url="/dashboard/roll-detail/@roll.Source"
+                 data-roll-name="@queryDisplayName"
+                 onclick="openStandalone(this)">
 
-    <div class="cd-tile-icon">
-        <i class="fa-solid fa-magnifying-glass-chart"></i>
-    </div>
+                <div class="cd-tile-icon">
+                    <i class="fa-solid fa-magnifying-glass-chart"></i>
+                </div>
 
-    <h3 class="cd-tile-name">@queryDisplayName</h3>
+                <h3 class="cd-tile-name">@queryDisplayName</h3>
                 <span class="cd-tile-short">@roll.Short</span>
                 <div class="cd-tile-stats">
                     <span title="Linked"><i class="fa-solid fa-link"></i> @rd.LinkedCount</span>
@@ -569,10 +856,22 @@
             </div>
         }
 
-        <div class="cd-tile cd-tile-rebates" data-drawer-url="/dashboard/rebates-detail" data-roll-name="Rebates" onclick="openStandalone(this)">
-            <div class="cd-tile-icon"><i class="fa-solid fa-percent"></i></div>
-            <h3 class="cd-tile-name">Rebates</h3>
-            <span class="cd-tile-short">Apply or track your property rate rebates</span>
+        <div class="cd-tile cd-tile-rebates"
+             data-drawer-url="/dashboard/rebates-detail"
+             data-roll-name="Rebates"
+             onclick="openRebateNotice(this)">
+
+            <div class="cd-tile-icon">
+                <i class="fa-solid fa-percent"></i>
+            </div>
+
+            <h3 class="cd-tile-name">
+                Rebates
+            </h3>
+
+            <span class="cd-tile-short">
+                Apply or track your property rate rebates
+            </span>
             <div class="cd-tile-stats">
                 <span title="Applications"><i class="fa-solid fa-file-pen"></i> @(Model.Rebates?.Count ?? 0)</span>
             </div>
@@ -612,6 +911,83 @@
     </div>
 </div>
 
+<!-- ═══════════════════════════════════════════════
+     PENSIONER RATES REBATE INFORMATION MODAL
+═══════════════════════════════════════════════ -->
+<div id="rebateNoticeModal"
+     class="rebate-notice-modal"
+     role="dialog"
+     aria-modal="true"
+     aria-hidden="true"
+     aria-labelledby="rebateNoticeTitle">
+
+    <div class="rebate-notice-dialog">
+
+        <!-- Close and continue to Rebates -->
+        <button type="button"
+                id="rebateNoticeClose"
+                class="rebate-notice-close"
+                aria-label="Close notice and continue to Rebates"
+                onclick="closeRebateNoticeAndOpenDashboard()">
+
+            <i class="fa-solid fa-xmark"></i>
+
+        </button>
+
+
+        <div class="rebate-notice-header">
+
+            <div>
+                <span class="rebate-notice-badge">
+                    <i class="fa-solid fa-circle-info"></i>
+                    Important Information
+                </span>
+
+                <h2 id="rebateNoticeTitle">
+                    Pensioner Property Rates Rebates
+                </h2>
+
+                <p>
+                    Please review this important rebate information
+                    before continuing.
+                </p>
+            </div>
+
+        </div>
+
+
+        <div class="rebate-notice-image-wrap">
+
+            <img src="~/images/rebates/Pensioner_Property_Rates_Rebates_2027.jpg"
+                 asp-append-version="true"
+                 class="rebate-notice-image"
+                 alt="City of Johannesburg Pensioner Property Rates Rebates information notice" />
+
+        </div>
+
+
+        <div class="rebate-notice-footer">
+
+            <span>
+                <i class="fa-solid fa-circle-info"></i>
+                Close this notice to continue to your Rebates dashboard.
+            </span>
+
+            <button type="button"
+                    class="rebate-notice-continue"
+                    onclick="closeRebateNoticeAndOpenDashboard()">
+
+                Continue to Rebates
+
+                <i class="fa-solid fa-arrow-right"></i>
+
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
 <script id="cdFamilyLookupData" type="application/json">
     @Html.Raw(System.Text.Json.JsonSerializer.Serialize(familyLookup))
 </script>
@@ -832,6 +1208,70 @@
 
         loadIntoDetail('/dashboard/roll-detail/' + encodeURIComponent(source));
         }
+
+        // ── Pensioner rebate information modal ──────────────────────
+        // Clicking the Rebates tile shows the public information poster first.
+        // Closing the poster then opens ONLY the existing Rebates detail dashboard.
+        let pendingRebateTile = null;
+
+        function openRebateNotice(tileEl) {
+            pendingRebateTile = tileEl;
+
+            const modal =
+                document.getElementById('rebateNoticeModal');
+
+            const closeButton =
+                document.getElementById('rebateNoticeClose');
+
+            // Fail safely: if the modal is unavailable, open Rebates directly.
+            if (!modal) {
+                openStandalone(tileEl);
+                return;
+            }
+
+            modal.classList.add('is-open');
+            modal.setAttribute('aria-hidden', 'false');
+
+            document.body.classList.add(
+                'rebate-notice-modal-open');
+
+            window.setTimeout(function () {
+                closeButton?.focus();
+            }, 50);
+        }
+
+        function closeRebateNoticeAndOpenDashboard() {
+            const modal =
+                document.getElementById('rebateNoticeModal');
+
+            if (modal) {
+                modal.classList.remove('is-open');
+                modal.setAttribute('aria-hidden', 'true');
+            }
+
+            document.body.classList.remove(
+                'rebate-notice-modal-open');
+
+            // Use the exact tile that was clicked. Fall back to the Rebates
+            // tile in the DOM so the action remains reliable.
+            const rebateTile =
+                pendingRebateTile
+                || document.querySelector(
+                    '.cd-tile-rebates[data-drawer-url="/dashboard/rebates-detail"]');
+
+            pendingRebateTile = null;
+
+            if (!rebateTile) {
+                return;
+            }
+
+            // Small delay allows the modal to disappear before the dashboard
+            // switches to the Rebates-only detail view.
+            window.setTimeout(function () {
+                openStandalone(rebateTile);
+            }, 100);
+        }
+
 
         function openStandalone(tileEl) {
         const drawerUrl = tileEl.dataset.drawerUrl || '';
@@ -1636,6 +2076,14 @@
         // ── Keyboard handlers ──────────────────────────────────────
         document.addEventListener('keydown', function (e) {
         if (e.key !== 'Escape') return;
+
+        const rebateNoticeModal =
+            document.getElementById('rebateNoticeModal');
+
+        if (rebateNoticeModal?.classList.contains('is-open')) {
+            closeRebateNoticeAndOpenDashboard();
+            return;
+        }
 
         document.querySelectorAll('.pin-backdrop.open').forEach(function (modal) {
         const id = modal.id.replace('pinModal_', '');

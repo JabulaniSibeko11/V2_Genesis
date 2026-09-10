@@ -55,6 +55,13 @@ public class HomeController : Controller
             RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier
         });
     }
+    [HttpGet]
+    [AllowAnonymous]
+    [Route("help/user-manual")]
+    public IActionResult UserManual()
+    {
+        return View();
+    }
 
     public IActionResult Contact()
     {
