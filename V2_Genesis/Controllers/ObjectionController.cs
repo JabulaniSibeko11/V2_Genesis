@@ -1451,12 +1451,27 @@ public class ObjectionController : Controller
             createdBy: userId);
 
         TempData["pin"] = result.Pin;
+
+        // The active submission reference must always be the reference that
+        // was just created. For an Appeal this is APP-GV23-..., not the
+        // original GV23-Sup... objection reference.
         TempData["Id"] = objectionRef;
+        TempData["ObjectionNum"] = objectionRef;
         TempData["objection_ref"] = objectionRef;
+
+        // Keep the new submission reference available if TempData is consumed
+        // by the acknowledgement/display view before another request needs it.
+        HttpContext.Session.SetString("ObjectionNum", objectionRef);
+
         TempData["section51pin"] = result.Pin;
         TempData["time"] = DateTime.Now.ToString("dd MMMM yyyy HH:mm");
         TempData["IsMulti"] = isMulti.ToString();
         TempData["IsAppeal"] = isAppeal.ToString();
+
+        TempData.Keep("Id");
+        TempData.Keep("ObjectionNum");
+        TempData.Keep("objection_ref");
+        TempData.Keep("IsAppeal");
 
         TempData["successmessage"] = isAppeal
             ? "Appeal Submitted Successfully"
