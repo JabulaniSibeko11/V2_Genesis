@@ -165,27 +165,93 @@
 }
 @if (TempData["DuplicateLodgementError"] != null)
 {
-    <div class="alert alert-warning" style="border-left:5px solid #e6b000;">
-        <strong>Duplicate Lodgement Blocked</strong><br />
+    <div class="duplicate-lodgement-alert"
+         role="alert"
+         aria-live="assertive">
 
-        @TempData["DuplicateLodgementError"]
+        <div class="duplicate-alert-icon">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
 
-        @if (TempData["DuplicateReferenceNo"] != null)
-        {
-            <br />
-            <strong>Existing Reference:</strong> @TempData["DuplicateReferenceNo"]
-        }
+        <div class="duplicate-alert-content">
 
-        @if (TempData["DuplicateStatus"] != null)
-        {
-            <br />
-            <strong>Status:</strong> @TempData["DuplicateStatus"]
-        }
+            <div class="duplicate-alert-heading">
+                <span class="duplicate-alert-label">
+                    Submission Blocked
+                </span>
 
-        <br />
-        Please contact the Valuation team for assistance.
+                <h3>
+                    This submission already exists
+                </h3>
+            </div>
+
+            <p class="duplicate-alert-message">
+                @TempData["DuplicateLodgementError"]
+            </p>
+
+
+            @if (TempData["DuplicateReferenceNo"] != null ||
+                 TempData["DuplicateStatus"] != null)
+            {
+                <div class="duplicate-alert-details">
+
+                    @if (TempData["DuplicateReferenceNo"] != null)
+                    {
+                        <div class="duplicate-alert-detail">
+                            <span>
+                                Existing Reference
+                            </span>
+
+                            <strong>
+                                @TempData["DuplicateReferenceNo"]
+                            </strong>
+                        </div>
+                    }
+
+
+                    @if (TempData["DuplicateStatus"] != null)
+                    {
+                        <div class="duplicate-alert-detail">
+                            <span>
+                                Current Status
+                            </span>
+
+                            <strong>
+                                @TempData["DuplicateStatus"]
+                            </strong>
+                        </div>
+                    }
+
+                </div>
+            }
+
+
+            <div class="duplicate-alert-guidance">
+                <i class="fa-solid fa-circle-info"></i>
+
+                <span>
+                    Please use the existing submission instead of
+                    lodging another one. If you believe this is
+                    incorrect, contact Valuation Services for assistance.
+                </span>
+            </div>
+
+        </div>
+
+
+        <button type="button"
+                class="duplicate-alert-close"
+                aria-label="Close duplicate submission warning"
+                onclick="this.closest('.duplicate-lodgement-alert').remove()">
+
+            <i class="fa-solid fa-xmark"></i>
+
+        </button>
+
     </div>
 }
+
+
 <!-- ══════════════════════════════════════════════════════════════
      ADMIN COMMAND BAR
      Deliberately distinct from Views/Dashboard/Index.cshtml (the
