@@ -1044,15 +1044,35 @@
                         <span class="res-client-account-type">@(m.ClientAccountType ?? "Unknown")</span>
                     </div>
 
-                    <div class="res-ref-footer">
-
-                        @if (m.RefType == "Query" || m.RefType == "Review")
+                    @{
+                        // Keep Search Enquiries aligned with the Admin/Client dashboards.
+                        // All submission types use the same read-only submitted-form route.
+                        var submissionType = m.RefType switch
                         {
-                            <a class="res-btn res-btn-info"
-                                   href="/Section78/Display?queryNo=@referenceNo">
-                                <i class="fa-solid fa-eye"></i> View @m.RefType
-                            </a>
-                        }
+                            "Appeal" => "Appeal",
+                            "Query" => "Query",
+                            "Review" => "Review",
+                            "Attributes" => "Attributes",
+                            _ => "Objection"
+                        };
+
+                        var submittedFormUrl = Url.RouteUrl(
+                            "ViewSubmission",
+                            new
+                            {
+                                submissionType = submissionType,
+                                referenceNumber = referenceNo,
+                                rollSource = m.RollSource,
+                                returnUrl = "/admin/search"
+                            }) ?? "#";
+                    }
+
+                    <div class="res-ref-footer">
+                        <a class="res-btn res-btn-info"
+                               href="@submittedFormUrl">
+                            <i class="fa-solid fa-eye"></i>
+                            View @submissionType Form
+                        </a>
                     </div>
 
                     <div class="admin-notice-panel">
@@ -1172,10 +1192,28 @@
                                                 }
 
                                                 <li>
-                                                    <a class="dropdown-item"
-                                                           href="/admin/search/ref?refNo=@m.Objection_No&rollSource=@m.RollSource">
-                                                        <i class="fa-solid fa-magnifying-glass"></i> Open Case Details
-                                                    </a>
+                                                    <form method="post"
+                                                          asp-controller="Admin"
+                                                          asp-action="SearchByRef"
+                                                          class="m-0">
+
+                                                        @Html.AntiForgeryToken()
+
+                                                        <input type="hidden"
+                                                               name="refNo"
+                                                               value="@m.Objection_No" />
+
+                                                        <input type="hidden"
+                                                               name="rollSource"
+                                                               value="@m.RollSource" />
+
+                                                        <button type="submit"
+                                                                class="dropdown-item">
+                                                            <i class="fa-solid fa-magnifying-glass"></i>
+                                                            Open Case Details
+                                                        </button>
+
+                                                    </form>
                                                 </li>
                                             </ul>
                                         </div>

@@ -691,9 +691,10 @@
             <!-- Support -->
             <div class="cl-drawer-section-title">Support</div>
 
-            <a href="/Sup1/ViewGuide" class="cl-drawer-link @(reqPath.StartsWith("/sup1/viewguide") ? "active" : "")">
-                <i class="fa-solid fa-book-open"></i>
-                User Guidelines
+            <a href="/help/user-manual"
+                   class="cl-drawer-link @(reqPath.StartsWith("/help/user-manual") ? "active" : "")">
+                <i class="fa-solid fa-book"></i>
+                User Manual
             </a>
 
             <a href="/Home/FAQ" class="cl-drawer-link @(reqPath == "/home/faq" ? "active" : "")">

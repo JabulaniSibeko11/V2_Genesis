@@ -323,36 +323,374 @@
 
 
 /* ── Responsive ──────────────────────────────────────────────── */
-@media (max-width: 900px) {
-    .info-page {
-        grid-template-columns: 1fr;
+/* ══════════════════════════════════════════════════════════════
+   RESPONSIVE — INFO / PRIVACY PAGES
+══════════════════════════════════════════════════════════════ */
+
+.info-page,
+.info-content,
+.info-toc,
+.info-content section {
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+    /* Prevent long emails, URLs and reference text from breaking layout */
+    .info-content p,
+    .info-content li,
+    .info-content a,
+    .info-note,
+    .info-toc a {
+        overflow-wrap: anywhere;
+        word-break: normal;
     }
 
+
+/* ── Tablet / smaller laptop ───────────────────────────────── */
+@media (max-width: 900px) {
+
+    .info-page {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 22px;
+        width: 100%;
+        max-width: 100%;
+        padding: 28px 20px 52px;
+    }
+
+
+    /* TOC stops being sticky when stacked */
     .info-toc {
         position: static;
+        top: auto;
+        width: 100%;
+        max-width: 100%;
     }
+
+
+    .info-content {
+        width: 100%;
+        max-width: 100%;
+    }
+
 
     .contact-grid {
         grid-template-columns: 1fr;
     }
 }
 
+
+/* ── Phones ────────────────────────────────────────────────── */
 @media (max-width: 600px) {
+
+    /* HERO */
     .info-hero {
-        padding: 32px 16px;
+        width: 100%;
+        padding: 28px 14px 26px;
+        box-sizing: border-box;
+        overflow: hidden;
     }
 
-        .info-hero h1 {
-            font-size: 21px;
+
+    .info-hero-badge {
+        max-width: 100%;
+        padding: 6px 11px;
+        font-size: 9px;
+        letter-spacing: 1.2px;
+        white-space: normal;
+        text-align: center;
+        justify-content: center;
+    }
+
+
+    .info-hero h1 {
+        font-size: 23px;
+        line-height: 1.25;
+        margin-bottom: 8px;
+    }
+
+
+    .info-hero p {
+        width: 100%;
+        max-width: 100%;
+        padding: 0 4px;
+        font-size: 12px;
+        line-height: 1.6;
+        overflow-wrap: anywhere;
+    }
+
+
+    /* PAGE */
+    .info-page {
+        display: block;
+        width: 100%;
+        max-width: 100%;
+        margin: 0;
+        padding: 16px 10px 38px;
+        overflow-x: hidden;
+    }
+
+
+    /*
+       The Privacy TOC contains 11 links and becomes longer than
+       the useful content on very small phones.
+
+       Hide it on phones and let the client read the policy
+       naturally from section 1 down.
+    */
+    .info-toc {
+        display: none;
+    }
+
+
+    /* MAIN CONTENT CARD */
+    .info-content {
+        width: 100%;
+        max-width: 100%;
+        margin: 0;
+        padding: 18px 14px;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+
+    .info-updated {
+        margin-bottom: 20px;
+        font-size: 10.5px;
+        line-height: 1.4;
+        flex-wrap: wrap;
+    }
+
+
+    /* SECTIONS */
+    .info-content section {
+        width: 100%;
+        margin-bottom: 27px;
+        scroll-margin-top: 80px;
+    }
+
+
+    /* SECTION HEADINGS */
+    .info-content h2 {
+        align-items: flex-start;
+        gap: 8px;
+        font-size: 15px;
+        line-height: 1.35;
+        padding-bottom: 9px;
+        margin-bottom: 11px;
+    }
+
+
+        .info-content h2 .num {
+            width: 24px;
+            height: 24px;
+            flex: 0 0 24px;
+            margin-top: 0;
+            font-size: 11px;
         }
 
-    .info-content {
-        padding: 22px 18px;
+
+    .info-content h3 {
+        margin: 16px 0 7px;
+        font-size: 12.5px;
+        line-height: 1.4;
     }
 
-    .info-page {
-        padding: 24px 14px 48px;
+
+    /* BODY COPY */
+    .info-content p,
+    .info-content li {
+        font-size: 12px;
+        line-height: 1.65;
+        max-width: 100%;
     }
+
+
+    .info-content p {
+        margin-bottom: 12px;
+    }
+
+
+    /* LISTS */
+    .info-content ul {
+        margin: 0 0 0 17px;
+        padding: 0;
+    }
+
+
+    .info-content li {
+        margin-bottom: 7px;
+        padding-left: 1px;
+    }
+
+
+    /* LINKS / EMAIL ADDRESSES */
+    .info-content a {
+        display: inline;
+        max-width: 100%;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+    }
+
+
+    /* NOTE BOX */
+    .info-note {
+        width: 100%;
+        gap: 8px;
+        margin-top: 12px;
+        padding: 11px 10px;
+        border-radius: 7px;
+        font-size: 11px;
+        line-height: 1.55;
+        box-sizing: border-box;
+        overflow-wrap: anywhere;
+    }
+
+
+        .info-note i {
+            flex: 0 0 auto;
+            margin-top: 3px;
+        }
+
+
+    /* CONTACT PAGE — shared CSS safety */
+    .contact-card {
+        padding: 16px;
+    }
+
+
+        .contact-card .detail {
+            align-items: flex-start;
+            font-size: 12px;
+            overflow-wrap: anywhere;
+            word-break: break-word;
+        }
+
+
+    .hours-table {
+        font-size: 11.5px;
+    }
+
+
+        .hours-table td {
+            padding: 8px 4px;
+        }
+
+
+            .hours-table td:first-child {
+                width: 45%;
+            }
+
+
+    .contact-map {
+        height: 230px;
+    }
+}
+
+
+/* ── Small phones: 320px – 420px ───────────────────────────── */
+@media (max-width: 420px) {
+
+    .info-hero {
+        padding: 23px 10px 22px;
+    }
+
+
+    .info-hero-badge {
+        font-size: 8.5px;
+        letter-spacing: .8px;
+        padding: 5px 9px;
+    }
+
+
+    .info-hero h1 {
+        font-size: 20px;
+    }
+
+
+    .info-hero p {
+        font-size: 11px;
+        line-height: 1.55;
+    }
+
+
+    .info-page {
+        padding: 10px 7px 32px;
+    }
+
+
+    .info-content {
+        padding: 15px 11px;
+        border-radius: 8px;
+    }
+
+
+        .info-content h2 {
+            gap: 7px;
+            font-size: 13.5px;
+        }
+
+
+            .info-content h2 .num {
+                width: 22px;
+                height: 22px;
+                flex-basis: 22px;
+                font-size: 10px;
+            }
+
+
+        .info-content h3 {
+            font-size: 12px;
+        }
+
+
+        .info-content p,
+        .info-content li {
+            font-size: 11.5px;
+            line-height: 1.6;
+        }
+
+
+        .info-content ul {
+            margin-left: 15px;
+        }
+
+
+    .info-note {
+        padding: 9px;
+        font-size: 10.5px;
+    }
+
+
+    .info-updated {
+        font-size: 10px;
+    }
+}
+
+
+/* ── Extremely narrow phones ───────────────────────────────── */
+@media (max-width: 340px) {
+
+    .info-page {
+        padding-left: 5px;
+        padding-right: 5px;
+    }
+
+
+    .info-content {
+        padding: 13px 9px;
+    }
+
+
+        .info-content h2 {
+            font-size: 13px;
+        }
+
+
+        .info-content p,
+        .info-content li {
+            font-size: 11px;
+        }
 }
 
 

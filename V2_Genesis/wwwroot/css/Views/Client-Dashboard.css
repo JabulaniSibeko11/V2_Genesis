@@ -58,9 +58,17 @@
     margin: 0;
     padding: 0;
     flex: 1;
-    overflow: hidden;
+    /* IMPORTANT:
+       Dropdown menus are absolutely positioned below this element.
+       overflow:hidden clips them inside the 64px navbar. */
+    overflow: visible;
 }
-
+.cl-navbar,
+.cl-nav-inner,
+.cl-nav-item,
+.cl-dropdown {
+    overflow: visible;
+}
 .cl-nav-item {
     position: relative;
 }
