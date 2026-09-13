@@ -26,21 +26,25 @@ public class DashboardController : Controller
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IAnnouncementService _announcement;
     private readonly RollDatesSettings _rollDates;
-
+    private readonly AttributesDbContext _attributesDb;
     private readonly IDashboardService _dashboardService;
     private readonly IAttributesDashboardService _attributesService;
     private readonly IRebatesService _rebates;
     private readonly ILogger<DashboardController> _logger;
     public DashboardController(
-        ApplicationDbContext db,
-        UserManager<ApplicationUser> userManager,
-        IAnnouncementService announcement,
-        IDashboardService dashboardService,
-        IOptions<RollDatesSettings> rollDatesOpts,
-        IAttributesDashboardService attributesService, IRebatesService rebates,
-        ILogger<DashboardController> logger)
+      ApplicationDbContext db,
+      AttributesDbContext attributesDb,
+      UserManager<ApplicationUser> userManager,
+      IAnnouncementService announcement,
+      IDashboardService dashboardService,
+      IOptions<RollDatesSettings> rollDatesOpts,
+      IAttributesDashboardService attributesService,
+      IRebatesService rebates,
+      ILogger<DashboardController> logger)
     {
         _db = db;
+        _attributesDb = attributesDb;
+
         _userManager = userManager;
         _announcement = announcement;
         _dashboardService = dashboardService;
@@ -476,5 +480,68 @@ public class DashboardController : Controller
         }
 
         return RedirectToAction("Index", new { openRoll = "attributes" });
+    }
+    [HttpGet]
+    [Route("dashboard/inspection/{inspectionRequestId:long}")]
+    public async Task<IActionResult> OpenInspection(
+    long inspectionRequestId,
+    string? view = null)
+    {
+        var userId =
+            User.FindFirstValue(
+                ClaimTypes.NameIdentifier);
+
+        if (string.IsNullOrWhiteSpace(userId))
+            return Challenge();
+
+        var request =
+            await _attributesDb
+                .AttrInspectionRequests
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x =>
+                    x.Id == inspectionRequestId);
+
+        if (request == null)
+            return NotFound();
+
+        var property =
+            await _attributesDb
+                .AttrPropertyInfo
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x =>
+                    x.Attr_ID == request.Attr_ID &&
+                    x.IsActive);
+
+        if (property == null)
+            return NotFound();
+
+        // Critical security check:
+        // the logged-in client must own this submission.
+        if (!string.Equals(
+                property.SubmittedByUserId,
+                userId,
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return Forbid();
+        }
+
+        if (request.EmailToken == Guid.Empty)
+        {
+            TempData["AttributeError"] =
+                "The secure inspection link is not available for this appointment.";
+
+            return RedirectToAction(
+                nameof(Index),
+                new { openRoll = "attributes" });
+        }
+
+        return RedirectToAction(
+            "Index",
+            "AttributeInspectionLink",
+            new
+            {
+                token = request.EmailToken,
+                view
+            });
     }
 }

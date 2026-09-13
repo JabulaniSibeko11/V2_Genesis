@@ -181,6 +181,7 @@
         @TempData["AttributeSuccess"]
     </div>
 }
+
 @functions {
 
     string FormatZAR(string? val)
@@ -336,6 +337,93 @@
         }
 
         return "Res";
+    }
+    string ResolveNotificationRoll(
+    string? referenceNumber,
+    string? storedRollSource)
+    {
+        var reference =
+            referenceNumber?.Trim()
+            ?? string.Empty;
+
+        if (reference.StartsWith(
+                "APP-GV23-SUP4-",
+                StringComparison.OrdinalIgnoreCase) ||
+            reference.StartsWith(
+                "GV23-SUP4-",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return "Objection_Supp4";
+        }
+
+        if (reference.StartsWith(
+                "APP-GV23-SUP3-",
+                StringComparison.OrdinalIgnoreCase) ||
+            reference.StartsWith(
+                "GV23-SUP3-",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return "Objection_Supp3";
+        }
+
+        if (reference.StartsWith(
+                "APP-GV23-SUP2-",
+                StringComparison.OrdinalIgnoreCase) ||
+            reference.StartsWith(
+                "GV23-SUP2-",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return "Objection_Supp2";
+        }
+
+        if (reference.StartsWith(
+                "APP-GV23-SUP1-",
+                StringComparison.OrdinalIgnoreCase) ||
+            reference.StartsWith(
+                "GV23-SUP1-",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return "Objection_Supp1";
+        }
+
+        if (reference.StartsWith(
+                "APP-GV23-",
+                StringComparison.OrdinalIgnoreCase) ||
+            reference.StartsWith(
+                "GV23-",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return "Objection";
+        }
+
+        if (reference.Contains(
+                "QUE",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return "Objection_Query";
+        }
+
+        return storedRollSource?.Trim()
+               ?? string.Empty;
+    }
+
+    string ResolveNotificationUrl(
+        V2_Genesis.Models.Notifications.Notifications note)
+    {
+        var roll =
+            ResolveNotificationRoll(
+                note.ReferenceNumber,
+                note.RollSource);
+
+        if (!string.IsNullOrWhiteSpace(roll))
+        {
+            return "/Dashboard?openRoll="
+                + Uri.EscapeDataString(roll);
+        }
+
+        return !string.IsNullOrWhiteSpace(note.Url)
+            ? note.Url
+            : "javascript:void(0)";
     }
 }
 

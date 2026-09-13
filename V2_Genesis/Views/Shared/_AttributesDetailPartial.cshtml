@@ -410,19 +410,24 @@
                                 <td>
                                     @if (item.Status == "PendingClientResponse")
                                     {
-                                        <button type="button"
-                                                class="cd-action-btn"
-                                                onclick="openInspectionResponseModal('@item.Id')">
+                                        <a class="cd-action-btn"
+                                               asp-controller="Dashboard"
+                                               asp-action="OpenInspection"
+                                               asp-route-inspectionRequestId="@item.Id">
+                                            <i class="fa-solid fa-calendar-days"></i>
                                             Select Date
-                                        </button>
+                                        </a>
                                     }
                                     else if (item.Status == "InspectionDetailsSent")
                                     {
-                                        <button type="button"
-                                                class="cd-action-btn"
-                                                onclick="openPinModal('@item.Id')">
+                                        <a class="cd-action-btn"
+                                               asp-controller="Dashboard"
+                                               asp-action="OpenInspection"
+                                               asp-route-inspectionRequestId="@item.Id"
+                                               asp-route-view="valuer">
+                                            <i class="fa-solid fa-key"></i>
                                             Enter PIN
-                                        </button>
+                                        </a>
                                     }
                                     else if (item.Status == "Confirmed")
                                     {
