@@ -1530,11 +1530,12 @@ namespace V2_Genesis.Services.Implementations
         }
 
         public async Task<ReturnedAttributeCorrectionViewModel?> GetReturnedCorrectionAsync(
-            long attrId,
-            string userId,
-            CancellationToken cancellationToken = default)
+        long attrId,
+        string userId,
+        CancellationToken cancellationToken = default)
         {
-            if (attrId <= 0 || string.IsNullOrWhiteSpace(userId)) return null;
+            if (attrId <= 0 || string.IsNullOrWhiteSpace(userId))
+                return null;
 
             var info = await _context.AttrPropertyInfo
                 .AsNoTracking()
@@ -1546,20 +1547,27 @@ namespace V2_Genesis.Services.Implementations
                          && x.RevisionRequired,
                     cancellationToken);
 
-            if (info is null) return null;
+            if (info is null)
+                return null;
 
             var review = await _context.AttrValuerReviews
                 .AsNoTracking()
-                .Where(x => x.Attr_ID == attrId && x.ReviewStatus == "ReturnedToClient")
+                .Where(x =>
+                    x.Attr_ID == attrId &&
+                    x.ReviewStatus == "ReturnedToClient")
                 .OrderByDescending(x => x.CompletedAt ?? x.StartedAt)
                 .FirstOrDefaultAsync(cancellationToken);
 
-            if (review is null) return null;
+            if (review is null)
+                return null;
 
+            // Old / section-based correction flow.
             var sections = await _context.AttrValuerReviewSections
                 .AsNoTracking()
-                .Where(x => x.ReviewId == review.Id
-                            && (x.RequiresCorrection || x.SectionDecision == "Needs correction"))
+                .Where(x =>
+                    x.ReviewId == review.Id &&
+                    (x.RequiresCorrection ||
+                     x.SectionDecision == "Needs correction"))
                 .OrderBy(x => x.Id)
                 .Select(x => new ReturnedAttributeCorrectionSectionVm
                 {
@@ -1569,12 +1577,60 @@ namespace V2_Genesis.Services.Implementations
                 })
                 .ToListAsync(cancellationToken);
 
-            // A returned submission without a marked correction section is incomplete
-            // on the valuer side and must not expose the entire form for editing.
-            if (sections.Count == 0) return null;
+            // New AIVS field-based correction flow.
+            var fields = await _context.AttrValuerReviewFieldCorrections
+                .AsNoTracking()
+                .Where(x =>
+                    x.ReviewId == review.Id &&
+                    x.Attr_ID == attrId &&
+                    x.IsActive)
+                .OrderBy(x => x.SectionCode)
+                .ThenBy(x => x.Id)
+                .Select(x => new ReturnedAttributeCorrectionFieldVm
+                {
+                    SectionCode = x.SectionCode,
+                    FieldCode = x.FieldCode,
+                    FieldLabel = x.FieldLabel,
+                    CityValue = x.CityValue,
+                    ClientValue = x.ClientValue
+                })
+                .ToListAsync(cancellationToken);
 
-            var submission = await BuildSubmittedAttributeViewModelAsync(attrId, cancellationToken);
-            if (submission is null) return null;
+            // AIVS now returns individual fields. Create their parent sections
+            // so CorrectReturned.cshtml can render them.
+            foreach (var sectionCode in fields
+                .Select(x => x.SectionCode)
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct(StringComparer.OrdinalIgnoreCase))
+            {
+                if (sections.Any(x =>
+                    string.Equals(
+                        x.Code,
+                        sectionCode,
+                        StringComparison.OrdinalIgnoreCase)))
+                {
+                    continue;
+                }
+
+                sections.Add(new ReturnedAttributeCorrectionSectionVm
+                {
+                    Code = sectionCode,
+                    Name = GetCorrectionSectionDisplayName(sectionCode),
+                    Comment = review.FinalComment ?? string.Empty
+                });
+            }
+
+            // Only reject the request when AIVS supplied neither a returned
+            // section nor an individual returned field.
+            if (sections.Count == 0 && fields.Count == 0)
+                return null;
+
+            var submission = await BuildSubmittedAttributeViewModelAsync(
+                attrId,
+                cancellationToken);
+
+            if (submission is null)
+                return null;
 
             return new ReturnedAttributeCorrectionViewModel
             {
@@ -1582,14 +1638,24 @@ namespace V2_Genesis.Services.Implementations
                 AttrNo = info.Attr_No ?? string.Empty,
                 PropertyDescription = info.Property_Desc ?? string.Empty,
                 FormType = info.Property_Type,
-                RevisionReason = info.RevisionReason ?? review.FinalComment ?? string.Empty,
+
+                RevisionReason =
+                    info.RevisionReason
+                    ?? review.FinalComment
+                    ?? string.Empty,
+
                 RequestedAt = info.RevisionRequestedDateTime,
                 RequestedBy = info.RevisionRequestedBy ?? string.Empty,
+
                 Submission = submission,
+
                 Sections = sections
+                    .OrderBy(x => x.Name)
+                    .ToList(),
+
+                Fields = fields
             };
         }
-
         public async Task ResubmitReturnedCorrectionAsync(
             ReturnedAttributeCorrectionViewModel model,
             string userId,
@@ -1630,15 +1696,37 @@ namespace V2_Genesis.Services.Implementations
                 throw new InvalidOperationException("The valuer correction request could not be found.");
 
             var allowedCodeRows = await _context.AttrValuerReviewSections
-                .Where(x => x.ReviewId == review.Id
-                            && (x.RequiresCorrection || x.SectionDecision == "Needs correction"))
-                .Select(x => x.SectionCode)
+       .Where(x =>
+           x.ReviewId == review.Id &&
+           (x.RequiresCorrection ||
+            x.SectionDecision == "Needs correction"))
+       .Select(x => x.SectionCode)
+       .ToListAsync(cancellationToken);
+
+            var returnedFieldRows = await _context
+                .AttrValuerReviewFieldCorrections
+                .AsNoTracking()
+                .Where(x =>
+                    x.ReviewId == review.Id &&
+                    x.Attr_ID == info.Attr_ID &&
+                    x.IsActive)
+                .Select(x => new
+                {
+                    x.SectionCode,
+                    x.FieldCode
+                })
                 .ToListAsync(cancellationToken);
 
-            var allowedCodes = allowedCodeRows.ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var allowedCodes = allowedCodeRows
+                .Concat(returnedFieldRows.Select(x => x.SectionCode))
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
             if (allowedCodes.Count == 0)
-                throw new InvalidOperationException("The valuer did not identify any form section for correction.");
+            {
+                throw new InvalidOperationException(
+                    "The valuer did not identify any fields or sections for correction.");
+            }
 
             var propertyId = info.PropertyDetails.Id;
             var posted = model.Submission ?? new AttributeSubmissionViewModel();

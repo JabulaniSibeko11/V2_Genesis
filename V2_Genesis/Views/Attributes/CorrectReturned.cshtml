@@ -76,6 +76,134 @@
         || property.Name.Contains("Sources", StringComparison.OrdinalIgnoreCase)
         || property.Name.Contains("Financials", StringComparison.OrdinalIgnoreCase);
 
+    List<(string Value, string Text)>? DropdownOptions(string prefix, string propertyName)
+    {
+        // Keep correction controls aligned with the choices on Attributes/Create.cshtml.
+        if (prefix == "ValuationDetails"
+            && propertyName is ("ValuationCategoryOnRoll" or "ActualUse"))
+        {
+            return new()
+            {
+                ("Agricultural", "Agricultural"),
+                ("Business and Commercial", "Business and Commercial"),
+                ("Industrial", "Industrial"),
+                ("Mining", "Mining"),
+                ("Municipal", "Municipal"),
+                ("Multipurpose", "Multipurpose"),
+                ("Private Open Space", "Private Open Space"),
+                ("Public Open Space", "Public Open Space"),
+                ("Public Service Infrastructure", "Public Service Infrastructure"),
+                ("Public Service Purposes", "Public Service Purposes"),
+                ("Religious", "Religious"),
+                ("Residential", "Residential"),
+                ("Residential with Consent Use", "Residential with Consent Use"),
+                ("Vacant Land", "Vacant Land")
+            };
+        }
+
+        if (prefix == "ValuationDetails"
+            && propertyName == "AlternateUsages")
+        {
+            return new()
+            {
+                ("Resi-Business", "Resi-Business"),
+                ("Resi-Agri", "Resi-Agri"),
+                ("Business-Industrial", "Business-Industrial"),
+                ("Residential-Public Service", "Residential-Public Service"),
+                ("Other Mixed Use", "Other Mixed Use")
+            };
+        }
+
+        if (prefix == "SecondaryAttributes" && propertyName == "Storeys")
+        {
+            return new()
+            {
+                ("1", "1"),
+                ("2", "2"),
+                ("3", "3"),
+                ("4", "4")
+            };
+        }
+
+        if (prefix == "SecondaryAttributes" && propertyName == "Security")
+        {
+            return new()
+            {
+                ("High", "High"),
+                ("Medium", "Medium"),
+                ("Low", "Low"),
+                ("None", "None")
+            };
+        }
+
+        if (prefix == "SecondaryAttributes" && propertyName == "Noise")
+        {
+            return new()
+            {
+                ("Freeway", "Freeway"),
+                ("Major Road", "Major Road"),
+                ("Side Street", "Side Street"),
+                ("Cul-de-sac", "Cul-de-sac"),
+                ("Entertainment", "Entertainment")
+            };
+        }
+
+        if (prefix == "SecondaryAttributes" && propertyName == "Topography")
+        {
+            return new()
+            {
+                ("Level", "Level"),
+                ("Average", "Average"),
+                ("Slope", "Slope"),
+                ("Steep", "Steep")
+            };
+        }
+
+        if (prefix == "SecondaryAttributes"
+            && propertyName is ("Quality" or "Condition"))
+        {
+            // Residential Create page options.
+            return new()
+            {
+                ("Excellent", "Excellent"),
+                ("Good", "Good"),
+                ("Average", "Average"),
+                ("Poor", "Poor")
+            };
+        }
+
+        if (prefix == "SecondaryAttributes" && propertyName == "STCondition")
+        {
+            // The Create page posts the numeric ST condition code.
+            return new()
+            {
+                ("1", "Excellent"),
+                ("2", "Good"),
+                ("3", "Average"),
+                ("4", "Fair"),
+                ("5", "Poor")
+            };
+        }
+
+        if ((prefix.StartsWith("BusinessBuildings[", StringComparison.Ordinal)
+             || prefix.StartsWith("DrcBuildings[", StringComparison.Ordinal)
+             || prefix.StartsWith("DrcImprovements[", StringComparison.Ordinal))
+            && propertyName is ("Quality" or "Condition"))
+        {
+            // Business / DRC Create page options.
+            return new()
+            {
+                ("Excellent", "Excellent"),
+                ("Good", "Good"),
+                ("Average", "Average"),
+                ("Fair", "Fair"),
+                ("Poor", "Poor")
+            };
+        }
+
+        return null;
+    }
+
     bool CanClientEdit(string prefix, string propertyName)
     {
         if (prefix == "PropertyDetails" || prefix == "Access"
@@ -376,9 +504,24 @@
             <div class="attr-card">
                 <div class="attr-title"><i class="fa-solid fa-pen-to-square" style="color:var(--at-gold);margin-right:8px;"></i> @sec.Name</div>
                 <div class="attr-divider"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
-                @if (!string.IsNullOrWhiteSpace(sec.Comment))
+                @{
+                    // The overall Valuer Correction Request is already displayed above.
+                    // Only show a section comment when it is genuinely different from
+                    // the overall return-to-client reason.
+                    var showSectionComment =
+                        !string.IsNullOrWhiteSpace(sec.Comment)
+                        && !string.Equals(
+                            sec.Comment.Trim(),
+                            Model.RevisionReason?.Trim(),
+                            StringComparison.OrdinalIgnoreCase);
+                }
+
+                @if (showSectionComment)
                 {
-                    <div class="alert alert-warning"><strong>Valuer comment:</strong><br />@sec.Comment</div>
+                    <div class="alert alert-warning">
+                        <strong>Section-specific valuer comment:</strong><br />
+                        @sec.Comment
+                    </div>
                 }
 
                 @if (sec.Code.Equals("EVIDENCE", StringComparison.OrdinalIgnoreCase))
@@ -407,62 +550,140 @@
                             @foreach (var prop in EditableProperties(source.Data))
                             {
                                 var correction = CorrectionFor(sec.Code, source.Prefix, prop.Name);
-                                if (correction is null) continue;
-
                                 var name = $"Submission.{source.Prefix}.{prop.Name}";
                                 var value = prop.GetValue(source.Data);
+                                var formattedValue = FormatValue(value);
                                 var type = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
                                 var canEdit = CanClientEdit(source.Prefix, prop.Name);
+                                var dropdownOptions = DropdownOptions(source.Prefix, prop.Name);
 
-                                <div class="col-12">
-                                    <div class="attr-section-title"><span class="num"><i class="fa-solid fa-pen"></i></span> @correction.FieldLabel</div>
-                                    <table class="attr-table">
-                                        <tr>
-                                            <td class="attr-label">City Value</td>
-                                            <td><input class="attr-input" value="@(string.IsNullOrWhiteSpace(correction.CityValue) ? "Not supplied" : correction.CityValue)" readonly /></td>
-                                            <td class="attr-label">Previously Submitted</td>
-                                            <td><input class="attr-input" value="@(string.IsNullOrWhiteSpace(correction.ClientValue) ? "Not supplied" : correction.ClientValue)" readonly /></td>
-                                        </tr>
-                                        <tr>
-                                            <td class="attr-label">Corrected Value</td>
-                                            <td colspan="3">
-                                                @if (!canEdit)
-                                                {
-                                                    <input type="hidden" name="@name" value="@FormatValue(value)" />
-                                                    <div class="form-control bg-light text-muted">This field is read-only.</div>
-                                                }
-                                                else if (type == typeof(bool))
-                                                {
-                                                    <select class="attr-input" id="@name" name="@name">
-                                                        @if (string.Equals(FormatValue(value), "true", StringComparison.OrdinalIgnoreCase))
-                                                        {
-                                                            <option value="true" selected>Yes</option>
-                                                            <option value="false">No</option>
-                                                        }
-                                                        else
-                                                        {
-                                                            <option value="true">Yes</option>
-                                                            <option value="false" selected>No</option>
-                                                        }
-                                                    </select>
-                                                }
-                                                else if (IsLongText(prop))
-                                                {
-                                                    <textarea class="attr-input" id="@name" name="@name" rows="3">@FormatValue(value)</textarea>
-                                                }
-                                                else
-                                                {
+                                if (correction is null)
+                                {
+                                    @* Preserve every value that was NOT returned for correction.
+                                       Some sections are saved as one object/list on POST, so omitting
+                                       these values could otherwise overwrite unchanged client data. *@
+                                    <input type="hidden"
+                                           name="@name"
+                                           value="@formattedValue" />
+                                }
+                                else
+                                {
+                                    <div class="col-12">
+                                        <div class="attr-section-title">
+                                            <span class="num"><i class="fa-solid fa-pen"></i></span>
+                                            @correction.FieldLabel
+                                        </div>
+
+                                        <table class="attr-table">
+                                            <tr>
+                                                <td class="attr-label">City Value</td>
+                                                <td>
                                                     <input class="attr-input"
-                                                           id="@name"
-                                                           name="@name"
-                                                           type="@InputType(prop)"
-                                                           step="@(InputType(prop) == "number" ? "any" : null)"
-                                                           value="@FormatValue(value)" />
-                                                }
-                                            </td>
-                                        </tr>
-                                    </table>
-                                </div>
+                                                           value="@(string.IsNullOrWhiteSpace(correction.CityValue) ? "Not supplied" : correction.CityValue)"
+                                                           readonly />
+                                                </td>
+
+                                                <td class="attr-label">Previously Submitted</td>
+                                                <td>
+                                                    <input class="attr-input"
+                                                           value="@(string.IsNullOrWhiteSpace(correction.ClientValue) ? "Not supplied" : correction.ClientValue)"
+                                                           readonly />
+                                                </td>
+                                            </tr>
+
+                                            <tr>
+                                                <td class="attr-label">Corrected Value</td>
+                                                <td colspan="3">
+                                                    @if (!canEdit)
+                                                    {
+                                                        <input type="hidden"
+                                                               name="@name"
+                                                               value="@formattedValue" />
+
+                                                        <div class="form-control bg-light text-muted">
+                                                            This field is read-only.
+                                                        </div>
+                                                    }
+                                                    else if (dropdownOptions is not null)
+                                                    {
+                                                        <select class="attr-input attr-select"
+                                                                id="@name"
+                                                                name="@name">
+
+                                                            @if (string.IsNullOrWhiteSpace(formattedValue))
+                                                            {
+                                                                <option value="" selected>-- Select --</option>
+                                                            }
+                                                            else
+                                                            {
+                                                                <option value="">-- Select --</option>
+                                                            }
+
+                                                            @foreach (var option in dropdownOptions)
+                                                            {
+                                                                var selected =
+                                                                    string.Equals(
+                                                                        formattedValue,
+                                                                        option.Value,
+                                                                        StringComparison.OrdinalIgnoreCase)
+                                                                    ||
+                                                                    string.Equals(
+                                                                        formattedValue,
+                                                                        option.Text,
+                                                                        StringComparison.OrdinalIgnoreCase);
+
+                                                                if (selected)
+                                                                {
+                                                                    <option value="@option.Value" selected>@option.Text</option>
+                                                                }
+                                                                else
+                                                                {
+                                                                    <option value="@option.Value">@option.Text</option>
+                                                                }
+                                                            }
+                                                        </select>
+                                                    }
+                                                    else if (type == typeof(bool))
+                                                    {
+                                                        @* The create form captures these as Yes / No choices.
+                                                           Keep the correction page compact while posting the same
+                                                           true/false model value. *@
+                                                        <select class="attr-input attr-select"
+                                                                id="@name"
+                                                                name="@name">
+                                                            @if (string.Equals(formattedValue, "true", StringComparison.OrdinalIgnoreCase))
+                                                            {
+                                                                <option value="true" selected>Yes</option>
+                                                                <option value="false">No</option>
+                                                            }
+                                                            else
+                                                            {
+                                                                <option value="true">Yes</option>
+                                                                <option value="false" selected>No</option>
+                                                            }
+                                                        </select>
+                                                    }
+                                                    else if (IsLongText(prop))
+                                                    {
+                                                        <textarea class="attr-input"
+                                                                  id="@name"
+                                                                  name="@name"
+                                                                  rows="3">@formattedValue</textarea>
+                                                    }
+                                                    else
+                                                    {
+                                                        <input class="attr-input"
+                                                               id="@name"
+                                                               name="@name"
+                                                               type="@InputType(prop)"
+                                                               step="@(InputType(prop) == "number" ? "any" : null)"
+                                                               value="@formattedValue" />
+                                                    }
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                }
                             }
                         </div>
                     }
