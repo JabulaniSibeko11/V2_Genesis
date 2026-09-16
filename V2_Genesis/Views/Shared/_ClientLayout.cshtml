@@ -53,7 +53,7 @@
             var dates = rollDates.For(source);
 
             if (dates is null)
-                return $"Property search is currently unavailable for {label}.";
+                return $"Property search is currently closed for {label}.";
 
             if (periodNow < dates.OpenDate)
             {
@@ -220,62 +220,61 @@
                         </ul>
                     </li>
                 }
-                else
-                {
-                    <!-- Property Search Dropdown -->
-                    <li class="cl-nav-item cl-dropdown">
-                        <button type="button"
-                                class="cl-nav-link cl-dropdown-toggle @(isPropertySearchArea ? "active" : "")">
-                            <i class="fa-solid fa-magnifying-glass"></i>
-                            Property Search
-                            <i class="fa-solid fa-chevron-down cl-dd-chevron"></i>
-                        </button>
 
-                        <ul class="cl-dropdown-menu">
-                            @foreach (var roll in objectionSearchRolls)
-                            {
-                                var enabled = canSearchRoll(roll.Source);
+                <!-- Property Search Dropdown: shown to clients and Admin.
+                     Admin bypasses roll-date restrictions through canSearchRoll(). -->
 
-                                <li>
-                                    @if (enabled)
-                                    {
-                                        <a class="cl-dd-item" href="/search/@roll.Source">
-                                            <i class="fa-solid @roll.Icon"></i>
-                                            <span>@roll.Label</span>
-                                        </a>
-                                    }
-                                    else
-                                    {
-                                        <button type="button"
-                                                class="cl-dd-item cl-dd-item-disabled js-roll-period-disabled"
-                                                data-roll-period-message="@searchPeriodMessage(roll.Source, roll.Label)"
-                                                aria-disabled="true">
-                                            <i class="fa-solid @roll.Icon"></i>
-                                            <span>@roll.Label</span>
-                                            <span class="roll-period-status">Unavailable</span>
-                                        </button>
-                                    }
-                                </li>
-                            }
+                <li class="cl-nav-item cl-dropdown">
+                    <button type="button"
+                            class="cl-nav-link cl-dropdown-toggle @(isPropertySearchArea ? "active" : "")">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        Property Search
+                        <i class="fa-solid fa-chevron-down cl-dd-chevron"></i>
+                    </button>
 
-                            <li class="cl-dd-divider"></li>
+                    <ul class="cl-dropdown-menu">
+                        @foreach (var roll in objectionSearchRolls)
+                        {
+                            var enabled = canSearchRoll(roll.Source);
 
                             <li>
-                                <a class="cl-dd-item" href="/search/Query">
-                                    <i class="fa-solid fa-magnifying-glass-chart"></i>
-                                    Section 78 Query / Review
-                                </a>
+                                @if (enabled)
+                                {
+                                    <a class="cl-dd-item" href="/search/@roll.Source">
+                                        <i class="fa-solid @roll.Icon"></i>
+                                        <span>@roll.Label</span>
+                                    </a>
+                                }
+                                else
+                                {
+                                    <a class="cl-dd-item cl-dd-item-disabled"
+                                           href="/Dashboard?openRoll=@roll.Source"
+                                           title="The objection period is closed. Open the roll dashboard to view your linked properties and submissions.">
+                                        <i class="fa-solid @roll.Icon"></i>
+                                        <span>@roll.Label</span>
+                                        <span class="roll-period-status">Objection Period Closed</span>
+                                    </a>
+                                }
                             </li>
+                        }
 
-                            <li>
-                                <a class="cl-dd-item" href="/attributes/search">
-                                    <i class="fa-solid fa-clipboard-list"></i>
-                                    Property Attributes
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
-                }
+                        <li class="cl-dd-divider"></li>
+
+                        <li>
+                            <a class="cl-dd-item" href="/search/Objection_Query">
+                                <i class="fa-solid fa-magnifying-glass-chart"></i>
+                                Section 78 Query / Review
+                            </a>
+                        </li>
+
+                        <li>
+                            <a class="cl-dd-item" href="/attributes/search">
+                                <i class="fa-solid fa-clipboard-list"></i>
+                                Property Attributes
+                            </a>
+                        </li>
+                    </ul>
+                </li>
 
                 <!-- Services Dropdown -->
                 <li class="cl-nav-item cl-dropdown cl-dropdown-end">
@@ -537,48 +536,47 @@
                     Client Notices
                 </a>
             }
-            else
+
+            <!-- Property Search
+                 Shown to both clients and Admin.
+                 Admin is always enabled because canSearchRoll() returns true for Admin. -->
+            <div class="cl-drawer-section-title">Property Search</div>
+
+            @foreach (var roll in objectionSearchRolls)
             {
-                <!-- Property Search via one Dashboard -->
-                <div class="cl-drawer-section-title">Property Search</div>
+                var enabled = canSearchRoll(roll.Source);
 
-                @foreach (var roll in objectionSearchRolls)
+                if (enabled)
                 {
-                    var enabled = canSearchRoll(roll.Source);
-
-                    if (enabled)
-                    {
-                        <a href="/Dashboard?openRoll=@roll.Source"
-                               class="cl-drawer-link @(openRoll == roll.Source ? "active" : "")">
-                            <i class="fa-solid @roll.Icon"></i>
-                            @roll.Label
-                        </a>
-                    }
-                    else
-                    {
-                        <button type="button"
-                                class="cl-drawer-link cl-drawer-link-disabled js-roll-period-disabled"
-                                data-roll-period-message="@searchPeriodMessage(roll.Source, roll.Label)"
-                                aria-disabled="true">
-                            <i class="fa-solid @roll.Icon"></i>
-                            <span>@roll.Label</span>
-                            <span class="roll-period-status">Unavailable</span>
-                        </button>
-                    }
+                    <a href="/search/@roll.Source"
+                           class="cl-drawer-link @(reqPath.Equals($"/search/{roll.Source}", StringComparison.OrdinalIgnoreCase) ? "active" : "")">
+                        <i class="fa-solid @roll.Icon"></i>
+                        <span>@roll.Label</span>
+                    </a>
                 }
-
-                <a href="/Dashboard?openRoll=Query"
-                       class="cl-drawer-link @(openRoll == "Query" ? "active" : "")">
-                    <i class="fa-solid fa-magnifying-glass-chart"></i>
-                    Section 78 Query / Review
-                </a>
-
-                <a href="/Dashboard?openRoll=attributes"
-                       class="cl-drawer-link @(openRoll == "attributes" ? "active" : "")">
-                    <i class="fa-solid fa-clipboard-list"></i>
-                    Property Attributes
-                </a>
+                else
+                {
+                    <a href="/Dashboard?openRoll=@roll.Source"
+                           class="cl-drawer-link cl-drawer-link-disabled @(openRoll == roll.Source ? "active" : "")"
+                           title="The objection period is closed. Open the roll dashboard to view your linked properties and submissions.">
+                        <i class="fa-solid @roll.Icon"></i>
+                        <span>@roll.Label</span>
+                        <span class="roll-period-status">Objection Period Closed</span>
+                    </a>
+                }
             }
+
+            <a href="/search/Objection_Query"
+                   class="cl-drawer-link @(reqPath.Equals("/search/objection_query", StringComparison.OrdinalIgnoreCase) ? "active" : "")">
+                <i class="fa-solid fa-magnifying-glass-chart"></i>
+                Section 78 Query / Review
+            </a>
+
+            <a href="/attributes/search"
+                   class="cl-drawer-link @(reqPath.StartsWith("/attributes/search") ? "active" : "")">
+                <i class="fa-solid fa-clipboard-list"></i>
+                Property Attributes
+            </a>
 
             <!-- Services -->
             <div class="cl-drawer-section-title">Services</div>
@@ -812,9 +810,13 @@
         e.preventDefault();
         e.stopPropagation();
 
+        if (item.closest('#clDrawer')) {
+        closeDrawer();
+        }
+
         showRollPeriodMessage(
         item.dataset.rollPeriodMessage ||
-        'This roll is not currently available for property search.'
+        'The objection period is closed. You can no longer search and link a property for this roll.'
         );
         });
         });

@@ -132,7 +132,7 @@ public class PropertySearchController : Controller
     }
 
 
-   
+
     private static string ResolveReviewStatus(
         DateTime? reviewCloseDate)
     {
@@ -183,7 +183,7 @@ public class PropertySearchController : Controller
         if (!RollSearchRegistry.Configs.ContainsKey(rollSource))
             return NotFound($"No search configuration found for '{rollSource}'.");
 
-        
+
 
         if (!CanSearchAndLinkRoll(
                 rollSource,
@@ -234,6 +234,33 @@ public class PropertySearchController : Controller
 
         if (!ModelState.IsValid || roll is null)
             return PartialView("_NoResults", roll);
+
+        // Server-side protection: a client must not be able to keep using an
+        // already-open search page after the objection period has closed.
+        // Admin users and Section 78 Query / Review are allowed by
+        // CanSearchAndLinkRoll().
+        if (!CanSearchAndLinkRoll(
+                rollSource,
+                out var periodMessage))
+        {
+            _logger.LogWarning(
+                "Blocked property search outside objection period. User={User}, Roll={Roll}",
+                User.Identity?.Name,
+                rollSource);
+
+            var safeMessage =
+                System.Net.WebUtility.HtmlEncode(
+                    periodMessage
+                    ?? "The objection period is closed. You can no longer search and link a property for this roll.");
+
+            return Content(
+                $@"<div class=""alert alert-warning m-3"" role=""alert"">
+                        <i class=""fa-solid fa-calendar-xmark me-2""></i>
+                        <strong>Property Search Unavailable</strong>
+                        <div class=""mt-1"">{safeMessage}</div>
+                   </div>",
+                "text/html");
+        }
 
         var started = System.Diagnostics.Stopwatch.StartNew();
 
@@ -299,8 +326,8 @@ public class PropertySearchController : Controller
             return PartialView("_NoResults", roll);
         }
     }
-   
-    
+
+
     [HttpGet]
     [Route("property/view")]
     [AllowAnonymous]
@@ -510,12 +537,12 @@ public class PropertySearchController : Controller
             Items = items,
             Roll = normalRoll,
             OpenDate = IsQueryRoll(rollSource)
-    ? null
-    : rollDates?.OpenDate,
+                ? null
+                : rollDates?.OpenDate,
 
             VisibleUntil = IsQueryRoll(rollSource)
-    ? null
-    : rollDates?.VisibleUntil,
+                ? null
+                : rollDates?.VisibleUntil,
             IsAttributes = false,
             IsLis = false,
             IsUniversalSearch = isUniversalSearch,
@@ -738,15 +765,40 @@ public class PropertySearchController : Controller
         "LIS",
         StringComparison.OrdinalIgnoreCase);
 
-        var currentEmail = User.FindFirstValue(ClaimTypes.Name) ?? "";
+        var isAdmin = IsCurrentUserAdmin();
 
-        bool isAdmin = !string.IsNullOrEmpty(currentEmail) && (
-            currentEmail.Equals("AdministrationEnquiries@Joburg.org.za",
-                StringComparison.OrdinalIgnoreCase) ||
-            System.Text.RegularExpressions.Regex.IsMatch(
-                currentEmail,
-                @"^val\.admin(1[0-9]?|[1-9])@joburg\.org\.za$",
-                System.Text.RegularExpressions.RegexOptions.IgnoreCase));
+        // Final server-side link protection. This prevents a client from
+        // linking a property from an old/bookmarked property page after the
+        // objection period has closed. Admin users and Query / Review remain
+        // allowed through CanSearchAndLinkRoll().
+        if (!CanSearchAndLinkRoll(
+                rollSource,
+                out var periodMessage))
+        {
+            TempData["PropertySearchPeriodMessage"] =
+                periodMessage;
+
+            TempData["LinkError"] =
+                periodMessage;
+
+            _logger.LogWarning(
+                "Blocked property link outside objection period. User={UserId}, Roll={Roll}, PropertyFrom={PropertyFrom}, Key={Key}, PropertyId={PropertyId}, UnitKey={UnitKey}, ValuationKey={ValuationKey}",
+                userId,
+                rollSource,
+                propertyFrom,
+                key,
+                propertyId,
+                unitKey,
+                valuationKey);
+
+            return RedirectToAction(
+                "Index",
+                "Dashboard",
+                new
+                {
+                    openRoll = rollSource
+                });
+        }
 
         try
         {
@@ -894,6 +946,32 @@ public class PropertySearchController : Controller
     string? SearchUnit,
     string? SearchOwner)
     {
+        // LIS is part of the same property-search/linking journey. Do not let
+        // a client bypass a closed objection period by calling the LIS endpoint
+        // directly. Admin users and Section 78 Query / Review are exempt.
+        if (!CanSearchAndLinkRoll(
+                rollSource,
+                out var periodMessage))
+        {
+            _logger.LogWarning(
+                "Blocked LIS search outside objection period. User={User}, Roll={Roll}",
+                User.Identity?.Name,
+                rollSource);
+
+            var safeMessage =
+                System.Net.WebUtility.HtmlEncode(
+                    periodMessage
+                    ?? "The objection period is closed. You can no longer search and link a property for this roll.");
+
+            return Content(
+                $@"<div class=""alert alert-warning m-3"" role=""alert"">
+                        <i class=""fa-solid fa-calendar-xmark me-2""></i>
+                        <strong>LIS Search Unavailable</strong>
+                        <div class=""mt-1"">{safeMessage}</div>
+                   </div>",
+                "text/html");
+        }
+
         var p = new LisSearchParams
         {
             SearchTownName = SearchTownName,
@@ -1041,6 +1119,32 @@ public class PropertySearchController : Controller
        string? ST_Unit,
        string? ST_Right)
     {
+        // Omission is also reached from the property-search journey. Prevent
+        // direct POSTs after the objection period has closed.
+        if (!CanSearchAndLinkRoll(
+                rollSource,
+                out var periodMessage))
+        {
+            TempData["PropertySearchPeriodMessage"] =
+                periodMessage;
+
+            TempData["LinkError"] =
+                periodMessage;
+
+            _logger.LogWarning(
+                "Blocked omission submission outside objection period. User={User}, Roll={Roll}",
+                User.Identity?.Name,
+                rollSource);
+
+            return RedirectToAction(
+                "Index",
+                "Dashboard",
+                new
+                {
+                    openRoll = rollSource
+                });
+        }
+
         // ── Call service to build desc + resolve correct roll target ───────
         var (propertyDesc, sourceTable, controllerName) =
             _omissionService.BuildOmissionDescription(
