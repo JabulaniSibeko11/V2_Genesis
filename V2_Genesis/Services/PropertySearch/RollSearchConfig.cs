@@ -105,18 +105,18 @@ public static class RollSearchRegistry
 ),
             // ── Section 78 Query roll ─────────────────────────────────
             ["Objection_Query"] = new(
-                SpTown: "SearchTown",
-                SpStand: "SearchTownStandNumber",
-                SpStandAddress: "StandTownStandNumberAddress",
-                SpAddress: "SearchTownAddress",
-                SpScheme: "SearchTownScheme",
-                SpUnit: "SearchTownUnit",
-                SpSchemeUnit: "SearchTownSchemeUnit",
-                SpStandScheme: "SearchTownERFScheme",
-                SpAddressScheme: "SearchTownAddressScheme",
-                DetailSp: "IndexObjection",
-                ConnectionKey: "QueryConnection",
-                IsQuery: true               // ← only one that is true
-            ),
+    SpTown: "SearchTown",
+    SpStand: "SearchTownStandNumber",
+    SpStandAddress: "StandTownStandNumberAddress",
+    SpAddress: "SearchTownAddress",
+    SpScheme: "SearchTownScheme",
+    SpUnit: "SearchTownUnit",
+    SpSchemeUnit: "SearchTownSchemeUnit",
+    SpStandScheme: "SearchTownERFScheme",
+    SpAddressScheme: "SearchTownAddressScheme",
+    DetailSp: "IndexSection78Property",
+    ConnectionKey: "QueryConnection",
+    IsQuery: true
+),
         };
 }

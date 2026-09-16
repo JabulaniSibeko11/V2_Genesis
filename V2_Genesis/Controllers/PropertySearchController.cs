@@ -64,14 +64,75 @@ public class PropertySearchController : Controller
            AdminPattern.IsMatch(email)
        );
 
-    private static bool IsQueryRoll(string? rollSource)
+    private bool IsCurrentUserAdmin()
     {
-        return string.Equals(
-            rollSource,
-            "Query",
-            StringComparison.OrdinalIgnoreCase);
+        var email =
+            User.FindFirstValue(ClaimTypes.Email)
+            ?? User.FindFirstValue(ClaimTypes.Name)
+            ?? User.Identity?.Name;
+
+        return IsAdmin(email);
     }
 
+    private static bool IsQueryRoll(string? rollSource)
+    {
+        return
+            string.Equals(
+                rollSource,
+                "Query",
+                StringComparison.OrdinalIgnoreCase)
+            ||
+            string.Equals(
+                rollSource,
+                "Objection_Query",
+                StringComparison.OrdinalIgnoreCase);
+    }
+
+    private bool CanSearchAndLinkRoll(
+        string rollSource,
+        out string? message)
+    {
+        message = null;
+
+        if (IsCurrentUserAdmin())
+            return true;
+
+        if (IsQueryRoll(rollSource))
+            return true;
+
+        var dates = _rollDates.For(rollSource);
+
+        if (dates is null)
+            return true;
+
+        var now = DateTime.Now;
+
+        if (now >= dates.OpenDate &&
+            now <= dates.VisibleUntil)
+        {
+            return true;
+        }
+
+        if (now < dates.OpenDate)
+        {
+            message =
+                $"The objection period has not opened yet. " +
+                $"Property search and linking will be available from " +
+                $"{dates.OpenDate:dd MMMM yyyy 'at' HH:mm}.";
+        }
+        else
+        {
+            message =
+                $"The objection period closed on " +
+                $"{dates.VisibleUntil:dd MMMM yyyy 'at' HH:mm}. " +
+                $"You can no longer search and link a property for this roll.";
+        }
+
+        return false;
+    }
+
+
+   
     private static string ResolveReviewStatus(
         DateTime? reviewCloseDate)
     {
@@ -121,6 +182,28 @@ public class PropertySearchController : Controller
         // Validate this roll has a search config
         if (!RollSearchRegistry.Configs.ContainsKey(rollSource))
             return NotFound($"No search configuration found for '{rollSource}'.");
+
+        
+
+        if (!CanSearchAndLinkRoll(
+                rollSource,
+                out var periodMessage))
+        {
+            TempData["PropertySearchPeriodMessage"] =
+                periodMessage;
+
+            TempData["LinkError"] =
+                periodMessage;
+
+            return RedirectToAction(
+                "Index",
+                "Dashboard",
+                new
+                {
+                    openRoll = rollSource
+                });
+        }
+
 
         // Townships and schemes use separate SQL connections and can be loaded
         // in parallel. The service also caches these relatively static lists.
@@ -426,12 +509,13 @@ public class PropertySearchController : Controller
         {
             Items = items,
             Roll = normalRoll,
-            OpenDate = rollSource.Equals("Query", StringComparison.OrdinalIgnoreCase)
-                ? null
-                : rollDates?.OpenDate,
-            VisibleUntil = rollSource.Equals("Query", StringComparison.OrdinalIgnoreCase)
-                ? null
-                : rollDates?.VisibleUntil,
+            OpenDate = IsQueryRoll(rollSource)
+    ? null
+    : rollDates?.OpenDate,
+
+            VisibleUntil = IsQueryRoll(rollSource)
+    ? null
+    : rollDates?.VisibleUntil,
             IsAttributes = false,
             IsLis = false,
             IsUniversalSearch = isUniversalSearch,

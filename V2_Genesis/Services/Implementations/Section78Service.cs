@@ -27,7 +27,7 @@ namespace V2_Genesis.Services.Implementations
         private readonly IEmailService _emailService;
         private readonly ISubmittedFormPdfService _submittedFormPdfService;
         private readonly ILogger<Section78Service> _logger;
-        private const string SP_DETAIL = "IndexObjection";
+        private const string SP_DETAIL ="IndexSection78Property";
         private const string SP_LINKED = "DashboardLinkedQ";
         private const string SP_SUBMITTED = "DashboardObjectionQ";
 

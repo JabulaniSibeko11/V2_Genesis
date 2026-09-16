@@ -1349,3 +1349,211 @@ select.coj-township-select {
         cursor: not-allowed;
         opacity: .65;
     }
+
+.nav-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    flex-shrink: 0;
+    margin-right: 24px;
+}
+
+.nav-brand-mark {
+    width: 44px;
+    height: 44px;
+    background: #e6b000;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    padding: 4px;
+    flex-shrink: 0;
+}
+
+
+.brand-logo {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.nav-brand-text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.2;
+}
+
+.nav-brand-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: #1a1a1a;
+    letter-spacing: 1.5px;
+}
+
+.nav-brand-sub {
+    font-size: 9.5px;
+    color: rgba(0,0,0,.5);
+    letter-spacing: .5px;
+}
+
+.cl-nav-link.active {
+    background: rgba(0,0,0,.1);
+    border-bottom: 2px solid #1a1a1a;
+}
+
+.cl-drawer-section-title {
+    padding: 10px 20px 4px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    color: #999;
+    text-transform: uppercase;
+}
+
+/* Nav links must always start at the left corner, right
+                                                                                                   after the logo — never centered. Kept here too (in
+                                                                                                   addition to site.css) since this is the layout that
+                                                                                                   every page shares, so the fix is visible right where
+                                                                                                   the nav itself is defined. */
+.cl-nav-links {
+    justify-content: flex-start !important;
+}
+
+/* Mobile drawer: fixed header + dedicated scroll area */
+.cl-mobile-drawer {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    max-height: 100dvh;
+    overflow: hidden;
+}
+
+.cl-drawer-header {
+    flex: 0 0 auto;
+}
+
+.cl-drawer-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    padding-bottom: 24px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(30,58,64,.28) transparent;
+}
+
+    .cl-drawer-scroll::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .cl-drawer-scroll::-webkit-scrollbar-thumb {
+        background: rgba(30,58,64,.28);
+        border-radius: 10px;
+    }
+
+    .cl-drawer-scroll::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+/* Roll period availability */
+.cl-dd-item-disabled,
+.cl-drawer-link-disabled {
+    opacity: .55;
+    cursor: not-allowed !important;
+    user-select: none;
+}
+
+.cl-dd-item-disabled {
+    width: 100%;
+    border: 0;
+    background: transparent;
+    text-align: left;
+    font: inherit;
+}
+
+.cl-drawer-link-disabled {
+    width: 100%;
+    border: 0;
+    background: transparent;
+    text-align: left;
+    font: inherit;
+}
+
+.roll-period-status {
+    margin-left: auto;
+    padding: 2px 7px;
+    border-radius: 999px;
+    background: rgba(0,0,0,.08);
+    color: #777;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: .4px;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.roll-period-toast {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    z-index: 99999;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    max-width: min(460px, calc(100vw - 32px));
+    padding: 14px 16px;
+    border: 1px solid rgba(0,0,0,.08);
+    border-radius: 12px;
+    background: #fff;
+    color: #1a1a1a;
+    box-shadow: 0 12px 36px rgba(0,0,0,.18);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(12px);
+    transition: opacity .2s ease, transform .2s ease, visibility .2s ease;
+}
+
+    .roll-period-toast.show {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+    }
+
+    .roll-period-toast > i {
+        margin-top: 2px;
+        color: #b07d00;
+        font-size: 18px;
+        flex: 0 0 auto;
+    }
+
+#rollPeriodToastText {
+    flex: 1 1 auto;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+#rollPeriodToastClose {
+    border: 0;
+    background: transparent;
+    color: #666;
+    font-size: 21px;
+    line-height: 1;
+    padding: 0;
+    cursor: pointer;
+    flex: 0 0 auto;
+}
+
+@media (max-width: 576px) {
+    .roll-period-toast {
+        right: 16px;
+        bottom: 16px;
+        left: 16px;
+        max-width: none;
+    }
+}
+
+

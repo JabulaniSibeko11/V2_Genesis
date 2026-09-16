@@ -30,9 +30,36 @@
         string.Equals(Context?.Request?.Query["propertyFrom"].FirstOrDefault(), "Attributes", StringComparison.OrdinalIgnoreCase) ||
         string.Equals(Context?.Session?.GetString("RollSource"), "Attributes", StringComparison.OrdinalIgnoreCase);
 
-    bool isQuery = string.Equals(Context?.Request?.Query["rollSource"].FirstOrDefault(), "Query", StringComparison.OrdinalIgnoreCase) ||
-                   string.Equals(Context?.Request?.Query["propertyFrom"].FirstOrDefault(), "Query", StringComparison.OrdinalIgnoreCase) ||
-                   string.Equals(Context?.Session?.GetString("RollSource"), "Query", StringComparison.OrdinalIgnoreCase);
+    bool isQuery =
+    string.Equals(
+        Context?.Request?.Query["rollSource"].FirstOrDefault(),
+        "Query",
+        StringComparison.OrdinalIgnoreCase)
+    ||
+    string.Equals(
+        Context?.Request?.Query["rollSource"].FirstOrDefault(),
+        "Objection_Query",
+        StringComparison.OrdinalIgnoreCase)
+    ||
+    string.Equals(
+        Context?.Request?.Query["propertyFrom"].FirstOrDefault(),
+        "Query",
+        StringComparison.OrdinalIgnoreCase)
+    ||
+    string.Equals(
+        Context?.Request?.Query["propertyFrom"].FirstOrDefault(),
+        "Objection_Query",
+        StringComparison.OrdinalIgnoreCase)
+    ||
+    string.Equals(
+        Context?.Session?.GetString("RollSource"),
+        "Query",
+        StringComparison.OrdinalIgnoreCase)
+    ||
+    string.Equals(
+        Context?.Session?.GetString("RollSource"),
+        "Objection_Query",
+        StringComparison.OrdinalIgnoreCase);
     bool isLis = Model?.IsLis == true ||
 string.Equals(Context?.Request?.Query["propertyFrom"].FirstOrDefault(), "LIS", StringComparison.OrdinalIgnoreCase) ||
 string.Equals(Context?.Session?.GetString("PropertyFrom"), "LIS", StringComparison.OrdinalIgnoreCase);

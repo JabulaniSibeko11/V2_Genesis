@@ -1,4 +1,7 @@
 ﻿@using System.Security.Claims
+@using Microsoft.Extensions.Options
+@using V2_Genesis.Services.PropertySearch
+@inject IOptions<RollDatesSettings> RollDatesOptions
 @{
     var reqPath = Context.Request.Path.Value?.ToLower() ?? "";
     var openRoll = Context.Request.Query["openRoll"].ToString();
@@ -18,6 +21,53 @@
 
     bool isAdminArea =
         reqPath.StartsWith("/admin");
+    var rollDates = RollDatesOptions.Value;
+    var periodNow = DateTime.Now;
+
+    var objectionSearchRolls = new[]
+    {
+    new { Source = "Objection",       Label = "General Valuation Roll", Icon = "fa-landmark" },
+    new { Source = "Objection_Supp1", Label = "Supplementary Roll 1",   Icon = "fa-scroll" },
+    new { Source = "Objection_Supp2", Label = "Supplementary Roll 2",   Icon = "fa-scroll" },
+    new { Source = "Objection_Supp3", Label = "Supplementary Roll 3",   Icon = "fa-scroll" },
+    new { Source = "Objection_Supp4", Label = "Supplementary Roll 4",   Icon = "fa-scroll" }
+};
+    Func<string, bool> canSearchRoll = source =>
+    {
+        if (isAdmin)
+            return true;
+
+        var dates = rollDates.For(source);
+
+        if (dates is null)
+            return true;
+
+        return
+            periodNow >= dates.OpenDate &&
+            periodNow <= dates.VisibleUntil;
+    };
+
+    Func<string, string, string> searchPeriodMessage =
+        (source, label) =>
+        {
+            var dates = rollDates.For(source);
+
+            if (dates is null)
+                return $"Property search is currently unavailable for {label}.";
+
+            if (periodNow < dates.OpenDate)
+            {
+                return
+                    $"The objection period for {label} opens on " +
+                    $"{dates.OpenDate:dd MMMM yyyy 'at' HH:mm}. " +
+                    $"You cannot search and link a property before the period opens.";
+            }
+
+            return
+                $"The objection period for {label} closed on " +
+                $"{dates.VisibleUntil:dd MMMM yyyy 'at' HH:mm}. " +
+                $"You can no longer search and link a property for this roll.";
+        };
 
     bool isPropertySearchArea =
         reqPath.StartsWith("/search")
@@ -91,116 +141,6 @@
           href="~/css/genesis-responsive.css"
           asp-append-version="true" />
 
-    <style>
-            .nav-brand {
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                text-decoration: none;
-                flex-shrink: 0;
-                margin-right: 24px;
-            }
-
-            .nav-brand-mark {
-                width: 44px;
-                height: 44px;
-                background: #e6b000;
-                border-radius: 8px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                overflow: hidden;
-                padding: 4px;
-                flex-shrink: 0;
-            }
-          
-
-            .brand-logo {
-                width: 100%;
-                height: 100%;
-                object-fit: contain;
-            }
-
-            .nav-brand-text {
-                display: flex;
-                flex-direction: column;
-                line-height: 1.2;
-            }
-
-            .nav-brand-name {
-                font-size: 13px;
-                font-weight: 700;
-                color: #1a1a1a;
-                letter-spacing: 1.5px;
-            }
-
-            .nav-brand-sub {
-                font-size: 9.5px;
-                color: rgba(0,0,0,.5);
-                letter-spacing: .5px;
-            }
-
-            .cl-nav-link.active {
-                background: rgba(0,0,0,.1);
-                border-bottom: 2px solid #1a1a1a;
-            }
-
-            .cl-drawer-section-title {
-                padding: 10px 20px 4px;
-                font-size: 10px;
-                font-weight: 700;
-                letter-spacing: 1.5px;
-                color: #999;
-                text-transform: uppercase;
-            }
-
-            /* Nav links must always start at the left corner, right
-                                                                                       after the logo — never centered. Kept here too (in
-                                                                                       addition to site.css) since this is the layout that
-                                                                                       every page shares, so the fix is visible right where
-                                                                                       the nav itself is defined. */
-            .cl-nav-links {
-                justify-content: flex-start !important;
-            }
-
-            /* Mobile drawer: fixed header + dedicated scroll area */
-            .cl-mobile-drawer {
-                display: flex;
-                flex-direction: column;
-                height: 100dvh;
-                max-height: 100dvh;
-                overflow: hidden;
-            }
-
-            .cl-drawer-header {
-                flex: 0 0 auto;
-            }
-
-            .cl-drawer-scroll {
-                flex: 1 1 auto;
-                min-height: 0;
-                overflow-y: auto;
-                overflow-x: hidden;
-                -webkit-overflow-scrolling: touch;
-                overscroll-behavior: contain;
-                padding-bottom: 24px;
-                scrollbar-width: thin;
-                scrollbar-color: rgba(30,58,64,.28) transparent;
-            }
-
-                .cl-drawer-scroll::-webkit-scrollbar {
-                    width: 6px;
-                }
-
-                .cl-drawer-scroll::-webkit-scrollbar-thumb {
-                    background: rgba(30,58,64,.28);
-                    border-radius: 10px;
-                }
-
-                .cl-drawer-scroll::-webkit-scrollbar-track {
-                    background: transparent;
-                }
-    </style>
 
     
 </head>
@@ -292,42 +232,31 @@
                         </button>
 
                         <ul class="cl-dropdown-menu">
-                            <li>
-                                <a class="cl-dd-item" href="/search/Objection">
-                                    <i class="fa-solid fa-landmark"></i>
-                                    General Valuation Roll
-                                </a>
-                            </li>
+                            @foreach (var roll in objectionSearchRolls)
+                            {
+                                var enabled = canSearchRoll(roll.Source);
 
-                            <li class="cl-dd-divider"></li>
-
-                            <li>
-                                <a class="cl-dd-item" href="/search/Objection_Supp1">
-                                    <i class="fa-solid fa-scroll"></i>
-                                    Supplementary Roll 1
-                                </a>
-                            </li>
-
-                            <li>
-                                <a class="cl-dd-item" href="/search/Objection_Supp2">
-                                    <i class="fa-solid fa-scroll"></i>
-                                    Supplementary Roll 2
-                                </a>
-                            </li>
-
-                            <li>
-                                <a class="cl-dd-item" href="/search/Objection_Supp3">
-                                    <i class="fa-solid fa-scroll"></i>
-                                    Supplementary Roll 3
-                                </a>
-                            </li>
-
-                            <li>
-                                <a class="cl-dd-item" href="/search/Objection_Supp4">
-                                    <i class="fa-solid fa-scroll"></i>
-                                    Supplementary Roll 4
-                                </a>
-                            </li>
+                                <li>
+                                    @if (enabled)
+                                    {
+                                        <a class="cl-dd-item" href="/search/@roll.Source">
+                                            <i class="fa-solid @roll.Icon"></i>
+                                            <span>@roll.Label</span>
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <button type="button"
+                                                class="cl-dd-item cl-dd-item-disabled js-roll-period-disabled"
+                                                data-roll-period-message="@searchPeriodMessage(roll.Source, roll.Label)"
+                                                aria-disabled="true">
+                                            <i class="fa-solid @roll.Icon"></i>
+                                            <span>@roll.Label</span>
+                                            <span class="roll-period-status">Unavailable</span>
+                                        </button>
+                                    }
+                                </li>
+                            }
 
                             <li class="cl-dd-divider"></li>
 
@@ -613,37 +542,30 @@
                 <!-- Property Search via one Dashboard -->
                 <div class="cl-drawer-section-title">Property Search</div>
 
-                <a href="/Dashboard?openRoll=Objection"
-                       class="cl-drawer-link @(openRoll == "Objection" ? "active" : "")">
-                    <i class="fa-solid fa-landmark"></i>
-                    General Valuation Roll
-                </a>
+                @foreach (var roll in objectionSearchRolls)
+                {
+                    var enabled = canSearchRoll(roll.Source);
 
-                <a href="/Dashboard?openRoll=Objection_Supp1"
-                       class="cl-drawer-link @(openRoll == "Objection_Supp1" ? "active" : "")">
-                    <i class="fa-solid fa-scroll"></i>
-                    Supplementary Roll 1
-                </a>
-
-                <a href="/Dashboard?openRoll=Objection_Supp2"
-                       class="cl-drawer-link @(openRoll == "Objection_Supp2" ? "active" : "")">
-                    <i class="fa-solid fa-scroll"></i>
-                    Supplementary Roll 2
-                </a>
-
-                <a href="/Dashboard?openRoll=Objection_Supp3"
-                       class="cl-drawer-link @(openRoll == "Objection_Supp3" ? "active" : "")">
-                    <i class="fa-solid fa-scroll"></i>
-                    Supplementary Roll 3
-                </a>
-
-                <a href="/Dashboard?openRoll=Objection_Supp4"
-                       class="cl-drawer-link @(openRoll == "Objection_Supp4" ? "active" : "")">
-                    <i class="fa-solid fa-scroll"></i>
-                    Supplementary Roll 4
-                </a>
-
-          
+                    if (enabled)
+                    {
+                        <a href="/Dashboard?openRoll=@roll.Source"
+                               class="cl-drawer-link @(openRoll == roll.Source ? "active" : "")">
+                            <i class="fa-solid @roll.Icon"></i>
+                            @roll.Label
+                        </a>
+                    }
+                    else
+                    {
+                        <button type="button"
+                                class="cl-drawer-link cl-drawer-link-disabled js-roll-period-disabled"
+                                data-roll-period-message="@searchPeriodMessage(roll.Source, roll.Label)"
+                                aria-disabled="true">
+                            <i class="fa-solid @roll.Icon"></i>
+                            <span>@roll.Label</span>
+                            <span class="roll-period-status">Unavailable</span>
+                        </button>
+                    }
+                }
 
                 <a href="/Dashboard?openRoll=Query"
                        class="cl-drawer-link @(openRoll == "Query" ? "active" : "")">
@@ -770,6 +692,22 @@
             </span>
         </div>
     </footer>
+
+    <!-- Roll availability message -->
+    <div id="rollPeriodToast"
+         class="roll-period-toast"
+         role="status"
+         aria-live="polite"
+         aria-atomic="true">
+        <i class="fa-solid fa-calendar-xmark"></i>
+        <span id="rollPeriodToastText"></span>
+        <button type="button"
+                id="rollPeriodToastClose"
+                aria-label="Close">
+            &times;
+        </button>
+    </div>
+
     <!-- ══ SCRIPTS ═════════════════════════════════════════════════ -->
 
     <script src="~/js/dropdown-escape.js" asp-append-version="true"></script>
@@ -844,6 +782,46 @@
         });
 
         document.getElementById('clUserMenu')?.classList.remove('open');
+        });
+
+
+        // Roll period availability message
+        const rollPeriodToast = document.getElementById('rollPeriodToast');
+        const rollPeriodToastText = document.getElementById('rollPeriodToastText');
+        let rollPeriodToastTimer;
+
+        function showRollPeriodMessage(message) {
+        if (!message) return;
+
+        if (!rollPeriodToast || !rollPeriodToastText) {
+        window.alert(message);
+        return;
+        }
+
+        window.clearTimeout(rollPeriodToastTimer);
+        rollPeriodToastText.textContent = message;
+        rollPeriodToast.classList.add('show');
+
+        rollPeriodToastTimer = window.setTimeout(() => {
+        rollPeriodToast.classList.remove('show');
+        }, 6000);
+        }
+
+        document.querySelectorAll('.js-roll-period-disabled').forEach(item => {
+        item.addEventListener('click', e => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        showRollPeriodMessage(
+        item.dataset.rollPeriodMessage ||
+        'This roll is not currently available for property search.'
+        );
+        });
+        });
+
+        document.getElementById('rollPeriodToastClose')?.addEventListener('click', () => {
+        window.clearTimeout(rollPeriodToastTimer);
+        rollPeriodToast?.classList.remove('show');
         });
 
         // User menu
