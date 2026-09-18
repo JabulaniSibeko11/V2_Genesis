@@ -10,7 +10,8 @@
 ═══════════════════════════════════════════════════════════════════ *@
 @{
     ViewData["Title"] = "Submission Acknowledged";
-    Layout = "~/Views/Shared/_ClientLayout.cshtml";
+   // Layout = "~/Views/Shared/_ClientLayout.cshtml";
+    Layout = "~/Views/Shared/_Legend_Layout.cshtml";
 
     bool isMulti = ViewBag.IsMulti == true;
     bool isReview = TempData.Peek("ReviewStat")?.ToString() == "R";

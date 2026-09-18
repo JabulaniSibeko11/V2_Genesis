@@ -1,7 +1,8 @@
 ﻿@model V2_Genesis.Models.ViewModels.Attributes.AttributeWithdrawalViewModel
 @{
     ViewData["Title"] = "Withdraw Attributes Submission";
-    Layout = "~/Views/Shared/_ClientLayout.cshtml";
+    //Layout = "~/Views/Shared/_ClientLayout.cshtml";
+     Layout = "~/Views/Shared/_Legend_Layout.cshtml";
 
     var returnUrl = !string.IsNullOrWhiteSpace(Model.ReturnUrl)
         ? Model.ReturnUrl

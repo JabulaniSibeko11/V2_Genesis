@@ -2,8 +2,8 @@
 @model V2_Genesis.Models.ViewModels.Attributes.AttributeSubmissionViewModel
 @{
     ViewData["Title"] = "Attribute Property Submission";
-    Layout = "~/Views/Shared/_ClientLayout.cshtml";
-
+    //Layout = "~/Views/Shared/_ClientLayout.cshtml";
+    Layout = "~/Views/Shared/_Legend_Layout.cshtml";
     bool isRes = Model.FormType == "Residential";
     bool isSt = Model.FormType == "ResidentialST";
     bool isBus = Model.FormType == "BusinessCommercial";

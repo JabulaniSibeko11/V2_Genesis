@@ -1,0 +1,313 @@
+/* ============================================================
+   GENESIS CLIENT DASHBOARD — LEGACY FRONT-END FEATURE BRANCH
+   ------------------------------------------------------------
+   Presentation only. Existing _RollDetailPartial remains the
+   source of tables/actions/business rules.
+   ============================================================ */
+
+.legacy-roll-dashboard-partial {
+    --legacy-gold: #d2a000;
+    --legacy-gold-bright: #e6b000;
+    --legacy-teal: #08737c;
+    --legacy-teal-dark: #006570;
+    --legacy-white: #ffffff;
+    --legacy-text: #183238;
+    --legacy-muted: #66777c;
+    --legacy-border: #dce4e6;
+
+    width: 100%;
+}
+
+/* The selected roll title already appears in the parent dashboard detail bar.
+   Keep the existing partial's Search Property logic available to the launcher
+   itself and remove only the duplicate info header here. */
+.legacy-roll-dashboard-partial > .cd-detail-roll-info {
+    display: none !important;
+}
+
+.legacy-roll-dashboard-partial .cd-detail-closed-notice {
+    margin: 0 0 18px;
+    border: 1px solid #ead58d;
+    border-left: 5px solid var(--legacy-gold-bright);
+    border-radius: 8px;
+    background: #fff9e7;
+}
+
+/* ── Old-dashboard accordion look ───────────────────── */
+
+.legacy-roll-dashboard-partial .cd-widget {
+    margin: 0 0 28px !important;
+    border: 0 !important;
+    border-radius: 8px !important;
+    background: transparent !important;
+    box-shadow: 0 8px 23px rgba(21, 48, 55, .10);
+    overflow: visible;
+}
+
+.legacy-roll-dashboard-partial .cd-widget-toggle {
+    min-height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    padding: 15px 22px !important;
+    border: 0 !important;
+    border-radius: 8px !important;
+    background: var(--legacy-teal) !important;
+    color: var(--legacy-white) !important;
+    cursor: pointer;
+    box-shadow: 0 5px 13px rgba(0, 101, 112, .14);
+}
+
+/* The old portal used gold for Linked Properties. */
+.legacy-roll-dashboard-partial
+.cd-widget-toggle[onclick*="-linked"] {
+    background: var(--legacy-gold) !important;
+}
+
+.legacy-roll-dashboard-partial .cd-widget-toggle:hover {
+    filter: brightness(1.03);
+}
+
+.legacy-roll-dashboard-partial .cd-widget-toggle-left {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 11px;
+}
+
+.legacy-roll-dashboard-partial .cd-widget-toggle-left > i {
+    flex: 0 0 auto;
+    width: 20px;
+    text-align: center;
+    color: #ffcf32;
+    font-size: 17px;
+}
+
+.legacy-roll-dashboard-partial
+.cd-widget-toggle[onclick*="-linked"]
+.cd-widget-toggle-left > i {
+    color: #ffffff;
+}
+
+.legacy-roll-dashboard-partial .cd-widget-toggle h3 {
+    min-width: 0;
+    margin: 0 !important;
+    color: #ffffff !important;
+    font-size: 18px !important;
+    font-weight: 800 !important;
+    line-height: 1.25;
+}
+
+.legacy-roll-dashboard-partial .cd-count-badge {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 25px;
+    padding: 4px 11px;
+    border: 0;
+    border-radius: 999px;
+    background: rgba(255,255,255,.22) !important;
+    color: #ffffff !important;
+    font-size: 10px !important;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.legacy-roll-dashboard-partial .cd-widget-chevron {
+    flex: 0 0 auto;
+    color: #ffffff !important;
+    font-size: 18px;
+    transition: transform .2s ease;
+}
+
+/* ── Expanded body / existing dynamic tables ────────── */
+
+.legacy-roll-dashboard-partial .cd-widget-body {
+    margin-top: 0;
+    border: 1px solid var(--legacy-border);
+    border-top: 0;
+    border-radius: 0 0 8px 8px;
+    background: #ffffff;
+}
+
+.legacy-roll-dashboard-partial .cd-widget-body.open {
+    padding: 16px 18px 18px;
+}
+
+.legacy-roll-dashboard-partial .table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.legacy-roll-dashboard-partial .cd-table {
+    width: 100% !important;
+    margin: 0 !important;
+    border-collapse: collapse;
+    background: #ffffff;
+}
+
+.legacy-roll-dashboard-partial .cd-table thead th {
+    border-bottom: 0 !important;
+    background: #f0bc00 !important;
+    color: #15282c !important;
+    font-size: 11px !important;
+    font-weight: 800 !important;
+    white-space: nowrap;
+}
+
+.legacy-roll-dashboard-partial .cd-table tbody td {
+    vertical-align: middle;
+    border-bottom: 1px solid #edf0f1 !important;
+    color: #354a50;
+    font-size: 11px;
+}
+
+.legacy-roll-dashboard-partial .cd-action-btn {
+    min-height: 34px;
+    border-radius: 6px;
+}
+
+/* Keep dropdown menus above the DataTable/card. */
+.legacy-roll-dashboard-partial .dropdown-menu {
+    z-index: 1080;
+}
+
+/* DataTables controls */
+.legacy-roll-dashboard-partial .dataTables_wrapper {
+    width: 100%;
+}
+
+.legacy-roll-dashboard-partial .dataTables_filter input,
+.legacy-roll-dashboard-partial .dataTables_length select {
+    min-height: 34px;
+    border: 1px solid #ccd6d8 !important;
+    border-radius: 6px;
+}
+
+.legacy-roll-dashboard-partial .dataTables_info,
+.legacy-roll-dashboard-partial .dataTables_paginate,
+.legacy-roll-dashboard-partial .dataTables_length,
+.legacy-roll-dashboard-partial .dataTables_filter {
+    color: var(--legacy-muted) !important;
+    font-size: 10px !important;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+
+/* Half-screen / tablet — use the existing DataTables Responsive
+   child-row behaviour. */
+@media (max-width: 1180px) {
+    .legacy-roll-dashboard-partial .cd-widget {
+        margin-bottom: 20px !important;
+    }
+
+    .legacy-roll-dashboard-partial .cd-widget-toggle {
+        min-height: 58px;
+        padding: 13px 16px !important;
+    }
+
+    .legacy-roll-dashboard-partial .cd-widget-toggle h3 {
+        font-size: 15px !important;
+    }
+
+    .legacy-roll-dashboard-partial .cd-widget-body.open {
+        padding: 13px;
+    }
+
+    .legacy-roll-dashboard-partial table.dataTable.dtr-inline.collapsed
+    > tbody > tr > td.dtr-control:before {
+        background: var(--legacy-teal-dark) !important;
+        border-color: var(--legacy-teal-dark) !important;
+    }
+}
+
+/* Phone */
+@media (max-width: 600px) {
+    .legacy-roll-dashboard-partial .cd-detail-closed-notice {
+        padding: 11px 12px;
+        font-size: 11px;
+        line-height: 1.5;
+    }
+
+    .legacy-roll-dashboard-partial .cd-widget {
+        margin-bottom: 14px !important;
+        border-radius: 7px !important;
+        box-shadow: 0 4px 12px rgba(21, 48, 55, .09);
+    }
+
+    .legacy-roll-dashboard-partial .cd-widget-toggle {
+        min-height: 56px;
+        gap: 8px;
+        padding: 11px 12px !important;
+        border-radius: 7px !important;
+    }
+
+    .legacy-roll-dashboard-partial .cd-widget-toggle-left {
+        gap: 8px;
+        overflow: hidden;
+    }
+
+    .legacy-roll-dashboard-partial .cd-widget-toggle-left > i {
+        width: 17px;
+        font-size: 14px;
+    }
+
+    .legacy-roll-dashboard-partial .cd-widget-toggle h3 {
+        overflow: hidden;
+        font-size: 13px !important;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .legacy-roll-dashboard-partial .cd-count-badge {
+        min-height: 22px;
+        max-width: 95px;
+        padding: 3px 8px;
+        overflow: hidden;
+        font-size: 8px !important;
+        text-overflow: ellipsis;
+    }
+
+    .legacy-roll-dashboard-partial .cd-widget-chevron {
+        font-size: 14px;
+    }
+
+    .legacy-roll-dashboard-partial .cd-widget-body.open {
+        padding: 9px;
+    }
+
+    .legacy-roll-dashboard-partial .cd-table thead th,
+    .legacy-roll-dashboard-partial .cd-table tbody td {
+        font-size: 10px !important;
+    }
+
+    .legacy-roll-dashboard-partial .cd-action-btn {
+        min-height: 32px;
+        padding: 5px 8px;
+        font-size: 9px;
+    }
+
+    .legacy-roll-dashboard-partial .dataTables_length,
+    .legacy-roll-dashboard-partial .dataTables_filter {
+        width: 100%;
+        margin: 0 0 8px !important;
+        text-align: left !important;
+    }
+
+    .legacy-roll-dashboard-partial .dataTables_filter input {
+        width: min(100%, 230px) !important;
+        margin-left: 5px !important;
+    }
+
+    .legacy-roll-dashboard-partial .dataTables_info,
+    .legacy-roll-dashboard-partial .dataTables_paginate {
+        width: 100%;
+        margin-top: 8px !important;
+        text-align: center !important;
+    }
+}

@@ -74,51 +74,82 @@ public class PropertySearchService : IPropertySearchService
 
     public async Task<List<string>> GetTownshipsAsync(string? rollSource = null)
     {
-        var cacheKey = $"PropertySearch:Townships:{rollSource?.Trim() ?? "Default"}";
-        if (_cache.TryGetValue(cacheKey, out List<string>? cachedTownships) && cachedTownships is not null)
-            return cachedTownships;
+        var source = string.IsNullOrWhiteSpace(rollSource)
+            ? "Objection"
+            : rollSource.Trim();
 
-        var connectionString = _defaultConn;
-        var townshipProcedure = SP_TOWNSHIPS;
+        var cacheKey =
+            $"PropertySearch:Townships:Roll:{source}";
 
-        // GV, LIS and all callers without a supplementary roll use the
-        // complete township list. Supplementary rolls must only display
-        // townships available in that roll's own database.
-        if (!string.IsNullOrWhiteSpace(rollSource) &&
-            rollSource.StartsWith(
-                "Objection_Supp",
-                StringComparison.OrdinalIgnoreCase) &&
-            OmissionRollRegistry.Build().TryGetValue(
-                rollSource,
-                out var supplementaryRoll))
+        if (_cache.TryGetValue(
+                cacheKey,
+                out List<string>? cachedTownships) &&
+            cachedTownships is not null)
         {
-            connectionString =
-                _config.GetConnectionString(supplementaryRoll.ConnectionKey)
-                ?? throw new InvalidOperationException(
-                    $"Connection string '{supplementaryRoll.ConnectionKey}' is missing.");
-
-            townshipProcedure = supplementaryRoll.TownSp;
+            return cachedTownships;
         }
 
-        await using var conn =
-            new SqlConnection(connectionString);
+        string connectionString;
 
-        var rows = await conn.QueryAsync<string>(
-            townshipProcedure,
-            commandType: CommandType.StoredProcedure,
-            commandTimeout: 60);
+        if (RollSearchRegistry.Configs.TryGetValue(
+                source,
+                out var rollConfig))
+        {
+            connectionString =
+                GetRollConnection(rollConfig);
+        }
+        else
+        {
+            // Default only for callers that genuinely do not represent
+            // one of the configured valuation rolls.
+            connectionString = _defaultConn;
+        }
 
-        var result = rows
-            .Where(x => !string.IsNullOrWhiteSpace(x))
-            .Select(x => x.Trim())
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .OrderBy(x => x)
-            .ToList();
+        const string townshipProcedure =
+            "dbo.propertyDetailsTown";
 
-        _cache.Set(cacheKey, result, TimeSpan.FromMinutes(30));
-        return result;
+        try
+        {
+            await using var conn =
+                new SqlConnection(connectionString);
+
+            var rows = await conn.QueryAsync<string>(
+                townshipProcedure,
+                commandType: CommandType.StoredProcedure,
+                commandTimeout: 60);
+
+            var result = rows
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Select(x => x.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(x => x)
+                .ToList();
+
+            _cache.Set(
+                cacheKey,
+                result,
+                TimeSpan.FromMinutes(30));
+
+            _logger.LogInformation(
+                "Loaded {Count} townships for Roll={RollSource} from its own roll database.",
+                result.Count,
+                source);
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Could not load township list for Roll={RollSource}. " +
+                "The application will not fall back to another roll's township list.",
+                source);
+
+            // Important: do not fall back to the GV township list.
+            // A blank list is safer than showing townships that are not on this roll.
+            return new List<string>();
+        }
     }
-
     public async Task<List<string>> GetSchemesAsync()
     {
         const string cacheKey = "PropertySearch:Schemes";

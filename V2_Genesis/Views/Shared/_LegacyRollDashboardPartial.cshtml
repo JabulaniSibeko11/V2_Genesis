@@ -1,0 +1,26 @@
+@model V2_Genesis.Models.ViewModels.Dashboard.RollDetailViewModel
+
+@*
+    FEATURE BRANCH FRONT-END WRAPPER ONLY
+
+    This wrapper deliberately reuses the existing _RollDetailPartial.cshtml.
+
+    Why:
+    - DashboardController continues to load RollData exactly as it does now.
+    - Existing stored procedures/services are unchanged.
+    - Existing Search Property / objection / appeal / notice / evidence actions are unchanged.
+    - Existing table/action business rules remain in one place.
+    - This feature branch changes presentation only.
+
+    The legacy CSS below restyles the existing widgets to match the previous
+    ObjectionSystem dashboard: Linked Properties in gold, remaining sections
+    in teal, collapsible tables underneath.
+*@
+
+<div class="legacy-roll-dashboard-partial"
+     data-roll-source="@Model.Roll.Source"
+     data-roll-name="@(Model.Roll.IsQuery ? "Section 78 Query / Review" : Model.Roll.Name)">
+
+    <partial name="_RollDetailPartial" model="Model" />
+
+</div>

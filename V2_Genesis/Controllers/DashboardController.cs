@@ -99,7 +99,7 @@ public class DashboardController : Controller
             CanLodgeObjectionForRoll = !roll.IsQuery && periodStatus == "active"
         };
 
-        return PartialView("_RollDetailPartial", vm);
+        return PartialView("_LegacyRollDashboardPartial", vm);
     }
 
     // ── On-demand Rebates detail — Tiles drawer for the Rebates tile ────

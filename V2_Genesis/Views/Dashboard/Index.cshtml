@@ -1,2342 +1,486 @@
-﻿@using System.Security.Claims
-@using System.Net
-@using V2_Genesis.Helpers
-@using V2_Genesis.Services.Interfaces
-@using V2_Genesis.Services.Implementations
-@using V2_Genesis.Services.PropertySearch
-@inject INotificationService NotificationService
-@inject IObjectionService ObjectionRules
-@model V2_Genesis.Models.ViewModels.Dashboard.ClientDashboardViewModel
+@using System.Globalization
+@using V2_Genesis.Models.ViewModels.Dashboard
+@model ClientDashboardViewModel
 
 @{
-    ViewData["Title"] = "My Dashboard";
-    Layout = "~/Views/Shared/_ClientLayout.cshtml";
+    ViewData["Title"] = "Property Services Dashboard";
+   // Layout = "~/Views/Shared/_ClientLayout.cshtml";
+    Layout = "~/Views/Shared/_Legend_Layout.cshtml";
 
-    var ann = Model.Announcement;
+    var sup4 = Model.Rolls.FirstOrDefault(x =>
+        string.Equals(x.Source, "Objection_Supp4", StringComparison.OrdinalIgnoreCase));
 
-    var dashboardUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-    var dashboardUserEmail =
-        User.FindFirstValue(ClaimTypes.Email)
-        ?? User.FindFirstValue(ClaimTypes.Name)
-        ?? User.Identity?.Name
-        ?? "";
+    var query = Model.Rolls.FirstOrDefault(x =>
+        x.IsQuery ||
+        string.Equals(x.Source, "Objection_Query", StringComparison.OrdinalIgnoreCase));
 
-    var isDashboardAdmin =
-        User.IsInRole("Admin")
-        || dashboardUserEmail.Equals("AdministrationEnquiries@Joburg.org.za", StringComparison.OrdinalIgnoreCase)
-        || System.Text.RegularExpressions.Regex.IsMatch(
-            dashboardUserEmail,
-            @"^val\.admin(1[0-9]?|[1-9])@joburg\.org\.za$",
-            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-
-    var unreadNotificationCount = await NotificationService.GetUnreadCountAsync(
-        dashboardUserId,
-        dashboardUserEmail,
-        isDashboardAdmin);
-
-    var latestNotifications = await NotificationService.GetLatestAsync(
-        dashboardUserId,
-        dashboardUserEmail,
-        isDashboardAdmin,
-        10);
-}
-@if (TempData["LodgementWindowError"] != null)
-{
-    <div class="alert alert-warning" style="border-left:5px solid #e6b000;">
-        <strong>Lodgement Period Closed</strong><br />
-        @TempData["LodgementWindowError"]
-    </div>
-}
-@if (TempData["DuplicateLodgementError"] != null)
-{
-    <div class="duplicate-lodgement-alert"
-         role="alert"
-         aria-live="assertive">
-
-        <div class="duplicate-alert-icon">
-            <i class="fa-solid fa-triangle-exclamation"></i>
-        </div>
-
-        <div class="duplicate-alert-content">
-
-            <div class="duplicate-alert-heading">
-                <span class="duplicate-alert-label">
-                    Submission Blocked
-                </span>
-
-                <h3>
-                    This submission already exists
-                </h3>
-            </div>
-
-            <p class="duplicate-alert-message">
-                @TempData["DuplicateLodgementError"]
-            </p>
-
-
-            @if (TempData["DuplicateReferenceNo"] != null ||
-                 TempData["DuplicateStatus"] != null)
-            {
-                <div class="duplicate-alert-details">
-
-                    @if (TempData["DuplicateReferenceNo"] != null)
-                    {
-                        <div class="duplicate-alert-detail">
-                            <span>
-                                Existing Reference
-                            </span>
-
-                            <strong>
-                                @TempData["DuplicateReferenceNo"]
-                            </strong>
-                        </div>
-                    }
-
-
-                    @if (TempData["DuplicateStatus"] != null)
-                    {
-                        <div class="duplicate-alert-detail">
-                            <span>
-                                Current Status
-                            </span>
-
-                            <strong>
-                                @TempData["DuplicateStatus"]
-                            </strong>
-                        </div>
-                    }
-
-                </div>
-            }
-
-
-            <div class="duplicate-alert-guidance">
-                <i class="fa-solid fa-circle-info"></i>
-
-                <span>
-                    Please use the existing submission instead of
-                    lodging another one. If you believe this is
-                    incorrect, contact Valuation Services for assistance.
-                </span>
-            </div>
-
-        </div>
-
-
-        <button type="button"
-                class="duplicate-alert-close"
-                aria-label="Close duplicate submission warning"
-                onclick="this.closest('.duplicate-lodgement-alert').remove()">
-
-            <i class="fa-solid fa-xmark"></i>
-
-        </button>
-
-    </div>
-}
-
-
-@if (TempData["DownloadError"] != null)
-{
-    <div class="alert alert-warning" style="border-left:5px solid #e6b000;">
-        <strong>Download Failed</strong><br />
-        @TempData["DownloadError"]
-    </div>
-}
-@if (TempData["NoticeError"] != null)
-{
-    <div class="alert alert-warning" style="border-left:5px solid #e6b000;">
-        <strong>Download Failed</strong><br />
-        @TempData["NoticeError"]
-    </div>
-}
-@if (TempData["PinError"] != null)
-{
-    <div class="alert alert-danger" style="border-left:5px solid #b91c1c;">
-        <strong>PIN Verification Failed</strong><br />
-        @TempData["PinError"]
-    </div>
-}
-
-@if (TempData["PinSuccess"] != null)
-{
-    <div class="alert alert-success" style="border-left:5px solid #047857;">
-        <strong>PIN Verified</strong><br />
-        @TempData["PinSuccess"]
-    </div>
-}
-
-@if (TempData["AttributeError"] != null)
-{
-    <div class="alert alert-danger" style="border-left:5px solid #b91c1c;">
-        <strong>Attribute Action Failed</strong><br />
-        @TempData["AttributeError"]
-    </div>
-}
-
-@if (TempData["AttributeSuccess"] != null)
-{
-    <div class="alert alert-success" style="border-left:5px solid #047857;">
-        <strong>Attribute Updated</strong><br />
-        @TempData["AttributeSuccess"]
-    </div>
-}
-
-@functions {
-
-    string FormatZAR(string? val)
+    var closedSources = new[]
     {
-        if (string.IsNullOrWhiteSpace(val))
-            return "–";
-
-        // Remove currency symbols and spaces only
-        var clean = val.Replace("R", "")
-                       .Replace(",", "")
-                       .Trim();
-
-        if (!decimal.TryParse(clean,
-            System.Globalization.NumberStyles.Any,
-            System.Globalization.CultureInfo.InvariantCulture,
-            out var num) || num <= 0)
-        {
-            return "–";
-        }
-
-        return "R " + num.ToString("N0",
-            new System.Globalization.CultureInfo("en-ZA"));
-
-
-      
-    }
-
-    RollDateEntry? GetDates(string rollSource)
-    {
-        Model.RollDates.TryGetValue(rollSource, out var d);
-        return d;
-    }
-
-    string PeriodStatus(RollDateEntry? d)
-    {
-        if (d is null) return "unknown";
-        var now = DateTime.Now;
-        if (now < d.OpenDate) return "upcoming";
-        if (now <= d.VisibleUntil) return "active";
-        return "closed";
-    }
-
-    string GetAttrStatusPill(string? status)
-    {
-        var displayText = AttributeStatusDisplayHelper.GetDisplayStatus(status);
-        var cssClass = AttributeStatusDisplayHelper.GetStatusCssClass(status);
-
-        return $@"
-<span class='cd-status-pill {Enc(cssClass)}'>
-    {Enc(displayText)}
-</span>";
-    }
-
-    string GetApptStatusPill(string? status)
-    {
-        var displayText = AttributeStatusDisplayHelper.GetDisplayStatus(status);
-        var cssClass = AttributeStatusDisplayHelper.GetStatusCssClass(status);
-
-        return $@"
-<span class='cd-status-pill {Enc(cssClass)}'>
-    {Enc(displayText)}
-</span>";
-    }
-
-    string GetRebateStatusPill(string? status) => status switch
-    {
-        "Acknowledge" => "<span class='cd-pill cd-pill-lodging'>Acknowledged</span>",
-        "Auto Reject" => "<span class='cd-pill cd-pill-rejected'>Auto Rejected</span>",
-        "Under Review" => "<span class='cd-pill cd-pill-inprogress'>Under Review</span>",
-        "Approved" => "<span class='cd-pill cd-pill-completed'>Approved</span>",
-        "Rejected" => "<span class='cd-pill cd-pill-rejected'>Rejected</span>",
-        _ => $"<span class='cd-pill cd-pill-pending'>{status ?? "Pending"}</span>"
+        "Objection",
+        "Objection_Supp1",
+        "Objection_Supp2",
+        "Objection_Supp3"
     };
 
-    string GetReviewStatusPill(string? status)
-    {
-        if (string.Equals(
-                status,
-                "Open",
-                StringComparison.OrdinalIgnoreCase))
-        {
-            return """
-            <span class="cd-pill cd-pill-completed">
-                Review Open
-            </span>
-            """;
-        }
+    var closedRolls = Model.Rolls
+        .Where(x => closedSources.Contains(x.Source, StringComparer.OrdinalIgnoreCase))
+        .OrderBy(x => Array.FindIndex(
+            closedSources,
+            source => source.Equals(x.Source, StringComparison.OrdinalIgnoreCase)))
+        .ToList();
 
-        return """
-        <span class="cd-pill cd-pill-rejected">
-            Review Closed
-        </span>
-        """;
+    RollData DataFor(string source) =>
+        Model.RollData.TryGetValue(source, out var data)
+            ? data
+            : new RollData();
+
+    string StatusFor(string source)
+    {
+        if (!Model.RollDates.TryGetValue(source, out var dates))
+            return "OPEN";
+
+        var now = DateTime.Now;
+
+        if (now < dates.OpenDate)
+            return "OPENING SOON";
+
+        return now <= dates.VisibleUntil
+            ? "OPEN"
+            : "CLOSED";
     }
 
-    string FormatReviewCloseDate(DateTime? closeDate)
+    string RollSubtitle(string source) => source switch
     {
-        return closeDate.HasValue
-            ? closeDate.Value.ToString("dd MMM yyyy")
-            : "Not set";
-    }
-    string ResolveSection78PropertyType(string? category)
-    {
-        var value =
-            category?.Trim()
-            ?? string.Empty;
-
-        if (
-            value.Contains(
-                "Multiple",
-                StringComparison.OrdinalIgnoreCase)
-            ||
-            value.Contains(
-                "Multipurpose",
-                StringComparison.OrdinalIgnoreCase)
-            ||
-            value.Contains(
-                "Multi Purpose",
-                StringComparison.OrdinalIgnoreCase)
-        )
-        {
-            return "Multi";
-        }
-
-        if (
-            value.Contains(
-                "Business",
-                StringComparison.OrdinalIgnoreCase)
-            ||
-            value.Contains(
-                "Commercial",
-                StringComparison.OrdinalIgnoreCase)
-            ||
-            value.Contains(
-                "Industrial",
-                StringComparison.OrdinalIgnoreCase)
-        )
-        {
-            return "Bus";
-        }
-
-        if (
-            value.Contains(
-                "Agricultural",
-                StringComparison.OrdinalIgnoreCase)
-            ||
-            value.Contains(
-                "Agriculture",
-                StringComparison.OrdinalIgnoreCase)
-        )
-        {
-            return "Agric";
-        }
-
-        return "Res";
-    }
-    string ResolveNotificationRoll(
-    string? referenceNumber,
-    string? storedRollSource)
-    {
-        var reference =
-            referenceNumber?.Trim()
-            ?? string.Empty;
-
-        if (reference.StartsWith(
-                "APP-GV23-SUP4-",
-                StringComparison.OrdinalIgnoreCase) ||
-            reference.StartsWith(
-                "GV23-SUP4-",
-                StringComparison.OrdinalIgnoreCase))
-        {
-            return "Objection_Supp4";
-        }
-
-        if (reference.StartsWith(
-                "APP-GV23-SUP3-",
-                StringComparison.OrdinalIgnoreCase) ||
-            reference.StartsWith(
-                "GV23-SUP3-",
-                StringComparison.OrdinalIgnoreCase))
-        {
-            return "Objection_Supp3";
-        }
-
-        if (reference.StartsWith(
-                "APP-GV23-SUP2-",
-                StringComparison.OrdinalIgnoreCase) ||
-            reference.StartsWith(
-                "GV23-SUP2-",
-                StringComparison.OrdinalIgnoreCase))
-        {
-            return "Objection_Supp2";
-        }
-
-        if (reference.StartsWith(
-                "APP-GV23-SUP1-",
-                StringComparison.OrdinalIgnoreCase) ||
-            reference.StartsWith(
-                "GV23-SUP1-",
-                StringComparison.OrdinalIgnoreCase))
-        {
-            return "Objection_Supp1";
-        }
-
-        if (reference.StartsWith(
-                "APP-GV23-",
-                StringComparison.OrdinalIgnoreCase) ||
-            reference.StartsWith(
-                "GV23-",
-                StringComparison.OrdinalIgnoreCase))
-        {
-            return "Objection";
-        }
-
-        if (reference.Contains(
-                "QUE",
-                StringComparison.OrdinalIgnoreCase))
-        {
-            return "Objection_Query";
-        }
-
-        return storedRollSource?.Trim()
-               ?? string.Empty;
-    }
-
-    string ResolveNotificationUrl(
-        V2_Genesis.Models.Notifications.Notifications note)
-    {
-        var roll =
-            ResolveNotificationRoll(
-                note.ReferenceNumber,
-                note.RollSource);
-
-        if (!string.IsNullOrWhiteSpace(roll))
-        {
-            return "/Dashboard?openRoll="
-                + Uri.EscapeDataString(roll);
-        }
-
-        return !string.IsNullOrWhiteSpace(note.Url)
-            ? note.Url
-            : "javascript:void(0)";
-    }
+        "Objection" => "General Valuation Roll 2023",
+        "Objection_Supp1" => "Supplementary Roll 1",
+        "Objection_Supp2" => "Supplementary Roll 2",
+        "Objection_Supp3" => "Supplementary Roll 3",
+        "Objection_Supp4" => "Supplementary Roll 4",
+        _ => source
+    };
 }
 
+<link rel="stylesheet"
+      href="~/css/Views/legacy-client-dashboard.css"
+      asp-append-version="true" />
 
+<div class="legacy-dashboard">
 
-@section Styles {
-    @* DataTables / Responsive vendor CSS is loaded once in _ClientLayout.
-       Keep this view free of duplicate DataTables CSS to avoid conflicts. *@
-
-    <style>
-        /* ============================================================
-                   Pensioner Rates Rebate information modal
-                   Client Dashboard only
-                ============================================================ */
-
-        .rebate-notice-modal {
-            position: fixed;
-            inset: 0;
-            z-index: 100000;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            background: rgba(8, 25, 29, .84);
-            backdrop-filter: blur(4px);
-            -webkit-backdrop-filter: blur(4px);
-        }
-
-            .rebate-notice-modal.is-open {
-                display: flex;
-            }
-
-        body.rebate-notice-modal-open {
-            overflow: hidden;
-        }
-
-        .rebate-notice-dialog {
-            position: relative;
-            width: min(780px, 96vw);
-            max-height: 95vh;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            background: #fff;
-            border-radius: 16px;
-            box-shadow: 0 24px 70px rgba(0, 0, 0, .38);
-            animation: rebateNoticeEnter .22s ease-out;
-        }
-
-        @@keyframes rebateNoticeEnter {
-            from {
-                opacity: 0;
-                transform: translateY(12px) scale(.985);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-        }
-
-        .rebate-notice-close {
-            position: absolute;
-            top: 12px;
-            right: 12px;
-            z-index: 10;
-            width: 42px;
-            height: 42px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            border: 0;
-            border-radius: 50%;
-            background: #172f34;
-            color: #fff;
-            font-size: 19px;
-            cursor: pointer;
-            box-shadow: 0 4px 14px rgba(0, 0, 0, .25);
-            transition: background .2s ease, color .2s ease, transform .2s ease;
-        }
-
-            .rebate-notice-close:hover,
-            .rebate-notice-close:focus-visible {
-                background: #e6b000;
-                color: #172f34;
-                transform: scale(1.06);
-            }
-
-            .rebate-notice-close:focus-visible,
-            .rebate-notice-continue:focus-visible {
-                outline: 3px solid rgba(230, 176, 0, .55);
-                outline-offset: 2px;
-            }
-
-        .rebate-notice-header {
-            flex: 0 0 auto;
-            padding: 18px 70px 15px 20px;
-            border-bottom: 1px solid #e6eaeb;
-            background: #fff;
-        }
-
-        .rebate-notice-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            margin-bottom: 5px;
-            color: #9b7600;
-            font-size: 10px;
-            font-weight: 800;
-            letter-spacing: .8px;
-            text-transform: uppercase;
-        }
-
-        .rebate-notice-header h2 {
-            margin: 0;
-            color: #173a40;
-            font-size: 19px;
-            font-weight: 800;
-            line-height: 1.3;
-        }
-
-        .rebate-notice-header p {
-            margin: 4px 0 0;
-            color: #6c7b80;
-            font-size: 12px;
-            line-height: 1.45;
-        }
-
-        .rebate-notice-image-wrap {
-            flex: 1 1 auto;
-            min-height: 0;
-            display: flex;
-            align-items: flex-start;
-            justify-content: center;
-            overflow: auto;
-            padding: 12px;
-            background: #eef2f3;
-            overscroll-behavior: contain;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        .rebate-notice-image {
-            display: block;
-            width: auto;
-            max-width: 100%;
-            height: auto;
-            max-height: 70vh;
-            object-fit: contain;
-            border-radius: 5px;
-            background: #fff;
-        }
-
-        .rebate-notice-footer {
-            flex: 0 0 auto;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 16px;
-            padding: 13px 18px;
-            border-top: 1px solid #e4e9ea;
-            background: #fff;
-        }
-
-            .rebate-notice-footer > span {
-                display: flex;
-                align-items: center;
-                gap: 7px;
-                color: #68777c;
-                font-size: 11px;
-                line-height: 1.4;
-            }
-
-                .rebate-notice-footer > span i {
-                    color: #e6b000;
-                }
-
-        .rebate-notice-continue {
-            flex: 0 0 auto;
-            min-height: 39px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            padding: 0 15px;
-            border: 0;
-            border-radius: 8px;
-            background: #e6b000;
-            color: #173a40;
-            font-size: 11px;
-            font-weight: 800;
-            cursor: pointer;
-            transition: background .2s ease, transform .2s ease;
-        }
-
-            .rebate-notice-continue:hover {
-                background: #f2c21c;
-                transform: translateY(-1px);
-            }
-
-        /* Tablet / phone */
-        @@media (max-width: 767.98px) {
-            .rebate-notice-modal {
-                padding: 10px;
-            }
-
-            .rebate-notice-dialog {
-                width: 100%;
-                max-height: 96vh;
-                border-radius: 12px;
-            }
-
-            .rebate-notice-header {
-                padding: 15px 58px 13px 14px;
-            }
-
-                .rebate-notice-header h2 {
-                    font-size: 16px;
-                }
-
-                .rebate-notice-header p {
-                    font-size: 10.5px;
-                }
-
-            .rebate-notice-close {
-                top: 9px;
-                right: 9px;
-                width: 38px;
-                height: 38px;
-                font-size: 17px;
-            }
-
-            .rebate-notice-image-wrap {
-                padding: 7px;
-            }
-
-            .rebate-notice-image {
-                max-height: 72vh;
-            }
-
-            .rebate-notice-footer {
-                flex-direction: column;
-                align-items: stretch;
-                padding: 10px 12px;
-            }
-
-                .rebate-notice-footer > span {
-                    font-size: 10px;
-                }
-
-            .rebate-notice-continue {
-                width: 100%;
-                min-height: 42px;
-            }
-        }
-
-        /* Very small phones */
-        @@media (max-width: 420px) {
-            .rebate-notice-modal {
-                padding: 6px;
-            }
-
-            .rebate-notice-dialog {
-                max-height: 98vh;
-                border-radius: 10px;
-            }
-
-            .rebate-notice-header {
-                padding-top: 12px;
-                padding-bottom: 10px;
-            }
-
-                .rebate-notice-header h2 {
-                    font-size: 14px;
-                }
-
-            .rebate-notice-image {
-                max-height: 68vh;
-            }
-
-            .rebate-notice-footer {
-                padding: 8px 10px;
-            }
-        }
-
-        @@media (prefers-reduced-motion: reduce) {
-            .rebate-notice-dialog {
-                animation: none;
-            }
-
-            .rebate-notice-close,
-            .rebate-notice-continue {
-                transition: none;
-            }
-        }
-    </style>
-}
-
-<!-- ── Welcome strip ──────────────────────────────────────────────────── -->
-<div class="ann-bar @ann.BadgeCss">
-    <div class="ann-inner">
-
-        <span class="ann-badge @ann.BadgeCss">
-            <span class="ann-dot"></span>
-            @ann.BadgeText
-        </span>
-
-       
-        <span class="ann-text">
-            <span>@ann.Message</span>
-        </span>
-
-        
-        @if (ann.DaysLeft > 0)
-        {
-            <span class="ann-days @ann.DaysCss">
-                <i class="fa-solid fa-calendar-days"></i>
-                @ann.DaysLeft @(ann.DaysLeft == 1 ? "day" : "days") remaining
-            </span>
-        }
-
+    <div class="legacy-dashboard-announcement">
+        <i class="fa-solid fa-bullhorn"></i>
+        <span>@Model.Announcement.Message</span>
     </div>
-</div>
 
+    <section class="legacy-dashboard-heading">
+        <span class="legacy-dashboard-kicker">CITY OF JOHANNESBURG · VALUATION SERVICES</span>
+        <h1>Property Services – Supplementary Rolls and Rebates</h1>
+        <span class="legacy-dashboard-heading-line"></span>
+    </section>
 
-<div class="cd-hero">
-    <div class="cd-welcome-inner">
-        <div class="cd-welcome-left">
+    <div class="legacy-dashboard-grid">
 
-            <!-- Avatar initial box -->
-            <div class="cd-hero-avatar">
-                @(Model.DisplayName?.Substring(0, 1).ToUpper() ?? "U")
-            </div>
+        @if (sup4 is not null)
+        {
+            var data = DataFor(sup4.Source);
+            var status = StatusFor(sup4.Source);
 
-            <div>
-                <div class="cd-welcome-eyebrow">
-                    <span></span>
-                    @(Model.IsCompany ? "Company Account" : "Individual Account") &nbsp;·&nbsp; Property Dashboard
+            <article class="legacy-service-card legacy-service-card-teal">
+                <div class="legacy-service-status @(status == "OPEN" ? "is-open" : "is-closed")">
+                    @status
                 </div>
-                <h1 class="cd-welcome-name">
-                    Welcome back,&nbsp;<em>@Model.DisplayName</em>
-                    <span class="cd-welcome-wave">👋</span>
-                </h1>
-                <p class="cd-welcome-sub">
-                    City of Johannesburg
-                    <span class="cd-welcome-dot"></span>
-                    Valuation Portal
+
+                <div class="legacy-service-icon">
+                    <i class="fa-solid fa-scroll"></i>
+                </div>
+
+                <h2>Supplementary Roll 4</h2>
+
+                <p>
+                    Search, link and manage properties for the current
+                    supplementary valuation roll.
                 </p>
-            </div>
-        </div>
 
-        <!-- Notification bell -->
-        <div class="cd-notification-wrap">
-            <button type="button" class="cd-notification-btn" id="notificationBellBtn">
-                <i class="fa-solid fa-bell"></i>
-                @if (unreadNotificationCount > 0)
-                {
-                    <span class="cd-notification-count">@unreadNotificationCount</span>
-                }
-            </button>
-
-            <div class="cd-notification-panel" id="notificationPanel">
-                <div class="cd-notification-head">
-                    <strong>Notifications</strong>
-                    <span>@unreadNotificationCount unread</span>
+                <div class="legacy-service-stats">
+                    <span><i class="fa-solid fa-link"></i> @data.LinkedCount Linked</span>
+                    <span><i class="fa-solid fa-file-pen"></i> @data.ObjectedCount Objections</span>
+                    <span><i class="fa-solid fa-gavel"></i> @data.AppealsCount Appeals</span>
                 </div>
-                @if (!latestNotifications.Any())
-                {
-                    <div class="cd-notification-empty">
-                        <i class="fa-solid fa-bell-slash" style="font-size:24px;color:#ddd;display:block;margin-bottom:8px;"></i>
-                        No notifications yet.
-                    </div>
-                }
-                else
-                {
-                    <div class="cd-notification-list">
-                        @foreach (var note in latestNotifications)
-                        {
-                            var noteType = string.IsNullOrWhiteSpace(note.NotificationType) ? "Info" : note.NotificationType;
-                            <a class="cd-notification-item @(note.IsRead ? "" : "unread")"
-                                   href="@(string.IsNullOrWhiteSpace(note.Url) ? "javascript:void(0)" : note.Url)">
-                                <div class="cd-note-icon cd-note-@noteType.ToLower()">
-                                    <i class="fa-solid @(noteType == "Success" ? "fa-circle-check" : noteType == "Warning" ? "fa-triangle-exclamation" : noteType == "Error" ? "fa-circle-xmark" : "fa-circle-info")"></i>
-                                </div>
-                                <div class="cd-note-body">
-                                    <strong>@(note.Title ?? "Notification")</strong>
-                                    <p>@note.Message</p>
-                                    @if (!string.IsNullOrWhiteSpace(note.ReferenceNumber))
-                                    {
-                                        <span class="cd-note-ref">@note.ReferenceNumber</span>
-                                    }
-                                    <small>@note.CreatedDate.ToString("dd MMM yyyy HH:mm")</small>
-                                </div>
-                            </a>
-                        }
-                    </div>
-                }
-            </div>
-        </div>
-    </div>
-</div>
-@if (TempData["LinkSuccess"] != null)
-{
-    <div class="dash-link-alert dash-link-success">
-        <i class="fa-solid fa-circle-check"></i>
-        <div>
-            <strong>Property Linked!</strong>
-            @TempData["LinkSuccess"]
-        </div>
-        <button onclick="this.closest('.dash-link-alert').remove()">
-            <i class="fa-solid fa-xmark"></i>
-        </button>
-    </div>
-}
 
-@if (TempData["LinkError"] != null)
-{
-    <div class="dash-link-alert dash-link-error">
-        <i class="fa-solid fa-circle-exclamation"></i>
-        <div>
-            <strong>Could Not Link Property</strong>
-            @TempData["LinkError"]
-        </div>
-        <button onclick="this.closest('.dash-link-alert').remove()">
-            <i class="fa-solid fa-xmark"></i>
-        </button>
-    </div>
-}
-@if (TempData["ReviewStatus"] != null)
-{
-    var reviewStatus =
-        TempData["ReviewStatus"]?.ToString();
-
-    <div class="dash-link-alert
-        @(string.Equals(
-                                                                                                                                          reviewStatus,
-                                                                                                                                          "Open",
-                                                                                                                                          StringComparison.OrdinalIgnoreCase)
-                                                                                                                                          ? "dash-link-success"
-                                                                                                                                          : "dash-link-error")">
-
-        <i class="fa-solid
-            @(string.Equals(
-                                                                                                                                                                          reviewStatus,
-                                                                                                                                                                          "Open",
-                                                                                                                                                                          StringComparison.OrdinalIgnoreCase)
-                                                                                                                                                                          ? "fa-unlock"
-                                                                                                                                                                          : "fa-lock")">
-        </i>
-
-        <div>
-            <strong>
-                Section 78 status:
-                @reviewStatus
-            </strong>
-
-            @if (TempData["ReviewCloseDate"] != null)
-            {
-                <div>
-                    Review closing date:
-                    @TempData["ReviewCloseDate"]
-                </div>
-            }
-        </div>
-    </div>
-}
-
-
-@{
-    var families = Model.Rolls.Where(r => !r.IsQuery)
-                               .GroupBy(r => r.Main_Roll)
-                               .ToList();
-    var queryRolls = Model.Rolls.Where(r => r.IsQuery).ToList();
-
-    var familyLookup = families.Select(fam =>
-    {
-        var head = fam.FirstOrDefault(r => r.IsGv) ?? fam.First();
-        var membersOrdered = fam.OrderBy(r => r.Source == head.Source ? 0 : 1)
-                                 .ThenBy(r => r.Source)
-                                 .Select(r => new { source = r.Source, name = r.Name, shortName = r.Short })
-                                 .ToList();
-        return new { headSource = head.Source, members = membersOrdered };
-    }).ToList();
-}
-
-<!-- ── Client dashboard: family tiles + persistent tab strip ──────────── -->
-<div class="cd-body" id="cdMainBody">
-
-    <p class="cd-intro-note">
-        <i class="fa-solid fa-circle-info"></i>
-        Tap a card below to see your properties, objections and appeals for that roll.
-    </p>
-
-    <div class="cd-tile-grid" id="cdTileGrid">
-        @foreach (var fam in families)
-        {
-            var head = fam.FirstOrDefault(r => r.IsGv) ?? fam.First();
-            var members = fam.OrderBy(r => r.Source == head.Source ? 0 : 1).ThenBy(r => r.Source).ToList();
-            var totalLinked = fam.Sum(r => (Model.RollData.GetValueOrDefault(r.Source) ?? new()).LinkedCount);
-            var totalObjected = fam.Sum(r => (Model.RollData.GetValueOrDefault(r.Source) ?? new()).ObjectedCount);
-            var totalAppeals = fam.Sum(r => (Model.RollData.GetValueOrDefault(r.Source) ?? new()).AppealsCount);
-            var dates = GetDates(head.Source);
-            var periodStatus = PeriodStatus(dates);
-            var membersJson = System.Text.Json.JsonSerializer.Serialize(
-                members.Select(m => new { source = m.Source, name = m.Name, shortName = m.Short }));
-
-            <div class="cd-tile cd-tile-family"
-                 data-head-source="@head.Source"
-                 data-members="@membersJson"
-                 onclick="openFamily(this)">
-
-                @if (members.Count > 1)
-                {
-                    <span class="cd-tile-family-count">
-                        <i class="fa-solid fa-layer-group"></i> @members.Count rolls
-                    </span>
-                }
-
-                <div class="cd-tile-icon"><i class="fa-solid fa-landmark"></i></div>
-                <h3 class="cd-tile-name">@head.Name</h3>
-
-                @if (members.Count > 1)
-                {
-                    <span class="cd-tile-cta">
-                        <i class="fa-solid fa-arrow-turn-down-right"></i>
-                        Click to open @head.Short and all @(members.Count - 1) supplementary rolls
-                    </span>
-                }
-                else
-                {
-                    <span class="cd-tile-short">@head.Short</span>
-                }
-
-                <div class="cd-tile-stats">
-                    <span title="Linked"><i class="fa-solid fa-link"></i> @totalLinked</span>
-                    <span title="Objections"><i class="fa-solid fa-file-pen"></i> @totalObjected</span>
-                    @if (totalAppeals > 0)
+                <div class="legacy-service-actions">
+                    @if (status == "OPEN")
                     {
-                        <span title="Appeals"><i class="fa-solid fa-gavel"></i> @totalAppeals</span>
+                        <a href="/search/Objection_Supp4"
+                           class="legacy-btn legacy-btn-primary">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            Search Property
+                        </a>
                     }
+
+                    <button type="button"
+                            class="legacy-btn legacy-btn-secondary"
+                            onclick="openLegacyRoll('Objection_Supp4', 'Supplementary Roll 4')">
+                        <i class="fa-solid fa-table-list"></i>
+                        Dashboard
+                    </button>
                 </div>
-
-                @if (dates is not null)
-                {
-                    <span class="cd-tile-badge cd-badge-@periodStatus">
-                        @(periodStatus == "active" ? "Objection Open" :
-                          periodStatus == "upcoming" ? "Opening Soon" :
-                          "Objection Closed")
-                    </span>
-                }
-
-                <span class="cd-tile-open-hint">
-                    View Details <i class="fa-solid fa-arrow-right"></i>
-                </span>
-            </div>
+            </article>
         }
 
-        @foreach (var roll in queryRolls)
+        @if (query is not null)
         {
-            var rd = Model.RollData.GetValueOrDefault(roll.Source) ?? new();
+            var data = DataFor(query.Source);
 
-           
-            var queryDisplayName = "Section 78 Query/Review";
+            <article class="legacy-service-card legacy-service-card-teal">
+                <div class="legacy-service-status is-open">OPEN</div>
 
-
-            <div class="cd-tile cd-tile-query"
-                 data-drawer-url="/dashboard/roll-detail/@roll.Source"
-                 data-roll-name="@queryDisplayName"
-                 onclick="openStandalone(this)">
-
-                <div class="cd-tile-icon">
+                <div class="legacy-service-icon">
                     <i class="fa-solid fa-magnifying-glass-chart"></i>
                 </div>
 
-                <h3 class="cd-tile-name">@queryDisplayName</h3>
-                <span class="cd-tile-short">@roll.Short</span>
-                <div class="cd-tile-stats">
-                    <span title="Linked"><i class="fa-solid fa-link"></i> @rd.LinkedCount</span>
-                    <span title="Queries"><i class="fa-solid fa-file-magnifying-glass"></i> @rd.ObjectedCount</span>
+                <h2>Section 78 Query / Review</h2>
+
+                <p>
+                    Lodge or track a Section 78 Query and, where available,
+                    continue with the Review process.
+                </p>
+
+                <div class="legacy-service-stats">
+                    <span><i class="fa-solid fa-link"></i> @data.LinkedCount Linked</span>
+                    <span><i class="fa-solid fa-file-circle-question"></i> @data.ObjectedCount Submissions</span>
                 </div>
-                <span class="cd-tile-badge cd-badge-open">OPEN</span>
-                <span class="cd-tile-open-hint">View Details <i class="fa-solid fa-arrow-right"></i></span>
-            </div>
+
+                <div class="legacy-service-actions">
+                    <a href="/search/Objection_Query"
+                       class="legacy-btn legacy-btn-primary">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        Search Property
+                    </a>
+
+                    <button type="button"
+                            class="legacy-btn legacy-btn-secondary"
+                            onclick="openLegacyRoll('@query.Source', 'Section 78 Query / Review')">
+                        <i class="fa-solid fa-table-list"></i>
+                        Dashboard
+                    </button>
+                </div>
+            </article>
         }
 
-        <div class="cd-tile cd-tile-rebates"
-             data-drawer-url="/dashboard/rebates-detail"
-             data-roll-name="Rebates"
-             onclick="openRebateNotice(this)">
+        <article class="legacy-service-card legacy-service-card-gold">
+            <div class="legacy-service-status is-open">OPEN</div>
 
-            <div class="cd-tile-icon">
+            <div class="legacy-service-icon">
                 <i class="fa-solid fa-percent"></i>
             </div>
 
-            <h3 class="cd-tile-name">
-                Rebates
-            </h3>
+            <h2>Rebates Process</h2>
 
-            <span class="cd-tile-short">
-                Apply or track your property rate rebates
-            </span>
-            <div class="cd-tile-stats">
-                <span title="Applications"><i class="fa-solid fa-file-pen"></i> @(Model.Rebates?.Count ?? 0)</span>
-            </div>
-            <span class="cd-tile-badge cd-badge-open">OPEN</span>
-            <span class="cd-tile-open-hint">View Details <i class="fa-solid fa-arrow-right"></i></span>
-        </div>
+            <p>
+                Apply for and track City of Johannesburg property rate rebate applications.
+            </p>
 
-        <div class="cd-tile cd-tile-attributes" data-drawer-url="/dashboard/attributes-detail" data-roll-name="Property Attributes" onclick="openStandalone(this)">
-            <div class="cd-tile-icon"><i class="fa-solid fa-clipboard-list"></i></div>
-            <h3 class="cd-tile-name">Property Attributes</h3>
-            <span class="cd-tile-short">Submit updated property information</span>
-            <div class="cd-tile-stats">
-                <span title="Linked"><i class="fa-solid fa-link"></i> @Model.AttributesLinked.Count</span>
-                <span title="Submissions"><i class="fa-solid fa-file-pen"></i> @Model.AttributesData.SubmissionCount</span>
-            </div>
-            <span class="cd-tile-badge cd-badge-open">NEW</span>
-            <span class="cd-tile-open-hint">View Details <i class="fa-solid fa-arrow-right"></i></span>
-        </div>
-
-    </div>
-
-    <!-- ── Detail area — shown after a tile is clicked ────────────────── -->
-    <div id="cdDetailArea" style="display:none;">
-        <button type="button" class="cd-back-btn" onclick="closeDetail()">
-            <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
-        </button>
-
-        <div id="cdFamilyContext" class="cd-family-context" style="display:none;"></div>
-
-        <div id="cdFamilyTabs" class="cd-family-tabs" style="display:none;"></div>
-
-        <div id="cdDetailBody">
-            <div class="cd-roll-loading">
-                <i class="fa-solid fa-circle-notch fa-spin"></i> Loading…
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- ═══════════════════════════════════════════════
-     PENSIONER RATES REBATE INFORMATION MODAL
-═══════════════════════════════════════════════ -->
-<div id="rebateNoticeModal"
-     class="rebate-notice-modal"
-     role="dialog"
-     aria-modal="true"
-     aria-hidden="true"
-     aria-labelledby="rebateNoticeTitle">
-
-    <div class="rebate-notice-dialog">
-
-        <!-- Close and continue to Rebates -->
-        <button type="button"
-                id="rebateNoticeClose"
-                class="rebate-notice-close"
-                aria-label="Close notice and continue to Rebates"
-                onclick="closeRebateNoticeAndOpenDashboard()">
-
-            <i class="fa-solid fa-xmark"></i>
-
-        </button>
-
-
-        <div class="rebate-notice-header">
-
-            <div>
-                <span class="rebate-notice-badge">
-                    <i class="fa-solid fa-circle-info"></i>
-                    Important Information
+            <div class="legacy-service-stats">
+                <span>
+                    <i class="fa-solid fa-file-pen"></i>
+                    @(Model.Rebates?.Count ?? 0) Applications
                 </span>
-
-                <h2 id="rebateNoticeTitle">
-                    Pensioner Property Rates Rebates
-                </h2>
-
-                <p>
-                    Please review this important rebate information
-                    before continuing.
-                </p>
             </div>
 
-        </div>
+            <div class="legacy-service-actions">
+                <a href="/Rebates/Index"
+                   class="legacy-btn legacy-btn-primary legacy-btn-gold">
+                    <i class="fa-solid fa-file-signature"></i>
+                    Apply for Rebates
+                </a>
 
+                <button type="button"
+                        class="legacy-btn legacy-btn-secondary"
+                        onclick="openLegacyService('/dashboard/rebates-detail', 'Rebates')">
+                    <i class="fa-solid fa-table-list"></i>
+                    Dashboard
+                </button>
+            </div>
+        </article>
 
-        <div class="rebate-notice-image-wrap">
+        <article class="legacy-service-card legacy-service-card-gold">
+            <div class="legacy-service-status is-open">OPEN</div>
 
-              <img src="~/images/pensioner_property_rates_rebates_2027.jpg" 
-                 asp-append-version="true"
-                 class="rebate-notice-image"
-                 alt="City of Johannesburg Pensioner Property Rates Rebates information notice" />
-          
-        </div>
+            <div class="legacy-service-icon">
+                <i class="fa-solid fa-clipboard-list"></i>
+            </div>
 
+            <h2>Property Attributes</h2>
 
-        <div class="rebate-notice-footer">
+            <p>
+                Submit updated property attribute information and track
+                inspections, corrections and approvals.
+            </p>
 
+            <div class="legacy-service-stats">
+                <span>
+                    <i class="fa-solid fa-link"></i>
+                    @Model.AttributesLinked.Count Linked
+                </span>
+                <span>
+                    <i class="fa-solid fa-file-pen"></i>
+                    @Model.AttributesData.SubmissionCount Submissions
+                </span>
+            </div>
+
+            <div class="legacy-service-actions">
+                <a href="/attributes/search"
+                   class="legacy-btn legacy-btn-primary legacy-btn-gold">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    Search Property
+                </a>
+
+                <button type="button"
+                        class="legacy-btn legacy-btn-secondary"
+                        onclick="openLegacyService('/dashboard/attributes-detail', 'Property Attributes')">
+                    <i class="fa-solid fa-table-list"></i>
+                    Dashboard
+                </button>
+            </div>
+        </article>
+
+    </div>
+
+    <section class="legacy-archive">
+        <button type="button"
+                class="legacy-archive-toggle"
+                id="legacyArchiveToggle"
+                aria-expanded="false"
+                onclick="toggleLegacyArchive()">
             <span>
-                <i class="fa-solid fa-circle-info"></i>
-                Close this notice to continue to your Rebates dashboard.
+                <i class="fa-solid fa-bolt"></i>
+                <strong>Quick Access – Previous Valuation Rolls</strong>
+                <small>View GV23 and closed supplementary rolls</small>
             </span>
+
+            <i class="fa-solid fa-chevron-down legacy-archive-chevron"
+               id="legacyArchiveChevron"></i>
+        </button>
+
+        <div class="legacy-archive-body"
+             id="legacyArchiveBody"
+             hidden>
+
+            @foreach (var roll in closedRolls)
+            {
+                var data = DataFor(roll.Source);
+
+                <article class="legacy-archive-card">
+                    <div>
+                        <span class="legacy-archive-badge">CLOSED</span>
+                        <h3>@RollSubtitle(roll.Source)</h3>
+                        <p>
+                            @data.LinkedCount linked ·
+                            @data.ObjectedCount objections ·
+                            @data.AppealsCount appeals
+                        </p>
+                    </div>
+
+                    <button type="button"
+                            class="legacy-btn legacy-btn-secondary"
+                            onclick="openLegacyRoll('@roll.Source', '@RollSubtitle(roll.Source)')">
+                        <i class="fa-solid fa-table-list"></i>
+                        Dashboard
+                    </button>
+                </article>
+            }
+
+        </div>
+    </section>
+
+    <section class="legacy-detail"
+             id="legacyDetail"
+             hidden>
+
+        <div class="legacy-detail-head">
+            <div>
+                <span>MY PROPERTY SERVICES</span>
+                <h2 id="legacyDetailTitle">Dashboard</h2>
+            </div>
 
             <button type="button"
-                    class="rebate-notice-continue"
-                    onclick="closeRebateNoticeAndOpenDashboard()">
-
-                Continue to Rebates
-
-                <i class="fa-solid fa-arrow-right"></i>
-
+                    class="legacy-btn legacy-btn-secondary"
+                    onclick="closeLegacyDetail()">
+                <i class="fa-solid fa-arrow-left"></i>
+                Back
             </button>
-
         </div>
 
-    </div>
-
-</div>
-<script id="cdFamilyLookupData" type="application/json">
-    @Html.Raw(System.Text.Json.JsonSerializer.Serialize(familyLookup))
-</script>
-
-<div id="statusExplainModal" class="status-modal-backdrop" style="display:none;">
-    <div class="status-modal">
-        <div class="status-modal-header">
-            <div>
-                <h4 id="statusExplainTitle">Status Information</h4>
-                <p>What this status means</p>
+        <div id="legacyDetailBody">
+            <div class="legacy-loading">
+                <i class="fa-solid fa-circle-notch fa-spin"></i>
+                Loading…
             </div>
-
-            <button type="button" id="closeStatusExplainModal">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
         </div>
+    </section>
 
-        <div class="status-modal-body">
-            <p id="statusExplainMessage"></p>
-        </div>
-
-        <div class="status-modal-footer">
-            <button type="button" id="okayStatusExplainModal">
-                Okay
-            </button>
-        </div>
-    </div>
 </div>
-
-
-@functions {
-    string Enc(string? value)
-    {
-        return WebUtility.HtmlEncode(value ?? "");
-    }
-
-    string GetStatusDisplayText(string? status) => status switch
-    {
-        "Obj-Unallocated" or "Obj-Section51" => "Obj-Pending",
-        "Obj-Inprogress" or "Obj-Pending-Approval" or "Obj-Rejected" => "Obj-InProgress",
-        "Obj-Lodging" => "Obj-Lodging",
-        "Obj-PenTest" => "Invalid",
-
-        "App-Unallocated" => "App-Unallocated",
-        "App-Lodging" => "App-Lodging",
-        "App-Finalized" => "App-Finalized",
-
-        "Query-Lodging" => "Query-Lodging",
-        "Query-Unallocated" => "Query-Pending",
-        "Query-Inprogress" => "Query-InProgress",
-        "Query-Finalized" or "Notice-Sent" => "Finalised",
-        "Query-Withdrawn" => "Withdrawn",
-
-        null or "" => "Pending",
-        _ => status
-    };
-
-    string GetStatusPill(string? status)
-    {
-        var title = StatusExplanationHelper.GetTitle(status);
-        var description = StatusExplanationHelper.GetDescription(status);
-        var badgeClass = StatusExplanationHelper.GetBadgeClass(status);
-        var displayText = GetStatusDisplayText(status);
-
-        return $@"
-<span class='client-status-badge cd-pill {Enc(badgeClass)}'
-      title='{Enc(description)}'
-      data-status-title='{Enc(title)}'
-      data-status-message='{Enc(description)}'>
-    {Enc(displayText)}
-    <i class='fa-solid fa-circle-question status-help-icon'></i>
-</span>";
-    }
-}
 
 @section Scripts {
-    @* DataTables / Responsive / Buttons scripts are loaded once by _ClientLayout. *@
-    <script>
-        // ============================================================
-        // Dashboard JS - Combined
-        // ============================================================
+<script>
+    const legacyDetailCache = {};
 
-        // ── Family tiles + persistent tab strip ──────────────────────
-        const detailCache = {};
-        let familyLookup = [];
-        const dashboardOpenRollKey = 'v2genesis.dashboard.openRoll';
+    function toggleLegacyArchive() {
+        const body = document.getElementById('legacyArchiveBody');
+        const button = document.getElementById('legacyArchiveToggle');
+        const chevron = document.getElementById('legacyArchiveChevron');
 
-        function rememberDashboardRoll(source) {
-        if (!source) return;
+        if (!body || !button) return;
 
-        try {
-        window.sessionStorage.setItem(dashboardOpenRollKey, source);
-        } catch (e) {
-        // The dashboard still works when browser storage is unavailable.
-        }
-        }
+        const willOpen = body.hidden;
+        body.hidden = !willOpen;
+        button.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+        chevron?.classList.toggle('is-open', willOpen);
+    }
 
-        function getRememberedDashboardRoll() {
-        try {
-        return window.sessionStorage.getItem(dashboardOpenRollKey);
-        } catch (e) {
-        return null;
-        }
-        }
-
-        function clearRememberedDashboardRoll() {
-        try {
-        window.sessionStorage.removeItem(dashboardOpenRollKey);
-        } catch (e) {
-        }
-        }
-
-        try {
-        familyLookup = JSON.parse(document.getElementById('cdFamilyLookupData').textContent);
-        } catch (e) {
-        familyLookup = [];
-        }
-
-        function openFamily(tileEl) {
-        let members;
-        try {
-        members = JSON.parse(tileEl.dataset.members);
-        } catch (e) {
-        return;
-        }
-
-        const context = document.getElementById('cdFamilyContext');
-        if (context && members.length) {
-        context.style.display = 'flex';
-        context.innerHTML =
-        '<i class="fa-solid fa-landmark"></i>' +
-        '<div><strong>' + members[0].name + '</strong>' +
-        '<span>' + members.length + ' roll' + (members.length === 1 ? '' : 's') + ' in this family &middot; pick one below</span></div>';
-        }
-
-        renderFamilyTabs(members, tileEl.dataset.headSource);
-        showDetailArea();
-        selectFamilyTab(tileEl.dataset.headSource, members);
-        prefetchFamilyMembers(members, tileEl.dataset.headSource);
-        }
-
-        // ── Warm the cache for every OTHER roll in this family right
-        //    away, quietly, in the background (the head roll is already
-        //    being fetched by selectFamilyTab above, so it's skipped
-        //    here to avoid a duplicate request). By the time the client
-        //    clicks a Sup tab, it's already sitting in detailCache —
-        //    instant switch, no spinner, same feel as the Admin
-        //    dashboard. ───────────────────────────────────────────────
-        function prefetchFamilyMembers(members, skipSource) {
-        members.forEach(function (m) {
-        if (m.source === skipSource) return;
-
-        const url = '/dashboard/roll-detail/' + encodeURIComponent(m.source);
-        if (detailCache[url]) return;
-
-        fetch(url)
-        .then(function (res) {
-        if (!res.ok) throw new Error('prefetch failed');
-        return res.text();
-        })
-        .then(function (html) {
-        detailCache[url] = html;
-        })
-        .catch(function () {
-        // Silent — a failed prefetch just means that tab
-        // falls back to the normal fetch-on-click path.
-        });
-        });
-        }
-
-        function renderFamilyTabs(members, activeSource) {
-        const wrap = document.getElementById('cdFamilyTabs');
-        if (!wrap) return;
-
-        wrap.dataset.members = JSON.stringify(members);
-        wrap.style.display = 'flex';
-
-        wrap.innerHTML = members.map(function (m) {
-        const isActive = m.source === activeSource;
-        return '<button type="button" class="cd-fam-tab' + (isActive ? ' active' : '') + '" ' +
-        'data-source="' + m.source + '" onclick="selectFamilyTabFromEl(this)">' +
-        '<span class="cd-fam-tab-name">' + m.shortName + '</span>' +
-        (isActive ? '<span class="cd-fam-tab-current"><i class="fa-solid fa-circle-check"></i> Viewing</span>' : '') +
-        '</button>';
-        }).join('');
-        }
-
-        function selectFamilyTabFromEl(el) {
-        const wrap = document.getElementById('cdFamilyTabs');
-        let members = [];
-        try {
-        members = JSON.parse(wrap.dataset.members || '[]');
-        } catch (e) {}
-        selectFamilyTab(el.dataset.source, members);
-        }
-
-        function selectFamilyTab(source, members) {
-        rememberDashboardRoll(source);
-
-        const wrap = document.getElementById('cdFamilyTabs');
-
-        if (wrap) {
-        wrap.querySelectorAll('.cd-fam-tab').forEach(function (tab) {
-        const isActive = tab.dataset.source === source;
-        tab.classList.toggle('active', isActive);
-
-        const marker = tab.querySelector('.cd-fam-tab-current');
-        if (isActive && !marker) {
-        const span = document.createElement('span');
-        span.className = 'cd-fam-tab-current';
-        span.innerHTML = '<i class="fa-solid fa-circle-check"></i> Viewing';
-        tab.appendChild(span);
-        } else if (!isActive && marker) {
-        marker.remove();
-        }
-        });
-        }
-
-        loadIntoDetail('/dashboard/roll-detail/' + encodeURIComponent(source));
-        }
-
-        // ── Pensioner rebate information modal ──────────────────────
-        // Clicking the Rebates tile shows the public information poster first.
-        // Closing the poster then opens ONLY the existing Rebates detail dashboard.
-        let pendingRebateTile = null;
-
-        function openRebateNotice(tileEl) {
-            pendingRebateTile = tileEl;
-
-            const modal =
-                document.getElementById('rebateNoticeModal');
-
-            const closeButton =
-                document.getElementById('rebateNoticeClose');
-
-            // Fail safely: if the modal is unavailable, open Rebates directly.
-            if (!modal) {
-                openStandalone(tileEl);
-                return;
-            }
-
-            modal.classList.add('is-open');
-            modal.setAttribute('aria-hidden', 'false');
-
-            document.body.classList.add(
-                'rebate-notice-modal-open');
-
-            window.setTimeout(function () {
-                closeButton?.focus();
-            }, 50);
-        }
-
-        function closeRebateNoticeAndOpenDashboard() {
-            const modal =
-                document.getElementById('rebateNoticeModal');
-
-            if (modal) {
-                modal.classList.remove('is-open');
-                modal.setAttribute('aria-hidden', 'true');
-            }
-
-            document.body.classList.remove(
-                'rebate-notice-modal-open');
-
-            // Use the exact tile that was clicked. Fall back to the Rebates
-            // tile in the DOM so the action remains reliable.
-            const rebateTile =
-                pendingRebateTile
-                || document.querySelector(
-                    '.cd-tile-rebates[data-drawer-url="/dashboard/rebates-detail"]');
-
-            pendingRebateTile = null;
-
-            if (!rebateTile) {
-                return;
-            }
-
-            // Small delay allows the modal to disappear before the dashboard
-            // switches to the Rebates-only detail view.
-            window.setTimeout(function () {
-                openStandalone(rebateTile);
-            }, 100);
-        }
-
-
-        function openStandalone(tileEl) {
-        const drawerUrl = tileEl.dataset.drawerUrl || '';
-        const rollDetailPrefix = '/dashboard/roll-detail/';
-
-        if (drawerUrl.startsWith(rollDetailPrefix)) {
-        rememberDashboardRoll(
-        decodeURIComponent(drawerUrl.substring(rollDetailPrefix.length))
+    function openLegacyRoll(source, title) {
+        openLegacyService(
+            '/dashboard/roll-detail/' + encodeURIComponent(source),
+            title
         );
-        } else if (drawerUrl === '/dashboard/attributes-detail') {
-        rememberDashboardRoll('attributes');
-        } else if (drawerUrl === '/dashboard/rebates-detail') {
-        rememberDashboardRoll('rebates');
+    }
+
+    async function openLegacyService(url, title) {
+        const detail = document.getElementById('legacyDetail');
+        const body = document.getElementById('legacyDetailBody');
+        const titleElement = document.getElementById('legacyDetailTitle');
+
+        if (!detail || !body) return;
+
+        titleElement.textContent = title || 'Dashboard';
+        detail.hidden = false;
+        detail.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+        if (legacyDetailCache[url]) {
+            body.innerHTML = legacyDetailCache[url];
+            initialiseLegacyTables(body);
+            return;
         }
-
-        const wrap = document.getElementById('cdFamilyTabs');
-        if (wrap) {
-        wrap.style.display = 'none';
-        wrap.innerHTML = '';
-        }
-
-        const context = document.getElementById('cdFamilyContext');
-        if (context) {
-        context.style.display = 'none';
-        context.innerHTML = '';
-        }
-
-        showDetailArea();
-        loadIntoDetail(tileEl.dataset.drawerUrl);
-        }
-
-        function showDetailArea() {
-        const tileGrid = document.getElementById('cdTileGrid');
-        const detailArea = document.getElementById('cdDetailArea');
-        if (!tileGrid || !detailArea) return;
-
-        tileGrid.style.display = 'none';
-        detailArea.style.display = '';
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
-        function closeDetail() {
-        const tileGrid = document.getElementById('cdTileGrid');
-        const detailArea = document.getElementById('cdDetailArea');
-        if (!tileGrid || !detailArea) return;
-
-        detailArea.style.display = 'none';
-        tileGrid.style.display = '';
-        clearRememberedDashboardRoll();
-        }
-
-        function loadIntoDetail(url) {
-        const body = document.getElementById('cdDetailBody');
-        if (!body || !url) return;
 
         body.innerHTML =
-        '<div class="cd-roll-loading"><i class="fa-solid fa-circle-notch fa-spin"></i> Loading…</div>';
+            '<div class="legacy-loading">' +
+            '<i class="fa-solid fa-circle-notch fa-spin"></i> Loading…' +
+            '</div>';
 
-        if (detailCache[url]) {
-        body.innerHTML = detailCache[url];
-        initTablesWithin(body);
-        reparentFixedModals(body);
-        initPinCountdowns(body);
-        return;
-        }
-
-        fetch(url)
-        .then(function (res) {
-        if (!res.ok) throw new Error('Failed to load (' + res.status + ')');
-        return res.text();
-        })
-        .then(function (html) {
-        detailCache[url] = html;
-        body.innerHTML = html;
-        initTablesWithin(body);
-        reparentFixedModals(body);
-        initPinCountdowns(body);
-        })
-        .catch(function (err) {
-        body.innerHTML =
-        '<div class="cd-roll-error">' +
-        '<i class="fa-solid fa-triangle-exclamation"></i> ' +
-        'Could not load these details. Please try again.' +
-        '</div>';
-        console.error('[Dashboard] detail fetch failed:', err);
-        });
-        }
-
-        function initTablesWithin(container) {
-
-            if (!container)
-                return;
-
-            // Dashboard partial tables are normally inside collapsed widgets.
-            // Do not initialise display:none tables because DataTables Responsive
-            // cannot calculate the correct phone width while the parent is hidden.
-            container
-                .querySelectorAll('.cd-widget-body.open .cd-table')
-                .forEach(function (tableElement) {
-
-                    if (!tableElement.id)
-                        return;
-
-                    initDataTable('#' + tableElement.id);
-                    adjustDataTable('#' + tableElement.id);
-                });
-        }
-
-        // ── Move full-screen modals out of the detail area ───────────
-        //    Same reasoning as before: if the detail area ever gets a
-        //    CSS transform applied to it, position:fixed children would
-        //    be constrained to its box instead of the full screen.
-        function reparentFixedModals(container) {
-        container
-        .querySelectorAll('.pin-backdrop, .attr-insp-modal-backdrop')
-        .forEach(function (modal) {
-        document.body.appendChild(modal);
-        });
-        }
-
-        // ── Widget sub-section toggle ───────────────────────────────
-        function toggleWidget(key) {
-
-            const body =
-                document.getElementById('widget-' + key);
-
-            const chevron =
-                document.getElementById('wchev-' + key);
-
-            if (!body)
-                return;
-
-            const isOpen =
-                body.classList.toggle('open');
-
-            if (chevron) {
-                chevron.style.transform =
-                    isOpen
-                        ? 'rotate(180deg)'
-                        : 'rotate(0deg)';
-            }
-
-            if (!isOpen)
-                return;
-
-            // Initialise the table only AFTER the widget becomes visible.
-            // This is what allows DataTables Responsive to hide lower-priority
-            // columns and display the + child-row control on narrow phones.
-            requestAnimationFrame(function () {
-
-                body
-                    .querySelectorAll('.cd-table')
-                    .forEach(function (tableElement) {
-
-                        if (!tableElement.id)
-                            return;
-
-                        const selector =
-                            '#' + tableElement.id;
-
-                        if (!$.fn.DataTable.isDataTable(selector)) {
-                            initDataTable(selector);
-                        }
-
-                        adjustDataTable(selector);
-                    });
+        try {
+            const response = await fetch(url, {
+                credentials: 'same-origin',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
             });
+
+            if (!response.ok) {
+                throw new Error('HTTP ' + response.status);
+            }
+
+            const html = await response.text();
+            legacyDetailCache[url] = html;
+            body.innerHTML = html;
+            initialiseLegacyTables(body);
+        }
+        catch (error) {
+            console.error('[Legacy dashboard demo]', error);
+
+            body.innerHTML =
+                '<div class="legacy-error">' +
+                '<i class="fa-solid fa-triangle-exclamation"></i>' +
+                '<strong>Could not load the dashboard information.</strong>' +
+                '<span>Please try again.</span>' +
+                '</div>';
+        }
+    }
+
+    function closeLegacyDetail() {
+        const detail = document.getElementById('legacyDetail');
+
+        if (!detail) return;
+
+        detail.hidden = true;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Existing _RollDetailPartial calls this function.
+    function toggleWidget(key) {
+        const body = document.getElementById('widget-' + key);
+        const chevron = document.getElementById('wchev-' + key);
+
+        if (!body) return;
+
+        const isOpen = body.classList.toggle('open');
+
+        if (chevron) {
+            chevron.style.transform =
+                isOpen ? 'rotate(180deg)' : 'rotate(0deg)';
         }
 
-        // ── DataTable responsive recalculation ──────────────────────
-        function adjustDataTable(selector) {
+        if (isOpen) {
+            initialiseLegacyTables(body);
+        }
+    }
 
-            if (
-                !selector
-                || !$(selector).length
-                || !$.fn.DataTable.isDataTable(selector)
-            ) {
-                return;
-            }
+    // Existing roll partial uses logAction on some links.
+    function logAction(action, roll, reference) {
+        console.debug(
+            '[Dashboard action]',
+            action,
+            roll,
+            reference
+        );
+    }
 
-            const table =
-                $(selector).DataTable();
-
-            table.columns.adjust();
-
-            if (
-                table.responsive
-                && typeof table.responsive.recalc === 'function'
-            ) {
-                table.responsive.recalc();
-            }
+    function initialiseLegacyTables(container) {
+        if (!window.jQuery ||
+            !jQuery.fn ||
+            !jQuery.fn.DataTable) {
+            return;
         }
 
-        // ── Init DataTables ─────────────────────────────────────────
-        // IMPORTANT:
-        // Desktop must show every real table column, especially the
-        // reference number. Responsive child-row behaviour is only
-        // enabled on phone/tablet widths.
-        const dashboardResponsiveBreakpoint = 1180;
-        let dashboardLastResponsiveMode =
-            window.innerWidth <= dashboardResponsiveBreakpoint;
+        container
+            .querySelectorAll('.cd-table')
+            .forEach(function(table) {
+                if (!table.id) return;
 
-        function isDashboardResponsiveMode() {
-            return window.innerWidth <= dashboardResponsiveBreakpoint;
-        }
+                const selector = '#' + table.id;
 
-        function initDataTable(selector) {
+                if (jQuery.fn.DataTable.isDataTable(selector)) {
+                    jQuery(selector).DataTable().columns.adjust();
+                    return;
+                }
 
-            if (
-                !selector
-                || !$(selector).length
-                || $.fn.DataTable.isDataTable(selector)
-            ) {
-                return;
-            }
+                if (!table.closest('.cd-widget-body.open')) {
+                    return;
+                }
 
-            const colCount =
-                $(selector + ' thead th').length;
-
-            if (!colCount)
-                return;
-
-            const useResponsive =
-                isDashboardResponsiveMode();
-
-                    const columnDefs = [
-            {
-                targets: 0,
-                // First column becomes the + / − responsive control.
-                className: useResponsive
-                    ? 'dtr-control'
-                    : '',
-                responsivePriority: 1,
-                visible: true
-            },
-            {
-                targets: colCount - 1,
-
-                // On half-screen/tablet/phone, always move
-                // the Actions/Options column into the + details row.
-                className: useResponsive
-                    ? 'none'
-                    : '',
-
-                orderable: false,
-                visible: true
-            }
-        ];
-
-            $(selector).DataTable({
-
-                // On desktop Responsive is OFF. This prevents DataTables
-                // from hiding the Attribute / Objection / Appeal / Query
-                // reference column on wide screens.
-                responsive: useResponsive
-                    ? {
+                jQuery(selector).DataTable({
+                    responsive: {
                         details: {
                             type: 'inline',
                             target: 'td.dtr-control'
                         }
-                    }
-                    : false,
-
-                autoWidth: false,
-                scrollX: false,
-
-                dom:
-                    '<"hs-dt-top"lf>' +
-                    'rt' +
-                    '<"hs-dt-bottom"ip>',
-
-                lengthMenu: [
-                    [5, 10, 25, 50, -1],
-                    [5, 10, 25, 50, 'All']
-                ],
-
-                pageLength: 5,
-
-                language: {
-                    search: '_INPUT_',
-                    searchPlaceholder: 'Search...',
-                    lengthMenu: '_MENU_ per page',
-                    emptyTable: 'No records found',
-                    zeroRecords: 'No matching records found',
-                    info: 'Showing _START_ to _END_ of _TOTAL_ entries',
-                    infoEmpty: 'No records found',
-                    infoFiltered: '(filtered from _MAX_ total)',
-                    paginate: {
-                        previous: 'Previous',
-                        next: 'Next'
-                    }
-                },
-
-                columnDefs: columnDefs,
-
-                initComplete: function () {
-
-                    const api =
-                        this.api();
-
-                    // Force every column visible on desktop.
-                    // This is the key protection for the reference column.
-                    if (!useResponsive) {
-                        api.columns().visible(true, false);
-                    }
-
-                    requestAnimationFrame(function () {
-
-                        api.columns.adjust();
-
-                        if (
-                            useResponsive
-                            && api.responsive
-                            && typeof api.responsive.recalc === 'function'
-                        ) {
-                            api.responsive.recalc();
-
-                            // Attributes uses a combined Reference / Property
-                            // first column. Recalculate once more after the
-                            // browser has painted the wider first cell so that
-                            // Responsive correctly adds the + control.
-                            if (selector.indexOf('tbl-attr-') >= 0) {
-                                window.setTimeout(function () {
-                                    api.columns.adjust();
-                                    api.responsive.recalc();
-                                }, 50);
-                            }
+                    },
+                    autoWidth: false,
+                    pageLength: 5,
+                    lengthMenu: [
+                        [5, 10, 25, 50, -1],
+                        [5, 10, 25, 50, 'All']
+                    ],
+                    columnDefs: [
+                        {
+                            targets: 0,
+                            className: 'dtr-control all',
+                            responsivePriority: 1
+                        },
+                        {
+                            targets: -1,
+                            className: 'none',
+                            orderable: false
                         }
-                    });
-                },
-
-                drawCallback: function () {
-
-                    const api =
-                        this.api();
-
-                    // Desktop must never inherit a hidden-column state
-                    // from a previous narrow responsive render.
-                    if (!useResponsive) {
-                        api.columns().visible(true, false);
-                        api.columns.adjust();
-                        return;
-                    }
-
-                    if (
-                        api.responsive
-                        && typeof api.responsive.recalc === 'function'
-                    ) {
-                        api.responsive.recalc();
-                    }
-                }
-            });
-        }
-
-        function rebuildVisibleDashboardTablesForViewport() {
-
-            const currentMode =
-                isDashboardResponsiveMode();
-
-            // Only rebuild when crossing the desktop/mobile breakpoint.
-            if (currentMode === dashboardLastResponsiveMode) {
-
-                document
-                    .querySelectorAll('.cd-widget-body.open .cd-table')
-                    .forEach(function (tableElement) {
-
-                        if (!tableElement.id)
-                            return;
-
-                        adjustDataTable(
-                            '#' + tableElement.id);
-                    });
-
-                return;
-            }
-
-            dashboardLastResponsiveMode =
-                currentMode;
-
-            document
-                .querySelectorAll('.cd-widget-body.open .cd-table')
-                .forEach(function (tableElement) {
-
-                    if (!tableElement.id)
-                        return;
-
-                    const selector =
-                        '#' + tableElement.id;
-
-                    if ($.fn.DataTable.isDataTable(selector)) {
-                        $(selector)
-                            .DataTable()
-                            .destroy();
-                    }
-
-                    // Remove Responsive state/classes left by the previous mode.
-                    $(selector)
-                        .find('tbody tr')
-                        .removeClass('parent child');
-
-                    $(selector)
-                        .find('th, td')
-                        .removeClass('dtr-control dtr-hidden');
-
-                    $(selector)
-                        .find('tr.child')
-                        .remove();
-
-                    initDataTable(selector);
-                    adjustDataTable(selector);
+                    ]
                 });
-        }
-
-        // Recalculate visible Dashboard tables when phone orientation
-        // or viewport width changes. Crossing 768px rebuilds the table
-        // so desktop can never keep mobile hidden-column state.
-        let dashboardTableResizeTimer = null;
-
-        window.addEventListener('resize', function () {
-
-            window.clearTimeout(
-                dashboardTableResizeTimer);
-
-            dashboardTableResizeTimer =
-                window.setTimeout(function () {
-
-                    rebuildVisibleDashboardTablesForViewport();
-
-                }, 150);
-        });
-
-        // ── Open roll after redirect ────────────────────────────────
-        function openLinkedRollFromQueryString() {
-        const params = new URLSearchParams(window.location.search);
-        const requestedRoll = params.get('openRoll');
-        const openRoll = requestedRoll || getRememberedDashboardRoll();
-
-        if (!openRoll) return;
-
-        rememberDashboardRoll(openRoll);
-
-        const lower = openRoll.toLowerCase();
-
-        if (lower === 'attributes' || lower === 'rebates') {
-        const tile = document.querySelector(
-        '.cd-tile[data-drawer-url="/dashboard/' + lower + '-detail"]'
-        );
-        if (tile) openStandalone(tile);
-        if (requestedRoll) {
-        window.history.replaceState({}, document.title, window.location.pathname);
-        }
-        return;
-        }
-
-        const family = familyLookup.find(function (f) {
-        return f.members.some(function (m) { return m.source === openRoll; });
-        });
-
-        if (family) {
-        const tile = document.querySelector(
-        '.cd-tile-family[data-head-source="' + family.headSource + '"]'
-        );
-        if (tile) {
-        openFamily(tile);
-        selectFamilyTab(openRoll, family.members);
-        }
-        if (requestedRoll) {
-        window.history.replaceState({}, document.title, window.location.pathname);
-        }
-        return;
-        }
-
-        const queryTile = document.querySelector(
-        '.cd-tile-query[data-drawer-url="/dashboard/roll-detail/' + openRoll + '"]'
-        );
-        if (queryTile) {
-        openStandalone(queryTile);
-        } else {
-        console.warn('Roll not found for openRoll:', openRoll);
-        }
-
-        if (requestedRoll) {
-        window.history.replaceState({}, document.title, window.location.pathname);
-        }
-        }
-
-        // ── Inspection PIN countdown ───────────────────────────────
-        let pinCountdownTimer = null;
-
-        function padCountdown(value) {
-        return String(value).padStart(2, '0');
-        }
-
-        function updatePinCountdowns(container) {
-        const root = container || document;
-
-        root.querySelectorAll('[data-pin-countdown]').forEach(function (element) {
-        const epoch = Number(element.dataset.appointmentEpoch);
-        const label = element.querySelector('.attr-pin-validity-text');
-        const icon = element.querySelector('i');
-        const hasPin = element.dataset.hasPin === 'true';
-
-        if (!label || !Number.isFinite(epoch)) {
-        if (label) label.textContent = 'Appointment time is unavailable.';
-        return;
-        }
-
-        const remaining = epoch - Date.now();
-
-        if (remaining <= 0) {
-        element.classList.add('attr-pin-validity-active');
-        if (icon) icon.className = 'fa-solid fa-circle-check';
-        label.textContent = hasPin
-        ? 'Appointment time reached — your PIN can now be used.'
-        : 'Appointment time reached — waiting for the valuer to generate the PIN.';
-        return;
-        }
-
-        element.classList.remove('attr-pin-validity-active');
-        if (icon) icon.className = 'fa-solid fa-hourglass-half';
-
-        const totalSeconds = Math.max(0, Math.floor(remaining / 1000));
-        const days = Math.floor(totalSeconds / 86400);
-        const hours = Math.floor((totalSeconds % 86400) / 3600);
-        const minutes = Math.floor((totalSeconds % 3600) / 60);
-        const seconds = totalSeconds % 60;
-        const dayText = days > 0 ? days + 'd ' : '';
-
-        label.textContent = 'PIN valid in ' + dayText +
-        padCountdown(hours) + 'h ' +
-        padCountdown(minutes) + 'm ' +
-        padCountdown(seconds) + 's';
-        });
-        }
-
-        function initPinCountdowns(container) {
-        updatePinCountdowns(container);
-
-        if (pinCountdownTimer !== null) {
-        window.clearInterval(pinCountdownTimer);
-        }
-
-        pinCountdownTimer = window.setInterval(function () {
-        updatePinCountdowns(document);
-        }, 1000);
-        }
-
-        // ── Inspection date response modal ──────────────────────────
-        function openInspectionResponseModal(id) {
-        const modal = document.getElementById('inspectionModal_' + id);
-
-        if (modal) {
-        modal.style.display = 'flex';
-        document.body.style.overflow = 'hidden';
-        }
-        }
-
-        function closeInspectionResponseModal(id) {
-        const modal = document.getElementById('inspectionModal_' + id);
-
-        if (modal) {
-        modal.style.display = 'none';
-        document.body.style.overflow = '';
-        }
-        }
-
-        // ── Returned correction / resubmission modal ────────────────
-        function openReturnedCorrectionModal(id) {
-        const modal = document.getElementById('returnedCorrectionModal_' + id);
-
-        if (modal) {
-        modal.style.display = 'flex';
-        document.body.style.overflow = 'hidden';
-        }
-        }
-
-        function closeReturnedCorrectionModal(id) {
-        const modal = document.getElementById('returnedCorrectionModal_' + id);
-
-        if (modal) {
-        modal.style.display = 'none';
-        document.body.style.overflow = '';
-        }
-        }
-
-        // ── PIN modal keypad ────────────────────────────────────────
-        const pinValues = {};
-        const PIN_LEN = 4;
-
-        function openPinModal(id) {
-        pinValues[id] = '';
-
-        const modal = document.getElementById('pinModal_' + id);
-        const input = document.getElementById('pinHiddenInput_' + id);
-        const error = document.getElementById('pinError_' + id);
-        const submit = document.getElementById('pinSubmitBtn_' + id);
-
-        if (!modal || !input || !submit) {
-        console.warn('PIN modal elements missing for appointment:', id);
-        return;
-        }
-
-        input.value = '';
-
-        if (error) {
-        error.classList.remove('show');
-        }
-
-        submit.disabled = true;
-
-        updatePinDots(id);
-
-        modal.style.display = 'flex';
-        modal.classList.add('open');
-        document.body.style.overflow = 'hidden';
-
-        setTimeout(function () {
-        input.focus();
-        }, 100);
-        }
-
-        function closePinModal(id) {
-        const modal = document.getElementById('pinModal_' + id);
-        const input = document.getElementById('pinHiddenInput_' + id);
-        const error = document.getElementById('pinError_' + id);
-        const submit = document.getElementById('pinSubmitBtn_' + id);
-
-        if (modal) {
-        modal.classList.remove('open');
-        modal.style.display = 'none';
-        }
-
-        pinValues[id] = '';
-
-        if (input) {
-        input.value = '';
-        }
-
-        if (error) {
-        error.classList.remove('show');
-        }
-
-        if (submit) {
-        submit.disabled = true;
-        }
-
-        updatePinDots(id);
-
-        document.body.style.overflow = '';
-        }
-
-        function pinKey(id, digit) {
-        let value = pinValues[id] || '';
-
-        if (value.length >= PIN_LEN) return;
-
-        value += digit;
-        pinValues[id] = value;
-
-        const input = document.getElementById('pinHiddenInput_' + id);
-        const error = document.getElementById('pinError_' + id);
-        const submit = document.getElementById('pinSubmitBtn_' + id);
-
-        if (input) {
-        input.value = value;
-        }
-
-        if (error) {
-        error.classList.remove('show');
-        }
-
-        if (submit) {
-        submit.disabled = value.length < PIN_LEN;
-        }
-
-        updatePinDots(id);
-        }
-
-        function pinDelete(id) {
-        let value = pinValues[id] || '';
-
-        if (value.length === 0) return;
-
-        value = value.slice(0, -1);
-        pinValues[id] = value;
-
-        const input = document.getElementById('pinHiddenInput_' + id);
-        const error = document.getElementById('pinError_' + id);
-        const submit = document.getElementById('pinSubmitBtn_' + id);
-
-        if (input) {
-        input.value = value;
-        }
-
-        if (error) {
-        error.classList.remove('show');
-        }
-
-        if (submit) {
-        submit.disabled = value.length < PIN_LEN;
-        }
-
-        updatePinDots(id);
-        }
-
-        function updatePinDots(id) {
-        const value = pinValues[id] || '';
-
-        for (let i = 0; i < PIN_LEN; i++) {
-        const dot = document.getElementById('dot_' + id + '_' + i);
-
-        if (!dot) continue;
-
-        dot.classList.remove('filled', 'gold', 'error');
-
-        if (i < value.length) {
-        dot.classList.add('filled');
-        }
-
-        if (value.length === PIN_LEN && i === PIN_LEN - 1) {
-        dot.classList.add('gold');
-        }
-        }
-        }
-
-        // ── Status modal ────────────────────────────────────────────
-        function initStatusExplanationModal() {
-        const modal = document.getElementById("statusExplainModal");
-        const title = document.getElementById("statusExplainTitle");
-        const message = document.getElementById("statusExplainMessage");
-
-        document.querySelectorAll(".client-status-badge").forEach(badge => {
-        badge.addEventListener("click", function () {
-        if (!modal || !title || !message) return;
-
-        title.innerText = this.dataset.statusTitle || "Status Information";
-        message.innerText = this.dataset.statusMessage || "No explanation available.";
-
-        modal.style.display = "flex";
-        document.body.style.overflow = "hidden";
-        });
-        });
-
-        function closeStatusModal() {
-        if (modal) {
-        modal.style.display = "none";
-        }
-
-        document.body.style.overflow = "";
-        }
-
-        document.getElementById("closeStatusExplainModal")
-        ?.addEventListener("click", closeStatusModal);
-
-        document.getElementById("okayStatusExplainModal")
-        ?.addEventListener("click", closeStatusModal);
-
-        modal?.addEventListener("click", function (e) {
-        if (e.target === modal) {
-        closeStatusModal();
-        }
-        });
-        }
-
-        // ── Notification bell ───────────────────────────────────────
-        function initNotificationBell() {
-        const bellBtn = document.getElementById("notificationBellBtn");
-        const panel = document.getElementById("notificationPanel");
-
-        bellBtn?.addEventListener("click", function (e) {
-        e.stopPropagation();
-        panel?.classList.toggle("open");
-        });
-
-        panel?.addEventListener("click", function (e) {
-        e.stopPropagation();
-        });
-
-        document.addEventListener("click", function () {
-        panel?.classList.remove("open");
-        });
-        }
-
-        // ── Global click handlers ───────────────────────────────────
-        document.addEventListener('click', function (e) {
-        // Close PIN modal when backdrop is clicked.
-        const pinBackdrop = e.target.closest('.pin-backdrop');
-
-        if (pinBackdrop && e.target === pinBackdrop) {
-        const id = pinBackdrop.id.replace('pinModal_', '');
-        closePinModal(id);
-        return;
-        }
-
-        // Close normal inspection / correction modals on backdrop click.
-        if (e.target.classList.contains('attr-insp-modal-backdrop')) {
-        e.target.style.display = 'none';
-        document.body.style.overflow = '';
-        }
-        });
-
-        // ── Keyboard handlers ──────────────────────────────────────
-        document.addEventListener('keydown', function (e) {
-        if (e.key !== 'Escape') return;
-
-        const rebateNoticeModal =
-            document.getElementById('rebateNoticeModal');
-
-        if (rebateNoticeModal?.classList.contains('is-open')) {
-            closeRebateNoticeAndOpenDashboard();
-            return;
-        }
-
-        document.querySelectorAll('.pin-backdrop.open').forEach(function (modal) {
-        const id = modal.id.replace('pinModal_', '');
-        closePinModal(id);
-        });
-
-        document.querySelectorAll('.attr-insp-modal-backdrop').forEach(function (modal) {
-        if (modal.style.display === 'flex') {
-        modal.style.display = 'none';
-        document.body.style.overflow = '';
-        }
-        });
-
-        const detailArea = document.getElementById('cdDetailArea');
-        if (detailArea && detailArea.style.display !== 'none') {
-        closeDetail();
-        }
-        });
-
-        // ── Physical keyboard / pasted PIN input ───────────────────
-        document.addEventListener('input', function (e) {
-        if (!e.target || !e.target.id || !e.target.id.startsWith('pinHiddenInput_')) {
-        return;
-        }
-
-        const id = e.target.id.replace('pinHiddenInput_', '');
-        const value = e.target.value.replace(/\D/g, '').slice(0, PIN_LEN);
-
-        e.target.value = value;
-        pinValues[id] = value;
-
-        const error = document.getElementById('pinError_' + id);
-        const submit = document.getElementById('pinSubmitBtn_' + id);
-
-        if (error) {
-        error.classList.remove('show');
-        }
-
-        if (submit) {
-        submit.disabled = value.length < PIN_LEN;
-        }
-
-        updatePinDots(id);
-        });
-
-        // ── Init everything once page loads ────────────────────────
-        // Tables are initialised right after each AJAX fetch completes
-        // (see initTablesWithin), so nothing needs eager wiring here —
-        // the tile grid has no tables in the DOM until a tile is clicked.
-        $(document).ready(function () {
-        openLinkedRollFromQueryString();
-        initNotificationBell();
-        initStatusExplanationModal();
-        });
-
-        // ── Re-open PIN modal if server returned PIN error ─────────
-        const serverPinError = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["PinError"]?.ToString()));
-
-        document.addEventListener('DOMContentLoaded', function () {
-        if (!serverPinError) {
-        return;
-        }
-
-        const firstPinModal = document.querySelector('.pin-backdrop[id^="pinModal_"]');
-
-        if (!firstPinModal) {
-        return;
-        }
-
-        const id = firstPinModal.id.replace('pinModal_', '');
-
-        openPinModal(id);
-
-        const error = document.getElementById('pinError_' + id);
-        const errorMsg = document.getElementById('pinErrorMsg_' + id);
-
-        if (errorMsg) {
-        errorMsg.textContent = serverPinError;
-        }
-
-        if (error) {
-        error.classList.add('show');
-        }
-
-        for (let i = 0; i < PIN_LEN; i++) {
-        const dot = document.getElementById('dot_' + id + '_' + i);
-
-        if (dot) {
-        dot.classList.add('error');
-        }
-        }
-
-        setTimeout(function () {
-        for (let i = 0; i < PIN_LEN; i++) {
-        const dot = document.getElementById('dot_' + id + '_' + i);
-
-        if (dot) {
-        dot.classList.remove('error');
-        }
-        }
-        }, 600);
-        });
-    </script>
+            });
+    }
+</script>
 }

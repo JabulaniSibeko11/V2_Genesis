@@ -1,0 +1,946 @@
+﻿@using System.Security.Claims
+@using Microsoft.Extensions.Options
+@using V2_Genesis.Services.PropertySearch
+@inject IOptions<RollDatesSettings> RollDatesOptions
+
+@{
+    var reqPath =
+        Context.Request.Path.Value?.ToLowerInvariant()
+        ?? string.Empty;
+
+    var openRoll =
+        Context.Request.Query["openRoll"].ToString();
+
+    var isAuthenticated =
+        User?.Identity?.IsAuthenticated ?? false;
+
+    var currentEmail =
+        User?.FindFirstValue(ClaimTypes.Email)
+        ?? User?.FindFirstValue(ClaimTypes.Name)
+        ?? User?.Identity?.Name
+        ?? string.Empty;
+
+    var isAdmin =
+        User?.IsInRole("Admin") == true
+        || currentEmail.Equals(
+            "AdministrationEnquiries@Joburg.org.za",
+            StringComparison.OrdinalIgnoreCase)
+        || System.Text.RegularExpressions.Regex.IsMatch(
+            currentEmail,
+            @"^val\.admin(1[0-9]?|[1-9])@joburg\.org\.za$",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+    var dashboardUrl =
+        isAdmin
+            ? "/admin"
+            : "/dashboard";
+
+    var rollDates =
+        RollDatesOptions.Value;
+
+    var now =
+        DateTime.Now;
+
+    var rollMenu = new[]
+    {
+        new
+        {
+            Source = "Objection",
+            Label = "GV23 Valuation Roll",
+            ShortLabel = "GV23"
+        },
+        new
+        {
+            Source = "Objection_Supp1",
+            Label = "Supplementary Roll 1",
+            ShortLabel = "Sup1"
+        },
+        new
+        {
+            Source = "Objection_Supp2",
+            Label = "Supplementary Roll 2",
+            ShortLabel = "Sup2"
+        },
+        new
+        {
+            Source = "Objection_Supp3",
+            Label = "Supplementary Roll 3",
+            ShortLabel = "Sup3"
+        },
+        new
+        {
+            Source = "Objection_Supp4",
+            Label = "Supplementary Roll 4",
+            ShortLabel = "Sup4"
+        }
+    };
+
+    bool CanSearchRoll(string source)
+    {
+        if (isAdmin)
+            return true;
+
+        var dates =
+            rollDates.For(source);
+
+        if (dates is null)
+            return true;
+
+        return
+            now >= dates.OpenDate
+            && now <= dates.VisibleUntil;
+    }
+
+    string RollStatus(string source)
+    {
+        var dates =
+            rollDates.For(source);
+
+        if (dates is null)
+            return string.Empty;
+
+        if (now < dates.OpenDate)
+            return "Opening Soon";
+
+        if (now <= dates.VisibleUntil)
+            return "Open";
+
+        return "Closed";
+    }
+
+    string RollDashboardUrl(string source) =>
+        "/Dashboard?openRoll="
+        + Uri.EscapeDataString(source);
+
+    var sup4CanSearch =
+        CanSearchRoll("Objection_Supp4");
+
+    var sup4Status =
+        RollStatus("Objection_Supp4");
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0" />
+
+    <title>
+        @ViewData["Title"] - City of Johannesburg Valuation Portal
+    </title>
+
+    <link rel="preconnect"
+          href="https://fonts.googleapis.com" />
+
+    <link rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossorigin />
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap"
+          rel="stylesheet" />
+
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+
+    <link rel="stylesheet"
+          href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" />
+
+    <link rel="stylesheet"
+          href="https://cdn.datatables.net/responsive/2.4.1/css/responsive.dataTables.min.css" />
+
+    <link rel="stylesheet"
+          href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css" />
+
+    <link rel="icon"
+          type="image/png"
+          sizes="32x32"
+          href="~/images/favicon-32x32.png" />
+
+    <link rel="icon"
+          type="image/png"
+          sizes="16x16"
+          href="~/images/favicon-16x16.png" />
+
+    <link rel="stylesheet"
+          href="~/css/site.css"
+          asp-append-version="true" />
+
+    <link rel="stylesheet"
+          href="~/css/legend-layout.css"
+          asp-append-version="true" />
+
+    <link rel="stylesheet"
+          href="~/css/global-action-loader.css"
+          asp-append-version="true" />
+
+    <link rel="stylesheet"
+          href="~/css/form-submission-loader.css"
+          asp-append-version="true" />
+
+    @await RenderSectionAsync(
+        "Styles",
+        required: false)
+</head>
+
+<body class="legend-body">
+
+    <partial name="_GlobalActionLoader" />
+    <partial name="_SubmissionActionLoader" />
+
+    <header class="legend-header">
+        <nav class="navbar navbar-expand-xl legend-navbar">
+            <div class="container-fluid legend-nav-container">
+
+                <a class="legend-brand"
+                   href="@dashboardUrl"
+                   aria-label="City of Johannesburg Valuation Portal">
+
+                    <img src="~/images/joburg_logo.png"
+                         class="legend-logo"
+                         alt="City of Johannesburg" />
+
+                </a>
+
+                <button class="navbar-toggler legend-toggler"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#legendNavbar"
+                        aria-controls="legendNavbar"
+                        aria-expanded="false"
+                        aria-label="Toggle navigation">
+
+                    <i class="fa-solid fa-bars"></i>
+
+                </button>
+
+                <div class="collapse navbar-collapse"
+                     id="legendNavbar">
+
+                    <ul class="navbar-nav legend-nav-list me-auto">
+
+                        <!-- GV23 -->
+                        <li class="nav-item dropdown">
+
+                            <a class="nav-link dropdown-toggle legend-nav-link"
+                               href="#"
+                               id="legendGvDropdown"
+                               role="button"
+                               data-bs-toggle="dropdown"
+                               aria-expanded="false">
+
+                                GV23 Valuation Roll
+
+                            </a>
+
+                            <ul class="dropdown-menu legend-dropdown"
+                                aria-labelledby="legendGvDropdown">
+
+                                <li>
+                                    <a class="dropdown-item legend-dropdown-item"
+                                       href="@RollDashboardUrl("Objection")">
+
+                                        <i class="fa-solid fa-gauge-high"></i>
+                                        Dashboard
+
+                                    </a>
+                                </li>
+
+                                <li>
+                                    <hr class="dropdown-divider" />
+                                </li>
+
+                                <li>
+                                    @if (CanSearchRoll("Objection"))
+                                    {
+                                        <a class="dropdown-item legend-dropdown-item"
+                                           href="/search/Objection">
+
+                                            <i class="fa-solid fa-magnifying-glass"></i>
+                                            Property Search
+
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <a class="dropdown-item legend-dropdown-item"
+                                           href="@RollDashboardUrl("Objection")">
+
+                                            <i class="fa-solid fa-lock"></i>
+
+                                            <span>
+                                                Property Search
+                                                <small class="legend-menu-status">
+                                                    Objection Period Closed
+                                                </small>
+                                            </span>
+
+                                        </a>
+                                    }
+                                </li>
+
+                            </ul>
+                        </li>
+
+                        <!-- Supplementary Rolls -->
+                        <li class="nav-item dropdown">
+
+                            <a class="nav-link dropdown-toggle legend-nav-link"
+                               href="#"
+                               id="legendSupplementaryDropdown"
+                               role="button"
+                               data-bs-toggle="dropdown"
+                               aria-expanded="false">
+
+                                Supplementary Rolls
+
+                            </a>
+
+                            <ul class="dropdown-menu legend-dropdown legend-dropdown-wide"
+                                aria-labelledby="legendSupplementaryDropdown">
+
+                                <li class="legend-dropdown-heading">
+                                    Current Supplementary Roll
+                                </li>
+
+                                <li>
+                                    @if (sup4CanSearch)
+                                    {
+                                        <a class="dropdown-item legend-dropdown-item"
+                                           href="/search/Objection_Supp4">
+
+                                            <i class="fa-solid fa-magnifying-glass"></i>
+
+                                            <span>
+                                                Supplementary Roll 4
+                                                <small class="legend-menu-status legend-menu-status-open">
+                                                    @sup4Status
+                                                </small>
+                                            </span>
+
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <a class="dropdown-item legend-dropdown-item"
+                                           href="@RollDashboardUrl("Objection_Supp4")">
+
+                                            <i class="fa-solid fa-scroll"></i>
+
+                                            <span>
+                                                Supplementary Roll 4
+                                                <small class="legend-menu-status">
+                                                    Objection Period Closed
+                                                </small>
+                                            </span>
+
+                                        </a>
+                                    }
+                                </li>
+
+                                <li>
+                                    <a class="dropdown-item legend-dropdown-item"
+                                       href="@RollDashboardUrl("Objection_Supp4")">
+
+                                        <i class="fa-solid fa-gauge-high"></i>
+                                        Supplementary Roll 4 Dashboard
+
+                                    </a>
+                                </li>
+
+                                <li>
+                                    <hr class="dropdown-divider" />
+                                </li>
+
+                                <li class="legend-dropdown-heading">
+                                    Previous Supplementary Rolls
+                                </li>
+
+                                @foreach (
+                                    var roll
+                                    in rollMenu.Where(x =>
+                                        x.Source is
+                                        "Objection_Supp1"
+                                        or "Objection_Supp2"
+                                        or "Objection_Supp3"))
+                                {
+                                    <li>
+                                        <a class="dropdown-item legend-dropdown-item"
+                                           href="@RollDashboardUrl(roll.Source)">
+
+                                            <i class="fa-solid fa-clock-rotate-left"></i>
+
+                                            <span>
+                                                @roll.Label
+                                                <small class="legend-menu-status">
+                                                    Closed - View Dashboard
+                                                </small>
+                                            </span>
+
+                                        </a>
+                                    </li>
+                                }
+
+                            </ul>
+                        </li>
+
+                        <!-- Section 78 -->
+                        <li class="nav-item dropdown">
+
+                            <a class="nav-link dropdown-toggle legend-nav-link"
+                               href="#"
+                               id="legendSection78Dropdown"
+                               role="button"
+                               data-bs-toggle="dropdown"
+                               aria-expanded="false">
+
+                                Section 78
+
+                            </a>
+
+                            <ul class="dropdown-menu legend-dropdown"
+                                aria-labelledby="legendSection78Dropdown">
+
+                                <li>
+                                    <a class="dropdown-item legend-dropdown-item"
+                                       href="/search/Objection_Query">
+
+                                        <i class="fa-solid fa-magnifying-glass-chart"></i>
+                                        Query / Review Search
+
+                                    </a>
+                                </li>
+
+                                <li>
+                                    <hr class="dropdown-divider" />
+                                </li>
+
+                                <li>
+                                    <a class="dropdown-item legend-dropdown-item"
+                                       href="/Dashboard?openRoll=Objection_Query">
+
+                                        <i class="fa-solid fa-gauge-high"></i>
+                                        Query / Review Dashboard
+
+                                    </a>
+                                </li>
+
+                            </ul>
+                        </li>
+
+                        <!-- Rebates -->
+                        <li class="nav-item dropdown">
+
+                            <a class="nav-link dropdown-toggle legend-nav-link"
+                               href="#"
+                               id="legendRebatesDropdown"
+                               role="button"
+                               data-bs-toggle="dropdown"
+                               aria-expanded="false">
+
+                                Rebates
+
+                            </a>
+
+                            <ul class="dropdown-menu legend-dropdown"
+                                aria-labelledby="legendRebatesDropdown">
+
+                                <li>
+                                    <a class="dropdown-item legend-dropdown-item"
+                                       href="/Rebates/Index">
+
+                                        <i class="fa-solid fa-file-signature"></i>
+                                        Apply for Rebates
+
+                                    </a>
+                                </li>
+
+                                <li>
+                                    <hr class="dropdown-divider" />
+                                </li>
+
+                                <li>
+                                    <a class="dropdown-item legend-dropdown-item"
+                                       href="/Dashboard?openRoll=rebates">
+
+                                        <i class="fa-solid fa-gauge-high"></i>
+                                        Rebates Dashboard
+
+                                    </a>
+                                </li>
+
+                            </ul>
+                        </li>
+
+                        <!-- Attributes -->
+                        <li class="nav-item dropdown">
+
+                            <a class="nav-link dropdown-toggle legend-nav-link"
+                               href="#"
+                               id="legendAttributesDropdown"
+                               role="button"
+                               data-bs-toggle="dropdown"
+                               aria-expanded="false">
+
+                                Attributes
+
+                            </a>
+
+                            <ul class="dropdown-menu legend-dropdown"
+                                aria-labelledby="legendAttributesDropdown">
+
+                                <li>
+                                    <a class="dropdown-item legend-dropdown-item"
+                                       href="/attributes/search">
+
+                                        <i class="fa-solid fa-magnifying-glass"></i>
+                                        Search Property
+
+                                    </a>
+                                </li>
+
+                                <li>
+                                    <a class="dropdown-item legend-dropdown-item"
+                                       href="/Dashboard?openRoll=attributes">
+
+                                        <i class="fa-solid fa-gauge-high"></i>
+                                        Attributes Dashboard
+
+                                    </a>
+                                </li>
+
+                                <li>
+                                    <hr class="dropdown-divider" />
+                                </li>
+
+                                <li>
+                                    <a class="dropdown-item legend-dropdown-item"
+                                       href="/attributes/about">
+
+                                        <i class="fa-solid fa-circle-info"></i>
+                                        About Attributes
+
+                                    </a>
+                                </li>
+
+                            </ul>
+                        </li>
+
+                        <!-- Upload Documents -->
+                        <li class="nav-item dropdown">
+
+                            <a class="nav-link dropdown-toggle legend-nav-link"
+                               href="#"
+                               id="legendDocumentsDropdown"
+                               role="button"
+                               data-bs-toggle="dropdown"
+                               aria-expanded="false">
+
+                                Upload Documents
+
+                            </a>
+
+                            <ul class="dropdown-menu legend-dropdown"
+                                aria-labelledby="legendDocumentsDropdown">
+
+                                <li>
+                                    <a class="dropdown-item legend-dropdown-item"
+                                       href="/evidence/verifyObj">
+
+                                        <i class="fa-solid fa-paperclip"></i>
+                                        Objection / Appeal Evidence
+
+                                    </a>
+                                </li>
+
+                                <li>
+                                    <a class="dropdown-item legend-dropdown-item"
+                                       href="/attributes/evidence">
+
+                                        <i class="fa-solid fa-file-arrow-up"></i>
+                                        Attribute Evidence
+
+                                    </a>
+                                </li>
+
+                            </ul>
+                        </li>
+
+                        <!-- Section 51 -->
+                        <li class="nav-item dropdown">
+
+                            <a class="nav-link dropdown-toggle legend-nav-link"
+                               href="#"
+                               id="legendSection51Dropdown"
+                               role="button"
+                               data-bs-toggle="dropdown"
+                               aria-expanded="false">
+
+                                Section 51
+
+                            </a>
+
+                            <ul class="dropdown-menu legend-dropdown"
+                                aria-labelledby="legendSection51Dropdown">
+
+                                <li>
+                                    <a class="dropdown-item legend-dropdown-item"
+                                       href="/section51/verify">
+
+                                        <i class="fa-solid fa-file-circle-check"></i>
+                                        Submit Section 51
+
+                                    </a>
+                                </li>
+
+                                <li>
+                                    <hr class="dropdown-divider" />
+                                </li>
+
+                                <li>
+                                    <a class="dropdown-item legend-dropdown-item"
+                                       href="/notices">
+
+                                        <i class="fa-solid fa-envelope-open-text"></i>
+                                        My Notices
+
+                                    </a>
+                                </li>
+
+                            </ul>
+                        </li>
+
+                        <!-- Help -->
+                        <li class="nav-item dropdown">
+
+                            <a class="nav-link dropdown-toggle legend-nav-link"
+                               href="#"
+                               id="legendHelpDropdown"
+                               role="button"
+                               data-bs-toggle="dropdown"
+                               aria-expanded="false">
+
+                                Help
+
+                            </a>
+
+                            <ul class="dropdown-menu legend-dropdown"
+                                aria-labelledby="legendHelpDropdown">
+
+                                <li>
+                                    <a class="dropdown-item legend-dropdown-item"
+                                       href="/help/user-manual">
+
+                                        <i class="fa-solid fa-book"></i>
+                                        User Manual
+
+                                    </a>
+                                </li>
+
+                                <li>
+                                    <a class="dropdown-item legend-dropdown-item"
+                                       href="/Home/FAQ">
+
+                                        <i class="fa-solid fa-circle-question"></i>
+                                        FAQ
+
+                                    </a>
+                                </li>
+
+                                <li>
+                                    <a class="dropdown-item legend-dropdown-item"
+                                       href="/Home/Contact">
+
+                                        <i class="fa-solid fa-headset"></i>
+                                        Contact Support
+
+                                    </a>
+                                </li>
+
+                                <li>
+                                    <a class="dropdown-item legend-dropdown-item"
+                                       href="/Home/Privacy">
+
+                                        <i class="fa-solid fa-shield-halved"></i>
+                                        Privacy
+
+                                    </a>
+                                </li>
+
+                            </ul>
+                        </li>
+
+                        @if (isAdmin)
+                        {
+                            <!-- Admin -->
+                            <li class="nav-item dropdown">
+
+                                <a class="nav-link dropdown-toggle legend-nav-link"
+                                   href="#"
+                                   id="legendAdminDropdown"
+                                   role="button"
+                                   data-bs-toggle="dropdown"
+                                   aria-expanded="false">
+
+                                    Admin
+
+                                </a>
+
+                                <ul class="dropdown-menu legend-dropdown"
+                                    aria-labelledby="legendAdminDropdown">
+
+                                    <li>
+                                        <a class="dropdown-item legend-dropdown-item"
+                                           href="/admin">
+
+                                            <i class="fa-solid fa-gauge-high"></i>
+                                            Admin Dashboard
+
+                                        </a>
+                                    </li>
+
+                                    <li>
+                                        <a class="dropdown-item legend-dropdown-item"
+                                           href="/admin/search">
+
+                                            <i class="fa-solid fa-magnifying-glass"></i>
+                                            Search Enquiry
+
+                                        </a>
+                                    </li>
+
+                                    <li>
+                                        <a class="dropdown-item legend-dropdown-item"
+                                           href="/admin/notices">
+
+                                            <i class="fa-solid fa-bell"></i>
+                                            Client Notices
+
+                                        </a>
+                                    </li>
+
+                                </ul>
+                            </li>
+                        }
+
+                    </ul>
+
+                    <!-- User menu -->
+                    <div class="legend-user-wrap">
+
+                        @if (isAuthenticated)
+                        {
+                            <div class="dropdown">
+
+                                <button type="button"
+                                        class="legend-user-button dropdown-toggle"
+                                        data-bs-toggle="dropdown"
+                                        aria-expanded="false">
+
+                                    <span class="legend-user-wave">
+                                        👋
+                                    </span>
+
+                                    <span class="legend-user-text">
+                                        Hello
+                                        <strong>
+                                            @currentEmail
+                                        </strong>
+                                    </span>
+
+                                </button>
+
+                                <ul class="dropdown-menu dropdown-menu-end legend-dropdown legend-user-menu">
+
+                                    <li>
+                                        <a class="dropdown-item legend-dropdown-item"
+                                           href="@dashboardUrl">
+
+                                            <i class="fa-solid fa-gauge-high"></i>
+                                            Dashboard
+
+                                        </a>
+                                    </li>
+
+                                    @if (!isAdmin)
+                                    {
+                                        <li>
+                                            <a class="dropdown-item legend-dropdown-item"
+                                               href="/notices">
+
+                                                <i class="fa-solid fa-bell"></i>
+                                                My Notices
+
+                                            </a>
+                                        </li>
+                                    }
+
+                                    <li>
+                                        <a class="dropdown-item legend-dropdown-item"
+                                           href="/my-profile">
+
+                                            <i class="fa-solid fa-user"></i>
+                                            My Profile
+
+                                        </a>
+                                    </li>
+
+                                    <li>
+                                        <hr class="dropdown-divider" />
+                                    </li>
+
+                                    <li>
+                                        <form asp-action="Logout"
+                                              asp-controller="Account"
+                                              method="post">
+
+                                            @Html.AntiForgeryToken()
+
+                                            <button type="submit"
+                                                    class="dropdown-item legend-dropdown-item legend-signout">
+
+                                                <i class="fa-solid fa-right-from-bracket"></i>
+                                                Sign Out
+
+                                            </button>
+                                        </form>
+                                    </li>
+
+                                </ul>
+                            </div>
+                        }
+                        else
+                        {
+                            <a href="/account/login?returnUrl=@Context.Request.Path@Context.Request.QueryString"
+                               class="legend-login-link">
+
+                                <i class="fa-solid fa-right-to-bracket"></i>
+                                Sign In
+
+                            </a>
+                        }
+
+                    </div>
+
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="legend-main">
+        @RenderBody()
+    </main>
+
+    <footer class="legend-footer">
+
+        <div class="legend-footer-inner">
+
+            <span>
+                © @DateTime.Now.Year City of Johannesburg Valuation Portal
+            </span>
+
+            <div class="legend-footer-links">
+
+                <a href="/Home/Privacy">
+                    Privacy
+                </a>
+
+                <a href="/Home/FAQ">
+                    FAQ
+                </a>
+
+                <a href="/Home/Contact">
+                    Contact
+                </a>
+
+            </div>
+
+        </div>
+
+    </footer>
+
+    <script src="~/js/dropdown-escape.js"
+            asp-append-version="true"></script>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+
+    <script src="https://cdn.datatables.net/responsive/2.4.1/js/dataTables.responsive.min.js"></script>
+
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+
+    <script src="~/js/global-action-loader.js"
+            asp-append-version="true"></script>
+
+    <script src="~/js/form-submission-loader.js"
+            asp-append-version="true"></script>
+
+    <script>
+        (() => {
+            const navbar =
+                document.getElementById('legendNavbar');
+
+            if (!navbar) {
+                return;
+            }
+
+            // Close the mobile navigation after selecting a normal link.
+            navbar
+                .querySelectorAll('a.dropdown-item, a.legend-login-link')
+                .forEach(link => {
+                    link.addEventListener('click', () => {
+                        if (window.innerWidth >= 1200) {
+                            return;
+                        }
+
+                        const collapse =
+                            bootstrap.Collapse.getInstance(navbar);
+
+                        collapse?.hide();
+                    });
+                });
+
+            // ESC closes open Bootstrap dropdowns and the mobile menu.
+            document.addEventListener('keydown', event => {
+                if (event.key !== 'Escape') {
+                    return;
+                }
+
+                navbar
+                    .querySelectorAll('[data-bs-toggle="dropdown"]')
+                    .forEach(toggle => {
+                        bootstrap.Dropdown
+                            .getInstance(toggle)
+                            ?.hide();
+                    });
+
+                if (window.innerWidth < 1200) {
+                    bootstrap.Collapse
+                        .getInstance(navbar)
+                        ?.hide();
+                }
+            });
+        })();
+    </script>
+
+    @await RenderSectionAsync(
+        "Scripts",
+        required: false)
+
+</body>
+</html>

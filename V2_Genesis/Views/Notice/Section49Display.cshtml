@@ -2,7 +2,8 @@
 @model List<V2_Genesis.Models.Results.PropertyDetailResult>
 @{
     ViewData["Title"] = "Section 49 Notice";
-    Layout = "~/Views/Shared/_ClientLayout.cshtml";
+    //Layout = "~/Views/Shared/_ClientLayout.cshtml";
+    Layout = "~/Views/Shared/_Legend_Layout.cshtml";
     var roll = ViewBag.Roll as V2_Genesis.Models.GvList;
     var rollSource = ViewData["RollSource"]?.ToString();
     var unitKey = ViewData["UnitKey"]?.ToString();

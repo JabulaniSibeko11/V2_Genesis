@@ -1,6 +1,7 @@
 ﻿@{
     ViewData["Title"] = "Application Submitted";
-    Layout = "~/Views/Shared/_ClientLayout.cshtml";
+    //Layout = "~/Views/Shared/_ClientLayout.cshtml";
+    Layout = "~/Views/Shared/_Legend_Layout.cshtml";
 
     var rebateNo = TempData["id"]?.ToString() ?? "";
     var rebateType = TempData["Type"]?.ToString() ?? "Rebate Application";

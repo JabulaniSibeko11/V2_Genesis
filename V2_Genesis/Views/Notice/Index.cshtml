@@ -1,7 +1,8 @@
 ﻿@model V2_Genesis.Models.Notice.NoticesDashboardViewModel
 @{
     ViewData["Title"] = "My Notices";
-    Layout = "~/Views/Shared/_ClientLayout.cshtml";
+    //Layout = "~/Views/Shared/_ClientLayout.cshtml";
+    Layout = "~/Views/Shared/_Legend_Layout.cshtml";
 
     var today = DateTime.Today;
     var upcoming = Model.CalendarEvents.Where(e => !e.IsExpired).ToList();
