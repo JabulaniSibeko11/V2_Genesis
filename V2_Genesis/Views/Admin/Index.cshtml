@@ -1,4 +1,4 @@
-﻿﻿﻿@using System.Security.Claims
+﻿﻿@using System.Security.Claims
 @using V2_Genesis.Helpers
 @model V2_Genesis.Models.ViewModels.Dashboard.AdminDashboardViewModel
 @{
@@ -135,6 +135,10 @@
   
     <link href="~/css/views/client-dashboard.css" rel="stylesheet" asp-append-version="true" />
 
+    <link href="~/css/Views/admin-legacy-dashboard.css"
+          rel="stylesheet"
+          asp-append-version="true" />
+
     <style>
         .cd-source-value {
             display: inline-flex;
@@ -253,231 +257,735 @@
 }
 
 
-<!-- ══════════════════════════════════════════════════════════════
-     ADMIN COMMAND BAR
-     Deliberately distinct from Views/Dashboard/Index.cshtml (the
-     client dashboard) — this is an internal tool, not a client-facing
-     welcome screen. No lodgement-window countdown here on purpose:
-     admin access to a roll is never gated by whether the public
-     objection window is open or closed.
-════════════════════════════════════════════════════════════════ -->
-<div class="adm-command-bar">
-    <div class="adm-command-bar-inner">
-        <span class="adm-mode-tag">
-            <i class="fa-solid fa-shield-halved"></i> Admin Mode
-        </span>
-
-        <div class="adm-command-identity">
-            @if (!string.IsNullOrWhiteSpace(_adminFullName))
-            {
-                <strong>@_adminFullName</strong>
-            }
-            @if (!string.IsNullOrWhiteSpace(_adminPosition))
-            {
-                <span class="adm-command-role">@_adminPosition</span>
-            }
-            @if (!string.IsNullOrWhiteSpace(_sapNumeric))
-            {
-                <span class="adm-command-sap">SAP @_sapNumeric</span>
-            }
-            <span class="adm-command-email">@Model.AdminEmail</span>
-        </div>
-
-        <div class="adm-command-actions">
-            <a href="/admin/search" class="adm-command-btn adm-command-btn--gold">
-                <i class="fa-solid fa-magnifying-glass"></i> Search Enquiry
-            </a>
-            <a href="/admin/audit" class="adm-command-btn">
-                <i class="fa-solid fa-clock-rotate-left"></i> Audit Trail
-            </a>
-            <a href="/admin/notices" class="adm-command-btn">
-                <i class="fa-solid fa-bell"></i> Client Notices
-            </a>
-        </div>
-    </div>
-</div>
-
-<!-- ── Console heading ──────────────────────────────────────────────── -->
 @{
-    var totalObj = Model.Rolls.Where(r => !r.IsQuery).Sum(r => Model.DataFor(r.Source).ObjectedCount);
-    var totalApp = Model.Rolls.Where(r => !r.IsQuery).Sum(r => Model.DataFor(r.Source).AppealsCount);
-    var totalQry = Model.Rolls.Where(r => r.IsQuery).Sum(r => Model.DataFor(r.Source).ObjectedCount);
-    var rollCount = Model.Rolls.Count();
-}
-<div class="adm-console-hero">
-    <div class="adm-console-hero-inner">
-        <div class="adm-console-hero-icon">
-            <i class="fa-solid fa-building-shield"></i>
-        </div>
-        <div>
-            <h1 class="adm-console-title">Objections, Appeals &amp; Queries Workspace</h1>
-            <p class="adm-console-sub">
-                <strong>@totalObj</strong> objections &middot;
-                <strong>@totalApp</strong> appeals &middot;
-                <strong>@totalQry</strong> queries
-                across @rollCount rolls
-            </p>
-        </div>
-    </div>
-</div>
+    // Keep these existing structures because the detail/table JavaScript below
+    // still uses the family lookup. The data source remains exactly the same.
+    var adminFamilies = Model.Rolls
+        .Where(r => !r.IsQuery)
+        .GroupBy(r => r.Main_Roll)
+        .ToList();
 
-<!-- ── Per-roll sections ───────────────────────────────────────────── -->
-
-@{
-    var adminFamilies = Model.Rolls.Where(r => !r.IsQuery)
-                                    .GroupBy(r => r.Main_Roll)
-                                    .ToList();
-    var adminQueryRolls = Model.Rolls.Where(r => r.IsQuery).ToList();
+    var adminQueryRolls = Model.Rolls
+        .Where(r => r.IsQuery)
+        .ToList();
 
     var adminFamilyLookup = adminFamilies.Select(fam =>
     {
         var head = fam.FirstOrDefault(r => r.IsGv) ?? fam.First();
-        var membersOrdered = fam.OrderBy(r => r.Source == head.Source ? 0 : 1)
-                                 .ThenBy(r => r.Source)
-                                 .Select(r => new { source = r.Source, name = r.Name, shortName = r.Short })
-                                 .ToList();
-        return new { headSource = head.Source, members = membersOrdered };
+
+        var membersOrdered = fam
+            .OrderBy(r => r.Source == head.Source ? 0 : 1)
+            .ThenBy(r => r.Source)
+            .Select(r => new
+            {
+                source = r.Source,
+                name = r.Name,
+                shortName = r.Short
+            })
+            .ToList();
+
+        return new
+        {
+            headSource = head.Source,
+            members = membersOrdered
+        };
     }).ToList();
+
+    // ── Old-style Admin launcher ─────────────────────────────────────
+    var adminSup4 = Model.Rolls.FirstOrDefault(x =>
+        string.Equals(
+            x.Source,
+            "Objection_Supp4",
+            StringComparison.OrdinalIgnoreCase));
+
+    var adminQuery = Model.Rolls.FirstOrDefault(x =>
+        x.IsQuery ||
+        string.Equals(
+            x.Source,
+            "Objection_Query",
+            StringComparison.OrdinalIgnoreCase));
+
+    var adminPreviousSources = new[]
+    {
+        "Objection",
+        "Objection_Supp1",
+        "Objection_Supp2",
+        "Objection_Supp3"
+    };
+
+    var adminPreviousRolls = Model.Rolls
+        .Where(x =>
+            adminPreviousSources.Contains(
+                x.Source,
+                StringComparer.OrdinalIgnoreCase))
+        .OrderBy(x =>
+            Array.FindIndex(
+                adminPreviousSources,
+                source => source.Equals(
+                    x.Source,
+                    StringComparison.OrdinalIgnoreCase)))
+        .ToList();
+
+    string AdminRollLabel(string source) => source switch
+    {
+        "Objection" => "General Valuation Roll 2023",
+        "Objection_Supp1" => "Supplementary Roll 1",
+        "Objection_Supp2" => "Supplementary Roll 2",
+        "Objection_Supp3" => "Supplementary Roll 3",
+        "Objection_Supp4" => "Supplementary Roll 4",
+        _ => source
+    };
+
+    string AdminPublicPeriodStatus(string source)
+    {
+        var dates = Model.DatesFor(source);
+
+        if (dates is null)
+            return "ADMIN ACCESS";
+
+        var now = DateTime.Now;
+
+        if (now < dates.OpenDate)
+            return "OPENING SOON";
+
+        return now <= dates.VisibleUntil
+            ? "OPEN"
+            : "CLOSED";
+    }
 }
 
-<!-- ── Admin dashboard: family tiles + persistent tab strip ───────────── -->
-<div class="cd-body" id="cdTileBody">
+<!-- ══════════════════════════════════════════════════════════════
+     OLD-STYLE ADMIN DASHBOARD
+     Front-end only: all data, actions and detailed tables below
+     continue to use the existing Genesis Admin model and logic.
+════════════════════════════════════════════════════════════════ -->
+<div class="adm-legacy-dashboard"
+     id="cdTileBody">
 
-    <p class="cd-intro-note">
-        <i class="fa-solid fa-circle-info"></i>
-        Select a card below to review linked properties, objections and appeals for that roll.
-    </p>
+    <section class="adm-legacy-heading">
 
-    <div class="cd-tile-grid" id="cdTileGrid">
-        @foreach (var fam in adminFamilies)
+        <div class="adm-legacy-mode">
+            <i class="fa-solid fa-shield-halved"></i>
+            Administration
+        </div>
+
+        <h1>
+            Valuation Administration
+        </h1>
+
+        <p>
+            Select a service below to search, capture, review or manage
+            valuation submissions.
+        </p>
+
+        @if (!string.IsNullOrWhiteSpace(_adminFullName) ||
+             !string.IsNullOrWhiteSpace(_adminPosition) ||
+             !string.IsNullOrWhiteSpace(_sapNumeric))
         {
-            var head = fam.FirstOrDefault(r => r.IsGv) ?? fam.First();
-            var members = fam.OrderBy(r => r.Source == head.Source ? 0 : 1).ThenBy(r => r.Source).ToList();
-            var totalLinked = fam.Sum(r => Model.DataFor(r.Source).LinkedCount);
-            var totalObjected = fam.Sum(r => Model.DataFor(r.Source).ObjectedCount);
-            var totalAppeals = fam.Sum(r => Model.DataFor(r.Source).AppealsCount);
-            var dates = Model.DatesFor(head.Source);
-            var periodStatus = Model.GetPeriodStatus(head.Source);
-            var membersJson = System.Text.Json.JsonSerializer.Serialize(
-                members.Select(m => new { source = m.Source, name = m.Name, shortName = m.Short }));
+            <div class="adm-legacy-user-summary">
 
-            <div class="cd-tile cd-tile-family"
-                 data-head-source="@head.Source"
-                 data-members="@membersJson"
-                 onclick="openAdminFamily(this)">
-
-                @if (members.Count > 1)
+                @if (!string.IsNullOrWhiteSpace(_adminFullName))
                 {
-                    <span class="cd-tile-family-count">
-                        <i class="fa-solid fa-layer-group"></i> @members.Count rolls
+                    <strong>
+                        @_adminFullName
+                    </strong>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(_adminPosition))
+                {
+                    <span>
+                        @_adminPosition
                     </span>
                 }
 
-                <div class="cd-tile-icon"><i class="fa-solid fa-landmark"></i></div>
-                <h3 class="cd-tile-name">@head.Name</h3>
-
-                @if (members.Count > 1)
+                @if (!string.IsNullOrWhiteSpace(_sapNumeric))
                 {
-                    <span class="cd-tile-cta">
-                        <i class="fa-solid fa-arrow-turn-down-right"></i>
-                        Click to open @head.Short and all @(members.Count - 1) supplementary rolls
-                    </span>
-                }
-                else
-                {
-                    <span class="cd-tile-short">@head.Short</span>
-                }
-
-                <div class="cd-tile-stats">
-                    <span title="Linked"><i class="fa-solid fa-link"></i> @totalLinked</span>
-                    <span title="Objections"><i class="fa-solid fa-file-pen"></i> @totalObjected</span>
-                    @if (totalAppeals > 0)
-                    {
-                        <span title="Appeals"><i class="fa-solid fa-gavel"></i> @totalAppeals</span>
-                    }
-                </div>
-
-                @if (dates is not null)
-                {
-                    <span class="cd-tile-badge cd-badge-@periodStatus">
-                        @(periodStatus == "active" ? "Objection Open" :
-                          periodStatus == "upcoming" ? "Opening Soon" :
-                          "Objection Closed")
+                    <span>
+                        SAP @_sapNumeric
                     </span>
                 }
 
-                <span class="cd-tile-open-hint">
-                    View Details <i class="fa-solid fa-arrow-right"></i>
+            </div>
+        }
+
+        <div class="adm-legacy-quick-tools">
+
+            <a href="/admin/audit">
+                <i class="fa-solid fa-clock-rotate-left"></i>
+                Audit Trail
+            </a>
+
+            <a href="/admin/notices">
+                <i class="fa-solid fa-bell"></i>
+                Client Notices
+            </a>
+
+        </div>
+
+        <span class="adm-legacy-heading-line"></span>
+
+    </section>
+
+    <div class="adm-legacy-grid">
+
+        @if (adminSup4 is not null)
+        {
+            var data =
+                Model.DataFor(adminSup4.Source);
+
+            var status =
+                AdminPublicPeriodStatus(adminSup4.Source);
+
+            <article class="adm-legacy-card
+                            adm-legacy-card-teal">
+
+                <span class="adm-legacy-status
+                             @(status == "OPEN"
+                                 ? "is-open"
+                                 : status == "CLOSED"
+                                     ? "is-closed"
+                                     : "is-admin")">
+                    @status
                 </span>
-            </div>
-        }
 
-        @foreach (var roll in adminQueryRolls)
-        {
-            var rollKey = roll.Source.Replace("_", "");
-            var rd = Model.DataFor(roll.Source);
-
-          
-    var queryDisplayName = "Section 78 Query/Review";
-
-<div class="cd-tile cd-tile-query"
-     data-standalone-key="@rollKey"
-     data-roll-name="@queryDisplayName"
-     onclick="openAdminStandalone(this)">
-
-    <div class="cd-tile-icon">
-        <i class="fa-solid fa-magnifying-glass-chart"></i>
-    </div>
-
-    <h3 class="cd-tile-name">@queryDisplayName</h3>
-                <span class="cd-tile-short">@roll.Short</span>
-                <div class="cd-tile-stats">
-                    <span title="Linked"><i class="fa-solid fa-link"></i> @rd.LinkedCount</span>
-                    <span title="Queries"><i class="fa-solid fa-file-magnifying-glass"></i> @rd.ObjectedCount</span>
+                <div class="adm-legacy-icon">
+                    <i class="fa-solid fa-scroll"></i>
                 </div>
-                <span class="cd-tile-badge cd-badge-open">OPEN</span>
-                <span class="cd-tile-open-hint">View Details <i class="fa-solid fa-arrow-right"></i></span>
-            </div>
+
+                <h2>
+                    Supplementary Roll 4
+                </h2>
+
+                <p>
+                    Search, capture and manage Supplementary Roll 4
+                    properties, objections and appeals.
+                </p>
+
+                <div class="adm-legacy-stats">
+
+                    <span>
+                        <i class="fa-solid fa-link"></i>
+                        @data.LinkedCount Linked
+                    </span>
+
+                    <span>
+                        <i class="fa-solid fa-file-pen"></i>
+                        @data.ObjectedCount Objections
+                    </span>
+
+                    <span>
+                        <i class="fa-solid fa-gavel"></i>
+                        @data.AppealsCount Appeals
+                    </span>
+
+                </div>
+
+                <div class="adm-legacy-actions">
+
+                    <a href="/search/Objection_Supp4"
+                       class="adm-legacy-btn
+                              adm-legacy-btn-primary">
+
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        Search Property
+
+                    </a>
+
+                    <button type="button"
+                            class="adm-legacy-btn
+                                   adm-legacy-btn-secondary"
+                            onclick="openAdminRollSource(
+                                'Objection_Supp4')">
+
+                        <i class="fa-solid fa-table-list"></i>
+                        Dashboard
+
+                    </button>
+
+                </div>
+
+            </article>
         }
 
-        <div class="cd-tile cd-tile-rebates" data-standalone-key="rebates" data-roll-name="Rebates" onclick="openAdminStandalone(this)">
-            <div class="cd-tile-icon"><i class="fa-solid fa-percent"></i></div>
-            <h3 class="cd-tile-name">Rebates</h3>
-            <span class="cd-tile-short">Apply for or track rebate applications captured by you</span>
-            <div class="cd-tile-stats">
-                <span title="Applications"><i class="fa-solid fa-file-pen"></i> @(Model.Rebates?.Count ?? 0)</span>
-            </div>
-            <span class="cd-tile-badge cd-badge-open">OPEN</span>
-            <span class="cd-tile-open-hint">View Details <i class="fa-solid fa-arrow-right"></i></span>
-        </div>
+        @if (adminQuery is not null)
+        {
+            var data =
+                Model.DataFor(adminQuery.Source);
 
-        <div class="cd-tile cd-tile-attributes" data-standalone-key="attributes" data-roll-name="Property Attributes" onclick="openAdminStandalone(this)">
-            <div class="cd-tile-icon"><i class="fa-solid fa-clipboard-list"></i></div>
-            <h3 class="cd-tile-name">Property Attributes</h3>
-            <span class="cd-tile-short">Submit or track property attributes captured by you</span>
-            <div class="cd-tile-stats">
-                <span title="Linked"><i class="fa-solid fa-link"></i> @Model.AttributesLinked.Count</span>
-                <span title="Submissions"><i class="fa-solid fa-file-pen"></i> @Model.AttributesData.SubmissionCount</span>
-            </div>
-            <span class="cd-tile-badge cd-badge-open">NEW</span>
-            <span class="cd-tile-open-hint">View Details <i class="fa-solid fa-arrow-right"></i></span>
-        </div>
+            <article class="adm-legacy-card
+                            adm-legacy-card-teal">
 
-        <a class="cd-tile cd-tile-enquiries"
-           asp-controller="Admin"
-           asp-action="Search"
-           style="text-decoration:none;color:inherit;">
-            <div class="cd-tile-icon"><i class="fa-solid fa-magnifying-glass"></i></div>
-            <h3 class="cd-tile-name">Search Enquiries</h3>
-            <span class="cd-tile-short">Find a property, objection, appeal, query or review</span>
-            <div class="cd-tile-stats">
-                <span><i class="fa-solid fa-file-lines"></i> All Rolls</span>
+                <span class="adm-legacy-status is-open">
+                    OPEN
+                </span>
+
+                <div class="adm-legacy-icon">
+                    <i class="fa-solid fa-magnifying-glass-chart"></i>
+                </div>
+
+                <h2>
+                    Section 78 Query / Review
+                </h2>
+
+                <p>
+                    Search, capture and manage Section 78 Queries
+                    and Reviews.
+                </p>
+
+                <div class="adm-legacy-stats">
+
+                    <span>
+                        <i class="fa-solid fa-link"></i>
+                        @data.LinkedCount Linked
+                    </span>
+
+                    <span>
+                        <i class="fa-solid fa-file-circle-question"></i>
+                        @data.ObjectedCount Submissions
+                    </span>
+
+                </div>
+
+                <div class="adm-legacy-actions">
+
+                    <a href="/search/Objection_Query"
+                       class="adm-legacy-btn
+                              adm-legacy-btn-primary">
+
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        Search Property
+
+                    </a>
+
+                    <button type="button"
+                            class="adm-legacy-btn
+                                   adm-legacy-btn-secondary"
+                            onclick="openAdminRollSource(
+                                '@adminQuery.Source')">
+
+                        <i class="fa-solid fa-table-list"></i>
+                        Dashboard
+
+                    </button>
+
+                </div>
+
+            </article>
+        }
+
+        <article class="adm-legacy-card
+                        adm-legacy-card-gold">
+
+            <span class="adm-legacy-status is-open">
+                OPEN
+            </span>
+
+            <div class="adm-legacy-icon">
+                <i class="fa-solid fa-percent"></i>
             </div>
-            <span class="cd-tile-badge cd-badge-open">SEARCH</span>
-            <span class="cd-tile-open-hint">Open Search <i class="fa-solid fa-arrow-right"></i></span>
+
+            <h2>
+                Rebates
+            </h2>
+
+            <p>
+                Capture and track property rebate applications.
+            </p>
+
+            <div class="adm-legacy-stats">
+
+                <span>
+                    <i class="fa-solid fa-file-pen"></i>
+                    @(Model.Rebates?.Count ?? 0) Applications
+                </span>
+
+            </div>
+
+            <div class="adm-legacy-actions">
+
+                <a href="/Rebates/Index"
+                   class="adm-legacy-btn
+                          adm-legacy-btn-primary
+                          adm-legacy-btn-gold">
+
+                    <i class="fa-solid fa-file-signature"></i>
+                    Apply for Rebates
+
+                </a>
+
+                <button type="button"
+                        class="adm-legacy-btn
+                               adm-legacy-btn-secondary"
+                        data-standalone-key="rebates"
+                        onclick="openAdminStandalone(this)">
+
+                    <i class="fa-solid fa-table-list"></i>
+                    Dashboard
+
+                </button>
+
+            </div>
+
+        </article>
+
+        <article class="adm-legacy-card
+                        adm-legacy-card-gold">
+
+            <span class="adm-legacy-status is-open">
+                OPEN
+            </span>
+
+            <div class="adm-legacy-icon">
+                <i class="fa-solid fa-clipboard-list"></i>
+            </div>
+
+            <h2>
+                Property Attributes
+            </h2>
+
+            <p>
+                Capture and track property attribute submissions.
+            </p>
+
+            <div class="adm-legacy-stats">
+
+                <span>
+                    <i class="fa-solid fa-link"></i>
+                    @Model.AttributesLinked.Count Linked
+                </span>
+
+                <span>
+                    <i class="fa-solid fa-file-pen"></i>
+                    @Model.AttributesData.SubmissionCount Submissions
+                </span>
+
+            </div>
+
+            <div class="adm-legacy-actions">
+
+                <a href="/attributes/search"
+                   class="adm-legacy-btn
+                          adm-legacy-btn-primary
+                          adm-legacy-btn-gold">
+
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    Search Property
+
+                </a>
+
+                <button type="button"
+                        class="adm-legacy-btn
+                               adm-legacy-btn-secondary"
+                        data-standalone-key="attributes"
+                        onclick="openAdminStandalone(this)">
+
+                    <i class="fa-solid fa-table-list"></i>
+                    Dashboard
+
+                </button>
+
+            </div>
+
+        </article>
+
+        <!-- Admin-only additional tile requested for this deployment -->
+        <a href="/admin/search"
+           class="adm-legacy-card
+                  adm-legacy-card-search">
+
+            <span class="adm-legacy-status is-admin">
+                ADMIN TOOL
+            </span>
+
+            <div class="adm-legacy-icon">
+                <i class="fa-solid fa-magnifying-glass"></i>
+            </div>
+
+            <h2>
+                Search Enquiries
+            </h2>
+
+            <p>
+                Search across properties, objections, appeals,
+                Section 78 Queries and Reviews from one place.
+            </p>
+
+            <div class="adm-legacy-stats">
+
+                <span>
+                    <i class="fa-solid fa-layer-group"></i>
+                    All Rolls
+                </span>
+
+                <span>
+                    <i class="fa-solid fa-user-shield"></i>
+                    Admin Search
+                </span>
+
+            </div>
+
+            <div class="adm-legacy-actions">
+
+                <span class="adm-legacy-btn
+                             adm-legacy-btn-primary">
+
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    Open Search Enquiries
+
+                </span>
+
+            </div>
+
         </a>
+
     </div>
+
+    <section class="adm-legacy-archive">
+
+        <button type="button"
+                class="adm-legacy-archive-toggle"
+                id="admLegacyArchiveToggle"
+                aria-expanded="false"
+                onclick="toggleAdminLegacyArchive()">
+
+            <span>
+
+                <i class="fa-solid fa-bolt"></i>
+
+                <span>
+
+                    <strong>
+                        Quick Access – Previous Valuation Rolls
+                    </strong>
+
+                    <small>
+                        View GV23 and closed supplementary rolls
+                    </small>
+
+                </span>
+
+            </span>
+
+            <i class="fa-solid fa-chevron-down
+                      adm-legacy-archive-chevron"
+               id="admLegacyArchiveChevron"></i>
+
+        </button>
+
+        <div class="adm-legacy-archive-body"
+             id="admLegacyArchiveBody"
+             hidden>
+
+            @foreach (var roll in adminPreviousRolls)
+            {
+                var data =
+                    Model.DataFor(roll.Source);
+
+                <article class="adm-legacy-archive-card">
+
+                    <div>
+
+                        <span class="adm-legacy-archive-badge">
+                            CLOSED
+                        </span>
+
+                        <h3>
+                            @AdminRollLabel(roll.Source)
+                        </h3>
+
+                        <p>
+                            @data.LinkedCount linked ·
+                            @data.ObjectedCount objections ·
+                            @data.AppealsCount appeals
+                        </p>
+
+                    </div>
+
+                    <div class="adm-legacy-archive-actions">
+
+                        <a href="/search/@roll.Source"
+                           class="adm-legacy-small-link">
+
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            Search
+
+                        </a>
+
+                        <button type="button"
+                                class="adm-legacy-btn
+                                       adm-legacy-btn-secondary"
+                                onclick="openAdminRollSource(
+                                    '@roll.Source')">
+
+                            <i class="fa-solid fa-table-list"></i>
+                            Dashboard
+
+                        </button>
+
+                    </div>
+
+                </article>
+            }
+
+        </div>
+
+    </section>
+
 </div>
+
+<script>
+    function toggleAdminLegacyArchive() {
+
+        const body =
+            document.getElementById(
+                'admLegacyArchiveBody');
+
+        const button =
+            document.getElementById(
+                'admLegacyArchiveToggle');
+
+        const chevron =
+            document.getElementById(
+                'admLegacyArchiveChevron');
+
+        if (!body || !button) {
+            return;
+        }
+
+        const willOpen =
+            body.hidden;
+
+        body.hidden =
+            !willOpen;
+
+        button.setAttribute(
+            'aria-expanded',
+            willOpen ? 'true' : 'false');
+
+        chevron?.classList.toggle(
+            'is-open',
+            willOpen);
+    }
+
+    function openAdminRollSource(source) {
+
+        if (!source) {
+            return;
+        }
+
+        const key =
+            source.replace(/_/g, '');
+
+        const familyTabs =
+            document.getElementById(
+                'cdFamilyTabs');
+
+        if (familyTabs) {
+            familyTabs.style.display = 'none';
+            familyTabs.innerHTML = '';
+        }
+
+        const familyContext =
+            document.getElementById(
+                'cdFamilyContext');
+
+        if (familyContext) {
+            familyContext.style.display = 'none';
+            familyContext.innerHTML = '';
+        }
+
+        if (typeof showAdminDetailArea === 'function') {
+            showAdminDetailArea();
+        }
+
+        if (typeof showOnlyAdminSection === 'function') {
+            showOnlyAdminSection(
+                'adm-roll-' + key);
+        }
+
+        const body =
+            document.getElementById(
+                'rollbody-' + key);
+
+        const chevron =
+            document.getElementById(
+                'chevron-' + key);
+
+        const section =
+            document.getElementById(
+                'adm-roll-' + key);
+
+        if (body) {
+            body.classList.add('open');
+        }
+
+        if (chevron) {
+            chevron.style.transform =
+                'rotate(180deg)';
+        }
+
+        if (typeof initTablesInSection === 'function') {
+            initTablesInSection(key);
+        }
+
+        section?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+        });
+    }
+
+    document.addEventListener(
+        'DOMContentLoaded',
+        function () {
+
+            const params =
+                new URLSearchParams(
+                    window.location.search);
+
+            const openRoll =
+                params.get('openRoll');
+
+            if (!openRoll) {
+                return;
+            }
+
+            const normalised =
+                openRoll.toLowerCase();
+
+            if (normalised === 'rebates') {
+
+                const button =
+                    document.querySelector(
+                        'button[data-standalone-key="rebates"]');
+
+                if (button &&
+                    typeof openAdminStandalone === 'function') {
+
+                    openAdminStandalone(button);
+                }
+
+                return;
+            }
+
+            if (normalised === 'attributes') {
+
+                const button =
+                    document.querySelector(
+                        'button[data-standalone-key="attributes"]');
+
+                if (button &&
+                    typeof openAdminStandalone === 'function') {
+
+                    openAdminStandalone(button);
+                }
+
+                return;
+            }
+
+            openAdminRollSource(
+                openRoll);
+        });
+</script>
 
 <script id="admFamilyLookupData" type="application/json">
 @Html.Raw(System.Text.Json.JsonSerializer.Serialize(adminFamilyLookup))
