@@ -137,7 +137,7 @@
         </div>
         <div class="tiles-grid">
 
-            <div class="tile tile-rates">
+           @*  <div class="tile tile-rates">
                 <div class="tile-status-row">
                     <span class="tile-status badge-open">
                         <span class="tile-status-dot"></span> NEW
@@ -168,7 +168,7 @@
                         Open Calculator
                     </button>
                 </div>
-            </div>
+            </div> *@
             <div class="tile tile-evidence">
                 <div class="tile-status-row">
                     <span class="tile-status badge-open">
@@ -280,7 +280,7 @@
         </div>
     </div>
 </section>
-<div class="rates-modal-backdrop"
+@* <div class="rates-modal-backdrop"
      id="ratesModalBackdrop"
      hidden>
 </div>
@@ -486,6 +486,8 @@
         </div>
     </div>
 </div>
+ *@
+
 @section Scripts {
   
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
@@ -502,12 +504,12 @@
         // Property search, disclaimer and Possible Rates Calculator
         // ════════════════════════════════════════════════════════════════════════
 
-        let activeRateTariffs = [];
-        let rateTariffsLoadingPromise = null;
+        //let activeRateTariffs = [];
+        //let rateTariffsLoadingPromise = null;
 
         // Stores the element that opened the calculator so keyboard focus can
         // return to it when the modal closes.
-        let calculatorTriggerElement = null;
+        //let calculatorTriggerElement = null;
 
 
         // ════════════════════════════════════════════════════════════════════════
@@ -522,41 +524,41 @@
         return tokenElement ? tokenElement.value : '';
         }
 
-        function formatRand(value) {
-        const numericValue = Number(value);
+        // function formatRand(value) {
+        // const numericValue = Number(value);
 
-        return new Intl.NumberFormat('en-ZA', {
-        style: 'currency',
-        currency: 'ZAR',
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-        }).format(Number.isFinite(numericValue) ? numericValue : 0);
-        }
+        // return new Intl.NumberFormat('en-ZA', {
+        // style: 'currency',
+        // currency: 'ZAR',
+        // minimumFractionDigits: 2,
+        // maximumFractionDigits: 2
+        // }).format(Number.isFinite(numericValue) ? numericValue : 0);
+        // }
 
-        function formatTariff(value) {
-        const numericValue = Number(value);
+        // function formatTariff(value) {
+        // const numericValue = Number(value);
 
-        if (!Number.isFinite(numericValue)) {
-        return '0.000000';
-        }
+        // if (!Number.isFinite(numericValue)) {
+        // return '0.000000';
+        // }
 
-        return numericValue.toFixed(6);
-        }
+        // return numericValue.toFixed(6);
+        // }
 
-        async function readResponsePayload(response) {
-        const contentType = response.headers.get('content-type') || '';
+        // async function readResponsePayload(response) {
+        // const contentType = response.headers.get('content-type') || '';
 
-        if (contentType.includes('application/json')) {
-        return await response.json();
-        }
+        // if (contentType.includes('application/json')) {
+        // return await response.json();
+        // }
 
-        const text = await response.text();
+        // const text = await response.text();
 
-        return {
-        success: false,
-        message: text || 'The server returned an unexpected response.'
-        };
-        }
+        // return {
+        // success: false,
+        // message: text || 'The server returned an unexpected response.'
+        // };
+        // }
 
 
         // ════════════════════════════════════════════════════════════════════════
@@ -1856,7 +1858,7 @@
         function () {
         loadTownshipsAndSchemes();
         initialiseDisclaimer();
-        initialiseRatesCalculator();
+        //initialiseRatesCalculator();
 
         [
         'hs_stand',
@@ -1887,7 +1889,7 @@
         // Required because the current Search button uses:
         // onclick="runHomeSearch()"
         window.runHomeSearch = runHomeSearch;
-        window.openRatesFromProperty = openRatesFromProperty;
+       // window.openRatesFromProperty = openRatesFromProperty;
         async function openRatesFromProperty(button) {
         if (!button) {
         return;
