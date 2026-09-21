@@ -72,7 +72,8 @@ public class PropertySearchService : IPropertySearchService
     // Shared search lists
     // ─────────────────────────────────────────────────────────────
 
-    public async Task<List<string>> GetTownshipsAsync(string? rollSource = null)
+    public async Task<List<string>> GetTownshipsAsync(
+     string? rollSource = null)
     {
         var source = string.IsNullOrWhiteSpace(rollSource)
             ? "Objection"
@@ -89,24 +90,19 @@ public class PropertySearchService : IPropertySearchService
             return cachedTownships;
         }
 
-        string connectionString;
-
-        if (RollSearchRegistry.Configs.TryGetValue(
+        if (!RollSearchRegistry.Configs.TryGetValue(
                 source,
                 out var rollConfig))
         {
-            connectionString =
-                GetRollConnection(rollConfig);
-        }
-        else
-        {
-            // Default only for callers that genuinely do not represent
-            // one of the configured valuation rolls.
-            connectionString = _defaultConn;
+            _logger.LogWarning(
+                "No township configuration found for Roll={RollSource}",
+                source);
+
+            return new List<string>();
         }
 
-        const string townshipProcedure =
-            "dbo.propertyDetailsTown";
+        var connectionString =
+            GetRollConnection(rollConfig);
 
         try
         {
@@ -114,7 +110,7 @@ public class PropertySearchService : IPropertySearchService
                 new SqlConnection(connectionString);
 
             var rows = await conn.QueryAsync<string>(
-                townshipProcedure,
+                rollConfig.TownshipSp,
                 commandType: CommandType.StoredProcedure,
                 commandTimeout: 60);
 
@@ -131,9 +127,11 @@ public class PropertySearchService : IPropertySearchService
                 TimeSpan.FromMinutes(30));
 
             _logger.LogInformation(
-                "Loaded {Count} townships for Roll={RollSource} from its own roll database.",
+                "Loaded {Count} townships. Roll={RollSource}, SP={TownshipSp}, Connection={ConnectionKey}",
                 result.Count,
-                source);
+                source,
+                rollConfig.TownshipSp,
+                rollConfig.ConnectionKey);
 
             return result;
         }
@@ -141,12 +139,12 @@ public class PropertySearchService : IPropertySearchService
         {
             _logger.LogError(
                 ex,
-                "Could not load township list for Roll={RollSource}. " +
-                "The application will not fall back to another roll's township list.",
-                source);
+                "Could not load townships. Roll={RollSource}, SP={TownshipSp}, Connection={ConnectionKey}",
+                source,
+                rollConfig.TownshipSp,
+                rollConfig.ConnectionKey);
 
-            // Important: do not fall back to the GV township list.
-            // A blank list is safer than showing townships that are not on this roll.
+            // Never fall back to another roll.
             return new List<string>();
         }
     }

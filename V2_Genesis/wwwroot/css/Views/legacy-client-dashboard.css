@@ -1,11 +1,9 @@
 /* ============================================================
-   GENESIS CLIENT DASHBOARD — LEGACY FRONT-END FEATURE BRANCH
-   ------------------------------------------------------------
-   Presentation only. Existing _RollDetailPartial remains the
-   source of tables/actions/business rules.
+   GENESIS CLIENT DASHBOARD — LEGACY FRONT-END
+   Responsive launcher + existing dynamic roll-detail styling.
    ============================================================ */
 
-.legacy-roll-dashboard-partial {
+:root {
     --legacy-gold: #d2a000;
     --legacy-gold-bright: #e6b000;
     --legacy-teal: #08737c;
@@ -14,13 +12,423 @@
     --legacy-text: #183238;
     --legacy-muted: #66777c;
     --legacy-border: #dce4e6;
-
-    width: 100%;
 }
 
-/* The selected roll title already appears in the parent dashboard detail bar.
-   Keep the existing partial's Search Property logic available to the launcher
-   itself and remove only the duplicate info header here. */
+/* ============================================================
+   DASHBOARD LANDING / LAUNCHER
+   ============================================================ */
+
+.legacy-dashboard {
+    width: min(1220px, calc(100% - 28px));
+    max-width: 100%;
+    min-width: 0;
+    margin: 22px auto 46px;
+    font-family: "Poppins", Arial, sans-serif;
+}
+
+.legacy-dashboard-announcement {
+    width: 100%;
+    min-width: 0;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 16px;
+    border: 1px solid rgba(0, 101, 112, .14);
+    border-left: 4px solid var(--legacy-teal);
+    border-radius: 9px;
+    background: #eef8f9;
+    color: #34545b;
+    font-size: 11px;
+    line-height: 1.55;
+    overflow-wrap: break-word;
+}
+
+.legacy-dashboard-announcement > i {
+    flex: 0 0 auto;
+    margin-top: 2px;
+    color: var(--legacy-teal);
+}
+
+.legacy-dashboard-announcement > span {
+    min-width: 0;
+}
+
+.legacy-dashboard-heading {
+    padding: 24px 10px 26px;
+    text-align: center;
+}
+
+.legacy-dashboard-kicker {
+    display: inline-block;
+    margin-bottom: 7px;
+    color: #8a9699;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 1.1px;
+}
+
+.legacy-dashboard-heading h1 {
+    max-width: 900px;
+    margin: 0 auto;
+    color: var(--legacy-teal);
+    font-size: clamp(24px, 3vw, 34px);
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+.legacy-dashboard-heading-line {
+    display: block;
+    width: 70px;
+    height: 3px;
+    margin: 15px auto 0;
+    border-radius: 999px;
+    background: var(--legacy-teal);
+}
+
+.legacy-dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 22px;
+}
+
+.legacy-service-card {
+    position: relative;
+    min-width: 0;
+    min-height: 300px;
+    display: flex;
+    flex-direction: column;
+    padding: 28px;
+    border: 1px solid #e8ecee;
+    border-radius: 13px;
+    background: #ffffff;
+    box-shadow: 0 6px 18px rgba(25, 46, 52, .11);
+    overflow: hidden;
+}
+
+.legacy-service-card-teal {
+    border-top: 5px solid var(--legacy-teal);
+}
+
+.legacy-service-card-gold {
+    border-top: 5px solid var(--legacy-gold-bright);
+}
+
+.legacy-service-status {
+    width: fit-content;
+    margin: -6px 0 13px;
+    padding: 5px 12px;
+    border-radius: 999px;
+    font-size: 8px;
+    font-weight: 900;
+    letter-spacing: .9px;
+}
+
+.legacy-service-status.is-open {
+    border: 1px solid #a7dfbf;
+    background: #e9f8ef;
+    color: #08783f;
+}
+
+.legacy-service-status.is-closed {
+    border: 1px solid #d8dfe1;
+    background: #eef1f2;
+    color: #59676b;
+}
+
+.legacy-service-icon {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 48px;
+    height: 48px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: rgba(0, 101, 112, .09);
+    color: var(--legacy-teal);
+    font-size: 20px;
+}
+
+.legacy-service-card-gold .legacy-service-icon {
+    background: #fff7dc;
+    color: #b88900;
+}
+
+.legacy-service-card h2 {
+    min-width: 0;
+    margin: 0 68px 13px 0;
+    padding-bottom: 13px;
+    border-bottom: 1px solid #eceeef;
+    color: var(--legacy-teal);
+    font-size: 21px;
+    font-weight: 800;
+    line-height: 1.25;
+}
+
+.legacy-service-card-gold h2 {
+    color: #b88900;
+}
+
+.legacy-service-card p {
+    margin: 0 0 18px;
+    color: #3d5156;
+    font-size: 12px;
+    line-height: 1.65;
+}
+
+.legacy-service-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.legacy-service-stats span {
+    min-width: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 9px;
+    border-radius: 8px;
+    background: #f3f6f7;
+    color: #52666c;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.legacy-service-stats i {
+    color: var(--legacy-teal);
+}
+
+.legacy-service-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: auto;
+}
+
+.legacy-btn {
+    min-height: 41px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 0 14px;
+    border: 0;
+    border-radius: 9px;
+    text-decoration: none;
+    font: inherit;
+    font-size: 10px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.legacy-btn-primary {
+    background: var(--legacy-teal);
+    color: #ffffff;
+}
+
+.legacy-btn-primary:hover {
+    color: #ffffff;
+}
+
+.legacy-btn-gold {
+    background: var(--legacy-gold-bright);
+    color: #18282d;
+}
+
+.legacy-btn-gold:hover {
+    color: #18282d;
+}
+
+.legacy-btn-secondary {
+    border: 1px solid #d6dcde;
+    background: #ffffff;
+    color: var(--legacy-teal);
+}
+
+/* ============================================================
+   PREVIOUS / CLOSED ROLLS
+   ============================================================ */
+
+.legacy-archive {
+    margin-top: 30px;
+}
+
+.legacy-archive-toggle {
+    width: 100%;
+    min-height: 76px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    padding: 14px 18px;
+    border: 1px solid var(--legacy-gold-bright);
+    border-radius: 9px;
+    background: var(--legacy-teal);
+    color: #ffffff;
+    text-align: left;
+    cursor: pointer;
+}
+
+.legacy-archive-toggle > span {
+    min-width: 0;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    column-gap: 11px;
+    align-items: center;
+}
+
+.legacy-archive-toggle > span > i {
+    grid-row: 1 / span 2;
+    color: var(--legacy-gold-bright);
+    font-size: 19px;
+}
+
+.legacy-archive-toggle strong {
+    display: block;
+    min-width: 0;
+    font-size: 16px;
+}
+
+.legacy-archive-toggle small {
+    display: block;
+    margin-top: 3px;
+    color: rgba(255,255,255,.79);
+    font-size: 9px;
+}
+
+.legacy-archive-chevron {
+    flex: 0 0 auto;
+    transition: transform .2s ease;
+}
+
+.legacy-archive-chevron.is-open {
+    transform: rotate(180deg);
+}
+
+.legacy-archive-body {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    padding-top: 14px;
+}
+
+.legacy-archive-card {
+    min-width: 0;
+    min-height: 112px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 16px;
+    border: 1px solid var(--legacy-border);
+    border-left: 4px solid var(--legacy-teal);
+    border-radius: 10px;
+    background: #ffffff;
+    box-shadow: 0 3px 10px rgba(25, 46, 52, .07);
+}
+
+.legacy-archive-card > div {
+    min-width: 0;
+}
+
+.legacy-archive-badge {
+    display: inline-flex;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: #edf0f1;
+    color: #536267;
+    font-size: 8px;
+    font-weight: 900;
+    letter-spacing: .7px;
+}
+
+.legacy-archive-card h3 {
+    margin: 5px 0 4px;
+    color: var(--legacy-teal);
+    font-size: 14px;
+    font-weight: 800;
+}
+
+.legacy-archive-card p {
+    margin: 0;
+    color: var(--legacy-muted);
+    font-size: 9px;
+    line-height: 1.5;
+}
+
+/* ============================================================
+   DYNAMIC DETAIL AREA
+   ============================================================ */
+
+.legacy-detail {
+    width: 100%;
+    min-width: 0;
+    margin-top: 28px;
+}
+
+.legacy-detail-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 16px;
+    padding: 16px 18px;
+    border: 1px solid var(--legacy-border);
+    border-left: 4px solid var(--legacy-teal);
+    border-radius: 9px;
+    background: #ffffff;
+}
+
+.legacy-detail-head > div {
+    min-width: 0;
+}
+
+.legacy-detail-head span {
+    display: block;
+    color: var(--legacy-muted);
+    font-size: 8px;
+    font-weight: 800;
+    letter-spacing: 1px;
+}
+
+.legacy-detail-head h2 {
+    margin: 3px 0 0;
+    color: var(--legacy-teal);
+    font-size: 21px;
+    font-weight: 800;
+}
+
+.legacy-loading,
+.legacy-error {
+    min-height: 110px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    padding: 18px;
+    border: 1px solid var(--legacy-border);
+    border-radius: 9px;
+    background: #ffffff;
+    color: var(--legacy-muted);
+    text-align: center;
+}
+
+.legacy-error {
+    flex-direction: column;
+    color: #8a3d32;
+}
+
+/* ============================================================
+   EXISTING DYNAMIC ROLL PARTIAL
+   ============================================================ */
+
+.legacy-roll-dashboard-partial {
+    width: 100%;
+    min-width: 0;
+}
+
 .legacy-roll-dashboard-partial > .cd-detail-roll-info {
     display: none !important;
 }
@@ -33,9 +441,8 @@
     background: #fff9e7;
 }
 
-/* ── Old-dashboard accordion look ───────────────────── */
-
 .legacy-roll-dashboard-partial .cd-widget {
+    min-width: 0;
     margin: 0 0 28px !important;
     border: 0 !important;
     border-radius: 8px !important;
@@ -45,6 +452,7 @@
 }
 
 .legacy-roll-dashboard-partial .cd-widget-toggle {
+    width: 100%;
     min-height: 64px;
     display: flex;
     align-items: center;
@@ -59,14 +467,8 @@
     box-shadow: 0 5px 13px rgba(0, 101, 112, .14);
 }
 
-/* The old portal used gold for Linked Properties. */
-.legacy-roll-dashboard-partial
-.cd-widget-toggle[onclick*="-linked"] {
+.legacy-roll-dashboard-partial .cd-widget-toggle[onclick*="-linked"] {
     background: var(--legacy-gold) !important;
-}
-
-.legacy-roll-dashboard-partial .cd-widget-toggle:hover {
-    filter: brightness(1.03);
 }
 
 .legacy-roll-dashboard-partial .cd-widget-toggle-left {
@@ -84,8 +486,7 @@
     font-size: 17px;
 }
 
-.legacy-roll-dashboard-partial
-.cd-widget-toggle[onclick*="-linked"]
+.legacy-roll-dashboard-partial .cd-widget-toggle[onclick*="-linked"]
 .cd-widget-toggle-left > i {
     color: #ffffff;
 }
@@ -122,9 +523,8 @@
     transition: transform .2s ease;
 }
 
-/* ── Expanded body / existing dynamic tables ────────── */
-
 .legacy-roll-dashboard-partial .cd-widget-body {
+    min-width: 0;
     margin-top: 0;
     border: 1px solid var(--legacy-border);
     border-top: 0;
@@ -138,6 +538,7 @@
 
 .legacy-roll-dashboard-partial .table-responsive {
     width: 100%;
+    max-width: 100%;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
 }
@@ -170,14 +571,14 @@
     border-radius: 6px;
 }
 
-/* Keep dropdown menus above the DataTable/card. */
 .legacy-roll-dashboard-partial .dropdown-menu {
     z-index: 1080;
 }
 
-/* DataTables controls */
 .legacy-roll-dashboard-partial .dataTables_wrapper {
     width: 100%;
+    max-width: 100%;
+    min-width: 0;
 }
 
 .legacy-roll-dashboard-partial .dataTables_filter input,
@@ -196,11 +597,20 @@
 }
 
 /* ============================================================
-   RESPONSIVE
+   TABLET / HALF SCREEN
    ============================================================ */
 
-/* Half-screen / tablet — use the existing DataTables Responsive
-   child-row behaviour. */
+@media (max-width: 900px) {
+    .legacy-dashboard-grid,
+    .legacy-archive-body {
+        grid-template-columns: 1fr;
+    }
+
+    .legacy-service-card {
+        min-height: 270px;
+    }
+}
+
 @media (max-width: 1180px) {
     .legacy-roll-dashboard-partial .cd-widget {
         margin-bottom: 20px !important;
@@ -226,8 +636,115 @@
     }
 }
 
-/* Phone */
+/* ============================================================
+   PHONE
+   ============================================================ */
+
 @media (max-width: 600px) {
+    .legacy-dashboard {
+        width: min(100% - 16px, 1220px);
+        margin-top: 10px;
+        margin-bottom: 26px;
+    }
+
+    .legacy-dashboard-announcement {
+        padding: 10px 11px;
+        font-size: 10px;
+    }
+
+    .legacy-dashboard-heading {
+        padding: 18px 4px 20px;
+    }
+
+    .legacy-dashboard-kicker {
+        font-size: 7.5px;
+        letter-spacing: .8px;
+    }
+
+    .legacy-dashboard-heading h1 {
+        font-size: 23px;
+    }
+
+    .legacy-service-card {
+        min-height: 0;
+        padding: 20px;
+    }
+
+    .legacy-service-card h2 {
+        margin-right: 56px;
+        font-size: 18px;
+    }
+
+    .legacy-service-icon {
+        top: 18px;
+        right: 17px;
+        width: 42px;
+        height: 42px;
+        font-size: 17px;
+    }
+
+    .legacy-service-stats {
+        gap: 6px;
+    }
+
+    .legacy-service-stats span {
+        font-size: 9px;
+    }
+
+    .legacy-service-actions {
+        flex-direction: column;
+    }
+
+    .legacy-btn {
+        width: 100%;
+        min-height: 44px;
+    }
+
+    .legacy-archive {
+        margin-top: 18px;
+    }
+
+    .legacy-archive-toggle {
+        align-items: flex-start;
+        padding: 13px;
+    }
+
+    .legacy-archive-toggle strong {
+        font-size: 13px;
+        line-height: 1.35;
+    }
+
+    .legacy-archive-toggle small {
+        font-size: 8px;
+    }
+
+    .legacy-archive-card {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .legacy-archive-card .legacy-btn {
+        width: 100%;
+    }
+
+    .legacy-detail {
+        margin-top: 18px;
+    }
+
+    .legacy-detail-head {
+        align-items: stretch;
+        flex-direction: column;
+        padding: 13px;
+    }
+
+    .legacy-detail-head h2 {
+        font-size: 18px;
+    }
+
+    .legacy-detail-head .legacy-btn {
+        width: 100%;
+    }
+
     .legacy-roll-dashboard-partial .cd-detail-closed-notice {
         padding: 11px 12px;
         font-size: 11px;
@@ -248,6 +765,7 @@
     }
 
     .legacy-roll-dashboard-partial .cd-widget-toggle-left {
+        min-width: 0;
         gap: 8px;
         overflow: hidden;
     }
@@ -258,6 +776,7 @@
     }
 
     .legacy-roll-dashboard-partial .cd-widget-toggle h3 {
+        min-width: 0;
         overflow: hidden;
         font-size: 13px !important;
         text-overflow: ellipsis;
@@ -287,7 +806,7 @@
     }
 
     .legacy-roll-dashboard-partial .cd-action-btn {
-        min-height: 32px;
+        min-height: 34px;
         padding: 5px 8px;
         font-size: 9px;
     }
@@ -301,7 +820,7 @@
 
     .legacy-roll-dashboard-partial .dataTables_filter input {
         width: min(100%, 230px) !important;
-        margin-left: 5px !important;
+        margin-left: 0 !important;
     }
 
     .legacy-roll-dashboard-partial .dataTables_info,
@@ -309,5 +828,46 @@
         width: 100%;
         margin-top: 8px !important;
         text-align: center !important;
+    }
+
+    /* DataTables Responsive supplies the + child-row control.
+       The last Actions column is configured as "none" in Dashboard/Index.cshtml,
+       so it appears inside the expandable child row on narrow screens. */
+    .legacy-roll-dashboard-partial table.dataTable.dtr-inline.collapsed
+    > tbody > tr > td.dtr-control {
+        padding-left: 30px !important;
+    }
+}
+
+/* ============================================================
+   VERY SMALL PHONE
+   ============================================================ */
+
+@media (max-width: 380px) {
+    .legacy-dashboard {
+        width: calc(100% - 12px);
+    }
+
+    .legacy-dashboard-heading h1 {
+        font-size: 20px;
+    }
+
+    .legacy-service-card {
+        padding: 17px;
+    }
+
+    .legacy-service-card h2 {
+        margin-right: 50px;
+        font-size: 16px;
+    }
+
+    .legacy-service-icon {
+        width: 38px;
+        height: 38px;
+        font-size: 15px;
+    }
+
+    .legacy-roll-dashboard-partial .cd-widget-toggle h3 {
+        max-width: 170px;
     }
 }

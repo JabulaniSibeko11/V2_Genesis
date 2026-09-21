@@ -1,6 +1,7 @@
 /* ============================================================
    ADMIN LEGACY DASHBOARD
    Old portal dashboard presentation using current Genesis data.
+   Responsive launcher + detail-area safety.
    ============================================================ */
 
 .adm-legacy-dashboard {
@@ -13,6 +14,8 @@
     --adm-border: #e2e7e8;
 
     width: min(1220px, calc(100% - 28px));
+    max-width: 100%;
+    min-width: 0;
     margin: 22px auto 46px;
     font-family: "Poppins", Arial, sans-serif;
 }
@@ -44,6 +47,7 @@
     color: var(--adm-teal);
     font-size: clamp(25px, 3vw, 34px);
     font-weight: 800;
+    line-height: 1.2;
 }
 
 .adm-legacy-heading > p {
@@ -85,6 +89,7 @@
 
 .adm-legacy-card {
     position: relative;
+    min-width: 0;
     min-height: 300px;
     display: flex;
     flex-direction: column;
@@ -96,9 +101,7 @@
     text-decoration: none;
     box-shadow: 0 6px 18px rgba(25, 46, 52, .11);
     overflow: hidden;
-    transition:
-        transform .15s ease,
-        box-shadow .15s ease;
+    transition: transform .15s ease, box-shadow .15s ease;
 }
 
 .adm-legacy-card:hover {
@@ -117,11 +120,7 @@
 
 .adm-legacy-card-search {
     border-top: 5px solid var(--adm-teal);
-    background:
-        linear-gradient(
-            135deg,
-            #ffffff 0%,
-            #f1f9fa 100%);
+    background: linear-gradient(135deg, #ffffff 0%, #f1f9fa 100%);
 }
 
 .adm-legacy-icon {
@@ -172,12 +171,14 @@
 }
 
 .adm-legacy-card h2 {
+    min-width: 0;
     margin: 0 68px 13px 0;
     padding-bottom: 13px;
     border-bottom: 1px solid #eceeef;
     color: var(--adm-teal);
     font-size: 21px;
     font-weight: 800;
+    line-height: 1.25;
 }
 
 .adm-legacy-card-gold h2 {
@@ -199,6 +200,7 @@
 }
 
 .adm-legacy-stats span {
+    min-width: 0;
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -282,12 +284,14 @@
 }
 
 .adm-legacy-archive-toggle > span {
+    min-width: 0;
     display: flex;
     align-items: center;
     gap: 11px;
 }
 
 .adm-legacy-archive-toggle > span > i {
+    flex: 0 0 auto;
     color: var(--adm-gold);
     font-size: 19px;
 }
@@ -300,11 +304,12 @@
 .adm-legacy-archive-toggle small {
     display: block;
     margin-top: 3px;
-    color: rgba(255, 255, 255, .79);
+    color: rgba(255,255,255,.79);
     font-size: 9px;
 }
 
 .adm-legacy-archive-chevron {
+    flex: 0 0 auto;
     transition: transform .2s ease;
 }
 
@@ -320,6 +325,7 @@
 }
 
 .adm-legacy-archive-card {
+    min-width: 0;
     min-height: 112px;
     display: flex;
     align-items: center;
@@ -330,7 +336,11 @@
     border-left: 4px solid var(--adm-teal);
     border-radius: 10px;
     background: #ffffff;
-    box-shadow: 0 3px 10px rgba(25, 46, 52, .07);
+    box-shadow: 0 3px 10px rgba(25,46,52,.07);
+}
+
+.adm-legacy-archive-card > div {
+    min-width: 0;
 }
 
 .adm-legacy-archive-badge {
@@ -355,6 +365,7 @@
     margin: 0;
     color: var(--adm-muted);
     font-size: 9px;
+    line-height: 1.5;
 }
 
 .adm-legacy-archive-actions {
@@ -371,95 +382,6 @@
     text-decoration: none;
 }
 
-/* Existing Admin detail area stays intact. */
-#cdDetailArea {
-    width: min(1220px, calc(100% - 28px));
-    margin: 22px auto 46px;
-}
-
-/* Tablet / half-screen */
-@media (max-width: 900px) {
-    .adm-legacy-grid,
-    .adm-legacy-archive-body {
-        grid-template-columns: 1fr;
-    }
-
-    .adm-legacy-card {
-        min-height: 270px;
-    }
-}
-
-/* Phone */
-@media (max-width: 600px) {
-    .adm-legacy-dashboard {
-        width: min(100% - 16px, 1220px);
-        margin-top: 10px;
-    }
-
-    .adm-legacy-heading {
-        padding-left: 3px;
-        padding-right: 3px;
-    }
-
-    .adm-legacy-heading h1 {
-        font-size: 24px;
-    }
-
-    .adm-legacy-card {
-        min-height: 0;
-        padding: 20px;
-    }
-
-    .adm-legacy-card h2 {
-        margin-right: 58px;
-        font-size: 18px;
-    }
-
-    .adm-legacy-icon {
-        width: 42px;
-        height: 42px;
-        font-size: 17px;
-    }
-
-    .adm-legacy-actions {
-        flex-direction: column;
-    }
-
-    .adm-legacy-btn {
-        width: 100%;
-    }
-
-    .adm-legacy-archive-toggle {
-        align-items: flex-start;
-        padding: 14px;
-    }
-
-    .adm-legacy-archive-toggle strong {
-        font-size: 13px;
-    }
-
-    .adm-legacy-archive-card {
-        align-items: stretch;
-        flex-direction: column;
-    }
-
-    .adm-legacy-archive-actions {
-        width: 100%;
-        justify-content: space-between;
-    }
-
-    .adm-legacy-archive-actions .adm-legacy-btn {
-        width: auto;
-    }
-
-    #cdDetailArea {
-        width: min(100% - 12px, 1220px);
-        margin-top: 12px;
-    }
-}
-
-
-/* Compact Admin-only links kept from the previous command bar */
 .adm-legacy-quick-tools {
     display: flex;
     flex-wrap: wrap;
@@ -477,18 +399,119 @@
     border: 1px solid #dce4e6;
     border-radius: 8px;
     background: #ffffff;
-    color: #006570;
+    color: var(--adm-teal);
     font-size: 9px;
     font-weight: 800;
     text-decoration: none;
 }
 
 .adm-legacy-quick-tools a:hover {
-    border-color: #e6b000;
-    color: #004e57;
+    border-color: var(--adm-gold);
+    color: var(--adm-teal-dark);
 }
 
+/* Existing Admin detail area remains functionally unchanged. */
+#cdDetailArea {
+    width: min(1220px, calc(100% - 28px));
+    max-width: 100%;
+    min-width: 0;
+    margin: 22px auto 46px;
+}
+
+#cdDetailArea .cd-roll-section,
+#cdDetailArea .cd-roll-body,
+#cdDetailArea .cd-widget,
+#cdDetailArea .cd-widget-body {
+    min-width: 0;
+    max-width: 100%;
+}
+
+#cdDetailArea .table-responsive {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+#cdDetailArea .dataTables_wrapper {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+}
+
+/* ============================================================
+   TABLET / HALF SCREEN
+   ============================================================ */
+
+@media (max-width: 900px) {
+    .adm-legacy-grid,
+    .adm-legacy-archive-body {
+        grid-template-columns: 1fr;
+    }
+
+    .adm-legacy-card {
+        min-height: 270px;
+    }
+}
+
+/* ============================================================
+   PHONE
+   ============================================================ */
+
 @media (max-width: 600px) {
+    .adm-legacy-dashboard {
+        width: min(100% - 16px, 1220px);
+        margin-top: 10px;
+        margin-bottom: 26px;
+    }
+
+    .adm-legacy-heading {
+        padding: 12px 3px 18px;
+    }
+
+    .adm-legacy-heading h1 {
+        font-size: 23px;
+    }
+
+    .adm-legacy-heading > p {
+        font-size: 10px;
+    }
+
+    .adm-legacy-card {
+        min-height: 0;
+        padding: 20px;
+    }
+
+    .adm-legacy-card h2 {
+        margin-right: 56px;
+        font-size: 18px;
+    }
+
+    .adm-legacy-icon {
+        top: 18px;
+        right: 17px;
+        width: 42px;
+        height: 42px;
+        font-size: 17px;
+    }
+
+    .adm-legacy-stats {
+        gap: 6px;
+    }
+
+    .adm-legacy-stats span {
+        font-size: 9px;
+    }
+
+    .adm-legacy-actions {
+        flex-direction: column;
+    }
+
+    .adm-legacy-btn {
+        width: 100%;
+        min-height: 44px;
+    }
+
     .adm-legacy-quick-tools {
         width: 100%;
     }
@@ -496,5 +519,136 @@
     .adm-legacy-quick-tools a {
         flex: 1 1 140px;
         justify-content: center;
+        min-height: 42px;
+    }
+
+    .adm-legacy-archive {
+        margin-top: 18px;
+    }
+
+    .adm-legacy-archive-toggle {
+        align-items: flex-start;
+        padding: 13px;
+    }
+
+    .adm-legacy-archive-toggle > span {
+        min-width: 0;
+    }
+
+    .adm-legacy-archive-toggle strong {
+        font-size: 13px;
+        line-height: 1.35;
+    }
+
+    .adm-legacy-archive-toggle small {
+        font-size: 8px;
+    }
+
+    .adm-legacy-archive-card {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .adm-legacy-archive-actions {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .adm-legacy-small-link,
+    .adm-legacy-archive-actions .adm-legacy-btn {
+        width: 100%;
+        min-height: 42px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    #cdDetailArea {
+        width: min(100% - 12px, 1220px);
+        margin-top: 12px;
+        margin-bottom: 26px;
+    }
+
+    #cdDetailArea .cd-roll-header {
+        gap: 8px;
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+
+    #cdDetailArea .cd-roll-header-left {
+        min-width: 0;
+    }
+
+    #cdDetailArea .cd-roll-name,
+    #cdDetailArea .cd-roll-short {
+        max-width: 100%;
+        overflow-wrap: break-word;
+    }
+
+    #cdDetailArea .cd-widget-toggle {
+        gap: 8px;
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+
+    #cdDetailArea .cd-widget-toggle-left {
+        min-width: 0;
+    }
+
+    #cdDetailArea .cd-widget-toggle h3 {
+        min-width: 0;
+        max-width: 180px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    #cdDetailArea .dataTables_length,
+    #cdDetailArea .dataTables_filter,
+    #cdDetailArea .dataTables_info,
+    #cdDetailArea .dataTables_paginate {
+        width: 100%;
+        float: none !important;
+        text-align: left !important;
+    }
+
+    #cdDetailArea .dataTables_filter input {
+        max-width: 100% !important;
+        margin-left: 0 !important;
+    }
+}
+
+/* ============================================================
+   VERY SMALL PHONE
+   ============================================================ */
+
+@media (max-width: 380px) {
+    .adm-legacy-dashboard {
+        width: calc(100% - 12px);
+    }
+
+    .adm-legacy-heading h1 {
+        font-size: 20px;
+    }
+
+    .adm-legacy-card {
+        padding: 17px;
+    }
+
+    .adm-legacy-card h2 {
+        margin-right: 50px;
+        font-size: 16px;
+    }
+
+    .adm-legacy-icon {
+        width: 38px;
+        height: 38px;
+        font-size: 15px;
+    }
+
+    #cdDetailArea {
+        width: calc(100% - 10px);
     }
 }

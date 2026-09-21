@@ -1009,7 +1009,7 @@ public class PropertySearchController : Controller
             // FIX: use _search (DefaultConnection + Objection.dbo SPs) — same source
             //      as the home and property search pages. OmissionService was connecting
             //      to the roll-specific DB (e.g. Sup3) which doesn't have those SPs.
-            var townsTask = _search.GetTownshipsAsync();
+            var townsTask = _search.GetTownshipsAsync(rollSource);
             var schemesTask = _search.GetSchemesAsync();
             await Task.WhenAll(townsTask, schemesTask);
 
