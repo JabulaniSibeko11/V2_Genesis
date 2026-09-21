@@ -41,37 +41,31 @@
     var now =
         DateTime.Now;
 
-    var rollMenu = new[]
+    var supplementaryRolls = new[]
     {
         new
         {
-            Source = "Objection",
-            Label = "GV23 Valuation Roll",
-            ShortLabel = "GV23"
-        },
-        new
-        {
-            Source = "Objection_Supp1",
-            Label = "Supplementary Roll 1",
-            ShortLabel = "Sup1"
-        },
-        new
-        {
-            Source = "Objection_Supp2",
-            Label = "Supplementary Roll 2",
-            ShortLabel = "Sup2"
+            Source = "Objection_Supp4",
+            Label = "Supplementary Roll 4",
+            Icon = "fa-scroll"
         },
         new
         {
             Source = "Objection_Supp3",
             Label = "Supplementary Roll 3",
-            ShortLabel = "Sup3"
+            Icon = "fa-scroll"
         },
         new
         {
-            Source = "Objection_Supp4",
-            Label = "Supplementary Roll 4",
-            ShortLabel = "Sup4"
+            Source = "Objection_Supp2",
+            Label = "Supplementary Roll 2",
+            Icon = "fa-scroll"
+        },
+        new
+        {
+            Source = "Objection_Supp1",
+            Label = "Supplementary Roll 1",
+            Icon = "fa-scroll"
         }
     };
 
@@ -97,7 +91,7 @@
             rollDates.For(source);
 
         if (dates is null)
-            return string.Empty;
+            return "Open";
 
         if (now < dates.OpenDate)
             return "Opening Soon";
@@ -108,20 +102,107 @@
         return "Closed";
     }
 
+    string RollStatusClass(string source)
+    {
+        var status =
+            RollStatus(source);
+
+        return status switch
+        {
+            "Open" => "legend-status-open",
+            "Closed" => "legend-status-closed",
+            _ => "legend-status-upcoming"
+        };
+    }
+
+    string RollSearchNote(string source)
+    {
+        if (isAdmin)
+            return string.Empty;
+
+        var dates =
+            rollDates.For(source);
+
+        if (dates is null)
+            return string.Empty;
+
+        if (now < dates.OpenDate)
+            return "Objection period not open";
+
+        if (now > dates.VisibleUntil)
+            return "Objection period closed";
+
+        return string.Empty;
+    }
+
     string RollDashboardUrl(string source) =>
-        "/Dashboard?openRoll="
+        (isAdmin
+            ? "/admin?openRoll="
+            : "/Dashboard?openRoll=")
         + Uri.EscapeDataString(source);
 
-    var sup4CanSearch =
-        CanSearchRoll("Objection_Supp4");
+    string ServiceDashboardUrl(string key) =>
+        (isAdmin
+            ? "/admin?openRoll="
+            : "/Dashboard?openRoll=")
+        + Uri.EscapeDataString(key);
 
-    var sup4Status =
-        RollStatus("Objection_Supp4");
+    string RollSearchUrl(string source) =>
+        CanSearchRoll(source)
+            ? "/search/" + source
+            : RollDashboardUrl(source);
+
+    bool IsRollSelected(string source) =>
+        openRoll.Equals(
+            source,
+            StringComparison.OrdinalIgnoreCase)
+        || reqPath.Equals(
+            "/search/" + source.ToLowerInvariant(),
+            StringComparison.OrdinalIgnoreCase);
+
+    var gvSelected =
+        IsRollSelected("Objection");
+
+    var supplementarySelected =
+        supplementaryRolls.Any(x =>
+            IsRollSelected(x.Source));
+
+    var querySelected =
+        reqPath.StartsWith("/search/objection_query")
+        || openRoll.Equals(
+            "Objection_Query",
+            StringComparison.OrdinalIgnoreCase);
+
+    var rebatesSelected =
+        reqPath.StartsWith("/rebates")
+        || openRoll.Equals(
+            "rebates",
+            StringComparison.OrdinalIgnoreCase);
+
+    var attributesSelected =
+        reqPath.StartsWith("/attributes")
+        || openRoll.Equals(
+            "attributes",
+            StringComparison.OrdinalIgnoreCase);
+
+    var evidenceSelected =
+        reqPath.StartsWith("/evidence")
+        || reqPath.StartsWith("/attributes/evidence");
+
+    var supportSelected =
+        reqPath.StartsWith("/help/user-manual")
+        || reqPath.StartsWith("/home/faq")
+        || reqPath.StartsWith("/home/contact")
+        || reqPath.StartsWith("/home/privacy");
+
+    var adminSelected =
+        reqPath.StartsWith("/admin");
 }
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
     <meta charset="utf-8" />
 
     <meta name="viewport"
@@ -185,6 +266,12 @@
     @await RenderSectionAsync(
         "Styles",
         required: false)
+
+    <!-- Same global responsive safety net used by ClientLayout. -->
+    <link rel="stylesheet"
+          href="~/css/genesis-responsive.css"
+          asp-append-version="true" />
+
 </head>
 
 <body class="legend-body">
@@ -192,661 +279,638 @@
     <partial name="_GlobalActionLoader" />
     <partial name="_SubmissionActionLoader" />
 
-    <header class="legend-header">
-        <nav class="navbar navbar-expand-xl legend-navbar">
-            <div class="container-fluid legend-nav-container">
+    <!-- ============================================================
+         LEGEND TOP BAR
+         One navigation pattern on desktop, tablet and phone.
+         ============================================================ -->
+    <header class="legend-topbar">
 
-                <a class="legend-brand"
-                   href="@dashboardUrl"
+        <div class="legend-topbar-inner">
+
+            <a href="@dashboardUrl"
+                   class="legend-brand"
                    aria-label="City of Johannesburg Valuation Portal">
 
+                <span class="legend-brand-mark">
+
                     <img src="~/images/joburg_logo.png"
-                         class="legend-logo"
-                         alt="City of Johannesburg" />
+                         alt="City of Johannesburg"
+                         class="legend-brand-logo" />
 
-                </a>
+                </span>
 
-                <button class="navbar-toggler legend-toggler"
-                        type="button"
-                        data-bs-toggle="collapse"
-                        data-bs-target="#legendNavbar"
-                        aria-controls="legendNavbar"
-                        aria-expanded="false"
-                        aria-label="Toggle navigation">
+                <span class="legend-brand-copy">
 
-                    <i class="fa-solid fa-bars"></i>
+                    <strong>
+                        City of Johannesburg
+                    </strong>
+
+                    <small>
+                        Valuation Portal
+                    </small>
+
+                </span>
+
+            </a>
+
+            @if (isAuthenticated)
+            {
+                <span class="legend-topbar-user"
+                      title="@currentEmail">
+                    @currentEmail
+                </span>
+            }
+
+            <button type="button"
+                    class="legend-menu-button"
+                    id="legendMenuButton"
+                    aria-controls="legendDrawer"
+                    aria-expanded="false"
+                    aria-label="Open navigation">
+
+                <i class="fa-solid fa-bars"></i>
+
+            </button>
+
+        </div>
+
+    </header>
+
+    <!-- Drawer backdrop -->
+    <div class="legend-drawer-backdrop"
+         id="legendDrawerBackdrop"
+         aria-hidden="true">
+    </div>
+
+    <!-- ============================================================
+         LEGEND DRAWER
+         ClientLayout-style right drawer.
+         ============================================================ -->
+    <aside class="legend-drawer"
+           id="legendDrawer"
+           aria-hidden="true"
+           aria-label="Portal navigation">
+
+        <div class="legend-drawer-header">
+
+            <div class="legend-drawer-brand">
+
+                <span class="legend-drawer-logo">
+
+                    <img src="~/images/joburg_logo.png"
+                         alt=""
+                         class="legend-drawer-logo-image" />
+
+                </span>
+
+                <span>
+
+                    <strong>
+                        CITY OF JOHANNESBURG
+                    </strong>
+
+                    <small>
+                        Valuation Portal
+                    </small>
+
+                </span>
+
+            </div>
+
+            <button type="button"
+                    class="legend-drawer-close"
+                    id="legendDrawerClose"
+                    aria-label="Close navigation">
+
+                <i class="fa-solid fa-xmark"></i>
+
+            </button>
+
+        </div>
+
+        <div class="legend-drawer-scroll">
+
+            @if (isAuthenticated)
+            {
+                <div class="legend-signed-in">
+
+                    <small>
+                        Signed in as
+                    </small>
+
+                    <strong title="@currentEmail">
+                        @currentEmail
+                    </strong>
+
+                </div>
+            }
+
+            <!-- ====================================================
+                 VALUATION ROLLS
+                 ==================================================== -->
+            <div class="legend-drawer-section-title">
+                Valuation Rolls
+            </div>
+
+            <!-- GV23 -->
+            <div class="legend-drawer-group @(gvSelected ? "open" : "")">
+
+                <button type="button"
+                        class="legend-drawer-toggle"
+                        aria-expanded="@(gvSelected ? "true" : "false")">
+
+                    <i class="fa-solid fa-landmark"></i>
+
+                    <span class="legend-drawer-label">
+                        GV23 Valuation Roll
+                    </span>
+
+                    <span class="legend-roll-status @RollStatusClass("Objection")">
+                        @RollStatus("Objection")
+                    </span>
+
+                    <i class="fa-solid fa-chevron-down legend-drawer-chevron"></i>
 
                 </button>
 
-                <div class="collapse navbar-collapse"
-                     id="legendNavbar">
+                <div class="legend-drawer-sub">
 
-                    <ul class="navbar-nav legend-nav-list me-auto">
+                    @if (CanSearchRoll("Objection"))
+                    {
+                        <a href="/search/Objection"
+                               class="legend-drawer-link legend-drawer-child">
 
-                        <!-- GV23 -->
-                        <li class="nav-item dropdown">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            Search Property
 
-                            <a class="nav-link dropdown-toggle legend-nav-link"
-                               href="#"
-                               id="legendGvDropdown"
-                               role="button"
-                               data-bs-toggle="dropdown"
-                               aria-expanded="false">
+                        </a>
+                    }
+                    else
+                    {
+                        <a href="@RollDashboardUrl("Objection")"
+                               class="legend-drawer-link legend-drawer-child legend-drawer-disabled">
 
-                                GV23 Valuation Roll
+                            <i class="fa-solid fa-lock"></i>
 
-                            </a>
+                            <span>
+                                Search Property
 
-                            <ul class="dropdown-menu legend-dropdown"
-                                aria-labelledby="legendGvDropdown">
+                                <small class="legend-drawer-note">
+                                    @RollSearchNote("Objection")
+                                </small>
+                            </span>
 
-                                <li>
-                                    <a class="dropdown-item legend-dropdown-item"
-                                       href="@RollDashboardUrl("Objection")">
+                        </a>
+                    }
 
-                                        <i class="fa-solid fa-gauge-high"></i>
-                                        Dashboard
+                    <a href="@RollDashboardUrl("Objection")"
+                           class="legend-drawer-link legend-drawer-child">
 
-                                    </a>
-                                </li>
+                        <i class="fa-solid fa-gauge-high"></i>
+                        Dashboard
 
-                                <li>
-                                    <hr class="dropdown-divider" />
-                                </li>
+                    </a>
 
-                                <li>
-                                    @if (CanSearchRoll("Objection"))
-                                    {
-                                        <a class="dropdown-item legend-dropdown-item"
-                                           href="/search/Objection">
+                </div>
+            </div>
 
-                                            <i class="fa-solid fa-magnifying-glass"></i>
-                                            Property Search
+            <!-- Supplementary Rolls -->
+            <div class="legend-drawer-group @(supplementarySelected ? "open" : "")">
 
-                                        </a>
-                                    }
-                                    else
-                                    {
-                                        <a class="dropdown-item legend-dropdown-item"
-                                           href="@RollDashboardUrl("Objection")">
+                <button type="button"
+                        class="legend-drawer-toggle"
+                        aria-expanded="@(supplementarySelected ? "true" : "false")">
 
-                                            <i class="fa-solid fa-lock"></i>
+                    <i class="fa-solid fa-scroll"></i>
 
-                                            <span>
-                                                Property Search
-                                                <small class="legend-menu-status">
-                                                    Objection Period Closed
-                                                </small>
-                                            </span>
+                    <span class="legend-drawer-label">
+                        Supplementary Rolls
+                    </span>
 
-                                        </a>
-                                    }
-                                </li>
+                    <i class="fa-solid fa-chevron-down legend-drawer-chevron"></i>
 
-                            </ul>
-                        </li>
+                </button>
 
-                        <!-- Supplementary Rolls -->
-                        <li class="nav-item dropdown">
+                <div class="legend-drawer-sub legend-supplementary-list">
 
-                            <a class="nav-link dropdown-toggle legend-nav-link"
-                               href="#"
-                               id="legendSupplementaryDropdown"
-                               role="button"
-                               data-bs-toggle="dropdown"
-                               aria-expanded="false">
+                    @foreach (var roll in supplementaryRolls)
+                    {
+                        var rollSelected =
+                            IsRollSelected(roll.Source);
 
-                                Supplementary Rolls
+                        <div class="legend-drawer-group legend-roll-group @(rollSelected ? "open" : "")">
 
-                            </a>
+                            <button type="button"
+                                    class="legend-drawer-toggle legend-roll-toggle"
+                                    aria-expanded="@(rollSelected ? "true" : "false")">
 
-                            <ul class="dropdown-menu legend-dropdown legend-dropdown-wide"
-                                aria-labelledby="legendSupplementaryDropdown">
+                                <i class="fa-solid @roll.Icon"></i>
 
-                                <li class="legend-dropdown-heading">
-                                    Current Supplementary Roll
-                                </li>
+                                <span class="legend-drawer-label">
+                                    @roll.Label
+                                </span>
 
-                                <li>
-                                    @if (sup4CanSearch)
-                                    {
-                                        <a class="dropdown-item legend-dropdown-item"
-                                           href="/search/Objection_Supp4">
+                                <span class="legend-roll-status @RollStatusClass(roll.Source)">
+                                    @RollStatus(roll.Source)
+                                </span>
 
-                                            <i class="fa-solid fa-magnifying-glass"></i>
+                                <i class="fa-solid fa-chevron-down legend-drawer-chevron"></i>
 
-                                            <span>
-                                                Supplementary Roll 4
-                                                <small class="legend-menu-status legend-menu-status-open">
-                                                    @sup4Status
-                                                </small>
-                                            </span>
+                            </button>
 
-                                        </a>
-                                    }
-                                    else
-                                    {
-                                        <a class="dropdown-item legend-dropdown-item"
-                                           href="@RollDashboardUrl("Objection_Supp4")">
+                            <div class="legend-drawer-sub legend-roll-actions">
 
-                                            <i class="fa-solid fa-scroll"></i>
-
-                                            <span>
-                                                Supplementary Roll 4
-                                                <small class="legend-menu-status">
-                                                    Objection Period Closed
-                                                </small>
-                                            </span>
-
-                                        </a>
-                                    }
-                                </li>
-
-                                <li>
-                                    <a class="dropdown-item legend-dropdown-item"
-                                       href="@RollDashboardUrl("Objection_Supp4")">
-
-                                        <i class="fa-solid fa-gauge-high"></i>
-                                        Supplementary Roll 4 Dashboard
-
-                                    </a>
-                                </li>
-
-                                <li>
-                                    <hr class="dropdown-divider" />
-                                </li>
-
-                                <li class="legend-dropdown-heading">
-                                    Previous Supplementary Rolls
-                                </li>
-
-                                @foreach (
-                                    var roll
-                                    in rollMenu.Where(x =>
-                                        x.Source is
-                                        "Objection_Supp1"
-                                        or "Objection_Supp2"
-                                        or "Objection_Supp3"))
+                                @if (CanSearchRoll(roll.Source))
                                 {
-                                    <li>
-                                        <a class="dropdown-item legend-dropdown-item"
-                                           href="@RollDashboardUrl(roll.Source)">
-
-                                            <i class="fa-solid fa-clock-rotate-left"></i>
-
-                                            <span>
-                                                @roll.Label
-                                                <small class="legend-menu-status">
-                                                    Closed - View Dashboard
-                                                </small>
-                                            </span>
-
-                                        </a>
-                                    </li>
-                                }
-
-                            </ul>
-                        </li>
-
-                        <!-- Section 78 -->
-                        <li class="nav-item dropdown">
-
-                            <a class="nav-link dropdown-toggle legend-nav-link"
-                               href="#"
-                               id="legendSection78Dropdown"
-                               role="button"
-                               data-bs-toggle="dropdown"
-                               aria-expanded="false">
-
-                                Section 78
-
-                            </a>
-
-                            <ul class="dropdown-menu legend-dropdown"
-                                aria-labelledby="legendSection78Dropdown">
-
-                                <li>
-                                    <a class="dropdown-item legend-dropdown-item"
-                                       href="/search/Objection_Query">
-
-                                        <i class="fa-solid fa-magnifying-glass-chart"></i>
-                                        Query / Review Search
-
-                                    </a>
-                                </li>
-
-                                <li>
-                                    <hr class="dropdown-divider" />
-                                </li>
-
-                                <li>
-                                    <a class="dropdown-item legend-dropdown-item"
-                                       href="/Dashboard?openRoll=Objection_Query">
-
-                                        <i class="fa-solid fa-gauge-high"></i>
-                                        Query / Review Dashboard
-
-                                    </a>
-                                </li>
-
-                            </ul>
-                        </li>
-
-                        <!-- Rebates -->
-                        <li class="nav-item dropdown">
-
-                            <a class="nav-link dropdown-toggle legend-nav-link"
-                               href="#"
-                               id="legendRebatesDropdown"
-                               role="button"
-                               data-bs-toggle="dropdown"
-                               aria-expanded="false">
-
-                                Rebates
-
-                            </a>
-
-                            <ul class="dropdown-menu legend-dropdown"
-                                aria-labelledby="legendRebatesDropdown">
-
-                                <li>
-                                    <a class="dropdown-item legend-dropdown-item"
-                                       href="/Rebates/Index">
-
-                                        <i class="fa-solid fa-file-signature"></i>
-                                        Apply for Rebates
-
-                                    </a>
-                                </li>
-
-                                <li>
-                                    <hr class="dropdown-divider" />
-                                </li>
-
-                                <li>
-                                    <a class="dropdown-item legend-dropdown-item"
-                                       href="/Dashboard?openRoll=rebates">
-
-                                        <i class="fa-solid fa-gauge-high"></i>
-                                        Rebates Dashboard
-
-                                    </a>
-                                </li>
-
-                            </ul>
-                        </li>
-
-                        <!-- Attributes -->
-                        <li class="nav-item dropdown">
-
-                            <a class="nav-link dropdown-toggle legend-nav-link"
-                               href="#"
-                               id="legendAttributesDropdown"
-                               role="button"
-                               data-bs-toggle="dropdown"
-                               aria-expanded="false">
-
-                                Attributes
-
-                            </a>
-
-                            <ul class="dropdown-menu legend-dropdown"
-                                aria-labelledby="legendAttributesDropdown">
-
-                                <li>
-                                    <a class="dropdown-item legend-dropdown-item"
-                                       href="/attributes/search">
+                                    <a href="/search/@roll.Source"
+                                           class="legend-drawer-link legend-drawer-grandchild">
 
                                         <i class="fa-solid fa-magnifying-glass"></i>
                                         Search Property
 
                                     </a>
-                                </li>
+                                }
+                                else
+                                {
+                                    <a href="@RollDashboardUrl(roll.Source)"
+                                           class="legend-drawer-link legend-drawer-grandchild legend-drawer-disabled">
 
-                                <li>
-                                    <a class="dropdown-item legend-dropdown-item"
-                                       href="/Dashboard?openRoll=attributes">
+                                        <i class="fa-solid fa-lock"></i>
 
-                                        <i class="fa-solid fa-gauge-high"></i>
-                                        Attributes Dashboard
+                                        <span>
+                                            Search Property
 
-                                    </a>
-                                </li>
-
-                                <li>
-                                    <hr class="dropdown-divider" />
-                                </li>
-
-                                <li>
-                                    <a class="dropdown-item legend-dropdown-item"
-                                       href="/attributes/about">
-
-                                        <i class="fa-solid fa-circle-info"></i>
-                                        About Attributes
+                                            <small class="legend-drawer-note">
+                                                @RollSearchNote(roll.Source)
+                                            </small>
+                                        </span>
 
                                     </a>
-                                </li>
+                                }
 
-                            </ul>
-                        </li>
+                                <a href="@RollDashboardUrl(roll.Source)"
+                                       class="legend-drawer-link legend-drawer-grandchild">
 
-                        <!-- Upload Documents -->
-                        <li class="nav-item dropdown">
-
-                            <a class="nav-link dropdown-toggle legend-nav-link"
-                               href="#"
-                               id="legendDocumentsDropdown"
-                               role="button"
-                               data-bs-toggle="dropdown"
-                               aria-expanded="false">
-
-                                Upload Documents
-
-                            </a>
-
-                            <ul class="dropdown-menu legend-dropdown"
-                                aria-labelledby="legendDocumentsDropdown">
-
-                                <li>
-                                    <a class="dropdown-item legend-dropdown-item"
-                                       href="/evidence/verifyObj">
-
-                                        <i class="fa-solid fa-paperclip"></i>
-                                        Objection / Appeal Evidence
-
-                                    </a>
-                                </li>
-
-                                <li>
-                                    <a class="dropdown-item legend-dropdown-item"
-                                       href="/attributes/evidence">
-
-                                        <i class="fa-solid fa-file-arrow-up"></i>
-                                        Attribute Evidence
-
-                                    </a>
-                                </li>
-
-                            </ul>
-                        </li>
-
-                        <!-- Section 51 -->
-                        <li class="nav-item dropdown">
-
-                            <a class="nav-link dropdown-toggle legend-nav-link"
-                               href="#"
-                               id="legendSection51Dropdown"
-                               role="button"
-                               data-bs-toggle="dropdown"
-                               aria-expanded="false">
-
-                                Section 51
-
-                            </a>
-
-                            <ul class="dropdown-menu legend-dropdown"
-                                aria-labelledby="legendSection51Dropdown">
-
-                                <li>
-                                    <a class="dropdown-item legend-dropdown-item"
-                                       href="/section51/verify">
-
-                                        <i class="fa-solid fa-file-circle-check"></i>
-                                        Submit Section 51
-
-                                    </a>
-                                </li>
-
-                                <li>
-                                    <hr class="dropdown-divider" />
-                                </li>
-
-                                <li>
-                                    <a class="dropdown-item legend-dropdown-item"
-                                       href="/notices">
-
-                                        <i class="fa-solid fa-envelope-open-text"></i>
-                                        My Notices
-
-                                    </a>
-                                </li>
-
-                            </ul>
-                        </li>
-
-                        <!-- Help -->
-                        <li class="nav-item dropdown">
-
-                            <a class="nav-link dropdown-toggle legend-nav-link"
-                               href="#"
-                               id="legendHelpDropdown"
-                               role="button"
-                               data-bs-toggle="dropdown"
-                               aria-expanded="false">
-
-                                Help
-
-                            </a>
-
-                            <ul class="dropdown-menu legend-dropdown"
-                                aria-labelledby="legendHelpDropdown">
-
-                                <li>
-                                    <a class="dropdown-item legend-dropdown-item"
-                                       href="/help/user-manual">
-
-                                        <i class="fa-solid fa-book"></i>
-                                        User Manual
-
-                                    </a>
-                                </li>
-
-                                <li>
-                                    <a class="dropdown-item legend-dropdown-item"
-                                       href="/Home/FAQ">
-
-                                        <i class="fa-solid fa-circle-question"></i>
-                                        FAQ
-
-                                    </a>
-                                </li>
-
-                                <li>
-                                    <a class="dropdown-item legend-dropdown-item"
-                                       href="/Home/Contact">
-
-                                        <i class="fa-solid fa-headset"></i>
-                                        Contact Support
-
-                                    </a>
-                                </li>
-
-                                <li>
-                                    <a class="dropdown-item legend-dropdown-item"
-                                       href="/Home/Privacy">
-
-                                        <i class="fa-solid fa-shield-halved"></i>
-                                        Privacy
-
-                                    </a>
-                                </li>
-
-                            </ul>
-                        </li>
-
-                        @if (isAdmin)
-                        {
-                            <!-- Admin -->
-                            <li class="nav-item dropdown">
-
-                                <a class="nav-link dropdown-toggle legend-nav-link"
-                                   href="#"
-                                   id="legendAdminDropdown"
-                                   role="button"
-                                   data-bs-toggle="dropdown"
-                                   aria-expanded="false">
-
-                                    Admin
+                                    <i class="fa-solid fa-gauge-high"></i>
+                                    Dashboard
 
                                 </a>
 
-                                <ul class="dropdown-menu legend-dropdown"
-                                    aria-labelledby="legendAdminDropdown">
-
-                                    <li>
-                                        <a class="dropdown-item legend-dropdown-item"
-                                           href="/admin">
-
-                                            <i class="fa-solid fa-gauge-high"></i>
-                                            Admin Dashboard
-
-                                        </a>
-                                    </li>
-
-                                    <li>
-                                        <a class="dropdown-item legend-dropdown-item"
-                                           href="/admin/search">
-
-                                            <i class="fa-solid fa-magnifying-glass"></i>
-                                            Search Enquiry
-
-                                        </a>
-                                    </li>
-
-                                    <li>
-                                        <a class="dropdown-item legend-dropdown-item"
-                                           href="/admin/notices">
-
-                                            <i class="fa-solid fa-bell"></i>
-                                            Client Notices
-
-                                        </a>
-                                    </li>
-
-                                </ul>
-                            </li>
-                        }
-
-                    </ul>
-
-                    <!-- User menu -->
-                    <div class="legend-user-wrap">
-
-                        @if (isAuthenticated)
-                        {
-                            <div class="dropdown">
-
-                                <button type="button"
-                                        class="legend-user-button dropdown-toggle"
-                                        data-bs-toggle="dropdown"
-                                        aria-expanded="false">
-
-                                    <span class="legend-user-wave">
-                                        👋
-                                    </span>
-
-                                    <span class="legend-user-text">
-                                        Hello
-                                        <strong>
-                                            @currentEmail
-                                        </strong>
-                                    </span>
-
-                                </button>
-
-                                <ul class="dropdown-menu dropdown-menu-end legend-dropdown legend-user-menu">
-
-                                    <li>
-                                        <a class="dropdown-item legend-dropdown-item"
-                                           href="@dashboardUrl">
-
-                                            <i class="fa-solid fa-gauge-high"></i>
-                                            Dashboard
-
-                                        </a>
-                                    </li>
-
-                                    @if (!isAdmin)
-                                    {
-                                        <li>
-                                            <a class="dropdown-item legend-dropdown-item"
-                                               href="/notices">
-
-                                                <i class="fa-solid fa-bell"></i>
-                                                My Notices
-
-                                            </a>
-                                        </li>
-                                    }
-
-                                    <li>
-                                        <a class="dropdown-item legend-dropdown-item"
-                                           href="/my-profile">
-
-                                            <i class="fa-solid fa-user"></i>
-                                            My Profile
-
-                                        </a>
-                                    </li>
-
-                                    <li>
-                                        <hr class="dropdown-divider" />
-                                    </li>
-
-                                    <li>
-                                        <form asp-action="Logout"
-                                              asp-controller="Account"
-                                              method="post">
-
-                                            @Html.AntiForgeryToken()
-
-                                            <button type="submit"
-                                                    class="dropdown-item legend-dropdown-item legend-signout">
-
-                                                <i class="fa-solid fa-right-from-bracket"></i>
-                                                Sign Out
-
-                                            </button>
-                                        </form>
-                                    </li>
-
-                                </ul>
                             </div>
-                        }
-                        else
-                        {
-                            <a href="/account/login?returnUrl=@Context.Request.Path@Context.Request.QueryString"
-                               class="legend-login-link">
-
-                                <i class="fa-solid fa-right-to-bracket"></i>
-                                Sign In
-
-                            </a>
-                        }
-
-                    </div>
+                        </div>
+                    }
 
                 </div>
             </div>
-        </nav>
-    </header>
 
+            <!-- Section 78 -->
+            <div class="legend-drawer-group @(querySelected ? "open" : "")">
+
+                <button type="button"
+                        class="legend-drawer-toggle"
+                        aria-expanded="@(querySelected ? "true" : "false")">
+
+                    <i class="fa-solid fa-magnifying-glass-chart"></i>
+
+                    <span class="legend-drawer-label">
+                        Section 78
+                    </span>
+
+                    <i class="fa-solid fa-chevron-down legend-drawer-chevron"></i>
+
+                </button>
+
+                <div class="legend-drawer-sub">
+
+                    <a href="/search/Objection_Query"
+                           class="legend-drawer-link legend-drawer-child">
+
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        Search Property
+
+                    </a>
+
+                    <a href="@RollDashboardUrl("Objection_Query")"
+                           class="legend-drawer-link legend-drawer-child">
+
+                        <i class="fa-solid fa-gauge-high"></i>
+                        Dashboard
+
+                    </a>
+
+                </div>
+            </div>
+
+            <!-- Rebates -->
+            <div class="legend-drawer-group @(rebatesSelected ? "open" : "")">
+
+                <button type="button"
+                        class="legend-drawer-toggle"
+                        aria-expanded="@(rebatesSelected ? "true" : "false")">
+
+                    <i class="fa-solid fa-percent"></i>
+
+                    <span class="legend-drawer-label">
+                        Rebates
+                    </span>
+
+                    <i class="fa-solid fa-chevron-down legend-drawer-chevron"></i>
+
+                </button>
+
+                <div class="legend-drawer-sub">
+
+                    <a href="/Rebates/Index"
+                           class="legend-drawer-link legend-drawer-child">
+
+                        <i class="fa-solid fa-file-signature"></i>
+                        Apply for Rebates
+
+                    </a>
+
+                    <a href="@ServiceDashboardUrl("rebates")"
+                           class="legend-drawer-link legend-drawer-child">
+
+                        <i class="fa-solid fa-gauge-high"></i>
+                        Dashboard
+
+                    </a>
+
+                </div>
+            </div>
+
+            <!-- Property Attributes -->
+            <div class="legend-drawer-group @(attributesSelected ? "open" : "")">
+
+                <button type="button"
+                        class="legend-drawer-toggle"
+                        aria-expanded="@(attributesSelected ? "true" : "false")">
+
+                    <i class="fa-solid fa-clipboard-list"></i>
+
+                    <span class="legend-drawer-label">
+                        Property Attributes
+                    </span>
+
+                    <i class="fa-solid fa-chevron-down legend-drawer-chevron"></i>
+
+                </button>
+
+                <div class="legend-drawer-sub">
+
+                    <a href="/attributes/search"
+                           class="legend-drawer-link legend-drawer-child">
+
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        Search Property
+
+                    </a>
+
+                    <a href="@ServiceDashboardUrl("attributes")"
+                           class="legend-drawer-link legend-drawer-child">
+
+                        <i class="fa-solid fa-gauge-high"></i>
+                        Dashboard
+
+                    </a>
+
+                    <a href="/attributes/about"
+                           class="legend-drawer-link legend-drawer-child">
+
+                        <i class="fa-solid fa-circle-info"></i>
+                        About Attributes
+
+                    </a>
+
+                </div>
+            </div>
+
+            <!-- ====================================================
+                 SERVICES
+                 ==================================================== -->
+            <div class="legend-drawer-section-title">
+                Services
+            </div>
+
+            <!-- Add Evidence
+                 Section 51 intentionally hidden for this deployment.
+                 Valuer Physical Inspection intentionally hidden here. -->
+            <div class="legend-drawer-group @(evidenceSelected ? "open" : "")">
+
+                <button type="button"
+                        class="legend-drawer-toggle"
+                        aria-expanded="@(evidenceSelected ? "true" : "false")">
+
+                    <i class="fa-solid fa-paperclip"></i>
+
+                    <span class="legend-drawer-label">
+                        Add Evidence
+                    </span>
+
+                    <i class="fa-solid fa-chevron-down legend-drawer-chevron"></i>
+
+                </button>
+
+                <div class="legend-drawer-sub">
+
+                    <a href="/evidence/VerifyObj"
+                           class="legend-drawer-link legend-drawer-child">
+
+                        <i class="fa-solid fa-file-arrow-up"></i>
+                        Objection / Appeal Evidence
+
+                    </a>
+
+                    <a href="/attributes/evidence"
+                           class="legend-drawer-link legend-drawer-child">
+
+                        <i class="fa-solid fa-paperclip"></i>
+                        Attribute Evidence
+
+                    </a>
+
+                    <a href="/evidence/verify?rollSource=Objection_Query"
+                           class="legend-drawer-link legend-drawer-child">
+
+                        <i class="fa-solid fa-file-circle-plus"></i>
+                        Section 78 Query / Review Evidence
+
+                    </a>
+
+                </div>
+            </div>
+
+            @if (!isAdmin)
+            {
+                <a href="/notices"
+                       class="legend-drawer-link @(reqPath.StartsWith("/notices") ? "active" : "")">
+
+                    <i class="fa-solid fa-bell"></i>
+                    Notices
+
+                </a>
+            }
+
+            <!-- ====================================================
+                 ADMIN
+                 ==================================================== -->
+            @if (isAdmin)
+            {
+                <div class="legend-drawer-section-title">
+                    Admin
+                </div>
+
+                <div class="legend-drawer-group @(adminSelected ? "open" : "")">
+
+                    <button type="button"
+                            class="legend-drawer-toggle"
+                            aria-expanded="@(adminSelected ? "true" : "false")">
+
+                        <i class="fa-solid fa-shield-halved"></i>
+
+                        <span class="legend-drawer-label">
+                            Admin Tools
+                        </span>
+
+                        <i class="fa-solid fa-chevron-down legend-drawer-chevron"></i>
+
+                    </button>
+
+                    <div class="legend-drawer-sub">
+
+                        <a href="/admin"
+                               class="legend-drawer-link legend-drawer-child">
+
+                            <i class="fa-solid fa-gauge-high"></i>
+                            Admin Dashboard
+
+                        </a>
+
+                        <a href="/admin/search"
+                               class="legend-drawer-link legend-drawer-child">
+
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            Search Enquiries
+
+                        </a>
+
+                        <a href="/admin/notices"
+                               class="legend-drawer-link legend-drawer-child">
+
+                            <i class="fa-solid fa-bell"></i>
+                            Client Notices
+
+                        </a>
+
+                    </div>
+                </div>
+            }
+
+            <!-- ====================================================
+                 SUPPORT
+                 ==================================================== -->
+            <div class="legend-drawer-section-title">
+                Support
+            </div>
+
+            <a href="/help/user-manual"
+                   class="legend-drawer-link @(reqPath.StartsWith("/help/user-manual") ? "active" : "")">
+
+                <i class="fa-solid fa-book"></i>
+                User Manual
+
+            </a>
+
+            <a href="/Home/FAQ"
+                   class="legend-drawer-link @(reqPath == "/home/faq" ? "active" : "")">
+
+                <i class="fa-solid fa-comments"></i>
+                FAQ
+
+            </a>
+
+            <a href="/Home/Contact"
+                   class="legend-drawer-link @(reqPath == "/home/contact" ? "active" : "")">
+
+                <i class="fa-solid fa-headset"></i>
+                Contact Support
+
+            </a>
+
+            <a href="/Home/Privacy"
+                   class="legend-drawer-link @(reqPath == "/home/privacy" ? "active" : "")">
+
+                <i class="fa-solid fa-shield-halved"></i>
+                Privacy Policy
+
+            </a>
+
+            <div class="legend-drawer-divider"></div>
+
+            @if (isAuthenticated)
+            {
+                <a href="/my-profile"
+                       class="legend-drawer-link @(reqPath.StartsWith("/my-profile") ? "active" : "")">
+
+                    <i class="fa-solid fa-user"></i>
+                    My Profile
+
+                </a>
+
+                <form asp-action="Logout"
+                      asp-controller="Account"
+                      method="post">
+
+                    @Html.AntiForgeryToken()
+
+                    <button type="submit"
+                            class="legend-drawer-link legend-drawer-logout">
+
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                        Sign Out
+
+                    </button>
+
+                </form>
+            }
+            else
+            {
+                <a href="/account/login?returnUrl=@Context.Request.Path@Context.Request.QueryString"
+                       class="legend-drawer-link">
+
+                    <i class="fa-solid fa-right-to-bracket"></i>
+                    Sign In
+
+                </a>
+            }
+
+        </div>
+
+    </aside>
+
+    <!-- ============================================================
+         PAGE CONTENT
+         ============================================================ -->
     <main class="legend-main">
         @RenderBody()
     </main>
 
+    <!-- ============================================================
+         FOOTER
+         ============================================================ -->
     <footer class="legend-footer">
 
         <div class="legend-footer-inner">
 
-            <span>
-                © @DateTime.Now.Year City of Johannesburg Valuation Portal
+            <span class="legend-footer-brand">
+                <i class="fa-solid fa-city"></i>
+                City of Johannesburg Valuation Portal
             </span>
 
-            <div class="legend-footer-links">
+            <nav class="legend-footer-links">
 
                 <a href="/Home/Privacy">
-                    Privacy
+                    Privacy Policy
                 </a>
 
                 <a href="/Home/FAQ">
@@ -854,14 +918,22 @@
                 </a>
 
                 <a href="/Home/Contact">
-                    Contact
+                    Contact Us
                 </a>
 
-            </div>
+            </nav>
+
+            <span class="legend-footer-copy">
+                © @DateTime.Now.Year City of Johannesburg. All rights reserved.
+            </span>
 
         </div>
 
     </footer>
+
+    <!-- ============================================================
+         SCRIPTS
+         ============================================================ -->
 
     <script src="~/js/dropdown-escape.js"
             asp-append-version="true"></script>
@@ -892,49 +964,191 @@
 
     <script>
         (() => {
-            const navbar =
-                document.getElementById('legendNavbar');
 
-            if (!navbar) {
-                return;
-            }
+        const drawer =
+        document.getElementById(
+        'legendDrawer');
 
-            // Close the mobile navigation after selecting a normal link.
-            navbar
-                .querySelectorAll('a.dropdown-item, a.legend-login-link')
-                .forEach(link => {
-                    link.addEventListener('click', () => {
-                        if (window.innerWidth >= 1200) {
-                            return;
-                        }
+        const backdrop =
+        document.getElementById(
+        'legendDrawerBackdrop');
 
-                        const collapse =
-                            bootstrap.Collapse.getInstance(navbar);
+        const menuButton =
+        document.getElementById(
+        'legendMenuButton');
 
-                        collapse?.hide();
-                    });
-                });
+        const closeButton =
+        document.getElementById(
+        'legendDrawerClose');
 
-            // ESC closes open Bootstrap dropdowns and the mobile menu.
-            document.addEventListener('keydown', event => {
-                if (event.key !== 'Escape') {
-                    return;
-                }
+        if (!drawer ||
+        !backdrop ||
+        !menuButton) {
 
-                navbar
-                    .querySelectorAll('[data-bs-toggle="dropdown"]')
-                    .forEach(toggle => {
-                        bootstrap.Dropdown
-                            .getInstance(toggle)
-                            ?.hide();
-                    });
+        return;
+        }
 
-                if (window.innerWidth < 1200) {
-                    bootstrap.Collapse
-                        .getInstance(navbar)
-                        ?.hide();
-                }
-            });
+        function openDrawer() {
+
+        drawer.classList.add(
+        'open');
+
+        backdrop.classList.add(
+        'open');
+
+        drawer.setAttribute(
+        'aria-hidden',
+        'false');
+
+        backdrop.setAttribute(
+        'aria-hidden',
+        'false');
+
+        menuButton.setAttribute(
+        'aria-expanded',
+        'true');
+
+        document.body.classList.add(
+        'legend-drawer-open');
+
+        closeButton?.focus();
+        }
+
+        function closeDrawer() {
+
+        drawer.classList.remove(
+        'open');
+
+        backdrop.classList.remove(
+        'open');
+
+        drawer.setAttribute(
+        'aria-hidden',
+        'true');
+
+        backdrop.setAttribute(
+        'aria-hidden',
+        'true');
+
+        menuButton.setAttribute(
+        'aria-expanded',
+        'false');
+
+        document.body.classList.remove(
+        'legend-drawer-open');
+        }
+
+        function closeSiblingGroups(
+        group) {
+
+        const parent =
+        group.parentElement;
+
+        if (!parent) {
+        return;
+        }
+
+        Array.from(
+        parent.children)
+        .filter(item =>
+        item.classList
+        ?.contains(
+        'legend-drawer-group')
+        && item !== group)
+        .forEach(item => {
+
+        item.classList.remove(
+        'open');
+
+        item
+        .querySelector(
+        ':scope > .legend-drawer-toggle')
+        ?.setAttribute(
+        'aria-expanded',
+        'false');
+        });
+        }
+
+        drawer
+        .querySelectorAll(
+        '.legend-drawer-toggle')
+        .forEach(toggle => {
+
+        toggle.addEventListener(
+        'click',
+        event => {
+
+        event.preventDefault();
+
+        const group =
+        toggle.closest(
+        '.legend-drawer-group');
+
+        if (!group) {
+        return;
+        }
+
+        const willOpen =
+        !group.classList
+        .contains(
+        'open');
+
+        if (willOpen) {
+        closeSiblingGroups(
+        group);
+        }
+
+        group.classList.toggle(
+        'open',
+        willOpen);
+
+        toggle.setAttribute(
+        'aria-expanded',
+        willOpen
+        ? 'true'
+        : 'false');
+        });
+        });
+
+        menuButton.addEventListener(
+        'click',
+        openDrawer);
+
+        closeButton?.addEventListener(
+        'click',
+        closeDrawer);
+
+        backdrop.addEventListener(
+        'click',
+        closeDrawer);
+
+        drawer
+        .querySelectorAll(
+        'a, button[type="submit"]')
+        .forEach(item => {
+
+        item.addEventListener(
+        'click',
+        () => {
+
+        if (!item.classList
+        .contains(
+        'legend-drawer-toggle')) {
+
+        closeDrawer();
+        }
+        });
+        });
+
+        document.addEventListener(
+        'keydown',
+        event => {
+
+        if (event.key === 'Escape') {
+        closeDrawer();
+        }
+        });
+
         })();
     </script>
 

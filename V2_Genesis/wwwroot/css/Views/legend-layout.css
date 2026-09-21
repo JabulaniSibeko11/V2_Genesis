@@ -1,0 +1,1056 @@
+/* ================================================================
+   LEGEND LAYOUT
+   City of Johannesburg Valuation Portal
+
+   Deployment navigation:
+   - same drawer pattern on desktop, tablet and phone
+   - modelled on the existing _ClientLayout drawer
+   - no separate desktop dropdown navigation
+   ================================================================ */
+
+:root {
+    --legend-gold: #e6b000;
+    --legend-gold-dark: #c49a00;
+    --legend-gold-light: #fdf6d8;
+
+    --legend-dark: #1e3a40;
+    --legend-dark-deep: #0d2228;
+
+    --legend-warm: #f7f5f2;
+    --legend-white: #ffffff;
+
+    --legend-text: #1a1a1a;
+    --legend-muted: #888888;
+
+    --legend-border: #ede9e3;
+
+    --legend-error: #c0392b;
+    --legend-error-bg: #fdecea;
+
+    --legend-open: #176c40;
+    --legend-open-bg: #e7f3eb;
+
+    --legend-closed: #666666;
+    --legend-closed-bg: #ededed;
+
+    --legend-upcoming: #8a6200;
+    --legend-upcoming-bg: #fff3c8;
+
+    --legend-nav-height: 64px;
+    --legend-drawer-width: 340px;
+}
+
+/* ================================================================
+   BASE
+   ================================================================ */
+
+html,
+body {
+    width: 100%;
+    max-width: 100%;
+}
+
+body.legend-body {
+    margin: 0;
+    min-height: 100vh;
+    padding-top: var(--legend-nav-height) !important;
+    display: flex;
+    flex-direction: column;
+    background: var(--legend-warm);
+    color: var(--legend-text);
+    font-family: "Poppins", Arial, sans-serif;
+    overflow-x: clip;
+}
+
+body.legend-drawer-open {
+    overflow: hidden;
+}
+
+/* ================================================================
+   TOP BAR
+   ================================================================ */
+
+.legend-topbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: var(--legend-nav-height);
+    z-index: 1000;
+
+    background: var(--legend-gold);
+
+    box-shadow:
+        0 2px 16px
+        rgba(0, 0, 0, .20);
+}
+
+.legend-topbar-inner {
+    width: 100%;
+    max-width: 1440px;
+    height: 100%;
+
+    display: flex;
+    align-items: center;
+
+    margin: 0 auto;
+    padding: 0 28px;
+}
+
+.legend-brand {
+    min-width: 0;
+
+    display: inline-flex;
+    align-items: center;
+    gap: 11px;
+
+    color: var(--legend-text);
+    text-decoration: none;
+}
+
+.legend-brand:hover {
+    color: var(--legend-text);
+}
+
+.legend-brand-mark {
+    width: 48px;
+    height: 48px;
+
+    flex: 0 0 48px;
+
+    display: grid;
+    place-items: center;
+
+    padding: 5px;
+
+    border-radius: 9px;
+
+    background:
+        rgba(255, 255, 255, .14);
+}
+
+.legend-brand-logo {
+    width: 100%;
+    height: 100%;
+
+    object-fit: contain;
+}
+
+.legend-brand-copy {
+    min-width: 0;
+
+    display: flex;
+    flex-direction: column;
+
+    line-height: 1.15;
+}
+
+.legend-brand-copy strong {
+    color: var(--legend-text);
+
+    font-size: 14px;
+    font-weight: 800;
+
+    white-space: nowrap;
+}
+
+.legend-brand-copy small {
+    margin-top: 3px;
+
+    color:
+        rgba(0, 0, 0, .58);
+
+    font-size: 9px;
+    font-weight: 600;
+}
+
+.legend-topbar-user {
+    min-width: 0;
+    max-width: 300px;
+
+    margin-left: auto;
+    margin-right: 12px;
+
+    overflow: hidden;
+
+    color: #31464b;
+
+    font-size: 11px;
+    font-weight: 700;
+
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.legend-menu-button {
+    width: 40px;
+    height: 40px;
+
+    flex: 0 0 40px;
+
+    display: grid;
+    place-items: center;
+
+    margin-left: auto;
+
+    border: 0;
+    border-radius: 8px;
+
+    background:
+        rgba(0, 0, 0, .08);
+
+    color: var(--legend-text);
+
+    cursor: pointer;
+
+    font-size: 18px;
+
+    transition:
+        background .15s ease,
+        transform .15s ease;
+}
+
+.legend-menu-button:hover,
+.legend-menu-button:focus-visible {
+    background:
+        rgba(0, 0, 0, .13);
+}
+
+.legend-menu-button:active {
+    transform:
+        scale(.97);
+}
+
+/* ================================================================
+   DRAWER / BACKDROP
+   ================================================================ */
+
+.legend-drawer-backdrop {
+    position: fixed;
+    inset: 0;
+
+    z-index: 1100;
+
+    background:
+        rgba(0, 0, 0, .50);
+
+    opacity: 0;
+    visibility: hidden;
+
+    pointer-events: none;
+
+    backdrop-filter:
+        blur(2px);
+
+    transition:
+        opacity .25s ease,
+        visibility .25s ease;
+}
+
+.legend-drawer-backdrop.open {
+    opacity: 1;
+    visibility: visible;
+
+    pointer-events: auto;
+}
+
+.legend-drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+
+    z-index: 1200;
+
+    width:
+        min(
+            var(--legend-drawer-width),
+            100vw
+        );
+
+    display: flex;
+    flex-direction: column;
+
+    background:
+        var(--legend-white);
+
+    box-shadow:
+        -8px 0 40px
+        rgba(0, 0, 0, .20);
+
+    transform:
+        translateX(105%);
+
+    visibility: hidden;
+
+    transition:
+        transform .28s ease,
+        visibility .28s ease;
+}
+
+.legend-drawer.open {
+    transform:
+        translateX(0);
+
+    visibility: visible;
+}
+
+/* ================================================================
+   DRAWER HEADER
+   ================================================================ */
+
+.legend-drawer-header {
+    min-height: 72px;
+
+    flex: 0 0 auto;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+
+    padding: 16px 18px;
+
+    background:
+        var(--legend-dark);
+
+    border-bottom:
+        2px solid
+        rgba(230, 176, 0, .30);
+}
+
+.legend-drawer-brand {
+    min-width: 0;
+
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.legend-drawer-logo {
+    width: 34px;
+    height: 34px;
+
+    flex: 0 0 34px;
+
+    display: grid;
+    place-items: center;
+
+    padding: 3px;
+
+    border-radius: 6px;
+
+    background:
+        var(--legend-gold);
+}
+
+.legend-drawer-logo-image {
+    width: 100%;
+    height: 100%;
+
+    object-fit: contain;
+}
+
+.legend-drawer-brand strong {
+    display: block;
+
+    color: #ffffff;
+
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1.2px;
+
+    white-space: nowrap;
+}
+
+.legend-drawer-brand small {
+    display: block;
+
+    margin-top: 2px;
+
+    color:
+        rgba(255, 255, 255, .58);
+
+    font-size: 8px;
+    font-weight: 500;
+}
+
+.legend-drawer-close {
+    width: 38px;
+    height: 38px;
+
+    flex: 0 0 38px;
+
+    display: grid;
+    place-items: center;
+
+    border: 0;
+    border-radius: 8px;
+
+    background:
+        transparent;
+
+    color:
+        rgba(255, 255, 255, .74);
+
+    cursor: pointer;
+
+    font-size: 19px;
+}
+
+.legend-drawer-close:hover,
+.legend-drawer-close:focus-visible {
+    background:
+        rgba(255, 255, 255, .08);
+
+    color:
+        #ffffff;
+}
+
+/* ================================================================
+   DRAWER BODY
+   ================================================================ */
+
+.legend-drawer-scroll {
+    min-height: 0;
+    flex: 1 1 auto;
+
+    overflow-y: auto;
+    overscroll-behavior: contain;
+
+    scrollbar-width: thin;
+    scrollbar-color:
+        #c8c8c8
+        transparent;
+}
+
+.legend-signed-in {
+    padding:
+        13px 18px;
+
+    background:
+        var(--legend-warm);
+
+    border-bottom:
+        1px solid
+        var(--legend-border);
+}
+
+.legend-signed-in small {
+    display: block;
+
+    color:
+        var(--legend-muted);
+
+    font-size: 9px;
+}
+
+.legend-signed-in strong {
+    display: block;
+
+    margin-top: 2px;
+
+    overflow: hidden;
+
+    color:
+        var(--legend-text);
+
+    font-size: 11px;
+    font-weight: 600;
+
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.legend-drawer-section-title {
+    padding:
+        12px 18px 4px;
+
+    color:
+        #aaaaaa;
+
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 1.6px;
+
+    text-transform: uppercase;
+}
+
+/* ================================================================
+   LINKS / TOGGLES
+   ================================================================ */
+
+.legend-drawer-link,
+.legend-drawer-toggle {
+    width: 100%;
+    min-height: 45px;
+
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    padding:
+        11px 18px;
+
+    border: 0;
+    border-bottom:
+        1px solid #f5f5f5;
+
+    background:
+        #ffffff;
+
+    color:
+        var(--legend-text);
+
+    font-family:
+        "Poppins",
+        Arial,
+        sans-serif;
+
+    font-size: 12px;
+    font-weight: 500;
+
+    line-height: 1.35;
+
+    text-align: left;
+    text-decoration: none;
+
+    cursor: pointer;
+
+    transition:
+        background .15s ease,
+        color .15s ease;
+}
+
+.legend-drawer-link:hover,
+.legend-drawer-link:focus-visible,
+.legend-drawer-toggle:hover,
+.legend-drawer-toggle:focus-visible {
+    background:
+        var(--legend-gold-light);
+
+    color:
+        var(--legend-text);
+}
+
+.legend-drawer-link.active {
+    padding-left:
+        15px;
+
+    background:
+        var(--legend-gold-light);
+
+    border-left:
+        3px solid
+        var(--legend-gold);
+}
+
+.legend-drawer-link > i,
+.legend-drawer-toggle > i:first-child {
+    width: 18px;
+
+    flex: 0 0 18px;
+
+    color:
+        var(--legend-gold-dark);
+
+    text-align: center;
+}
+
+.legend-drawer-label {
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.legend-drawer-chevron {
+    flex: 0 0 auto;
+
+    color:
+        #999999 !important;
+
+    font-size: 10px;
+
+    transition:
+        transform .20s ease;
+}
+
+.legend-drawer-group.open
+> .legend-drawer-toggle
+> .legend-drawer-chevron {
+    transform:
+        rotate(180deg);
+}
+
+/* ================================================================
+   SUB MENUS
+   ================================================================ */
+
+.legend-drawer-sub {
+    display: none;
+
+    background:
+        #fafafa;
+
+    border-bottom:
+        1px solid #f0f0f0;
+}
+
+.legend-drawer-group.open
+> .legend-drawer-sub {
+    display: block;
+}
+
+.legend-drawer-child {
+    min-height: 42px;
+
+    padding-left: 46px;
+
+    background:
+        #fafafa;
+
+    font-size: 11px;
+}
+
+.legend-drawer-child:hover,
+.legend-drawer-child:focus-visible {
+    background:
+        var(--legend-gold-light);
+}
+
+.legend-drawer-child > i {
+    color:
+        #8d7b35;
+}
+
+/* ================================================================
+   SUPPLEMENTARY ROLL NESTED DROPDOWNS
+   Every supplementary roll owns Search Property + Dashboard.
+   ================================================================ */
+
+.legend-supplementary-list {
+    padding: 0;
+}
+
+.legend-roll-group {
+    border-bottom:
+        1px solid #efefef;
+}
+
+.legend-roll-group:last-child {
+    border-bottom: 0;
+}
+
+.legend-roll-toggle {
+    min-height: 44px;
+
+    padding-left: 46px;
+
+    background:
+        #fafafa;
+
+    font-size: 11px;
+}
+
+.legend-roll-toggle:hover,
+.legend-roll-toggle:focus-visible {
+    background:
+        #f8f3df;
+}
+
+.legend-roll-actions {
+    background:
+        #ffffff;
+}
+
+.legend-drawer-grandchild {
+    min-height: 40px;
+
+    padding-left: 76px;
+
+    background:
+        #ffffff;
+
+    font-size: 10.5px;
+}
+
+.legend-drawer-grandchild:hover,
+.legend-drawer-grandchild:focus-visible {
+    background:
+        var(--legend-gold-light);
+}
+
+/* ================================================================
+   ROLL STATUS
+   ================================================================ */
+
+.legend-roll-status {
+    flex: 0 0 auto;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    margin-left: auto;
+
+    padding:
+        3px 7px;
+
+    border-radius:
+        999px;
+
+    font-size: 7px;
+    font-weight: 900;
+    letter-spacing: .2px;
+
+    white-space: nowrap;
+}
+
+.legend-status-open {
+    background:
+        var(--legend-open-bg);
+
+    color:
+        var(--legend-open);
+}
+
+.legend-status-closed {
+    background:
+        var(--legend-closed-bg);
+
+    color:
+        var(--legend-closed);
+}
+
+.legend-status-upcoming {
+    background:
+        var(--legend-upcoming-bg);
+
+    color:
+        var(--legend-upcoming);
+}
+
+.legend-drawer-disabled {
+    color:
+        #717a7d;
+}
+
+.legend-drawer-disabled > i {
+    color:
+        #8c9294;
+}
+
+.legend-drawer-note {
+    display: block;
+
+    margin-top: 2px;
+
+    color:
+        #8a8a8a;
+
+    font-size: 8px;
+    font-weight: 400;
+}
+
+/* ================================================================
+   DIVIDER / LOGOUT
+   ================================================================ */
+
+.legend-drawer-divider {
+    height: 1px;
+
+    margin:
+        7px 0;
+
+    background:
+        #ededed;
+}
+
+.legend-drawer-logout {
+    color:
+        var(--legend-error);
+}
+
+.legend-drawer-logout > i {
+    color:
+        var(--legend-error);
+}
+
+.legend-drawer-logout:hover,
+.legend-drawer-logout:focus-visible {
+    background:
+        var(--legend-error-bg);
+}
+
+/* ================================================================
+   MAIN
+   ================================================================ */
+
+.legend-main {
+    width: 100%;
+    min-width: 0;
+
+    flex: 1 0 auto;
+
+    background:
+        var(--legend-warm);
+}
+
+/* Existing Bootstrap/DataTables dropdowns inside page content. */
+.legend-main .dropdown-menu {
+    z-index: 1080;
+}
+
+.legend-main .table-responsive {
+    width: 100%;
+    max-width: 100%;
+
+    overflow-x: auto;
+
+    -webkit-overflow-scrolling:
+        touch;
+}
+
+.legend-main .dataTables_wrapper {
+    width: 100%;
+    max-width: 100%;
+
+    min-width: 0;
+}
+
+/* ================================================================
+   FOOTER
+   ================================================================ */
+
+.legend-footer {
+    flex: 0 0 auto;
+
+    padding:
+        18px 28px;
+
+    background:
+        var(--legend-dark-deep);
+
+    border-top:
+        3px solid
+        rgba(230, 176, 0, .25);
+}
+
+.legend-footer-inner {
+    width: 100%;
+    max-width: 1440px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+
+    gap: 10px;
+
+    margin: 0 auto;
+}
+
+.legend-footer-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    color:
+        var(--legend-gold);
+
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.legend-footer-links {
+    display: flex;
+    flex-wrap: wrap;
+
+    gap: 20px;
+}
+
+.legend-footer-links a {
+    color:
+        rgba(255, 255, 255, .48);
+
+    font-size: 12px;
+    font-weight: 600;
+
+    text-decoration: none;
+}
+
+.legend-footer-links a:hover {
+    color:
+        var(--legend-gold);
+}
+
+.legend-footer-copy {
+    color:
+        rgba(255, 255, 255, .36);
+
+    font-size: 11px;
+}
+
+/* ================================================================
+   TABLET
+   ================================================================ */
+
+@media (max-width: 900px) {
+
+    .legend-topbar-inner {
+        padding:
+            0 16px;
+    }
+
+    .legend-topbar-user {
+        max-width: 210px;
+    }
+
+    .legend-footer-inner {
+        justify-content: center;
+
+        text-align: center;
+    }
+
+    .legend-footer-brand,
+    .legend-footer-copy {
+        width: 100%;
+
+        justify-content: center;
+    }
+
+    .legend-footer-links {
+        justify-content: center;
+    }
+}
+
+/* ================================================================
+   PHONE
+   ================================================================ */
+
+@media (max-width: 575.98px) {
+
+    :root {
+        --legend-drawer-width: 100vw;
+    }
+
+    .legend-topbar-inner {
+        padding:
+            0 10px;
+    }
+
+    .legend-brand {
+        gap: 8px;
+    }
+
+    .legend-brand-mark {
+        width: 42px;
+        height: 42px;
+
+        flex-basis: 42px;
+    }
+
+    .legend-brand-copy strong {
+        font-size: 12px;
+    }
+
+    .legend-brand-copy small {
+        font-size: 8px;
+    }
+
+    .legend-topbar-user {
+        display: none;
+    }
+
+    .legend-menu-button {
+        margin-left: auto;
+    }
+
+    .legend-drawer {
+        width: 100vw;
+    }
+
+    .legend-drawer-header {
+        min-height: 66px;
+
+        padding:
+            13px 14px;
+    }
+
+    .legend-drawer-brand strong {
+        font-size: 10px;
+    }
+
+    .legend-drawer-section-title {
+        padding-left: 14px;
+        padding-right: 14px;
+    }
+
+    .legend-drawer-link,
+    .legend-drawer-toggle {
+        min-height: 46px;
+
+        padding-left: 14px;
+        padding-right: 14px;
+
+        font-size: 11.5px;
+    }
+
+    .legend-drawer-child {
+        padding-left: 42px;
+
+        font-size: 11px;
+    }
+
+    .legend-roll-toggle {
+        padding-left: 42px;
+
+        font-size: 10.5px;
+    }
+
+    .legend-drawer-grandchild {
+        padding-left: 68px;
+
+        font-size: 10.5px;
+    }
+
+    .legend-footer {
+        padding:
+            18px 14px;
+    }
+
+    .legend-footer-links {
+        gap: 12px;
+    }
+}
+
+/* ================================================================
+   VERY SMALL PHONE
+   ================================================================ */
+
+@media (max-width: 380px) {
+
+    .legend-brand-copy strong {
+        max-width: 190px;
+
+        overflow: hidden;
+
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .legend-roll-status {
+        padding:
+            3px 5px;
+
+        font-size: 6.5px;
+    }
+
+    .legend-drawer-link,
+    .legend-drawer-toggle {
+        gap: 8px;
+    }
+
+    .legend-drawer-grandchild {
+        padding-left: 60px;
+    }
+}
