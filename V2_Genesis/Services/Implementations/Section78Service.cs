@@ -943,9 +943,10 @@ namespace V2_Genesis.Services.Implementations
                 reference.EndsWith(
                     "-R",
                     StringComparison.OrdinalIgnoreCase);
-
-            var files = new[]
-            {
+            var files =
+                new[]
+                {
+        evidence?.Rep_letter,
         evidence?.Files1,
         evidence?.Files2,
         evidence?.Files3,
@@ -956,7 +957,9 @@ namespace V2_Genesis.Services.Implementations
         evidence?.Files8,
         evidence?.Files9,
         evidence?.Files10
-    };
+                };
+
+
 
             var actualFileCount = files.Count(
                 x => !string.IsNullOrWhiteSpace(x));
@@ -975,10 +978,9 @@ namespace V2_Genesis.Services.Implementations
 
                 ValuationKey = query.Valuation_Key,
 
-                FileCount = evidence?.Evidence_count > 0
-                    ? Convert.ToInt32(evidence.Evidence_count.Value)
-                    : actualFileCount,
+               
 
+                FileCount = actualFileCount,
                 Files = files,
 
                 Section6 = new Obj_Section6Model
@@ -1141,14 +1143,13 @@ namespace V2_Genesis.Services.Implementations
                 DateTime.Now;
 
             var validFiles =
-                result.Files?
-                    .Where(file =>
-                        !string.IsNullOrWhiteSpace(file))
-                    .Select(file =>
-                        file!.Trim())
-                    .Take(10)
-                    .ToList()
-                ?? new List<string>();
+    result.Files?
+        .Where(file =>
+            !string.IsNullOrWhiteSpace(file))
+        .Select(file => file!)
+        .ToList()
+    ?? new List<string>();
+
 
             var fileCount =
                 result.FileCount > 0

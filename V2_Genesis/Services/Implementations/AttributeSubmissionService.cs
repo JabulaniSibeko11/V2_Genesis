@@ -1314,6 +1314,36 @@ namespace V2_Genesis.Services.Implementations
             var drcMarketValue = await _context.AttrDrcMarketValueDemolition
                 .FirstOrDefaultAsync(x => x.PropertyDetailsId == propertyDetailsId, cancellationToken);
 
+            var storedFiles =
+    await _context.AttrFiles
+        .AsNoTracking()
+        .FirstOrDefaultAsync(
+            x =>
+                x.Attr_ID == attrId &&
+                x.IsActive,
+            cancellationToken);
+
+            var storedUploadedFileNames =
+                new[]
+                {
+        storedFiles?.Rep_Letter,
+        storedFiles?.Files1,
+        storedFiles?.Files2,
+        storedFiles?.Files3,
+        storedFiles?.Files4,
+        storedFiles?.Files5,
+        storedFiles?.Files6,
+        storedFiles?.Files7,
+        storedFiles?.Files8,
+        storedFiles?.Files9,
+        storedFiles?.Files10
+                }
+                .Where(x =>
+                    !string.IsNullOrWhiteSpace(x))
+                .Select(x => x!)
+                .ToList();
+
+
             var model = new AttributeSubmissionViewModel
             {
                 AttrId = info.Attr_ID,
@@ -1523,7 +1553,15 @@ namespace V2_Genesis.Services.Implementations
                     Area = v.Area,
                     Rate = v.Rate,
                     VacantLandCost = v.VacantLandCost
-                }).ToList()
+                }).ToList(),
+                Files = new AttributeFilesVm
+                {
+                    UploadedFileNames =
+        storedUploadedFileNames
+                },
+
+
+
             };
 
             return model;

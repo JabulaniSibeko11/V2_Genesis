@@ -534,8 +534,33 @@
             <div class="sub-comment-box">@DisplayValue(Model.ClientComment)</div>
         </div>
     </div>
-
     @* ── Declaration ───────────────────────────────── *@
+    <div class="sub-card">
+        <div class="sub-card-bar">
+            <i class="fa-solid fa-signature"></i>
+            <h4>Declaration</h4>
+        </div>
+
+        <div class="sub-card-body">
+            <div class="sub-grid">
+
+                <div class="sub-field">
+                    <span class="sub-field-label">
+                        Declaration Accepted
+                    </span>
+
+                    <div class="sub-field-value">
+                        @(Model.Declaration?.DeclarationAccepted == true
+                            ? "Yes"
+                            : "No")
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    
+    
     <div class="sub-card">
         <div class="sub-card-bar">
             <i class="fa-solid fa-signature"></i>

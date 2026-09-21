@@ -16,7 +16,12 @@ namespace V2_Genesis.Services.Attributes
         private readonly IWebHostEnvironment _env;
 
         private const string HEADER_IMAGE = "Images/Obj_Header.PNG";
-
+        private const string ACK_BLUE = "#3F7FB5";
+        private const string ACK_LIGHT_BLUE = "#EAF4FB";
+        private const string ACK_PALE_BLUE = "#F5FAFF";
+        private const string ACK_BORDER = "#444444";
+        private const string ACK_GREY = "#666666";
+        private const string ACK_RED = "#CC0000";
         public AttributeDocumentService(
             IOptions<AttributeStorageOptions> options,
             IWebHostEnvironment env)
@@ -591,16 +596,23 @@ namespace V2_Genesis.Services.Attributes
             });
         }
 
-        private static void AddSectionTitle(ColumnDescriptor col, string title)
+        private static void AddSectionTitle(
+      ColumnDescriptor col,
+      string title)
         {
             col.Item()
                 .PaddingTop(10)
-                .Background("#D7ECEA")
+                .Background(ACK_BLUE)
+                .Border(1)
+                .BorderColor(ACK_BORDER)
                 .Padding(5)
                 .Text(title)
                 .Bold()
-                .FontSize(9);
+                .FontSize(9)
+                .FontColor(Colors.White);
         }
+
+
         private static void AddTwoColumnTable(ColumnDescriptor col, List<(string Label, string? Value)> rows)
         {
             col.Item().Table(table =>
@@ -726,21 +738,35 @@ namespace V2_Genesis.Services.Attributes
             IReadOnlyCollection<string> correctedSections)
         {
             col.Item()
-                .Background("#EAF7EE")
-                .Border(0.5f)
-                .BorderColor("#218838")
-                .Padding(8)
-                .Column(box =>
-                {
-                    box.Item().Text("Corrections Received").Bold().FontSize(11);
-                    box.Item().PaddingTop(3).Text(
-                        "This document confirms receipt of the corrected property attribute information requested by the Valuer.");
-                    box.Item().PaddingTop(3).Text(
-                        "The original attribute reference remains unchanged. No new 48-hour evidence period or evidence PIN applies to this correction submission.");
-                    box.Item().PaddingTop(5)
-                        .Text($"Attribute Reference: {propertyInfo.Attr_No ?? model.AttrNo ?? ""}")
-                        .Bold();
-                });
+    .Background(ACK_LIGHT_BLUE)
+    .Border(1)
+    .BorderColor(ACK_BLUE)
+    .Padding(8)
+    .Column(box =>
+    {
+        box.Item()
+            .Text("Corrections Received")
+            .Bold()
+            .FontSize(11)
+            .FontColor(ACK_BLUE);
+
+        box.Item()
+            .PaddingTop(3)
+            .Text(
+                "This document confirms receipt of the corrected property attribute information requested by the Valuer.");
+
+        box.Item()
+            .PaddingTop(3)
+            .Text(
+                "The original attribute reference remains unchanged. No new 48-hour evidence period or evidence PIN applies to this correction submission.");
+
+        box.Item()
+            .PaddingTop(5)
+            .Text(
+                $"Attribute Reference: {propertyInfo.Attr_No ?? model.AttrNo ?? ""}")
+            .Bold();
+    });
+
 
             var sections = (correctedSections ?? Array.Empty<string>())
                 .Where(x => !string.IsNullOrWhiteSpace(x))
@@ -768,25 +794,41 @@ namespace V2_Genesis.Services.Attributes
         }
 
         private static void AddAcknowledgementIntro(
-    ColumnDescriptor col,
-    AttributeSubmissionViewModel model,
-    AttrPropertyInfo propertyInfo)
+     ColumnDescriptor col,
+     AttributeSubmissionViewModel model,
+     AttrPropertyInfo propertyInfo)
         {
             col.Item()
-                .Background("#FFF8E1")
-                .Border(0.5f)
-                .BorderColor("#E6B000")
+                .Background(ACK_LIGHT_BLUE)
+                .Border(1)
+                .BorderColor(ACK_BLUE)
                 .Padding(8)
                 .Column(box =>
                 {
-                    box.Item().Text("Submission Received").Bold().FontSize(11);
-                    box.Item().PaddingTop(3).Text(
-                        "This document is a copy of the property attribute information submitted through the City of Johannesburg Valuation Portal.");
-                    box.Item().PaddingTop(3).Text(
-                        "This acknowledgement does not imply acceptance or approval. The submitted information remains subject to review by the valuation team.");
-                    box.Item().PaddingTop(5).Text($"Attribute Reference: {propertyInfo.Attr_No ?? model.AttrNo ?? ""}").Bold();
+                    box.Item()
+                        .Text("Submission Received")
+                        .Bold()
+                        .FontSize(11)
+                        .FontColor(ACK_BLUE);
+
+                    box.Item()
+                        .PaddingTop(3)
+                        .Text(
+                            "This document is a copy of the property attribute information submitted through the City of Johannesburg Valuation Portal.");
+
+                    box.Item()
+                        .PaddingTop(3)
+                        .Text(
+                            "This acknowledgement does not imply acceptance or approval. The submitted information remains subject to review by the valuation team.");
+
+                    box.Item()
+                        .PaddingTop(5)
+                        .Text(
+                            $"Attribute Reference: {propertyInfo.Attr_No ?? model.AttrNo ?? ""}")
+                        .Bold();
                 });
         }
+
 
         private static void AddSubmittedPropertyDetails(
     ColumnDescriptor col,
@@ -1134,40 +1176,93 @@ namespace V2_Genesis.Services.Attributes
                 .Text(model.ClientComment);
         }
 
-        private static void AddSubmittedEvidenceSummary(ColumnDescriptor col, AttributeSubmissionViewModel model)
+        private static void AddSubmittedEvidenceSummary(
+    ColumnDescriptor col,
+    AttributeSubmissionViewModel model)
         {
-            AddSectionTitle(col, "6. Supporting Documents");
+            AddSectionTitle(
+                col,
+                "6. Supporting Documents");
 
-            var fileNames = new List<string>();
+            var fileNames =
+                new List<string>();
 
-            if (model.Files?.RepLetter != null)
-                fileNames.Add(model.Files.RepLetter.FileName);
+            if (model.Files?.RepLetter is { Length: > 0 })
+            {
+                var originalName =
+                    Path.GetFileName(
+                        model.Files.RepLetter.FileName);
+
+                if (!string.IsNullOrWhiteSpace(originalName))
+                    fileNames.Add(originalName);
+            }
 
             if (model.Files?.EvidenceFiles != null)
-                fileNames.AddRange(model.Files.EvidenceFiles.Select(f => f.FileName));
+            {
+                foreach (var file in
+                         model.Files.EvidenceFiles
+                             .Where(x => x is { Length: > 0 }))
+                {
+                    var originalName =
+                        Path.GetFileName(
+                            file.FileName);
+
+                    if (!string.IsNullOrWhiteSpace(originalName))
+                        fileNames.Add(originalName);
+                }
+            }
 
             if (model.Files?.UploadedFileNames != null)
-                fileNames.AddRange(model.Files.UploadedFileNames);
-
-            fileNames = fileNames
-                .Where(x => !string.IsNullOrWhiteSpace(x))
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToList();
-
-            if (!fileNames.Any())
             {
-                col.Item().Padding(5).Text("No supporting documents uploaded.");
+                foreach (var fileName in
+                         model.Files.UploadedFileNames)
+                {
+                    if (!string.IsNullOrWhiteSpace(fileName))
+                    {
+                        // Stored filename is already the original uploaded base name.
+                        // Do not rename, prefix, suffix or sanitise it for display.
+                        fileNames.Add(fileName);
+                    }
+                }
+            }
+
+            fileNames =
+                fileNames
+                    .Where(x =>
+                        !string.IsNullOrWhiteSpace(x))
+                    .Distinct(
+                        StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+
+            if (fileNames.Count == 0)
+            {
+                col.Item()
+                    .Padding(5)
+                    .Background(ACK_LIGHT_BLUE)
+                    .Border(1)
+                    .BorderColor(ACK_BORDER)
+                    .Text(
+                        "No supporting documents uploaded.");
+
                 return;
             }
 
-            col.Item().Column(list =>
-            {
-                foreach (var file in fileNames)
+            col.Item()
+                .Background(ACK_LIGHT_BLUE)
+                .Border(1)
+                .BorderColor(ACK_BORDER)
+                .Padding(8)
+                .Column(list =>
                 {
-                    list.Item().Text($"• {file}");
-                }
-            });
+                    foreach (var fileName in fileNames)
+                    {
+                        list.Item()
+                            .Text($"• {fileName}")
+                            .FontSize(8);
+                    }
+                });
         }
+
 
         private static void AddSubmittedDeclaration(ColumnDescriptor col, AttributeSubmissionViewModel model)
         {
@@ -1190,19 +1285,26 @@ namespace V2_Genesis.Services.Attributes
         }
 
         private static void AddEvidenceAccessDetails(
-            ColumnDescriptor col,
-            AttributeSubmissionViewModel model,
-            AttrPropertyInfo propertyInfo)
+     ColumnDescriptor col,
+     AttributeSubmissionViewModel model,
+     AttrPropertyInfo propertyInfo)
         {
-            var reference = propertyInfo.Attr_No ?? model.AttrNo ?? "";
-            var pin = model.GeneratedEvidencePin;
-            var deadline = model.GeneratedEvidenceDeadline;
+            var reference =
+                propertyInfo.Attr_No ??
+                model.AttrNo ??
+                "";
+
+            var pin =
+                model.GeneratedEvidencePin;
+
+            var deadline =
+                model.GeneratedEvidenceDeadline;
 
             col.Item()
                 .PaddingTop(8)
-                .Background("#EAF7F5")
+                .Background(ACK_LIGHT_BLUE)
                 .Border(1)
-                .BorderColor("#006B70")
+                .BorderColor(ACK_BLUE)
                 .Padding(10)
                 .Column(box =>
                 {
@@ -1210,48 +1312,76 @@ namespace V2_Genesis.Services.Attributes
                         .Text("Additional Evidence Access")
                         .Bold()
                         .FontSize(11)
-                        .FontColor("#006B70");
+                        .FontColor(ACK_BLUE);
 
-                    box.Item().PaddingTop(5).Table(table =>
-                    {
-                        table.ColumnsDefinition(columns =>
+                    box.Item()
+                        .PaddingTop(5)
+                        .Table(table =>
                         {
-                            columns.RelativeColumn();
-                            columns.RelativeColumn(2.2f);
+                            table.ColumnsDefinition(columns =>
+                            {
+                                columns.RelativeColumn();
+                                columns.RelativeColumn(2.2f);
+                            });
+
+                            table.Cell()
+                                .Element(CellLabel)
+                                .Text("Reference Number");
+
+                            table.Cell()
+                                .Element(CellValue)
+                                .Text(reference)
+                                .Bold();
+
+                            table.Cell()
+                                .Element(CellLabel)
+                                .Text("Evidence PIN");
+
+                            table.Cell().Element(CellValue)
+      .Text(
+          string.IsNullOrWhiteSpace(pin)
+              ? "Not available"
+              : pin)
+      .Bold()
+      .FontSize(8);
+
+                            table.Cell()
+                                .Element(CellLabel)
+                                .Text("Evidence Window Closes");
+
+                            table.Cell()
+                                .Element(CellValue)
+                                .Text(
+                                    deadline.HasValue
+                                        ? deadline.Value.ToString(
+                                            "dd MMMM yyyy HH:mm")
+                                        : "48 hours after declaration");
                         });
 
-                        table.Cell().Element(CellLabel).Text("Reference Number");
-                        table.Cell().Element(CellValue).Text(reference).Bold();
-
-                        table.Cell().Element(CellLabel).Text("Evidence PIN");
-                        table.Cell().Element(CellValue)
-                            .Text(string.IsNullOrWhiteSpace(pin) ? "Not available" : pin)
-                            .Bold()
-                            .FontSize(12);
-
-                        table.Cell().Element(CellLabel).Text("Evidence Window Closes");
-                        table.Cell().Element(CellValue).Text(
-                            deadline.HasValue
-                                ? deadline.Value.ToString("dd MMMM yyyy HH:mm")
-                                : "48 hours after declaration");
-                    });
-
-                    box.Item().PaddingTop(6).Text(
-                        "Use the Attribute reference number and Evidence PIN on the Valuation Portal to upload additional evidence. The PIN expires when the 48-hour evidence window closes.")
+                    box.Item()
+                        .PaddingTop(6)
+                        .Text(
+                            "Use the Attribute reference number and Evidence PIN on the Valuation Portal to upload additional evidence. The PIN expires when the 48-hour evidence window closes.")
                         .FontSize(8);
                 });
         }
-        private static void AddHeader(TableDescriptor table, params string[] headers)
+
+        private static void AddHeader(
+     TableDescriptor table,
+     params string[] headers)
         {
             foreach (var header in headers)
             {
                 table.Cell()
-                    .Background("#D7ECEA")
-                    .Border(0.5f)
-                    .BorderColor("#BFD8D6")
+                    .Background(ACK_BLUE)
+                    .Border(1)
+                    .BorderColor(ACK_BORDER)
                     .Padding(4)
+                    .AlignCenter()
                     .Text(header)
-                    .Bold();
+                    .Bold()
+                    .FontSize(7)
+                    .FontColor(Colors.White);
             }
         }
 
@@ -1470,13 +1600,36 @@ namespace V2_Genesis.Services.Attributes
                         AddSubmittedDeclaration(col, model);
                     });
 
-                    page.Footer().AlignCenter().Text(text =>
-                    {
-                        text.Span("Corrections acknowledged on ");
-                        text.Span(DateTime.Now.ToString("dd MMMM yyyy HH:mm")).SemiBold();
-                        text.Span(" | Attribute Ref: ");
-                        text.Span(propertyInfo.Attr_No ?? model.AttrNo ?? "").SemiBold();
-                    });
+                    page.Footer()
+     .PaddingTop(5)
+     .Column(footer =>
+     {
+         footer.Item()
+             .AlignCenter()
+             .Text(
+                 "This is an official document generated by the City of Johannesburg")
+             .FontSize(7)
+             .FontColor(ACK_GREY);
+
+         footer.Item()
+             .AlignCenter()
+             .Text(
+                 $"Generated on: {DateTime.Now:dd MMMM yyyy HH:mm}")
+             .FontSize(7)
+             .FontColor(ACK_GREY);
+
+         footer.Item()
+             .AlignCenter()
+             .Text(
+                 propertyInfo.Attr_No ??
+                 model.AttrNo ??
+                 "")
+             .FontSize(8)
+             .SemiBold()
+             .FontColor(ACK_RED);
+     });
+
+
                 });
             }).GeneratePdf(pdfPath);
         }
@@ -1537,13 +1690,36 @@ namespace V2_Genesis.Services.Attributes
                         AddSubmittedDeclaration(col, model);
                     });
 
-                    page.Footer().AlignCenter().Text(text =>
-                    {
-                        text.Span("Generated on ");
-                        text.Span(DateTime.Now.ToString("dd MMMM yyyy HH:mm")).SemiBold();
-                        text.Span(" | Attribute Ref: ");
-                        text.Span(propertyInfo.Attr_No ?? model.AttrNo ?? "").SemiBold();
-                    });
+                    page.Footer()
+    .PaddingTop(5)
+    .Column(footer =>
+    {
+        footer.Item()
+            .AlignCenter()
+            .Text(
+                "This is an official document generated by the City of Johannesburg")
+            .FontSize(7)
+            .FontColor(ACK_GREY);
+
+        footer.Item()
+            .AlignCenter()
+            .Text(
+                $"Generated on: {DateTime.Now:dd MMMM yyyy HH:mm}")
+            .FontSize(7)
+            .FontColor(ACK_GREY);
+
+        footer.Item()
+            .AlignCenter()
+            .Text(
+                propertyInfo.Attr_No ??
+                model.AttrNo ??
+                "")
+            .FontSize(8)
+            .SemiBold()
+            .FontColor(ACK_RED);
+    });
+
+
                 });
             }).GeneratePdf(pdfPath);
         }
@@ -1588,23 +1764,27 @@ namespace V2_Genesis.Services.Attributes
             table.Cell().ColumnSpan(3).Element(CellValue).Text(value ?? "");
         }
 
-        private static IContainer CellLabel(IContainer container)
+        private static IContainer CellLabel(
+     IContainer container)
         {
             return container
-                .Border(0.5f)
-                .BorderColor("#BFD8D6")
-                .Background("#F3FAF9")
+                .Border(1)
+                .BorderColor(ACK_BORDER)
+                .Background(ACK_LIGHT_BLUE)
                 .Padding(4)
                 .DefaultTextStyle(x => x.Bold());
         }
 
-        private static IContainer CellValue(IContainer container)
+
+        private static IContainer CellValue(
+     IContainer container)
         {
             return container
-                .Border(0.5f)
-                .BorderColor("#BFD8D6")
+                .Border(1)
+                .BorderColor(ACK_BORDER)
                 .Padding(4);
         }
+
 
 
 

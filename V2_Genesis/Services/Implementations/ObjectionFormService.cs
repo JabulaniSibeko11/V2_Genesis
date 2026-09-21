@@ -2231,15 +2231,24 @@ WHERE LTRIM(RTRIM(Objection_Ref_S6)) = @ReferenceNo;";
         public string? ObjectorType { get; set; }
     }
 
-    private static List<string> GetUploadedDocumentNames(Obj_Files objFile)
+    private static List<string> GetUploadedDocumentNames(
+     Obj_Files objFile)
     {
-        var docs = new List<string>();
+        var docs =
+            new List<string>();
 
-        void Add(string? name)
+        void Add(string? fileName)
         {
-            if (!string.IsNullOrWhiteSpace(name))
-                docs.Add(name.Trim());
+            if (!string.IsNullOrWhiteSpace(fileName))
+            {
+                // Keep the stored original filename unchanged.
+                docs.Add(fileName);
+            }
         }
+
+        // Representative letter is an uploaded file too.
+        // Do NOT change it to "Representative Letter: filename.pdf".
+        Add(objFile.Rep_letter);
 
         Add(objFile.Files1);
         Add(objFile.Files2);
@@ -2252,10 +2261,8 @@ WHERE LTRIM(RTRIM(Objection_Ref_S6)) = @ReferenceNo;";
         Add(objFile.Files9);
         Add(objFile.Files10);
 
-        if (!string.IsNullOrWhiteSpace(objFile.Rep_letter))
-            docs.Add("Representative Letter: " + objFile.Rep_letter.Trim());
-
         return docs;
     }
+
 }
 
