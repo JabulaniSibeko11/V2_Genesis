@@ -1121,142 +1121,240 @@ namespace V2_Genesis.Services.Implementations
         {
             var addressParts = new[]
             {
-                FirstValueFromSources(sources, "ADDR1", "Address1", "Street_Address", "LisStreetAddress"),
-                FirstValueFromSources(sources, "ADDR2", "Address2"),
-                FirstValueFromSources(sources, "ADDR3", "Address3"),
-                FirstValueFromSources(sources, "ADDR4", "Address4"),
-                FirstValueFromSources(sources, "ADDR5", "Address5")
+                FirstValueByNamePriority(
+                    sources,
+                    "ADDR1",
+                    "Address1",
+                    "Street_Address",
+                    "LisStreetAddress"),
+
+                FirstValueByNamePriority(
+                    sources,
+                    "ADDR2",
+                    "Address2"),
+
+                FirstValueByNamePriority(
+                    sources,
+                    "ADDR3",
+                    "Address3"),
+
+                FirstValueByNamePriority(
+                    sources,
+                    "ADDR4",
+                    "Address4"),
+
+                FirstValueByNamePriority(
+                    sources,
+                    "ADDR5",
+                    "Address5")
             }
             .Where(x => !string.IsNullOrWhiteSpace(x))
             .Distinct(StringComparer.OrdinalIgnoreCase);
 
-            return new SubmissionPropertyViewModel
-            {
-                PropertyDescription = FirstValueFromSources(
+            /*
+             * IMPORTANT:
+             *
+             * Property_Type / A_Property_Type can be "Multi" when the
+             * client used Form D. That identifies the submitted form and
+             * must NOT replace what is reflected on the valuation roll.
+             *
+             * The display property type therefore follows the CURRENT
+             * valuation category first:
+             *
+             *   Old_Category / GV_Category / CatDesc / Category
+             *
+             * Example:
+             *   FormType = Multi
+             *   Current roll category = Residential
+             *
+             * Display:
+             *   Property type = Residential
+             *
+             * not:
+             *   Property type = Multipurpose
+             */
+            var currentCategory =
+                FirstValueByNamePriority(
                     sources,
-                    "A_Property_Desc",
-                    "Property_Desc",
-                    "PropertyDesc"),
+                    "Old_Category",
+                    "GV_Category",
+                    "CatDesc",
+                    "Category");
 
-                PropertyType = FirstValueFromSources(
+            var storedFormPropertyType =
+                FirstValueByNamePriority(
                     sources,
                     "A_Property_Type",
                     "Property_Type",
-                    "PropertyType"),
+                    "PropertyType");
 
-                PremiseId = FirstValueFromSources(
+            var currentExtent =
+                FirstValueByNamePriority(
                     sources,
-                    "A_Premise_id",
-                    "Premise_id",
-                    "PremiseId"),
-
-                PropertyId = FirstValueFromSources(
-                    sources,
-                    "A_Property_id",
-                    "Property_id",
-                    "PropertyId"),
-
-                UnitKey = FirstValueFromSources(
-                    sources,
-                    "A_Unit_key",
-                    "Unit_key",
-                    "UnitKey"),
-
-                ValuationKey = FirstValueFromSources(
-                    sources,
-                    "A_Valuation_Key",
-                    "Valuation_Key",
-                    "ValuationKey"),
-
-                Address = string.Join(", ", addressParts),
-
-                Township = FirstValueFromSources(
-                    sources,
-                    "TownNameDesc",
-                    "Township",
-                    "Town_Name"),
-
-                Erf = FirstValueFromSources(
-                    sources,
-                    "ERF",
-                    "Erf",
-                    "Stand_No",
-                    "StandNo"),
-
-                Sector = FirstValueFromSources(
-                    sources,
-                    "A_Sector",
-                    "Sector"),
-
-                Category = FirstValueFromSources(
-                    sources,
-                    "CatDesc",
-                    "Category",
-                    "Old_Category",
-                    "GV_Category"),
-
-                Extent = FirstValueFromSources(
-                    sources,
-                    "RateableArea",
-                    "Extent",
                     "Old_Extent",
-                    "GV_Extent"),
+                    "GV_Extent",
+                    "RateableArea",
+                    "Extent");
 
-                MarketValue = FirstValueFromSources(
+            var currentMarketValue =
+                FirstValueByNamePriority(
                     sources,
-                    "MarketValue",
-                    "Market_Value",
                     "Old_Market_Value",
-                    "GV_Market_Value"),
+                    "GV_Market_Value",
+                    "MarketValue",
+                    "Market_Value");
 
-                OwnerName = FirstValueFromSources(
-                    sources,
-                    "Owner_Name",
-                    "OwnerName")
+            return new SubmissionPropertyViewModel
+            {
+                PropertyDescription =
+                    FirstValueByNamePriority(
+                        sources,
+                        "A_Property_Desc",
+                        "Property_Desc",
+                        "PropertyDesc"),
+
+                /*
+                 * Keep FormType separate from PropertyType.
+                 * PropertyType is what is reflected on the roll.
+                 */
+                PropertyType =
+                    FirstNonEmpty(
+                        currentCategory,
+                        storedFormPropertyType),
+
+                PremiseId =
+                    FirstValueByNamePriority(
+                        sources,
+                        "A_Premise_id",
+                        "Premise_id",
+                        "PremiseId"),
+
+                PropertyId =
+                    FirstValueByNamePriority(
+                        sources,
+                        "A_Property_id",
+                        "Property_id",
+                        "PropertyId"),
+
+                UnitKey =
+                    FirstValueByNamePriority(
+                        sources,
+                        "A_Unit_key",
+                        "Unit_key",
+                        "UnitKey"),
+
+                ValuationKey =
+                    FirstValueByNamePriority(
+                        sources,
+                        "A_Valuation_Key",
+                        "Valuation_Key",
+                        "ValuationKey"),
+
+                Address =
+                    string.Join(
+                        ", ",
+                        addressParts),
+
+                Township =
+                    FirstValueByNamePriority(
+                        sources,
+                        "TownNameDesc",
+                        "Township",
+                        "Town_Name",
+                        "Town_Name_Desc"),
+
+                Erf =
+                    FirstValueByNamePriority(
+                        sources,
+                        "ERF",
+                        "Erf",
+                        "Stand_No",
+                        "StandNo",
+                        "Unit_No"),
+
+                Sector =
+                    FirstValueByNamePriority(
+                        sources,
+                        "A_Sector",
+                        "Sector",
+                        "Sector_Type"),
+
+                Category =
+                    currentCategory,
+
+                Extent =
+                    currentExtent,
+
+                MarketValue =
+                    currentMarketValue,
+
+                OwnerName =
+                    FirstValueByNamePriority(
+                        sources,
+                        "Owner_Name",
+                        "OwnerName")
             };
         }
 
         private static SubmissionValuationViewModel BuildCurrentValuation(
             params object?[] sources)
         {
+            /*
+             * "Current" means AS REFLECTED ON THE ROLL.
+             *
+             * Use field-name priority across all returned result sets.
+             * This prevents a generic Property_Type / Category value from
+             * the main record (for example "Multi") from winning over the
+             * actual Old_Category returned in Section 6.
+             */
             return new SubmissionValuationViewModel
             {
-                PropertyDescription = FirstValueFromSources(
-                    sources,
-                    "Old_Property_Description",
-                    "Old_Property_Desc",
-                    "Property_Desc",
-                    "A_Property_Desc"),
+                PropertyDescription =
+                    FirstValueByNamePriority(
+                        sources,
+                        "Old_Property_Description",
+                        "Old_Property_Desc",
+                        "Property_Desc",
+                        "A_Property_Desc"),
 
-                Category = FirstValueFromSources(
-                    sources,
-                    "Old_Category",
-                    "GV_Category",
-                    "Category"),
+                Category =
+                    FirstValueByNamePriority(
+                        sources,
+                        "Old_Category",
+                        "GV_Category",
+                        "CatDesc",
+                        "Category"),
 
-                Address = FirstValueFromSources(
-                    sources,
-                    "Old_Address",
-                    "GV_Address",
-                    "LisStreetAddress"),
+                Address =
+                    FirstValueByNamePriority(
+                        sources,
+                        "Old_Address",
+                        "GV_Address",
+                        "LisStreetAddress",
+                        "Property_Address"),
 
-                Extent = FirstValueFromSources(
-                    sources,
-                    "Old_Extent",
-                    "GV_Extent",
-                    "RateableArea"),
+                Extent =
+                    FirstValueByNamePriority(
+                        sources,
+                        "Old_Extent",
+                        "GV_Extent",
+                        "RateableArea",
+                        "Extent"),
 
-                MarketValue = FirstValueFromSources(
-                    sources,
-                    "Old_Market_Value",
-                    "GV_Market_Value",
-                    "MarketValue"),
+                MarketValue =
+                    FirstValueByNamePriority(
+                        sources,
+                        "Old_Market_Value",
+                        "GV_Market_Value",
+                        "MarketValue",
+                        "Market_Value"),
 
-                Owner = FirstValueFromSources(
-                    sources,
-                    "Old_Owner",
-                    "Owner_Name",
-                    "OwnerName")
+                Owner =
+                    FirstValueByNamePriority(
+                        sources,
+                        "Old_Owner",
+                        "Owner_Name",
+                        "OwnerName")
             };
         }
 
@@ -1265,71 +1363,74 @@ namespace V2_Genesis.Services.Implementations
         {
             return new SubmissionValuationViewModel
             {
-                PropertyDescription = FirstValueFromSources(
-                    sources,
-                    "new_Property_Description",
-                    "New_Property_Description",
-                    "New_Property_Desc"),
+                PropertyDescription =
+                    FirstValueByNamePriority(
+                        sources,
+                        "new_Property_Description",
+                        "New_Property_Description",
+                        "New_Property_Desc"),
 
-                Category = FirstValueFromSources(
-                    sources,
-                    "new_Category",
-                    "New_Category",
-                    "Requested_Category"),
+                Category =
+                    FirstValueByNamePriority(
+                        sources,
+                        "new_Category",
+                        "New_Category",
+                        "Requested_Category"),
 
-                Address = FirstValueFromSources(
-                    sources,
-                    "new_Address",
-                    "New_Address",
-                    "Requested_Address"),
+                Address =
+                    FirstValueByNamePriority(
+                        sources,
+                        "new_Address",
+                        "New_Address",
+                        "Requested_Address"),
 
-                Extent = FirstValueFromSources(
-                    sources,
-                    "new_Extent",
-                    "New_Extent",
-                    "Requested_Extent"),
+                Extent =
+                    FirstValueByNamePriority(
+                        sources,
+                        "new_Extent",
+                        "New_Extent",
+                        "Requested_Extent"),
 
-                MarketValue = FirstValueFromSources(
-                    sources,
-                    "new_Market_Value",
-                    "New_Market_Value",
-                    "Requested_Market_Value"),
+                MarketValue =
+                    FirstValueByNamePriority(
+                        sources,
+                        "new_Market_Value",
+                        "New_Market_Value",
+                        "Requested_Market_Value"),
 
-                Owner = FirstValueFromSources(
-                    sources,
-                    "new_Owner",
-                    "New_Owner",
-                    "Requested_Owner")
+                Owner =
+                    FirstValueByNamePriority(
+                        sources,
+                        "new_Owner",
+                        "New_Owner",
+                        "Requested_Owner")
             };
         }
 
         private static List<MultiPurposeLineViewModel> BuildMultiPurposeLines(
-       params object?[] sources)
+            params object?[] sources)
         {
             var lines =
                 new List<MultiPurposeLineViewModel>();
 
             /*
-             * IMPORTANT:
+             * Main values are handled by:
              *
-             * Main values are handled separately through:
-             *
-             *   CurrentValuation
+             *   CurrentValuation:
              *      Old_Category
              *      Old_Extent
              *      Old_Market_Value
              *
-             *   RequestedValuation
+             *   RequestedValuation:
              *      New_Category
              *      New_Extent
              *      New_Market_Value
              *
-             * Multipurpose split values start from suffix 2:
+             * Multipurpose splits begin at suffix 2:
              *
              *   Old2 / New2 = Split 1
              *   Old3 / New3 = Split 2
              *   Old4 / New4 = Split 3
-             *   ...
              */
             for (var dbIndex = 2;
                  dbIndex <= 10;
@@ -1348,66 +1449,56 @@ namespace V2_Genesis.Services.Implementations
                         LineNumber =
                             splitNumber,
 
-                        // ─────────────────────────────
-                        // As reflected on the Roll
-                        // ─────────────────────────────
                         CurrentCategory =
-                            FirstValueFromSources(
+                            FirstValueByNamePriority(
                                 sources,
                                 $"Old{suffix}_Category",
                                 $"Old_Category{suffix}",
                                 $"GV_Category{suffix}"),
 
                         CurrentExtent =
-                            FirstValueFromSources(
+                            FirstValueByNamePriority(
                                 sources,
                                 $"Old{suffix}_Extent",
                                 $"Old_Extent{suffix}",
                                 $"GV_Extent{suffix}"),
 
                         CurrentMarketValue =
-                            FirstValueFromSources(
+                            FirstValueByNamePriority(
                                 sources,
                                 $"Old{suffix}_Market_Value",
                                 $"Old_Market_Value{suffix}",
                                 $"GV_Market_Value{suffix}"),
 
-                        // ─────────────────────────────
-                        // Client requested values
-                        // ─────────────────────────────
                         RequestedCategory =
-                            FirstValueFromSources(
+                            FirstValueByNamePriority(
                                 sources,
                                 $"new{suffix}_Category",
                                 $"New{suffix}_Category",
                                 $"New_Category{suffix}"),
 
                         RequestedExtent =
-                            FirstValueFromSources(
+                            FirstValueByNamePriority(
                                 sources,
                                 $"new{suffix}_Extent",
                                 $"New{suffix}_Extent",
                                 $"New_Extent{suffix}"),
 
                         RequestedMarketValue =
-                            FirstValueFromSources(
+                            FirstValueByNamePriority(
                                 sources,
                                 $"new{suffix}_Market_Value",
                                 $"New{suffix}_Market_Value",
                                 $"New_Market_Value{suffix}"),
 
                         Remarks =
-                            FirstValueFromSources(
+                            FirstValueByNamePriority(
                                 sources,
                                 $"Remarks{suffix}",
                                 $"GV_Remarks{suffix}",
                                 $"New_Remarks{suffix}")
                     };
 
-                /*
-                 * Only display a Split row when at least
-                 * one value was actually submitted.
-                 */
                 if (line.HasValues)
                 {
                     lines.Add(line);
@@ -1908,6 +1999,44 @@ namespace V2_Genesis.Services.Implementations
                 ?.Source;
         }
 
+        private static string FirstValueByNamePriority(
+            IEnumerable<object?> sources,
+            params string[] names)
+        {
+            /*
+             * Field-name priority is important for valuation display data.
+             *
+             * FirstValueFromSources() is source-first. That is useful in many
+             * places, but for current valuation data it can allow a generic
+             * field from the main record to win before an authoritative
+             * Old_* field found in a later Section 6 result set.
+             *
+             * Here we search each preferred field name across ALL sources
+             * before moving to the next fallback field name.
+             */
+            var flattenedSources =
+                FlattenSources(sources)
+                    .ToArray();
+
+            foreach (var name in names)
+            {
+                foreach (var source in flattenedSources)
+                {
+                    var value =
+                        FirstValue(
+                            source,
+                            name);
+
+                    if (!string.IsNullOrWhiteSpace(value))
+                    {
+                        return value.Trim();
+                    }
+                }
+            }
+
+            return string.Empty;
+        }
+
         private static string FirstValueFromSources(
             IEnumerable<object?> sources,
             params string[] names)
@@ -2213,13 +2342,22 @@ namespace V2_Genesis.Services.Implementations
                     "Old_Property_Description",
                     "Old_Property_Desc"));
 
+            /*
+             * Do not let Form D / "Multi" replace the category reflected
+             * on the roll. PropertyType is a display value; FormType tells
+             * us which submitted form structure was used.
+             */
             property.PropertyType = FirstExisting(
+                Value(
+                    "Old_Category",
+                    "GV_Category",
+                    "CatDesc",
+                    "Category"),
                 property.PropertyType,
                 Value(
                     "A_Property_Type",
                     "Property_Type",
-                    "PropertyType"),
-                model.FormType);
+                    "PropertyType"));
 
             property.PropertyId = FirstExisting(
                 property.PropertyId,
@@ -2392,6 +2530,13 @@ namespace V2_Genesis.Services.Implementations
                 model,
                 model.CurrentValuation);
 
+            /*
+             * The property display must show what is reflected on the roll.
+             * A Multipurpose/Form D submission changes FormType only; it must
+             * not turn a Residential/Business/etc. property into Multipurpose.
+             */
+            SyncPropertyWithCurrentValuation(model);
+
             model.RequestedValuation = BuildRequestedValuationFromFields(
                 model,
                 model.RequestedValuation);
@@ -2417,14 +2562,99 @@ namespace V2_Genesis.Services.Implementations
                 ?? string.Empty;
 
             current.PropertyDescription = FirstNonEmpty(
+                Value(
+                    "Old_Property_Description",
+                    "Old_Property_Desc"),
                 current.PropertyDescription,
-                Value("Old_Property_Description", "Old_Property_Desc", "Property_Desc"));
-            current.Category = FirstNonEmpty(current.Category, Value("Old_Category", "GV_Category"));
-            current.Address = FirstNonEmpty(current.Address, Value("Old_Address", "GV_Address", "LisStreetAddress"));
-            current.Extent = FirstNonEmpty(current.Extent, Value("Old_Extent", "GV_Extent", "RateableArea"));
-            current.MarketValue = FirstNonEmpty(current.MarketValue, Value("Old_Market_Value", "GV_Market_Value", "MarketValue"));
-            current.Owner = FirstNonEmpty(current.Owner, Value("Old_Owner", "Owner_Name"));
+                Value("Property_Desc"));
+
+            current.Category = FirstNonEmpty(
+                Value(
+                    "Old_Category",
+                    "GV_Category"),
+                current.Category,
+                Value(
+                    "CatDesc",
+                    "Category"));
+
+            current.Address = FirstNonEmpty(
+                Value(
+                    "Old_Address",
+                    "GV_Address"),
+                current.Address,
+                Value(
+                    "LisStreetAddress",
+                    "Property_Address"));
+
+            current.Extent = FirstNonEmpty(
+                Value(
+                    "Old_Extent",
+                    "GV_Extent"),
+                current.Extent,
+                Value(
+                    "RateableArea",
+                    "Extent"));
+
+            current.MarketValue = FirstNonEmpty(
+                Value(
+                    "Old_Market_Value",
+                    "GV_Market_Value"),
+                current.MarketValue,
+                Value(
+                    "MarketValue",
+                    "Market_Value"));
+
+            current.Owner = FirstNonEmpty(
+                Value("Old_Owner"),
+                current.Owner,
+                Value(
+                    "Owner_Name",
+                    "OwnerName"));
+
             return current;
+        }
+
+        private static void SyncPropertyWithCurrentValuation(
+            SubmissionViewModel model)
+        {
+            var property =
+                model.Property
+                ?? new SubmissionPropertyViewModel();
+
+            var current =
+                model.CurrentValuation
+                ?? new SubmissionValuationViewModel();
+
+            /*
+             * Keep display values aligned with the valuation roll.
+             *
+             * FormType may still be "Multi" so the correct Form D sections
+             * are rendered. These assignments affect only the displayed
+             * current property values.
+             */
+            if (!string.IsNullOrWhiteSpace(current.Category))
+            {
+                property.PropertyType =
+                    current.Category.Trim();
+
+                property.Category =
+                    current.Category.Trim();
+            }
+
+            if (!string.IsNullOrWhiteSpace(current.Extent))
+            {
+                property.Extent =
+                    current.Extent.Trim();
+            }
+
+            if (!string.IsNullOrWhiteSpace(current.MarketValue))
+            {
+                property.MarketValue =
+                    current.MarketValue.Trim();
+            }
+
+            model.Property =
+                property;
         }
 
         private static SubmissionValuationViewModel BuildRequestedValuationFromFields(
@@ -2438,12 +2668,48 @@ namespace V2_Genesis.Services.Implementations
                 ?.Trim()
                 ?? string.Empty;
 
-            requested.PropertyDescription = FirstNonEmpty(requested.PropertyDescription, Value("new_Property_Description", "New_Property_Description", "New_Property_Desc"));
-            requested.Category = FirstNonEmpty(requested.Category, Value("new_Category", "New_Category", "Requested_Category"));
-            requested.Address = FirstNonEmpty(requested.Address, Value("new_Address", "New_Address", "Requested_Address"));
-            requested.Extent = FirstNonEmpty(requested.Extent, Value("new_Extent", "New_Extent", "Requested_Extent"));
-            requested.MarketValue = FirstNonEmpty(requested.MarketValue, Value("new_Market_Value", "New_Market_Value", "Requested_Market_Value"));
-            requested.Owner = FirstNonEmpty(requested.Owner, Value("new_Owner", "New_Owner", "Requested_Owner"));
+            requested.PropertyDescription = FirstNonEmpty(
+                Value(
+                    "new_Property_Description",
+                    "New_Property_Description",
+                    "New_Property_Desc"),
+                requested.PropertyDescription);
+
+            requested.Category = FirstNonEmpty(
+                Value(
+                    "new_Category",
+                    "New_Category",
+                    "Requested_Category"),
+                requested.Category);
+
+            requested.Address = FirstNonEmpty(
+                Value(
+                    "new_Address",
+                    "New_Address",
+                    "Requested_Address"),
+                requested.Address);
+
+            requested.Extent = FirstNonEmpty(
+                Value(
+                    "new_Extent",
+                    "New_Extent",
+                    "Requested_Extent"),
+                requested.Extent);
+
+            requested.MarketValue = FirstNonEmpty(
+                Value(
+                    "new_Market_Value",
+                    "New_Market_Value",
+                    "Requested_Market_Value"),
+                requested.MarketValue);
+
+            requested.Owner = FirstNonEmpty(
+                Value(
+                    "new_Owner",
+                    "New_Owner",
+                    "Requested_Owner"),
+                requested.Owner);
+
             return requested;
         }
 
@@ -2470,35 +2736,112 @@ namespace V2_Genesis.Services.Implementations
             SubmissionViewModel model,
             List<MultiPurposeLineViewModel> currentLines)
         {
-            string Value(params string[] names) => model.Sections
-                .SelectMany(section => section.Fields)
-                .FirstOrDefault(field => names.Contains(field.Name, StringComparer.OrdinalIgnoreCase))
-                ?.Value
-                ?.Trim()
-                ?? string.Empty;
-
-            var lines = new List<MultiPurposeLineViewModel>();
-
-            for (var index = 1; index <= 10; index++)
+            string Value(params string[] names)
             {
-                var suffix = index == 1 ? string.Empty : index.ToString(CultureInfo.InvariantCulture);
-                var line = new MultiPurposeLineViewModel
+                foreach (var name in names)
                 {
-                    LineNumber = index,
-                    CurrentCategory = Value($"Old{suffix}_Category", $"Old_Category{suffix}", $"GV_Category{suffix}"),
-                    CurrentExtent = Value($"Old{suffix}_Extent", $"Old_Extent{suffix}", $"GV_Extent{suffix}"),
-                    CurrentMarketValue = Value($"Old{suffix}_Market_Value", $"Old_Market_Value{suffix}", $"GV_Market_Value{suffix}"),
-                    RequestedCategory = Value($"new{suffix}_Category", $"New{suffix}_Category", $"New_Category{suffix}"),
-                    RequestedExtent = Value($"new{suffix}_Extent", $"New{suffix}_Extent", $"New_Extent{suffix}"),
-                    RequestedMarketValue = Value($"new{suffix}_Market_Value", $"New{suffix}_Market_Value", $"New_Market_Value{suffix}"),
-                    Remarks = Value($"Remarks{suffix}", $"GV_Remarks{suffix}", $"New_Remarks{suffix}")
-                };
+                    var value =
+                        model.Sections
+                            .SelectMany(section => section.Fields)
+                            .FirstOrDefault(field =>
+                                field.Name.Equals(
+                                    name,
+                                    StringComparison.OrdinalIgnoreCase))
+                            ?.Value
+                            ?.Trim();
 
-                if (line.HasValues)
-                    lines.Add(line);
+                    if (!string.IsNullOrWhiteSpace(value))
+                    {
+                        return value;
+                    }
+                }
+
+                return string.Empty;
             }
 
-            return lines.Count > 0 ? lines : currentLines;
+            var lines =
+                new List<MultiPurposeLineViewModel>();
+
+            /*
+             * Main is not a split:
+             *
+             *   Old_Category / New_Category = Main
+             *
+             * Split numbering starts at the DB suffix 2:
+             *
+             *   Old2 / New2 = Split 1
+             *   Old3 / New3 = Split 2
+             *   Old4 / New4 = Split 3
+             */
+            for (var dbIndex = 2;
+                 dbIndex <= 10;
+                 dbIndex++)
+            {
+                var suffix =
+                    dbIndex.ToString(
+                        CultureInfo.InvariantCulture);
+
+                var splitNumber =
+                    dbIndex - 1;
+
+                var line =
+                    new MultiPurposeLineViewModel
+                    {
+                        LineNumber =
+                            splitNumber,
+
+                        CurrentCategory =
+                            Value(
+                                $"Old{suffix}_Category",
+                                $"Old_Category{suffix}",
+                                $"GV_Category{suffix}"),
+
+                        CurrentExtent =
+                            Value(
+                                $"Old{suffix}_Extent",
+                                $"Old_Extent{suffix}",
+                                $"GV_Extent{suffix}"),
+
+                        CurrentMarketValue =
+                            Value(
+                                $"Old{suffix}_Market_Value",
+                                $"Old_Market_Value{suffix}",
+                                $"GV_Market_Value{suffix}"),
+
+                        RequestedCategory =
+                            Value(
+                                $"new{suffix}_Category",
+                                $"New{suffix}_Category",
+                                $"New_Category{suffix}"),
+
+                        RequestedExtent =
+                            Value(
+                                $"new{suffix}_Extent",
+                                $"New{suffix}_Extent",
+                                $"New_Extent{suffix}"),
+
+                        RequestedMarketValue =
+                            Value(
+                                $"new{suffix}_Market_Value",
+                                $"New{suffix}_Market_Value",
+                                $"New_Market_Value{suffix}"),
+
+                        Remarks =
+                            Value(
+                                $"Remarks{suffix}",
+                                $"GV_Remarks{suffix}",
+                                $"New_Remarks{suffix}")
+                    };
+
+                if (line.HasValues)
+                {
+                    lines.Add(line);
+                }
+            }
+
+            return lines.Count > 0
+                ? lines
+                : currentLines;
         }
 
         private static List<SubmissionFormSectionViewModel> BuildFormSections(
