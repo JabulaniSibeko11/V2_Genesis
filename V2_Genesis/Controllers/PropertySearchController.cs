@@ -171,20 +171,32 @@ public class PropertySearchController : Controller
     [Route("search/{rollSource}")]
     public async Task<IActionResult> Index(string rollSource)
     {
-        // Load the roll info from GV_LIST
+        // ─────────────────────────────────────────────────────────────
+        // 1. Resolve selected valuation roll
+        // ─────────────────────────────────────────────────────────────
         var roll = await _db.GvList
             .AsNoTracking()
             .FirstOrDefaultAsync(r => r.Source == rollSource);
 
         if (roll is null)
-            return NotFound($"Roll '{rollSource}' not found.");
+        {
+            return NotFound(
+                $"Roll '{rollSource}' not found.");
+        }
 
-        // Validate this roll has a search config
+        // ─────────────────────────────────────────────────────────────
+        // 2. Make sure this roll has Property Search configuration
+        // ─────────────────────────────────────────────────────────────
         if (!RollSearchRegistry.Configs.ContainsKey(rollSource))
-            return NotFound($"No search configuration found for '{rollSource}'.");
+        {
+            return NotFound(
+                $"No search configuration found for '{rollSource}'.");
+        }
 
-
-
+        // ─────────────────────────────────────────────────────────────
+        // 3. Check whether clients may search this roll
+        //    Admin bypass remains handled by CanSearchAndLinkRoll()
+        // ─────────────────────────────────────────────────────────────
         if (!CanSearchAndLinkRoll(
                 rollSource,
                 out var periodMessage))
@@ -204,22 +216,45 @@ public class PropertySearchController : Controller
                 });
         }
 
+        // ─────────────────────────────────────────────────────────────
+        // 4. Load ONLY townships belonging to the selected roll
+        //
+        //    GV     -> GV township SP
+        //    Sup1   -> Sup1 township SP
+        //    Sup2   -> Sup2 township SP
+        //    Sup3   -> Sup3 township SP
+        //    Sup4   -> Sup4 township SP
+        //
+        //    Schemes are NOT loaded here.
+        //    They are loaded after the client selects a township.
+        // ─────────────────────────────────────────────────────────────
+        var townships =
+            await _search.GetTownshipsAsync(
+                rollSource);
 
-        // Townships and schemes use separate SQL connections and can be loaded
-        // in parallel. The service also caches these relatively static lists.
-        var townshipsTask = _search.GetTownshipsAsync(rollSource);
-        var schemesTask = _search.GetSchemesAsync();
-        await Task.WhenAll(townshipsTask, schemesTask);
+        // ─────────────────────────────────────────────────────────────
+        // 5. Populate page data
+        // ─────────────────────────────────────────────────────────────
+        ViewBag.Roll =
+            roll;
 
-        ViewBag.Roll = roll;
-        ViewBag.Townships = townshipsTask.Result;
-        ViewBag.Schemes = schemesTask.Result;
-        ViewBag.GvList = await _db.GvList
-            .AsNoTracking()
-            .OrderBy(r => r.ID)
-            .ToListAsync();
+        ViewBag.Townships =
+            townships;
 
-        return View(new PropertySearchParams());
+        // Scheme list deliberately starts empty.
+        // JavaScript will call:
+        // /search/{rollSource}/schemes?township=...
+        ViewBag.Schemes =
+            new List<string>();
+
+        ViewBag.GvList =
+            await _db.GvList
+                .AsNoTracking()
+                .OrderBy(r => r.ID)
+                .ToListAsync();
+
+        return View(
+            new PropertySearchParams());
     }
 
     // ── POST /search/{rollSource} — returns partial (AJAX) ───────────
@@ -1187,5 +1222,28 @@ public class PropertySearchController : Controller
                 PropertyFrom = rollSource,
                 omission = true
             });
+    }
+    [HttpGet]
+    [Route("search/{rollSource}/schemes")]
+    public async Task<IActionResult> GetSchemes(
+    string rollSource,
+    string township)
+    {
+        if (string.IsNullOrWhiteSpace(township))
+        {
+            return Json(Array.Empty<string>());
+        }
+
+        if (!RollSearchRegistry.Configs.ContainsKey(rollSource))
+        {
+            return NotFound();
+        }
+
+        var schemes =
+            await _search.GetSchemesAsync(
+                rollSource,
+                township);
+
+        return Json(schemes);
     }
 }

@@ -1,7 +1,9 @@
 ﻿namespace GenesisV2.Services.PropertySearch;
 
 public record RollSearchConfig(
+    
       string TownshipSp,
+      string SchemeSp,
     string SpTown,
     string SpStand,
     string SpStandAddress,
@@ -23,6 +25,7 @@ public static class RollSearchRegistry
         {
             ["Objection"] = new(
                   TownshipSp: "Objection.dbo.propertyDetailsTown",
+                  SchemeSp: "Objection.dbo.propertyDetailsScheme",
                 SpTown: "Objection.dbo.SearchTown",
                 SpStand: "Objection.dbo.SearchTownStandNumber",
                 SpStandAddress: "Objection.dbo.SearchTownStandNumberAddress",
@@ -38,6 +41,7 @@ public static class RollSearchRegistry
 
             ["Objection_Supp1"] = new(
                   TownshipSp: "propertyDetailsTown",
+                  SchemeSp: "propertyDetailsScheme",
                 SpTown: "SearchTown_Sup1",
                 SpStand: "SearchTownStandNumber_Sup1",
                 SpStandAddress: "StandTownStandNumberAddress_Sup1",
@@ -53,6 +57,7 @@ public static class RollSearchRegistry
 
             ["Objection_Supp2"] = new(
                 TownshipSp: "propertyDetailsTown",
+                 SchemeSp: "propertyDetailsScheme",
                 SpTown: "SearchTown_Sup2",
                 SpStand: "SearchTownStandNumber",
                 SpStandAddress: "StandTownStandNumberAddress",
@@ -68,6 +73,7 @@ public static class RollSearchRegistry
 
             ["Objection_Supp3"] = new(
                 TownshipSp: "propertyDetailsTown",
+                 SchemeSp: "propertyDetailsScheme",
                 SpTown: "SearchTown",
                 SpStand: "SearchTownStandNumber",
                 SpStandAddress: "StandTownStandNumberAddress",
@@ -83,6 +89,7 @@ public static class RollSearchRegistry
 
             ["Objection_Supp4"] = new(
                 TownshipSp: "propertyDetailsTown",
+                 SchemeSp: "propertyDetailsScheme",
                 SpTown: "SearchTown",
                 SpStand: "SearchTownStandNumber",
                 SpStandAddress: "StandTownStandNumberAddress",
@@ -98,6 +105,7 @@ public static class RollSearchRegistry
 
             ["Objection_Supp5"] = new(
     TownshipSp: "propertyDetailsTown",
+     SchemeSp: "propertyDetailsScheme",
     SpTown: "SearchTown",
     SpStand: "SearchTownStandNumber",
     SpStandAddress: "StandTownStandNumberAddress",
@@ -113,6 +121,7 @@ public static class RollSearchRegistry
             // ── Section 78 Query roll ─────────────────────────────────
             ["Objection_Query"] = new(
                 TownshipSp: "propertyDetailsTown",
+                 SchemeSp: "propertyDetailsScheme",
     SpTown: "SearchTown",
     SpStand: "SearchTownStandNumber",
     SpStandAddress: "StandTownStandNumberAddress",

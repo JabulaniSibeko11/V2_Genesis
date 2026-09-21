@@ -10,7 +10,9 @@ namespace V2_Genesis.Services.Interfaces
         Task<List<string>> GetTownshipsAsync(string? rollSource = null);
 
 
-        Task<List<string>> GetSchemesAsync();
+        Task<List<string>> GetSchemesAsync(
+    string? rollSource = null,
+    string? township = null);
 
 
         Task<List<PropertySearchResult>> SearchAsync(

@@ -3,7 +3,6 @@
 @{
     var roll = ViewBag.Roll as V2_Genesis.Models.GvList;
     var townships = ViewBag.Townships as List<string> ?? new();
-    var schemes = ViewBag.Schemes as List<string> ?? new();
 
     ViewData["Title"] = $"Property Search – {roll?.Short}";
     //Layout = "~/Views/Shared/_ClientLayout.cshtml";
@@ -22,8 +21,6 @@
     @*  <link href="~/css/views/searchpropertycss.css"  rel="stylesheet" asp-append-version="true" /> *@
 }
 
-
-
 <div class="srch-page">
 
     <div class="srch-hero">
@@ -31,58 +28,77 @@
             @*  <div class="srch-hero-logo">
                 <img src="~/images/joburg_logo.png" alt="City of Johannesburg" />
             </div> *@
+
             <div class="srch-hero-text">
-                <div class="srch-hero-org">City of Johannesburg · Valuation Services</div>
+                <div class="srch-hero-org">
+                    City of Johannesburg · Valuation Services
+                </div>
+
                 <h1 class="srch-hero-title">
-                    Property Search — <span>@(roll?.Name ?? "Valuation Roll")</span>
+                    Property Search —
+                    <span>@(roll?.Name ?? "Valuation Roll")</span>
                 </h1>
+
                 <p class="srch-hero-sub">
-                    Search the @(roll?.Short ?? "") to find and link a property before lodging an objection or appeal.
+                    Search the @(roll?.Short ?? "")
+                    to find and link a property before lodging an objection or appeal.
                 </p>
             </div>
+
             <div class="srch-hero-right">
                 <div class="srch-roll-badge">
                     <i class="fa-solid fa-landmark"></i>
                     @(roll?.Short ?? "GV23")
                 </div>
+
                 <a href="/dashboard" class="srch-back-btn">
-                    <i class="fa-solid fa-arrow-left"></i> Dashboard
+                    <i class="fa-solid fa-arrow-left"></i>
+                    Dashboard
                 </a>
             </div>
         </div>
     </div>
 
-  
     <div class="srch-body">
 
-       
         <div class="srch-left">
 
             <div class="srch-left-heading">
                 <h2>
-                    <i class="fa-solid fa-magnifying-glass" style="color:#e6b000;margin-right:8px;font-size:16px;"></i>
+                    <i class="fa-solid fa-magnifying-glass"
+                       style="color:#e6b000;margin-right:8px;font-size:16px;"></i>
                     Search Criteria
                 </h2>
-                <p>Select a township and fill in at least one field below.</p>
+
+                <p>
+                    Select a township and fill in at least one field below.
+                    Scheme names are filtered to the selected township.
+                </p>
             </div>
 
             <form id="searchForm">
                 @Html.AntiForgeryToken()
 
-        
                 <div class="srch-field">
-                    <label class="srch-label">
+                    <label class="srch-label" for="TownName">
                         <i class="fa-solid fa-map-pin"></i>
                         Township <span class="req">*</span>
                     </label>
-                    <select name="TownName" id="TownName" class="srch-select coj-township-select" required>
+
+                    <select name="TownName"
+                            id="TownName"
+                            class="srch-select coj-township-select"
+                            required>
                         <option value="">Select Township…</option>
+
                         @foreach (var t in townships)
                         {
                             <option value="@t">@t</option>
                         }
                     </select>
-                    <span class="srch-val-msg" id="townErr"></span>
+
+                    <span class="srch-val-msg"
+                          id="townErr"></span>
                 </div>
 
                 <div class="srch-divider">
@@ -91,138 +107,204 @@
                     <div class="srch-divider-line"></div>
                 </div>
 
-           
                 <div class="srch-field">
-                    <label class="srch-label">
-                        <i class="fa-solid fa-road"></i> Address
+                    <label class="srch-label" for="Address">
+                        <i class="fa-solid fa-road"></i>
+                        Address
                     </label>
-                    <input type="text" name="Address" id="Address"
-                           class="srch-input" minlength="3"
+
+                    <input type="text"
+                           name="Address"
+                           id="Address"
+                           class="srch-input"
+                           minlength="3"
                            placeholder="e.g. 17 Commissioner Street" />
                 </div>
 
-          
                 <div class="srch-field">
-                    <label class="srch-label">
-                        <i class="fa-solid fa-hashtag"></i> Stand Number
+                    <label class="srch-label" for="Stand">
+                        <i class="fa-solid fa-hashtag"></i>
+                        Stand Number
                     </label>
-                    <input type="text" name="Stand" id="Stand"
+
+                    <input type="text"
+                           name="Stand"
+                           id="Stand"
                            class="srch-input"
                            placeholder="e.g. 1234" />
                 </div>
 
-                
                 <div class="srch-field">
-                    <label class="srch-label">
-                        <i class="fa-solid fa-building"></i> Scheme Name
+                    <label class="srch-label" for="Scheme">
+                        <i class="fa-solid fa-building"></i>
+                        Scheme Name
                     </label>
-                    <select name="Scheme" id="Scheme" class="srch-select">
-                        <option value="">Select Scheme…</option>
-                        @foreach (var s in schemes)
-                        {
-                            <option value="@s">@s</option>
-                        }
+
+                    <select name="Scheme"
+                            id="Scheme"
+                            class="srch-select"
+                            disabled>
+                        <option value="">
+                            Select Township First…
+                        </option>
                     </select>
+
+                    <span class="srch-val-msg"
+                          id="schemeMsg"
+                          aria-live="polite"></span>
                 </div>
 
-               
                 <div class="srch-field">
-                    <label class="srch-label">
-                        <i class="fa-solid fa-door-open"></i> Unit Number
+                    <label class="srch-label" for="Unit">
+                        <i class="fa-solid fa-door-open"></i>
+                        Unit Number
                     </label>
-                    <input type="text" name="Unit" id="Unit"
+
+                    <input type="text"
+                           name="Unit"
+                           id="Unit"
                            class="srch-input"
-                           placeholder="e.g. 5" />
+                           placeholder="e.g. 5"
+                           disabled />
                 </div>
 
-                <button type="submit" class="srch-submit" id="searchBtn">
+                <button type="submit"
+                        class="srch-submit"
+                        id="searchBtn">
                     <i class="fa-solid fa-magnifying-glass"></i>
                     Search Property
                 </button>
             </form>
         </div>
 
-      
         <div class="srch-right">
 
             <div class="srch-right-heading">
                 <h2>How to Search</h2>
+
                 <p>
                     Use the form on the left to locate your property in the
-                    @(roll?.Name ?? "Valuation Roll"). Once found, select it to link it to your account.
+                    @(roll?.Name ?? "Valuation Roll").
+                    Once found, select it to link it to your account.
                 </p>
             </div>
 
             <div class="srch-steps">
+
                 <div class="srch-step">
                     <div class="srch-step-num">1</div>
+
                     <div class="srch-step-body">
-                        <div class="srch-step-title">Select a Township</div>
+                        <div class="srch-step-title">
+                            Select a Township
+                        </div>
+
                         <p class="srch-step-desc">
                             Start by choosing the township your property falls under.
                             This field is required.
                         </p>
                     </div>
                 </div>
+
                 <div class="srch-step">
                     <div class="srch-step-num">2</div>
+
                     <div class="srch-step-body">
-                        <div class="srch-step-title">Fill in at least one field</div>
-                        <p class="srch-step-desc">
+                        <div class="srch-step-title">
+                            Fill in at least one field
+                        </div>
+
+                        <div class="srch-step-desc">
                             Provide one or more of:
+
                             <ul>
                                 <li>Street address</li>
                                 <li>Stand number</li>
-                                <li>Scheme name + Unit number</li>
+                                <li>
+                                    Scheme name + Unit number.
+                                    The Scheme list is automatically limited
+                                    to schemes in the selected township.
+                                </li>
                             </ul>
-                        </p>
+                        </div>
                     </div>
                 </div>
+
                 <div class="srch-step">
                     <div class="srch-step-num">3</div>
+
                     <div class="srch-step-body">
-                        <div class="srch-step-title">Click Search &amp; Select</div>
+                        <div class="srch-step-title">
+                            Click Search &amp; Select
+                        </div>
+
                         <p class="srch-step-desc">
-                            Results appear in a panel above. Click <strong>Select</strong>
+                            Results appear in a panel above.
+                            Click <strong>Select</strong>
                             on the matching property to link it to your account.
                         </p>
                     </div>
                 </div>
+
             </div>
 
             <div class="srch-tip">
                 <i class="fa-solid fa-triangle-exclamation srch-tip-icon"></i>
+
                 <div>
-                    <strong>Property not found?</strong> If no results appear, try
-                    broadening your search — remove one filter, check spelling, or
-                    use the LIS (Land Information System) search for the latest
-                    property data including recently subdivided or consolidated erfs.
+                    <strong>Property not found?</strong>
+                    If no results appear, try broadening your search —
+                    remove one filter, check spelling, or use the LIS
+                    (Land Information System) search for the latest property
+                    data including recently subdivided or consolidated erfs.
                 </div>
             </div>
 
             <div class="srch-note">
-                <i class="fa-solid fa-info-circle" style="margin-right:6px;"></i>
-                Stand and Scheme/Unit searches are mutually exclusive — fill one or the other, not both.
+                <i class="fa-solid fa-info-circle"
+                   style="margin-right:6px;"></i>
+
+                Stand and Scheme/Unit searches are mutually exclusive —
+                fill one or the other, not both.
             </div>
 
         </div>
     </div>
 </div>
 
+<div class="psm-backdrop"
+     id="psmBackdrop"
+     onclick="closeResultsModal()">
+</div>
 
-<div class="psm-backdrop" id="psmBackdrop" onclick="closeResultsModal()"></div>
-<div class="psm-modal" id="psmModal">
-    <div class="psm-header" id="psmHeader">
+<div class="psm-modal"
+     id="psmModal">
+
+    <div class="psm-header"
+         id="psmHeader">
+
         <div class="psm-header-left">
             <i class="fa-solid fa-list-check"></i>
-            <span id="psmTitle">Search Results</span>
-            <span class="ps-results-count" id="psmCount"></span>
+
+            <span id="psmTitle">
+                Search Results
+            </span>
+
+            <span class="ps-results-count"
+                  id="psmCount"></span>
         </div>
-        <button class="psm-close" onclick="closeResultsModal()">
+
+        <button type="button"
+                class="psm-close"
+                onclick="closeResultsModal()">
             <i class="fa-solid fa-xmark"></i>
         </button>
+
     </div>
-    <div class="psm-body" id="psmBody"></div>
+
+    <div class="psm-body"
+         id="psmBody">
+    </div>
 </div>
 
 @section Scripts {
@@ -235,115 +317,477 @@
     <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
 
     <script>
-        const stand  = document.getElementById('Stand');
-        const scheme = document.getElementById('Scheme');
-        const unit   = document.getElementById('Unit');
+        (() => {
+        'use strict';
+
+        const rollSource =
+        @Html.Raw(
+            System.Text.Json.JsonSerializer.Serialize(
+                roll?.Source ?? string.Empty));
+
+        const form =
+        document.getElementById('searchForm');
+
+        const town =
+        document.getElementById('TownName');
+
+        const address =
+        document.getElementById('Address');
+
+        const stand =
+        document.getElementById('Stand');
+
+        const scheme =
+        document.getElementById('Scheme');
+
+        const unit =
+        document.getElementById('Unit');
+
+        const townErr =
+        document.getElementById('townErr');
+
+        const schemeMsg =
+        document.getElementById('schemeMsg');
+
+        let schemeRequestController = null;
+        let schemeLoading = false;
+        let schemesAvailable = false;
+
+        function setSchemeMessage(message) {
+        if (!schemeMsg) {
+        return;
+        }
+
+        schemeMsg.textContent =
+        message || '';
+        }
+
+        function resetScheme(
+        placeholder = 'Select Township First…') {
+
+        scheme.innerHTML = '';
+
+        const option =
+        document.createElement('option');
+
+        option.value = '';
+        option.textContent = placeholder;
+
+        scheme.appendChild(option);
+
+        scheme.value = '';
+        unit.value = '';
+
+        schemesAvailable = false;
+        }
+
+        function populateSchemes(items) {
+        scheme.innerHTML = '';
+
+        const first =
+        document.createElement('option');
+
+        first.value = '';
+        first.textContent = 'Select Scheme…';
+
+        scheme.appendChild(first);
+
+        items.forEach(item => {
+        const value =
+        (item || '').trim();
+
+        if (!value) {
+        return;
+        }
+
+        const option =
+        document.createElement('option');
+
+        option.value = value;
+        option.textContent = value;
+
+        scheme.appendChild(option);
+        });
+
+        schemesAvailable =
+        items.length > 0;
+        }
 
         function updateFieldStates() {
-        if (stand.value.trim() !== '') {
-        scheme.disabled = true;
-        unit.disabled   = true;
-        scheme.value    = '';
-        unit.value      = '';
-        } else {
-        scheme.disabled = false;
-        unit.disabled   = scheme.value === '';
-        if (scheme.value.trim() !== '') {
-        stand.disabled = true;
-        stand.value    = '';
-        } else {
-        stand.disabled = false;
+        const hasTown =
+        town.value.trim() !== '';
+
+        const hasStand =
+        stand.value.trim() !== '';
+
+        const hasScheme =
+        scheme.value.trim() !== '';
+
+        /*
+        * Stand and Scheme/Unit are mutually exclusive.
+        *
+        * Scheme must also remain disabled until:
+        *  - a township has been selected; and
+        *  - that township's scheme list has loaded.
+        */
+        scheme.disabled =
+        !hasTown ||
+        hasStand ||
+        schemeLoading ||
+        !schemesAvailable;
+
+        unit.disabled =
+        !hasTown ||
+        hasStand ||
+        !hasScheme;
+
+        stand.disabled =
+        hasScheme;
+
+        if (hasStand) {
+        scheme.value = '';
+        unit.value = '';
+        }
+
+        if (!hasScheme) {
+        unit.value = '';
         }
         }
+
+        async function loadSchemesForTownship() {
+        const selectedTown =
+        town.value.trim();
+
+        schemeRequestController?.abort();
+
+        setSchemeMessage('');
+
+        schemeLoading = false;
+        schemesAvailable = false;
+
+        if (!selectedTown) {
+        resetScheme(
+        'Select Township First…');
+
+        updateFieldStates();
+        return;
         }
-        stand.addEventListener('input',   updateFieldStates);
-        scheme.addEventListener('change', updateFieldStates);
+
+        schemeLoading = true;
+
+        resetScheme(
+        'Loading schemes…');
+
         updateFieldStates();
 
+        schemeRequestController =
+        new AbortController();
+
+        try {
+        const response =
+        await fetch(
+        `/search/${encodeURIComponent(rollSource)}/schemes` +
+        `?township=${encodeURIComponent(selectedTown)}`,
+        {
+        method: 'GET',
+        headers: {
+        'X-Requested-With': 'XMLHttpRequest'
+        },
+        signal:
+        schemeRequestController.signal
+        });
+
+        if (!response.ok) {
+        throw new Error(
+        `Scheme lookup failed with HTTP ${response.status}`);
+        }
+
+        const items =
+        await response.json();
+
+        const schemes =
+        Array.isArray(items)
+        ? items
+        .filter(x =>
+        typeof x === 'string' &&
+        x.trim() !== '')
+        .map(x => x.trim())
+        : [];
+
+        if (schemes.length === 0) {
+        resetScheme(
+        'No schemes found for this township');
+
+        setSchemeMessage(
+        'No sectional-title schemes were found for the selected township.');
+
+        return;
+        }
+
+        populateSchemes(schemes);
+
+        setSchemeMessage(
+        `${schemes.length} scheme${schemes.length === 1 ? '' : 's'} available in this township.`);
+        }
+        catch (error) {
+        if (error?.name === 'AbortError') {
+        return;
+        }
+
+        console.error(
+        '[Property Search] Scheme lookup failed.',
+        error);
+
+        resetScheme(
+        'Unable to load schemes');
+
+        setSchemeMessage(
+        'The Scheme list could not be loaded. You can still search by Address or Stand Number.');
+        }
+        finally {
+        schemeLoading = false;
+
+        updateFieldStates();
+        }
+        }
+
+        town.addEventListener(
+        'change',
+        async function () {
+
+        townErr.textContent = '';
+
+        /*
+        * A new township means any previously selected
+        * Scheme / Unit belongs to the old township.
+        */
+        scheme.value = '';
+        unit.value = '';
+
+        await loadSchemesForTownship();
+        });
+
+        stand.addEventListener(
+        'input',
+        function () {
+
+        if (stand.value.trim() !== '') {
+        scheme.value = '';
+        unit.value = '';
+        }
+
+        updateFieldStates();
+        });
+
+        scheme.addEventListener(
+        'change',
+        function () {
+
+        if (scheme.value.trim() !== '') {
+        stand.value = '';
+        }
+
+        updateFieldStates();
+        });
+
         function openResultsModal() {
-        document.getElementById('psmBackdrop').classList.add('show');
-        document.getElementById('psmModal').classList.add('show');
-        document.body.style.overflow = 'hidden';
+        document
+        .getElementById('psmBackdrop')
+        .classList
+        .add('show');
+
+        document
+        .getElementById('psmModal')
+        .classList
+        .add('show');
+
+        document.body.style.overflow =
+        'hidden';
         }
 
         function closeResultsModal() {
-        document.getElementById('psmBackdrop').classList.remove('show');
-        document.getElementById('psmModal').classList.remove('show');
-        document.body.style.overflow = '';
-        if ($.fn.DataTable.isDataTable('#psResultsTable'))
-        $('#psResultsTable').DataTable().destroy();
+        document
+        .getElementById('psmBackdrop')
+        .classList
+        .remove('show');
+
+        document
+        .getElementById('psmModal')
+        .classList
+        .remove('show');
+
+        document.body.style.overflow =
+        '';
+
+        if ($.fn.DataTable.isDataTable(
+        '#psResultsTable')) {
+
+        $('#psResultsTable')
+        .DataTable()
+        .destroy();
+        }
         }
 
-        document.getElementById('searchForm').addEventListener('submit', async function (e) {
+        /*
+        * The existing markup calls closeResultsModal()
+        * from the modal backdrop / close button.
+        */
+        window.closeResultsModal =
+        closeResultsModal;
+
+        form.addEventListener(
+        'submit',
+        async function (e) {
+
         e.preventDefault();
 
-        const town = document.getElementById('TownName');
-        const address = document.getElementById('Address');
+        if (!town.value.trim()) {
+        townErr.textContent =
+        'Please select a Township.';
 
-        if (!town.value) {
-        document.getElementById('townErr').textContent = 'Please select a Township.';
         town.focus();
         return;
         }
 
-        document.getElementById('townErr').textContent = '';
+        townErr.textContent = '';
+
         closeResultsModal();
 
-        const data  = new FormData(this);
-        const token = this.querySelector('input[name="__RequestVerificationToken"]').value;
-        const controller = new AbortController();
-        // Server-side SQL command timeout (PropertySearchService) is 45s
-        // for a township-only search and 15s for a narrowed one — this
-        // must stay above the LONGER of those two, or the client gives up
-        // before the server even has a chance to respond for exactly the
-        // broad township searches this page is meant to support.
-        const timeoutId = setTimeout(() => controller.abort(), 50000);
+        const data =
+        new FormData(this);
+
+        const token =
+        this.querySelector(
+        'input[name="__RequestVerificationToken"]')
+        .value;
+
+        const controller =
+        new AbortController();
+
+        /*
+        * Server-side SQL command timeout is longer for
+        * broad township-only searches, so keep the client
+        * timeout above the server timeout.
+        */
+        const timeoutId =
+        setTimeout(
+        () => controller.abort(),
+        50000);
 
         try {
-        const response = await fetch('/search/@(roll?.Source)', {
-        method : 'POST',
+        const response =
+        await fetch(
+        `/search/${encodeURIComponent(rollSource)}`,
+        {
+        method: 'POST',
+
         headers: {
-        'RequestVerificationToken': token,
-        'X-Requested-With': 'XMLHttpRequest'
+        'RequestVerificationToken':
+        token,
+
+        'X-Requested-With':
+        'XMLHttpRequest'
         },
-        body: data,
-        signal: controller.signal
+
+        body:
+        data,
+
+        signal:
+        controller.signal
         });
 
-        if (!response.ok)
-        throw new Error(`Search failed with HTTP ${response.status}`);
+        if (!response.ok) {
+        throw new Error(
+        `Search failed with HTTP ${response.status}`);
+        }
 
-        document.getElementById('psmBody').innerHTML = await response.text();
-        document.getElementById('psmTitle').textContent =
+        document
+        .getElementById('psmBody')
+        .innerHTML =
+        await response.text();
+
+        document
+        .getElementById('psmTitle')
+        .textContent =
         'Results – @(roll?.Short ?? "Search")';
 
-        document.querySelectorAll('#psmBody script').forEach(s => {
-        const sc = document.createElement('script');
-        sc.textContent = s.textContent;
-        document.body.appendChild(sc);
+        document
+        .querySelectorAll(
+        '#psmBody script')
+        .forEach(s => {
+
+        const sc =
+        document.createElement(
+        'script');
+
+        sc.textContent =
+        s.textContent;
+
+        document.body
+        .appendChild(sc);
         });
 
         openResultsModal();
         }
         catch (error) {
-        const timedOut = error?.name === 'AbortError';
-        document.getElementById('psmBody').innerHTML =
+        const timedOut =
+        error?.name === 'AbortError';
+
+        document
+        .getElementById('psmBody')
+        .innerHTML =
         `<div class="alert alert-warning m-3">` +
-        (timedOut
+        (
+        timedOut
         ? 'The search is taking longer than expected. Please try again — if this keeps happening, adding a Stand, Address, Scheme or Unit can help narrow a very large township.'
-        : 'The property search could not be completed. Please try again.') +
+        : 'The property search could not be completed. Please try again.'
+        ) +
         `</div>`;
-        document.getElementById('psmTitle').textContent = 'Search';
+
+        document
+        .getElementById('psmTitle')
+        .textContent =
+        'Search';
+
         openResultsModal();
-        console.error('[Property Search]', error);
+
+        console.error(
+        '[Property Search]',
+        error);
         }
         finally {
-        clearTimeout(timeoutId);
+        clearTimeout(
+        timeoutId);
         }
         });
 
-        document.addEventListener('keydown', e => {
-        if (e.key === 'Escape') closeResultsModal();
+        document.addEventListener(
+        'keydown',
+        e => {
+
+        if (e.key === 'Escape') {
+        closeResultsModal();
+        }
         });
+
+        /*
+        * Initial state:
+        * - Scheme disabled until Township is selected.
+        * - Unit disabled until Scheme is selected.
+        *
+        * If the browser restores a Township value after Back/Forward
+        * navigation, reload the matching scheme list automatically.
+        */
+        if (town.value.trim()) {
+        loadSchemesForTownship();
+        }
+        else {
+        resetScheme(
+        'Select Township First…');
+
+        updateFieldStates();
+        }
+
+        })();
     </script>
 }

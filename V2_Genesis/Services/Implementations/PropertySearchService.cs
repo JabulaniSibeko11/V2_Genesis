@@ -148,29 +148,81 @@ public class PropertySearchService : IPropertySearchService
             return new List<string>();
         }
     }
-    public async Task<List<string>> GetSchemesAsync()
+    public async Task<List<string>> GetSchemesAsync(
+     string? rollSource = null,
+     string? township = null)
     {
-        const string cacheKey = "PropertySearch:Schemes";
-        if (_cache.TryGetValue(cacheKey, out List<string>? cachedSchemes) && cachedSchemes is not null)
-            return cachedSchemes;
+        var source = string.IsNullOrWhiteSpace(rollSource)
+            ? "Objection"
+            : rollSource.Trim();
 
-        await using var conn =
-            new SqlConnection(_defaultConn);
+        if (!RollSearchRegistry.Configs.TryGetValue(
+                source,
+                out var rollConfig))
+        {
+            return new List<string>();
+        }
 
-        var rows = await conn.QueryAsync<string>(
-            SP_SCHEMES,
-            commandType: CommandType.StoredProcedure,
-            commandTimeout: 60);
+        var town = township?.Trim() ?? string.Empty;
 
-        var result = rows
-            .Where(x => !string.IsNullOrWhiteSpace(x))
-            .Select(x => x.Trim())
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .OrderBy(x => x)
-            .ToList();
+        var cacheKey =
+            $"PropertySearch:Schemes:{source}:{town}";
 
-        _cache.Set(cacheKey, result, TimeSpan.FromMinutes(30));
-        return result;
+        if (_cache.TryGetValue(
+                cacheKey,
+                out List<string>? cached) &&
+            cached is not null)
+        {
+            return cached;
+        }
+
+        try
+        {
+            var connectionString =
+                GetRollConnection(rollConfig);
+
+            await using var conn =
+                new SqlConnection(connectionString);
+
+            var parameters =
+                new DynamicParameters();
+
+            parameters.Add(
+                "@TownName",
+                string.IsNullOrWhiteSpace(town)
+                    ? null
+                    : town);
+
+            var rows = await conn.QueryAsync<string>(
+                rollConfig.SchemeSp,
+                parameters,
+                commandType: CommandType.StoredProcedure,
+                commandTimeout: 60);
+
+            var result = rows
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Select(x => x.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(x => x)
+                .ToList();
+
+            _cache.Set(
+                cacheKey,
+                result,
+                TimeSpan.FromMinutes(30));
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Failed loading schemes. Roll={Roll}, Town={Town}",
+                source,
+                town);
+
+            return new List<string>();
+        }
     }
 
     // ─────────────────────────────────────────────────────────────

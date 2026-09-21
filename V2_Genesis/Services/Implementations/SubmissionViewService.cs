@@ -1304,65 +1304,114 @@ namespace V2_Genesis.Services.Implementations
         }
 
         private static List<MultiPurposeLineViewModel> BuildMultiPurposeLines(
-            params object?[] sources)
+       params object?[] sources)
         {
-            var lines = new List<MultiPurposeLineViewModel>();
+            var lines =
+                new List<MultiPurposeLineViewModel>();
 
-            for (var index = 1; index <= 10; index++)
+            /*
+             * IMPORTANT:
+             *
+             * Main values are handled separately through:
+             *
+             *   CurrentValuation
+             *      Old_Category
+             *      Old_Extent
+             *      Old_Market_Value
+             *
+             *   RequestedValuation
+             *      New_Category
+             *      New_Extent
+             *      New_Market_Value
+             *
+             * Multipurpose split values start from suffix 2:
+             *
+             *   Old2 / New2 = Split 1
+             *   Old3 / New3 = Split 2
+             *   Old4 / New4 = Split 3
+             *   ...
+             */
+            for (var dbIndex = 2;
+                 dbIndex <= 10;
+                 dbIndex++)
             {
-                var suffix = index == 1
-                    ? string.Empty
-                    : index.ToString(CultureInfo.InvariantCulture);
+                var suffix =
+                    dbIndex.ToString(
+                        CultureInfo.InvariantCulture);
 
-                var line = new MultiPurposeLineViewModel
-                {
-                    LineNumber = index,
+                var splitNumber =
+                    dbIndex - 1;
 
-                    CurrentCategory = FirstValueFromSources(
-                        sources,
-                        $"Old{suffix}_Category",
-                        $"Old_Category{suffix}",
-                        $"GV_Category{suffix}"),
+                var line =
+                    new MultiPurposeLineViewModel
+                    {
+                        LineNumber =
+                            splitNumber,
 
-                    CurrentExtent = FirstValueFromSources(
-                        sources,
-                        $"Old{suffix}_Extent",
-                        $"Old_Extent{suffix}",
-                        $"GV_Extent{suffix}"),
+                        // ─────────────────────────────
+                        // As reflected on the Roll
+                        // ─────────────────────────────
+                        CurrentCategory =
+                            FirstValueFromSources(
+                                sources,
+                                $"Old{suffix}_Category",
+                                $"Old_Category{suffix}",
+                                $"GV_Category{suffix}"),
 
-                    CurrentMarketValue = FirstValueFromSources(
-                        sources,
-                        $"Old{suffix}_Market_Value",
-                        $"Old_Market_Value{suffix}",
-                        $"GV_Market_Value{suffix}"),
+                        CurrentExtent =
+                            FirstValueFromSources(
+                                sources,
+                                $"Old{suffix}_Extent",
+                                $"Old_Extent{suffix}",
+                                $"GV_Extent{suffix}"),
 
-                    RequestedCategory = FirstValueFromSources(
-                        sources,
-                        $"new{suffix}_Category",
-                        $"New{suffix}_Category",
-                        $"New_Category{suffix}"),
+                        CurrentMarketValue =
+                            FirstValueFromSources(
+                                sources,
+                                $"Old{suffix}_Market_Value",
+                                $"Old_Market_Value{suffix}",
+                                $"GV_Market_Value{suffix}"),
 
-                    RequestedExtent = FirstValueFromSources(
-                        sources,
-                        $"new{suffix}_Extent",
-                        $"New{suffix}_Extent",
-                        $"New_Extent{suffix}"),
+                        // ─────────────────────────────
+                        // Client requested values
+                        // ─────────────────────────────
+                        RequestedCategory =
+                            FirstValueFromSources(
+                                sources,
+                                $"new{suffix}_Category",
+                                $"New{suffix}_Category",
+                                $"New_Category{suffix}"),
 
-                    RequestedMarketValue = FirstValueFromSources(
-                        sources,
-                        $"new{suffix}_Market_Value",
-                        $"New{suffix}_Market_Value",
-                        $"New_Market_Value{suffix}"),
+                        RequestedExtent =
+                            FirstValueFromSources(
+                                sources,
+                                $"new{suffix}_Extent",
+                                $"New{suffix}_Extent",
+                                $"New_Extent{suffix}"),
 
-                    Remarks = FirstValueFromSources(
-                        sources,
-                        $"Remarks{suffix}",
-                        $"GV_Remarks{suffix}",
-                        $"New_Remarks{suffix}")
-                };
+                        RequestedMarketValue =
+                            FirstValueFromSources(
+                                sources,
+                                $"new{suffix}_Market_Value",
+                                $"New{suffix}_Market_Value",
+                                $"New_Market_Value{suffix}"),
 
+                        Remarks =
+                            FirstValueFromSources(
+                                sources,
+                                $"Remarks{suffix}",
+                                $"GV_Remarks{suffix}",
+                                $"New_Remarks{suffix}")
+                    };
+
+                /*
+                 * Only display a Split row when at least
+                 * one value was actually submitted.
+                 */
                 if (line.HasValues)
+                {
                     lines.Add(line);
+                }
             }
 
             return lines;
