@@ -1,9 +1,9 @@
-﻿﻿@{
-ViewData["Title"] = "Search Enquiry";
-Layout = "~/Views/Shared/_ClientLayout.cshtml";
-var gvList = ViewBag.GvList as List<V2_Genesis.Models.GvList> ?? new();
-var towns = ViewBag.Townships as List<string> ?? new();
-var schemes = ViewBag.Schemes as List<string> ?? new();
+﻿@{
+    ViewData["Title"] = "Search Enquiry";
+    Layout = "~/Views/Shared/_Legend_Layout.cshtml";
+    var gvList = ViewBag.GvList as List<V2_Genesis.Models.GvList> ?? new();
+    var towns = ViewBag.Townships as List<string> ?? new();
+    var schemes = ViewBag.Schemes as List<string> ?? new();
 }
 
 @section Styles {
@@ -61,6 +61,7 @@ var schemes = ViewBag.Schemes as List<string> ?? new();
                 </div>
                 <div class="adms-card-body">
                     <form method="post" action="/admin/search/ref"
+                          id="refSearchForm"
                           onsubmit="handleSubmit(event,this,'refBtn')">
                         @Html.AntiForgeryToken()
 
@@ -216,6 +217,40 @@ var schemes = ViewBag.Schemes as List<string> ?? new();
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Searching…';
         btn.disabled = true;
         }
+
+        // Opened from a notification: /admin/search?reference=X&rollSource=Y
+        // Fill in the reference and run the search straight away so the
+        // admin lands on the record the notification is about.
+        document.addEventListener('DOMContentLoaded', function () {
+        var params = new URLSearchParams(window.location.search);
+        var reference = (params.get('reference') || '').trim();
+        if (!reference) return;
+
+        var form = document.getElementById('refSearchForm');
+        var input = document.getElementById('refNo');
+        if (!form || !input) return;
+
+        switchTab('ref');
+        input.value = reference;
+
+        var roll = params.get('rollSource');
+        var select = form.querySelector('select[name="rollSource"]');
+        if (roll && select &&
+        Array.prototype.some.call(select.options, function (o) { return o.value === roll; })) {
+        select.value = roll;
+        }
+
+        // Don't re-run the search if the admin comes back to this page.
+        window.history.replaceState({}, document.title, window.location.pathname);
+
+        var btn = document.getElementById('refBtn');
+        if (btn) {
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Searching…';
+        btn.disabled = true;
+        }
+
+        form.submit();
+        });
 
         function showErr(form, msg) {
         var ex = form.querySelector('.adms-err');

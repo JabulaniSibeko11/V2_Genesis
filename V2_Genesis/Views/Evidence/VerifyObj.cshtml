@@ -1,6 +1,7 @@
 ﻿@{
     Layout = User.Identity?.IsAuthenticated == true
-        ? "~/Views/Shared/_ClientLayout.cshtml"
+        ? /* "~/Views/Shared/_ClientLayout.cshtml" */
+        "~/ Views / Shared / _Legend_Layout.cshtml"
         : "~/Views/Shared/_Layout.cshtml";
 
     ViewData["Title"] = "Verify Reference — Add Evidence";

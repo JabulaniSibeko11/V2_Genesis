@@ -25,7 +25,7 @@ namespace V2_Genesis.Services.Implementations
             var url = n.Url?.Trim() ?? string.Empty;
 
             if (isAdmin)
-                return IsLocal(url) ? url : AdminHome;
+                return ResolveAdmin(n, url);
 
             // Anything that is already a specific local page (profile,
             // an inspection, a detail page, ...) is used as-is.
@@ -68,6 +68,57 @@ namespace V2_Genesis.Services.Implementations
                 query["section"] = section;
 
             return QueryHelpers.AddQueryString(target, query);
+        }
+
+        /// <summary>
+        /// Builds the URL to store on a new admin notification: Search
+        /// Enquiries with the reference (and roll) filled in and searched.
+        /// </summary>
+        public static string BuildAdminUrl(
+            string? referenceNumber,
+            string? rollSource = null)
+        {
+            if (string.IsNullOrWhiteSpace(referenceNumber))
+            {
+                return string.IsNullOrWhiteSpace(rollSource)
+                    ? AdminHome
+                    : QueryHelpers.AddQueryString(AdminHome, "openRoll", rollSource);
+            }
+
+            var query = new Dictionary<string, string?>
+            {
+                ["reference"] = referenceNumber.Trim()
+            };
+
+            // The reference search only accepts valuation rolls, not Query.
+            if (!string.IsNullOrWhiteSpace(rollSource) &&
+                !rollSource.Equals("Objection_Query", StringComparison.OrdinalIgnoreCase))
+            {
+                query["rollSource"] = rollSource;
+            }
+
+            return QueryHelpers.AddQueryString("/admin/search", query);
+        }
+
+        private static string ResolveAdmin(Notifications n, string url)
+        {
+            // Specific admin pages other than the old search link are kept.
+            if (IsLocal(url) &&
+                !url.StartsWith("/admin/search", StringComparison.OrdinalIgnoreCase))
+            {
+                return url;
+            }
+
+            var reference = n.ReferenceNumber;
+
+            if (string.IsNullOrWhiteSpace(reference) && url.Contains('?'))
+            {
+                var parsed = QueryHelpers.ParseQuery(url[url.IndexOf('?')..]);
+                if (parsed.TryGetValue("reference", out var value))
+                    reference = value.ToString();
+            }
+
+            return BuildAdminUrl(reference, n.RollSource);
         }
 
         // ── helpers ───────────────────────────────────────────────────

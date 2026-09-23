@@ -1,0 +1,265 @@
+﻿/* ================================================================
+   ADMIN DASHBOARD — CLIENT LOOK
+   Loaded after legacy-client-dashboard.css and dashboard-detail-page.css
+   so the Admin landing page and its in-page roll detail look exactly
+   like the Client dashboard. Only Admin-specific extras live here.
+   ================================================================ */
+
+/* ── Search Enquiries: admin-only strip under the service cards ───── */
+
+.legacy-dashboard .adm-search-strip {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-top: 26px;
+    padding: 20px 24px;
+    border: 1px solid #e3e8e9;
+    border-left: 5px solid #e6b000;
+    border-radius: 14px;
+    background: #fff;
+    color: #1e3a40;
+    text-decoration: none;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, .08), 0 1px 4px rgba(0, 0, 0, .05);
+    transition: transform .2s ease, box-shadow .2s ease;
+}
+
+    .legacy-dashboard .adm-search-strip:hover,
+    .legacy-dashboard .adm-search-strip:focus-visible {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 34px rgba(13, 34, 40, .16), 0 2px 8px rgba(0, 0, 0, .06);
+        color: #1e3a40;
+    }
+
+.adm-search-strip-icon {
+    flex: 0 0 52px;
+    width: 52px;
+    height: 52px;
+    display: grid;
+    place-items: center;
+    border: 2px solid rgba(230, 176, 0, .35);
+    border-radius: 15px;
+    background: linear-gradient(135deg, #1e3a40 0%, #0d2228 100%);
+    color: #e6b000;
+    font-size: 20px;
+}
+
+.adm-search-strip-text {
+    min-width: 0;
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+    .adm-search-strip-text strong {
+        font-size: 19px;
+        font-weight: 800;
+    }
+
+    .adm-search-strip-text small {
+        color: #36626d;
+        font-size: 14px;
+        line-height: 1.5;
+    }
+
+.adm-search-strip-badge {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: #fff3c8;
+    color: #8a6200;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.adm-search-strip-arrow {
+    flex: 0 0 auto;
+    color: #9a7600;
+    font-size: 18px;
+}
+
+/* ── Previous rolls: Search + Dashboard side by side ──────────────── */
+
+.legacy-dashboard .adm-archive-actions {
+    flex: 0 0 auto;
+    display: flex;
+    gap: 10px;
+}
+
+/* ================================================================
+   IN-PAGE DETAIL AREA (after clicking "Dashboard" on a card)
+   Uses the Client detail-page board from dashboard-detail-page.css:
+   .client-dashboard-page .legacy-roll-dashboard-partial
+   The only difference is Admin's header element (.cd-roll-header).
+   ================================================================ */
+
+.cd-body.adm-detail-area {
+    max-width: 100%;
+    display: block;
+    gap: 0;
+}
+
+.adm-detail-area .cd-roll-section.legacy-roll-dashboard-partial {
+    overflow: visible;
+    margin-bottom: 24px;
+}
+
+    .adm-detail-area .cd-roll-section.legacy-roll-dashboard-partial:hover {
+        box-shadow: 0 10px 28px rgba(15, 42, 48, .12);
+    }
+
+.adm-detail-area .legacy-roll-dashboard-partial > .cd-roll-header {
+    padding: 24px 28px;
+    gap: 16px 24px;
+    border-bottom: 3px solid #e6b000;
+    border-top-left-radius: 13px 17px;
+    border-top-right-radius: 17px;
+    background: linear-gradient(135deg, #1e3a40 0%, #122830 60%, #0d2228 100%);
+    filter: none;
+}
+
+    .adm-detail-area .legacy-roll-dashboard-partial > .cd-roll-header:hover {
+        filter: none;
+    }
+
+.adm-detail-area .cd-roll-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    font-size: 22px;
+}
+
+.adm-detail-area .cd-roll-name {
+    font-size: clamp(20px, 1.6vw, 24px);
+    line-height: 1.25;
+}
+
+.adm-detail-area .cd-roll-short {
+    color: rgba(255, 255, 255, .6);
+    font-size: 13px;
+}
+
+.adm-detail-area .cd-period-wrap {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.adm-detail-area .cd-period-dates {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: rgba(255, 255, 255, .8);
+    font-size: 14px;
+    font-weight: 700;
+}
+
+    .adm-detail-area .cd-period-dates i {
+        color: #e6b000;
+    }
+
+.adm-detail-area .cd-roll-badge {
+    font-size: 11.5px;
+}
+
+.adm-detail-area .cd-roll-search-btn {
+    min-height: 44px;
+    padding: 0 18px;
+    border-radius: 10px;
+    font-size: 14px;
+    color: #1e3a40;
+}
+
+.adm-detail-area .cd-roll-chevron {
+    color: rgba(255, 255, 255, .7);
+    font-size: 16px;
+}
+
+.adm-detail-area .cd-roll-body {
+    border-bottom-left-radius: 13px 17px;
+    border-bottom-right-radius: 17px;
+}
+
+/* ── Responsive ───────────────────────────────────────────────────── */
+
+@media (max-width: 900px) {
+    .legacy-dashboard .adm-search-strip {
+        flex-wrap: wrap;
+        gap: 14px;
+    }
+
+    .adm-search-strip-text {
+        flex-basis: calc(100% - 70px);
+    }
+
+    .adm-search-strip-arrow {
+        display: none;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .adm-detail-area .legacy-roll-dashboard-partial > .cd-roll-header {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 18px 16px;
+        border-top-left-radius: 10px 13px;
+        border-top-right-radius: 13px;
+    }
+
+    .adm-detail-area .cd-roll-header-right {
+        width: 100%;
+        align-items: stretch;
+    }
+
+    .adm-detail-area .cd-roll-search-btn {
+        flex: 1 1 100%;
+        justify-content: center;
+    }
+
+    .adm-detail-area .cd-roll-chevron {
+        display: none;
+    }
+
+    .adm-detail-area .cd-roll-name {
+        font-size: 18px;
+    }
+}
+
+@media (max-width: 600px) {
+    .legacy-dashboard .adm-search-strip {
+        padding: 16px;
+    }
+
+    .adm-search-strip-text strong {
+        font-size: 17px;
+    }
+
+    .adm-search-strip-text small {
+        font-size: 13px;
+    }
+
+    .legacy-dashboard .adm-archive-actions {
+        flex-direction: column;
+    }
+}
+
+/* Admin sub-line (position · SAP · portal) is longer than the client's,
+   so let it wrap instead of squeezing into narrow columns. */
+#cdTileBody .cd-welcome-sub {
+    flex-wrap: wrap;
+    row-gap: 2px;
+}
+
+/* Roll sections always stay open on Admin: no chevron, no pointer. */
+.adm-detail-area .legacy-roll-dashboard-partial > .cd-roll-header {
+    cursor: default;
+}
+
+.adm-detail-area .cd-roll-chevron {
+    display: none !important;
+}

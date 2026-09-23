@@ -2,24 +2,25 @@
 @using Microsoft.Extensions.Options
 @using V2_Genesis.Services.PropertySearch
 @inject IOptions<RollDatesSettings> RollDatesOptions
- 
+@inject Microsoft.AspNetCore.Identity.UserManager<V2_Genesis.Models.Entities.ApplicationUser> LegendUserManager
+
 @{
     var reqPath =
         Context.Request.Path.Value?.ToLowerInvariant()
         ?? string.Empty;
- 
+
     var openRoll =
         Context.Request.Query["openRoll"].ToString();
- 
+
     var isAuthenticated =
         User?.Identity?.IsAuthenticated ?? false;
- 
+
     var currentEmail =
         User?.FindFirstValue(ClaimTypes.Name)
         ?? User?.FindFirstValue(ClaimTypes.Email)
         ?? User?.Identity?.Name
         ?? string.Empty;
- 
+
     var isAdmin =
         User?.IsInRole("Admin") == true
         || currentEmail.Equals(
@@ -29,18 +30,18 @@
             currentEmail,
             @"^val\.admin(1[0-9]?|[1-9])@joburg\.org\.za$",
             System.Text.RegularExpressions.RegexOptions.IgnoreCase);
- 
+
     var dashboardUrl =
         isAdmin
             ? "/admin"
             : "/dashboard";
- 
+
     var rollDates =
         RollDatesOptions.Value;
- 
+
     var now =
         DateTime.Now;
- 
+
     // Keep the order requested in the navigation.
     var supplementaryRolls = new[]
     {
@@ -69,40 +70,40 @@
             Icon = "fa-scroll"
         }
     };
- 
+
     bool CanSearchRoll(string source)
     {
         if (isAdmin)
             return true;
- 
+
         var dates =
             rollDates.For(source);
- 
+
         if (dates is null)
             return true;
- 
+
         return
             now >= dates.OpenDate
             && now <= dates.VisibleUntil;
     }
- 
+
     string RollStatus(string source)
     {
         var dates =
             rollDates.For(source);
- 
+
         if (dates is null)
             return "Open";
- 
+
         if (now < dates.OpenDate)
             return "Opening Soon";
- 
+
         if (now <= dates.VisibleUntil)
             return "Open";
- 
+
         return "Closed";
     }
- 
+
     string RollStatusClass(string source)
     {
         return RollStatus(source) switch
@@ -112,32 +113,32 @@
             _ => "legend-status-upcoming"
         };
     }
- 
+
     string RollSearchNote(string source)
     {
         if (isAdmin)
             return string.Empty;
- 
+
         var dates =
             rollDates.For(source);
- 
+
         if (dates is null)
             return string.Empty;
- 
+
         if (now < dates.OpenDate)
             return "Objection period not open";
- 
+
         if (now > dates.VisibleUntil)
             return "Objection period closed";
- 
+
         return string.Empty;
     }
- 
+
     string RollDashboardUrl(string source) =>
      "/dashboard/roll-detail/"
      + Uri.EscapeDataString(source);
 
- 
+
     string ServiceDashboardUrl(string key)
     {
         return key.ToLowerInvariant() switch
@@ -148,57 +149,57 @@
         };
     }
 
- 
+
     bool IsRollSelected(string source) =>
-            openRoll.Equals(
-                source,
-                StringComparison.OrdinalIgnoreCase)
-            || reqPath.Equals(
-                "/search/" + source.ToLowerInvariant(),
-                StringComparison.OrdinalIgnoreCase);
- 
+        openRoll.Equals(
+            source,
+            StringComparison.OrdinalIgnoreCase)
+        || reqPath.Equals(
+            "/search/" + source.ToLowerInvariant(),
+            StringComparison.OrdinalIgnoreCase);
+
     var gvSelected =
         IsRollSelected("Objection");
- 
+
     var supplementarySelected =
         supplementaryRolls.Any(x =>
             IsRollSelected(x.Source));
- 
+
     var querySelected =
         reqPath.StartsWith("/search/objection_query")
         || openRoll.Equals(
             "Objection_Query",
             StringComparison.OrdinalIgnoreCase);
- 
+
     var rebatesSelected =
         reqPath.StartsWith("/rebates")
         || openRoll.Equals(
             "rebates",
             StringComparison.OrdinalIgnoreCase);
- 
+
     var attributesSelected =
         reqPath.StartsWith("/attributes")
         || openRoll.Equals(
             "attributes",
             StringComparison.OrdinalIgnoreCase);
- 
+
     var evidenceSelected =
         reqPath.StartsWith("/evidence")
         || reqPath.StartsWith("/attributes/evidence");
- 
+
     string RollDateRange(string source)
     {
         var dates =
             rollDates.For(source);
- 
+
         if (dates is null)
             return string.Empty;
- 
+
         return dates.OpenDate.Year == dates.VisibleUntil.Year
             ? $"{dates.OpenDate:dd MMM} – {dates.VisibleUntil:dd MMM yyyy}"
             : $"{dates.OpenDate:dd MMM yyyy} – {dates.VisibleUntil:dd MMM yyyy}";
     }
- 
+
     string LnStatusClass(string source) =>
         RollStatus(source) switch
         {
@@ -206,76 +207,113 @@
             "Closed" => "ln-status-closed",
             _ => "ln-status-upcoming"
         };
- 
+
     // The roll that starts expanded in the menu / drawer:
     // the one being viewed, otherwise the first open roll.
     var defaultOpenSupp =
         supplementaryRolls.FirstOrDefault(x => IsRollSelected(x.Source))?.Source
         ?? supplementaryRolls.FirstOrDefault(x => RollStatus(x.Source) == "Open")?.Source
         ?? supplementaryRolls.Last().Source;
- 
+
     var gvDashSelected =
         reqPath.Equals("/dashboard/roll-detail/objection");
- 
+
     string CurrentPathFor(string url) =>
         reqPath.Equals(url.ToLowerInvariant()) ? "active" : "";
- 
+
+    // ── Drawer profile card ─────────────────────────────────────────
+    var legendUser =
+        isAuthenticated
+            ? await LegendUserManager.GetUserAsync(User)
+            : null;
+
+    var profileName =
+        !string.IsNullOrWhiteSpace(legendUser?.DisplayName)
+            ? legendUser!.DisplayName
+            : (currentEmail.Contains('@') ? currentEmail.Split('@')[0] : currentEmail);
+
+    var profileEmail =
+        legendUser?.Email ?? currentEmail;
+
+    var profileAccountType =
+        isAdmin
+            ? "Administrator"
+            : legendUser?.IsCompany == true
+                ? "Company Account"
+                : "Individual Account";
+
+    var profileInitial =
+        string.IsNullOrWhiteSpace(profileName)
+            ? "?"
+            : profileName.Substring(0, 1).ToUpperInvariant();
+
+    // Admins always see every roll's Search + Dashboard in the menus
+    // (same as their dashboard). Clients get the one-at-a-time accordion.
+    string? SuppMenuGroup(string group) =>
+        isAdmin ? null : group;
+
+    bool SuppRollOpen(string source) =>
+        isAdmin || source == defaultOpenSupp;
+
+    var adminSearchSelected =
+        reqPath.StartsWith("/admin/search");
+
     var profileSelected =
         reqPath.StartsWith("/my-profile");
 }
- 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
- 
+
     <meta charset="utf-8" />
- 
+
     <meta name="viewport"
           content="width=device-width, initial-scale=1.0" />
- 
+
     <title>
         @ViewData["Title"] - City of Johannesburg Valuation Portal
     </title>
- 
+
     <link rel="preconnect"
           href="https://fonts.googleapis.com" />
- 
+
     <link rel="preconnect"
           href="https://fonts.gstatic.com"
           crossorigin />
- 
+
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap"
           rel="stylesheet" />
- 
+
     <link rel="stylesheet"
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
- 
+
     <link rel="stylesheet"
           href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
- 
+
     <link rel="stylesheet"
           href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" />
- 
+
     <link rel="stylesheet"
           href="https://cdn.datatables.net/responsive/2.4.1/css/responsive.dataTables.min.css" />
- 
+
     <link rel="stylesheet"
           href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css" />
- 
+
     <link rel="icon"
           type="image/png"
           sizes="32x32"
           href="~/images/favicon-32x32.png" />
- 
+
     <link rel="icon"
           type="image/png"
           sizes="16x16"
           href="~/images/favicon-16x16.png" />
- 
+
     <link rel="stylesheet"
           href="~/css/site.css"
           asp-append-version="true" />
- 
+
     @*
         Use the same navbar / user profile / responsive drawer CSS as
         _ClientLayout.cshtml.
@@ -283,7 +321,7 @@
     <link rel="stylesheet"
           href="~/css/Views/Client-Dashboard.css"
           asp-append-version="true" />
- 
+
     @*
         Keep Legend page body/footer styling.
         Use the actual repository path.
@@ -291,38 +329,38 @@
     <link rel="stylesheet"
           href="~/css/Views/legend-layout.css"
           asp-append-version="true" />
- 
+
     <link rel="stylesheet"
           href="~/css/legend-nav.css"
           asp-append-version="true" />
- 
+
     <link rel="stylesheet"
           href="~/css/global-action-loader.css"
           asp-append-version="true" />
- 
+
     <link rel="stylesheet"
           href="~/css/form-submission-loader.css"
           asp-append-version="true" />
- 
+
     @await RenderSectionAsync(
         "Styles",
         required: false)
- 
+
     <link rel="stylesheet"
           href="~/css/genesis-responsive.css"
           asp-append-version="true" />
- 
+
     <style>
             /*
                                  * Legend only needs a small amount of extra styling.
                                  * The actual navbar, dropdowns, profile and mobile drawer are
                                  * deliberately the ClientLayout classes.
                                  */
- 
+
             .legend-body {
                 padding-top: 64px !important;
             }
- 
+
             /*
                                  * ClientLayout's responsive stylesheet switches to the
                                  * hamburger/drawer at 1180px. Keep exactly the same breakpoint.
@@ -332,95 +370,95 @@
                 .cl-user {
                     display: none !important;
                 }
- 
+
                 .cl-hamburger {
                     display: flex !important;
                     margin-left: auto !important;
                 }
             }
- 
+
             @@media (min-width: 1181px) {
                 .cl-hamburger {
                     display: none !important;
                 }
             }
     </style>
- 
+
 </head>
- 
+
 <body class="legend-body">
- 
+
     <partial name="_GlobalActionLoader" />
     <partial name="_SubmissionActionLoader" />
- 
+
     <!-- ============================================================
          NAVBAR
          Same visual structure as _ClientLayout.
          ============================================================ -->
     <nav class="cl-navbar"
          id="clientNav">
- 
+
         <div class="cl-nav-inner">
- 
+
             <!-- Brand -->
             <a href="@dashboardUrl"
                    class="nav-brand">
- 
+
                 <div class="nav-brand-mark">
- 
+
                     <img src="~/images/joburg_logo.png"
                          class="brand-logo"
                          alt="City of Johannesburg" />
- 
+
                 </div>
- 
+
                 <div class="nav-brand-text">
- 
+
                     <span class="nav-brand-name">
                         City of Johannesburg
                     </span>
- 
+
                     <span class="nav-brand-sub">
                         Valuation Portal
                     </span>
- 
+
                 </div>
- 
+
             </a>
- 
+
             <!-- ====================================================
                  DESKTOP NAVIGATION
                  ==================================================== -->
             <ul class="cl-nav-links"
                 id="clNavLinks">
- 
+
                 <!-- =================================================
                      1. GV23 VALUATION ROLL
                      ================================================= -->
                 <li class="cl-nav-item cl-dropdown">
- 
+
                     <button type="button"
                             class="cl-nav-link cl-dropdown-toggle @(gvSelected ? "active" : "")">
- 
+
                         <i class="fa-solid fa-landmark"></i>
- 
+
                         GV23 Valuation Roll
- 
+
                         <i class="fa-solid fa-chevron-down cl-dd-chevron"></i>
- 
+
                     </button>
- 
+
                     <ul class="cl-dropdown-menu">
- 
+
                         @if (CanSearchRoll("Objection"))
                         {
                             <li>
                                 <a class="cl-dd-item"
                                        href="/search/Objection">
- 
+
                                     <i class="fa-solid fa-magnifying-glass"></i>
                                     Search Property
- 
+
                                 </a>
                             </li>
                         }
@@ -430,71 +468,71 @@
                                 <a class="cl-dd-item cl-dd-item-disabled legend-nav-search-closed"
                                        href="@RollDashboardUrl("Objection")"
                                        title="@RollSearchNote("Objection")">
- 
+
                                     <i class="fa-solid fa-lock"></i>
- 
+
                                     <span>
                                         Search Property
                                         <small>@RollSearchNote("Objection")</small>
                                     </span>
- 
+
                                 </a>
                             </li>
                         }
- 
+
                         <li class="cl-dd-divider"></li>
- 
+
                         <li>
                             <a class="cl-dd-item"
                                    href="@RollDashboardUrl("Objection")">
- 
+
                                 <i class="fa-solid fa-gauge-high"></i>
                                 Dashboard
- 
+
                             </a>
                         </li>
- 
+
                     </ul>
- 
+
                 </li>
- 
+
                 <!-- =================================================
                      2. SUPPLEMENTARY ROLLS
                      Sup1, Sup2, Sup3, Sup4.
                      Each one has Search Property + Dashboard.
                      ================================================= -->
                 <li class="cl-nav-item cl-dropdown">
- 
+
                     <button type="button"
                             class="cl-nav-link cl-dropdown-toggle @(supplementarySelected ? "active" : "")">
- 
+
                         <i class="fa-solid fa-scroll"></i>
- 
+
                         Supplementary Rolls
- 
+
                         <i class="fa-solid fa-chevron-down cl-dd-chevron"></i>
- 
+
                     </button>
- 
+
                     <ul class="cl-dropdown-menu ln-roll-menu">
- 
+
                         <li class="ln-menu-head">
                             Supplementary Valuation Rolls
                         </li>
- 
+
                         @foreach (var roll in supplementaryRolls)
                         {
                             <li class="ln-roll-li">
-                                <details class="ln-acc ln-roll"
-                                         name="ln-supp-menu"
-                                         open="@(roll.Source == defaultOpenSupp)">
- 
+                                <details class="ln-acc ln-roll @(isAdmin ? "ln-locked" : "")"
+                                         name="@SuppMenuGroup("ln-supp-menu")"
+                                         open="@SuppRollOpen(roll.Source)">
+
                                     <summary class="ln-roll-summary">
- 
+
                                         <span class="ln-roll-icon">
                                             <i class="fa-solid @roll.Icon"></i>
                                         </span>
- 
+
                                         <span class="ln-roll-text">
                                             <strong>@roll.Label</strong>
                                             @if (!string.IsNullOrEmpty(RollDateRange(roll.Source)))
@@ -502,17 +540,17 @@
                                                 <small>@RollDateRange(roll.Source)</small>
                                             }
                                         </span>
- 
+
                                         <span class="ln-status @LnStatusClass(roll.Source)">
                                             @RollStatus(roll.Source)
                                         </span>
- 
+
                                         <i class="fa-solid fa-chevron-down ln-chevron"></i>
- 
+
                                     </summary>
- 
+
                                     <div class="ln-roll-actions">
- 
+
                                         @if (CanSearchRoll(roll.Source))
                                         {
                                             <a class="ln-action ln-action-primary"
@@ -530,230 +568,244 @@
                                                 Search closed
                                             </span>
                                         }
- 
+
                                         <a class="ln-action"
                                                href="@RollDashboardUrl(roll.Source)">
                                             <i class="fa-solid fa-gauge-high"></i>
                                             Dashboard
                                         </a>
- 
+
                                     </div>
- 
+
                                 </details>
                             </li>
                         }
- 
+
                     </ul>
- 
+
                 </li>
- 
+
                 <!-- =================================================
                      3. SECTION 78
                      ================================================= -->
                 <li class="cl-nav-item cl-dropdown">
- 
+
                     <button type="button"
                             class="cl-nav-link cl-dropdown-toggle @(querySelected ? "active" : "")">
- 
+
                         <i class="fa-solid fa-magnifying-glass-chart"></i>
- 
+
                         Section 78
- 
+
                         <i class="fa-solid fa-chevron-down cl-dd-chevron"></i>
- 
+
                     </button>
- 
+
                     <ul class="cl-dropdown-menu">
- 
+
                         <li>
                             <a class="cl-dd-item"
                                    href="/search/Objection_Query">
- 
+
                                 <i class="fa-solid fa-magnifying-glass"></i>
                                 Search Property
- 
+
                             </a>
                         </li>
- 
+
                         <li class="cl-dd-divider"></li>
- 
+
                         <li>
                             <a class="cl-dd-item"
                                    href="@RollDashboardUrl("Objection_Query")">
- 
+
                                 <i class="fa-solid fa-gauge-high"></i>
                                 Dashboard
- 
+
                             </a>
                         </li>
- 
+
                     </ul>
- 
+
                 </li>
- 
+
                 <!-- =================================================
                      4. REBATES
                      Rebates do not use the normal roll property search.
                      The current entry point is Apply for Rebates.
                      ================================================= -->
                 <li class="cl-nav-item cl-dropdown">
- 
+
                     <button type="button"
                             class="cl-nav-link cl-dropdown-toggle @(rebatesSelected ? "active" : "")">
- 
+
                         <i class="fa-solid fa-percent"></i>
- 
+
                         Rebates
- 
+
                         <i class="fa-solid fa-chevron-down cl-dd-chevron"></i>
- 
+
                     </button>
- 
+
                     <ul class="cl-dropdown-menu">
- 
+
                         <li>
                             <a class="cl-dd-item"
                                    href="/Rebates/Index">
- 
+
                                 <i class="fa-solid fa-file-signature"></i>
                                 Apply for Rebates
- 
+
                             </a>
                         </li>
- 
+
                         <li class="cl-dd-divider"></li>
- 
+
                         <li>
                             <a class="cl-dd-item"
                                    href="@ServiceDashboardUrl("rebates")">
- 
+
                                 <i class="fa-solid fa-gauge-high"></i>
                                 Dashboard
- 
+
                             </a>
                         </li>
- 
+
                     </ul>
- 
+
                 </li>
- 
+
                 <!-- =================================================
                      5. PROPERTY ATTRIBUTES
                      Dashboard + Search Property + About.
                      ================================================= -->
                 <li class="cl-nav-item cl-dropdown">
- 
+
                     <button type="button"
                             class="cl-nav-link cl-dropdown-toggle @(attributesSelected ? "active" : "")">
- 
+
                         <i class="fa-solid fa-clipboard-list"></i>
- 
+
                         Attributes
- 
+
                         <i class="fa-solid fa-chevron-down cl-dd-chevron"></i>
- 
+
                     </button>
- 
+
                     <ul class="cl-dropdown-menu">
- 
+
                         <li>
                             <a class="cl-dd-item"
                                    href="/attributes/search">
- 
+
                                 <i class="fa-solid fa-magnifying-glass"></i>
                                 Search Property
- 
+
                             </a>
                         </li>
- 
+
                         <li class="cl-dd-divider"></li>
- 
+
                         <li>
                             <a class="cl-dd-item"
                                    href="@ServiceDashboardUrl("attributes")">
- 
+
                                 <i class="fa-solid fa-gauge-high"></i>
                                 Dashboard
- 
+
                             </a>
                         </li>
- 
+
                         <li class="cl-dd-divider"></li>
- 
+
                         <li>
                             <a class="cl-dd-item"
                                    href="/attributes/about">
- 
+
                                 <i class="fa-solid fa-circle-info"></i>
                                 About Attributes
- 
+
                             </a>
                         </li>
- 
+
                     </ul>
- 
+
                 </li>
- 
+
+                <!-- =================================================
+                     ADMIN: SEARCH ENQUIRIES (direct link)
+                     ================================================= -->
+                @if (isAdmin)
+                {
+                    <li class="cl-nav-item">
+                        <a href="/admin/search"
+                               class="cl-nav-link ln-nav-admin @(adminSearchSelected ? "active" : "")">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            Search Enquiries
+                        </a>
+                    </li>
+                }
+
                 <!-- =================================================
                      6. ADD EVIDENCE
                      Same evidence choices as ClientLayout / existing
                      Legend drawer.
                      ================================================= -->
                 <li class="cl-nav-item cl-dropdown cl-dropdown-end">
- 
+
                     <button type="button"
                             class="cl-nav-link cl-dropdown-toggle @(evidenceSelected ? "active" : "")">
- 
+
                         <i class="fa-solid fa-paperclip"></i>
- 
+
                         Add Evidence
- 
+
                         <i class="fa-solid fa-chevron-down cl-dd-chevron"></i>
- 
+
                     </button>
- 
+
                     <ul class="cl-dropdown-menu">
- 
+
                         <li>
                             <a class="cl-dd-item"
                                    href="/evidence/VerifyObj">
- 
+
                                 <i class="fa-solid fa-file-arrow-up"></i>
                                 Objection / Appeal Evidence
- 
+
                             </a>
                         </li>
- 
+
                         <li class="cl-dd-divider"></li>
- 
+
                         <li>
                             <a class="cl-dd-item"
                                    href="/attributes/evidence">
- 
+
                                 <i class="fa-solid fa-paperclip"></i>
                                 Attribute Evidence
- 
+
                             </a>
                         </li>
- 
+
                         <li class="cl-dd-divider"></li>
- 
+
                         <li>
                             <a class="cl-dd-item"
                                    href="/evidence/verify?rollSource=Objection_Query">
- 
+
                                 <i class="fa-solid fa-file-circle-plus"></i>
                                 Section 78 Query / Review Evidence
- 
+
                             </a>
                         </li>
- 
+
                     </ul>
- 
+
                 </li>
- 
+
             </ul>
- 
+
             <!-- ====================================================
                  PROFILE
                  Copied from _ClientLayout behaviour.
@@ -762,41 +814,41 @@
             {
                 <div class="cl-user"
                      id="clUser">
- 
+
                     <button type="button"
                             class="cl-user-btn"
                             id="clUserBtn">
- 
+
                         <div class="cl-avatar">
                             @(string.IsNullOrWhiteSpace(currentEmail)
                                 ? "?"
                                 : currentEmail.Substring(0, 1).ToUpperInvariant())
                         </div>
- 
+
                         <span class="cl-user-name d-none d-lg-inline">
                             @(currentEmail.Contains('@')
                                 ? currentEmail.Split('@')[0]
                                 : currentEmail)
                         </span>
- 
+
                         <i class="fa-solid fa-chevron-down"
                            style="font-size:11px;"></i>
- 
+
                     </button>
- 
+
                     <div class="cl-user-menu"
                          id="clUserMenu">
- 
+
                         <div style="
                             padding:12px 16px 8px;
                             border-bottom:1px solid #f0f0f0;">
- 
+
                             <div style="
                                 font-size:11px;
                                 color:#888;">
                                 Signed in as
                             </div>
- 
+
                             <div style="
                                 font-size:13px;
                                 font-weight:600;
@@ -806,65 +858,65 @@
                                 text-overflow:ellipsis;
                                 max-width:210px;"
                                  title="@currentEmail">
- 
+
                                 @currentEmail
- 
+
                             </div>
- 
+
                         </div>
- 
+
                         <a href="/my-profile"
                                class="cl-user-item @(profileSelected ? "active" : "")">
- 
+
                             <i class="fa-solid fa-user"></i>
                             My Profile
- 
+
                         </a>
- 
+
                         <a href="@dashboardUrl"
                                class="cl-user-item">
- 
+
                             <i class="fa-solid fa-gauge-high"></i>
- 
+
                             @(isAdmin
                                 ? "Admin Dashboard"
                                 : "Dashboard")
- 
+
                         </a>
- 
+
                         @if (isAdmin)
                         {
                             <div class="cl-dd-divider"></div>
- 
+
                             <a href="/admin"
                                    class="cl-user-item">
- 
+
                                 <i class="fa-solid fa-shield-halved"></i>
                                 Admin Panel
- 
+
                             </a>
                         }
- 
+
                         <div class="cl-dd-divider"></div>
- 
+
                         <form asp-action="Logout"
                               asp-controller="Account"
                               method="post">
- 
+
                             @Html.AntiForgeryToken()
- 
+
                             <button type="submit"
                                     class="cl-user-item cl-logout">
- 
+
                                 <i class="fa-solid fa-right-from-bracket"></i>
                                 Sign Out
- 
+
                             </button>
- 
+
                         </form>
- 
+
                     </div>
- 
+
                 </div>
             }
             else
@@ -874,18 +926,18 @@
                     gap:6px;
                     margin-left:auto;
                     flex-shrink:0;">
- 
+
                     <a href="/account/login?returnUrl=@Context.Request.Path@Context.Request.QueryString"
                            class="cl-nav-link">
- 
+
                         <i class="fa-solid fa-right-to-bracket"></i>
                         Sign In
- 
+
                     </a>
- 
+
                 </div>
             }
- 
+
             <!-- Phone / tablet hamburger -->
             <button type="button"
                     class="cl-hamburger"
@@ -893,17 +945,17 @@
                     aria-label="Open menu"
                     aria-controls="clDrawer"
                     aria-expanded="false">
- 
+
                 <span></span>
                 <span></span>
                 <span></span>
- 
+
             </button>
- 
+
         </div>
- 
+
     </nav>
- 
+
     <!-- ============================================================
          RESPONSIVE DRAWER
          Same pattern as _ClientLayout.
@@ -911,71 +963,121 @@
     <div class="cl-mobile-backdrop"
          id="clBackdrop">
     </div>
- 
+
     <div class="cl-mobile-drawer ln-drawer"
          id="clDrawer"
          role="dialog"
          aria-modal="true"
          aria-label="Main menu">
- 
+
         <!-- Header -->
         <div class="ln-drawer-header">
- 
+
             <a href="@dashboardUrl"
                    class="ln-drawer-brand">
- 
+
                 <img src="~/images/joburg_logo.png"
                      alt="" />
- 
+
                 <span>
                     <strong>City of Johannesburg</strong>
                     <small>Valuation Portal</small>
                 </span>
- 
+
             </a>
- 
+
             <button type="button"
                     class="ln-drawer-close"
                     id="clDrawerClose"
                     aria-label="Close menu">
                 <i class="fa-solid fa-xmark"></i>
             </button>
- 
+
         </div>
- 
+
         <div class="ln-drawer-scroll">
- 
+
             @if (isAuthenticated)
             {
-                <div class="ln-user-card">
- 
-                    <div class="ln-user-avatar">
-                        @(string.IsNullOrWhiteSpace(currentEmail)
-                            ? "?"
-                            : currentEmail.Substring(0, 1).ToUpperInvariant())
+                <!-- Profile card: who is signed in + My Profile / Sign Out -->
+                <div class="ln-profile-card">
+
+                    <div class="ln-profile-top">
+
+                        <div class="ln-user-avatar">@profileInitial</div>
+
+                        <div class="ln-user-text">
+                            <strong title="@profileName">@profileName</strong>
+                            <span class="ln-profile-type">
+                                <i class="fa-solid @(isAdmin ? "fa-user-shield" : "fa-user")"></i>
+                                @profileAccountType
+                            </span>
+                            <small title="@profileEmail">@profileEmail</small>
+                        </div>
+
                     </div>
- 
-                    <div class="ln-user-text">
-                        <small>Signed in as</small>
-                        <strong title="@currentEmail">@currentEmail</strong>
+
+                    <div class="ln-profile-actions">
+
+                        <a href="/my-profile"
+                               class="ln-foot-btn @(profileSelected ? "active" : "")">
+                            <i class="fa-solid fa-id-card"></i>
+                            My Profile
+                        </a>
+
+                        <form asp-action="Logout"
+                              asp-controller="Account"
+                              method="post">
+
+                            @Html.AntiForgeryToken()
+
+                            <button type="submit"
+                                    class="ln-foot-btn ln-foot-logout">
+                                <i class="fa-solid fa-right-from-bracket"></i>
+                                Sign Out
+                            </button>
+
+                        </form>
+
                     </div>
- 
+
                 </div>
- 
+
                 <a href="@dashboardUrl"
                        class="ln-home-btn">
                     <i class="fa-solid fa-house"></i>
                     @(isAdmin ? "Admin Dashboard" : "My Dashboard")
                 </a>
+
+                @if (isAdmin)
+                {
+                    <div class="ln-drawer-label">Admin tools</div>
+
+                    <div class="ln-admin-tools">
+                        <a href="/admin/search"
+                               class="ln-link @(adminSearchSelected ? "active" : "")">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            Search Enquiries
+                        </a>
+                    </div>
+                }
             }
- 
+            else
+            {
+                <a href="/account/login"
+                       class="ln-home-btn">
+                    <i class="fa-solid fa-right-to-bracket"></i>
+                    Sign In
+                </a>
+            }
+
             <div class="ln-drawer-label">Services</div>
- 
+
             <!-- GV23 -->
             <details class="ln-acc ln-group"
                      name="ln-drawer"
                      open="@(gvSelected || gvDashSelected)">
- 
+
                 <summary class="ln-group-summary">
                     <span class="ln-group-icon"><i class="fa-solid fa-landmark"></i></span>
                     <span class="ln-group-title">
@@ -988,9 +1090,9 @@
                     <span class="ln-status @LnStatusClass("Objection")">@RollStatus("Objection")</span>
                     <i class="fa-solid fa-chevron-down ln-chevron"></i>
                 </summary>
- 
+
                 <div class="ln-group-body">
- 
+
                     @if (CanSearchRoll("Objection"))
                     {
                         <a href="/search/Objection"
@@ -1010,45 +1112,45 @@
                             </span>
                         </span>
                     }
- 
+
                     <a href="@RollDashboardUrl("Objection")"
                            class="ln-link @CurrentPathFor(RollDashboardUrl("Objection"))">
                         <i class="fa-solid fa-gauge-high"></i>
                         Dashboard
                     </a>
- 
+
                 </div>
- 
+
             </details>
- 
+
             <!-- Supplementary Rolls -->
             <details class="ln-acc ln-group"
                      name="ln-drawer"
                      open="@(supplementarySelected || supplementaryRolls.Any(x => reqPath.Equals(RollDashboardUrl(x.Source).ToLowerInvariant())))">
- 
+
                 <summary class="ln-group-summary">
                     <span class="ln-group-icon"><i class="fa-solid fa-scroll"></i></span>
                     <span class="ln-group-title">
                         Supplementary Rolls
-                        <small>@supplementaryRolls.Length rolls · tap a roll for options</small>
+                        <small>@supplementaryRolls.Length rolls@(isAdmin ? "" : " · tap a roll for options")</small>
                     </span>
                     <i class="fa-solid fa-chevron-down ln-chevron"></i>
                 </summary>
- 
+
                 <div class="ln-group-body">
- 
+
                     @foreach (var roll in supplementaryRolls)
                     {
-                        <details class="ln-acc ln-roll"
-                                 name="ln-drawer-supp"
-                                 open="@(roll.Source == defaultOpenSupp)">
- 
+                        <details class="ln-acc ln-roll @(isAdmin ? "ln-locked" : "")"
+                                 name="@SuppMenuGroup("ln-drawer-supp")"
+                                 open="@SuppRollOpen(roll.Source)">
+
                             <summary class="ln-roll-summary">
- 
+
                                 <span class="ln-roll-icon">
                                     <i class="fa-solid @roll.Icon"></i>
                                 </span>
- 
+
                                 <span class="ln-roll-text">
                                     <strong>@roll.Label.Replace("Supplementary ", "")</strong>
                                     @if (!string.IsNullOrEmpty(RollDateRange(roll.Source)))
@@ -1056,17 +1158,17 @@
                                         <small>@RollDateRange(roll.Source)</small>
                                     }
                                 </span>
- 
+
                                 <span class="ln-status @LnStatusClass(roll.Source)">
                                     @RollStatus(roll.Source)
                                 </span>
- 
+
                                 <i class="fa-solid fa-chevron-down ln-chevron"></i>
- 
+
                             </summary>
- 
+
                             <div class="ln-roll-actions">
- 
+
                                 @if (CanSearchRoll(roll.Source))
                                 {
                                     <a class="ln-action ln-action-primary"
@@ -1084,27 +1186,27 @@
                                         Search closed
                                     </span>
                                 }
- 
+
                                 <a class="ln-action"
                                        href="@RollDashboardUrl(roll.Source)">
                                     <i class="fa-solid fa-gauge-high"></i>
                                     Dashboard
                                 </a>
- 
+
                             </div>
- 
+
                         </details>
                     }
- 
+
                 </div>
- 
+
             </details>
- 
+
             <!-- Section 78 -->
             <details class="ln-acc ln-group"
                      name="ln-drawer"
                      open="@querySelected">
- 
+
                 <summary class="ln-group-summary">
                     <span class="ln-group-icon"><i class="fa-solid fa-magnifying-glass-chart"></i></span>
                     <span class="ln-group-title">
@@ -1113,7 +1215,7 @@
                     </span>
                     <i class="fa-solid fa-chevron-down ln-chevron"></i>
                 </summary>
- 
+
                 <div class="ln-group-body">
                     <a href="/search/Objection_Query"
                            class="ln-link">
@@ -1126,14 +1228,14 @@
                         Dashboard
                     </a>
                 </div>
- 
+
             </details>
- 
+
             <!-- Rebates -->
             <details class="ln-acc ln-group"
                      name="ln-drawer"
                      open="@(rebatesSelected || reqPath == "/dashboard/rebates-detail")">
- 
+
                 <summary class="ln-group-summary">
                     <span class="ln-group-icon"><i class="fa-solid fa-percent"></i></span>
                     <span class="ln-group-title">
@@ -1142,7 +1244,7 @@
                     </span>
                     <i class="fa-solid fa-chevron-down ln-chevron"></i>
                 </summary>
- 
+
                 <div class="ln-group-body">
                     <a href="/Rebates/Index"
                            class="ln-link @CurrentPathFor("/Rebates/Index")">
@@ -1155,14 +1257,14 @@
                         Dashboard
                     </a>
                 </div>
- 
+
             </details>
- 
+
             <!-- Attributes -->
             <details class="ln-acc ln-group"
                      name="ln-drawer"
                      open="@(attributesSelected && !evidenceSelected || reqPath == "/dashboard/attributes-detail")">
- 
+
                 <summary class="ln-group-summary">
                     <span class="ln-group-icon"><i class="fa-solid fa-clipboard-list"></i></span>
                     <span class="ln-group-title">
@@ -1171,7 +1273,7 @@
                     </span>
                     <i class="fa-solid fa-chevron-down ln-chevron"></i>
                 </summary>
- 
+
                 <div class="ln-group-body">
                     <a href="/attributes/search"
                            class="ln-link @CurrentPathFor("/attributes/search")">
@@ -1189,14 +1291,14 @@
                         About Attributes
                     </a>
                 </div>
- 
+
             </details>
- 
+
             <!-- Add Evidence -->
             <details class="ln-acc ln-group"
                      name="ln-drawer"
                      open="@evidenceSelected">
- 
+
                 <summary class="ln-group-summary">
                     <span class="ln-group-icon"><i class="fa-solid fa-paperclip"></i></span>
                     <span class="ln-group-title">
@@ -1205,7 +1307,7 @@
                     </span>
                     <i class="fa-solid fa-chevron-down ln-chevron"></i>
                 </summary>
- 
+
                 <div class="ln-group-body">
                     <a href="/evidence/VerifyObj"
                            class="ln-link">
@@ -1223,181 +1325,137 @@
                         Section 78 Query / Review Evidence
                     </a>
                 </div>
- 
+
             </details>
- 
-            @if (isAdmin)
-            {
-                <a href="/admin"
-                       class="ln-link"
-                       style="margin-top:6px;">
-                    <i class="fa-solid fa-shield-halved"></i>
-                    Admin Panel
-                </a>
-            }
- 
+
+
+
         </div>
- 
-        <!-- Footer: profile + sign out -->
-        <div class="ln-drawer-footer">
- 
-            @if (isAuthenticated)
-            {
-                <a href="/my-profile"
-                       class="ln-foot-btn @(profileSelected ? "active" : "")">
-                    <i class="fa-solid fa-user"></i>
-                    My Profile
-                </a>
- 
-                <form asp-action="Logout"
-                      asp-controller="Account"
-                      method="post">
- 
-                    @Html.AntiForgeryToken()
- 
-                    <button type="submit"
-                            class="ln-foot-btn ln-foot-logout">
-                        <i class="fa-solid fa-right-from-bracket"></i>
-                        Sign Out
-                    </button>
- 
-                </form>
-            }
-            else
-            {
-                <a href="/account/login"
-                       class="ln-foot-btn">
-                    <i class="fa-solid fa-right-to-bracket"></i>
-                    Sign In
-                </a>
-            }
- 
-        </div>
- 
+
     </div>
- 
+
     <!-- ============================================================
          PAGE CONTENT
          ============================================================ -->
     <main class="legend-main">
         @RenderBody()
     </main>
- 
+
     <!-- ============================================================
          FOOTER
          ============================================================ -->
     <footer class="legend-footer">
- 
+
         <div class="legend-footer-inner">
- 
+
             <span class="legend-footer-brand">
- 
+
                 <i class="fa-solid fa-city"></i>
                 City of Johannesburg Valuation Portal
- 
+
             </span>
- 
+
             <nav class="legend-footer-links">
- 
+
                 <a href="/Home/Privacy">
                     Privacy Policy
                 </a>
- 
+
                 <a href="/Home/FAQ">
                     FAQ
                 </a>
- 
+
                 <a href="/Home/Contact">
                     Contact Us
                 </a>
- 
+
             </nav>
- 
+
             <span class="legend-footer-copy">
                 © @DateTime.Now.Year City of Johannesburg. All rights reserved.
             </span>
- 
+
         </div>
- 
+
     </footer>
- 
+
     <!-- ============================================================
          SCRIPTS
          ============================================================ -->
- 
+
     <script src="~/js/dropdown-escape.js"
             asp-append-version="true"></script>
- 
+
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
- 
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
- 
+
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
- 
+
     <script src="https://cdn.datatables.net/responsive/2.4.1/js/dataTables.responsive.min.js"></script>
- 
+
     <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
- 
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
- 
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
- 
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
- 
+
     <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
- 
+
     <script src="~/js/global-action-loader.js"
             asp-append-version="true"></script>
- 
+
     <script src="~/js/form-submission-loader.js"
             asp-append-version="true"></script>
- 
+
     <script>
         (() => {
         'use strict';
- 
+
         // ==============================================
         // Desktop dropdowns - same as _ClientLayout
         // ==============================================
         document
         .querySelectorAll('.cl-dropdown')
         .forEach(dropdown => {
- 
+
         const toggle =
         dropdown.querySelector(
         '.cl-dropdown-toggle');
- 
+
         const menu =
         dropdown.querySelector(
         '.cl-dropdown-menu');
- 
+
         if (!toggle || !menu) {
         return;
         }
- 
+
         toggle.addEventListener(
         'click',
         event => {
- 
+
         event.preventDefault();
         event.stopPropagation();
- 
+
         document
         .querySelectorAll(
         '.cl-dropdown-menu.open')
         .forEach(openMenu => {
- 
+
         if (openMenu !== menu) {
         openMenu.classList.remove(
         'open');
         }
         });
- 
+
         document
         .querySelectorAll(
         '.cl-dd-chevron')
         .forEach(chevron => {
- 
+
         if (
         chevron !==
         toggle.querySelector(
@@ -1407,14 +1465,14 @@
         '';
         }
         });
- 
+
         menu.classList.toggle(
         'open');
- 
+
         const chevron =
         toggle.querySelector(
         '.cl-dd-chevron');
- 
+
         if (chevron) {
         chevron.style.transform =
         menu.classList.contains(
@@ -1424,7 +1482,7 @@
         }
         });
         });
- 
+
         function closeDesktopMenus() {
         document
         .querySelectorAll(
@@ -1433,7 +1491,7 @@
         menu.classList.remove(
         'open');
         });
- 
+
         document
         .querySelectorAll(
         '.cl-dd-chevron')
@@ -1441,14 +1499,26 @@
         chevron.style.transform =
         '';
         });
- 
+
         document
         .getElementById(
         'clUserMenu')
         ?.classList.remove(
         'open');
         }
- 
+
+        // Admin: every roll stays open (Search + Dashboard always visible).
+        document
+        .querySelectorAll('details.ln-locked')
+        .forEach(item => {
+        item.open = true;
+        item.addEventListener('toggle', () => {
+        if (!item.open) item.open = true;
+        });
+        item.querySelector('summary')
+        ?.addEventListener('click', event => event.preventDefault());
+        });
+
         // Clicking a roll (summary) inside a dropdown only expands it;
         // it must not close the dropdown.
         document
@@ -1462,11 +1532,11 @@
         }
         });
         });
- 
+
         document.addEventListener(
         'click',
         closeDesktopMenus);
- 
+
         // ==============================================
         // Profile - same as _ClientLayout
         // ==============================================
@@ -1476,10 +1546,10 @@
         ?.addEventListener(
         'click',
         event => {
- 
+
         event.preventDefault();
         event.stopPropagation();
- 
+
         document
         .querySelectorAll(
         '.cl-dropdown-menu.open')
@@ -1487,111 +1557,111 @@
         menu.classList.remove(
         'open');
         });
- 
+
         document
         .getElementById(
         'clUserMenu')
         ?.classList.toggle(
         'open');
         });
- 
+
         document
         .getElementById(
         'clUserMenu')
         ?.addEventListener(
         'click',
         event => {
- 
+
         event.stopPropagation();
         });
- 
+
         // ==============================================
         // Responsive drawer - same as _ClientLayout
         // ==============================================
         const drawer =
         document.getElementById(
         'clDrawer');
- 
+
         const backdrop =
         document.getElementById(
         'clBackdrop');
- 
+
         const hamburger =
         document.getElementById(
         'clHamburger');
- 
+
         function openDrawer() {
         closeDesktopMenus();
- 
+
         drawer?.classList.add(
         'open');
- 
+
         backdrop?.classList.add(
         'open');
- 
+
         hamburger?.setAttribute(
         'aria-expanded',
         'true');
- 
+
         document.body.style.overflow =
         'hidden';
         }
- 
+
         function closeDrawer() {
         drawer?.classList.remove(
         'open');
- 
+
         backdrop?.classList.remove(
         'open');
- 
+
         hamburger?.setAttribute(
         'aria-expanded',
         'false');
- 
+
         document.body.style.overflow =
         '';
         }
- 
+
         hamburger?.addEventListener(
         'click',
         openDrawer);
- 
+
         document
         .getElementById(
         'clDrawerClose')
         ?.addEventListener(
         'click',
         closeDrawer);
- 
+
         backdrop?.addEventListener(
         'click',
         closeDrawer);
- 
+
         drawer
         ?.querySelectorAll(
         'a, button[type="submit"]')
         .forEach(item => {
- 
+
         item.addEventListener(
         'click',
         closeDrawer);
         });
- 
+
         window.addEventListener(
         'resize',
         () => {
- 
+
         if (
         window.innerWidth > 1180
         ) {
         closeDrawer();
         }
         });
- 
+
         document.addEventListener(
         'keydown',
         event => {
- 
+
         if (
         event.key === 'Escape'
         ) {
@@ -1601,11 +1671,10 @@
         });
         })();
     </script>
- 
+
     @await RenderSectionAsync(
         "Scripts",
         required: false)
- 
+
 </body>
 </html>
- 

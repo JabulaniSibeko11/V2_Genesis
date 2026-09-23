@@ -1,7 +1,8 @@
 ﻿@{
     ViewData["Title"] = "Add Evidence";
     Layout = User.Identity?.IsAuthenticated == true
-       ? "~/Views/Shared/_ClientLayout.cshtml"
+       ? /* "~/Views/Shared/_ClientLayout.cshtml" */
+       "~/ Views / Shared / _Legend_Layout.cshtml"
        : "~/Views/Shared/_Layout.cshtml";
     bool isAppeal = (bool)(ViewBag.IsAppeal ?? false);
     bool isQuery = (bool)(ViewBag.IsQuery ?? false);
