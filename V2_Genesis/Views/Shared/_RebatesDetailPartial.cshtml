@@ -2,19 +2,30 @@
 @model V2_Genesis.Models.ViewModels.Dashboard.RebatesDetailViewModel
 @{
     // Loaded on demand — see DashboardController.RebatesDetail(...).
-    var rebateCount = Model.Rebates?.Count ?? 0;
-    // This partial is shared by the Client and Admin dashboards. Preserve the
-    // active workspace instead of sending every user to the Client dashboard.
-    var isAdminDashboard = Context.Request.Path.StartsWithSegments("/admin");
-    var rebateReturnUrl = isAdminDashboard
-        ? Url.Action(
-            "Index",
-            "Admin",
-            new { openRoll = "Rebates" }) ?? "/Admin?openRoll=Rebates"
-        : Url.Action(
-            "Index",
-            "Dashboard",
-            new { openRoll = "Rebates" }) ?? "/Dashboard?openRoll=Rebates";
+    var rebateCount =
+        Model.Rebates?.Count ?? 0;
+
+    // This partial is shared by Client and Admin.
+    // Keep Admin in the Admin workspace.
+    // Client returns to the new dedicated Rebates dashboard page.
+    var isAdminDashboard =
+        Context.Request.Path.StartsWithSegments(
+            "/admin");
+
+    var rebateReturnUrl =
+        isAdminDashboard
+            ? Url.Action(
+                "Index",
+                "Admin",
+                new
+                {
+                    openRoll = "Rebates"
+                })
+                ?? "/Admin?openRoll=Rebates"
+            : Url.Action(
+                "RebatesDetail",
+                "Dashboard")
+                ?? "/dashboard/rebates-detail";
 }
 
 @if (!isAdminDashboard)

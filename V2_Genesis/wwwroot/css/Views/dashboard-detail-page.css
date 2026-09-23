@@ -1,0 +1,442 @@
+﻿/* ============================================================
+   DEDICATED CLIENT DASHBOARD — ONE BIG BOARD
+   ------------------------------------------------------------
+   Goal:
+   - ONE outer dashboard board around header + notice + all tables.
+   - No separate floating card/board around every table section.
+   - Collapsed table sections look like the reference screenshot.
+   - Expanded section keeps the existing Genesis table styling.
+   ============================================================ */
+
+.client-dashboard-page {
+    width: min(1380px, calc(100% - 40px));
+    min-width: 0;
+    margin: 24px auto 50px;
+}
+
+.client-dashboard-page-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.client-dashboard-back {
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 14px;
+    border: 1px solid #dce4e6;
+    border-radius: 9px;
+    background: #fff;
+    color: #006570;
+    font-size: 11px;
+    font-weight: 800;
+    text-decoration: none;
+    box-shadow: 0 2px 7px rgba(20, 45, 51, .05);
+}
+
+    .client-dashboard-back:hover {
+        background: #f7fafb;
+        border-color: #c9d7da;
+        color: #006570;
+    }
+
+/* ============================================================
+   THE ONE BIG BOARD
+   Everything from the roll header down to the last table belongs
+   to this single container.
+   ============================================================ */
+
+.client-dashboard-page .legacy-roll-dashboard-partial {
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+    border: 1px solid #dde5e7;
+    border-left: 5px solid var(--p-gold, #e6b000);
+    border-radius: 18px;
+    background: #fff;
+    box-shadow: 0 10px 28px rgba(15, 42, 48, .13);
+    overflow: hidden;
+}
+
+    /*
+ * legacy-client-dashboard.css hides this when the roll partial was
+ * embedded inside the old dashboard. Dedicated pages must show it.
+ */
+    .client-dashboard-page
+    .legacy-roll-dashboard-partial > .cd-detail-roll-info {
+        display: flex !important;
+    }
+
+    /* ============================================================
+   ROLL / SERVICE CONTEXT HEADER
+   This is part of the BIG board, not a separate card.
+   ============================================================ */
+
+    .client-dashboard-page
+    .legacy-roll-dashboard-partial > .cd-detail-roll-info {
+        width: 100%;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin: 0 !important;
+        padding: 20px 24px !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        background: linear-gradient( 135deg, #17383f 0%, #102d33 60%, #0d292f 100%) !important;
+        box-shadow: none !important;
+    }
+
+.client-dashboard-page .cd-detail-roll-info-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 0;
+}
+
+.client-dashboard-page .cd-detail-roll-icon {
+    width: 48px;
+    height: 48px;
+    flex: 0 0 48px;
+    border: 1.5px solid rgba(230, 176, 0, .45);
+    border-radius: 13px;
+    background: rgba(230, 176, 0, .11);
+    color: var(--p-gold, #e6b000);
+    font-size: 18px;
+}
+
+.client-dashboard-page .cd-detail-roll-name {
+    margin: 0 0 3px !important;
+    color: #fff !important;
+    font-size: 18px !important;
+    font-weight: 800 !important;
+    line-height: 1.25;
+}
+
+.client-dashboard-page .cd-detail-roll-short {
+    color: rgba(255, 255, 255, .58) !important;
+    font-size: 11.5px;
+}
+
+.client-dashboard-page .cd-detail-roll-info-right {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.client-dashboard-page .cd-detail-roll-dates {
+    color: rgba(255, 255, 255, .72) !important;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+    .client-dashboard-page .cd-detail-roll-dates i {
+        color: var(--p-gold, #e6b000) !important;
+    }
+
+.client-dashboard-page .cd-roll-badge {
+    white-space: nowrap;
+}
+
+.client-dashboard-page .cd-detail-search-btn {
+    min-height: 38px;
+}
+
+/* ============================================================
+   CLOSED / INFORMATION NOTICE
+   Also part of the same big board.
+   ============================================================ */
+
+.client-dashboard-page
+.legacy-roll-dashboard-partial > .cd-detail-closed-notice {
+    width: 100%;
+    margin: 0 !important;
+    padding: 13px 24px !important;
+    border: 0 !important;
+    border-top: 1px solid #f5caca !important;
+    border-bottom: 1px solid #f5caca !important;
+    border-radius: 0 !important;
+    background: #fff2f2 !important;
+    box-shadow: none !important;
+}
+
+/* ============================================================
+   TABLE / ACCORDION SECTIONS
+   NO separate boards/cards.
+
+   Collapsed state:
+   - white row
+   - subtle divider
+   - dark text
+   - same outer big board
+
+   Open state:
+   - the selected header gets colour
+   - table body opens directly underneath
+   ============================================================ */
+
+.client-dashboard-page
+.legacy-roll-dashboard-partial
+.cd-widget {
+    width: 100% !important;
+    margin: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: #fff !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+}
+
+    /* Divider between each dashboard section */
+    .client-dashboard-page
+    .legacy-roll-dashboard-partial
+    .cd-widget + .cd-widget {
+        border-top: 1px solid #e5e8e9 !important;
+    }
+
+    /* Default/collapsed row — like screenshot 1 */
+    .client-dashboard-page
+    .legacy-roll-dashboard-partial
+    .cd-widget > .cd-widget-toggle {
+        min-height: 66px !important;
+        padding: 15px 24px !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        background: #fff !important;
+        color: #142f35 !important;
+        box-shadow: none !important;
+    }
+
+        .client-dashboard-page
+        .legacy-roll-dashboard-partial
+        .cd-widget > .cd-widget-toggle:hover {
+            background: #fafafa !important;
+        }
+
+    .client-dashboard-page
+    .legacy-roll-dashboard-partial
+    .cd-widget
+    .cd-widget-toggle-left > i {
+        color: #276873 !important;
+    }
+
+    .client-dashboard-page
+    .legacy-roll-dashboard-partial
+    .cd-widget
+    .cd-widget-toggle h3 {
+        margin: 0 !important;
+        color: #101820 !important;
+        font-size: 15px !important;
+        font-weight: 800 !important;
+    }
+
+    .client-dashboard-page
+    .legacy-roll-dashboard-partial
+    .cd-widget
+    .cd-count-badge {
+        background: #edf4f5 !important;
+        color: #245e68 !important;
+        border: 1px solid #cadfe2 !important;
+    }
+
+    .client-dashboard-page
+    .legacy-roll-dashboard-partial
+    .cd-widget
+    .cd-widget-chevron {
+        color: #b7c1c3 !important;
+    }
+
+    /* ============================================================
+   OPEN SECTION HEADER
+   Linked Properties = gold.
+   Other sections = teal.
+   ============================================================ */
+
+    .client-dashboard-page
+    .legacy-roll-dashboard-partial
+    .cd-widget:has(> .cd-widget-body.open) > .cd-widget-toggle {
+        background: #0f8088 !important;
+        color: #fff !important;
+    }
+
+        .client-dashboard-page
+        .legacy-roll-dashboard-partial
+        .cd-widget:has(> .cd-widget-body.open) > .cd-widget-toggle
+        .cd-widget-toggle-left > i,
+        .client-dashboard-page
+        .legacy-roll-dashboard-partial
+        .cd-widget:has(> .cd-widget-body.open) > .cd-widget-toggle
+        .cd-widget-toggle h3,
+        .client-dashboard-page
+        .legacy-roll-dashboard-partial
+        .cd-widget:has(> .cd-widget-body.open) > .cd-widget-toggle
+        .cd-widget-chevron {
+            color: #fff !important;
+        }
+
+        .client-dashboard-page
+        .legacy-roll-dashboard-partial
+        .cd-widget:has(> .cd-widget-body.open) > .cd-widget-toggle
+        .cd-count-badge {
+            background: rgba(255, 255, 255, .18) !important;
+            color: #fff !important;
+            border-color: rgba(255, 255, 255, .16) !important;
+        }
+
+    /*
+ * Linked Properties is always the first widget in these roll dashboards.
+ * When opened it uses the Genesis gold header like the screenshot.
+ */
+    .client-dashboard-page
+    .legacy-roll-dashboard-partial
+    .cd-widget:first-of-type:has(> .cd-widget-body.open) > .cd-widget-toggle {
+        background: #d9a900 !important;
+    }
+
+        .client-dashboard-page
+        .legacy-roll-dashboard-partial
+        .cd-widget:first-of-type:has(> .cd-widget-body.open) > .cd-widget-toggle
+        .cd-widget-toggle-left > i,
+        .client-dashboard-page
+        .legacy-roll-dashboard-partial
+        .cd-widget:first-of-type:has(> .cd-widget-body.open) > .cd-widget-toggle
+        .cd-widget-toggle h3,
+        .client-dashboard-page
+        .legacy-roll-dashboard-partial
+        .cd-widget:first-of-type:has(> .cd-widget-body.open) > .cd-widget-toggle
+        .cd-widget-chevron {
+            color: #fff !important;
+        }
+
+/* ============================================================
+   OPEN TABLE BODY
+   Still inside the same big board.
+   No extra outer card/border/shadow.
+   ============================================================ */
+
+.client-dashboard-page
+.legacy-roll-dashboard-partial
+.cd-widget-body {
+    margin: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: #fff !important;
+    box-shadow: none !important;
+}
+
+    .client-dashboard-page
+    .legacy-roll-dashboard-partial
+    .cd-widget-body.open {
+        padding: 18px 24px 22px !important;
+        border-top: 1px solid #e5e8e9 !important;
+    }
+
+    .client-dashboard-page
+    .legacy-roll-dashboard-partial
+    .cd-widget-body
+    .table-responsive {
+        margin: 0 !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+    }
+
+/*
+ * The table itself may keep its normal Genesis table header and rows.
+ * Remove any card effect around the table.
+ */
+.client-dashboard-page
+.legacy-roll-dashboard-partial
+.dataTables_wrapper {
+    margin: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+/* ============================================================
+   PHONE / TABLET
+   ============================================================ */
+
+@media (max-width: 767.98px) {
+
+    .client-dashboard-page {
+        width: calc(100% - 16px);
+        margin-top: 12px;
+        margin-bottom: 30px;
+    }
+
+    .client-dashboard-page-toolbar {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .client-dashboard-back {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .client-dashboard-page
+    .legacy-roll-dashboard-partial {
+        border-left-width: 4px;
+        border-radius: 13px;
+    }
+
+        .client-dashboard-page
+        .legacy-roll-dashboard-partial > .cd-detail-roll-info {
+            align-items: flex-start;
+            flex-direction: column;
+            padding: 16px !important;
+        }
+
+    .client-dashboard-page
+    .cd-detail-roll-info-left {
+        width: 100%;
+    }
+
+    .client-dashboard-page
+    .cd-detail-roll-info-right {
+        width: 100%;
+        align-items: stretch;
+        justify-content: flex-start;
+    }
+
+    .client-dashboard-page
+    .cd-detail-roll-dates {
+        width: 100%;
+        white-space: normal;
+    }
+
+    .client-dashboard-page
+    .cd-detail-search-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .client-dashboard-page
+    .legacy-roll-dashboard-partial
+    .cd-widget > .cd-widget-toggle {
+        min-height: 58px !important;
+        padding: 12px 14px !important;
+    }
+
+    .client-dashboard-page
+    .legacy-roll-dashboard-partial
+    .cd-widget
+    .cd-widget-toggle h3 {
+        font-size: 13px !important;
+    }
+
+    .client-dashboard-page
+    .legacy-roll-dashboard-partial
+    .cd-widget-body.open {
+        padding: 10px !important;
+    }
+}

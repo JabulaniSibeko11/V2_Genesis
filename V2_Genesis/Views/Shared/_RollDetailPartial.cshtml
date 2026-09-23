@@ -1,4 +1,4 @@
-﻿﻿@using V2_Genesis.Helpers
+﻿@using V2_Genesis.Helpers
 @using V2_Genesis.Services.Implementations
 @using V2_Genesis.Services.Interfaces
 @inject IObjectionService ObjectionRules
@@ -38,11 +38,46 @@
         return string.IsNullOrWhiteSpace(value) ? currentRollName : value;
     }
 }
-@{ 
-    // Loaded on demand — see DashboardController.RollDetail(...).
-    // Used both for the Tiles slide-over panel and the List view
-    // accordion's first-expand fetch.
-    var rollKey = Model.Roll.Source.Replace("_", "");
+@{
+    // Roll dashboard partial shared by the Client and Admin dashboards.
+    var rollKey =
+        Model.Roll.Source.Replace("_", "");
+
+    var isAdminDashboard =
+        Context.Request.Path.StartsWithSegments(
+            "/admin");
+
+    /*
+     * Preserve the current workspace:
+     *
+     * Client
+     *   -> dedicated roll dashboard page
+     *
+     * Admin
+     *   -> Admin dashboard with the same roll selected
+     */
+    var rollReturnUrl =
+        isAdminDashboard
+            ? Url.Action(
+                "Index",
+                "Admin",
+                new
+                {
+                    openRoll = Model.Roll.Source
+                })
+                ?? "/Admin?openRoll="
+                   + Uri.EscapeDataString(
+                       Model.Roll.Source ?? "")
+            : Url.Action(
+                "RollDetail",
+                "Dashboard",
+                new
+                {
+                    rollSource = Model.Roll.Source
+                })
+                ?? "/dashboard/roll-detail/"
+                   + Uri.EscapeDataString(
+                       Model.Roll.Source ?? "");
 }
 
 <style>
@@ -238,10 +273,7 @@
                                                                                                                                                                                                                                                ? item.Id.ToString()
                                                                                                                                                                                                                                                : item.IDProperty,
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            rollSource = Model.Roll.Source,
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           returnUrl = Url.Action(
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               "Index",
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               "Dashboard",
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               new { openRoll = Model.Roll.Source })
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           returnUrl = rollReturnUrl
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        })">
                                                     <i class="fa-solid fa-link-slash"></i> Unlink Property
                                                 </a>
@@ -324,7 +356,7 @@
                                                             submissionType = "Query",
                                                             referenceNumber = queryRefNo,
                                                             rollSource = "Objection_Query",
-                                                            returnUrl = "/Dashboard?openRoll=" + Uri.EscapeDataString(Model.Roll.Source ?? "")
+                                                            returnUrl = rollReturnUrl
                                                         }) ?? "#";
                                                 }
 
@@ -346,7 +378,7 @@
                                                        rel="noopener"
                                                        asp-route-objectionNo="@item.DisplayReference"
                                                        asp-route-rollSource="Objection_Query"
-                                                       asp-route-returnUrl="@("/Dashboard?openRoll=" + Uri.EscapeDataString(Model.Roll.Source ?? ""))">
+                                                       asp-route-returnUrl="@rollReturnUrl">
                                                     <i class="fa-solid fa-download"></i> Download Acknowledgement
                                                 </a>
                                             </li>
@@ -359,7 +391,7 @@
                                                            asp-route-referenceNo="@item.DisplayReference"
                                                            asp-route-type="Section78Outcome"
                                                            asp-route-rollSource="Objection_Query"
-                                                           asp-route-returnUrl="@("/Dashboard?openRoll=" + Uri.EscapeDataString(Model.Roll.Source ?? ""))">
+                                                           asp-route-returnUrl="@rollReturnUrl">
                                                         <i class="fa-solid fa-file-magnifying-glass"></i>
                                                         Download Section 78 Query Outcome
                                                     </a>
@@ -400,7 +432,7 @@
                                                            asp-route-objectionNo="@item.DisplayReference"
                                                            asp-route-withdrawType="@(item.IsReview ? "Review" : "Query")"
                                                            asp-route-rollSource="Objection_Query"
-                                                           asp-route-returnUrl="@("/Dashboard?openRoll=" + Uri.EscapeDataString(Model.Roll.Source ?? "Objection_Query"))">
+                                                           asp-route-returnUrl="@rollReturnUrl">
                                                         <i class="fa-solid fa-ban"></i>
                                                         Withdraw @(item.IsReview ? "Review" : "Query")
                                                     </a>
@@ -508,7 +540,7 @@
                                                            asp-route-submissionType="Review"
                                                            asp-route-referenceNumber="@item.DisplayReference"
                                                            asp-route-rollSource="Objection_Query"
-                                                           asp-route-returnUrl="/Dashboard?openRoll=@Model.Roll.Source">
+                                                           asp-route-returnUrl="@rollReturnUrl">
                                                         <i class="fa-solid fa-eye"></i> View Review Form
                                                     </a>
                                                 </li>
@@ -521,7 +553,7 @@
                                                        rel="noopener"
                                                            asp-route-objectionNo="@item.DisplayReference"
                                                            asp-route-rollSource="Objection_Query"
-                                                           asp-route-returnUrl="@("/Dashboard?openRoll=" + Uri.EscapeDataString(Model.Roll.Source ?? ""))">
+                                                           asp-route-returnUrl="@rollReturnUrl">
                                                         <i class="fa-solid fa-download"></i>Download Acknowledgement
                                                     </a>
                                                 </li>
@@ -534,7 +566,7 @@
                                                                asp-route-referenceNo="@item.DisplayReference"
                                                                asp-route-type="Section78Outcome"
                                                                asp-route-rollSource="Objection_Query"
-                                                               asp-route-returnUrl="@("/Dashboard?openRoll=" + Uri.EscapeDataString(Model.Roll.Source ?? ""))">
+                                                               asp-route-returnUrl="@rollReturnUrl">
                                                             <i class="fa-solid fa-file-magnifying-glass"></i>
                                                             Download Section 78 Review Outcome
                                                         </a>
@@ -575,7 +607,7 @@
                                                                asp-route-objectionNo="@item.DisplayReference"
                                                                asp-route-withdrawType="@(item.IsReview ? "Review" : "Query")"
                                                                asp-route-rollSource="Objection_Query"
-                                                               asp-route-returnUrl="@("/Dashboard?openRoll=" + Uri.EscapeDataString(Model.Roll.Source ?? "Objection_Query"))">
+                                                               asp-route-returnUrl="@rollReturnUrl">
                                                             <i class="fa-solid fa-ban"></i>
                                                             Withdraw @(item.IsReview ? "Review" : "Query")
                                                         </a>
@@ -705,10 +737,7 @@ else
                                                                                                                                                                                                                                                ? item.Id.ToString()
                                                                                                                                                                                                                                                : item.IDProperty,
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            rollSource = Model.Roll.Source,
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           returnUrl = Url.Action(
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               "Index",
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               "Dashboard",
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               new { openRoll = Model.Roll.Source })
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           returnUrl = rollReturnUrl
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        })">
                                                     <i class="fa-solid fa-link-slash"></i> Unlink
                                                 </a>
@@ -809,7 +838,7 @@ else
                                                                 submissionType = "Objection",
                                                                 referenceNumber = item.Objection_No,
                                                                 rollSource = Model.Roll.Source,
-                                                                returnUrl = "/Dashboard?openRoll=" + Uri.EscapeDataString(Model.Roll.Source ?? "")
+                                                                returnUrl = rollReturnUrl
                                                             }) ?? "#";
                                                     }
 
@@ -828,7 +857,7 @@ else
                                                        rel="noopener"
                                                            asp-route-objectionNo="@item.Objection_No"
                                                            asp-route-rollSource="@Model.Roll.Source"
-                                                           asp-route-returnUrl="@("/Dashboard?openRoll=" + Uri.EscapeDataString(Model.Roll.Source ?? ""))">
+                                                           asp-route-returnUrl="@rollReturnUrl">
                                                         <i class="fa-solid fa-download"></i> Download Acknowledgement
                                                     </a>
                                                 </li>
@@ -841,7 +870,7 @@ else
                                                                asp-route-referenceNo="@item.Objection_No"
                                                                asp-route-type="Section51"
                                                                asp-route-rollSource="@Model.Roll.Source"
-                                                               asp-route-returnUrl="@("/Dashboard?openRoll=" + Uri.EscapeDataString(Model.Roll.Source ?? ""))">
+                                                               asp-route-returnUrl="@rollReturnUrl">
                                                             <i class="fa-solid fa-users"></i>
                                                             Download Section 51 Notice
                                                         </a>
@@ -902,7 +931,7 @@ else
                                                                asp-action="DownloadSection53"
                                                                asp-route-rollSource="@Model.Roll.Source"
                                                                asp-route-objectionNo="@item.Objection_No"
-                                                               asp-route-returnUrl="@("/Dashboard?openRoll=" + Uri.EscapeDataString(Model.Roll.Source ?? ""))"
+                                                               asp-route-returnUrl="@rollReturnUrl"
                                                                onclick="logAction('DownloadDecision', '@Model.Roll.Source', '@item.Objection_No')">
                                                             <i class="fa-solid fa-file-pdf"></i>
                                                             Download Section 53 – Valuer Decision
@@ -917,7 +946,7 @@ else
                                                                asp-action="DownloadPreviousProcessOutcome"
                                                                asp-route-rollSource="@Model.Roll.Source"
                                                                asp-route-objectionNo="@item.Objection_No"
-                                                               asp-route-returnUrl="@("/Dashboard?openRoll=" + Uri.EscapeDataString(Model.Roll.Source ?? ""))"
+                                                               asp-route-returnUrl="@rollReturnUrl"
                                                                onclick="logAction('DownloadOutcomeNotice', '@Model.Roll.Source', '@item.Objection_No')">
                                                             <i class="fa-solid fa-file-circle-exclamation"></i>
                                                             Download Objection Outcome Notice
@@ -937,7 +966,7 @@ else
                                                                asp-action="DownloadInvalidOutcome"
                                                                asp-route-rollSource="@Model.Roll.Source"
                                                                asp-route-objectionNo="@item.Objection_No"
-                                                               asp-route-returnUrl="@("/Dashboard?openRoll=" + Uri.EscapeDataString(Model.Roll.Source ?? ""))"
+                                                               asp-route-returnUrl="@rollReturnUrl"
                                                                onclick="logAction('DownloadInvalidNotice', '@Model.Roll.Source', '@item.Objection_No')">
                                                             <i class="fa-solid fa-triangle-exclamation"></i>
                                                             @invalidNoticeLabel
@@ -991,7 +1020,7 @@ else
                                                                asp-route-objectionNo="@item.Objection_No"
                                                                asp-route-withdrawType="O"
                                                                asp-route-rollSource="@Model.Roll.Source"
-                                                               asp-route-returnUrl="@("/Dashboard?openRoll=" + Uri.EscapeDataString(Model.Roll.Source ?? ""))">
+                                                               asp-route-returnUrl="@rollReturnUrl">
                                                             <i class="fa-solid fa-ban"></i> Withdraw Objection
                                                         </a>
                                                     </li>
@@ -1078,7 +1107,7 @@ else
                                                        rel="noopener"
                                                            asp-route-objectionNo="@appealAckRef"
                                                            asp-route-rollSource="@Model.Roll.Source"
-                                                           asp-route-returnUrl="@("/Dashboard?openRoll=" + Uri.EscapeDataString(Model.Roll.Source ?? ""))">
+                                                           asp-route-returnUrl="@rollReturnUrl">
                                                         <i class="fa-solid fa-download"></i> Download Acknowledgement
                                                     </a>
                                                 </li>
@@ -1095,7 +1124,7 @@ else
                                                                 submissionType = "Appeal",
                                                                 referenceNumber = refNo,
                                                                 rollSource = Model.Roll.Source,
-                                                                returnUrl = "/Dashboard?openRoll=" + Uri.EscapeDataString(Model.Roll.Source ?? "")
+                                                                returnUrl = rollReturnUrl
                                                             }) ?? "#";
                                                     }
 
@@ -1151,7 +1180,7 @@ else
                                                                asp-action="DownloadAppealOutcome"
                                                                asp-route-rollSource="@Model.Roll.Source"
                                                                asp-route-referenceNumber="@finalAppealReference"
-                                                               asp-route-returnUrl="@("/Dashboard?openRoll=" + Uri.EscapeDataString(Model.Roll.Source ?? ""))"
+                                                               asp-route-returnUrl="@rollReturnUrl"
                                                                onclick="logAction('DownloadAppealOutcome', '@Model.Roll.Source', '@finalAppealReference')">
                                                             <i class="fa-solid fa-scale-balanced"></i>
                                                             @finalAppealNoticeLabel
@@ -1168,7 +1197,7 @@ else
                                                                asp-route-objectionNo="@item.Appeal_No"
                                                                asp-route-withdrawType="Appeal"
                                                                asp-route-rollSource="@Model.Roll.Source"
-                                                               asp-route-returnUrl="@("/Dashboard?openRoll=" + Uri.EscapeDataString(Model.Roll.Source ?? ""))">
+                                                               asp-route-returnUrl="@rollReturnUrl">
                                                             <i class="fa-solid fa-ban"></i> Withdraw Appeal
                                                         </a>
                                                     </li>

@@ -1,11 +1,51 @@
 @using System.Globalization
+@using System.Security.Claims
+@using V2_Genesis.Services.Interfaces
+@inject INotificationService NotificationService
 @using V2_Genesis.Models.ViewModels.Dashboard
 @model ClientDashboardViewModel
 
 @{
     ViewData["Title"] = "Property Services Dashboard";
-   // Layout = "~/Views/Shared/_ClientLayout.cshtml";
+    // Layout = "~/Views/Shared/_ClientLayout.cshtml";
     Layout = "~/Views/Shared/_Legend_Layout.cshtml";
+
+    var ann = Model.Announcement;
+
+    var dashboardUserId =
+        User.FindFirstValue(
+            ClaimTypes.NameIdentifier);
+
+    var dashboardUserEmail =
+        User.FindFirstValue(
+            ClaimTypes.Email)
+        ?? User.FindFirstValue(
+            ClaimTypes.Name)
+        ?? User.Identity?.Name
+        ?? string.Empty;
+
+    var isDashboardAdmin =
+        User.IsInRole("Admin")
+        || dashboardUserEmail.Equals(
+            "AdministrationEnquiries@Joburg.org.za",
+            StringComparison.OrdinalIgnoreCase)
+        || System.Text.RegularExpressions.Regex.IsMatch(
+            dashboardUserEmail,
+            @"^val\.admin(1[0-9]?|[1-9])@joburg\.org\.za$",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+    var unreadNotificationCount =
+        await NotificationService.GetUnreadCountAsync(
+            dashboardUserId,
+            dashboardUserEmail,
+            isDashboardAdmin);
+
+    var latestNotifications =
+        await NotificationService.GetLatestAsync(
+            dashboardUserId,
+            dashboardUserEmail,
+            isDashboardAdmin,
+            10);
 
     var sup4 = Model.Rolls.FirstOrDefault(x =>
         string.Equals(x.Source, "Objection_Supp4", StringComparison.OrdinalIgnoreCase));
@@ -60,16 +100,182 @@
     };
 }
 
+
+<link rel="stylesheet"
+      href="~/css/Views/Client-Dashboard.css"
+      asp-append-version="true" />
+
 <link rel="stylesheet"
       href="~/css/Views/legacy-client-dashboard.css"
       asp-append-version="true" />
 
-<div class="legacy-dashboard">
+<link rel="stylesheet"
+      href="~/css/Views/legend-layout.css"
+      asp-append-version="true" />
 
-    <div class="legacy-dashboard-announcement">
-        <i class="fa-solid fa-bullhorn"></i>
-        <span>@Model.Announcement.Message</span>
+<!-- ── Announcement strip — same as New Genesis ─────────────────── -->
+<div class="ann-bar @ann.BadgeCss">
+    <div class="ann-inner">
+
+        <span class="ann-badge @ann.BadgeCss">
+            <span class="ann-dot"></span>
+            @ann.BadgeText
+        </span>
+
+        <span class="ann-text">
+            <span>@ann.Message</span>
+        </span>
+
+        @if (ann.DaysLeft > 0)
+        {
+            <span class="ann-days @ann.DaysCss">
+                <i class="fa-solid fa-calendar-days"></i>
+                @ann.DaysLeft @(ann.DaysLeft == 1 ? "day" : "days") remaining
+            </span>
+        }
+
     </div>
+</div>
+
+<!-- ── Welcome hero — same as New Genesis ─────────────────────── -->
+<div class="cd-hero">
+
+    <div class="cd-welcome-inner">
+
+        <div class="cd-welcome-left">
+
+            <div class="cd-hero-avatar">
+                @(string.IsNullOrWhiteSpace(Model.DisplayName)
+                    ? "U"
+                    : Model.DisplayName.Substring(0, 1).ToUpperInvariant())
+            </div>
+
+            <div>
+
+                <div class="cd-welcome-eyebrow">
+                    <span></span>
+                    @(Model.IsCompany ? "Company Account" : "Individual Account")
+                    &nbsp;·&nbsp;
+                    Property Dashboard
+                </div>
+
+                <h1 class="cd-welcome-name">
+                    Welcome back,&nbsp;<em>@Model.DisplayName</em>
+                    <span class="cd-welcome-wave">👋</span>
+                </h1>
+
+                <p class="cd-welcome-sub">
+                    City of Johannesburg
+                    <span class="cd-welcome-dot"></span>
+                    Valuation Portal
+                </p>
+
+            </div>
+
+        </div>
+
+        <!-- Notification bell -->
+        <div class="cd-notification-wrap">
+
+            <button type="button"
+                    class="cd-notification-btn"
+                    id="notificationBellBtn"
+                    aria-label="Open notifications">
+
+                <i class="fa-solid fa-bell"></i>
+
+                @if (unreadNotificationCount > 0)
+                {
+                    <span class="cd-notification-count">
+                        @unreadNotificationCount
+                    </span>
+                }
+
+            </button>
+
+            <div class="cd-notification-panel"
+                 id="notificationPanel">
+
+                <div class="cd-notification-head">
+                    <strong>Notifications</strong>
+                    <span>@unreadNotificationCount unread</span>
+                </div>
+
+                @if (!latestNotifications.Any())
+                {
+                    <div class="cd-notification-empty">
+
+                        <i class="fa-solid fa-bell-slash"
+                               style="font-size:24px;color:#ddd;display:block;margin-bottom:8px;">
+                        </i>
+
+                        No notifications yet.
+
+                    </div>
+                }
+                else
+                {
+                    <div class="cd-notification-list">
+
+                        @foreach (var note in latestNotifications)
+                        {
+                            var noteType =
+                                string.IsNullOrWhiteSpace(note.NotificationType)
+                                    ? "Info"
+                                    : note.NotificationType;
+
+                            <a class="cd-notification-item @(note.IsRead ? "" : "unread")"
+                                   href="@(string.IsNullOrWhiteSpace(note.Url)
+                                                                                                  ? "javascript:void(0)"
+                                                                                                  : note.Url)">
+
+                                <div class="cd-note-icon cd-note-@noteType.ToLower()">
+                                    <i class="fa-solid @(noteType == "Success"
+                                                                                                                       ? "fa-circle-check"
+                                                                                                                       : noteType == "Warning"
+                                                                                                                           ? "fa-triangle-exclamation"
+                                                                                                                           : noteType == "Error"
+                                                                                                                               ? "fa-circle-xmark"
+                                                                                                                               : "fa-circle-info")">
+                                    </i>
+                                </div>
+
+                                <div class="cd-note-body">
+
+                                    <strong>
+                                        @(note.Title ?? "Notification")
+                                    </strong>
+
+                                    <p>@note.Message</p>
+
+                                    @if (!string.IsNullOrWhiteSpace(note.ReferenceNumber))
+                                    {
+                                        <span class="cd-note-ref">
+                                            @note.ReferenceNumber
+                                        </span>
+                                    }
+
+                                    <small>
+                                        @note.CreatedDate.ToString("dd MMM yyyy HH:mm")
+                                    </small>
+
+                                </div>
+
+                            </a>
+                        }
+
+                    </div>
+                }
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div class="legacy-dashboard">
 
     <section class="legacy-dashboard-heading">
         <span class="legacy-dashboard-kicker">CITY OF JOHANNESBURG · VALUATION SERVICES</span>
@@ -110,18 +316,17 @@
                     @if (status == "OPEN")
                     {
                         <a href="/search/Objection_Supp4"
-                           class="legacy-btn legacy-btn-primary">
+                               class="legacy-btn legacy-btn-primary">
                             <i class="fa-solid fa-magnifying-glass"></i>
                             Search Property
                         </a>
                     }
 
-                    <button type="button"
-                            class="legacy-btn legacy-btn-secondary"
-                            onclick="openLegacyRoll('Objection_Supp4', 'Supplementary Roll 4')">
+                    <a href="/dashboard/roll-detail/Objection_Supp4"
+                           class="legacy-btn legacy-btn-secondary">
                         <i class="fa-solid fa-table-list"></i>
                         Dashboard
-                    </button>
+                    </a>
                 </div>
             </article>
         }
@@ -151,17 +356,15 @@
 
                 <div class="legacy-service-actions">
                     <a href="/search/Objection_Query"
-                       class="legacy-btn legacy-btn-primary">
+                           class="legacy-btn legacy-btn-primary">
                         <i class="fa-solid fa-magnifying-glass"></i>
                         Search Property
                     </a>
-
-                    <button type="button"
-                            class="legacy-btn legacy-btn-secondary"
-                            onclick="openLegacyRoll('@query.Source', 'Section 78 Query / Review')">
+                    <a href="/dashboard/roll-detail/@query.Source"
+                           class="legacy-btn legacy-btn-secondary">
                         <i class="fa-solid fa-table-list"></i>
                         Dashboard
-                    </button>
+                    </a>
                 </div>
             </article>
         }
@@ -188,17 +391,17 @@
 
             <div class="legacy-service-actions">
                 <a href="/Rebates/Index"
-                   class="legacy-btn legacy-btn-primary legacy-btn-gold">
+                       class="legacy-btn legacy-btn-primary legacy-btn-gold">
                     <i class="fa-solid fa-file-signature"></i>
                     Apply for Rebates
                 </a>
 
-                <button type="button"
-                        class="legacy-btn legacy-btn-secondary"
-                        onclick="openLegacyService('/dashboard/rebates-detail', 'Rebates')">
+                <a href="/dashboard/rebates-detail"
+                       class="legacy-btn legacy-btn-secondary">
                     <i class="fa-solid fa-table-list"></i>
                     Dashboard
-                </button>
+                </a>
+
             </div>
         </article>
 
@@ -229,17 +432,16 @@
 
             <div class="legacy-service-actions">
                 <a href="/attributes/search"
-                   class="legacy-btn legacy-btn-primary legacy-btn-gold">
+                       class="legacy-btn legacy-btn-primary legacy-btn-gold">
                     <i class="fa-solid fa-magnifying-glass"></i>
                     Search Property
                 </a>
 
-                <button type="button"
-                        class="legacy-btn legacy-btn-secondary"
-                        onclick="openLegacyService('/dashboard/attributes-detail', 'Property Attributes')">
+                <a href="/dashboard/attributes-detail"
+                       class="legacy-btn legacy-btn-secondary">
                     <i class="fa-solid fa-table-list"></i>
                     Dashboard
-                </button>
+                </a>
             </div>
         </article>
 
@@ -280,207 +482,215 @@
                         </p>
                     </div>
 
-                    <button type="button"
-                            class="legacy-btn legacy-btn-secondary"
-                            onclick="openLegacyRoll('@roll.Source', '@RollSubtitle(roll.Source)')">
+                    <a href="/dashboard/roll-detail/@roll.Source"
+                           class="legacy-btn legacy-btn-secondary">
                         <i class="fa-solid fa-table-list"></i>
                         Dashboard
-                    </button>
+                    </a>
                 </article>
             }
 
         </div>
     </section>
 
-    <section class="legacy-detail"
-             id="legacyDetail"
-             hidden>
-
-        <div class="legacy-detail-head">
-            <div>
-                <span>MY PROPERTY SERVICES</span>
-                <h2 id="legacyDetailTitle">Dashboard</h2>
-            </div>
-
-            <button type="button"
-                    class="legacy-btn legacy-btn-secondary"
-                    onclick="closeLegacyDetail()">
-                <i class="fa-solid fa-arrow-left"></i>
-                Back
-            </button>
-        </div>
-
-        <div id="legacyDetailBody">
-            <div class="legacy-loading">
-                <i class="fa-solid fa-circle-notch fa-spin"></i>
-                Loading…
-            </div>
-        </div>
-    </section>
-
+ 
 </div>
 
 @section Scripts {
-<script>
-    const legacyDetailCache = {};
+    <script>
+        const legacyDetailCache = {};
 
-    function toggleLegacyArchive() {
-        const body = document.getElementById('legacyArchiveBody');
-        const button = document.getElementById('legacyArchiveToggle');
-        const chevron = document.getElementById('legacyArchiveChevron');
+        // ── Notification bell — same as New Genesis ─────────────────
+        function initNotificationBell() {
+            const bellBtn =
+                document.getElementById("notificationBellBtn");
 
-        if (!body || !button) return;
+            const panel =
+                document.getElementById("notificationPanel");
 
-        const willOpen = body.hidden;
-        body.hidden = !willOpen;
-        button.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
-        chevron?.classList.toggle('is-open', willOpen);
-    }
+            bellBtn?.addEventListener(
+                "click",
+                function (event) {
+                    event.stopPropagation();
+                    panel?.classList.toggle("open");
+                });
 
-    function openLegacyRoll(source, title) {
-        openLegacyService(
-            '/dashboard/roll-detail/' + encodeURIComponent(source),
-            title
-        );
-    }
+            panel?.addEventListener(
+                "click",
+                function (event) {
+                    event.stopPropagation();
+                });
 
-    async function openLegacyService(url, title) {
-        const detail = document.getElementById('legacyDetail');
-        const body = document.getElementById('legacyDetailBody');
-        const titleElement = document.getElementById('legacyDetailTitle');
-
-        if (!detail || !body) return;
-
-        titleElement.textContent = title || 'Dashboard';
-        detail.hidden = false;
-        detail.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-        if (legacyDetailCache[url]) {
-            body.innerHTML = legacyDetailCache[url];
-            initialiseLegacyTables(body);
-            return;
+            document.addEventListener(
+                "click",
+                function () {
+                    panel?.classList.remove("open");
+                });
         }
 
-        body.innerHTML =
-            '<div class="legacy-loading">' +
-            '<i class="fa-solid fa-circle-notch fa-spin"></i> Loading…' +
-            '</div>';
 
-        try {
-            const response = await fetch(url, {
-                credentials: 'same-origin',
-                headers: { 'X-Requested-With': 'XMLHttpRequest' }
-            });
+        function toggleLegacyArchive() {
+            const body = document.getElementById('legacyArchiveBody');
+            const button = document.getElementById('legacyArchiveToggle');
+            const chevron = document.getElementById('legacyArchiveChevron');
 
-            if (!response.ok) {
-                throw new Error('HTTP ' + response.status);
+            if (!body || !button) return;
+
+            const willOpen = body.hidden;
+            body.hidden = !willOpen;
+            button.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+            chevron?.classList.toggle('is-open', willOpen);
+        }
+
+        function openLegacyRoll(source, title) {
+            openLegacyService(
+                '/dashboard/roll-detail/' + encodeURIComponent(source),
+                title
+            );
+        }
+
+        async function openLegacyService(url, title) {
+            const detail = document.getElementById('legacyDetail');
+            const body = document.getElementById('legacyDetailBody');
+            const titleElement = document.getElementById('legacyDetailTitle');
+
+            if (!detail || !body) return;
+
+            titleElement.textContent = title || 'Dashboard';
+            detail.hidden = false;
+            detail.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            if (legacyDetailCache[url]) {
+                body.innerHTML = legacyDetailCache[url];
+                initialiseLegacyTables(body);
+                return;
             }
 
-            const html = await response.text();
-            legacyDetailCache[url] = html;
-            body.innerHTML = html;
-            initialiseLegacyTables(body);
-        }
-        catch (error) {
-            console.error('[Legacy dashboard demo]', error);
-
             body.innerHTML =
-                '<div class="legacy-error">' +
-                '<i class="fa-solid fa-triangle-exclamation"></i>' +
-                '<strong>Could not load the dashboard information.</strong>' +
-                '<span>Please try again.</span>' +
+                '<div class="legacy-loading">' +
+                '<i class="fa-solid fa-circle-notch fa-spin"></i> Loading…' +
                 '</div>';
-        }
-    }
 
-    function closeLegacyDetail() {
-        const detail = document.getElementById('legacyDetail');
-
-        if (!detail) return;
-
-        detail.hidden = true;
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    // Existing _RollDetailPartial calls this function.
-    function toggleWidget(key) {
-        const body = document.getElementById('widget-' + key);
-        const chevron = document.getElementById('wchev-' + key);
-
-        if (!body) return;
-
-        const isOpen = body.classList.toggle('open');
-
-        if (chevron) {
-            chevron.style.transform =
-                isOpen ? 'rotate(180deg)' : 'rotate(0deg)';
-        }
-
-        if (isOpen) {
-            initialiseLegacyTables(body);
-        }
-    }
-
-    // Existing roll partial uses logAction on some links.
-    function logAction(action, roll, reference) {
-        console.debug(
-            '[Dashboard action]',
-            action,
-            roll,
-            reference
-        );
-    }
-
-    function initialiseLegacyTables(container) {
-        if (!window.jQuery ||
-            !jQuery.fn ||
-            !jQuery.fn.DataTable) {
-            return;
-        }
-
-        container
-            .querySelectorAll('.cd-table')
-            .forEach(function(table) {
-                if (!table.id) return;
-
-                const selector = '#' + table.id;
-
-                if (jQuery.fn.DataTable.isDataTable(selector)) {
-                    jQuery(selector).DataTable().columns.adjust();
-                    return;
-                }
-
-                if (!table.closest('.cd-widget-body.open')) {
-                    return;
-                }
-
-                jQuery(selector).DataTable({
-                    responsive: {
-                        details: {
-                            type: 'inline',
-                            target: 'td.dtr-control'
-                        }
-                    },
-                    autoWidth: false,
-                    pageLength: 5,
-                    lengthMenu: [
-                        [5, 10, 25, 50, -1],
-                        [5, 10, 25, 50, 'All']
-                    ],
-                    columnDefs: [
-                        {
-                            targets: 0,
-                            className: 'dtr-control all',
-                            responsivePriority: 1
-                        },
-                        {
-                            targets: -1,
-                            className: 'none',
-                            orderable: false
-                        }
-                    ]
+            try {
+                const response = await fetch(url, {
+                    credentials: 'same-origin',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
                 });
+
+                if (!response.ok) {
+                    throw new Error('HTTP ' + response.status);
+                }
+
+                const html = await response.text();
+                legacyDetailCache[url] = html;
+                body.innerHTML = html;
+                initialiseLegacyTables(body);
+            }
+            catch (error) {
+                console.error('[Legacy dashboard demo]', error);
+
+                body.innerHTML =
+                    '<div class="legacy-error">' +
+                    '<i class="fa-solid fa-triangle-exclamation"></i>' +
+                    '<strong>Could not load the dashboard information.</strong>' +
+                    '<span>Please try again.</span>' +
+                    '</div>';
+            }
+        }
+
+        function closeLegacyDetail() {
+            const detail = document.getElementById('legacyDetail');
+
+            if (!detail) return;
+
+            detail.hidden = true;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Existing _RollDetailPartial calls this function.
+        function toggleWidget(key) {
+            const body = document.getElementById('widget-' + key);
+            const chevron = document.getElementById('wchev-' + key);
+
+            if (!body) return;
+
+            const isOpen = body.classList.toggle('open');
+
+            if (chevron) {
+                chevron.style.transform =
+                    isOpen ? 'rotate(180deg)' : 'rotate(0deg)';
+            }
+
+            if (isOpen) {
+                initialiseLegacyTables(body);
+            }
+        }
+
+        // Existing roll partial uses logAction on some links.
+        function logAction(action, roll, reference) {
+            console.debug(
+                '[Dashboard action]',
+                action,
+                roll,
+                reference
+            );
+        }
+
+        function initialiseLegacyTables(container) {
+            if (!window.jQuery ||
+                !jQuery.fn ||
+                !jQuery.fn.DataTable) {
+                return;
+            }
+
+            container
+                .querySelectorAll('.cd-table')
+                .forEach(function(table) {
+                    if (!table.id) return;
+
+                    const selector = '#' + table.id;
+
+                    if (jQuery.fn.DataTable.isDataTable(selector)) {
+                        jQuery(selector).DataTable().columns.adjust();
+                        return;
+                    }
+
+                    if (!table.closest('.cd-widget-body.open')) {
+                        return;
+                    }
+
+                    jQuery(selector).DataTable({
+                        responsive: {
+                            details: {
+                                type: 'inline',
+                                target: 'td.dtr-control'
+                            }
+                        },
+                        autoWidth: false,
+                        pageLength: 5,
+                        lengthMenu: [
+                            [5, 10, 25, 50, -1],
+                            [5, 10, 25, 50, 'All']
+                        ],
+                        columnDefs: [
+                            {
+                                targets: 0,
+                                className: 'dtr-control all',
+                                responsivePriority: 1
+                            },
+                            {
+                                targets: -1,
+                                className: 'none',
+                                orderable: false
+                            }
+                        ]
+                    });
+                });
+        }
+        document.addEventListener(
+            'DOMContentLoaded',
+            function () {
+                initNotificationBell();
             });
-    }
-</script>
+    </script>
 }

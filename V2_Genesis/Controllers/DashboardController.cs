@@ -99,7 +99,7 @@ public class DashboardController : Controller
             CanLodgeObjectionForRoll = !roll.IsQuery && periodStatus == "active"
         };
 
-        return PartialView("_LegacyRollDashboardPartial", vm);
+        return View("RollDetail", vm);
     }
 
     // ── On-demand Rebates detail — Tiles drawer for the Rebates tile ────
@@ -121,7 +121,7 @@ public class DashboardController : Controller
             vm.Rebates = new();
         }
 
-        return PartialView("_RebatesDetailPartial", vm);
+        return View("RebatesDetail", vm);
     }
 
     // ── On-demand Property Attributes detail — Tiles drawer ─────────────
@@ -137,7 +137,7 @@ public class DashboardController : Controller
             AttributesLinked = await _dashboardService.GetAttributesLinkedAsync(userId)
         };
 
-        return PartialView("_AttributesDetailPartial", vm);
+        return View("AttributesDetail", vm);
     }
 
     [HttpGet]

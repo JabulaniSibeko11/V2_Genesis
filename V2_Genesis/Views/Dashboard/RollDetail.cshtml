@@ -1,0 +1,48 @@
+﻿@model V2_Genesis.Models.ViewModels.Dashboard.RollDetailViewModel
+
+@{
+    ViewData["Title"] =
+        Model.Roll.IsQuery
+            ? "Section 78 Query / Review Dashboard"
+            : $"{Model.Roll.Name} Dashboard";
+
+    Layout = "~/Views/Shared/_Legend_Layout.cshtml";
+}
+
+@section Styles {
+
+    <link rel="stylesheet"
+          href="~/css/Views/Client-Dashboard.css"
+          asp-append-version="true" />
+
+    <link rel="stylesheet"
+          href="~/css/Views/legacy-client-dashboard.css"
+          asp-append-version="true" />
+
+    <link rel="stylesheet"
+          href="~/css/Views/dashboard-detail-page.css"
+          asp-append-version="true" />
+
+}
+
+<div class="client-dashboard-page">
+
+    <div class="client-dashboard-page-toolbar">
+        <a href="/dashboard"
+           class="client-dashboard-back">
+            <i class="fa-solid fa-arrow-left"></i>
+            Back to Property Services
+        </a>
+    </div>
+
+    <div class="legacy-roll-dashboard-partial">
+        <partial name="_RollDetailPartial"
+                 model="Model" />
+    </div>
+
+</div>
+
+@section Scripts {
+    <script src="~/js/dashboard-detail-page.js"
+            asp-append-version="true"></script>
+}

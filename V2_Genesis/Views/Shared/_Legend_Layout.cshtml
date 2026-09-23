@@ -15,8 +15,8 @@
         User?.Identity?.IsAuthenticated ?? false;
 
     var currentEmail =
-        User?.FindFirstValue(ClaimTypes.Email)
-        ?? User?.FindFirstValue(ClaimTypes.Name)
+        User?.FindFirstValue(ClaimTypes.Name)
+        ?? User?.FindFirstValue(ClaimTypes.Email)
         ?? User?.Identity?.Name
         ?? string.Empty;
 
@@ -41,18 +41,13 @@
     var now =
         DateTime.Now;
 
+    // Keep the order requested in the navigation.
     var supplementaryRolls = new[]
     {
         new
         {
-            Source = "Objection_Supp4",
-            Label = "Supplementary Roll 4",
-            Icon = "fa-scroll"
-        },
-        new
-        {
-            Source = "Objection_Supp3",
-            Label = "Supplementary Roll 3",
+            Source = "Objection_Supp1",
+            Label = "Supplementary Roll 1",
             Icon = "fa-scroll"
         },
         new
@@ -63,8 +58,14 @@
         },
         new
         {
-            Source = "Objection_Supp1",
-            Label = "Supplementary Roll 1",
+            Source = "Objection_Supp3",
+            Label = "Supplementary Roll 3",
+            Icon = "fa-scroll"
+        },
+        new
+        {
+            Source = "Objection_Supp4",
+            Label = "Supplementary Roll 4",
             Icon = "fa-scroll"
         }
     };
@@ -104,10 +105,7 @@
 
     string RollStatusClass(string source)
     {
-        var status =
-            RollStatus(source);
-
-        return status switch
+        return RollStatus(source) switch
         {
             "Open" => "legend-status-open",
             "Closed" => "legend-status-closed",
@@ -136,21 +134,20 @@
     }
 
     string RollDashboardUrl(string source) =>
-        (isAdmin
-            ? "/admin?openRoll="
-            : "/Dashboard?openRoll=")
-        + Uri.EscapeDataString(source);
+     "/dashboard/roll-detail/"
+     + Uri.EscapeDataString(source);
 
-    string ServiceDashboardUrl(string key) =>
-        (isAdmin
-            ? "/admin?openRoll="
-            : "/Dashboard?openRoll=")
-        + Uri.EscapeDataString(key);
 
-    string RollSearchUrl(string source) =>
-        CanSearchRoll(source)
-            ? "/search/" + source
-            : RollDashboardUrl(source);
+    string ServiceDashboardUrl(string key)
+    {
+        return key.ToLowerInvariant() switch
+        {
+            "attributes" => "/dashboard/attributes-detail",
+            "rebates" => "/dashboard/rebates-detail",
+            _ => "/dashboard"
+        };
+    }
+
 
     bool IsRollSelected(string source) =>
         openRoll.Equals(
@@ -189,14 +186,8 @@
         reqPath.StartsWith("/evidence")
         || reqPath.StartsWith("/attributes/evidence");
 
-    var supportSelected =
-        reqPath.StartsWith("/help/user-manual")
-        || reqPath.StartsWith("/home/faq")
-        || reqPath.StartsWith("/home/contact")
-        || reqPath.StartsWith("/home/privacy");
-
-    var adminSelected =
-        reqPath.StartsWith("/admin");
+    var profileSelected =
+        reqPath.StartsWith("/my-profile");
 }
 
 <!DOCTYPE html>
@@ -251,8 +242,20 @@
           href="~/css/site.css"
           asp-append-version="true" />
 
+    @*
+        Use the same navbar / user profile / responsive drawer CSS as
+        _ClientLayout.cshtml.
+    *@
     <link rel="stylesheet"
-          href="~/css/legend-layout.css"
+          href="~/css/Views/Client-Dashboard.css"
+          asp-append-version="true" />
+
+    @*
+        Keep Legend page body/footer styling.
+        Use the actual repository path.
+    *@
+    <link rel="stylesheet"
+          href="~/css/Views/legend-layout.css"
           asp-append-version="true" />
 
     <link rel="stylesheet"
@@ -267,10 +270,114 @@
         "Styles",
         required: false)
 
-    <!-- Same global responsive safety net used by ClientLayout. -->
     <link rel="stylesheet"
           href="~/css/genesis-responsive.css"
           asp-append-version="true" />
+
+    <style>
+            /*
+                     * Legend only needs a small amount of extra styling.
+                     * The actual navbar, dropdowns, profile and mobile drawer are
+                     * deliberately the ClientLayout classes.
+                     */
+
+            .legend-body {
+                padding-top: 64px !important;
+            }
+
+            .legend-nav-roll-heading {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                padding: 8px 16px 4px;
+            }
+
+                .legend-nav-roll-heading > i {
+                    width: 18px;
+                    color: #b78b00;
+                    text-align: center;
+                }
+
+                .legend-nav-roll-heading strong {
+                    min-width: 0;
+                    flex: 1;
+                    font-size: 11px;
+                    color: #1a1a1a;
+                }
+
+            .legend-nav-roll-actions {
+                padding-bottom: 5px;
+            }
+
+                .legend-nav-roll-actions .cl-dd-item {
+                    padding-top: 8px;
+                    padding-bottom: 8px;
+                    padding-left: 42px;
+                    font-size: 11px;
+                }
+
+                    .legend-nav-roll-actions .cl-dd-item > i {
+                        width: 16px;
+                        color: #8d7b35;
+                        text-align: center;
+                    }
+
+            .legend-nav-search-closed {
+                color: #777 !important;
+            }
+
+                .legend-nav-search-closed small {
+                    display: block;
+                    color: #999;
+                    font-size: 8px;
+                }
+
+            .legend-supp-menu {
+                min-width: 310px;
+                max-height: calc(100vh - 82px);
+                overflow-y: auto;
+            }
+
+            .legend-drawer-subtitle {
+                padding: 9px 20px 4px;
+                color: #8b8b8b;
+                font-size: 9px;
+                font-weight: 800;
+                letter-spacing: 1px;
+                text-transform: uppercase;
+            }
+
+            .legend-drawer-child {
+                padding-left: 42px !important;
+                font-size: 12px !important;
+            }
+
+            .legend-drawer-status {
+                margin-left: auto;
+            }
+
+            /*
+                     * ClientLayout's responsive stylesheet switches to the
+                     * hamburger/drawer at 1180px. Keep exactly the same breakpoint.
+                     */
+            @@media (max-width: 1180px) {
+                .cl-nav-links,
+                .cl-user {
+                    display: none !important;
+                }
+
+                .cl-hamburger {
+                    display: flex !important;
+                    margin-left: auto !important;
+                }
+            }
+
+             @@media (min-width: 1181px) {
+                .cl-hamburger {
+                    display: none !important;
+                }
+            }
+    </style>
 
 </head>
 
@@ -280,250 +387,152 @@
     <partial name="_SubmissionActionLoader" />
 
     <!-- ============================================================
-         LEGEND TOP BAR
-         One navigation pattern on desktop, tablet and phone.
+         NAVBAR
+         Same visual structure as _ClientLayout.
          ============================================================ -->
-    <header class="legend-topbar">
+    <nav class="cl-navbar"
+         id="clientNav">
 
-        <div class="legend-topbar-inner">
+        <div class="cl-nav-inner">
 
+            <!-- Brand -->
             <a href="@dashboardUrl"
-                   class="legend-brand"
-                   aria-label="City of Johannesburg Valuation Portal">
+                   class="nav-brand">
 
-                <span class="legend-brand-mark">
+                <div class="nav-brand-mark">
 
                     <img src="~/images/joburg_logo.png"
-                         alt="City of Johannesburg"
-                         class="legend-brand-logo" />
+                         class="brand-logo"
+                         alt="City of Johannesburg" />
 
-                </span>
+                </div>
 
-                <span class="legend-brand-copy">
+                <div class="nav-brand-text">
 
-                    <strong>
+                    <span class="nav-brand-name">
                         City of Johannesburg
-                    </strong>
+                    </span>
 
-                    <small>
+                    <span class="nav-brand-sub">
                         Valuation Portal
-                    </small>
+                    </span>
 
-                </span>
+                </div>
 
             </a>
 
-            @if (isAuthenticated)
-            {
-                <span class="legend-topbar-user"
-                      title="@currentEmail">
-                    @currentEmail
-                </span>
-            }
-
-            <button type="button"
-                    class="legend-menu-button"
-                    id="legendMenuButton"
-                    aria-controls="legendDrawer"
-                    aria-expanded="false"
-                    aria-label="Open navigation">
-
-                <i class="fa-solid fa-bars"></i>
-
-            </button>
-
-        </div>
-
-    </header>
-
-    <!-- Drawer backdrop -->
-    <div class="legend-drawer-backdrop"
-         id="legendDrawerBackdrop"
-         aria-hidden="true">
-    </div>
-
-    <!-- ============================================================
-         LEGEND DRAWER
-         ClientLayout-style right drawer.
-         ============================================================ -->
-    <aside class="legend-drawer"
-           id="legendDrawer"
-           aria-hidden="true"
-           aria-label="Portal navigation">
-
-        <div class="legend-drawer-header">
-
-            <div class="legend-drawer-brand">
-
-                <span class="legend-drawer-logo">
-
-                    <img src="~/images/joburg_logo.png"
-                         alt=""
-                         class="legend-drawer-logo-image" />
-
-                </span>
-
-                <span>
-
-                    <strong>
-                        CITY OF JOHANNESBURG
-                    </strong>
-
-                    <small>
-                        Valuation Portal
-                    </small>
-
-                </span>
-
-            </div>
-
-            <button type="button"
-                    class="legend-drawer-close"
-                    id="legendDrawerClose"
-                    aria-label="Close navigation">
-
-                <i class="fa-solid fa-xmark"></i>
-
-            </button>
-
-        </div>
-
-        <div class="legend-drawer-scroll">
-
-            @if (isAuthenticated)
-            {
-                <div class="legend-signed-in">
-
-                    <small>
-                        Signed in as
-                    </small>
-
-                    <strong title="@currentEmail">
-                        @currentEmail
-                    </strong>
-
-                </div>
-            }
-
             <!-- ====================================================
-                 VALUATION ROLLS
+                 DESKTOP NAVIGATION
                  ==================================================== -->
-            <div class="legend-drawer-section-title">
-                Valuation Rolls
-            </div>
+            <ul class="cl-nav-links"
+                id="clNavLinks">
 
-            <!-- GV23 -->
-            <div class="legend-drawer-group @(gvSelected ? "open" : "")">
+                <!-- =================================================
+                     1. GV23 VALUATION ROLL
+                     ================================================= -->
+                <li class="cl-nav-item cl-dropdown">
 
-                <button type="button"
-                        class="legend-drawer-toggle"
-                        aria-expanded="@(gvSelected ? "true" : "false")">
+                    <button type="button"
+                            class="cl-nav-link cl-dropdown-toggle @(gvSelected ? "active" : "")">
 
-                    <i class="fa-solid fa-landmark"></i>
+                        <i class="fa-solid fa-landmark"></i>
 
-                    <span class="legend-drawer-label">
                         GV23 Valuation Roll
-                    </span>
 
-                    <span class="legend-roll-status @RollStatusClass("Objection")">
-                        @RollStatus("Objection")
-                    </span>
+                        <i class="fa-solid fa-chevron-down cl-dd-chevron"></i>
 
-                    <i class="fa-solid fa-chevron-down legend-drawer-chevron"></i>
+                    </button>
 
-                </button>
+                    <ul class="cl-dropdown-menu">
 
-                <div class="legend-drawer-sub">
+                        @if (CanSearchRoll("Objection"))
+                        {
+                            <li>
+                                <a class="cl-dd-item"
+                                       href="/search/Objection">
 
-                    @if (CanSearchRoll("Objection"))
-                    {
-                        <a href="/search/Objection"
-                               class="legend-drawer-link legend-drawer-child">
+                                    <i class="fa-solid fa-magnifying-glass"></i>
+                                    Search Property
 
-                            <i class="fa-solid fa-magnifying-glass"></i>
-                            Search Property
+                                </a>
+                            </li>
+                        }
+                        else
+                        {
+                            <li>
+                                <a class="cl-dd-item cl-dd-item-disabled legend-nav-search-closed"
+                                       href="@RollDashboardUrl("Objection")"
+                                       title="@RollSearchNote("Objection")">
 
-                        </a>
-                    }
-                    else
-                    {
-                        <a href="@RollDashboardUrl("Objection")"
-                               class="legend-drawer-link legend-drawer-child legend-drawer-disabled">
+                                    <i class="fa-solid fa-lock"></i>
 
-                            <i class="fa-solid fa-lock"></i>
+                                    <span>
+                                        Search Property
+                                        <small>@RollSearchNote("Objection")</small>
+                                    </span>
 
-                            <span>
-                                Search Property
+                                </a>
+                            </li>
+                        }
 
-                                <small class="legend-drawer-note">
-                                    @RollSearchNote("Objection")
-                                </small>
-                            </span>
+                        <li class="cl-dd-divider"></li>
 
-                        </a>
-                    }
+                        <li>
+                            <a class="cl-dd-item"
+                                   href="@RollDashboardUrl("Objection")">
 
-                    <a href="@RollDashboardUrl("Objection")"
-                           class="legend-drawer-link legend-drawer-child">
+                                <i class="fa-solid fa-gauge-high"></i>
+                                Dashboard
 
-                        <i class="fa-solid fa-gauge-high"></i>
-                        Dashboard
+                            </a>
+                        </li>
 
-                    </a>
+                    </ul>
 
-                </div>
-            </div>
+                </li>
 
-            <!-- Supplementary Rolls -->
-            <div class="legend-drawer-group @(supplementarySelected ? "open" : "")">
+                <!-- =================================================
+                     2. SUPPLEMENTARY ROLLS
+                     Sup1, Sup2, Sup3, Sup4.
+                     Each one has Search Property + Dashboard.
+                     ================================================= -->
+                <li class="cl-nav-item cl-dropdown">
 
-                <button type="button"
-                        class="legend-drawer-toggle"
-                        aria-expanded="@(supplementarySelected ? "true" : "false")">
+                    <button type="button"
+                            class="cl-nav-link cl-dropdown-toggle @(supplementarySelected ? "active" : "")">
 
-                    <i class="fa-solid fa-scroll"></i>
+                        <i class="fa-solid fa-scroll"></i>
 
-                    <span class="legend-drawer-label">
                         Supplementary Rolls
-                    </span>
 
-                    <i class="fa-solid fa-chevron-down legend-drawer-chevron"></i>
+                        <i class="fa-solid fa-chevron-down cl-dd-chevron"></i>
 
-                </button>
+                    </button>
 
-                <div class="legend-drawer-sub legend-supplementary-list">
+                    <ul class="cl-dropdown-menu legend-supp-menu">
 
-                    @foreach (var roll in supplementaryRolls)
-                    {
-                        var rollSelected =
-                            IsRollSelected(roll.Source);
-
-                        <div class="legend-drawer-group legend-roll-group @(rollSelected ? "open" : "")">
-
-                            <button type="button"
-                                    class="legend-drawer-toggle legend-roll-toggle"
-                                    aria-expanded="@(rollSelected ? "true" : "false")">
+                        @foreach (var roll in supplementaryRolls)
+                        {
+                            <li class="legend-nav-roll-heading">
 
                                 <i class="fa-solid @roll.Icon"></i>
 
-                                <span class="legend-drawer-label">
+                                <strong>
                                     @roll.Label
-                                </span>
+                                </strong>
 
                                 <span class="legend-roll-status @RollStatusClass(roll.Source)">
                                     @RollStatus(roll.Source)
                                 </span>
 
-                                <i class="fa-solid fa-chevron-down legend-drawer-chevron"></i>
+                            </li>
 
-                            </button>
-
-                            <div class="legend-drawer-sub legend-roll-actions">
+                            <li class="legend-nav-roll-actions">
 
                                 @if (CanSearchRoll(roll.Source))
                                 {
-                                    <a href="/search/@roll.Source"
-                                           class="legend-drawer-link legend-drawer-grandchild">
+                                    <a class="cl-dd-item"
+                                           href="/search/@roll.Source">
 
                                         <i class="fa-solid fa-magnifying-glass"></i>
                                         Search Property
@@ -532,330 +541,707 @@
                                 }
                                 else
                                 {
-                                    <a href="@RollDashboardUrl(roll.Source)"
-                                           class="legend-drawer-link legend-drawer-grandchild legend-drawer-disabled">
+                                    <a class="cl-dd-item cl-dd-item-disabled legend-nav-search-closed"
+                                           href="@RollDashboardUrl(roll.Source)"
+                                           title="@RollSearchNote(roll.Source)">
 
                                         <i class="fa-solid fa-lock"></i>
 
                                         <span>
                                             Search Property
-
-                                            <small class="legend-drawer-note">
-                                                @RollSearchNote(roll.Source)
-                                            </small>
+                                            <small>@RollSearchNote(roll.Source)</small>
                                         </span>
 
                                     </a>
                                 }
 
-                                <a href="@RollDashboardUrl(roll.Source)"
-                                       class="legend-drawer-link legend-drawer-grandchild">
+                                <a class="cl-dd-item"
+                                       href="@RollDashboardUrl(roll.Source)">
 
                                     <i class="fa-solid fa-gauge-high"></i>
                                     Dashboard
 
                                 </a>
 
-                            </div>
-                        </div>
-                    }
+                            </li>
 
-                </div>
-            </div>
+                            @if (roll.Source != "Objection_Supp4")
+                            {
+                                <li class="cl-dd-divider"></li>
+                            }
+                        }
 
-            <!-- Section 78 -->
-            <div class="legend-drawer-group @(querySelected ? "open" : "")">
+                    </ul>
 
-                <button type="button"
-                        class="legend-drawer-toggle"
-                        aria-expanded="@(querySelected ? "true" : "false")">
+                </li>
 
-                    <i class="fa-solid fa-magnifying-glass-chart"></i>
+                <!-- =================================================
+                     3. SECTION 78
+                     ================================================= -->
+                <li class="cl-nav-item cl-dropdown">
 
-                    <span class="legend-drawer-label">
+                    <button type="button"
+                            class="cl-nav-link cl-dropdown-toggle @(querySelected ? "active" : "")">
+
+                        <i class="fa-solid fa-magnifying-glass-chart"></i>
+
                         Section 78
-                    </span>
 
-                    <i class="fa-solid fa-chevron-down legend-drawer-chevron"></i>
+                        <i class="fa-solid fa-chevron-down cl-dd-chevron"></i>
 
-                </button>
+                    </button>
 
-                <div class="legend-drawer-sub">
+                    <ul class="cl-dropdown-menu">
 
-                    <a href="/search/Objection_Query"
-                           class="legend-drawer-link legend-drawer-child">
+                        <li>
+                            <a class="cl-dd-item"
+                                   href="/search/Objection_Query">
 
-                        <i class="fa-solid fa-magnifying-glass"></i>
-                        Search Property
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                                Search Property
 
-                    </a>
+                            </a>
+                        </li>
 
-                    <a href="@RollDashboardUrl("Objection_Query")"
-                           class="legend-drawer-link legend-drawer-child">
+                        <li class="cl-dd-divider"></li>
 
-                        <i class="fa-solid fa-gauge-high"></i>
-                        Dashboard
+                        <li>
+                            <a class="cl-dd-item"
+                                   href="@RollDashboardUrl("Objection_Query")">
 
-                    </a>
+                                <i class="fa-solid fa-gauge-high"></i>
+                                Dashboard
 
-                </div>
-            </div>
+                            </a>
+                        </li>
 
-            <!-- Rebates -->
-            <div class="legend-drawer-group @(rebatesSelected ? "open" : "")">
+                    </ul>
 
-                <button type="button"
-                        class="legend-drawer-toggle"
-                        aria-expanded="@(rebatesSelected ? "true" : "false")">
+                </li>
 
-                    <i class="fa-solid fa-percent"></i>
+                <!-- =================================================
+                     4. REBATES
+                     Rebates do not use the normal roll property search.
+                     The current entry point is Apply for Rebates.
+                     ================================================= -->
+                <li class="cl-nav-item cl-dropdown">
 
-                    <span class="legend-drawer-label">
+                    <button type="button"
+                            class="cl-nav-link cl-dropdown-toggle @(rebatesSelected ? "active" : "")">
+
+                        <i class="fa-solid fa-percent"></i>
+
                         Rebates
-                    </span>
 
-                    <i class="fa-solid fa-chevron-down legend-drawer-chevron"></i>
+                        <i class="fa-solid fa-chevron-down cl-dd-chevron"></i>
 
-                </button>
+                    </button>
 
-                <div class="legend-drawer-sub">
+                    <ul class="cl-dropdown-menu">
 
-                    <a href="/Rebates/Index"
-                           class="legend-drawer-link legend-drawer-child">
+                        <li>
+                            <a class="cl-dd-item"
+                                   href="/Rebates/Index">
 
-                        <i class="fa-solid fa-file-signature"></i>
-                        Apply for Rebates
+                                <i class="fa-solid fa-file-signature"></i>
+                                Apply for Rebates
 
-                    </a>
+                            </a>
+                        </li>
 
-                    <a href="@ServiceDashboardUrl("rebates")"
-                           class="legend-drawer-link legend-drawer-child">
+                        <li class="cl-dd-divider"></li>
 
-                        <i class="fa-solid fa-gauge-high"></i>
-                        Dashboard
+                        <li>
+                            <a class="cl-dd-item"
+                                   href="@ServiceDashboardUrl("rebates")">
 
-                    </a>
+                                <i class="fa-solid fa-gauge-high"></i>
+                                Dashboard
 
-                </div>
-            </div>
+                            </a>
+                        </li>
 
-            <!-- Property Attributes -->
-            <div class="legend-drawer-group @(attributesSelected ? "open" : "")">
+                    </ul>
 
-                <button type="button"
-                        class="legend-drawer-toggle"
-                        aria-expanded="@(attributesSelected ? "true" : "false")">
+                </li>
 
-                    <i class="fa-solid fa-clipboard-list"></i>
+                <!-- =================================================
+                     5. PROPERTY ATTRIBUTES
+                     Dashboard + Search Property + About.
+                     ================================================= -->
+                <li class="cl-nav-item cl-dropdown">
 
-                    <span class="legend-drawer-label">
-                        Property Attributes
-                    </span>
+                    <button type="button"
+                            class="cl-nav-link cl-dropdown-toggle @(attributesSelected ? "active" : "")">
 
-                    <i class="fa-solid fa-chevron-down legend-drawer-chevron"></i>
+                        <i class="fa-solid fa-clipboard-list"></i>
 
-                </button>
+                        Attributes
 
-                <div class="legend-drawer-sub">
+                        <i class="fa-solid fa-chevron-down cl-dd-chevron"></i>
 
-                    <a href="/attributes/search"
-                           class="legend-drawer-link legend-drawer-child">
+                    </button>
 
-                        <i class="fa-solid fa-magnifying-glass"></i>
-                        Search Property
+                    <ul class="cl-dropdown-menu">
 
-                    </a>
+                        <li>
+                            <a class="cl-dd-item"
+                                   href="/attributes/search">
 
-                    <a href="@ServiceDashboardUrl("attributes")"
-                           class="legend-drawer-link legend-drawer-child">
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                                Search Property
 
-                        <i class="fa-solid fa-gauge-high"></i>
-                        Dashboard
+                            </a>
+                        </li>
 
-                    </a>
+                        <li class="cl-dd-divider"></li>
 
-                    <a href="/attributes/about"
-                           class="legend-drawer-link legend-drawer-child">
+                        <li>
+                            <a class="cl-dd-item"
+                                   href="@ServiceDashboardUrl("attributes")">
 
-                        <i class="fa-solid fa-circle-info"></i>
-                        About Attributes
+                                <i class="fa-solid fa-gauge-high"></i>
+                                Dashboard
 
-                    </a>
+                            </a>
+                        </li>
 
-                </div>
-            </div>
+                        <li class="cl-dd-divider"></li>
 
-            <!-- ====================================================
-                 SERVICES
-                 ==================================================== -->
-            <div class="legend-drawer-section-title">
-                Services
-            </div>
+                        <li>
+                            <a class="cl-dd-item"
+                                   href="/attributes/about">
 
-            <!-- Add Evidence
-                 Section 51 intentionally hidden for this deployment.
-                 Valuer Physical Inspection intentionally hidden here. -->
-            <div class="legend-drawer-group @(evidenceSelected ? "open" : "")">
+                                <i class="fa-solid fa-circle-info"></i>
+                                About Attributes
 
-                <button type="button"
-                        class="legend-drawer-toggle"
-                        aria-expanded="@(evidenceSelected ? "true" : "false")">
+                            </a>
+                        </li>
 
-                    <i class="fa-solid fa-paperclip"></i>
+                    </ul>
 
-                    <span class="legend-drawer-label">
-                        Add Evidence
-                    </span>
+                </li>
 
-                    <i class="fa-solid fa-chevron-down legend-drawer-chevron"></i>
+                <!-- =================================================
+                     6. ADD EVIDENCE
+                     Same evidence choices as ClientLayout / existing
+                     Legend drawer.
+                     ================================================= -->
+                <li class="cl-nav-item cl-dropdown cl-dropdown-end">
 
-                </button>
-
-                <div class="legend-drawer-sub">
-
-                    <a href="/evidence/VerifyObj"
-                           class="legend-drawer-link legend-drawer-child">
-
-                        <i class="fa-solid fa-file-arrow-up"></i>
-                        Objection / Appeal Evidence
-
-                    </a>
-
-                    <a href="/attributes/evidence"
-                           class="legend-drawer-link legend-drawer-child">
+                    <button type="button"
+                            class="cl-nav-link cl-dropdown-toggle @(evidenceSelected ? "active" : "")">
 
                         <i class="fa-solid fa-paperclip"></i>
-                        Attribute Evidence
 
-                    </a>
+                        Add Evidence
 
-                    <a href="/evidence/verify?rollSource=Objection_Query"
-                           class="legend-drawer-link legend-drawer-child">
+                        <i class="fa-solid fa-chevron-down cl-dd-chevron"></i>
 
-                        <i class="fa-solid fa-file-circle-plus"></i>
-                        Section 78 Query / Review Evidence
+                    </button>
+
+                    <ul class="cl-dropdown-menu">
+
+                        <li>
+                            <a class="cl-dd-item"
+                                   href="/evidence/VerifyObj">
+
+                                <i class="fa-solid fa-file-arrow-up"></i>
+                                Objection / Appeal Evidence
+
+                            </a>
+                        </li>
+
+                        <li class="cl-dd-divider"></li>
+
+                        <li>
+                            <a class="cl-dd-item"
+                                   href="/attributes/evidence">
+
+                                <i class="fa-solid fa-paperclip"></i>
+                                Attribute Evidence
+
+                            </a>
+                        </li>
+
+                        <li class="cl-dd-divider"></li>
+
+                        <li>
+                            <a class="cl-dd-item"
+                                   href="/evidence/verify?rollSource=Objection_Query">
+
+                                <i class="fa-solid fa-file-circle-plus"></i>
+                                Section 78 Query / Review Evidence
+
+                            </a>
+                        </li>
+
+                    </ul>
+
+                </li>
+
+            </ul>
+
+            <!-- ====================================================
+                 PROFILE
+                 Copied from _ClientLayout behaviour.
+                 ==================================================== -->
+            @if (isAuthenticated)
+            {
+                <div class="cl-user"
+                     id="clUser">
+
+                    <button type="button"
+                            class="cl-user-btn"
+                            id="clUserBtn">
+
+                        <div class="cl-avatar">
+                            @(string.IsNullOrWhiteSpace(currentEmail)
+                                ? "?"
+                                : currentEmail.Substring(0, 1).ToUpperInvariant())
+                        </div>
+
+                        <span class="cl-user-name d-none d-lg-inline">
+                            @(currentEmail.Contains('@')
+                                ? currentEmail.Split('@')[0]
+                                : currentEmail)
+                        </span>
+
+                        <i class="fa-solid fa-chevron-down"
+                           style="font-size:11px;"></i>
+
+                    </button>
+
+                    <div class="cl-user-menu"
+                         id="clUserMenu">
+
+                        <div style="
+                            padding:12px 16px 8px;
+                            border-bottom:1px solid #f0f0f0;">
+
+                            <div style="
+                                font-size:11px;
+                                color:#888;">
+                                Signed in as
+                            </div>
+
+                            <div style="
+                                font-size:13px;
+                                font-weight:600;
+                                color:#1a1a1a;
+                                white-space:nowrap;
+                                overflow:hidden;
+                                text-overflow:ellipsis;
+                                max-width:210px;"
+                                 title="@currentEmail">
+
+                                @currentEmail
+
+                            </div>
+
+                        </div>
+
+                        <a href="/my-profile"
+                               class="cl-user-item @(profileSelected ? "active" : "")">
+
+                            <i class="fa-solid fa-user"></i>
+                            My Profile
+
+                        </a>
+
+                        <a href="@dashboardUrl"
+                               class="cl-user-item">
+
+                            <i class="fa-solid fa-gauge-high"></i>
+
+                            @(isAdmin
+                                ? "Admin Dashboard"
+                                : "Dashboard")
+
+                        </a>
+
+                        @if (isAdmin)
+                        {
+                            <div class="cl-dd-divider"></div>
+
+                            <a href="/admin"
+                                   class="cl-user-item">
+
+                                <i class="fa-solid fa-shield-halved"></i>
+                                Admin Panel
+
+                            </a>
+                        }
+
+                        <div class="cl-dd-divider"></div>
+
+                        <form asp-action="Logout"
+                              asp-controller="Account"
+                              method="post">
+
+                            @Html.AntiForgeryToken()
+
+                            <button type="submit"
+                                    class="cl-user-item cl-logout">
+
+                                <i class="fa-solid fa-right-from-bracket"></i>
+                                Sign Out
+
+                            </button>
+
+                        </form>
+
+                    </div>
+
+                </div>
+            }
+            else
+            {
+                <div style="
+                    display:flex;
+                    gap:6px;
+                    margin-left:auto;
+                    flex-shrink:0;">
+
+                    <a href="/account/login?returnUrl=@Context.Request.Path@Context.Request.QueryString"
+                           class="cl-nav-link">
+
+                        <i class="fa-solid fa-right-to-bracket"></i>
+                        Sign In
 
                     </a>
 
                 </div>
+            }
+
+            <!-- Phone / tablet hamburger -->
+            <button type="button"
+                    class="cl-hamburger"
+                    id="clHamburger"
+                    aria-label="Open menu"
+                    aria-controls="clDrawer"
+                    aria-expanded="false">
+
+                <span></span>
+                <span></span>
+                <span></span>
+
+            </button>
+
+        </div>
+
+    </nav>
+
+    <!-- ============================================================
+         RESPONSIVE DRAWER
+         Same pattern as _ClientLayout.
+         ============================================================ -->
+    <div class="cl-mobile-backdrop"
+         id="clBackdrop">
+    </div>
+
+    <div class="cl-mobile-drawer"
+         id="clDrawer">
+
+        <div class="cl-drawer-header">
+
+            <div style="
+                display:flex;
+                align-items:center;
+                gap:10px;">
+
+                <img src="~/images/joburg_logo.png"
+                     alt="City of Johannesburg"
+                     style="
+                width:32px;
+                height:32px;
+                object-fit:contain;
+                background:#e6b000;
+                border-radius:6px;
+                padding:3px;" />
+
+                <span style="
+                    font-weight:700;
+                    font-size:12px;
+                    letter-spacing:1.5px;
+                    color:#fff;">
+
+                    CITY OF JOHANNESBURG
+
+                </span>
+
             </div>
 
-            @if (!isAdmin)
-            {
-                <a href="/notices"
-                       class="legend-drawer-link @(reqPath.StartsWith("/notices") ? "active" : "")">
+            <button type="button"
+                    id="clDrawerClose"
+                    aria-label="Close menu">
 
-                    <i class="fa-solid fa-bell"></i>
-                    Notices
+                <i class="fa-solid fa-xmark"></i>
+
+            </button>
+
+        </div>
+
+        <div class="cl-drawer-scroll">
+
+            @if (isAuthenticated)
+            {
+                <div style="
+                    padding:14px 20px;
+                    background:#f7f5f2;
+                    border-bottom:1px solid #ede9e3;">
+
+                    <div style="
+                        font-size:11px;
+                        color:#888;
+                        margin-bottom:2px;">
+
+                        Signed in as
+
+                    </div>
+
+                    <div style="
+                        font-size:13px;
+                        font-weight:600;
+                        color:#1a1a1a;
+                        word-break:break-all;">
+
+                        @currentEmail
+
+                    </div>
+
+                </div>
+            }
+
+            <!-- GV23 -->
+            <div class="cl-drawer-section-title">
+                GV23 Valuation Roll
+            </div>
+
+            @if (CanSearchRoll("Objection"))
+            {
+                <a href="/search/Objection"
+                       class="cl-drawer-link">
+
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    Search Property
+
+                </a>
+            }
+            else
+            {
+                <a href="@RollDashboardUrl("Objection")"
+                       class="cl-drawer-link cl-drawer-link-disabled">
+
+                    <i class="fa-solid fa-lock"></i>
+
+                    <span>
+                        Search Property
+                        <span class="roll-period-status">
+                            @RollSearchNote("Objection")
+                        </span>
+                    </span>
 
                 </a>
             }
 
-            <!-- ====================================================
-                 ADMIN
-                 ==================================================== -->
-            @if (isAdmin)
-            {
-                <div class="legend-drawer-section-title">
-                    Admin
-                </div>
+            <a href="@RollDashboardUrl("Objection")"
+                   class="cl-drawer-link">
 
-                <div class="legend-drawer-group @(adminSelected ? "open" : "")">
+                <i class="fa-solid fa-gauge-high"></i>
+                Dashboard
 
-                    <button type="button"
-                            class="legend-drawer-toggle"
-                            aria-expanded="@(adminSelected ? "true" : "false")">
+            </a>
 
-                        <i class="fa-solid fa-shield-halved"></i>
-
-                        <span class="legend-drawer-label">
-                            Admin Tools
-                        </span>
-
-                        <i class="fa-solid fa-chevron-down legend-drawer-chevron"></i>
-
-                    </button>
-
-                    <div class="legend-drawer-sub">
-
-                        <a href="/admin"
-                               class="legend-drawer-link legend-drawer-child">
-
-                            <i class="fa-solid fa-gauge-high"></i>
-                            Admin Dashboard
-
-                        </a>
-
-                        <a href="/admin/search"
-                               class="legend-drawer-link legend-drawer-child">
-
-                            <i class="fa-solid fa-magnifying-glass"></i>
-                            Search Enquiries
-
-                        </a>
-
-                        <a href="/admin/notices"
-                               class="legend-drawer-link legend-drawer-child">
-
-                            <i class="fa-solid fa-bell"></i>
-                            Client Notices
-
-                        </a>
-
-                    </div>
-                </div>
-            }
-
-            <!-- ====================================================
-                 SUPPORT
-                 ==================================================== -->
-            <div class="legend-drawer-section-title">
-                Support
+            <!-- Supplementary Rolls -->
+            <div class="cl-drawer-section-title">
+                Supplementary Rolls
             </div>
 
-            <a href="/help/user-manual"
-                   class="legend-drawer-link @(reqPath.StartsWith("/help/user-manual") ? "active" : "")">
+            @foreach (var roll in supplementaryRolls)
+            {
+                <div class="legend-drawer-subtitle">
 
-                <i class="fa-solid fa-book"></i>
-                User Manual
+                    @roll.Label
+
+                    <span class="legend-roll-status @RollStatusClass(roll.Source) legend-drawer-status">
+                        @RollStatus(roll.Source)
+                    </span>
+
+                </div>
+
+                @if (CanSearchRoll(roll.Source))
+                {
+                    <a href="/search/@roll.Source"
+                           class="cl-drawer-link legend-drawer-child">
+
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        Search Property
+
+                    </a>
+                }
+                else
+                {
+                    <a href="@RollDashboardUrl(roll.Source)"
+                           class="cl-drawer-link cl-drawer-link-disabled legend-drawer-child">
+
+                        <i class="fa-solid fa-lock"></i>
+
+                        <span>
+                            Search Property
+                            <span class="roll-period-status">
+                                @RollSearchNote(roll.Source)
+                            </span>
+                        </span>
+
+                    </a>
+                }
+
+                <a href="@RollDashboardUrl(roll.Source)"
+                       class="cl-drawer-link legend-drawer-child">
+
+                    <i class="fa-solid fa-gauge-high"></i>
+                    Dashboard
+
+                </a>
+            }
+
+            <!-- Section 78 -->
+            <div class="cl-drawer-section-title">
+                Section 78
+            </div>
+
+            <a href="/search/Objection_Query"
+                   class="cl-drawer-link">
+
+                <i class="fa-solid fa-magnifying-glass"></i>
+                Search Property
 
             </a>
 
-            <a href="/Home/FAQ"
-                   class="legend-drawer-link @(reqPath == "/home/faq" ? "active" : "")">
+            <a href="@RollDashboardUrl("Objection_Query")"
+                   class="cl-drawer-link">
 
-                <i class="fa-solid fa-comments"></i>
-                FAQ
-
-            </a>
-
-            <a href="/Home/Contact"
-                   class="legend-drawer-link @(reqPath == "/home/contact" ? "active" : "")">
-
-                <i class="fa-solid fa-headset"></i>
-                Contact Support
+                <i class="fa-solid fa-gauge-high"></i>
+                Dashboard
 
             </a>
 
-            <a href="/Home/Privacy"
-                   class="legend-drawer-link @(reqPath == "/home/privacy" ? "active" : "")">
+            <!-- Rebates -->
+            <div class="cl-drawer-section-title">
+                Rebates
+            </div>
 
-                <i class="fa-solid fa-shield-halved"></i>
-                Privacy Policy
+            <a href="/Rebates/Index"
+                   class="cl-drawer-link">
+
+                <i class="fa-solid fa-file-signature"></i>
+                Apply for Rebates
 
             </a>
 
-            <div class="legend-drawer-divider"></div>
+            <a href="@ServiceDashboardUrl("rebates")"
+                   class="cl-drawer-link">
 
+                <i class="fa-solid fa-gauge-high"></i>
+                Dashboard
+
+            </a>
+
+            <!-- Attributes -->
+            <div class="cl-drawer-section-title">
+                Property Attributes
+            </div>
+
+            <a href="/attributes/search"
+                   class="cl-drawer-link">
+
+                <i class="fa-solid fa-magnifying-glass"></i>
+                Search Property
+
+            </a>
+
+            <a href="@ServiceDashboardUrl("attributes")"
+                   class="cl-drawer-link">
+
+                <i class="fa-solid fa-gauge-high"></i>
+                Dashboard
+
+            </a>
+
+            <a href="/attributes/about"
+                   class="cl-drawer-link">
+
+                <i class="fa-solid fa-circle-info"></i>
+                About Attributes
+
+            </a>
+
+            <!-- Add Evidence -->
+            <div class="cl-drawer-section-title">
+                Add Evidence
+            </div>
+
+            <a href="/evidence/VerifyObj"
+                   class="cl-drawer-link">
+
+                <i class="fa-solid fa-file-arrow-up"></i>
+                Objection / Appeal Evidence
+
+            </a>
+
+            <a href="/attributes/evidence"
+                   class="cl-drawer-link">
+
+                <i class="fa-solid fa-paperclip"></i>
+                Attribute Evidence
+
+            </a>
+
+            <a href="/evidence/verify?rollSource=Objection_Query"
+                   class="cl-drawer-link">
+
+                <i class="fa-solid fa-file-circle-plus"></i>
+                Section 78 Query / Review Evidence
+
+            </a>
+
+            <div class="cl-dd-divider"
+                 style="margin:8px 0;">
+            </div>
+
+            <!-- Profile -->
             @if (isAuthenticated)
             {
                 <a href="/my-profile"
-                       class="legend-drawer-link @(reqPath.StartsWith("/my-profile") ? "active" : "")">
+                       class="cl-drawer-link @(profileSelected ? "active" : "")">
 
                     <i class="fa-solid fa-user"></i>
                     My Profile
 
                 </a>
+
+                <a href="@dashboardUrl"
+                       class="cl-drawer-link">
+
+                    <i class="fa-solid fa-gauge-high"></i>
+
+                    @(isAdmin
+                        ? "Admin Dashboard"
+                        : "Dashboard")
+
+                </a>
+
+                @if (isAdmin)
+                {
+                    <a href="/admin"
+                           class="cl-drawer-link">
+
+                        <i class="fa-solid fa-shield-halved"></i>
+                        Admin Panel
+
+                    </a>
+                }
 
                 <form asp-action="Logout"
                       asp-controller="Account"
@@ -864,7 +1250,7 @@
                     @Html.AntiForgeryToken()
 
                     <button type="submit"
-                            class="legend-drawer-link legend-drawer-logout">
+                            class="cl-drawer-link cl-drawer-logout">
 
                         <i class="fa-solid fa-right-from-bracket"></i>
                         Sign Out
@@ -875,8 +1261,8 @@
             }
             else
             {
-                <a href="/account/login?returnUrl=@Context.Request.Path@Context.Request.QueryString"
-                       class="legend-drawer-link">
+                <a href="/account/login"
+                       class="cl-drawer-link">
 
                     <i class="fa-solid fa-right-to-bracket"></i>
                     Sign In
@@ -886,7 +1272,7 @@
 
         </div>
 
-    </aside>
+    </div>
 
     <!-- ============================================================
          PAGE CONTENT
@@ -903,8 +1289,10 @@
         <div class="legend-footer-inner">
 
             <span class="legend-footer-brand">
+
                 <i class="fa-solid fa-city"></i>
                 City of Johannesburg Valuation Portal
+
             </span>
 
             <nav class="legend-footer-links">
@@ -964,191 +1352,237 @@
 
     <script>
         (() => {
+        'use strict';
 
-        const drawer =
-        document.getElementById(
-        'legendDrawer');
+        // ==============================================
+        // Desktop dropdowns - same as _ClientLayout
+        // ==============================================
+        document
+        .querySelectorAll('.cl-dropdown')
+        .forEach(dropdown => {
 
-        const backdrop =
-        document.getElementById(
-        'legendDrawerBackdrop');
+        const toggle =
+        dropdown.querySelector(
+        '.cl-dropdown-toggle');
 
-        const menuButton =
-        document.getElementById(
-        'legendMenuButton');
+        const menu =
+        dropdown.querySelector(
+        '.cl-dropdown-menu');
 
-        const closeButton =
-        document.getElementById(
-        'legendDrawerClose');
-
-        if (!drawer ||
-        !backdrop ||
-        !menuButton) {
-
+        if (!toggle || !menu) {
         return;
         }
-
-        function openDrawer() {
-
-        drawer.classList.add(
-        'open');
-
-        backdrop.classList.add(
-        'open');
-
-        drawer.setAttribute(
-        'aria-hidden',
-        'false');
-
-        backdrop.setAttribute(
-        'aria-hidden',
-        'false');
-
-        menuButton.setAttribute(
-        'aria-expanded',
-        'true');
-
-        document.body.classList.add(
-        'legend-drawer-open');
-
-        closeButton?.focus();
-        }
-
-        function closeDrawer() {
-
-        drawer.classList.remove(
-        'open');
-
-        backdrop.classList.remove(
-        'open');
-
-        drawer.setAttribute(
-        'aria-hidden',
-        'true');
-
-        backdrop.setAttribute(
-        'aria-hidden',
-        'true');
-
-        menuButton.setAttribute(
-        'aria-expanded',
-        'false');
-
-        document.body.classList.remove(
-        'legend-drawer-open');
-        }
-
-        function closeSiblingGroups(
-        group) {
-
-        const parent =
-        group.parentElement;
-
-        if (!parent) {
-        return;
-        }
-
-        Array.from(
-        parent.children)
-        .filter(item =>
-        item.classList
-        ?.contains(
-        'legend-drawer-group')
-        && item !== group)
-        .forEach(item => {
-
-        item.classList.remove(
-        'open');
-
-        item
-        .querySelector(
-        ':scope > .legend-drawer-toggle')
-        ?.setAttribute(
-        'aria-expanded',
-        'false');
-        });
-        }
-
-        drawer
-        .querySelectorAll(
-        '.legend-drawer-toggle')
-        .forEach(toggle => {
 
         toggle.addEventListener(
         'click',
         event => {
 
         event.preventDefault();
+        event.stopPropagation();
 
-        const group =
-        toggle.closest(
-        '.legend-drawer-group');
+        document
+        .querySelectorAll(
+        '.cl-dropdown-menu.open')
+        .forEach(openMenu => {
 
-        if (!group) {
-        return;
+        if (openMenu !== menu) {
+        openMenu.classList.remove(
+        'open');
         }
+        });
 
-        const willOpen =
-        !group.classList
-        .contains(
+        document
+        .querySelectorAll(
+        '.cl-dd-chevron')
+        .forEach(chevron => {
+
+        if (
+        chevron !==
+        toggle.querySelector(
+        '.cl-dd-chevron')
+        ) {
+        chevron.style.transform =
+        '';
+        }
+        });
+
+        menu.classList.toggle(
         'open');
 
-        if (willOpen) {
-        closeSiblingGroups(
-        group);
+        const chevron =
+        toggle.querySelector(
+        '.cl-dd-chevron');
+
+        if (chevron) {
+        chevron.style.transform =
+        menu.classList.contains(
+        'open')
+        ? 'rotate(180deg)'
+        : '';
+        }
+        });
+        });
+
+        function closeDesktopMenus() {
+        document
+        .querySelectorAll(
+        '.cl-dropdown-menu.open')
+        .forEach(menu => {
+        menu.classList.remove(
+        'open');
+        });
+
+        document
+        .querySelectorAll(
+        '.cl-dd-chevron')
+        .forEach(chevron => {
+        chevron.style.transform =
+        '';
+        });
+
+        document
+        .getElementById(
+        'clUserMenu')
+        ?.classList.remove(
+        'open');
         }
 
-        group.classList.toggle(
-        'open',
-        willOpen);
+        document.addEventListener(
+        'click',
+        closeDesktopMenus);
 
-        toggle.setAttribute(
+        // ==============================================
+        // Profile - same as _ClientLayout
+        // ==============================================
+        document
+        .getElementById(
+        'clUserBtn')
+        ?.addEventListener(
+        'click',
+        event => {
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        document
+        .querySelectorAll(
+        '.cl-dropdown-menu.open')
+        .forEach(menu => {
+        menu.classList.remove(
+        'open');
+        });
+
+        document
+        .getElementById(
+        'clUserMenu')
+        ?.classList.toggle(
+        'open');
+        });
+
+        document
+        .getElementById(
+        'clUserMenu')
+        ?.addEventListener(
+        'click',
+        event => {
+
+        event.stopPropagation();
+        });
+
+        // ==============================================
+        // Responsive drawer - same as _ClientLayout
+        // ==============================================
+        const drawer =
+        document.getElementById(
+        'clDrawer');
+
+        const backdrop =
+        document.getElementById(
+        'clBackdrop');
+
+        const hamburger =
+        document.getElementById(
+        'clHamburger');
+
+        function openDrawer() {
+        closeDesktopMenus();
+
+        drawer?.classList.add(
+        'open');
+
+        backdrop?.classList.add(
+        'open');
+
+        hamburger?.setAttribute(
         'aria-expanded',
-        willOpen
-        ? 'true'
-        : 'false');
-        });
-        });
+        'true');
 
-        menuButton.addEventListener(
+        document.body.style.overflow =
+        'hidden';
+        }
+
+        function closeDrawer() {
+        drawer?.classList.remove(
+        'open');
+
+        backdrop?.classList.remove(
+        'open');
+
+        hamburger?.setAttribute(
+        'aria-expanded',
+        'false');
+
+        document.body.style.overflow =
+        '';
+        }
+
+        hamburger?.addEventListener(
         'click',
         openDrawer);
 
-        closeButton?.addEventListener(
+        document
+        .getElementById(
+        'clDrawerClose')
+        ?.addEventListener(
         'click',
         closeDrawer);
 
-        backdrop.addEventListener(
+        backdrop?.addEventListener(
         'click',
         closeDrawer);
 
         drawer
-        .querySelectorAll(
+        ?.querySelectorAll(
         'a, button[type="submit"]')
         .forEach(item => {
 
         item.addEventListener(
         'click',
+        closeDrawer);
+        });
+
+        window.addEventListener(
+        'resize',
         () => {
 
-        if (!item.classList
-        .contains(
-        'legend-drawer-toggle')) {
-
+        if (
+        window.innerWidth > 1180
+        ) {
         closeDrawer();
         }
-        });
         });
 
         document.addEventListener(
         'keydown',
         event => {
 
-        if (event.key === 'Escape') {
+        if (
+        event.key === 'Escape'
+        ) {
+        closeDesktopMenus();
         closeDrawer();
         }
         });
-
         })();
     </script>
 

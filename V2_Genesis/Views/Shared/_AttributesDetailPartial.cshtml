@@ -4,16 +4,25 @@
 
 @{
     var attrData = Model.AttrData;
-    var isAdminDashboard = Context.Request.Path.StartsWithSegments("/admin");
-    var attributesReturnUrl = isAdminDashboard
-        ? Url.Action(
-            "Index",
-            "Admin",
-            new { openRoll = "Attributes" }) ?? "/Admin?openRoll=Attributes"
-        : Url.Action(
-            "Index",
-            "Dashboard",
-            new { openRoll = "Attributes" }) ?? "/Dashboard?openRoll=Attributes";
+
+    var isAdminDashboard =
+        Context.Request.Path.StartsWithSegments(
+            "/admin");
+
+    var attributesReturnUrl =
+        isAdminDashboard
+            ? Url.Action(
+                "Index",
+                "Admin",
+                new
+                {
+                    openRoll = "Attributes"
+                })
+                ?? "/Admin?openRoll=Attributes"
+            : Url.Action(
+                "AttributesDetail",
+                "Dashboard")
+                ?? "/dashboard/attributes-detail";
 }
 
 @if (!isAdminDashboard)
