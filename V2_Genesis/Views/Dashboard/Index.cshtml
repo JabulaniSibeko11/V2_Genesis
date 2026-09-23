@@ -4,18 +4,18 @@
 @inject INotificationService NotificationService
 @using V2_Genesis.Models.ViewModels.Dashboard
 @model ClientDashboardViewModel
-
+ 
 @{
     ViewData["Title"] = "Property Services Dashboard";
     // Layout = "~/Views/Shared/_ClientLayout.cshtml";
     Layout = "~/Views/Shared/_Legend_Layout.cshtml";
-
+ 
     var ann = Model.Announcement;
-
+ 
     var dashboardUserId =
         User.FindFirstValue(
             ClaimTypes.NameIdentifier);
-
+ 
     var dashboardUserEmail =
         User.FindFirstValue(
             ClaimTypes.Email)
@@ -23,7 +23,7 @@
             ClaimTypes.Name)
         ?? User.Identity?.Name
         ?? string.Empty;
-
+ 
     var isDashboardAdmin =
         User.IsInRole("Admin")
         || dashboardUserEmail.Equals(
@@ -33,27 +33,27 @@
             dashboardUserEmail,
             @"^val\.admin(1[0-9]?|[1-9])@joburg\.org\.za$",
             System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-
+ 
     var unreadNotificationCount =
         await NotificationService.GetUnreadCountAsync(
             dashboardUserId,
             dashboardUserEmail,
             isDashboardAdmin);
-
+ 
     var latestNotifications =
         await NotificationService.GetLatestAsync(
             dashboardUserId,
             dashboardUserEmail,
             isDashboardAdmin,
             10);
-
+ 
     var sup4 = Model.Rolls.FirstOrDefault(x =>
         string.Equals(x.Source, "Objection_Supp4", StringComparison.OrdinalIgnoreCase));
-
+ 
     var query = Model.Rolls.FirstOrDefault(x =>
         x.IsQuery ||
         string.Equals(x.Source, "Objection_Query", StringComparison.OrdinalIgnoreCase));
-
+ 
     var closedSources = new[]
     {
         "Objection",
@@ -61,34 +61,34 @@
         "Objection_Supp2",
         "Objection_Supp3"
     };
-
+ 
     var closedRolls = Model.Rolls
         .Where(x => closedSources.Contains(x.Source, StringComparer.OrdinalIgnoreCase))
         .OrderBy(x => Array.FindIndex(
             closedSources,
             source => source.Equals(x.Source, StringComparison.OrdinalIgnoreCase)))
         .ToList();
-
+ 
     RollData DataFor(string source) =>
         Model.RollData.TryGetValue(source, out var data)
             ? data
             : new RollData();
-
+ 
     string StatusFor(string source)
     {
         if (!Model.RollDates.TryGetValue(source, out var dates))
             return "OPEN";
-
+ 
         var now = DateTime.Now;
-
+ 
         if (now < dates.OpenDate)
             return "OPENING SOON";
-
+ 
         return now <= dates.VisibleUntil
             ? "OPEN"
             : "CLOSED";
     }
-
+ 
     string RollSubtitle(string source) => source switch
     {
         "Objection" => "General Valuation Roll 2023",
@@ -100,32 +100,27 @@
     };
 }
 
-
-<link rel="stylesheet"
-      href="~/css/Views/Client-Dashboard.css"
-      asp-append-version="true" />
-
-<link rel="stylesheet"
-      href="~/css/Views/legacy-client-dashboard.css"
-      asp-append-version="true" />
-
-<link rel="stylesheet"
-      href="~/css/Views/legend-layout.css"
-      asp-append-version="true" />
-
+ 
+@section Styles {
+    @* Client-Dashboard.css and legend-layout.css are already loaded by _Legend_Layout *@
+    <link rel="stylesheet"
+          href="~/css/Views/legacy-client-dashboard.css"
+          asp-append-version="true" />
+}
+ 
 <!-- ── Announcement strip — same as New Genesis ─────────────────── -->
 <div class="ann-bar @ann.BadgeCss">
     <div class="ann-inner">
-
+ 
         <span class="ann-badge @ann.BadgeCss">
             <span class="ann-dot"></span>
             @ann.BadgeText
         </span>
-
+ 
         <span class="ann-text">
             <span>@ann.Message</span>
         </span>
-
+ 
         @if (ann.DaysLeft > 0)
         {
             <span class="ann-days @ann.DaysCss">
@@ -133,185 +128,185 @@
                 @ann.DaysLeft @(ann.DaysLeft == 1 ? "day" : "days") remaining
             </span>
         }
-
+ 
     </div>
 </div>
-
+ 
 <!-- ── Welcome hero — same as New Genesis ─────────────────────── -->
 <div class="cd-hero">
-
+ 
     <div class="cd-welcome-inner">
-
+ 
         <div class="cd-welcome-left">
-
+ 
             <div class="cd-hero-avatar">
                 @(string.IsNullOrWhiteSpace(Model.DisplayName)
                     ? "U"
                     : Model.DisplayName.Substring(0, 1).ToUpperInvariant())
             </div>
-
+ 
             <div>
-
+ 
                 <div class="cd-welcome-eyebrow">
                     <span></span>
                     @(Model.IsCompany ? "Company Account" : "Individual Account")
                     &nbsp;·&nbsp;
                     Property Dashboard
                 </div>
-
+ 
                 <h1 class="cd-welcome-name">
                     Welcome back,&nbsp;<em>@Model.DisplayName</em>
                     <span class="cd-welcome-wave">👋</span>
                 </h1>
-
+ 
                 <p class="cd-welcome-sub">
                     City of Johannesburg
                     <span class="cd-welcome-dot"></span>
                     Valuation Portal
                 </p>
-
+ 
             </div>
-
+ 
         </div>
-
+ 
         <!-- Notification bell -->
         <div class="cd-notification-wrap">
-
+ 
             <button type="button"
                     class="cd-notification-btn"
                     id="notificationBellBtn"
                     aria-label="Open notifications">
-
+ 
                 <i class="fa-solid fa-bell"></i>
-
+ 
                 @if (unreadNotificationCount > 0)
                 {
                     <span class="cd-notification-count">
                         @unreadNotificationCount
                     </span>
                 }
-
+ 
             </button>
-
+ 
             <div class="cd-notification-panel"
                  id="notificationPanel">
-
+ 
                 <div class="cd-notification-head">
                     <strong>Notifications</strong>
                     <span>@unreadNotificationCount unread</span>
                 </div>
-
+ 
                 @if (!latestNotifications.Any())
                 {
                     <div class="cd-notification-empty">
-
+ 
                         <i class="fa-solid fa-bell-slash"
                                style="font-size:24px;color:#ddd;display:block;margin-bottom:8px;">
                         </i>
-
+ 
                         No notifications yet.
-
+ 
                     </div>
                 }
                 else
                 {
                     <div class="cd-notification-list">
-
+ 
                         @foreach (var note in latestNotifications)
                         {
                             var noteType =
                                 string.IsNullOrWhiteSpace(note.NotificationType)
                                     ? "Info"
                                     : note.NotificationType;
-
+ 
                             <a class="cd-notification-item @(note.IsRead ? "" : "unread")"
                                    href="@(string.IsNullOrWhiteSpace(note.Url)
-                                                                                                  ? "javascript:void(0)"
-                                                                                                  : note.Url)">
-
+                                                                                                                                                                     ? "javascript:void(0)"
+                                                                                                                                                                     : note.Url)">
+ 
                                 <div class="cd-note-icon cd-note-@noteType.ToLower()">
                                     <i class="fa-solid @(noteType == "Success"
-                                                                                                                       ? "fa-circle-check"
-                                                                                                                       : noteType == "Warning"
-                                                                                                                           ? "fa-triangle-exclamation"
-                                                                                                                           : noteType == "Error"
-                                                                                                                               ? "fa-circle-xmark"
-                                                                                                                               : "fa-circle-info")">
+                                                                                                                                                                                                      ? "fa-circle-check"
+                                                                                                                                                                                                      : noteType == "Warning"
+                                                                                                                                                                                                          ? "fa-triangle-exclamation"
+                                                                                                                                                                                                          : noteType == "Error"
+                                                                                                                                                                                                              ? "fa-circle-xmark"
+                                                                                                                                                                                                              : "fa-circle-info")">
                                     </i>
                                 </div>
-
+ 
                                 <div class="cd-note-body">
-
+ 
                                     <strong>
                                         @(note.Title ?? "Notification")
                                     </strong>
-
+ 
                                     <p>@note.Message</p>
-
+ 
                                     @if (!string.IsNullOrWhiteSpace(note.ReferenceNumber))
                                     {
                                         <span class="cd-note-ref">
                                             @note.ReferenceNumber
                                         </span>
                                     }
-
+ 
                                     <small>
                                         @note.CreatedDate.ToString("dd MMM yyyy HH:mm")
                                     </small>
-
+ 
                                 </div>
-
+ 
                             </a>
                         }
-
+ 
                     </div>
                 }
-
+ 
             </div>
-
+ 
         </div>
-
+ 
     </div>
-
+ 
 </div>
-
+ 
 <div class="legacy-dashboard">
-
+ 
     <section class="legacy-dashboard-heading">
         <span class="legacy-dashboard-kicker">CITY OF JOHANNESBURG · VALUATION SERVICES</span>
         <h1>Property Services – Supplementary Rolls and Rebates</h1>
         <span class="legacy-dashboard-heading-line"></span>
     </section>
-
+ 
     <div class="legacy-dashboard-grid">
-
+ 
         @if (sup4 is not null)
         {
             var data = DataFor(sup4.Source);
             var status = StatusFor(sup4.Source);
-
+ 
             <article class="legacy-service-card legacy-service-card-teal">
                 <div class="legacy-service-status @(status == "OPEN" ? "is-open" : "is-closed")">
                     @status
                 </div>
-
+ 
                 <div class="legacy-service-icon">
                     <i class="fa-solid fa-scroll"></i>
                 </div>
-
+ 
                 <h2>Supplementary Roll 4</h2>
-
+ 
                 <p>
                     Search, link and manage properties for the current
                     supplementary valuation roll.
                 </p>
-
+ 
                 <div class="legacy-service-stats">
                     <span><i class="fa-solid fa-link"></i> @data.LinkedCount Linked</span>
                     <span><i class="fa-solid fa-file-pen"></i> @data.ObjectedCount Objections</span>
                     <span><i class="fa-solid fa-gavel"></i> @data.AppealsCount Appeals</span>
                 </div>
-
+ 
                 <div class="legacy-service-actions">
                     @if (status == "OPEN")
                     {
@@ -321,7 +316,7 @@
                             Search Property
                         </a>
                     }
-
+ 
                     <a href="/dashboard/roll-detail/Objection_Supp4"
                            class="legacy-btn legacy-btn-secondary">
                         <i class="fa-solid fa-table-list"></i>
@@ -330,30 +325,30 @@
                 </div>
             </article>
         }
-
+ 
         @if (query is not null)
         {
             var data = DataFor(query.Source);
-
+ 
             <article class="legacy-service-card legacy-service-card-teal">
                 <div class="legacy-service-status is-open">OPEN</div>
-
+ 
                 <div class="legacy-service-icon">
                     <i class="fa-solid fa-magnifying-glass-chart"></i>
                 </div>
-
+ 
                 <h2>Section 78 Query / Review</h2>
-
+ 
                 <p>
                     Lodge or track a Section 78 Query and, where available,
                     continue with the Review process.
                 </p>
-
+ 
                 <div class="legacy-service-stats">
                     <span><i class="fa-solid fa-link"></i> @data.LinkedCount Linked</span>
                     <span><i class="fa-solid fa-file-circle-question"></i> @data.ObjectedCount Submissions</span>
                 </div>
-
+ 
                 <div class="legacy-service-actions">
                     <a href="/search/Objection_Query"
                            class="legacy-btn legacy-btn-primary">
@@ -368,57 +363,57 @@
                 </div>
             </article>
         }
-
+ 
         <article class="legacy-service-card legacy-service-card-gold">
             <div class="legacy-service-status is-open">OPEN</div>
-
+ 
             <div class="legacy-service-icon">
                 <i class="fa-solid fa-percent"></i>
             </div>
-
+ 
             <h2>Rebates Process</h2>
-
+ 
             <p>
                 Apply for and track City of Johannesburg property rate rebate applications.
             </p>
-
+ 
             <div class="legacy-service-stats">
                 <span>
                     <i class="fa-solid fa-file-pen"></i>
                     @(Model.Rebates?.Count ?? 0) Applications
                 </span>
             </div>
-
+ 
             <div class="legacy-service-actions">
                 <a href="/Rebates/Index"
                        class="legacy-btn legacy-btn-primary legacy-btn-gold">
                     <i class="fa-solid fa-file-signature"></i>
                     Apply for Rebates
                 </a>
-
+ 
                 <a href="/dashboard/rebates-detail"
                        class="legacy-btn legacy-btn-secondary">
                     <i class="fa-solid fa-table-list"></i>
                     Dashboard
                 </a>
-
+ 
             </div>
         </article>
-
+ 
         <article class="legacy-service-card legacy-service-card-gold">
             <div class="legacy-service-status is-open">OPEN</div>
-
+ 
             <div class="legacy-service-icon">
                 <i class="fa-solid fa-clipboard-list"></i>
             </div>
-
+ 
             <h2>Property Attributes</h2>
-
+ 
             <p>
                 Submit updated property attribute information and track
                 inspections, corrections and approvals.
             </p>
-
+ 
             <div class="legacy-service-stats">
                 <span>
                     <i class="fa-solid fa-link"></i>
@@ -429,14 +424,14 @@
                     @Model.AttributesData.SubmissionCount Submissions
                 </span>
             </div>
-
+ 
             <div class="legacy-service-actions">
                 <a href="/attributes/search"
                        class="legacy-btn legacy-btn-primary legacy-btn-gold">
                     <i class="fa-solid fa-magnifying-glass"></i>
                     Search Property
                 </a>
-
+ 
                 <a href="/dashboard/attributes-detail"
                        class="legacy-btn legacy-btn-secondary">
                     <i class="fa-solid fa-table-list"></i>
@@ -444,9 +439,9 @@
                 </a>
             </div>
         </article>
-
+ 
     </div>
-
+ 
     <section class="legacy-archive">
         <button type="button"
                 class="legacy-archive-toggle"
@@ -458,19 +453,19 @@
                 <strong>Quick Access – Previous Valuation Rolls</strong>
                 <small>View GV23 and closed supplementary rolls</small>
             </span>
-
+ 
             <i class="fa-solid fa-chevron-down legacy-archive-chevron"
                id="legacyArchiveChevron"></i>
         </button>
-
+ 
         <div class="legacy-archive-body"
              id="legacyArchiveBody"
              hidden>
-
+ 
             @foreach (var roll in closedRolls)
             {
                 var data = DataFor(roll.Source);
-
+ 
                 <article class="legacy-archive-card">
                     <div>
                         <span class="legacy-archive-badge">CLOSED</span>
@@ -481,7 +476,7 @@
                             @data.AppealsCount appeals
                         </p>
                     </div>
-
+ 
                     <a href="/dashboard/roll-detail/@roll.Source"
                            class="legacy-btn legacy-btn-secondary">
                         <i class="fa-solid fa-table-list"></i>
@@ -489,38 +484,38 @@
                     </a>
                 </article>
             }
-
+ 
         </div>
     </section>
 
  
 </div>
-
+ 
 @section Scripts {
     <script>
         const legacyDetailCache = {};
-
+ 
         // ── Notification bell — same as New Genesis ─────────────────
         function initNotificationBell() {
             const bellBtn =
                 document.getElementById("notificationBellBtn");
-
+ 
             const panel =
                 document.getElementById("notificationPanel");
-
+ 
             bellBtn?.addEventListener(
                 "click",
                 function (event) {
                     event.stopPropagation();
                     panel?.classList.toggle("open");
                 });
-
+ 
             panel?.addEventListener(
                 "click",
                 function (event) {
                     event.stopPropagation();
                 });
-
+ 
             document.addEventListener(
                 "click",
                 function () {
@@ -528,59 +523,59 @@
                 });
         }
 
-
+ 
         function toggleLegacyArchive() {
             const body = document.getElementById('legacyArchiveBody');
             const button = document.getElementById('legacyArchiveToggle');
             const chevron = document.getElementById('legacyArchiveChevron');
-
+ 
             if (!body || !button) return;
-
+ 
             const willOpen = body.hidden;
             body.hidden = !willOpen;
             button.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
             chevron?.classList.toggle('is-open', willOpen);
         }
-
+ 
         function openLegacyRoll(source, title) {
             openLegacyService(
                 '/dashboard/roll-detail/' + encodeURIComponent(source),
                 title
             );
         }
-
+ 
         async function openLegacyService(url, title) {
             const detail = document.getElementById('legacyDetail');
             const body = document.getElementById('legacyDetailBody');
             const titleElement = document.getElementById('legacyDetailTitle');
-
+ 
             if (!detail || !body) return;
-
+ 
             titleElement.textContent = title || 'Dashboard';
             detail.hidden = false;
             detail.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
+ 
             if (legacyDetailCache[url]) {
                 body.innerHTML = legacyDetailCache[url];
                 initialiseLegacyTables(body);
                 return;
             }
-
+ 
             body.innerHTML =
                 '<div class="legacy-loading">' +
                 '<i class="fa-solid fa-circle-notch fa-spin"></i> Loading…' +
                 '</div>';
-
+ 
             try {
                 const response = await fetch(url, {
                     credentials: 'same-origin',
                     headers: { 'X-Requested-With': 'XMLHttpRequest' }
                 });
-
+ 
                 if (!response.ok) {
                     throw new Error('HTTP ' + response.status);
                 }
-
+ 
                 const html = await response.text();
                 legacyDetailCache[url] = html;
                 body.innerHTML = html;
@@ -588,7 +583,7 @@
             }
             catch (error) {
                 console.error('[Legacy dashboard demo]', error);
-
+ 
                 body.innerHTML =
                     '<div class="legacy-error">' +
                     '<i class="fa-solid fa-triangle-exclamation"></i>' +
@@ -597,35 +592,35 @@
                     '</div>';
             }
         }
-
+ 
         function closeLegacyDetail() {
             const detail = document.getElementById('legacyDetail');
-
+ 
             if (!detail) return;
-
+ 
             detail.hidden = true;
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
-
+ 
         // Existing _RollDetailPartial calls this function.
         function toggleWidget(key) {
             const body = document.getElementById('widget-' + key);
             const chevron = document.getElementById('wchev-' + key);
-
+ 
             if (!body) return;
-
+ 
             const isOpen = body.classList.toggle('open');
-
+ 
             if (chevron) {
                 chevron.style.transform =
                     isOpen ? 'rotate(180deg)' : 'rotate(0deg)';
             }
-
+ 
             if (isOpen) {
                 initialiseLegacyTables(body);
             }
         }
-
+ 
         // Existing roll partial uses logAction on some links.
         function logAction(action, roll, reference) {
             console.debug(
@@ -635,30 +630,30 @@
                 reference
             );
         }
-
+ 
         function initialiseLegacyTables(container) {
             if (!window.jQuery ||
                 !jQuery.fn ||
                 !jQuery.fn.DataTable) {
                 return;
             }
-
+ 
             container
                 .querySelectorAll('.cd-table')
                 .forEach(function(table) {
                     if (!table.id) return;
-
+ 
                     const selector = '#' + table.id;
-
+ 
                     if (jQuery.fn.DataTable.isDataTable(selector)) {
                         jQuery(selector).DataTable().columns.adjust();
                         return;
                     }
-
+ 
                     if (!table.closest('.cd-widget-body.open')) {
                         return;
                     }
-
+ 
                     jQuery(selector).DataTable({
                         responsive: {
                             details: {
@@ -694,3 +689,5 @@
             });
     </script>
 }
+
+ 

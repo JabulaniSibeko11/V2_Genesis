@@ -15,6 +15,25 @@
         const selector =
             '#' + table.id;
 
+        const phoneMode =
+            isPhoneWidth();
+
+        // Rebuild when the screen crosses the phone breakpoint so
+        // the "+" rows (phone) / full columns (desktop) stay correct.
+        if (
+            jQuery.fn.DataTable.isDataTable(selector) &&
+            table.dataset.dtMode !== (phoneMode ? 'phone' : 'desktop')
+        ) {
+            jQuery(selector).DataTable().destroy();
+            table.classList.remove('dtr-inline', 'collapsed');
+            table.querySelectorAll('th, td').forEach(cell =>
+                cell.classList.remove('dtr-control', 'all', 'none'));
+            table.querySelectorAll('[style*="display: none"]').forEach(cell =>
+                cell.style.display = '');
+            table.querySelectorAll('tr.child').forEach(row => row.remove());
+            table.style.width = '';
+        }
+
         if (jQuery.fn.DataTable.isDataTable(selector)) {
             const api =
                 jQuery(selector).DataTable();
@@ -32,9 +51,10 @@
         }
 
         const useResponsive =
-            window.matchMedia(
-                '(max-width: 767.98px)')
-                .matches;
+            phoneMode;
+
+        table.dataset.dtMode =
+            phoneMode ? 'phone' : 'desktop';
 
         jQuery(selector).DataTable({
             responsive:
@@ -49,6 +69,13 @@
 
             autoWidth: false,
             pageLength: 10,
+
+            language: {
+                search: 'Search:',
+                searchPlaceholder: 'Search this table…',
+                emptyTable: 'No records to show yet.',
+                zeroRecords: 'No matching records found.'
+            },
 
             lengthMenu: [
                 [5, 10, 25, 50, -1],
@@ -65,8 +92,13 @@
                             responsivePriority: 1
                         },
                         {
+                            // Phone: every other column moves into
+                            // the "+" details panel (card style).
+                            targets: '_all',
+                            className: 'none'
+                        },
+                        {
                             targets: -1,
-                            className: 'none',
                             orderable: false
                         }
                     ]
@@ -77,6 +109,12 @@
                         }
                     ]
         });
+    }
+
+    function isPhoneWidth() {
+        return window.matchMedia(
+            '(max-width: 767.98px)')
+            .matches;
     }
 
     function initTablesWithin(container) {
@@ -325,8 +363,8 @@
                         ?.value ||
                     ''
                 )
-                .replace(/\D/g, '')
-                .slice(0, PIN_LEN);
+                    .replace(/\D/g, '')
+                    .slice(0, PIN_LEN);
 
             if (
                 value.length !==
@@ -402,7 +440,7 @@
             if (
                 pinBackdrop &&
                 event.target ===
-                    pinBackdrop
+                pinBackdrop
             ) {
                 const id =
                     pinBackdrop.id.replace(
@@ -480,30 +518,7 @@
                         document
                             .querySelectorAll(
                                 '.cd-widget-body.open .cd-table')
-                            .forEach(table => {
-                                if (
-                                    window.jQuery &&
-                                    jQuery.fn.DataTable &&
-                                    jQuery.fn.DataTable.isDataTable(
-                                        '#' + table.id)
-                                ) {
-                                    const api =
-                                        jQuery(
-                                            '#' +
-                                            table.id)
-                                            .DataTable();
-
-                                    api.columns.adjust();
-
-                                    if (
-                                        api.responsive &&
-                                        typeof api.responsive.recalc ===
-                                            'function'
-                                    ) {
-                                        api.responsive.recalc();
-                                    }
-                                }
-                            });
+                            .forEach(initDataTable);
                     },
                     150);
         });

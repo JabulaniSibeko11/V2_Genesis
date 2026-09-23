@@ -1,125 +1,139 @@
-﻿/* ============================================================
-   DEDICATED CLIENT DASHBOARD — ONE BIG BOARD
-   ------------------------------------------------------------
-   Goal:
-   - ONE outer dashboard board around header + notice + all tables.
-   - No separate floating card/board around every table section.
-   - Collapsed table sections look like the reference screenshot.
-   - Expanded section keeps the existing Genesis table styling.
-   ============================================================ */
-
+﻿
 .client-dashboard-page {
-    width: min(1380px, calc(100% - 40px));
+    --dd-dark: #1e3a40;
+    --dd-deep: #0d2228;
+    --dd-gold: #e6b000;
+    --dd-gold-bright: #f5c200;
+    --dd-gold-dark: #9a7600;
+    --dd-gold-dim: rgba(230, 176, 0, .12);
+    --dd-gold-border: rgba(230, 176, 0, .4);
+    --dd-teal: #36626d;
+    --dd-teal-pale: #e8f3f4;
+    --dd-border: #e3e8e9;
+    --dd-row-alt: #fafbfb;
+    --dd-radius: 18px;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
     min-width: 0;
-    margin: 24px auto 50px;
+    margin: 0;
+    padding: 26px 28px 56px;
+    font-family: "Poppins", Arial, sans-serif;
 }
+
+    .client-dashboard-page *,
+    .client-dashboard-page *::before,
+    .client-dashboard-page *::after {
+        box-sizing: border-box;
+    }
+
+/* ── Toolbar / back button ───────────────────────────────── */
 
 .client-dashboard-page-toolbar {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    margin-bottom: 16px;
+    margin-bottom: 18px;
 }
 
 .client-dashboard-back {
-    min-height: 40px;
+    min-height: 44px;
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    padding: 0 14px;
-    border: 1px solid #dce4e6;
-    border-radius: 9px;
+    gap: 9px;
+    padding: 0 18px;
+    border: 1.5px solid var(--dd-dark);
+    border-radius: 10px;
     background: #fff;
-    color: #006570;
-    font-size: 11px;
-    font-weight: 800;
+    color: var(--dd-dark);
+    font-size: 14px;
+    font-weight: 700;
     text-decoration: none;
-    box-shadow: 0 2px 7px rgba(20, 45, 51, .05);
+    transition: background .15s ease;
 }
 
-    .client-dashboard-back:hover {
-        background: #f7fafb;
-        border-color: #c9d7da;
-        color: #006570;
+    .client-dashboard-back:hover,
+    .client-dashboard-back:focus-visible {
+        background: var(--dd-teal-pale);
+        color: var(--dd-deep);
+    }
+
+    .client-dashboard-back i {
+        color: var(--dd-gold-dark);
     }
 
 /* ============================================================
    THE ONE BIG BOARD
-   Everything from the roll header down to the last table belongs
-   to this single container.
+   (overflow stays visible so the Actions dropdowns are never
+   clipped — corners are rounded on the children instead)
    ============================================================ */
 
 .client-dashboard-page .legacy-roll-dashboard-partial {
     width: 100%;
     min-width: 0;
     margin: 0;
-    border: 1px solid #dde5e7;
-    border-left: 5px solid var(--p-gold, #e6b000);
-    border-radius: 18px;
+    border: 1px solid var(--dd-border);
+    border-left: 5px solid var(--dd-gold);
+    border-radius: var(--dd-radius);
     background: #fff;
-    box-shadow: 0 10px 28px rgba(15, 42, 48, .13);
-    overflow: hidden;
+    box-shadow: 0 10px 28px rgba(15, 42, 48, .12);
+    overflow: visible;
 }
 
-    /*
- * legacy-client-dashboard.css hides this when the roll partial was
- * embedded inside the old dashboard. Dedicated pages must show it.
- */
-    .client-dashboard-page
-    .legacy-roll-dashboard-partial > .cd-detail-roll-info {
-        display: flex !important;
+    .client-dashboard-page .legacy-roll-dashboard-partial > .cd-detail-roll-info {
+        border-top-left-radius: 13px 17px !important;
+        border-top-right-radius: 17px !important;
     }
 
-    /* ============================================================
-   ROLL / SERVICE CONTEXT HEADER
-   This is part of the BIG board, not a separate card.
-   ============================================================ */
+    /* ── Roll / service header (hero gradient) ───────────────── */
 
-    .client-dashboard-page
-    .legacy-roll-dashboard-partial > .cd-detail-roll-info {
+    .client-dashboard-page .legacy-roll-dashboard-partial > .cd-detail-roll-info {
         width: 100%;
+        display: flex !important;
         align-items: center;
         justify-content: space-between;
         flex-wrap: wrap;
-        gap: 16px;
+        gap: 16px 24px;
         margin: 0 !important;
-        padding: 20px 24px !important;
+        padding: 24px 28px !important;
         border: 0 !important;
-        border-radius: 0 !important;
-        background: linear-gradient( 135deg, #17383f 0%, #102d33 60%, #0d292f 100%) !important;
+        border-bottom: 3px solid var(--dd-gold) !important;
+        background: linear-gradient(135deg, #1e3a40 0%, #122830 60%, #0d2228 100%) !important;
         box-shadow: none !important;
     }
 
 .client-dashboard-page .cd-detail-roll-info-left {
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 16px;
     min-width: 0;
 }
 
 .client-dashboard-page .cd-detail-roll-icon {
-    width: 48px;
-    height: 48px;
-    flex: 0 0 48px;
-    border: 1.5px solid rgba(230, 176, 0, .45);
-    border-radius: 13px;
-    background: rgba(230, 176, 0, .11);
-    color: var(--p-gold, #e6b000);
-    font-size: 18px;
+    width: 56px;
+    height: 56px;
+    flex: 0 0 56px;
+    display: grid;
+    place-items: center;
+    border: 2px solid var(--dd-gold-border);
+    border-radius: 16px;
+    background: var(--dd-gold-dim);
+    color: var(--dd-gold);
+    font-size: 22px;
 }
 
 .client-dashboard-page .cd-detail-roll-name {
-    margin: 0 0 3px !important;
+    margin: 0 0 4px !important;
     color: #fff !important;
-    font-size: 18px !important;
+    font-size: clamp(20px, 1.6vw, 24px) !important;
     font-weight: 800 !important;
     line-height: 1.25;
 }
 
 .client-dashboard-page .cd-detail-roll-short {
-    color: rgba(255, 255, 255, .58) !important;
-    font-size: 11.5px;
+    color: rgba(255, 255, 255, .6) !important;
+    font-size: 13px;
 }
 
 .client-dashboard-page .cd-detail-roll-info-right {
@@ -131,59 +145,68 @@
 }
 
 .client-dashboard-page .cd-detail-roll-dates {
-    color: rgba(255, 255, 255, .72) !important;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: rgba(255, 255, 255, .8) !important;
+    font-size: 14px;
     font-weight: 700;
     white-space: nowrap;
 }
 
     .client-dashboard-page .cd-detail-roll-dates i {
-        color: var(--p-gold, #e6b000) !important;
+        color: var(--dd-gold) !important;
     }
 
 .client-dashboard-page .cd-roll-badge {
+    font-size: 11.5px;
     white-space: nowrap;
 }
 
 .client-dashboard-page .cd-detail-search-btn {
-    min-height: 38px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 0 18px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 700;
 }
 
-/* ============================================================
-   CLOSED / INFORMATION NOTICE
-   Also part of the same big board.
-   ============================================================ */
+    .client-dashboard-page .cd-detail-search-btn:not(.cd-detail-search-btn--disabled) {
+        background: var(--dd-gold) !important;
+        color: var(--dd-dark) !important;
+        border: 0 !important;
+    }
 
-.client-dashboard-page
-.legacy-roll-dashboard-partial > .cd-detail-closed-notice {
+        .client-dashboard-page .cd-detail-search-btn:not(.cd-detail-search-btn--disabled):hover {
+            background: var(--dd-gold-bright) !important;
+        }
+
+/* ── Closed / info notice ────────────────────────────────── */
+
+.client-dashboard-page .legacy-roll-dashboard-partial > .cd-detail-closed-notice {
     width: 100%;
     margin: 0 !important;
-    padding: 13px 24px !important;
+    padding: 14px 28px !important;
     border: 0 !important;
-    border-top: 1px solid #f5caca !important;
-    border-bottom: 1px solid #f5caca !important;
+    border-bottom: 1px solid #f3cccc !important;
     border-radius: 0 !important;
-    background: #fff2f2 !important;
+    background: #fff3f3 !important;
+    color: #7a2020;
+    font-size: 14px;
+    line-height: 1.6;
     box-shadow: none !important;
 }
 
 /* ============================================================
-   TABLE / ACCORDION SECTIONS
-   NO separate boards/cards.
-
-   Collapsed state:
-   - white row
-   - subtle divider
-   - dark text
-   - same outer big board
-
-   Open state:
-   - the selected header gets colour
-   - table body opens directly underneath
+   SECTIONS (Linked / Objections / Appeals …)
+   Collapsed = white row with divider. Open = coloured header.
    ============================================================ */
 
-.client-dashboard-page
-.legacy-roll-dashboard-partial
-.cd-widget {
+.client-dashboard-page .legacy-roll-dashboard-partial .cd-widget {
     width: 100% !important;
     margin: 0 !important;
     border: 0 !important;
@@ -193,136 +216,119 @@
     overflow: visible !important;
 }
 
-    /* Divider between each dashboard section */
-    .client-dashboard-page
-    .legacy-roll-dashboard-partial
-    .cd-widget + .cd-widget {
-        border-top: 1px solid #e5e8e9 !important;
+    .client-dashboard-page .legacy-roll-dashboard-partial .cd-widget + .cd-widget {
+        border-top: 1px solid var(--dd-border) !important;
     }
 
-    /* Default/collapsed row — like screenshot 1 */
-    .client-dashboard-page
-    .legacy-roll-dashboard-partial
-    .cd-widget > .cd-widget-toggle {
-        min-height: 66px !important;
-        padding: 15px 24px !important;
+    .client-dashboard-page .legacy-roll-dashboard-partial .cd-widget > .cd-widget-toggle {
+        width: 100%;
+        min-height: 70px !important;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        padding: 16px 28px !important;
         border: 0 !important;
         border-radius: 0 !important;
         background: #fff !important;
-        color: #142f35 !important;
+        color: var(--dd-dark) !important;
         box-shadow: none !important;
+        cursor: pointer;
+        transition: background .15s ease;
     }
 
-        .client-dashboard-page
-        .legacy-roll-dashboard-partial
-        .cd-widget > .cd-widget-toggle:hover {
-            background: #fafafa !important;
+        .client-dashboard-page .legacy-roll-dashboard-partial .cd-widget > .cd-widget-toggle:hover {
+            background: #f7fafa !important;
         }
 
-    .client-dashboard-page
-    .legacy-roll-dashboard-partial
-    .cd-widget
-    .cd-widget-toggle-left > i {
-        color: #276873 !important;
+    .client-dashboard-page .legacy-roll-dashboard-partial .cd-widget .cd-widget-toggle-left {
+        min-width: 0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
     }
 
-    .client-dashboard-page
-    .legacy-roll-dashboard-partial
-    .cd-widget
-    .cd-widget-toggle h3 {
+        .client-dashboard-page .legacy-roll-dashboard-partial .cd-widget .cd-widget-toggle-left > i {
+            width: 22px;
+            flex: 0 0 auto;
+            text-align: center;
+            color: var(--dd-teal) !important;
+            font-size: 18px;
+        }
+
+    .client-dashboard-page .legacy-roll-dashboard-partial .cd-widget .cd-widget-toggle h3 {
+        min-width: 0;
         margin: 0 !important;
-        color: #101820 !important;
-        font-size: 15px !important;
+        color: var(--dd-dark) !important;
+        font-size: 17px !important;
         font-weight: 800 !important;
+        line-height: 1.3;
     }
 
-    .client-dashboard-page
-    .legacy-roll-dashboard-partial
-    .cd-widget
-    .cd-count-badge {
-        background: #edf4f5 !important;
-        color: #245e68 !important;
+    .client-dashboard-page .legacy-roll-dashboard-partial .cd-widget .cd-count-badge {
+        flex: 0 0 auto;
+        min-width: 30px;
+        min-height: 26px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 3px 10px;
         border: 1px solid #cadfe2 !important;
+        border-radius: 999px;
+        background: var(--dd-teal-pale) !important;
+        color: var(--dd-dark) !important;
+        font-size: 12.5px !important;
+        font-weight: 800;
     }
 
-    .client-dashboard-page
-    .legacy-roll-dashboard-partial
-    .cd-widget
-    .cd-widget-chevron {
-        color: #b7c1c3 !important;
+    .client-dashboard-page .legacy-roll-dashboard-partial .cd-widget .cd-widget-chevron {
+        flex: 0 0 auto;
+        color: #9aa9ac !important;
+        font-size: 16px;
+        transition: transform .2s ease;
     }
 
-    /* ============================================================
-   OPEN SECTION HEADER
-   Linked Properties = gold.
-   Other sections = teal.
-   ============================================================ */
-
-    .client-dashboard-page
-    .legacy-roll-dashboard-partial
-    .cd-widget:has(> .cd-widget-body.open) > .cd-widget-toggle {
-        background: #0f8088 !important;
-        color: #fff !important;
+    /* Open header — dark hero teal */
+    .client-dashboard-page .legacy-roll-dashboard-partial .cd-widget:has(> .cd-widget-body.open) > .cd-widget-toggle {
+        background: var(--dd-dark) !important;
     }
 
-        .client-dashboard-page
-        .legacy-roll-dashboard-partial
-        .cd-widget:has(> .cd-widget-body.open) > .cd-widget-toggle
-        .cd-widget-toggle-left > i,
-        .client-dashboard-page
-        .legacy-roll-dashboard-partial
-        .cd-widget:has(> .cd-widget-body.open) > .cd-widget-toggle
-        .cd-widget-toggle h3,
-        .client-dashboard-page
-        .legacy-roll-dashboard-partial
-        .cd-widget:has(> .cd-widget-body.open) > .cd-widget-toggle
-        .cd-widget-chevron {
+        .client-dashboard-page .legacy-roll-dashboard-partial .cd-widget:has(> .cd-widget-body.open) > .cd-widget-toggle h3,
+        .client-dashboard-page .legacy-roll-dashboard-partial .cd-widget:has(> .cd-widget-body.open) > .cd-widget-toggle .cd-widget-chevron {
             color: #fff !important;
         }
 
-        .client-dashboard-page
-        .legacy-roll-dashboard-partial
-        .cd-widget:has(> .cd-widget-body.open) > .cd-widget-toggle
-        .cd-count-badge {
-            background: rgba(255, 255, 255, .18) !important;
-            color: #fff !important;
-            border-color: rgba(255, 255, 255, .16) !important;
+        .client-dashboard-page .legacy-roll-dashboard-partial .cd-widget:has(> .cd-widget-body.open) > .cd-widget-toggle .cd-widget-toggle-left > i {
+            color: var(--dd-gold) !important;
         }
 
-    /*
- * Linked Properties is always the first widget in these roll dashboards.
- * When opened it uses the Genesis gold header like the screenshot.
- */
-    .client-dashboard-page
-    .legacy-roll-dashboard-partial
-    .cd-widget:first-of-type:has(> .cd-widget-body.open) > .cd-widget-toggle {
-        background: #d9a900 !important;
+        .client-dashboard-page .legacy-roll-dashboard-partial .cd-widget:has(> .cd-widget-body.open) > .cd-widget-toggle .cd-count-badge {
+            border-color: var(--dd-gold-border) !important;
+            background: var(--dd-gold-dim) !important;
+            color: var(--dd-gold) !important;
+        }
+
+    /* Linked Properties opens gold (toggle id ends in "-linked") */
+    .client-dashboard-page .legacy-roll-dashboard-partial .cd-widget:has(> .cd-widget-toggle[onclick*="-linked"]):has(> .cd-widget-body.open) > .cd-widget-toggle {
+        background: var(--dd-gold) !important;
     }
 
-        .client-dashboard-page
-        .legacy-roll-dashboard-partial
-        .cd-widget:first-of-type:has(> .cd-widget-body.open) > .cd-widget-toggle
-        .cd-widget-toggle-left > i,
-        .client-dashboard-page
-        .legacy-roll-dashboard-partial
-        .cd-widget:first-of-type:has(> .cd-widget-body.open) > .cd-widget-toggle
-        .cd-widget-toggle h3,
-        .client-dashboard-page
-        .legacy-roll-dashboard-partial
-        .cd-widget:first-of-type:has(> .cd-widget-body.open) > .cd-widget-toggle
-        .cd-widget-chevron {
-            color: #fff !important;
+        .client-dashboard-page .legacy-roll-dashboard-partial .cd-widget:has(> .cd-widget-toggle[onclick*="-linked"]):has(> .cd-widget-body.open) > .cd-widget-toggle h3,
+        .client-dashboard-page .legacy-roll-dashboard-partial .cd-widget:has(> .cd-widget-toggle[onclick*="-linked"]):has(> .cd-widget-body.open) > .cd-widget-toggle .cd-widget-chevron,
+        .client-dashboard-page .legacy-roll-dashboard-partial .cd-widget:has(> .cd-widget-toggle[onclick*="-linked"]):has(> .cd-widget-body.open) > .cd-widget-toggle .cd-widget-toggle-left > i {
+            color: var(--dd-dark) !important;
         }
 
-/* ============================================================
-   OPEN TABLE BODY
-   Still inside the same big board.
-   No extra outer card/border/shadow.
-   ============================================================ */
+        .client-dashboard-page .legacy-roll-dashboard-partial .cd-widget:has(> .cd-widget-toggle[onclick*="-linked"]):has(> .cd-widget-body.open) > .cd-widget-toggle .cd-count-badge {
+            border-color: rgba(30, 58, 64, .25) !important;
+            background: rgba(255, 255, 255, .45) !important;
+            color: var(--dd-dark) !important;
+        }
 
-.client-dashboard-page
-.legacy-roll-dashboard-partial
-.cd-widget-body {
+/* ── Section body ────────────────────────────────────────── */
+
+.client-dashboard-page .legacy-roll-dashboard-partial .cd-widget-body {
+    min-width: 0;
     margin: 0 !important;
     border: 0 !important;
     border-radius: 0 !important;
@@ -330,52 +336,378 @@
     box-shadow: none !important;
 }
 
-    .client-dashboard-page
-    .legacy-roll-dashboard-partial
-    .cd-widget-body.open {
-        padding: 18px 24px 22px !important;
-        border-top: 1px solid #e5e8e9 !important;
+    .client-dashboard-page .legacy-roll-dashboard-partial .cd-widget-body.open {
+        padding: 22px 28px 26px !important;
     }
 
-    .client-dashboard-page
-    .legacy-roll-dashboard-partial
-    .cd-widget-body
-    .table-responsive {
+    .client-dashboard-page .legacy-roll-dashboard-partial .cd-widget-body .table-responsive {
+        width: 100%;
+        max-width: 100%;
         margin: 0 !important;
         border: 0 !important;
         border-radius: 0 !important;
         box-shadow: none !important;
+        overflow-x: auto;
+        overflow-y: visible;
+        -webkit-overflow-scrolling: touch;
     }
 
-/*
- * The table itself may keep its normal Genesis table header and rows.
- * Remove any card effect around the table.
- */
-.client-dashboard-page
-.legacy-roll-dashboard-partial
-.dataTables_wrapper {
+/* ============================================================
+   TABLES
+   The table sits inside its own thin border with rounded
+   corners so every table reads as a clear, contained block.
+   ============================================================ */
+
+.client-dashboard-page .legacy-roll-dashboard-partial .dataTables_wrapper {
+    width: 100%;
+    min-width: 0;
     margin: 0 !important;
     border: 0 !important;
-    border-radius: 0 !important;
     background: transparent !important;
+    box-shadow: none !important;
+    font-size: 14px;
+    color: var(--dd-dark);
+}
+
+.client-dashboard-page .legacy-roll-dashboard-partial table.cd-table {
+    width: 100% !important;
+    margin: 0 !important;
+    border: 1px solid var(--dd-border) !important;
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+    border-radius: 12px;
+    background: #fff;
+    font-family: "Poppins", Arial, sans-serif !important;
+    font-size: 14px !important;
+    color: var(--dd-dark);
+}
+
+    .client-dashboard-page .legacy-roll-dashboard-partial table.cd-table thead th {
+        padding: 14px 16px !important;
+        border: 0 !important;
+        background: var(--dd-dark) !important;
+        color: var(--dd-gold) !important;
+        font-size: 12px !important;
+        font-weight: 700 !important;
+        letter-spacing: .7px;
+        text-transform: uppercase;
+        white-space: nowrap;
+        vertical-align: middle;
+    }
+
+        .client-dashboard-page .legacy-roll-dashboard-partial table.cd-table thead th:first-child {
+            border-top-left-radius: 11px;
+        }
+
+        .client-dashboard-page .legacy-roll-dashboard-partial table.cd-table thead th:last-child {
+            border-top-right-radius: 11px;
+        }
+
+/* DataTables sort arrows in gold */
+.client-dashboard-page .legacy-roll-dashboard-partial table.dataTable.cd-table thead th.sorting::before,
+.client-dashboard-page .legacy-roll-dashboard-partial table.dataTable.cd-table thead th.sorting::after,
+.client-dashboard-page .legacy-roll-dashboard-partial table.dataTable.cd-table thead th.sorting_asc::before,
+.client-dashboard-page .legacy-roll-dashboard-partial table.dataTable.cd-table thead th.sorting_asc::after,
+.client-dashboard-page .legacy-roll-dashboard-partial table.dataTable.cd-table thead th.sorting_desc::before,
+.client-dashboard-page .legacy-roll-dashboard-partial table.dataTable.cd-table thead th.sorting_desc::after {
+    color: var(--dd-gold);
+}
+
+.client-dashboard-page .legacy-roll-dashboard-partial table.cd-table tbody td {
+    padding: 14px 16px !important;
+    border: 0 !important;
+    border-bottom: 1px solid #edf0f1 !important;
+    background: #fff !important;
+    color: var(--dd-dark) !important;
+    font-size: 14px !important;
+    line-height: 1.45;
+    vertical-align: middle;
+    /* Long property descriptions wrap instead of pushing the
+           Options column off-screen ("nowrap" table class). */
+    white-space: normal !important;
+    overflow-wrap: break-word;
+}
+
+    .client-dashboard-page .legacy-roll-dashboard-partial table.cd-table tbody td:last-child {
+        width: 1%;
+        white-space: nowrap !important;
+    }
+
+.client-dashboard-page .legacy-roll-dashboard-partial table.cd-table tbody tr:nth-child(even) > td {
+    background: var(--dd-row-alt) !important;
+}
+
+.client-dashboard-page .legacy-roll-dashboard-partial table.cd-table tbody tr:hover > td {
+    background: #fffaeb !important;
+}
+
+.client-dashboard-page .legacy-roll-dashboard-partial table.cd-table tbody tr:last-child > td {
+    border-bottom: 0 !important;
+}
+
+    .client-dashboard-page .legacy-roll-dashboard-partial table.cd-table tbody tr:last-child > td:first-child {
+        border-bottom-left-radius: 11px;
+    }
+
+    .client-dashboard-page .legacy-roll-dashboard-partial table.cd-table tbody tr:last-child > td:last-child {
+        border-bottom-right-radius: 11px;
+    }
+
+/* No DataTables "sorted column" shading */
+.client-dashboard-page .legacy-roll-dashboard-partial table.dataTable.cd-table tbody td.sorting_1,
+.client-dashboard-page .legacy-roll-dashboard-partial table.dataTable.cd-table tbody tr > * {
     box-shadow: none !important;
 }
 
+/* Empty table message */
+.client-dashboard-page .legacy-roll-dashboard-partial table.cd-table td.dataTables_empty {
+    padding: 28px 16px !important;
+    color: var(--dd-teal) !important;
+    text-align: center;
+}
+
+/* Actions button */
+.client-dashboard-page .legacy-roll-dashboard-partial .cd-action-btn {
+    min-height: 38px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border: 1.5px solid var(--dd-dark);
+    border-radius: 9px;
+    background: #fff;
+    color: var(--dd-dark);
+    font-size: 13px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+    .client-dashboard-page .legacy-roll-dashboard-partial .cd-action-btn:hover,
+    .client-dashboard-page .legacy-roll-dashboard-partial .cd-action-btn[aria-expanded="true"] {
+        background: var(--dd-dark);
+        color: #fff;
+    }
+
+.client-dashboard-page .legacy-roll-dashboard-partial .dropdown-menu {
+    z-index: 1080;
+    min-width: 220px;
+    padding: 6px;
+    border: 1px solid var(--dd-border);
+    border-radius: 10px;
+    box-shadow: 0 12px 30px rgba(13, 34, 40, .18);
+    font-size: 14px;
+}
+
+    .client-dashboard-page .legacy-roll-dashboard-partial .dropdown-menu .dropdown-item {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding: 9px 12px;
+        border-radius: 7px;
+        color: var(--dd-dark);
+    }
+
+        .client-dashboard-page .legacy-roll-dashboard-partial .dropdown-menu .dropdown-item:hover {
+            background: var(--dd-teal-pale);
+        }
+
+        .client-dashboard-page .legacy-roll-dashboard-partial .dropdown-menu .dropdown-item i {
+            width: 16px;
+            color: var(--dd-teal);
+            text-align: center;
+        }
+
+/* ── DataTables controls (length / search / info / paging) ─ */
+
+.client-dashboard-page .legacy-roll-dashboard-partial .dataTables_length,
+.client-dashboard-page .legacy-roll-dashboard-partial .dataTables_filter,
+.client-dashboard-page .legacy-roll-dashboard-partial .dataTables_info,
+.client-dashboard-page .legacy-roll-dashboard-partial .dataTables_paginate {
+    color: var(--dd-teal) !important;
+    font-size: 14px !important;
+}
+
+.client-dashboard-page .legacy-roll-dashboard-partial .dataTables_length,
+.client-dashboard-page .legacy-roll-dashboard-partial .dataTables_filter {
+    margin-bottom: 16px !important;
+}
+
+.client-dashboard-page .legacy-roll-dashboard-partial .dataTables_info,
+.client-dashboard-page .legacy-roll-dashboard-partial .dataTables_paginate {
+    margin-top: 16px !important;
+    padding-top: 0 !important;
+}
+
+.client-dashboard-page .legacy-roll-dashboard-partial .dataTables_length select,
+.client-dashboard-page .legacy-roll-dashboard-partial .dataTables_filter input {
+    min-height: 42px;
+    padding: 6px 12px;
+    border: 1px solid #ccd6d8 !important;
+    border-radius: 9px !important;
+    background-color: #fff;
+    color: var(--dd-dark);
+    font-size: 14px;
+}
+
+.client-dashboard-page .legacy-roll-dashboard-partial .dataTables_filter input {
+    width: 260px;
+    margin-left: 8px;
+}
+
+    .client-dashboard-page .legacy-roll-dashboard-partial .dataTables_length select:focus,
+    .client-dashboard-page .legacy-roll-dashboard-partial .dataTables_filter input:focus {
+        border-color: var(--dd-gold) !important;
+        box-shadow: 0 0 0 3px rgba(230, 176, 0, .18);
+        outline: none;
+    }
+
+.client-dashboard-page .legacy-roll-dashboard-partial .dataTables_paginate .paginate_button {
+    min-width: 40px;
+    min-height: 40px;
+    padding: 8px 12px !important;
+    font-size: 14px;
+    color: var(--dd-dark) !important;
+}
+
+    .client-dashboard-page .legacy-roll-dashboard-partial .dataTables_paginate .paginate_button.current,
+    .client-dashboard-page .legacy-roll-dashboard-partial .dataTables_paginate .paginate_button.current:hover {
+        background: var(--dd-gold) !important;
+        border-color: var(--dd-gold) !important;
+        color: var(--dd-dark) !important;
+    }
+
+/* ── Responsive "+" control and child rows (phones) ──────── */
+
+.client-dashboard-page .legacy-roll-dashboard-partial table.dataTable.dtr-inline.collapsed > tbody > tr > td.dtr-control {
+    position: relative;
+    padding-left: 48px !important;
+    cursor: pointer;
+}
+
+    .client-dashboard-page .legacy-roll-dashboard-partial table.dataTable.dtr-inline.collapsed > tbody > tr > td.dtr-control::before {
+        position: absolute !important;
+        top: 50% !important;
+        left: 14px !important;
+        width: 24px !important;
+        height: 24px !important;
+        margin: 0 !important;
+        display: grid !important;
+        place-items: center;
+        transform: translateY(-50%);
+        border: 0 !important;
+        border-radius: 50% !important;
+        background: var(--dd-gold) !important;
+        box-shadow: none !important;
+        color: var(--dd-dark) !important;
+        content: "+" !important;
+        font-family: "Poppins", Arial, sans-serif !important;
+        font-size: 16px !important;
+        font-weight: 800 !important;
+        line-height: 24px !important;
+        text-indent: 0 !important;
+    }
+
+.client-dashboard-page .legacy-roll-dashboard-partial table.dataTable.dtr-inline.collapsed > tbody > tr.parent > td.dtr-control::before {
+    background: var(--dd-dark) !important;
+    color: var(--dd-gold) !important;
+    content: "−" !important;
+}
+
+.client-dashboard-page .legacy-roll-dashboard-partial table.dataTable > tbody > tr.child > td.child {
+    padding: 4px 16px 14px !important;
+    background: #f7fafa !important;
+}
+
+.client-dashboard-page .legacy-roll-dashboard-partial table.dataTable > tbody > tr.child ul.dtr-details {
+    display: block;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+    .client-dashboard-page .legacy-roll-dashboard-partial table.dataTable > tbody > tr.child ul.dtr-details > li {
+        display: grid;
+        grid-template-columns: minmax(96px, 38%) minmax(0, 1fr);
+        gap: 12px;
+        align-items: start;
+        padding: 10px 0;
+        border-bottom: 1px dashed #dde4e6;
+        white-space: normal;
+        font-size: 14px;
+    }
+
+        .client-dashboard-page .legacy-roll-dashboard-partial table.dataTable > tbody > tr.child ul.dtr-details > li:last-child {
+            border-bottom: 0;
+        }
+
+.client-dashboard-page .legacy-roll-dashboard-partial table.dataTable > tbody > tr.child span.dtr-title {
+    min-width: 0;
+    color: var(--dd-teal);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .4px;
+    text-transform: uppercase;
+}
+
+.client-dashboard-page .legacy-roll-dashboard-partial table.dataTable > tbody > tr.child span.dtr-data {
+    min-width: 0;
+    color: var(--dd-dark);
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
 /* ============================================================
-   PHONE / TABLET
+   BIG SCREENS
+   ============================================================ */
+
+@media (min-width: 1920px) {
+    .client-dashboard-page {
+        padding-left: 40px;
+        padding-right: 40px;
+    }
+
+        .client-dashboard-page .legacy-roll-dashboard-partial table.cd-table,
+        .client-dashboard-page .legacy-roll-dashboard-partial table.cd-table tbody td,
+        .client-dashboard-page .legacy-roll-dashboard-partial .dataTables_wrapper {
+            font-size: 15px !important;
+        }
+}
+
+/* ============================================================
+   TABLET
+   ============================================================ */
+
+@media (max-width: 1024px) {
+    .client-dashboard-page {
+        padding: 22px 20px 44px;
+    }
+
+        .client-dashboard-page .legacy-roll-dashboard-partial > .cd-detail-roll-info,
+        .client-dashboard-page .legacy-roll-dashboard-partial > .cd-detail-closed-notice {
+            padding-left: 22px !important;
+            padding-right: 22px !important;
+        }
+
+        .client-dashboard-page .legacy-roll-dashboard-partial .cd-widget > .cd-widget-toggle {
+            padding: 14px 22px !important;
+        }
+
+        .client-dashboard-page .legacy-roll-dashboard-partial .cd-widget-body.open {
+            padding: 18px 22px 22px !important;
+        }
+}
+
+/* ============================================================
+   PHONE
    ============================================================ */
 
 @media (max-width: 767.98px) {
-
     .client-dashboard-page {
-        width: calc(100% - 16px);
-        margin-top: 12px;
-        margin-bottom: 30px;
+        padding: 14px 12px 32px;
     }
 
     .client-dashboard-page-toolbar {
-        align-items: stretch;
-        flex-direction: column;
+        margin-bottom: 14px;
     }
 
     .client-dashboard-back {
@@ -383,60 +715,171 @@
         justify-content: center;
     }
 
-    .client-dashboard-page
-    .legacy-roll-dashboard-partial {
+    .client-dashboard-page .legacy-roll-dashboard-partial {
         border-left-width: 4px;
-        border-radius: 13px;
+        border-radius: 14px;
     }
 
-        .client-dashboard-page
-        .legacy-roll-dashboard-partial > .cd-detail-roll-info {
-            align-items: flex-start;
-            flex-direction: column;
-            padding: 16px !important;
+        .client-dashboard-page .legacy-roll-dashboard-partial > .cd-detail-roll-info {
+            border-top-left-radius: 10px 13px !important;
+            border-top-right-radius: 13px !important;
         }
 
-    .client-dashboard-page
-    .cd-detail-roll-info-left {
-        width: 100%;
+        .client-dashboard-page .legacy-roll-dashboard-partial > .cd-detail-roll-info {
+            align-items: stretch;
+            flex-direction: column;
+            padding: 18px 16px !important;
+        }
+
+    .client-dashboard-page .cd-detail-roll-icon {
+        width: 46px;
+        height: 46px;
+        flex-basis: 46px;
+        border-radius: 13px;
+        font-size: 18px;
     }
 
-    .client-dashboard-page
-    .cd-detail-roll-info-right {
+    .client-dashboard-page .cd-detail-roll-name {
+        font-size: 18px !important;
+    }
+
+    .client-dashboard-page .cd-detail-roll-info-right {
         width: 100%;
         align-items: stretch;
         justify-content: flex-start;
     }
 
-    .client-dashboard-page
-    .cd-detail-roll-dates {
+    .client-dashboard-page .cd-detail-roll-dates {
         width: 100%;
         white-space: normal;
+        font-size: 13px;
     }
 
-    .client-dashboard-page
-    .cd-detail-search-btn {
+    .client-dashboard-page .cd-detail-search-btn {
         width: 100%;
-        justify-content: center;
     }
 
-    .client-dashboard-page
-    .legacy-roll-dashboard-partial
-    .cd-widget > .cd-widget-toggle {
-        min-height: 58px !important;
-        padding: 12px 14px !important;
+    .client-dashboard-page .legacy-roll-dashboard-partial > .cd-detail-closed-notice {
+        padding: 12px 16px !important;
+        font-size: 13px;
     }
 
-    .client-dashboard-page
-    .legacy-roll-dashboard-partial
-    .cd-widget
-    .cd-widget-toggle h3 {
+    .client-dashboard-page .legacy-roll-dashboard-partial .cd-widget > .cd-widget-toggle {
+        min-height: 60px !important;
+        padding: 12px 16px !important;
+    }
+
+    .client-dashboard-page .legacy-roll-dashboard-partial .cd-widget .cd-widget-toggle h3 {
+        font-size: 15px !important;
+    }
+
+    .client-dashboard-page .legacy-roll-dashboard-partial .cd-widget-body.open {
+        padding: 14px 10px 16px !important;
+    }
+
+    /* Phones use the "+" rows, so no sideways scroll */
+    .client-dashboard-page .legacy-roll-dashboard-partial .cd-widget-body .table-responsive {
+        overflow-x: visible;
+    }
+
+    .client-dashboard-page .legacy-roll-dashboard-partial table.cd-table thead th {
+        padding: 12px !important;
+        font-size: 11px !important;
+    }
+
+    .client-dashboard-page .legacy-roll-dashboard-partial table.cd-table tbody td {
+        padding: 12px !important;
+        font-size: 13.5px !important;
+    }
+
+        /* Let the visible first column wrap instead of pushing the page wide */
+        .client-dashboard-page .legacy-roll-dashboard-partial table.cd-table tbody td:first-child,
+        .client-dashboard-page .legacy-roll-dashboard-partial table.cd-table thead th:first-child {
+            white-space: normal !important;
+            overflow-wrap: anywhere;
+        }
+
+    .client-dashboard-page .legacy-roll-dashboard-partial table.dataTable.dtr-inline.collapsed > tbody > tr > td.dtr-control {
+        padding-left: 44px !important;
+    }
+
+        .client-dashboard-page .legacy-roll-dashboard-partial table.dataTable.dtr-inline.collapsed > tbody > tr > td.dtr-control::before {
+            left: 11px !important;
+        }
+
+    .client-dashboard-page .legacy-roll-dashboard-partial .dataTables_length,
+    .client-dashboard-page .legacy-roll-dashboard-partial .dataTables_filter,
+    .client-dashboard-page .legacy-roll-dashboard-partial .dataTables_info,
+    .client-dashboard-page .legacy-roll-dashboard-partial .dataTables_paginate {
+        float: none !important;
+        width: 100%;
+        text-align: left !important;
         font-size: 13px !important;
     }
 
-    .client-dashboard-page
-    .legacy-roll-dashboard-partial
-    .cd-widget-body.open {
-        padding: 10px !important;
+    .client-dashboard-page .legacy-roll-dashboard-partial .dataTables_length,
+    .client-dashboard-page .legacy-roll-dashboard-partial .dataTables_filter {
+        margin-bottom: 10px !important;
     }
+
+        .client-dashboard-page .legacy-roll-dashboard-partial .dataTables_filter label,
+        .client-dashboard-page .legacy-roll-dashboard-partial .dataTables_length label {
+            display: block;
+            width: 100%;
+            text-align: left;
+        }
+
+        .client-dashboard-page .legacy-roll-dashboard-partial .dataTables_filter input {
+            display: block;
+            width: 100% !important;
+            height: 44px !important;
+            min-height: 44px;
+            margin: 6px 0 0 !important;
+        }
+
+    .client-dashboard-page .legacy-roll-dashboard-partial .dataTables_info {
+        text-align: center !important;
+    }
+
+    .client-dashboard-page .legacy-roll-dashboard-partial .dataTables_paginate {
+        margin-top: 8px !important;
+        text-align: center !important;
+    }
+
+    .client-dashboard-page .legacy-roll-dashboard-partial table.dataTable > tbody > tr.child ul.dtr-details > li {
+        font-size: 13.5px;
+    }
+
+    .client-dashboard-page .legacy-roll-dashboard-partial .dropdown-menu {
+        min-width: 0;
+        max-width: calc(100vw - 48px);
+    }
+}
+
+/* ============================================================
+   SMALL PHONE (≤ 380px)
+   ============================================================ */
+
+@media (max-width: 380px) {
+    .client-dashboard-page {
+        padding-left: 8px;
+        padding-right: 8px;
+    }
+
+        .client-dashboard-page .legacy-roll-dashboard-partial .cd-widget > .cd-widget-toggle {
+            padding: 12px !important;
+        }
+
+        .client-dashboard-page .legacy-roll-dashboard-partial .cd-widget .cd-widget-toggle h3 {
+            font-size: 14px !important;
+        }
+
+        .client-dashboard-page .legacy-roll-dashboard-partial .cd-widget-body.open {
+            padding: 10px 6px 14px !important;
+        }
+
+        .client-dashboard-page .legacy-roll-dashboard-partial table.dataTable > tbody > tr.child ul.dtr-details > li {
+            grid-template-columns: 1fr;
+            gap: 2px;
+        }
 }
