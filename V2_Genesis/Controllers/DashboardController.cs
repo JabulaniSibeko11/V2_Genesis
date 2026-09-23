@@ -237,17 +237,15 @@ public class DashboardController : Controller
                     property.Review_Status,
                     property.Review_Close_Date);
 
-            if (Section78ReviewStatus.IsClosed(
-                    property.Review_Status))
-            {
-                property.AvailableAction = "Closed";
-                continue;
-            }
-
+            // Query  -> Lodge Query  (not in the Section 78 extract)
+            // Open   -> Lodge Review (in the extract, period open)
+            // Closed -> Review closed
             property.AvailableAction =
-                property.HasCompletedQuery
-                    ? "Review"
-                    : "Query";
+                Section78ReviewStatus.IsClosed(property.Review_Status)
+                    ? "Closed"
+                    : Section78ReviewStatus.IsOpen(property.Review_Status)
+                        ? "Review"
+                        : "Query";
         }
     }
 
@@ -325,11 +323,11 @@ public class DashboardController : Controller
             return Section78ReviewStatus.Closed;
         }
 
-        /*
-         * NULL Review_Close_Date means the original Query process
-         * remains available.
-         */
-        return Section78ReviewStatus.Open;
+        // Review = the property is in the Section 78 weekly extract
+        // (the database stores "Open"). Everything else is a Query.
+        return Section78ReviewStatus.IsOpen(storedStatus)
+            ? Section78ReviewStatus.Open
+            : Section78ReviewStatus.Closed;
     }
     // ── STUB — replace each case with real DB query when ready ─────────────
     private Task<RollData> GetRollDataAsync(GvList roll, string userId)

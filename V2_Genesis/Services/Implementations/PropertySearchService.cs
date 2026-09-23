@@ -689,7 +689,9 @@ public class PropertySearchService : IPropertySearchService
         string rollSource,
         string idProperty,
         string userId,
-        string propertyFrom)
+        string propertyFrom,
+        string? unitKey = null,
+        string? valuationKey = null)
     {
         if (string.IsNullOrWhiteSpace(rollSource))
         {
@@ -760,7 +762,13 @@ public class PropertySearchService : IPropertySearchService
                             IDProperty = idProperty.Trim(),
                             UserID = userId,
                             PropertyFrom =
-                                resolvedPropertyFrom
+                                resolvedPropertyFrom,
+                            // Section 78: the property is also found by its
+                            // keys, and the keys decide Query vs Review.
+                            UnitKey =
+                                string.IsNullOrWhiteSpace(unitKey) ? null : unitKey.Trim(),
+                            ValuationKey =
+                                string.IsNullOrWhiteSpace(valuationKey) ? null : valuationKey.Trim()
                         },
                         commandType:
                             CommandType.StoredProcedure,

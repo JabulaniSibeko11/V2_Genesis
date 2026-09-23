@@ -257,12 +257,43 @@
         Actions
     </button>
                                         <ul class="dropdown-menu cd-action-menu">
-                                            <li>
-                                                <a class="dropdown-item"
-                                                       href="/objection/check?rollSource=@Model.Roll.Source&sourceTable=@item.PropertyFrom&unitKey=@item.UnitKey&valuationKey=@item.ValuationKey&appealStatus=False">
-                                                    <i class="fa-solid fa-file-pen"></i> Lodge Query
-                                                </a>
-                                            </li>
+                                            @* Section 78: Query by default. If the property is on the
+                                               Section 78 weekly extract it is a Review. *@
+                                            @if (item.CanLodgeReview)
+                                            {
+                                                <li>
+                                                    <a class="dropdown-item"
+                                                       href="/objection/check?rollSource=@Model.Roll.Source&sourceTable=@item.PropertyFrom&unitKey=@item.UnitKey&valuationKey=@item.ValuationKey&appealStatus=False&qtype=Review">
+                                                        <i class="fa-solid fa-scale-balanced"></i> Lodge Review
+                                                        @if (item.Review_Close_Date.HasValue)
+                                                        {
+                                                            <small class="text-muted ms-1">(closes @item.Review_Close_Date.Value.ToString("dd MMM yyyy"))</small>
+                                                        }
+                                                    </a>
+                                                </li>
+                                            }
+                                            else if (item.IsActionClosed)
+                                            {
+                                                <li>
+                                                    <span class="dropdown-item disabled"
+                                                          aria-disabled="true">
+                                                        <i class="fa-solid fa-lock"></i> Review period closed
+                                                        @if (item.Review_Close_Date.HasValue)
+                                                        {
+                                                            <small class="text-muted ms-1">(@item.Review_Close_Date.Value.ToString("dd MMM yyyy"))</small>
+                                                        }
+                                                    </span>
+                                                </li>
+                                            }
+                                            else
+                                            {
+                                                <li>
+                                                    <a class="dropdown-item"
+                                                       href="/objection/check?rollSource=@Model.Roll.Source&sourceTable=@item.PropertyFrom&unitKey=@item.UnitKey&valuationKey=@item.ValuationKey&appealStatus=False&qtype=Query">
+                                                        <i class="fa-solid fa-file-pen"></i> Lodge Query
+                                                    </a>
+                                                </li>
+                                            }
                                             <li>
                                                 <a class="dropdown-item cd-action-danger"
                                                        href="@Url.RouteUrl(

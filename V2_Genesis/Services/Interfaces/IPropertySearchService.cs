@@ -1,5 +1,4 @@
-﻿
-using V2_Genesis.Models;
+﻿using V2_Genesis.Models;
 using V2_Genesis.Models.Results;
 
 namespace V2_Genesis.Services.Interfaces
@@ -32,6 +31,8 @@ namespace V2_Genesis.Services.Interfaces
             string rollSource,
             string idProperty,
             string userId,
-            string propertyFrom);
+            string propertyFrom,
+            string? unitKey = null,
+            string? valuationKey = null);
     }
 }

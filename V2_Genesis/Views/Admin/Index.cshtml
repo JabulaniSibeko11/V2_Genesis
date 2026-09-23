@@ -1093,12 +1093,32 @@
         Actions
     </button>
                                         <ul class="dropdown-menu cd-action-menu">
-                                            <li>
-                                                <a class="dropdown-item"
-                                                   href="/objection/check?rollSource=@roll.Source&sourceTable=@item.PropertyFrom&unitKey=@item.UnitKey&valuationKey=@item.ValuationKey&appealStatus=False">
-                                                    <i class="fa-solid fa-file-pen"></i> Lodge Query
-                                                </a>
-                                            </li>
+                                            @if (item.CanLodgeReview)
+                                            {
+                                                <li>
+                                                    <a class="dropdown-item"
+                                                       href="/objection/check?rollSource=@roll.Source&sourceTable=@item.PropertyFrom&unitKey=@item.UnitKey&valuationKey=@item.ValuationKey&appealStatus=False&qtype=Review">
+                                                        <i class="fa-solid fa-scale-balanced"></i> Lodge Review
+                                                    </a>
+                                                </li>
+                                            }
+                                            else if (item.IsActionClosed)
+                                            {
+                                                <li>
+                                                    <span class="dropdown-item disabled" aria-disabled="true">
+                                                        <i class="fa-solid fa-lock"></i> Review period closed
+                                                    </span>
+                                                </li>
+                                            }
+                                            else
+                                            {
+                                                <li>
+                                                    <a class="dropdown-item"
+                                                       href="/objection/check?rollSource=@roll.Source&sourceTable=@item.PropertyFrom&unitKey=@item.UnitKey&valuationKey=@item.ValuationKey&appealStatus=False&qtype=Query">
+                                                        <i class="fa-solid fa-file-pen"></i> Lodge Query
+                                                    </a>
+                                                </li>
+                                            }
                                             <li>
                                                 <a class="dropdown-item"
                                                    href="/Home/Delete@(roll.ControllerName)?id=@item.Id">

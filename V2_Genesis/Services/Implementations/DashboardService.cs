@@ -493,49 +493,35 @@ public class DashboardService : IDashboardService
         string? databaseStatus,
         DateTime? reviewCloseDate)
     {
-        /*
-         * The persisted Review_Status is the primary value.
-         */
-        if (string.Equals(
-                databaseStatus,
-                "Closed",
-                StringComparison.OrdinalIgnoreCase))
-        {
+        // Query  = not in the Section 78 weekly extract
+        // Open   = Review, period open
+        // Closed = Review, period closed
+        if (string.Equals(databaseStatus, "Closed", StringComparison.OrdinalIgnoreCase))
             return "Closed";
+
+        if (string.Equals(databaseStatus, "Open", StringComparison.OrdinalIgnoreCase))
+        {
+            // A past closing date must never remain open in the UI,
+            // even if the SQL Agent job has not run yet.
+            return reviewCloseDate.HasValue && reviewCloseDate.Value.Date < DateTime.Today
+                ? "Closed"
+                : "Open";
         }
 
-        /*
-         * A past closing date must never remain open in the UI,
-         * even if the SQL Agent job has not run yet.
-         */
-        if (reviewCloseDate.HasValue &&
-            reviewCloseDate.Value.Date < DateTime.Today)
-        {
-            return "Closed";
-        }
-
-        /*
-         * NULL closing date means the initial Query process is
-         * still available.
-         */
-        return "Open";
+        return "Query";
     }
 
     private static string ResolveAvailableAction(
         string? reviewStatus,
         bool hasCompletedQuery)
     {
-        if (string.Equals(
-                reviewStatus,
-                "Closed",
-                StringComparison.OrdinalIgnoreCase))
-        {
+        if (string.Equals(reviewStatus, "Closed", StringComparison.OrdinalIgnoreCase))
             return "Closed";
-        }
 
-        return hasCompletedQuery
-            ? "Review"
-            : "Query";
+        if (string.Equals(reviewStatus, "Open", StringComparison.OrdinalIgnoreCase))
+            return "Review";
+
+        return "Query";
     }
 
     // ── Attributes linked properties ──────────────────────────────────

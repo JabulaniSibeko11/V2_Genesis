@@ -148,8 +148,9 @@ public class PropertySearchController : Controller
          * Past date:
          *     Review period is closed.
          */
+        // No close date = not a Section 78 Review -> Query.
         if (!reviewCloseDate.HasValue)
-            return Section78ReviewStatus.Open;
+            return Section78ReviewStatus.Closed;
 
         return reviewCloseDate.Value.Date >= DateTime.Today
             ? Section78ReviewStatus.Open
@@ -161,9 +162,21 @@ public class PropertySearchController : Controller
     {
         foreach (var property in properties)
         {
-            property.Review_Status =
-                ResolveReviewStatus(
-                    property.Review_Close_Date);
+            // IndexSection78Property now returns Review_Status
+            // (Query / Open / Closed). Keep it; only a past close date
+            // may still turn an Open review into Closed.
+            if (Section78ReviewStatus.IsOpen(property.Review_Status) &&
+                property.Review_Close_Date.HasValue &&
+                property.Review_Close_Date.Value.Date < DateTime.Today)
+            {
+                property.Review_Status = Section78ReviewStatus.Closed;
+            }
+            else if (string.IsNullOrWhiteSpace(property.Review_Status))
+            {
+                property.Review_Status =
+                    ResolveReviewStatus(
+                        property.Review_Close_Date);
+            }
         }
     }
     // ── GET /search/{rollSource} ──────────────────────────────────────
@@ -864,11 +877,23 @@ public class PropertySearchController : Controller
                 ? "LIS"
                 : sourceTable ?? rollSource;
 
+            // Section 78: send the keys too, so the property is found
+            // even if the search and link tables use different IDs.
+            var linkUnitKey = FirstNotEmpty(
+                NormalizeKey(unitKey),
+                NormalizeKey(HttpContext.Session.GetString("UnitKey")));
+
+            var linkValuationKey = FirstNotEmpty(
+                NormalizeKey(valuationKey),
+                NormalizeKey(HttpContext.Session.GetString("ValuationKey")));
+
             var result = await _search.LinkPropertyAsync(
                 rollSource: rollSource,
                 idProperty: idProperty,
                 userId: userId,
-                propertyFrom: linkPropertyFrom);
+                propertyFrom: linkPropertyFrom,
+                unitKey: linkUnitKey,
+                valuationKey: linkValuationKey);
 
             if (result.Success)
             {
@@ -879,7 +904,7 @@ public class PropertySearchController : Controller
                 {
                     TempData["ReviewStatus"] =
                         result.ReviewStatus
-                        ?? Section78ReviewStatus.Open;
+                        ?? Section78ReviewStatus.Closed;
 
                     if (result.ReviewCloseDate.HasValue)
                     {
@@ -891,13 +916,11 @@ public class PropertySearchController : Controller
                     }
 
                     TempData["LinkSuccess"] =
-                        result.ReviewStatus?.Equals(
-                            Section78ReviewStatus.Closed,
-                            StringComparison.OrdinalIgnoreCase) == true
-
-                            ? "Property linked successfully. The Section 78 review period for this property is closed."
-
-                            : "Property linked successfully. You can continue with the available Section 78 process from your dashboard.";
+                        Section78ReviewStatus.IsClosed(result.ReviewStatus)
+                            ? "Property linked successfully. This property is on the Section 78 review list, but the review period has closed."
+                            : Section78ReviewStatus.IsOpen(result.ReviewStatus)
+                                ? "Property linked successfully. This property is on the Section 78 review list — you can Lodge a Review from your dashboard."
+                                : "Property linked successfully. You can Lodge a Query for this property from your dashboard.";
                 }
                 else
                 {
