@@ -153,7 +153,22 @@
     var newCat3 = TempData["new3_Category"]?.ToString();
     var newMV3 = TempData["new3_Market_Value"]?.ToString();
     var newExt3 = TempData["new3_Extent"]?.ToString();
+    bool HasCurrentSplit(string? category, string? extent, string? marketValue)
+    {
+        return !string.IsNullOrWhiteSpace(category)
+            || !string.IsNullOrWhiteSpace(extent)
+            || !string.IsNullOrWhiteSpace(marketValue);
+    }
 
+    var currentSplitCount = 0;
+
+    if (HasCurrentSplit(oldCat2, oldExt2, oldMV2))
+        currentSplitCount++;
+
+    if (HasCurrentSplit(oldCat3, oldExt3, oldMV3))
+        currentSplitCount++;
+
+    var hasMultipleCurrentSplits = currentSplitCount > 1;
 
     var files = new List<string>();
     for (int i = 1; i <= 10; i++)
@@ -290,15 +305,25 @@
                                     <tbody>
                                         <tr class="dp-total-row">
                                             <td>Category</td>
-                                            <td>Multiple Purposes</td>
+                                            <td>@(hasMultipleCurrentSplits ? "Multiple Purposes" : "–")</td>
                                         </tr>
+
                                         <tr class="dp-total-row">
                                             <td>Total Extent</td>
-                                            <td>@FormatExtentTotal(oldExt2, oldExt3)</td>
+                                            <td>
+                                                @(hasMultipleCurrentSplits
+                                                    ? FormatExtentTotal(oldExt2, oldExt3)
+                                                    : "–")
+                                            </td>
                                         </tr>
+
                                         <tr class="dp-total-row">
                                             <td>Total Market Value</td>
-                                            <td>@FormatMarketValueTotal(oldMV2, oldMV3)</td>
+                                            <td>
+                                                @(hasMultipleCurrentSplits
+                                                    ? FormatMarketValueTotal(oldMV2, oldMV3)
+                                                    : "–")
+                                            </td>
                                         </tr>
 
                                         @if (!string.IsNullOrWhiteSpace(oldCat2) ||
