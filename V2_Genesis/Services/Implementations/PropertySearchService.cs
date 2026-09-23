@@ -274,13 +274,13 @@ public class PropertySearchService : IPropertySearchService
                 !searchParams.HasScheme &&
                 !searchParams.HasUnit;
 
-            var results = await conn.QueryAsync<PropertySearchResult>(
-                new CommandDefinition(
-                    storedProcedure,
-                    parameters,
-                    commandType: CommandType.StoredProcedure,
-                    commandTimeout: isTownshipOnly ? 45 : 15,
-                    cancellationToken: cancellationToken));
+            var results = await QueryAllowingOptionalFiltersAsync(
+                conn,
+                storedProcedure,
+                parameters,
+                isTownshipOnly ? 45 : 15,
+                rollSource,
+                cancellationToken);
 
             /*
              * For the Query roll, the search stored procedure must
@@ -306,6 +306,57 @@ public class PropertySearchService : IPropertySearchService
             throw new ApplicationException(
                 $"Property search failed for roll '{rollSource}'.",
                 ex);
+        }
+    }
+
+    // Scheme (and Stand / Address / Unit) are OPTIONAL filters.
+    // Some legacy roll databases (e.g. the Section 78 Query DB) declare a
+    // search procedure parameter without a default, so SQL rejects a
+    // township-only search with error 201 "expects parameter '@X'".
+    // Treat any such filter as "match everything" and retry, instead of
+    // forcing the client to pick a scheme.
+    private static readonly System.Text.RegularExpressions.Regex MissingParam =
+        new(@"expects parameter '(@\w+)'",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase |
+            System.Text.RegularExpressions.RegexOptions.Compiled);
+
+    private async Task<IEnumerable<PropertySearchResult>> QueryAllowingOptionalFiltersAsync(
+        SqlConnection conn,
+        string storedProcedure,
+        DynamicParameters parameters,
+        int timeoutSeconds,
+        string rollSource,
+        CancellationToken cancellationToken)
+    {
+        for (var attempt = 0; ; attempt++)
+        {
+            try
+            {
+                return await conn.QueryAsync<PropertySearchResult>(
+                    new CommandDefinition(
+                        storedProcedure,
+                        parameters,
+                        commandType: CommandType.StoredProcedure,
+                        commandTimeout: timeoutSeconds,
+                        cancellationToken: cancellationToken));
+            }
+            catch (SqlException ex) when (ex.Number == 201 && attempt < 4)
+            {
+                var match = MissingParam.Match(ex.Message);
+                if (!match.Success)
+                    throw;
+
+                var name = match.Groups[1].Value;
+
+                _logger.LogWarning(
+                    "Search SP {Sp} on roll {Roll} requires {Param}; retrying with a match-all value. " +
+                    "Give this parameter a default of NULL/'%' in SQL to remove this retry.",
+                    storedProcedure,
+                    rollSource,
+                    name);
+
+                parameters.Add(name, "%");
+            }
         }
     }
 
@@ -697,20 +748,23 @@ public class PropertySearchService : IPropertySearchService
                  * Review_Status
                  * Review_Close_Date
                  */
+                // QueryFirstOrDefault (not Single): only the first row of
+                // the first result set is needed, even if the procedure
+                // ever returns extra rows or result sets.
                 var linkedResult =
-                    await conn.QuerySingleOrDefaultAsync<
+                    await conn.QueryFirstOrDefaultAsync<
                         LinkSection78PropertyResult>(
                         SP_LINK_PROPERTY,
                         new
                         {
-                            IDProperty = idProperty,
+                            IDProperty = idProperty.Trim(),
                             UserID = userId,
                             PropertyFrom =
                                 resolvedPropertyFrom
                         },
                         commandType:
                             CommandType.StoredProcedure,
-                        commandTimeout: 60);
+                        commandTimeout: 90);
 
                 if (linkedResult is null)
                 {
@@ -769,26 +823,43 @@ public class PropertySearchService : IPropertySearchService
         {
             _logger.LogError(
                 ex,
-                "SQL error linking property {PropertyId} for user {UserId} on roll {RollSource}",
+                "SQL error {Number} linking property {PropertyId} for user {UserId} on roll {RollSource}: {Message}",
+                ex.Number,
                 idProperty,
                 userId,
-                rollSource);
+                rollSource,
+                ex.Message);
 
             return LinkResult.Fail(
                 "The property could not be linked because of a database error.");
+        }
+        catch (Exception ex) when (ex is DataException or InvalidCastException or InvalidOperationException)
+        {
+            // The procedure ran but its result could not be read (e.g. a
+            // column type the model does not expect). Don't crash the page.
+            _logger.LogError(
+                ex,
+                "Link result could not be read. Property {PropertyId}, user {UserId}, roll {RollSource}. {Message}",
+                idProperty,
+                userId,
+                rollSource,
+                ex.Message);
+
+            return LinkResult.Fail(
+                "The property was sent for linking but the result could not be read. Please check your dashboard or try again.");
         }
         catch (Exception ex)
         {
             _logger.LogError(
                 ex,
-                "Unexpected error linking property {PropertyId} for user {UserId} on roll {RollSource}",
+                "Unexpected error linking property {PropertyId} for user {UserId} on roll {RollSource}. {Message}",
                 idProperty,
                 userId,
-                rollSource);
+                rollSource,
+                ex.Message);
 
-            throw new ApplicationException(
-                $"Error linking property '{idProperty}' for user '{userId}' on roll '{rollSource}'.",
-                ex);
+            return LinkResult.Fail(
+                "The property could not be linked. Please try again.");
         }
     }
 }
