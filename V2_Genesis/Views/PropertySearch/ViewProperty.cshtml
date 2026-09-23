@@ -6,7 +6,7 @@
     bool isAuth = User?.Identity?.IsAuthenticated == true;
     bool isUniversalSearch = Model?.IsUniversalSearch == true;
     Layout = isAuth
-        ? "~/Views/Shared/_ClientLayout.cshtml"
+        ? "~/Views/Shared/_Legend_Layout.cshtml"
         : "~/Views/Shared/_Layout.cshtml";
 
     var items = Model?.Items ?? new List<V2_Genesis.Models.Results.PropertyDetailResult>();
@@ -383,7 +383,7 @@ string.Equals(Context?.Session?.GetString("PropertyFrom"), "LIS", StringComparis
                     <i class="fa-solid fa-arrow-left"></i> Cancel
                 </button>
                 <a class="ppd-btn ppd-btn-primary"
-                       href="/property/save?rollSource=@rollSource&key=@d.Id&sourceTable=@sourceTableCode">
+                       href="/property/save?rollSource=@rollSource&key=@d.Id&sourceTable=@sourceTableCode&unitKey=@d.UnitKey&valuationKey=@d.ValuationKey&propertyId=@d.PropertyId">
                     <i class="fa-solid fa-link"></i> Link Property
                 </a>
             }
@@ -521,4 +521,4 @@ string.Equals(Context?.Session?.GetString("PropertyFrom"), "LIS", StringComparis
         });
     </script>
     <script src="~/js/attribute-link-verification.js" asp-append-version="true"></script>
-    }
+}

@@ -352,19 +352,19 @@
 
     <style>
             /*
-                                 * Legend only needs a small amount of extra styling.
-                                 * The actual navbar, dropdowns, profile and mobile drawer are
-                                 * deliberately the ClientLayout classes.
-                                 */
+                                             * Legend only needs a small amount of extra styling.
+                                             * The actual navbar, dropdowns, profile and mobile drawer are
+                                             * deliberately the ClientLayout classes.
+                                             */
 
             .legend-body {
                 padding-top: 64px !important;
             }
 
             /*
-                                 * ClientLayout's responsive stylesheet switches to the
-                                 * hamburger/drawer at 1180px. Keep exactly the same breakpoint.
-                                 */
+                                             * ClientLayout's responsive stylesheet switches to the
+                                             * hamburger/drawer at 1180px. Keep exactly the same breakpoint.
+                                             */
             @@media (max-width: 1180px) {
                 .cl-nav-links,
                 .cl-user {
@@ -1338,6 +1338,41 @@
          PAGE CONTENT
          ============================================================ -->
     <main class="legend-main">
+        @* Result of linking a property (PropertySearchController.SaveRecord).
+           Shown on whichever page the client lands on after linking. *@
+        @{
+            var linkSuccess = TempData["LinkSuccess"] as string;
+            var linkError = TempData["LinkError"] as string;
+            var linkReviewClose = TempData["ReviewCloseDate"] as string;
+        }
+        @if (!string.IsNullOrWhiteSpace(linkSuccess) || !string.IsNullOrWhiteSpace(linkError))
+        {
+            <div class="legend-link-flash" style="max-width:1400px;margin:16px auto 0;padding:0 16px;">
+                @if (!string.IsNullOrWhiteSpace(linkSuccess))
+                {
+                    <div class="alert alert-success alert-dismissible fade show d-flex align-items-start gap-2" role="alert">
+                        <i class="fa-solid fa-circle-check mt-1"></i>
+                        <div>
+                            @linkSuccess
+                            @if (!string.IsNullOrWhiteSpace(linkReviewClose))
+                            {
+                                <div class="small mt-1">Review closing date: <strong>@linkReviewClose</strong></div>
+                            }
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                }
+                @if (!string.IsNullOrWhiteSpace(linkError))
+                {
+                    <div class="alert alert-danger alert-dismissible fade show d-flex align-items-start gap-2" role="alert">
+                        <i class="fa-solid fa-triangle-exclamation mt-1"></i>
+                        <div>@linkError</div>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                }
+            </div>
+        }
+
         @RenderBody()
     </main>
 

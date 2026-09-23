@@ -150,7 +150,7 @@ public class PropertySearchController : Controller
          */
         // No close date = not a Section 78 Review -> Query.
         if (!reviewCloseDate.HasValue)
-            return Section78ReviewStatus.Closed;
+            return Section78ReviewStatus.Query;
 
         return reviewCloseDate.Value.Date >= DateTime.Today
             ? Section78ReviewStatus.Open
@@ -801,8 +801,20 @@ public class PropertySearchController : Controller
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
+        _logger.LogInformation(
+            "SaveRecord called. User={UserId}, Roll={Roll}, Key={Key}, SourceTable={SourceTable}, PropertyFrom={PropertyFrom}, UnitKey={UnitKey}, ValuationKey={ValuationKey}, PropertyId={PropertyId}",
+            userId, rollSource, key, sourceTable, propertyFrom, unitKey, valuationKey, propertyId);
+
         if (string.IsNullOrEmpty(userId))
             return RedirectToAction("Login", "Account");
+
+        if (string.IsNullOrWhiteSpace(rollSource))
+        {
+            TempData["LinkError"] = "Property could not be linked because the valuation roll is missing.";
+            return RedirectToAction("Index", "Dashboard");
+        }
+
+        rollSource = rollSource.Trim();
 
         propertyFrom = string.IsNullOrWhiteSpace(propertyFrom)
             ? sourceTable
@@ -868,9 +880,7 @@ public class PropertySearchController : Controller
                     unitKey,
                     valuationKey);
 
-                return isAdmin
-                    ? RedirectToAction("Index", "Admin")
-                    : RedirectToAction("Index", "Dashboard");
+                return AfterLinkRedirect(rollSource, isAdmin);
             }
 
             var linkPropertyFrom = isLis
@@ -904,7 +914,7 @@ public class PropertySearchController : Controller
                 {
                     TempData["ReviewStatus"] =
                         result.ReviewStatus
-                        ?? Section78ReviewStatus.Closed;
+                        ?? Section78ReviewStatus.Query;
 
                     if (result.ReviewCloseDate.HasValue)
                     {
@@ -968,6 +978,15 @@ public class PropertySearchController : Controller
                 valuationKey);
         }
 
+        return AfterLinkRedirect(rollSource, isAdmin);
+    }
+
+    // After linking, go straight to the roll's detail page (Linked
+    // Properties section) so the client sees the property and the
+    // Lodge Query / Lodge Review button. The old "/dashboard?openRoll="
+    // is ignored by the new dashboard landing page.
+    private IActionResult AfterLinkRedirect(string rollSource, bool isAdmin)
+    {
         if (isAdmin)
         {
             return RedirectToAction("Index", "Admin", new
@@ -976,11 +995,12 @@ public class PropertySearchController : Controller
             });
         }
 
-        return RedirectToAction("Index", "Dashboard", new
-        {
-            openRoll = rollSource
-        });
+        return LocalRedirect(
+            "/dashboard/roll-detail/" +
+            Uri.EscapeDataString(rollSource) +
+            "?section=linked");
     }
+
     private static string? FirstNotEmpty(params string?[] values)
     {
         foreach (var value in values)

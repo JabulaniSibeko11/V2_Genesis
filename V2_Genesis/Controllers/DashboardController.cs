@@ -327,7 +327,7 @@ public class DashboardController : Controller
         // (the database stores "Open"). Everything else is a Query.
         return Section78ReviewStatus.IsOpen(storedStatus)
             ? Section78ReviewStatus.Open
-            : Section78ReviewStatus.Closed;
+            : Section78ReviewStatus.Query;
     }
     // ── STUB — replace each case with real DB query when ready ─────────────
     private Task<RollData> GetRollDataAsync(GvList roll, string userId)

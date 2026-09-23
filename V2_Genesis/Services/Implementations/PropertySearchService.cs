@@ -753,26 +753,52 @@ public class PropertySearchService : IPropertySearchService
                 // QueryFirstOrDefault (not Single): only the first row of
                 // the first result set is needed, even if the procedure
                 // ever returns extra rows or result sets.
-                var linkedResult =
-                    await conn.QueryFirstOrDefaultAsync<
-                        LinkSection78PropertyResult>(
-                        SP_LINK_PROPERTY,
-                        new
-                        {
-                            IDProperty = idProperty.Trim(),
-                            UserID = userId,
-                            PropertyFrom =
-                                resolvedPropertyFrom,
-                            // Section 78: the property is also found by its
-                            // keys, and the keys decide Query vs Review.
-                            UnitKey =
-                                string.IsNullOrWhiteSpace(unitKey) ? null : unitKey.Trim(),
-                            ValuationKey =
-                                string.IsNullOrWhiteSpace(valuationKey) ? null : valuationKey.Trim()
-                        },
-                        commandType:
-                            CommandType.StoredProcedure,
-                        commandTimeout: 90);
+                // Section 78: the keys (UnitKey + ValuationKey) decide Query
+                // vs Review. If the database still has the OLD version of
+                // InsertLinkedProperty (no @UnitKey / @ValuationKey), SQL
+                // raises 8144 "too many arguments" - link without the keys
+                // instead of failing, and log it so the SP gets updated.
+                LinkSection78PropertyResult? linkedResult;
+
+                try
+                {
+                    linkedResult =
+                        await conn.QueryFirstOrDefaultAsync<
+                            LinkSection78PropertyResult>(
+                            SP_LINK_PROPERTY,
+                            new
+                            {
+                                IDProperty = idProperty.Trim(),
+                                UserID = userId,
+                                PropertyFrom = resolvedPropertyFrom,
+                                UnitKey =
+                                    string.IsNullOrWhiteSpace(unitKey) ? null : unitKey.Trim(),
+                                ValuationKey =
+                                    string.IsNullOrWhiteSpace(valuationKey) ? null : valuationKey.Trim()
+                            },
+                            commandType: CommandType.StoredProcedure,
+                            commandTimeout: 90);
+                }
+                catch (SqlException ex) when (ex.Number == 8144)
+                {
+                    _logger.LogWarning(
+                        "InsertLinkedProperty on {RollSource} does not accept @UnitKey/@ValuationKey yet. " +
+                        "Linking with IDProperty only. Run the Section 78 SQL script to update the procedure.",
+                        rollSource);
+
+                    linkedResult =
+                        await conn.QueryFirstOrDefaultAsync<
+                            LinkSection78PropertyResult>(
+                            SP_LINK_PROPERTY,
+                            new
+                            {
+                                IDProperty = idProperty.Trim(),
+                                UserID = userId,
+                                PropertyFrom = resolvedPropertyFrom
+                            },
+                            commandType: CommandType.StoredProcedure,
+                            commandTimeout: 90);
+                }
 
                 if (linkedResult is null)
                 {
@@ -839,7 +865,7 @@ public class PropertySearchService : IPropertySearchService
                 ex.Message);
 
             return LinkResult.Fail(
-                "The property could not be linked because of a database error.");
+                $"The property could not be linked because of a database error (SQL {ex.Number}). Please contact support.");
         }
         catch (Exception ex) when (ex is DataException or InvalidCastException or InvalidOperationException)
         {
