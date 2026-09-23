@@ -49,33 +49,32 @@ public class NoticeService : INoticeService
     private record RollCfg(
         string ConnKey,
         string RootPath,
+        string AppealRootPath,
         string Short,
         string Name);
 
+    // Folder roots come from NoticeStoragePaths, which reads the keys that
+    // are really in appsettings.json (FileRootPath / AppealRootPath /
+    // Section49RootPath). The old keys here did not exist, so no notice was
+    // ever found and every "Download" said the notice was not available.
+    private RollCfg Roll(string connKey, string roll, string shortName, string name) =>
+        new(connKey,
+            NoticeStoragePaths.ObjectionRoot(_config, roll),
+            NoticeStoragePaths.AppealRoot(_config, roll),
+            shortName,
+            name);
+
     private List<RollCfg> Rolls => new()
     {
-        new("DefaultConnection",
-            _config["ObjectionRolls:Objection:RootPath"]       ?? "",
-            "GV", "General Valuation Roll 2023"),
-        new("Sup1Connection",
-            _config["ObjectionRolls:Objection_Supp1:RootPath"] ?? "",
-            "SUP1", "Supplementary Roll 1"),
-        new("Sup2Connection",
-            _config["ObjectionRolls:Objection_Supp2:RootPath"] ?? "",
-            "SUP2", "Supplementary Roll 2"),
-        new("Sup3Connection",
-            _config["ObjectionRolls:Objection_Supp3:RootPath"] ?? "",
-            "SUP3", "Supplementary Roll 3"),
-         new("Sup4Connection",
-            _config["ObjectionRolls:Objection_Supp4:RootPath"] ?? "",
-            "SUP4", "Supplementary Roll 4"),
-           new("Sup5Connection",
-            _config["ObjectionRolls:Objection_Supp5:RootPath"] ?? "",
-            "SUP5", "Supplementary Roll 5"),
+        Roll("DefaultConnection", "Objection",       "GV",   "General Valuation Roll 2023"),
+        Roll("Sup1Connection",    "Objection_Supp1", "SUP1", "Supplementary Roll 1"),
+        Roll("Sup2Connection",    "Objection_Supp2", "SUP2", "Supplementary Roll 2"),
+        Roll("Sup3Connection",    "Objection_Supp3", "SUP3", "Supplementary Roll 3"),
+        Roll("Sup4Connection",    "Objection_Supp4", "SUP4", "Supplementary Roll 4"),
+        Roll("Sup5Connection",    "Objection_Supp5", "SUP5", "Supplementary Roll 5"),
     };
-    private string Section49Root => _config["AppSettings:Section49RootPath"] ?? "";
-    private string AppealRoot => _config["AppSettings:AppealRootPath"] ?? "";
-    private string QueryRoot => _config["ObjectionRolls:Objection_Query:QueryRootPath"] ?? "";
+    private string Section49Root => NoticeStoragePaths.Section49Root(_config);
+    private string QueryRoot => NoticeStoragePaths.QueryRoot(_config);
 
 
 
@@ -1314,46 +1313,6 @@ public class NoticeService : INoticeService
             ? "REQUIRED DOCUMENTATION FOR APPEAL"
             : "REQUIRED DOCUMENTATION FOR OBJECTION";
 
-
-        // ── Resolve CURRENT valuation roll rows ─────────────────────────────
-        // A client may use the Multipurpose form even when the property
-        // currently has only ONE purpose on the valuation roll.
-        //
-        // In that case the current roll values may be stored in Old2_* or
-        // Old3_*. They must still be displayed as ONE property row on the
-        // acknowledgement and must not be treated as additional multipurpose rows.
-
-        var listedRows = new[]
-        {
-    (
-        Category: data.Old_Category,
-        MarketValue: FormatAcknowledgementMarketValue(data.Old_MarketValue),
-        Extent: data.Old_Extent
-    ),
-    (
-        Category: data.Old2_Category,
-        MarketValue: FormatAcknowledgementMarketValue(data.Old2_MarketValue),
-        Extent: data.Old2_Extent
-    ),
-    (
-        Category: data.Old3_Category,
-        MarketValue: FormatAcknowledgementMarketValue(data.Old3_MarketValue),
-        Extent: data.Old3_Extent
-    )
-}
-        .Where(x =>
-            !string.IsNullOrWhiteSpace(x.Category) ||
-            !string.IsNullOrWhiteSpace(x.MarketValue) ||
-            !string.IsNullOrWhiteSpace(x.Extent))
-        .ToList();
-
-        var listedRow1 = listedRows.ElementAtOrDefault(0);
-        var listedRow2 = listedRows.ElementAtOrDefault(1);
-        var listedRow3 = listedRows.ElementAtOrDefault(2);
-
-        // Only add extra rows when the CURRENT roll genuinely contains
-        // more than one purpose/category.
-        var currentRollIsMultipurpose = listedRows.Count > 1;
         return Document.Create(container =>
         {
             container.Page(page =>
@@ -1428,50 +1387,20 @@ public class NoticeService : INoticeService
                         .Bold();
 
                     PropertyTable(
-     col,
-
-     // Main property information
-     isOmission ? null : data.Old_PropertyDescription,
-
-     // Current roll category/value/extent.
-     // Whichever Old_* slot contains the ONE current valuation
-     // becomes the first/main row.
-     isOmission ? null : listedRow1.Category,
-
-     isOmission ? null : data.Old_Address,
-     isOmission ? null : listedRow1.MarketValue,
-     isOmission ? null : listedRow1.Extent,
-     isOmission ? null : data.Old_Owner,
-
-     // Only true when the CURRENT valuation roll actually has
-     // more than one purpose.
-     !isOmission && currentRollIsMultipurpose,
-
-     // Additional CURRENT roll purpose, if one genuinely exists
-     isOmission || !currentRollIsMultipurpose
-         ? null
-         : listedRow2.Category,
-
-     isOmission || !currentRollIsMultipurpose
-         ? null
-         : listedRow2.MarketValue,
-
-     isOmission || !currentRollIsMultipurpose
-         ? null
-         : listedRow2.Extent,
-
-     // Third CURRENT purpose, if one genuinely exists
-     isOmission || listedRows.Count < 3
-         ? null
-         : listedRow3.Category,
-
-     isOmission || listedRows.Count < 3
-         ? null
-         : listedRow3.MarketValue,
-
-     isOmission || listedRows.Count < 3
-         ? null
-         : listedRow3.Extent);
+                        col,
+                        isOmission ? null : data.Old_PropertyDescription,
+                        isOmission ? null : data.Old_Category,
+                        isOmission ? null : data.Old_Address,
+                        isOmission ? null : FormatAcknowledgementMarketValue(data.Old_MarketValue),
+                        isOmission ? null : data.Old_Extent,
+                        isOmission ? null : data.Old_Owner,
+                        !isOmission && data.IsMulti,
+                        isOmission ? null : data.Old2_Category,
+                        isOmission ? null : FormatAcknowledgementMarketValue(data.Old2_MarketValue),
+                        isOmission ? null : data.Old2_Extent,
+                        isOmission ? null : data.Old3_Category,
+                        isOmission ? null : FormatAcknowledgementMarketValue(data.Old3_MarketValue),
+                        isOmission ? null : data.Old3_Extent);
 
                     col.Item().BorderBottom(1).BorderColor("#555555");
 
@@ -1560,37 +1489,29 @@ public class NoticeService : INoticeService
 
                 // FOOTER - exactly like the letter style
                 page.Footer()
-    .PaddingTop(8)
-    .AlignCenter()
-    .Text(text =>
-    {
-        text.Line(
-                "_______________________________________________")
-            .FontSize(7)
-            .FontColor("#666666");
+                    .PaddingTop(5)
+                    .AlignCenter()
+                    .Column(f =>
+                    {
+                        f.Item()
+                            .Text("This is an official document generated by the City of Johannesburg")
+                            .FontSize(7)
+                            .FontColor("#666666");
 
-        text.Line(
-                "This is an official document generated by the City of Johannesburg Valuation Services Department")
-            .FontSize(7)
-            .FontColor("#666666");
+                        f.Item()
+                            .Text($"Generated on: {generatedDate}")
+                            .FontSize(7)
+                            .FontColor("#666666");
 
-        text.Line(
-                $"Generated on: {DateTime.Now:dd MMMM yyyy}")
-            .FontSize(7)
-            .FontColor("#666666");
-
-        if (!isOmission &&
-            !string.IsNullOrWhiteSpace(data.ValuationKey))
-        {
-            text.Line(data.ValuationKey.Trim())
-                .FontSize(7)
-                .SemiBold()
-                .FontColor("#cc0000");
-        }
-    });
-
-
-
+                        if (!isOmission && !string.IsNullOrWhiteSpace(data.ValuationKey))
+                        {
+                            f.Item()
+                                .Text(data.ValuationKey)
+                                .FontSize(8)
+                                .SemiBold()
+                                .FontColor("#cc0000");
+                        }
+                    });
             });
         }).GeneratePdf();
 
@@ -2255,7 +2176,9 @@ public class NoticeService : INoticeService
         {
             try
             {
-                var connStr = _config.GetConnectionString(roll.ConnKey)!;
+                var connStr = _config.GetConnectionString(roll.ConnKey);
+                if (string.IsNullOrWhiteSpace(connStr))
+                    continue;
                 await using var conn = new SqlConnection(connStr);
 
                 var objections = await conn.QueryAsync(
@@ -2360,7 +2283,9 @@ public class NoticeService : INoticeService
         {
             try
             {
-                var connStr = _config.GetConnectionString(roll.ConnKey)!;
+                var connStr = _config.GetConnectionString(roll.ConnKey);
+                if (string.IsNullOrWhiteSpace(connStr))
+                    continue;
                 await using var conn = new SqlConnection(connStr);
 
                 var appeals = await conn.QueryAsync(
@@ -2375,7 +2300,7 @@ public class NoticeService : INoticeService
                     var propDesc = appeal.A_Property_Desc?.ToString() ?? "";
 
                     // Appeal Decision notice (.eml in appeal root folder)
-                    var appDecision = FindNoticeFile(AppealRoot, appNo);
+                    var appDecision = FindNoticeFile(roll.AppealRootPath, appNo);
                     if (appDecision.exists)
                         vm.AppealNotices.Add(Notice(
                             appNo, propDesc, roll.Name,

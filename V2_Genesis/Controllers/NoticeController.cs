@@ -86,7 +86,9 @@ public class NoticeController : Controller
         }
         catch (UnauthorizedAccessException)
         {
-            return Forbid();
+            TempData["NoticeError"] =
+                "This document belongs to a different account, so it cannot be downloaded here.";
+            return RedirectToDashboard(returnUrl, rollSource);
         }
         catch (Exception ex)
         {
@@ -95,7 +97,7 @@ public class NoticeController : Controller
                 rollSource,
                 referenceNumber);
             TempData["NoticeError"] =
-                "The final appeal outcome could not be generated. Please try again.";
+                WithDetail("The final appeal outcome could not be generated. Please try again.", ex);
             return RedirectToDashboard(returnUrl, rollSource);
         }
     }
@@ -136,7 +138,9 @@ public class NoticeController : Controller
         }
         catch (UnauthorizedAccessException)
         {
-            return Forbid();
+            TempData["NoticeError"] =
+                "This document belongs to a different account, so it cannot be downloaded here.";
+            return RedirectToDashboard(returnUrl, rollSource);
         }
         catch (Exception ex)
         {
@@ -145,7 +149,7 @@ public class NoticeController : Controller
                 rollSource,
                 objectionNo);
             TempData["NoticeError"] =
-                "The objection outcome notice could not be generated. Please try again.";
+                WithDetail("The objection outcome notice could not be generated. Please try again.", ex);
             return RedirectToDashboard(returnUrl, rollSource);
         }
     }
@@ -186,7 +190,9 @@ public class NoticeController : Controller
         }
         catch (UnauthorizedAccessException)
         {
-            return Forbid();
+            TempData["NoticeError"] =
+                "This document belongs to a different account, so it cannot be downloaded here.";
+            return RedirectToDashboard(returnUrl, rollSource);
         }
         catch (Exception ex)
         {
@@ -195,7 +201,7 @@ public class NoticeController : Controller
                 rollSource,
                 objectionNo);
             TempData["NoticeError"] =
-                "The objection outcome notice could not be generated. Please try again.";
+                WithDetail("The objection outcome notice could not be generated. Please try again.", ex);
             return RedirectToDashboard(returnUrl, rollSource);
         }
     }
@@ -236,7 +242,9 @@ public class NoticeController : Controller
         }
         catch (UnauthorizedAccessException)
         {
-            return Forbid();
+            TempData["NoticeError"] =
+                "This document belongs to a different account, so it cannot be downloaded here.";
+            return RedirectToDashboard(returnUrl, rollSource);
         }
         catch (Exception ex)
         {
@@ -313,10 +321,12 @@ public class NoticeController : Controller
     string? returnUrl,
     CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(objectionNo))
+        if (string.IsNullOrWhiteSpace(objectionNo) || objectionNo.Trim() == "—")
         {
-            return BadRequest(
-                "The reference number is required.");
+            TempData["NoticeError"] =
+                "The reference number is missing, so the acknowledgement cannot be generated. " +
+                "You can download it from your dashboard.";
+            return RedirectToDashboard(returnUrl, rollSource);
         }
 
         var userId = User.FindFirstValue(
@@ -367,7 +377,9 @@ public class NoticeController : Controller
         }
         catch (UnauthorizedAccessException)
         {
-            return Forbid();
+            TempData["NoticeError"] =
+                "This document belongs to a different account, so it cannot be downloaded here.";
+            return RedirectToDashboard(returnUrl, rollSource);
         }
         catch (NotSupportedException ex)
         {
@@ -387,7 +399,7 @@ public class NoticeController : Controller
                 objectionNo);
 
             TempData["NoticeError"] =
-                "The acknowledgement could not be generated. Please try again.";
+                WithDetail("The acknowledgement could not be generated. Please try again.", ex);
 
             return RedirectToDashboard(returnUrl, rollSource);
         }
@@ -414,46 +426,25 @@ public class NoticeController : Controller
         try
         {
             if (string.IsNullOrWhiteSpace(path))
-                return BadRequest("No file path specified.");
+            {
+                TempData["NoticeError"] = "No notice was selected.";
+                return RedirectToDashboard(null, null);
+            }
 
             // Decode
             var filePath = System.Uri.UnescapeDataString(path);
 
             if (!System.IO.File.Exists(filePath))
-                return NotFound("Notice file not found.");
+            {
+                TempData["NoticeError"] = "The notice file could not be found on the server.";
+                return RedirectToDashboard(null, null);
+            }
 
             // Security: file must be within one of the configured roots
             // (prevents path traversal)
-            var safePaths = new[]
-            {
+            var safePaths = NoticeStoragePaths.AllRoots(
                 HttpContext.RequestServices
-                    .GetRequiredService<IConfiguration>()
-                    ["ObjectionRolls:Objection:RootPath"]       ?? "",
-                HttpContext.RequestServices
-                    .GetRequiredService<IConfiguration>()
-                    ["ObjectionRolls:Objection_Supp1:RootPath"] ?? "",
-                HttpContext.RequestServices
-                    .GetRequiredService<IConfiguration>()
-                    ["ObjectionRolls:Objection_Supp2:RootPath"] ?? "",
-                HttpContext.RequestServices
-                    .GetRequiredService<IConfiguration>()
-                    ["ObjectionRolls:Objection_Supp3:RootPath"] ?? "",
-                HttpContext.RequestServices
-                    .GetRequiredService<IConfiguration>()
-                    ["ObjectionRolls:Objection_Supp4:RootPath"] ?? "",
-                HttpContext.RequestServices
-                    .GetRequiredService<IConfiguration>()
-                    ["ObjectionRolls:Objection_Supp5:RootPath"] ?? "",
-                HttpContext.RequestServices
-                    .GetRequiredService<IConfiguration>()
-                    ["AppSettings:Section49RootPath"]            ?? "",
-                HttpContext.RequestServices
-                    .GetRequiredService<IConfiguration>()
-                    ["AppSettings:AppealRootPath"]               ?? "",
-                HttpContext.RequestServices
-                    .GetRequiredService<IConfiguration>()
-                    ["ObjectionRolls:Objection_Query:QueryRootPath"] ?? "",
-            };
+                    .GetRequiredService<IConfiguration>());
 
             var normalised = Path.GetFullPath(filePath);
             bool allowed = safePaths
@@ -466,7 +457,9 @@ public class NoticeController : Controller
             {
                 _logger.LogWarning(
                     "[Notices] Blocked download outside safe paths: {Path}", filePath);
-                return Forbid();
+                TempData["NoticeError"] =
+                    "This notice is stored outside the configured notice folders, so it cannot be downloaded.";
+                return RedirectToDashboard(null, null);
             }
 
             var ext = Path.GetExtension(filePath).ToLower();
@@ -482,7 +475,9 @@ public class NoticeController : Controller
         catch (Exception ex)
         {
             _logger.LogError(ex, "[Notices] Download failed for {Path}", path);
-            return StatusCode(500, "Could not retrieve the file.");
+            TempData["NoticeError"] =
+                WithDetail("The notice could not be downloaded. Please try again.", ex);
+            return RedirectToDashboard(null, null);
         }
     }
 
@@ -546,9 +541,41 @@ public class NoticeController : Controller
                 type);
 
             TempData["NoticeError"] =
-                "The notice could not be downloaded. Please try again.";
+                WithDetail("The notice could not be downloaded. Please try again.", ex);
             return RedirectToDashboard(returnUrl, rollSource);
         }
+    }
+
+    // Local path + query of the page that sent the request, or null.
+    private string? RefererPath()
+    {
+        var referer = Request.Headers.Referer.ToString();
+        if (string.IsNullOrWhiteSpace(referer) ||
+            !Uri.TryCreate(referer, UriKind.Absolute, out var uri) ||
+            !string.Equals(uri.Host, Request.Host.Host, StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        var local = uri.PathAndQuery;
+
+        // Never bounce back into a download URL (would loop).
+        if (local.Contains("download", StringComparison.OrdinalIgnoreCase))
+            return null;
+
+        return Url.IsLocalUrl(local) ? local : null;
+    }
+
+    // Admins (and Development) see the real reason a document failed,
+    // clients see the friendly message only.
+    private string WithDetail(string message, Exception ex)
+    {
+        var env = HttpContext.RequestServices
+            .GetService<IWebHostEnvironment>();
+
+        return IsAdministrativeUser() || env?.IsDevelopment() == true
+            ? $"{message} ({ex.Message})"
+            : message;
     }
 
     private bool IsAdministrativeUser() =>
@@ -564,6 +591,13 @@ public class NoticeController : Controller
     {
         if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
             return LocalRedirect(returnUrl);
+
+        // No returnUrl: go back to the page the button was clicked on, so the
+        // message is shown where the person was (Display page, My Notices,
+        // Section 49 page, ...), not on the dashboard landing page.
+        var back = RefererPath();
+        if (back is not null)
+            return LocalRedirect(back);
 
         var openRoll = string.IsNullOrWhiteSpace(rollSource)
             ? "Objection"

@@ -1344,6 +1344,21 @@
             var linkSuccess = TempData["LinkSuccess"] as string;
             var linkError = TempData["LinkError"] as string;
             var linkReviewClose = TempData["ReviewCloseDate"] as string;
+
+            // Set by every download action (acknowledgements, Section 49/53,
+            // outcome notices, rebates, attributes) when the file cannot be
+            // produced. Without this the download just "does nothing".
+            var noticeError = TempData["NoticeError"] as string;
+        }
+        @if (!string.IsNullOrWhiteSpace(noticeError))
+        {
+            <div class="legend-link-flash" style="max-width:1400px;margin:16px auto 0;padding:0 16px;">
+                <div class="alert alert-warning alert-dismissible fade show d-flex align-items-start gap-2" role="alert">
+                    <i class="fa-solid fa-file-circle-exclamation mt-1"></i>
+                    <div>@noticeError</div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            </div>
         }
         @if (!string.IsNullOrWhiteSpace(linkSuccess) || !string.IsNullOrWhiteSpace(linkError))
         {

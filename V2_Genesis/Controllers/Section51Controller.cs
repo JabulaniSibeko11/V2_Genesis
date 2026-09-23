@@ -190,13 +190,28 @@ public class Section51Controller : Controller
                 TempData["s51_files"]?.ToString() ?? "[]") ?? new();
 
         if (string.IsNullOrEmpty(objNo))
+        {
+            TempData["NoticeError"] =
+                "Your session has expired, so the confirmation can no longer be downloaded. " +
+                "Please verify your reference again.";
             return RedirectToAction(nameof(Verify));
+        }
 
         TempData.Keep();
 
-        var (pdf, fileName) = await _noticeService
-            .GenerateSection51AcknowledgementAsync(objNo, roll, count, fileNames);
+        try
+        {
+            var (pdf, fileName) = await _noticeService
+                .GenerateSection51AcknowledgementAsync(objNo, roll, count, fileNames);
 
-        return File(pdf, "application/pdf", fileName);
+            return File(pdf, "application/pdf", fileName);
+        }
+        catch (Exception ex)
+        {
+            // Show the reason on the confirmation page instead of a 500 page.
+            TempData["NoticeError"] =
+                "The confirmation document could not be generated. Please try again. (" + ex.Message + ")";
+            return RedirectToAction(nameof(Confirmation));
+        }
     }
 }

@@ -155,8 +155,7 @@
                                                 @if (n.FileExists)
                                                 {
                                                     <a class="nt-dl-btn @(n.FileExt==".eml"?"nt-eml":"")"
-                                                       href="@Url.Action("Download","Notices",new{path=Uri.EscapeDataString(n.FilePath)})"
-                                                       download>
+                                                       href="@Url.Action("Download","Notice",new{path=Uri.EscapeDataString(n.FilePath)})">
                                                         <i class="fa-solid fa-download"></i> @(n.FileExt==".eml"?"Email":"PDF")
                                                     </a>
                                                 }
@@ -199,7 +198,7 @@
                                             <td>@(n.IssuedDate.HasValue ? n.IssuedDate.Value.ToString("dd MMM yyyy") : "—")</td>
                                             <td>
                                                 @if (n.FileExists)
-                                                { <a class="nt-dl-btn nt-eml" href="@Url.Action("Download","Notices",new{path=Uri.EscapeDataString(n.FilePath)})" download><i class="fa-solid fa-download"></i> Email</a> }
+                                                { <a class="nt-dl-btn nt-eml" href="@Url.Action("Download","Notice",new{path=Uri.EscapeDataString(n.FilePath)})"><i class="fa-solid fa-download"></i> Email</a> }
                                                 else { <span class="nt-unavail">Pending</span> }
                                             </td>
                                         </tr>
@@ -239,7 +238,7 @@
                                             <td>@(n.IssuedDate.HasValue ? n.IssuedDate.Value.ToString("dd MMM yyyy") : "—")</td>
                                             <td>
                                                 @if (n.FileExists)
-                                                { <a class="nt-dl-btn" href="@Url.Action("Download","Notices",new{path=Uri.EscapeDataString(n.FilePath)})" download><i class="fa-solid fa-download"></i> PDF</a> }
+                                                { <a class="nt-dl-btn" href="@Url.Action("Download","Notice",new{path=Uri.EscapeDataString(n.FilePath)})"><i class="fa-solid fa-download"></i> PDF</a> }
                                                 else { <span class="nt-unavail">Pending</span> }
                                             </td>
                                         </tr>

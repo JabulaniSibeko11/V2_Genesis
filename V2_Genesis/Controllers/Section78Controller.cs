@@ -247,6 +247,12 @@ public class Section78Controller : Controller
         // ── Populate TempData for acknowledgement view ──────────────
         TempData["pin"] = result.RandomPin;
         TempData["id"] = result.QueryRef;
+
+        // Keep the reference so "Download Acknowledgement" on the
+        // Display page still works after a refresh (TempData is gone).
+        HttpContext.Session.SetString(
+            "Section78Ref",
+            result.QueryRef?.ToString() ?? string.Empty);
         TempData["Count"] = result.FileCount;
 
         for (int i = 0; i < 10; i++)

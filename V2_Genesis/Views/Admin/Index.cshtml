@@ -1228,9 +1228,7 @@
            asp-route-objectionNo="@item.DisplayReference"
            asp-route-rollSource="Objection_Query"
            asp-route-returnUrl="@queryReturnUrl"
-           data-no-loader
-           target="_blank"
-           rel="noopener">
+           data-no-loader>
 
             <i class="fa-solid fa-download"></i>
             Download Acknowledgement
@@ -1467,9 +1465,7 @@
            asp-route-objectionNo="@reviewRefNo"
            asp-route-rollSource="Objection_Query"
            asp-route-returnUrl="@reviewReturnUrl"
-           data-no-loader
-           target="_blank"
-           rel="noopener">
+           data-no-loader>
 
             <i class="fa-solid fa-download"></i>
             Download Acknowledgement
@@ -1804,8 +1800,6 @@
                Uri.EscapeDataString(roll.Source ?? "")
            )"
            data-no-loader
-           target="_blank"
-           rel="noopener"
            onclick="logAction(
                'DownloadAck',
                '@roll.Source',
@@ -1832,8 +1826,6 @@
                asp-route-unitKey="@item.Unit_key"
                asp-route-valuationKey="@item.Valuation_Key"
                data-no-loader
-               target="_blank"
-               rel="noopener"
                onclick="logAction(
                    'DownloadSection49',
                    '@roll.Source',
@@ -2165,9 +2157,7 @@
                "/Admin?openRoll=" +
                Uri.EscapeDataString(roll.Source ?? "")
            )"
-           data-no-loader
-           target="_blank"
-           rel="noopener">
+           data-no-loader>
 
             <i class="fa-solid fa-download"></i>
             Download Acknowledgement

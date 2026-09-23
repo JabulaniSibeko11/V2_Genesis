@@ -17,15 +17,26 @@
     bool isReview = TempData.Peek("ReviewStat")?.ToString() == "R";
     string typeWord = isReview ? "Review" : "Query";
 
+    // Reference just submitted. The session copy keeps the download
+    // working after a page refresh (TempData is gone by then).
     var queryRef =
     TempData["id"]?.ToString()
     ?? TempData["ObjectionNum"]?.ToString()
+    ?? Context.Session.GetString("ObjectionNum")
     ?? "—";
 
-
-    var displayRollSource = TempData["RollSource"]?.ToString()
-        ?? TempData["SourceTable"]?.ToString()
-        ?? "Query";
+    // Only a real roll name (Objection, Objection_Supp1..5, Objection_Query).
+    // Do NOT default to "Query": that sent every Objection / Appeal
+    // acknowledgement to the Section 78 database, where it is not found.
+    // Empty = the acknowledgement service works the roll out from the
+    // reference number.
+    var tdRoll = TempData["RollSource"]?.ToString();
+    string? displayRollSource =
+        !string.IsNullOrWhiteSpace(tdRoll) &&
+        tdRoll.StartsWith("Objection", StringComparison.OrdinalIgnoreCase)
+            ? tdRoll.Trim()
+            : null;
+    var hasAckRef = !string.IsNullOrWhiteSpace(queryRef) && queryRef != "—";
     var pin = TempData["pin"]?.ToString() ?? "—";
     var count = TempData["Count"]?.ToString() ?? "0";
     var reason = TempData["objection_reason"]?.ToString();
@@ -153,22 +164,7 @@
     var newCat3 = TempData["new3_Category"]?.ToString();
     var newMV3 = TempData["new3_Market_Value"]?.ToString();
     var newExt3 = TempData["new3_Extent"]?.ToString();
-    bool HasCurrentSplit(string? category, string? extent, string? marketValue)
-    {
-        return !string.IsNullOrWhiteSpace(category)
-            || !string.IsNullOrWhiteSpace(extent)
-            || !string.IsNullOrWhiteSpace(marketValue);
-    }
 
-    var currentSplitCount = 0;
-
-    if (HasCurrentSplit(oldCat2, oldExt2, oldMV2))
-        currentSplitCount++;
-
-    if (HasCurrentSplit(oldCat3, oldExt3, oldMV3))
-        currentSplitCount++;
-
-    var hasMultipleCurrentSplits = currentSplitCount > 1;
 
     var files = new List<string>();
     for (int i = 1; i <= 10; i++)
@@ -305,25 +301,15 @@
                                     <tbody>
                                         <tr class="dp-total-row">
                                             <td>Category</td>
-                                            <td>@(hasMultipleCurrentSplits ? "Multiple Purposes" : "–")</td>
+                                            <td>Multiple Purposes</td>
                                         </tr>
-
                                         <tr class="dp-total-row">
                                             <td>Total Extent</td>
-                                            <td>
-                                                @(hasMultipleCurrentSplits
-                                                    ? FormatExtentTotal(oldExt2, oldExt3)
-                                                    : "–")
-                                            </td>
+                                            <td>@FormatExtentTotal(oldExt2, oldExt3)</td>
                                         </tr>
-
                                         <tr class="dp-total-row">
                                             <td>Total Market Value</td>
-                                            <td>
-                                                @(hasMultipleCurrentSplits
-                                                    ? FormatMarketValueTotal(oldMV2, oldMV3)
-                                                    : "–")
-                                            </td>
+                                            <td>@FormatMarketValueTotal(oldMV2, oldMV3)</td>
                                         </tr>
 
                                         @if (!string.IsNullOrWhiteSpace(oldCat2) ||
@@ -577,12 +563,23 @@
 </div>
 
 <div class="dp-actions">
-    <a href="@Url.Action("DownloadAcknowledgement", "Notice", new { objectionNo = queryRef, rollSource = displayRollSource })"
+    @if (hasAckRef)
+    {
+        <a href="@Url.Action("DownloadAcknowledgement", "Notice", new { objectionNo = queryRef, rollSource = displayRollSource, returnUrl = Context.Request.Path.Value })"
            class="dp-btn-primary"
+           data-no-loader
            onclick="showDlToast()">
-        <i class="fa-solid fa-download"></i>
-        Download Acknowledgement
-    </a>
+            <i class="fa-solid fa-download"></i>
+            Download Acknowledgement
+        </a>
+    }
+    else
+    {
+        <a asp-controller="Dashboard" asp-action="Index" class="dp-btn-primary">
+            <i class="fa-solid fa-download"></i>
+            Download from My Dashboard
+        </a>
+    }
     <a asp-controller="Dashboard" asp-action="Index" class="dp-btn-secondary">
         <i class="fa-solid fa-gauge-high"></i>
         My Dashboard

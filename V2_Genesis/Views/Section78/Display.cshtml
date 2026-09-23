@@ -17,7 +17,12 @@
     bool isReview = TempData.Peek("ReviewStat")?.ToString() == "R";
     string typeWord = isReview ? "Review" : "Query";
 
-    var queryRef = TempData["id"]?.ToString() ?? "—";
+    var queryRef = TempData["id"]?.ToString();
+    if (string.IsNullOrWhiteSpace(queryRef))
+        queryRef = Context.Session.GetString("Section78Ref");
+    if (string.IsNullOrWhiteSpace(queryRef))
+        queryRef = "—";
+    var hasAckRef = queryRef != "—";
     var pin = TempData["pin"]?.ToString() ?? "—";
     var count = TempData["Count"]?.ToString() ?? "0";
     var reason = TempData["objection_reason"]?.ToString();
@@ -146,25 +151,6 @@
     var newMV3 = TempData["new3_Market_Value"]?.ToString();
     var newExt3 = TempData["new3_Extent"]?.ToString();
 
-    bool HasCurrentSplit(string? category, string? extent, string? marketValue)
-    {
-        return !string.IsNullOrWhiteSpace(category)
-            || !string.IsNullOrWhiteSpace(extent)
-            || !string.IsNullOrWhiteSpace(marketValue);
-    }
-
-    var currentSplitCount = 0;
-
-    if (HasCurrentSplit(oldCat, oldExtent, oldMV))
-        currentSplitCount++;
-
-    if (HasCurrentSplit(oldCat2, oldExt2, oldMV2))
-        currentSplitCount++;
-
-    if (HasCurrentSplit(oldCat3, oldExt3, oldMV3))
-        currentSplitCount++;
-
-    var hasMultipleCurrentSplits = currentSplitCount > 1;
     var files = new List<string>();
     for (int i = 1; i <= 10; i++)
     {
@@ -300,26 +286,17 @@
                                     <tbody>
                                         <tr class="dp-total-row">
                                             <td>Category</td>
-                                            <td>@(hasMultipleCurrentSplits ? "Multiple Purposes" : "–")</td>
+                                            <td>Multiple Purposes</td>
                                         </tr>
-
                                         <tr class="dp-total-row">
                                             <td>Total Extent</td>
-                                            <td>
-                                                @(hasMultipleCurrentSplits
-                                                    ? FormatExtentTotal(oldExtent, oldExt2, oldExt3)
-                                                    : "–")
-                                            </td>
+                                            <td>@FormatExtentTotal(oldExtent, oldExt2, oldExt3)</td>
                                         </tr>
-
                                         <tr class="dp-total-row">
                                             <td>Total Market Value</td>
-                                            <td>
-                                                @(hasMultipleCurrentSplits
-                                                    ? FormatMarketValueTotal(oldMV, oldMV2, oldMV3)
-                                                    : "–")
-                                            </td>
+                                            <td>@FormatMarketValueTotal(oldMV, oldMV2, oldMV3)</td>
                                         </tr>
+
                                         <tr class="dp-split-start">
                                             <td class="dp-split-label">Category Split 1</td>
                                             <td>@(string.IsNullOrWhiteSpace(oldCat) ? "–" : oldCat)</td>
@@ -605,12 +582,23 @@
 </div>
 
 <div class="dp-actions">
-    <a href="@Url.Action("DownloadAcknowledgement", "Notice", new { objectionNo = queryRef, rollSource = "Query" })"
+    @if (hasAckRef)
+    {
+        <a href="@Url.Action("DownloadAcknowledgement", "Notice", new { objectionNo = queryRef, rollSource = "Objection_Query", returnUrl = Context.Request.Path.Value })"
            class="dp-btn-primary"
+           data-no-loader
            onclick="showDlToast()">
-        <i class="fa-solid fa-download"></i>
-        Download Acknowledgement
-    </a>
+            <i class="fa-solid fa-download"></i>
+            Download Acknowledgement
+        </a>
+    }
+    else
+    {
+        <a href="/dashboard/roll-detail/Objection_Query?section=queries" class="dp-btn-primary">
+            <i class="fa-solid fa-download"></i>
+            Download from My Dashboard
+        </a>
+    }
     <a asp-controller="Dashboard" asp-action="Index" class="dp-btn-secondary">
         <i class="fa-solid fa-gauge-high"></i>
         My Dashboard

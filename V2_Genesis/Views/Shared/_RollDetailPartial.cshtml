@@ -405,8 +405,6 @@
                                                        asp-controller="Notice"
                                                        asp-action="DownloadAcknowledgement"
                                                        data-no-loader
-                                                       target="_blank"
-                                                       rel="noopener"
                                                        asp-route-objectionNo="@item.DisplayReference"
                                                        asp-route-rollSource="Objection_Query"
                                                        asp-route-returnUrl="@rollReturnUrl">
@@ -580,8 +578,6 @@
                                                            asp-controller="Notice"
                                                            asp-action="DownloadAcknowledgement"
                                                        data-no-loader
-                                                       target="_blank"
-                                                       rel="noopener"
                                                            asp-route-objectionNo="@item.DisplayReference"
                                                            asp-route-rollSource="Objection_Query"
                                                            asp-route-returnUrl="@rollReturnUrl">
@@ -884,8 +880,6 @@ else
                                                            asp-controller="Notice"
                                                            asp-action="DownloadAcknowledgement"
                                                        data-no-loader
-                                                       target="_blank"
-                                                       rel="noopener"
                                                            asp-route-objectionNo="@item.Objection_No"
                                                            asp-route-rollSource="@Model.Roll.Source"
                                                            asp-route-returnUrl="@rollReturnUrl">
@@ -916,9 +910,7 @@ else
            asp-route-rollSource="@Model.Roll.Source"
            asp-route-unitKey="@item.Unit_key"
            asp-route-valuationKey="@item.Valuation_Key"
-           data-no-loader
-           target="_blank"
-           rel="noopener">
+           data-no-loader>
             <i class="fa-solid fa-envelope-open-text"></i>
             Download Section 49 Notice
         </a>
@@ -1134,8 +1126,6 @@ else
                                                            asp-controller="Notice"
                                                            asp-action="DownloadAcknowledgement"
                                                        data-no-loader
-                                                       target="_blank"
-                                                       rel="noopener"
                                                            asp-route-objectionNo="@appealAckRef"
                                                            asp-route-rollSource="@Model.Roll.Source"
                                                            asp-route-returnUrl="@rollReturnUrl">

@@ -253,14 +253,29 @@ public class EvidenceController : Controller
                 TempData["ev_fileNames"]?.ToString() ?? "[]") ?? new();
 
         if (string.IsNullOrEmpty(objNo))
+        {
+            TempData["NoticeError"] =
+                "Your session has expired, so the confirmation can no longer be downloaded. " +
+                "Please verify your reference again.";
             return RedirectToAction(nameof(VerifyObj));
+        }
 
         TempData.Keep();
 
-        var (pdf, fileName) = await _noticeService
-            .GenerateAttachmentConfirmationAsync(objNo, roll, newCount, names);
+        try
+        {
+            var (pdf, fileName) = await _noticeService
+                .GenerateAttachmentConfirmationAsync(objNo, roll, newCount, names);
 
-        return File(pdf, "application/pdf", fileName);
+            return File(pdf, "application/pdf", fileName);
+        }
+        catch (Exception ex)
+        {
+            // Show the reason on the confirmation page instead of a 500 page.
+            TempData["NoticeError"] =
+                "The confirmation document could not be generated. Please try again. (" + ex.Message + ")";
+            return RedirectToAction(nameof(Confirmation));
+        }
     }
 
     // ── Roll detection ────────────────────────────────────────────────
