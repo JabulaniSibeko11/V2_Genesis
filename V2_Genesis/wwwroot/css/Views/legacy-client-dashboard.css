@@ -1006,3 +1006,82 @@
         max-width: 170px;
     }
 }
+/* ============================================================
+   ANNOUNCEMENT BAR — READABLE ON TABLET / PHONE
+   Desktop keeps the scrolling ticker. On narrow screens the
+   message is shown in full on its own line under the pills.
+   ============================================================ */
+
+@media (max-width: 900px) {
+    .ann-bar {
+        padding: 12px 0 14px;
+    }
+
+        .ann-bar .ann-inner {
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px 12px;
+            padding: 0 16px;
+        }
+
+        .ann-bar .ann-badge {
+            order: 1;
+        }
+
+        .ann-bar .ann-days {
+            order: 2;
+            margin-left: auto;
+        }
+
+        .ann-bar .ann-text {
+            order: 3;
+            flex: 1 1 100%;
+            min-width: 0;
+            overflow: visible;
+            white-space: normal;
+            -webkit-mask-image: none;
+            mask-image: none;
+            color: #1e3a40;
+            font-size: 14px;
+            font-weight: 500;
+            line-height: 1.55;
+        }
+
+            .ann-bar .ann-text span {
+                display: block;
+                padding-left: 0;
+                animation: none;
+                transform: none;
+                overflow-wrap: anywhere;
+            }
+}
+
+@media (max-width: 380px) {
+    .ann-bar .ann-inner {
+        padding: 0 12px;
+    }
+
+    .ann-bar .ann-badge,
+    .ann-bar .ann-days {
+        padding: 5px 11px;
+        font-size: 11px;
+    }
+
+    .ann-bar .ann-text {
+        font-size: 13.5px;
+    }
+}
+
+/* People who prefer less motion get the still message everywhere. */
+@media (prefers-reduced-motion: reduce) {
+    .ann-bar .ann-text {
+        white-space: normal;
+        -webkit-mask-image: none;
+        mask-image: none;
+    }
+
+        .ann-bar .ann-text span {
+            padding-left: 0;
+            animation: none;
+        }
+}

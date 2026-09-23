@@ -522,4 +522,152 @@
                     },
                     150);
         });
+
+    // ------------------------------------------------------------
+    // Deep link from a notification:
+    //   ?ref=OBJ-123      → open the section holding that record,
+    //                       go to its page and highlight the row
+    //   ?section=appeals  → open that section (used when there is
+    //                       no reference, or it can't be found)
+    // ------------------------------------------------------------
+    function widgetKeyOf(body) {
+        return body?.id?.replace(/^widget-/, '') || null;
+    }
+
+    function openWidgetBody(body) {
+        if (!body || body.classList.contains('open')) {
+            if (body) initTablesWithin(body);
+            return;
+        }
+
+        const key = widgetKeyOf(body);
+        if (key) window.toggleWidget(key);
+    }
+
+    function findRowByReference(ref) {
+        const wanted = ref.trim().toUpperCase();
+        let partial = null;
+
+        const rows = document.querySelectorAll(
+            '.cd-widget-body .cd-table tbody tr');
+
+        for (const row of rows) {
+            for (const cell of row.cells) {
+                const text = (cell.textContent || '')
+                    .replace(/\s+/g, ' ')
+                    .trim()
+                    .toUpperCase();
+
+                if (!text) continue;
+
+                if (text === wanted ||
+                    text.split(' ').includes(wanted)) {
+                    return row;
+                }
+
+                if (!partial && text.includes(wanted)) {
+                    partial = row;
+                }
+            }
+        }
+
+        return partial;
+    }
+
+    // `table` is captured before DataTables paginates, because rows on
+    // later pages are detached from the DOM (row.closest() is then null).
+    function showRow(row, table) {
+
+        if (window.jQuery &&
+            jQuery.fn?.DataTable &&
+            table?.id &&
+            jQuery.fn.DataTable.isDataTable('#' + table.id)) {
+
+            const api = jQuery('#' + table.id).DataTable();
+
+            // Clear any search so the row is visible, then jump to its page.
+            if (api.search()) api.search('').draw(false);
+
+            const visible = api
+                .rows({ order: 'applied', search: 'applied' })
+                .nodes()
+                .toArray();
+
+            const index = visible.indexOf(row);
+
+            if (index >= 0 && api.page.len() > 0) {
+                api.page(Math.floor(index / api.page.len()))
+                    .draw(false);
+            }
+
+            // Phones: expand the "+" details so the actions show.
+            if (table.classList.contains('collapsed') &&
+                !row.classList.contains('parent')) {
+                row.querySelector('td.dtr-control')?.click();
+            }
+        }
+
+        row.classList.add('cd-row-highlight');
+        row.setAttribute('tabindex', '-1');
+
+        window.setTimeout(function () {
+            row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            row.focus({ preventScroll: true });
+        }, 150);
+
+        window.setTimeout(function () {
+            row.classList.remove('cd-row-highlight');
+        }, 6000);
+    }
+
+    function openFromNotification() {
+        const params =
+            new URLSearchParams(window.location.search);
+
+        const ref =
+            (params.get('ref') || '').trim();
+
+        const section =
+            (params.get('section') || '').trim().toLowerCase();
+
+        if (!ref && !section) return;
+
+        const row =
+            ref ? findRowByReference(ref) : null;
+
+        const sectionBody =
+            section
+                ? document.querySelector(
+                    '.cd-widget-body[id$="-' + CSS.escape(section) + '"]')
+                : null;
+
+        const table =
+            row?.closest('table') || null;
+
+        const body =
+            row?.closest('.cd-widget-body') || sectionBody;
+
+        if (!body) return;
+
+        openWidgetBody(body);
+
+        if (row) {
+            showRow(row, table);
+        }
+        else {
+            window.setTimeout(function () {
+                body.closest('.cd-widget')
+                    ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 150);
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener(
+            'DOMContentLoaded',
+            openFromNotification);
+    }
+    else {
+        openFromNotification();
+    }
 })();

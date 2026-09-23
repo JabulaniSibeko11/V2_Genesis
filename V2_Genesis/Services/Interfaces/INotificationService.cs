@@ -31,5 +31,13 @@ namespace V2_Genesis.Services.Interfaces
         Task<List<Notifications>> GetLatestAsync(string? userId, string? userEmail, bool isAdmin, int take = 10);
 
         Task MarkAsReadAsync(long id, string? userId, string? userEmail, bool isAdmin);
+
+        /// <summary>
+        /// Marks the notification as read (only if it belongs to the caller)
+        /// and returns the local URL of the page it is about.
+        /// Returns null when it does not exist or is not the caller's.
+        /// </summary>
+        Task<string?> OpenAsync(long id, string? userId, string? userEmail, bool isAdmin);
+
     }
 }

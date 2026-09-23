@@ -131,6 +131,44 @@ namespace V2_Genesis.Services.Implementations
         }
 
         public async Task MarkAsReadAsync(
+       long id,
+       string? userId,
+       string? userEmail,
+       bool isAdmin)
+        {
+            var notification = await FindOwnedAsync(id, userId, userEmail, isAdmin);
+
+            if (notification == null || notification.IsRead)
+                return;
+
+            notification.IsRead = true;
+            notification.ReadDate = DateTime.Now;
+
+            await _db.SaveChangesAsync();
+        }
+
+        public async Task<string?> OpenAsync(
+            long id,
+            string? userId,
+            string? userEmail,
+            bool isAdmin)
+        {
+            var notification = await FindOwnedAsync(id, userId, userEmail, isAdmin);
+
+            if (notification == null)
+                return null;
+
+            if (!notification.IsRead)
+            {
+                notification.IsRead = true;
+                notification.ReadDate = DateTime.Now;
+                await _db.SaveChangesAsync();
+            }
+
+            return NotificationTargetResolver.Resolve(notification, isAdmin);
+        }
+
+        private async Task<Notifications?> FindOwnedAsync(
             long id,
             string? userId,
             string? userEmail,
@@ -140,7 +178,7 @@ namespace V2_Genesis.Services.Implementations
                 .FirstOrDefaultAsync(x => x.IDNotifications == id);
 
             if (notification == null)
-                return;
+                return null;
 
             var canRead = isAdmin
                 ? notification.TargetRole == "AllAdmins" || notification.TargetRole == "Admin"
@@ -150,13 +188,7 @@ namespace V2_Genesis.Services.Implementations
                       (!string.IsNullOrWhiteSpace(userEmail) && notification.UserEmail == userEmail)
                   );
 
-            if (!canRead)
-                return;
-
-            notification.IsRead = true;
-            notification.ReadDate = DateTime.Now;
-
-            await _db.SaveChangesAsync();
+            return canRead ? notification : null;
         }
     }
 }

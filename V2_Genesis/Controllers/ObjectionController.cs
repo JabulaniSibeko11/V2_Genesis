@@ -1437,7 +1437,10 @@ public class ObjectionController : Controller
             premiseId: obj.Premise_id,
             rollSource: rollSource,
             sourceTable: sourceTable,
-            url: BuildClientNotificationUrl(rollSource),
+                        url: BuildClientNotificationUrl(
+                rollSource,
+                objectionRef,
+                isAppeal ? "appeals" : SectionForRoll(rollSource)),
             createdBy: userId);
 
         await _notificationService.CreateAdminNotificationAsync(
@@ -1939,7 +1942,10 @@ public class ObjectionController : Controller
             premiseId: null,
             rollSource: rollSource,
             sourceTable: sourceTable,
-            url: BuildClientNotificationUrl(rollSource),
+                        url: BuildClientNotificationUrl(
+                rollSource,
+                objectionNo,
+                isAppeal ? "appeals" : isReview ? "reviews" : isQuery ? "queries" : "objections"),
             createdBy: userId);
 
         await _notificationService.CreateAdminNotificationAsync(
@@ -2241,8 +2247,7 @@ public class ObjectionController : Controller
                 premiseId: propertyKey,
                 rollSource: rollSource,
                 sourceTable: ResolveSourceTable(rollSource),
-                url:
-                    $"/Dashboard?openRoll={Uri.EscapeDataString(rollSource)}",
+        url: BuildClientNotificationUrl(rollSource, null, "linked"),
                 createdBy: userId);
         }
         catch (Exception ex)
@@ -2434,10 +2439,18 @@ public class ObjectionController : Controller
                ?? "";
     }
 
-    private string BuildClientNotificationUrl(string rollSource)
-    {
-        return $"/Dashboard?openRoll={rollSource}";
-    }
+    // Points straight at the roll's dashboard page; ref + section make the
+    // page open the right table and highlight the record.
+    private static string BuildClientNotificationUrl(
+        string? rollSource,
+        string? referenceNumber = null,
+        string? section = null) =>
+        NotificationTargetResolver.BuildClientUrl(rollSource, referenceNumber, section);
+
+    private static string SectionForRoll(string? rollSource) =>
+        string.Equals(rollSource, "Objection_Query", StringComparison.OrdinalIgnoreCase)
+            ? "queries"
+            : "objections";
 
     private string BuildAdminNotificationUrl(string referenceNumber)
     {

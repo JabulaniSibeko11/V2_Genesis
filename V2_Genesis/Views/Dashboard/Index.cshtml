@@ -220,9 +220,8 @@
                                     : note.NotificationType;
  
                             <a class="cd-notification-item @(note.IsRead ? "" : "unread")"
-                                   href="@(string.IsNullOrWhiteSpace(note.Url)
-                                                                                                                                                                     ? "javascript:void(0)"
-                                                                                                                                                                     : note.Url)">
+                                   href="/notifications/@note.IDNotifications/open"
+                                   title="Open @(note.Title ?? "notification")">
  
                                 <div class="cd-note-icon cd-note-@noteType.ToLower()">
                                     <i class="fa-solid @(noteType == "Success"

@@ -883,3 +883,20 @@
             gap: 2px;
         }
 }
+/* ============================================================
+   ROW OPENED FROM A NOTIFICATION
+   ============================================================ */
+
+.client-dashboard-page .legacy-roll-dashboard-partial table.cd-table tbody tr.cd-row-highlight > td {
+    background: #fff4cc !important;
+    transition: background .6s ease;
+}
+
+    .client-dashboard-page .legacy-roll-dashboard-partial table.cd-table tbody tr.cd-row-highlight > td:first-child {
+        box-shadow: inset 4px 0 0 var(--dd-gold, #e6b000) !important;
+    }
+
+.client-dashboard-page .legacy-roll-dashboard-partial table.cd-table tbody tr.cd-row-highlight:focus {
+    outline: 2px solid var(--dd-gold, #e6b000);
+    outline-offset: -2px;
+}
