@@ -10,7 +10,7 @@
 ═══════════════════════════════════════════════════════════════════ *@
 @{
     ViewData["Title"] = "Submission Acknowledged";
-   // Layout = "~/Views/Shared/_ClientLayout.cshtml";
+    // Layout = "~/Views/Shared/_ClientLayout.cshtml";
     Layout = "~/Views/Shared/_Legend_Layout.cshtml";
 
     bool isMulti = ViewBag.IsMulti == true;
@@ -84,45 +84,6 @@
             .Replace(',', ' ');
     }
 
-    string FormatExtentTotal(params string?[] values)
-    {
-        decimal total = 0;
-        var hasValue = false;
-
-        foreach (var value in values)
-        {
-            var amount = ParseDisplayNumber(value);
-            if (!amount.HasValue) continue;
-            total += amount.Value;
-            hasValue = true;
-        }
-
-        return hasValue
-            ? total.ToString("#,0.##", System.Globalization.CultureInfo.InvariantCulture).Replace(',', ' ')
-            : "–";
-    }
-
-    string FormatMarketValueTotal(params string?[] values)
-    {
-        decimal total = 0;
-        var hasValue = false;
-
-        foreach (var value in values)
-        {
-            var amount = ParseDisplayNumber(value);
-            if (!amount.HasValue) continue;
-            total += amount.Value;
-            hasValue = true;
-        }
-
-        return hasValue
-            ? FormatRand(total.ToString(System.Globalization.CultureInfo.InvariantCulture))
-            : "–";
-    }
-
-    string? RequestedOrCurrent(string? requestedValue, string? currentValue) =>
-        string.IsNullOrWhiteSpace(requestedValue) ? currentValue : requestedValue;
-
     var oldPropDesc = TempData["Old_Property_Description"]?.ToString();
     var oldCat = TempData["Old_Category"]?.ToString();
     var oldAddress = TempData["Old_Address"]?.ToString();
@@ -150,6 +111,41 @@
     var newCat3 = TempData["new3_Category"]?.ToString();
     var newMV3 = TempData["new3_Market_Value"]?.ToString();
     var newExt3 = TempData["new3_Extent"]?.ToString();
+
+    // ── Multipurpose layout (display only, no database change) ──────
+    // LEFT  (roll): top level = the roll's Multiple Purposes row (or the
+    //        single category), then Split 1-3 = the roll's split rows.
+    //        The form keeps the roll rows in TempData (CurrentFilter_mult_*),
+    //        so they are read here. Peek keeps them for a page refresh.
+    // RIGHT (requested): top level = what the client typed (never a sum),
+    //        Split 1 = new2_, Split 2 = new3_, Split 3 = filled by the page
+    //        script from the form (sessionStorage).
+    string? Peek(string key) => TempData.Peek(key)?.ToString();
+    string? FirstValue(params string?[] values) =>
+        values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v));
+
+    var rollTopCat = FirstValue(Peek("CurrentFilter_mult_purp_CAT"), oldCat);
+    var rollTopExt = FirstValue(Peek("CurrentFilter_mult_purp_EXT"), oldExtent);
+    var rollTopMV = FirstValue(Peek("CurrentFilter_mult_purp_MV"), oldMV);
+
+    var rollSplits = new[]
+    {
+        (Cat: FirstValue(Peek("CurrentFilter_mult_Res_CAT"), oldCat2),
+         Ext: FirstValue(Peek("CurrentFilter_mult_Res_EXT"), oldExt2),
+         MV:  FirstValue(Peek("CurrentFilter_mult_Res_MV"), oldMV2)),
+        (Cat: FirstValue(Peek("CurrentFilter_mult_Bus_CAT"), oldCat3),
+         Ext: FirstValue(Peek("CurrentFilter_mult_Bus_EXT"), oldExt3),
+         MV:  FirstValue(Peek("CurrentFilter_mult_Bus_MV"), oldMV3)),
+        (Cat: Peek("CurrentFilter_mult_S3_CAT"),
+         Ext: Peek("CurrentFilter_mult_S3_EXT"),
+         MV:  Peek("CurrentFilter_mult_S3_MV"))
+    };
+
+    var requestedSplits = new[]
+    {
+        (Cat: newCat2, Ext: newExt2, MV: newMV2),
+        (Cat: newCat3, Ext: newExt3, MV: newMV3)
+    };
 
     var files = new List<string>();
     for (int i = 1; i <= 10; i++)
@@ -286,69 +282,31 @@
                                     <tbody>
                                         <tr class="dp-total-row">
                                             <td>Category</td>
-                                            <td>Multiple Purposes</td>
+                                            <td>@(string.IsNullOrWhiteSpace(rollTopCat) ? "–" : rollTopCat)</td>
                                         </tr>
                                         <tr class="dp-total-row">
-                                            <td>Total Extent</td>
-                                            <td>@FormatExtentTotal(oldExtent, oldExt2, oldExt3)</td>
+                                            <td>Extent</td>
+                                            <td>@FormatExtent(rollTopExt)</td>
                                         </tr>
                                         <tr class="dp-total-row">
-                                            <td>Total Market Value</td>
-                                            <td>@FormatMarketValueTotal(oldMV, oldMV2, oldMV3)</td>
+                                            <td>Market Value</td>
+                                            <td>@FormatRand(rollTopMV)</td>
                                         </tr>
 
-                                        <tr class="dp-split-start">
-                                            <td class="dp-split-label">Category Split 1</td>
-                                            <td>@(string.IsNullOrWhiteSpace(oldCat) ? "–" : oldCat)</td>
-                                        </tr>
-                                        <tr>
-                                            <td class="dp-split-label">Extent Split 1</td>
-                                            <td>@FormatExtent(oldExtent)</td>
-                                        </tr>
-                                        <tr>
-                                            <td class="dp-split-label">Market Value Split 1</td>
-                                            <td>@FormatRand(oldMV)</td>
-                                        </tr>
-
-                                        @if (!string.IsNullOrWhiteSpace(oldCat2) ||
-                                             !string.IsNullOrWhiteSpace(oldExt2) ||
-                                             !string.IsNullOrWhiteSpace(oldMV2) ||
-                                             !string.IsNullOrWhiteSpace(newCat2) ||
-                                             !string.IsNullOrWhiteSpace(newExt2) ||
-                                             !string.IsNullOrWhiteSpace(newMV2))
+                                        @for (var s = 0; s < rollSplits.Length; s++)
                                         {
+                                            var roll = rollSplits[s];
                                             <tr class="dp-split-start">
-                                                <td class="dp-split-label">Category Split 2</td>
-                                                <td>@(string.IsNullOrWhiteSpace(oldCat2) ? "–" : oldCat2)</td>
+                                                <td class="dp-split-label">Category Split @(s + 1)</td>
+                                                <td>@(string.IsNullOrWhiteSpace(roll.Cat) ? "–" : roll.Cat)</td>
                                             </tr>
                                             <tr>
-                                                <td class="dp-split-label">Extent Split 2</td>
-                                                <td>@FormatExtent(oldExt2)</td>
+                                                <td class="dp-split-label">Extent Split @(s + 1)</td>
+                                                <td>@FormatExtent(roll.Ext)</td>
                                             </tr>
                                             <tr>
-                                                <td class="dp-split-label">Market Value Split 2</td>
-                                                <td>@FormatRand(oldMV2)</td>
-                                            </tr>
-                                        }
-
-                                        @if (!string.IsNullOrWhiteSpace(oldCat3) ||
-                                             !string.IsNullOrWhiteSpace(oldExt3) ||
-                                             !string.IsNullOrWhiteSpace(oldMV3) ||
-                                             !string.IsNullOrWhiteSpace(newCat3) ||
-                                             !string.IsNullOrWhiteSpace(newExt3) ||
-                                             !string.IsNullOrWhiteSpace(newMV3))
-                                        {
-                                            <tr class="dp-split-start">
-                                                <td class="dp-split-label">Category Split 3</td>
-                                                <td>@(string.IsNullOrWhiteSpace(oldCat3) ? "–" : oldCat3)</td>
-                                            </tr>
-                                            <tr>
-                                                <td class="dp-split-label">Extent Split 3</td>
-                                                <td>@FormatExtent(oldExt3)</td>
-                                            </tr>
-                                            <tr>
-                                                <td class="dp-split-label">Market Value Split 3</td>
-                                                <td>@FormatRand(oldMV3)</td>
+                                                <td class="dp-split-label">Market Value Split @(s + 1)</td>
+                                                <td>@FormatRand(roll.MV)</td>
                                             </tr>
                                         }
                                     </tbody>
@@ -410,99 +368,60 @@
                         <tbody>
                             <tr class="dp-total-row">
                                 <td>Category</td>
-                                <td>Multiple Purposes</td>
-                            </tr>
-                            <tr class="dp-total-row">
-                                <td>Total Proposed Extent</td>
-                                <td>
-                                    @FormatExtentTotal(
-                            RequestedOrCurrent(newExtent, oldExtent),
-                            RequestedOrCurrent(newExt2, oldExt2),
-                            RequestedOrCurrent(newExt3, oldExt3))
-                                </td>
-                            </tr>
-                            <tr class="dp-total-row">
-                                <td>Total Proposed Market Value</td>
-                                <td>
-                                    @FormatMarketValueTotal(
-                            RequestedOrCurrent(newMV, oldMV),
-                            RequestedOrCurrent(newMV2, oldMV2),
-                            RequestedOrCurrent(newMV3, oldMV3))
-                                </td>
-                            </tr>
-
-                            <tr class="dp-split-start">
-                                <td class="dp-split-label">Category Split 1</td>
                                 @{
                                     NewVal(newCat);
                                 }
                             </tr>
-                            <tr>
-                                <td class="dp-split-label">Extent Split 1</td>
+                            <tr class="dp-total-row">
+                                <td>Extent</td>
                                 @{
                                     NewVal(newExtent, isExtent: true);
                                 }
                             </tr>
-                            <tr>
-                                <td class="dp-split-label">Market Value Split 1</td>
+                            <tr class="dp-total-row">
+                                <td>Market Value</td>
                                 @{
                                     NewVal(newMV, true);
                                 }
                             </tr>
 
-                            @if (!string.IsNullOrWhiteSpace(oldCat2) ||
-                                 !string.IsNullOrWhiteSpace(oldExt2) ||
-                                 !string.IsNullOrWhiteSpace(oldMV2) ||
-                                 !string.IsNullOrWhiteSpace(newCat2) ||
-                                 !string.IsNullOrWhiteSpace(newExt2) ||
-                                 !string.IsNullOrWhiteSpace(newMV2))
+                            @for (var s = 0; s < requestedSplits.Length; s++)
                             {
+                                var req = requestedSplits[s];
                                 <tr class="dp-split-start">
-                                    <td class="dp-split-label">Category Split 2</td>
+                                    <td class="dp-split-label">Category Split @(s + 1)</td>
                                     @{
-                                        NewVal(newCat2);
+                                        NewVal(req.Cat);
                                     }
                                 </tr>
                                 <tr>
-                                    <td class="dp-split-label">Extent Split 2</td>
+                                    <td class="dp-split-label">Extent Split @(s + 1)</td>
                                     @{
-                                        NewVal(newExt2, isExtent: true);
+                                        NewVal(req.Ext, isExtent: true);
                                     }
                                 </tr>
                                 <tr>
-                                    <td class="dp-split-label">Market Value Split 2</td>
+                                    <td class="dp-split-label">Market Value Split @(s + 1)</td>
                                     @{
-                                        NewVal(newMV2, true);
+                                        NewVal(req.MV, true);
                                     }
                                 </tr>
                             }
 
-                            @if (!string.IsNullOrWhiteSpace(oldCat3) ||
-                                 !string.IsNullOrWhiteSpace(oldExt3) ||
-                                 !string.IsNullOrWhiteSpace(oldMV3) ||
-                                 !string.IsNullOrWhiteSpace(newCat3) ||
-                                 !string.IsNullOrWhiteSpace(newExt3) ||
-                                 !string.IsNullOrWhiteSpace(newMV3))
-                            {
-                                <tr class="dp-split-start">
-                                    <td class="dp-split-label">Category Split 3</td>
-                                    @{
-                                        NewVal(newCat3);
-                                    }
-                                </tr>
-                                <tr>
-                                    <td class="dp-split-label">Extent Split 3</td>
-                                    @{
-                                        NewVal(newExt3, isExtent: true);
-                                    }
-                                </tr>
-                                <tr>
-                                    <td class="dp-split-label">Market Value Split 3</td>
-                                    @{
-                                        NewVal(newMV3, true);
-                                    }
-                                </tr>
-                            }
+                            @* Split 3 is not saved to the database; the page script fills it
+                               from the values the client typed on the form. *@
+                            <tr class="dp-split-start">
+                                <td class="dp-split-label">Category Split 3</td>
+                                <td class="dp-new-val empty" data-s78-split3="cat">No change requested</td>
+                            </tr>
+                            <tr>
+                                <td class="dp-split-label">Extent Split 3</td>
+                                <td class="dp-new-val empty" data-s78-split3="ext">No change requested</td>
+                            </tr>
+                            <tr>
+                                <td class="dp-split-label">Market Value Split 3</td>
+                                <td class="dp-new-val empty" data-s78-split3="mv">No change requested</td>
+                            </tr>
                         </tbody>
                     </table>
                 }
@@ -585,9 +504,9 @@
     @if (hasAckRef)
     {
         <a href="@Url.Action("DownloadAcknowledgement", "Notice", new { objectionNo = queryRef, rollSource = "Objection_Query", returnUrl = Context.Request.Path.Value })"
-           class="dp-btn-primary"
-           data-no-loader
-           onclick="showDlToast()">
+               class="dp-btn-primary"
+               data-no-loader
+               onclick="showDlToast()">
             <i class="fa-solid fa-download"></i>
             Download Acknowledgement
         </a>
@@ -624,5 +543,49 @@
         function showDlToast() {
             console.log('Acknowledgement download started');
         }
+
+        // Multipurpose Requested Split 3 — saved by the Section 78
+        // Multipurpose form in sessionStorage (it is not stored in the DB).
+        (function () {
+            var cells = document.querySelectorAll('[data-s78-split3]');
+            if (!cells.length) return;
+
+            function read(key) {
+                try { return (sessionStorage.getItem(key) || '').trim(); }
+                catch (e) { return ''; }
+            }
+
+            function formatRand(value) {
+                var digits = value.replace(/[^\d.]/g, '');
+                if (!digits) return value;
+                var whole = Math.round(parseFloat(digits));
+                if (isNaN(whole)) return value;
+                return 'R ' + whole.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+            }
+
+            function formatExtent(value) {
+                var num = parseFloat(value.replace(/\s+/g, '').replace(/,/g, '.'));
+                if (isNaN(num)) return value;
+                return (num % 1 === 0 ? num.toString() : num.toFixed(2))
+                    .replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+            }
+
+            var values = {
+                cat: read('s78_New4_Category'),
+                ext: read('s78_New4_Extent'),
+                mv: read('s78_New4_Market_Value')
+            };
+
+            cells.forEach(function (cell) {
+                var part = cell.getAttribute('data-s78-split3');
+                var value = values[part];
+                if (!value) return;
+
+                cell.textContent = part === 'mv'
+                    ? formatRand(value)
+                    : part === 'ext' ? formatExtent(value) : value;
+                cell.classList.remove('empty');
+            });
+        })();
     </script>
 }

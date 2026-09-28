@@ -5201,5 +5201,30 @@
     document.head.appendChild(style);
 </script>
 
+       <script>
+        // Requested Split 3 is not saved in the database. Keep what the client
+        // typed so the Multipurpose display page can show it.
+        (function () {
+            var map = {
+                NewCat3: 's78_New4_Category',
+                NewExtent3: 's78_New4_Extent',
+                NewMarketValue3: 's78_New4_Market_Value'
+            };
+
+            function save() {
+                Object.keys(map).forEach(function (id) {
+                    var el = document.getElementById(id);
+                    try { sessionStorage.setItem(map[id], el && el.value ? el.value : ''); }
+                    catch (e) { }
+                });
+            }
+
+            save(); // clears values from a previous submission
+            ['input', 'change', 'submit'].forEach(function (name) {
+                document.addEventListener(name, save, true);
+            });
+        })();
+    </script>
+
     <script asp-append-version="true" src="~/js/Section78QueryParity.js"></script>
 }

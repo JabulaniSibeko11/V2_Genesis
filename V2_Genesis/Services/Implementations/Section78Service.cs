@@ -27,7 +27,7 @@ namespace V2_Genesis.Services.Implementations
         private readonly IEmailService _emailService;
         private readonly ISubmittedFormPdfService _submittedFormPdfService;
         private readonly ILogger<Section78Service> _logger;
-        private const string SP_DETAIL ="IndexSection78Property";
+        private const string SP_DETAIL = "IndexSection78Property";
         private const string SP_LINKED = "DashboardLinkedQ";
         private const string SP_SUBMITTED = "DashboardObjectionQ";
 
@@ -889,28 +889,38 @@ namespace V2_Genesis.Services.Implementations
 
             var reference = queryReference.Trim();
 
-            // EF Core parameterises this query automatically.
-            var query = await _qdb.Que_Property_Info
-                .AsNoTracking()
-                .Where(q =>
-                    q.Query_No != null &&
-                    q.Query_No.Trim() == reference &&
-                    (
-                        allowAdministrativeAccess ||
-                        q.UserID == userId
-                    ))
-                .Select(q => new
-                {
-                    q.Query_ID,
-                    q.Query_No,
-                    q.Query_Status,
-                    q.Sub_typ,
-                    q.Property_Type,
-                    q.Property_Desc,
-                    q.Valuation_Key,
-                    q.UserID
-                })
-                .FirstOrDefaultAsync(cancellationToken);
+            // Read everything with Dapper and CAST the columns to text.
+            // The Query DB column types differ from the shared EF models
+            // (Ref is BIGINT, some values are FLOAT), which caused
+            // "Unable to cast object of type 'System.Int64' / 'System.Double'
+            // to type 'System.String'" when EF materialised the rows.
+            await using var conn = new SqlConnection(_queryConn);
+
+            const string querySql = @"
+SELECT TOP (1)
+    CAST(Query_ID AS bigint)              AS Query_ID,
+    CAST(Query_No AS nvarchar(100))       AS Query_No,
+    CAST(Query_Status AS nvarchar(100))   AS Query_Status,
+    CAST(ISNULL(Sub_typ, 0) AS int)       AS Sub_typ,
+    CAST(Property_Type AS nvarchar(100))  AS Property_Type,
+    CAST(Property_Desc AS nvarchar(255))  AS Property_Desc,
+    CAST(Valuation_Key AS nvarchar(100))  AS Valuation_Key,
+    CAST(UserID AS nvarchar(450))         AS UserID
+FROM dbo.Que_Property_Info
+WHERE LTRIM(RTRIM(CAST(Query_No AS nvarchar(100)))) = @Reference
+  AND (@AllowAdmin = 1 OR CAST(UserID AS nvarchar(450)) = @UserId)
+ORDER BY Query_ID DESC;";
+
+            var query = await conn.QueryFirstOrDefaultAsync<AckQueryRow>(
+                new CommandDefinition(
+                    querySql,
+                    new
+                    {
+                        Reference = reference,
+                        UserId = userId,
+                        AllowAdmin = allowAdministrativeAccess ? 1 : 0
+                    },
+                    cancellationToken: cancellationToken));
 
             if (query is null)
             {
@@ -920,23 +930,83 @@ namespace V2_Genesis.Services.Implementations
                         : $"Section 78 submission '{reference}' was not found for the current user.");
             }
 
-            var section6 = await _qdb.Obj_Section6
-                .AsNoTracking()
-                .FirstOrDefaultAsync(
-                    x => x.Ref == query.Query_ID.ToString(),
-                    cancellationToken);
+            var queryIdText = query.Query_ID.ToString();
 
-            var section7 = await _qdb.Obj_Section7
-                .AsNoTracking()
-                .FirstOrDefaultAsync(
-                    x => x.Ref == query.Query_ID,
-                    cancellationToken);
+            const string section6Sql = @"
+SELECT TOP (1)
+    CAST(Objection_Ref_S6         AS nvarchar(100)) AS Objection_Ref_S6,
+    CAST(Old_Property_Description AS nvarchar(255)) AS Old_Property_Description,
+    CAST(Old_Category             AS nvarchar(255)) AS Old_Category,
+    CAST(Old_Address              AS nvarchar(500)) AS Old_Address,
+    CAST(Old_Extent               AS nvarchar(255)) AS Old_Extent,
+    CAST(Old_Market_Value         AS nvarchar(255)) AS Old_Market_Value,
+    CAST(Old_Owner                AS nvarchar(255)) AS Old_Owner,
+    CAST(New_Property_Description AS nvarchar(255)) AS New_Property_Description,
+    CAST(New_Category             AS nvarchar(255)) AS New_Category,
+    CAST(New_Address              AS nvarchar(500)) AS New_Address,
+    CAST(New_Extent               AS nvarchar(255)) AS New_Extent,
+    CAST(New_Market_Value         AS nvarchar(255)) AS New_Market_Value,
+    CAST(New_Owner                AS nvarchar(255)) AS New_Owner,
+    CAST(Objection_Reasons        AS nvarchar(max)) AS Objection_Reasons,
+    CAST(Old2_Category            AS nvarchar(255)) AS Old2_Category,
+    CAST(Old2_Extent              AS nvarchar(255)) AS Old2_Extent,
+    CAST(Old2_Market_Value        AS nvarchar(255)) AS Old2_Market_Value,
+    CAST(New2_Category            AS nvarchar(255)) AS New2_Category,
+    CAST(New2_Extent              AS nvarchar(255)) AS New2_Extent,
+    CAST(New2_Market_Value        AS nvarchar(255)) AS New2_Market_Value,
+    CAST(Old3_Category            AS nvarchar(255)) AS Old3_Category,
+    CAST(Old3_Extent              AS nvarchar(255)) AS Old3_Extent,
+    CAST(Old3_Market_Value        AS nvarchar(255)) AS Old3_Market_Value,
+    CAST(New3_Category            AS nvarchar(255)) AS New3_Category,
+    CAST(New3_Extent              AS nvarchar(255)) AS New3_Extent,
+    CAST(New3_Market_Value        AS nvarchar(255)) AS New3_Market_Value
+FROM dbo.Obj_Section6
+WHERE LTRIM(RTRIM(CAST(Objection_Ref_S6 AS nvarchar(100)))) = @Reference
+   OR LTRIM(RTRIM(CAST(Ref AS nvarchar(100)))) = @QueryId
+ORDER BY CASE WHEN LTRIM(RTRIM(CAST(Objection_Ref_S6 AS nvarchar(100)))) = @Reference THEN 0 ELSE 1 END;";
 
-            var evidence = await _qdb.Obj_Files
-                .AsNoTracking()
-                .FirstOrDefaultAsync(
-                    x => x.Ref == query.Query_ID,
-                    cancellationToken);
+            var section6 = await conn.QueryFirstOrDefaultAsync<Obj_Section6Model>(
+                new CommandDefinition(
+                    section6Sql,
+                    new { Reference = reference, QueryId = queryIdText },
+                    cancellationToken: cancellationToken));
+
+            const string section7Sql = @"
+SELECT TOP (1)
+    CAST(RandomPin AS nvarchar(50))                   AS RandomPin,
+    CONVERT(nvarchar(50), Declaration_Date, 126)      AS Declaration_Date
+FROM dbo.Obj_Section7
+WHERE LTRIM(RTRIM(CAST(Ref AS nvarchar(100)))) = @QueryId
+   OR LTRIM(RTRIM(CAST(Objection_Ref_S7 AS nvarchar(100)))) = @Reference;";
+
+            var section7 = await conn.QueryFirstOrDefaultAsync<AckSection7Row>(
+                new CommandDefinition(
+                    section7Sql,
+                    new { Reference = reference, QueryId = queryIdText },
+                    cancellationToken: cancellationToken));
+
+            const string filesSql = @"
+SELECT TOP (1)
+    CAST(Rep_letter AS nvarchar(500)) AS Rep_letter,
+    CAST(Files1  AS nvarchar(500)) AS Files1,
+    CAST(Files2  AS nvarchar(500)) AS Files2,
+    CAST(Files3  AS nvarchar(500)) AS Files3,
+    CAST(Files4  AS nvarchar(500)) AS Files4,
+    CAST(Files5  AS nvarchar(500)) AS Files5,
+    CAST(Files6  AS nvarchar(500)) AS Files6,
+    CAST(Files7  AS nvarchar(500)) AS Files7,
+    CAST(Files8  AS nvarchar(500)) AS Files8,
+    CAST(Files9  AS nvarchar(500)) AS Files9,
+    CAST(Files10 AS nvarchar(500)) AS Files10
+FROM dbo.Obj_Files
+WHERE LTRIM(RTRIM(CAST(Ref AS nvarchar(100)))) = @QueryId
+   OR LTRIM(RTRIM(CAST(Objection_Ref_files AS nvarchar(100)))) = @Reference;";
+
+            var evidence = await conn.QueryFirstOrDefaultAsync<AckFilesRow>(
+                new CommandDefinition(
+                    filesSql,
+                    new { Reference = reference, QueryId = queryIdText },
+                    cancellationToken: cancellationToken));
 
             var isReview =
                 query.Sub_typ == 1 ||
@@ -978,7 +1048,7 @@ namespace V2_Genesis.Services.Implementations
 
                 ValuationKey = query.Valuation_Key,
 
-               
+
 
                 FileCount = actualFileCount,
                 Files = files,
@@ -1714,6 +1784,39 @@ namespace V2_Genesis.Services.Implementations
             return string.IsNullOrWhiteSpace(cleaned)
                 ? "Section78"
                 : cleaned;
+        }
+
+        private sealed class AckQueryRow
+        {
+            public long Query_ID { get; set; }
+            public string? Query_No { get; set; }
+            public string? Query_Status { get; set; }
+            public int Sub_typ { get; set; }
+            public string? Property_Type { get; set; }
+            public string? Property_Desc { get; set; }
+            public string? Valuation_Key { get; set; }
+            public string? UserID { get; set; }
+        }
+
+        private sealed class AckSection7Row
+        {
+            public string? RandomPin { get; set; }
+            public string? Declaration_Date { get; set; }
+        }
+
+        private sealed class AckFilesRow
+        {
+            public string? Rep_letter { get; set; }
+            public string? Files1 { get; set; }
+            public string? Files2 { get; set; }
+            public string? Files3 { get; set; }
+            public string? Files4 { get; set; }
+            public string? Files5 { get; set; }
+            public string? Files6 { get; set; }
+            public string? Files7 { get; set; }
+            public string? Files8 { get; set; }
+            public string? Files9 { get; set; }
+            public string? Files10 { get; set; }
         }
 
         private sealed class Section78AcknowledgementDbRow

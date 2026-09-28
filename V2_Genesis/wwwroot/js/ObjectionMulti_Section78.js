@@ -359,7 +359,7 @@ function RSA() {
     }
     if (objector_key == "Representative") {
         $(".Div1-2").hide();
-        document.getElementById("owner_head").innerHTML = "1.1 OWNER DETAILS";
+        document.getElementById("owner_head").innerHTML = "OWNER DETAILS";
 
     }
 }
@@ -980,7 +980,7 @@ function load() {
     if (objector_key == "Owner") {
         $(".Div1-2").hide();
         $(".Div1-3").hide();
-        setHtml("o_name_l", 'REGISTERED OWNER OF PROPERTY');
+        setHtml("o_name_l", 'Registered Owner of Property<span style="color: red;">*</span>');
     }
     if (objector_key == "Third_Party") {
         $(".Div1-1").hide();
@@ -990,7 +990,8 @@ function load() {
     if (objector_key == "Representative") {
         $(".Div1-2").hide();
         $("#owner_details").hide();
-        setHtml("o_name_l", '<span style="color: red; ">*</span>REGISTERED OWNER OF PROPERTY (<span style="color: red;">required</span>)');
+        setHtml("o_name_l", 'Registered Owner of Property<span style="color: red;">*</span>');
+        
         setHtml("owner_head", "1.1 OWNER DETAILS");
 
     }
