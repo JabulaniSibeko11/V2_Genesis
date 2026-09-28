@@ -798,35 +798,21 @@ namespace V2_Genesis.Services.Attributes
      AttributeSubmissionViewModel model,
      AttrPropertyInfo propertyInfo)
         {
+            var evidenceCloses =
+                model.GeneratedEvidenceDeadline
+                ?? propertyInfo.SubmissionDateTime.AddHours(48);
+
+            // Same wording and style as the Objection acknowledgement.
             col.Item()
-                .Background(ACK_LIGHT_BLUE)
-                .Border(1)
-                .BorderColor(ACK_BLUE)
-                .Padding(8)
-                .Column(box =>
-                {
-                    box.Item()
-                        .Text("Submission Received")
-                        .Bold()
-                        .FontSize(11)
-                        .FontColor(ACK_BLUE);
+                .Text("This is to acknowledge that your property attribute submission has been successfully received and logged. Details below for your records.")
+                .FontSize(9);
 
-                    box.Item()
-                        .PaddingTop(3)
-                        .Text(
-                            "This document is a copy of the property attribute information submitted through the City of Johannesburg Valuation Portal.");
-
-                    box.Item()
-                        .PaddingTop(3)
-                        .Text(
-                            "This acknowledgement does not imply acceptance or approval. The submitted information remains subject to review by the valuation team.");
-
-                    box.Item()
-                        .PaddingTop(5)
-                        .Text(
-                            $"Attribute Reference: {propertyInfo.Attr_No ?? model.AttrNo ?? ""}")
-                        .Bold();
-                });
+            col.Item()
+                .Text(
+                    "IMPORTANT NOTICE: You have 48 hours from submission to upload outstanding evidence. " +
+                    $"Evidence upload closes: {evidenceCloses:dd MMMM yyyy 'at' HH:mm}.")
+                .FontSize(9)
+                .Bold();
         }
 
 
@@ -1297,73 +1283,41 @@ namespace V2_Genesis.Services.Attributes
             var pin =
                 model.GeneratedEvidencePin;
 
-            var deadline =
-                model.GeneratedEvidenceDeadline;
+            var propertyDescription =
+                model.PropertyDetails?.PropertyDesc ??
+                propertyInfo.Property_Desc;
+
+            // REFERENCE DETAILS — same layout as the Objection acknowledgement.
+            col.Item()
+                .AlignCenter()
+                .Text("REFERENCE DETAILS")
+                .FontSize(10)
+                .Bold();
 
             col.Item()
-                .PaddingTop(8)
-                .Background(ACK_LIGHT_BLUE)
+                .Background("#eeeeee")
                 .Border(1)
-                .BorderColor(ACK_BLUE)
+                .BorderColor("#444444")
                 .Padding(10)
-                .Column(box =>
+                .Column(refBox =>
                 {
-                    box.Item()
-                        .Text("Additional Evidence Access")
-                        .Bold()
-                        .FontSize(11)
-                        .FontColor(ACK_BLUE);
-
-                    box.Item()
-                        .PaddingTop(5)
-                        .Table(table =>
-                        {
-                            table.ColumnsDefinition(columns =>
-                            {
-                                columns.RelativeColumn();
-                                columns.RelativeColumn(2.2f);
-                            });
-
-                            table.Cell()
-                                .Element(CellLabel)
-                                .Text("Reference Number");
-
-                            table.Cell()
-                                .Element(CellValue)
-                                .Text(reference)
-                                .Bold();
-
-                            table.Cell()
-                                .Element(CellLabel)
-                                .Text("Evidence PIN");
-
-                            table.Cell().Element(CellValue)
-      .Text(
-          string.IsNullOrWhiteSpace(pin)
-              ? "Not available"
-              : pin)
-      .Bold()
-      .FontSize(8);
-
-                            table.Cell()
-                                .Element(CellLabel)
-                                .Text("Evidence Window Closes");
-
-                            table.Cell()
-                                .Element(CellValue)
-                                .Text(
-                                    deadline.HasValue
-                                        ? deadline.Value.ToString(
-                                            "dd MMMM yyyy HH:mm")
-                                        : "48 hours after declaration");
-                        });
-
-                    box.Item()
-                        .PaddingTop(6)
-                        .Text(
-                            "Use the Attribute reference number and Evidence PIN on the Valuation Portal to upload additional evidence. The PIN expires when the 48-hour evidence window closes.")
-                        .FontSize(8);
+                    RefRow(refBox, "Property Description:", propertyDescription);
+                    RefRow(refBox, "Attribute Reference:", reference);
+                    RefRow(refBox, "PIN:", string.IsNullOrWhiteSpace(pin) ? "Not available" : pin);
+                    RefRow(refBox, "Date Captured:",
+                        propertyInfo.SubmissionDateTime.ToString("dd MMMM yyyy HH:mm"));
                 });
+
+            col.Item().BorderBottom(1).BorderColor("#555555");
+
+            static void RefRow(ColumnDescriptor box, string label, string? value)
+            {
+                box.Item().Text(text =>
+                {
+                    text.Span(label + " ").Bold().FontSize(9);
+                    text.Span(string.IsNullOrWhiteSpace(value) ? "—" : value).FontSize(9);
+                });
+            }
         }
 
         private static void AddHeader(
@@ -1559,48 +1513,49 @@ namespace V2_Genesis.Services.Attributes
                 {
                     page.Size(PageSizes.A4);
 
-                    // No side margin on the page, so the letterhead runs edge to edge.
-                    // Content and footer add the normal 36pt side padding themselves.
+                    // Side margins (36pt) are applied by the header, content and footer.
                     page.MarginHorizontal(0);
                     page.MarginVertical(18);
                     page.DefaultTextStyle(x => x.FontFamily("Arial").FontSize(8));
 
-                    // HEADER: full-width letterhead, first page only.
+                    // HEADER: letterhead across the content width, first page only.
                     if (File.Exists(headerPath))
                     {
                         page.Header()
                             .ShowOnce()
-                            .PaddingBottom(8)
-                            .Image(headerPath, ImageScaling.FitWidth);
+                            .PaddingHorizontal(36)
+                            .PaddingBottom(6)
+                            .AlignCenter()
+                            .Height(90)
+                            .Image(headerPath, ImageScaling.FitArea);
                     }
 
-                    // FOOTER: line, official text + "Generated on:", date, reference in red.
+                    // FOOTER: centred; the date is the date the submission was made.
                     page.Footer()
                         .PaddingHorizontal(36)
+                        .PaddingTop(5)
                         .Column(footer =>
                         {
-                            footer.Item().LineHorizontal(0.75f).LineColor(Colors.Black);
+                            footer.Item()
+                                .AlignCenter()
+                                .Text("This is an official document generated by the City of Johannesburg")
+                                .FontSize(7)
+                                .FontColor("#666666");
 
                             footer.Item()
-                                .PaddingTop(8)
                                 .AlignCenter()
-                                .Text("This is an official document generated by the City of Johannesburg Generated on:")
-                                .FontSize(10.5f);
-
-                            footer.Item()
-                                .PaddingTop(5)
-                                .AlignCenter()
-                                .Text(DateTime.Now.ToString("dd MMMM yyyy HH:mm"))
-                                .FontSize(10.5f);
+                                .Text($"Generated on: {propertyInfo.SubmissionDateTime:dd MMMM yyyy HH:mm}")
+                                .FontSize(7)
+                                .FontColor("#666666");
 
                             if (!string.IsNullOrWhiteSpace(propertyInfo.Attr_No ?? model.AttrNo))
                             {
                                 footer.Item()
-                                    .PaddingTop(5)
                                     .AlignCenter()
                                     .Text(propertyInfo.Attr_No ?? model.AttrNo)
-                                    .FontSize(10.5f)
-                                    .FontColor("#FF0000");
+                                    .FontSize(8)
+                                    .SemiBold()
+                                    .FontColor("#cc0000");
                             }
                         });
 
@@ -1656,70 +1611,91 @@ namespace V2_Genesis.Services.Attributes
                 {
                     page.Size(PageSizes.A4);
 
-                    // No side margin on the page, so the letterhead runs edge to edge.
-                    // Content and footer add the normal 36pt side padding themselves.
+                    // Side margins (36pt) are applied by the header, content and footer.
                     page.MarginHorizontal(0);
                     page.MarginVertical(18);
                     page.DefaultTextStyle(x => x.FontFamily("Arial").FontSize(8));
 
-                    // HEADER: full-width letterhead, first page only.
+                    // HEADER: letterhead across the content width, first page only.
                     if (File.Exists(headerPath))
                     {
                         page.Header()
                             .ShowOnce()
-                            .PaddingBottom(8)
-                            .Image(headerPath, ImageScaling.FitWidth);
+                            .PaddingHorizontal(36)
+                            .PaddingBottom(6)
+                            .AlignCenter()
+                            .Height(90)
+                            .Image(headerPath, ImageScaling.FitArea);
                     }
 
-                    // FOOTER: line, official text + "Generated on:", date, reference in red.
+                    // FOOTER: centred; the date is the date the submission was made.
                     page.Footer()
                         .PaddingHorizontal(36)
+                        .PaddingTop(5)
                         .Column(footer =>
                         {
-                            footer.Item().LineHorizontal(0.75f).LineColor(Colors.Black);
+                            footer.Item()
+                                .AlignCenter()
+                                .Text("This is an official document generated by the City of Johannesburg")
+                                .FontSize(7)
+                                .FontColor("#666666");
 
                             footer.Item()
-                                .PaddingTop(8)
                                 .AlignCenter()
-                                .Text("This is an official document generated by the City of Johannesburg Generated on:")
-                                .FontSize(10.5f);
-
-                            footer.Item()
-                                .PaddingTop(5)
-                                .AlignCenter()
-                                .Text(DateTime.Now.ToString("dd MMMM yyyy HH:mm"))
-                                .FontSize(10.5f);
+                                .Text($"Generated on: {propertyInfo.SubmissionDateTime:dd MMMM yyyy HH:mm}")
+                                .FontSize(7)
+                                .FontColor("#666666");
 
                             if (!string.IsNullOrWhiteSpace(propertyInfo.Attr_No ?? model.AttrNo))
                             {
                                 footer.Item()
-                                    .PaddingTop(5)
                                     .AlignCenter()
                                     .Text(propertyInfo.Attr_No ?? model.AttrNo)
-                                    .FontSize(10.5f)
-                                    .FontColor("#FF0000");
+                                    .FontSize(8)
+                                    .SemiBold()
+                                    .FontColor("#cc0000");
                             }
                         });
 
                     page.Content().PaddingHorizontal(36).Column(col =>
                     {
-                        col.Item()
-                            .AlignCenter()
-                            .Text("Property Attribute Submission Acknowledgement")
-                            .Bold()
-                            .FontSize(13);
+                        // Top of the page: same layout as the Objection acknowledgement.
+                        col.Item().PaddingBottom(10).Column(top =>
+                        {
+                            top.Spacing(8);
 
-                        col.Item()
-                            .AlignCenter()
-                            .Text(GetFormLabel(model.FormType))
-                            .FontSize(10)
-                            .FontColor(Colors.Grey.Darken2);
+                            // DATE (submission date) — same as the Objection acknowledgement.
+                            top.Item()
+                                .AlignRight()
+                                .Text(propertyInfo.SubmissionDateTime.ToString("dd MMMM yyyy"))
+                                .FontSize(10)
+                                .SemiBold();
 
-                        col.Item().PaddingTop(6).PaddingBottom(10).LineHorizontal(0.5f);
+                            // TITLE
+                            top.Item()
+                                .AlignCenter()
+                                .Text("CITY OF JOHANNESBURG")
+                                .FontSize(13)
+                                .Bold();
 
-                        AddAcknowledgementIntro(col, model, propertyInfo);
+                            top.Item()
+                                .AlignCenter()
+                                .Text("PROPERTY ATTRIBUTE SUBMISSION ACKNOWLEDGEMENT")
+                                .FontSize(12)
+                                .Bold();
 
-                        AddEvidenceAccessDetails(col, model, propertyInfo);
+                            top.Item()
+                                .AlignCenter()
+                                .Text(GetFormLabel(model.FormType))
+                                .FontSize(9)
+                                .FontColor(Colors.Grey.Darken2);
+
+                            top.Item().BorderBottom(1).BorderColor("#555555");
+
+                            AddAcknowledgementIntro(top, model, propertyInfo);
+
+                            AddEvidenceAccessDetails(top, model, propertyInfo);
+                        });
 
                         AddSubmittedPropertyDetails(col, model);
 

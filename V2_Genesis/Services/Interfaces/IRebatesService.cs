@@ -5,7 +5,7 @@ namespace V2_Genesis.Services.Interfaces
 {
     public interface IRebatesService
     {
-        Task<RebatesSubmitResult>SubmitAsync( string rebateType,
+        Task<RebatesSubmitResult> SubmitAsync(string rebateType,
             string userId,
             string userEmail,
             Rebate_Info info,
@@ -27,5 +27,10 @@ namespace V2_Genesis.Services.Interfaces
         Task<List<Rebate_View_Model>> GetDashboardAsync(string userId);
         Task<List<Rebate_View_Model>> GetRebateDataAsync(string rebateNo);
         void WriteAcknowledgement(RebatesSubmitResult result);
+
+        /// Path of the rebate acknowledgement PDF. When the file is missing
+        /// (it failed to write on submit, or was removed) it is rebuilt from
+        /// the saved application. Null when the rebate does not exist.
+        Task<string?> GetAcknowledgementPathAsync(string rebateNo);
     }
 }

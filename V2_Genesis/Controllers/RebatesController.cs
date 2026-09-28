@@ -14,15 +14,18 @@ public class RebatesController : Controller
     private readonly IRebatesService _rebates;
     private readonly ApplicationDbContext _db;
     private readonly IConfiguration _config;
+    private readonly ILogger<RebatesController> _logger;
 
     public RebatesController(
         IRebatesService rebates,
         ApplicationDbContext db,
-        IConfiguration config)
+        IConfiguration config,
+        ILogger<RebatesController> logger)
     {
         _rebates = rebates;
         _db = db;
         _config = config;
+        _logger = logger;
     }
 
     // ── Helpers ───────────────────────────────────────────────────
@@ -90,40 +93,28 @@ public class RebatesController : Controller
     // ════════════════════════════════════════════════════════════
 
     [HttpGet]
-    public IActionResult Download(string rebateNo, string? returnUrl = null)
+    public async Task<IActionResult> Download(string rebateNo, string? returnUrl = null)
     {
+        var reference = (rebateNo ?? string.Empty).Trim();
+
+        if (string.IsNullOrWhiteSpace(reference))
+        {
+            _logger.LogWarning("[Rebates] Download acknowledgement called without a rebate number.");
+            TempData["NoticeError"] = "The rebate reference number is missing.";
+            return RedirectAfterDownload(returnUrl, "Rebates");
+        }
+
         try
         {
-            var reference = (rebateNo ?? string.Empty).Trim();
-            if (string.IsNullOrWhiteSpace(reference))
-            {
-                TempData["NoticeError"] = "The rebate reference number is missing.";
-                return RedirectAfterDownload(returnUrl, "Rebates");
-            }
-
-            var root = _config["ObjectionRolls:Rebates:RebateRooTPath"]
-                        ?? throw new InvalidOperationException("RebateRooTPath missing.");
-
-            var folder = Path.Combine(root, reference);
-            var expectedPath = Path.Combine(folder, $"{reference}_Acknowledgement.pdf");
-            string? path = System.IO.File.Exists(expectedPath) ? expectedPath : null;
-
-            // Older rebate folders may contain the acknowledgement with a
-            // slightly different/captured filename. The folder belongs to one
-            // rebate only, so use the acknowledgement PDF already stored there
-            // rather than failing the client download.
-            if (path == null && Directory.Exists(folder))
-            {
-                path = Directory
-                    .EnumerateFiles(folder, "*.pdf", SearchOption.TopDirectoryOnly)
-                    .FirstOrDefault(file =>
-                        Path.GetFileName(file).Contains(
-                            "Acknowledgement",
-                            StringComparison.OrdinalIgnoreCase));
-            }
+            // Finds the saved PDF, or rebuilds it from the application.
+            var path = await _rebates.GetAcknowledgementPathAsync(reference);
 
             if (path == null || !System.IO.File.Exists(path))
             {
+                _logger.LogWarning(
+                    "[Rebates] Acknowledgement for {RebateNo} was not found and could not be rebuilt.",
+                    reference);
+
                 TempData["NoticeError"] =
                     $"The rebate acknowledgement for {reference} was not found.";
                 return RedirectAfterDownload(returnUrl, "Rebates");
@@ -135,8 +126,12 @@ public class RebatesController : Controller
                 $"{reference}_Acknowledgement.pdf",
                 enableRangeProcessing: true);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            _logger.LogError(ex,
+                "[Rebates] Could not download the acknowledgement for {RebateNo}.",
+                reference);
+
             TempData["NoticeError"] =
                 "The rebate acknowledgement could not be downloaded.";
             return RedirectAfterDownload(returnUrl, "Rebates");

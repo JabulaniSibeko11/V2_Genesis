@@ -1,4 +1,5 @@
 ﻿using Dapper;
+using Microsoft.EntityFrameworkCore;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
@@ -150,9 +151,18 @@ namespace V2_Genesis.Services.Implementations
             };
 
             // ── 4. Acknowledgement PDF to disk ───────────────────────
-
-            // ── 4. Acknowledgement PDF to disk ───────────────────────
-            WriteAcknowledgement(result);
+            // A PDF problem must not fail a saved application; the Download
+            // action rebuilds the PDF from the database if it is missing.
+            try
+            {
+                WriteAcknowledgement(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex,
+                    "[Rebates] Could not write the acknowledgement PDF for {RebateNo}.",
+                    result.RebateNo);
+            }
 
             // ── 5. Email — attach PDF for Acknowledged, plain for Reject ─
             var (subject, htmlBody) = BuildRebateEmail(
@@ -390,6 +400,95 @@ namespace V2_Genesis.Services.Implementations
         // Uses the same acknowledgement visual standard as the rest of Genesis.
         // Rebate acknowledgements intentionally have NO 48-hour evidence window
         // and NO evidence PIN. They simply confirm receipt of the application.
+        public async Task<string?> GetAcknowledgementPathAsync(string rebateNo)
+        {
+            rebateNo = rebateNo?.Trim() ?? string.Empty;
+            if (rebateNo.Length == 0)
+                return null;
+
+            var root = _config["ObjectionRolls:Rebates:RebateRooTPath"]
+                ?? throw new InvalidOperationException("RebateRooTPath missing.");
+
+            var folder = Path.Combine(root, rebateNo);
+            var expectedPath = Path.Combine(folder, $"{rebateNo}_Acknowledgement.pdf");
+
+            if (File.Exists(expectedPath))
+                return expectedPath;
+
+            // Older folders may hold the acknowledgement under another name.
+            if (Directory.Exists(folder))
+            {
+                var existing = Directory
+                    .EnumerateFiles(folder, "*.pdf", SearchOption.TopDirectoryOnly)
+                    .FirstOrDefault(file => Path.GetFileName(file).Contains(
+                        "Acknowledgement", StringComparison.OrdinalIgnoreCase));
+
+                if (existing != null)
+                    return existing;
+            }
+
+            // Not on disk: rebuild it from the saved application.
+            var info = await _db.Rebate_Infos
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Rebate_No != null && x.Rebate_No.Trim() == rebateNo);
+
+            if (info is null)
+            {
+                _logger.LogWarning(
+                    "[Rebates] Acknowledgement requested for {RebateNo}, but the rebate was not found.",
+                    rebateNo);
+                return null;
+            }
+
+            var id = info.Rebate_ID;
+
+            var s1 = await _db.Rebate_Section1_PersonalDetails.AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Ref == id) ?? new();
+            var s2 = await _db.Rebate_Section2_Addresses.AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Ref == id) ?? new();
+            var s3 = await _db.Rebate_Section3_ContactDetails.AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Ref == id) ?? new();
+            var s5 = await _db.Rebate_Section5_Declarations.AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Ref == id) ?? new();
+            var files = await _db.Rebates_Files.AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Ref == id) ?? new();
+
+            var result = new RebatesSubmitResult
+            {
+                RebateNo = rebateNo,
+                RebateId = Convert.ToInt32(id),
+                status = info.Status,
+                FileCount = Convert.ToInt32(files.Evidence_count ?? 0),
+                SubmittedAt = s5.DateOfSubmission?.ToString("dd MMMM yyyy HH:mm"),
+                RebateType = info.Rebate_Type,
+                ApplicantName = string.Join(" ", new[] { s1.FirstNames, s1.Surname }
+                    .Where(x => !string.IsNullOrWhiteSpace(x))
+                    .Select(x => x!.Trim())),
+                AccountNumber = s1.AccountNumber,
+                Email = s3.Email,
+                PropertyAddress = string.Join(", ", new[]
+                {
+                    s2.StreetAddress,
+                    s2.CitySuburb,
+                    s2.PostalCode
+                }.Where(x => !string.IsNullOrWhiteSpace(x)).Select(x => x!.Trim())),
+                files = new[]
+                {
+                    files.Rep_letter,
+                    files.Files1, files.Files2, files.Files3, files.Files4, files.Files5,
+                    files.Files6, files.Files7, files.Files8, files.Files9, files.Files10
+                }
+            };
+
+            _logger.LogInformation(
+                "[Rebates] Acknowledgement PDF was missing for {RebateNo}; rebuilding it from the database.",
+                rebateNo);
+
+            WriteAcknowledgement(result);
+
+            return File.Exists(expectedPath) ? expectedPath : null;
+        }
+
         public void WriteAcknowledgement(RebatesSubmitResult result)
         {
             var uploadRoot = _config["ObjectionRolls:Rebates:RebateRooTPath"]
@@ -400,6 +499,20 @@ namespace V2_Genesis.Services.Implementations
 
             var pdfPath = Path.Combine(folder, $"{result.RebateNo}_Acknowledgement.pdf");
             var headerPath = Path.Combine(_env.WebRootPath, "Images", "Obj_Header.PNG");
+
+            // Letter date, Date Captured and footer date are the submission
+            // date (the PDF can be rebuilt later from the Download button).
+            var submittedAt =
+                DateTime.TryParseExact(
+                    result.SubmittedAt,
+                    "dd MMMM yyyy HH:mm",
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    System.Globalization.DateTimeStyles.None,
+                    out var parsedSubmitted)
+                    ? parsedSubmitted
+                    : DateTime.TryParse(result.SubmittedAt, out parsedSubmitted)
+                        ? parsedSubmitted
+                        : DateTime.Now;
 
             var uploadedFiles =
      result.files
@@ -432,48 +545,49 @@ namespace V2_Genesis.Services.Implementations
                 {
                     page.Size(PageSizes.A4);
 
-                    // No side margin on the page, so the letterhead runs edge to edge.
-                    // Content and footer add the normal 36pt side padding themselves.
+                    // Side margins (36pt) are applied by the header, content and footer.
                     page.MarginHorizontal(0);
                     page.MarginVertical(18);
                     page.DefaultTextStyle(x => x.FontFamily("Arial").FontSize(8));
 
-                    // HEADER: full-width letterhead, first page only.
+                    // HEADER: letterhead across the content width, first page only.
                     if (File.Exists(headerPath))
                     {
                         page.Header()
                             .ShowOnce()
-                            .PaddingBottom(8)
-                            .Image(headerPath, ImageScaling.FitWidth);
+                            .PaddingHorizontal(36)
+                            .PaddingBottom(6)
+                            .AlignCenter()
+                            .Height(90)
+                            .Image(headerPath, ImageScaling.FitArea);
                     }
 
-                    // FOOTER: line, official text + "Generated on:", date, reference in red.
+                    // FOOTER: centred; the date is the date the submission was made.
                     page.Footer()
                         .PaddingHorizontal(36)
+                        .PaddingTop(5)
                         .Column(footer =>
                         {
-                            footer.Item().LineHorizontal(0.75f).LineColor(Colors.Black);
+                            footer.Item()
+                                .AlignCenter()
+                                .Text("This is an official document generated by the City of Johannesburg")
+                                .FontSize(7)
+                                .FontColor("#666666");
 
                             footer.Item()
-                                .PaddingTop(8)
                                 .AlignCenter()
-                                .Text("This is an official document generated by the City of Johannesburg Generated on:")
-                                .FontSize(10.5f);
-
-                            footer.Item()
-                                .PaddingTop(5)
-                                .AlignCenter()
-                                .Text(DateTime.Now.ToString("dd MMMM yyyy HH:mm"))
-                                .FontSize(10.5f);
+                                .Text($"Generated on: {submittedAt:dd MMMM yyyy HH:mm}")
+                                .FontSize(7)
+                                .FontColor("#666666");
 
                             if (!string.IsNullOrWhiteSpace(result.RebateNo))
                             {
                                 footer.Item()
-                                    .PaddingTop(5)
                                     .AlignCenter()
                                     .Text(result.RebateNo)
-                                    .FontSize(10.5f)
-                                    .FontColor("#FF0000");
+                                    .FontSize(8)
+                                    .SemiBold()
+                                    .FontColor("#cc0000");
                             }
                         });
 
@@ -481,37 +595,75 @@ namespace V2_Genesis.Services.Implementations
                     {
                         col.Spacing(8);
 
+                        // DATE (submission date) — same as the Objection acknowledgement.
+                        col.Item()
+                            .AlignRight()
+                            .Text(submittedAt.ToString("dd MMMM yyyy"))
+                            .FontSize(10)
+                            .SemiBold();
+
+                        // TITLE
                         col.Item()
                             .AlignCenter()
-                            .Text("Rates Rebate Application Acknowledgement")
-                            .Bold()
-                            .FontSize(13);
+                            .Text("CITY OF JOHANNESBURG")
+                            .FontSize(13)
+                            .Bold();
+
+                        col.Item()
+                            .AlignCenter()
+                            .Text("RATES REBATE APPLICATION ACKNOWLEDGEMENT")
+                            .FontSize(12)
+                            .Bold();
 
                         col.Item()
                             .AlignCenter()
                             .Text(ValueOrDash(result.RebateType))
-                            .FontSize(10)
+                            .FontSize(9)
                             .FontColor(Colors.Grey.Darken2);
 
-                        col.Item().LineHorizontal(0.5f);
+                        col.Item().BorderBottom(1).BorderColor("#555555");
 
-                        // Standard acknowledgement intro.
+                        // INTRO — same wording/style as the Objection acknowledgement.
+                        // Rebates have no 48-hour evidence window or PIN.
                         col.Item()
-                            .Background("#EAF4FB")
-                            .Border(0.5f)
-                            .BorderColor("#3F7FB5")
-                            .Padding(9)
-                            .Column(box =>
+                            .Text("This is to acknowledge that your rates rebate application has been successfully received and logged. Details below for your records.")
+                            .FontSize(9);
+
+                        col.Item()
+                            .Text("IMPORTANT NOTICE: This acknowledgement is proof of submission only and does not mean that the application has been approved. The application remains subject to assessment by the Valuation Services Department.")
+                            .FontSize(9)
+                            .Bold();
+
+                        // REFERENCE DETAILS
+                        col.Item()
+                            .AlignCenter()
+                            .Text("REFERENCE DETAILS")
+                            .FontSize(10)
+                            .Bold();
+
+                        col.Item()
+                            .Background("#eeeeee")
+                            .Border(1)
+                            .BorderColor("#444444")
+                            .Padding(10)
+                            .Column(refBox =>
                             {
-                                box.Item().Text("Application Received").Bold().FontSize(11);
-                                box.Item().PaddingTop(3).Text(
-                                    "This document confirms that the City of Johannesburg Valuation Portal received your rates rebate application.");
-                                box.Item().PaddingTop(3).Text(
-                                    "This acknowledgement is proof of submission only and does not imply that the application has been approved. The application remains subject to assessment by the Valuation Services Department.");
-                                box.Item().PaddingTop(5)
-                                    .Text($"Rebate Reference: {result.RebateNo}")
-                                    .Bold();
+                                void RefRow(string label, string? value)
+                                {
+                                    refBox.Item().Text(text =>
+                                    {
+                                        text.Span(label + " ").Bold().FontSize(9);
+                                        text.Span(string.IsNullOrWhiteSpace(value) ? "—" : value.Trim()).FontSize(9);
+                                    });
+                                }
+
+                                RefRow("Property Address:", result.PropertyAddress);
+                                RefRow("Rebate Reference:", result.RebateNo);
+                                RefRow("Account Number:", result.AccountNumber);
+                                RefRow("Date Captured:", submittedAt.ToString("dd MMMM yyyy HH:mm"));
                             });
+
+                        col.Item().BorderBottom(1).BorderColor("#555555");
 
                         col.Item().PaddingTop(3)
                             .Background("#3F7FB5")
