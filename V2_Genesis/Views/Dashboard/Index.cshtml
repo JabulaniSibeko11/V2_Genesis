@@ -89,6 +89,16 @@
             : "CLOSED";
     }
  
+    var SaCulture = CultureInfo.GetCultureInfo("en-ZA");
+
+    bool HasTime(DateTime value) => value.TimeOfDay != TimeSpan.Zero;
+
+    // "12 June 2026" or "25 September 2026 at 15:35"
+    string FormatPeriodDate(DateTime value, bool withTime) =>
+        withTime && HasTime(value)
+            ? value.ToString("d MMMM yyyy", SaCulture) + " at " + value.ToString("HH:mm", SaCulture)
+            : value.ToString("d MMMM yyyy", SaCulture);
+
     string RollSubtitle(string source) => source switch
     {
         "Objection" => "General Valuation Roll 2023",
@@ -299,6 +309,60 @@
                     Search, link and manage properties for the current
                     supplementary valuation roll.
                 </p>
+
+                @* Inspection / objection period — dates come from RollDates in
+                   appsettings.json, so the text changes by itself when the
+                   dates change or the period closes. *@
+                @if (Model.RollDates.TryGetValue(sup4.Source, out var sup4Dates))
+                {
+                    var rollName = RollSubtitle(sup4.Source);
+                    var opens = FormatPeriodDate(sup4Dates.OpenDate, withTime: false);
+                    var closes = FormatPeriodDate(sup4Dates.VisibleUntil, withTime: true);
+                    var noticeCss = status switch
+                    {
+                        "OPEN" => "is-open",
+                        "OPENING SOON" => "is-soon",
+                        _ => "is-closed"
+                    };
+
+                    <div class="legacy-period-notice @noticeCss">
+                        <div class="legacy-period-head">
+                            <i class="fa-solid @(status == "CLOSED" ? "fa-lock" : "fa-scale-balanced")"></i>
+                            @(status switch
+                            {
+                                "OPEN" => "Inspection & objection period open",
+                                "OPENING SOON" => "Inspection & objection period opens soon",
+                                _ => "Inspection & objection period closed"
+                            })
+                        </div>
+
+                        <p class="legacy-period-text">
+                            @if (status == "OPEN")
+                            {
+                                @:The owner of properties within the boundaries of the City of Johannesburg or any other person has the right to inspect the @rollName and object to the entry in the @rollName from <strong>@opens</strong> to <strong>@closes</strong>.
+                            }
+                            else if (status == "OPENING SOON")
+                            {
+                                @:The owner of properties within the boundaries of the City of Johannesburg or any other person will have the right to inspect the @rollName and object to the entry in the @rollName from <strong>@opens</strong> to <strong>@closes</strong>.
+                            }
+                            else
+                            {
+                                @:The period to inspect the @rollName and object to the entry in the @rollName ran from <strong>@opens</strong> to <strong>@closes</strong> and is now closed. You can still view your linked properties, objections and appeals on the dashboard.
+                            }
+                        </p>
+
+                        <div class="legacy-period-dates">
+                            <span>
+                                <small>Opens</small>
+                                @sup4Dates.OpenDate.ToString("d MMM yyyy", SaCulture)
+                            </span>
+                            <span>
+                                <small>@(status == "CLOSED" ? "Closed" : "Closes")</small>
+                                @sup4Dates.VisibleUntil.ToString("d MMM yyyy", SaCulture)@(HasTime(sup4Dates.VisibleUntil) ? " · " + sup4Dates.VisibleUntil.ToString("HH:mm", SaCulture) : "")
+                            </span>
+                        </div>
+                    </div>
+                }
  
                 <div class="legacy-service-stats">
                     <span><i class="fa-solid fa-link"></i> @data.LinkedCount Linked</span>

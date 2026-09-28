@@ -1085,3 +1085,114 @@
             animation: none;
         }
 }
+
+/* ── Sup4 tile: inspection & objection period notice ───────────── */
+.legacy-period-notice {
+    margin: -6px 0 22px;
+    padding: 16px 18px;
+    border: 1px solid var(--ld-gold-border);
+    border-left: 4px solid var(--ld-gold);
+    border-radius: 12px;
+    background: var(--ld-gold-dim);
+}
+
+    .legacy-period-notice.is-open {
+        border-color: #a7dfbf;
+        border-left-color: #1f8a52;
+        background: #f1f9f4;
+    }
+
+    .legacy-period-notice.is-closed {
+        border-color: var(--ld-border);
+        border-left-color: #8a9699;
+        background: #f5f7f7;
+    }
+
+.legacy-period-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    color: var(--ld-dark);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: .6px;
+    text-transform: uppercase;
+}
+
+    .legacy-period-head i {
+        color: var(--ld-gold-dark);
+    }
+
+.legacy-period-notice.is-open .legacy-period-head i {
+    color: #1f8a52;
+}
+
+.legacy-period-notice.is-closed .legacy-period-head i {
+    color: #6b7a7e;
+}
+
+.legacy-service-card p.legacy-period-text {
+    margin: 0 0 12px;
+    color: var(--ld-dark);
+    font-size: 14px;
+    line-height: 1.65;
+}
+
+.legacy-period-text strong {
+    color: var(--ld-dark);
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.legacy-period-dates {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+    .legacy-period-dates span {
+        display: inline-flex;
+        flex-direction: column;
+        min-width: 130px;
+        padding: 8px 12px;
+        border: 1px solid var(--ld-border);
+        border-radius: 10px;
+        background: #ffffff;
+        color: var(--ld-dark);
+        font-size: 13.5px;
+        font-weight: 700;
+        line-height: 1.35;
+    }
+
+    .legacy-period-dates small {
+        color: var(--ld-teal);
+        font-size: 10.5px;
+        font-weight: 700;
+        letter-spacing: .6px;
+        text-transform: uppercase;
+    }
+
+.legacy-period-notice.is-closed .legacy-period-text,
+.legacy-period-notice.is-closed .legacy-period-dates span {
+    color: #4b5a5e;
+}
+
+@media (max-width: 600px) {
+    .legacy-period-notice {
+        padding: 14px;
+    }
+
+    .legacy-service-card p.legacy-period-text {
+        font-size: 13.5px;
+    }
+
+    .legacy-period-text strong {
+        white-space: normal;
+    }
+
+    .legacy-period-dates span {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+}

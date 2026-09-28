@@ -371,9 +371,9 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
 <div class="obj-hero">
     <div class="obj-hero-inner">
         <div class="obj-hero-left">
-            <div class="obj-hero-logo">
+           @*  <div class="obj-hero-logo">
                 <img src="~/images/joburg_logo.png" alt="City of Johannesburg" />
-            </div>
+            </div> *@
             <div class="obj-hero-text">
                 <div class="obj-hero-org">City of Johannesburg · Valuation Services</div>
                   @if (_isAppeal)
@@ -658,12 +658,12 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
                 </div>
                 <div class="row mb-2">
                     <div class="col-sm-6">
-                        <label class="form-label fw-semibold  text-dark"> HOME TELEPHONE <span style="color: red;">*</span></label>
+                        <label class="form-label fw-semibold  text-dark"> HOME TELEPHONE </label>
                         <input  id="o_cd_1" class="form-control o_cell_no border-2 rounded shadow-sm px-4 py-2" maxlength="13" onkeypress="return onlyNumberKey(event)" type="tel" onpaste="return false;" ondrop="return false;" asp-for="Owner_Home_Phone"placeholder="0112345678">
 
                     </div>
                     <div class="col-sm-6">
-                        <label class="form-label fw-semibold  text-dark"> WORK TELEPHONE <span style="color: red;">*</span></label>
+                        <label class="form-label fw-semibold  text-dark"> WORK TELEPHONE </label>
                         <input  id="o_cd_2" class="form-control o_cell_no border-2 rounded shadow-sm px-4 py-2" maxlength="13" onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;" asp-for="Owner_Work_Phone" placeholder="0112345678">
 
                     </div>
@@ -816,17 +816,17 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
                 </div>
                 <div class="row mb-2">
                     <div class="col-sm-6">
-                        <label class="form-label fw-semibold  text-dark"> HOME TELEPHONE <span style="color: red;">*</span></label>
+                        <label class="form-label fw-semibold  text-dark"> HOME TELEPHONE </label>
                         <input  id="obj_cd_1" class="form-control rounded shadow-sm px-4 py-2" maxlength="13" onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;" asp-for="Objector_Home" placeholder="0112345678">
 
                     </div>
                       <div class="col-sm-6">
-                           <label class="form-label fw-semibold  text-dark"> WORK TELEPHONE<span style="color: red;">*</span></label>
+                           <label class="form-label fw-semibold  text-dark"> WORK TELEPHONE</label>
                              <input  id="obj_cd_2" class="form-control rounded shadow-sm px-4 py-2" maxlength="13"  onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;" asp-for="Objector_Work" placeholder="0112345678">
 
                       </div>
                         <div class="col-sm-6">
-                              <label class="form-label fw-semibold  text-dark"> CELL <span style="color: red;">*</span></label>
+                              <label class="form-label fw-semibold  text-dark"> CELLPHONE NUMBER <span style="color: red;">*</span></label>
                              <input  id="obj_cd_3" class="form-control rounded shadow-sm px-4 py-2" maxlength="13"  onkeypress="return onlyNumberKey(event)" type="text" onpaste="return false;" ondrop="return false;" asp-for="Objector_Cell" placeholder="0712345678">
 
                         </div>
