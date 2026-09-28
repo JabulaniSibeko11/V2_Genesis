@@ -1852,9 +1852,28 @@ public class NoticeService : INoticeService
     string objectionNo, string rollSource,
     int fileCount, List<string> fileNames)
     {
-        var roll = _noticeSettings.For(rollSource);
         var fileName = $"Attachment_{SanitiseName(objectionNo)}.pdf";
         var header = Path.Combine(_env.WebRootPath, HEADER_IMAGE);
+        var uploadedAt = DateTime.Now;
+
+        // Friendly roll name, never the internal key (Objection_Query, ...).
+        var reference = objectionNo?.Trim() ?? string.Empty;
+        var rollLabel = EvidenceRollLabel(rollSource, reference);
+
+        var referenceLabel =
+            reference.StartsWith("QUE-", StringComparison.OrdinalIgnoreCase)
+                ? (rollLabel.EndsWith("Review", StringComparison.OrdinalIgnoreCase)
+                    ? "Review Reference:"
+                    : "Query Reference:")
+                : reference.StartsWith("APP-", StringComparison.OrdinalIgnoreCase)
+                    ? "Appeal Number:"
+                    : "Objection Number:";
+
+        var documents = fileNames?
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .ToList() ?? new List<string>();
+
+        var documentCount = documents.Count > 0 ? documents.Count : fileCount;
 
         var pdf = Document.Create(container =>
         {
@@ -1893,7 +1912,7 @@ public class NoticeService : INoticeService
 
                         footer.Item()
                             .AlignCenter()
-                            .Text($"Generated on: {DateTime.Now:dd MMMM yyyy HH:mm}")
+                            .Text($"Generated on: {uploadedAt:dd MMMM yyyy HH:mm}")
                             .FontSize(7)
                             .FontColor("#666666");
 
@@ -1910,116 +1929,150 @@ public class NoticeService : INoticeService
 
                 page.Content().PaddingHorizontal(36).Column(col =>
                 {
-                    col.Item().Height(8);
+                    col.Spacing(8);
 
-                    col.Item().AlignRight()
-                        .Text(DateTime.Now.ToString("dd MMMM yyyy HH:mm"))
+                    // DATE (upload date) — same as the acknowledgements.
+                    col.Item()
+                        .AlignRight()
+                        .Text(uploadedAt.ToString("dd MMMM yyyy"))
+                        .FontSize(10)
+                        .SemiBold();
+
+                    // TITLE
+                    col.Item()
+                        .AlignCenter()
+                        .Text("CITY OF JOHANNESBURG")
+                        .FontSize(13)
+                        .Bold();
+
+                    col.Item()
+                        .AlignCenter()
+                        .Text("EVIDENCE UPLOAD CONFIRMATION")
+                        .FontSize(12)
+                        .Bold();
+
+                    col.Item().BorderBottom(1).BorderColor("#555555");
+
+                    // INTRO
+                    col.Item()
+                        .Text("This is to acknowledge that your supporting documents have been successfully uploaded and logged. Details below for your records.")
                         .FontSize(9);
 
-                    col.Item().Height(6);
-                    col.Item().BorderBottom(1).BorderColor("#555555");
-                    col.Item().Height(6);
+                    col.Item()
+                        .Text("IMPORTANT NOTICE: You have 48 hours from the original submission to upload outstanding evidence.")
+                        .FontSize(9)
+                        .Bold();
 
-                    col.Item().AlignCenter()
-                        .Text("CITY OF JOHANNESBURG").FontSize(13).Bold();
+                    // REFERENCE DETAILS
+                    col.Item()
+                        .AlignCenter()
+                        .Text("REFERENCE DETAILS")
+                        .FontSize(10)
+                        .Bold();
 
-                    col.Item().Height(4);
-
-                    col.Item().AlignCenter()
-                        .Text("ATTACHMENT UPLOAD CONFIRMATION").FontSize(10).Bold();
-
-                    col.Item().Height(6);
-                    col.Item().BorderBottom(1).BorderColor("#555555");
-                    col.Item().Height(8);
-
-                    // Notice
-                    col.Item().PaddingBottom(6).Text(t =>
-                    {
-                        t.Span("This is to confirm that your documents have been " +
-                               "successfully uploaded. ");
-                        t.Span("IMPORTANT: ").Bold();
-                        t.Span("You have 48 hours from original submission to " +
-                               "upload outstanding evidence.");
-                    });
-
-                    // Reference box
-                    col.Item().Background("#F0F0F0").Border(1).BorderColor("#888888")
-                        .Padding(8).Column(box =>
+                    col.Item()
+                        .Background("#eeeeee")
+                        .Border(1)
+                        .BorderColor("#444444")
+                        .Padding(10)
+                        .Column(refBox =>
                         {
-                            box.Item().Text(t =>
+                            void RefRow(string label, string? value)
                             {
-                                t.Span("Objection/Appeal Number: ").Bold();
-                                t.Span(objectionNo);
-                            });
-                            box.Item().Text(t =>
-                            {
-                                t.Span("Roll: ").Bold();
-                                t.Span(roll.RollTitle);
-                            });
-                            box.Item().Text(t =>
-                            {
-                                t.Span("Upload Date/Time: ").Bold();
-                                t.Span(DateTime.Now.ToString("dd MMMM yyyy HH:mm"));
-                            });
-                            box.Item().Text(t =>
-                            {
-                                t.Span("Total Documents Uploaded: ").Bold();
-                                t.Span(fileCount.ToString());
-                            });
+                                refBox.Item().Text(text =>
+                                {
+                                    text.Span(label + " ").Bold();
+                                    text.Span(string.IsNullOrWhiteSpace(value) ? "—" : value);
+                                });
+                            }
+
+                            RefRow(referenceLabel, reference);
+                            RefRow("Roll:", rollLabel);
+                            RefRow("Upload Date/Time:", uploadedAt.ToString("dd MMMM yyyy HH:mm"));
+                            RefRow("Documents Uploaded:", $"{documentCount} document(s)");
                         });
 
-                    col.Item().Height(10);
+                    col.Item().BorderBottom(1).BorderColor("#555555");
 
-                    // File list
-                    col.Item().BorderBottom(1).BorderColor("#DDDDDD");
-                    col.Item().Height(4);
-
-                    col.Item().AlignCenter()
-                        .Text("UPLOADED DOCUMENTS").Bold().FontSize(9);
-
-                    col.Item().Height(6);
+                    // UPLOADED DOCUMENTS
+                    col.Item()
+                        .AlignCenter()
+                        .Text("UPLOADED DOCUMENTS")
+                        .FontSize(10)
+                        .Bold();
 
                     col.Item().Table(table =>
                     {
                         table.ColumnsDefinition(c =>
                         {
                             c.ConstantColumn(30);   // #
-                            c.RelativeColumn();     // filename
+                            c.RelativeColumn();     // file name
                         });
 
-                        // Header
-                        static IContainer TH(IContainer c) =>
-                            c.Background("#1a1a1a").Padding(6);
+                        static IContainer TH(IContainer c) => c
+                            .Background("#3f7fb5")
+                            .Border(1)
+                            .BorderColor("#222222")
+                            .Padding(5);
 
-                        table.Cell().Element(TH)
-                            .Text("#").FontColor(Colors.White).Bold().FontSize(8);
-                        table.Cell().Element(TH)
-                            .Text("File Name").FontColor(Colors.White).Bold().FontSize(8);
+                        static IContainer TD(IContainer c) => c
+                            .Border(1)
+                            .BorderColor("#222222")
+                            .Padding(5);
 
-                        bool alt = false;
-                        for (int i = 0; i < fileNames.Count; i++)
+                        table.Cell().Element(TH).AlignCenter()
+                            .Text("#").FontSize(8).FontColor(Colors.White).Bold();
+                        table.Cell().Element(TH)
+                            .Text("File Name").FontSize(8).FontColor(Colors.White).Bold();
+
+                        if (documents.Count == 0)
                         {
+                            table.Cell().ColumnSpan(2).Element(TD)
+                                .Text("No document names were recorded.")
+                                .FontSize(8)
+                                .Italic()
+                                .FontColor("#666666");
+                        }
 
-                            var bg = alt ? Colors.Grey.Lighten5 : Colors.White;
-                            alt = !alt;
-
-                            IContainer TD(IContainer c) =>
-                                c.Background(bg).BorderBottom(0.5f)
-                                 .BorderColor("#EEEEEE").Padding(5);
-
-                            table.Cell().Element(TD)
+                        for (int i = 0; i < documents.Count; i++)
+                        {
+                            table.Cell().Element(TD).AlignCenter()
                                 .Text((i + 1).ToString()).FontSize(8);
                             table.Cell().Element(TD)
-                                .Text(fileNames[i]).FontSize(8);
+                                .Text(documents[i]).FontSize(8);
                         }
                     });
-
                 });
             });
         }).GeneratePdf();
 
         return Task.FromResult((pdf, fileName));
     }
+    /// Roll name shown to the client on the evidence upload confirmation.
+    private static string EvidenceRollLabel(string? rollSource, string reference)
+    {
+        var roll = rollSource?.Trim() ?? string.Empty;
+
+        if (roll.Equals("Objection_Query", StringComparison.OrdinalIgnoreCase) ||
+            reference.StartsWith("QUE-", StringComparison.OrdinalIgnoreCase))
+        {
+            return reference.EndsWith("-R", StringComparison.OrdinalIgnoreCase)
+                ? "Section 78 Review"
+                : "Section 78 Query";
+        }
+
+        if (roll.StartsWith("Objection_Supp", StringComparison.OrdinalIgnoreCase))
+        {
+            var number = roll.Substring("Objection_Supp".Length);
+            return $"Supplementary Valuation Roll {number}";
+        }
+
+        if (roll.Equals("Objection", StringComparison.OrdinalIgnoreCase))
+            return "General Valuation Roll 2023";
+
+        return string.IsNullOrWhiteSpace(roll) ? "—" : roll.Replace('_', ' ');
+    }
+
     public Task<(byte[] Pdf, string FileName)> GenerateSection51AcknowledgementAsync(
     string objectionNo, string rollSource,
     int fileCount, List<string> fileNames)
