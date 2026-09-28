@@ -124,6 +124,34 @@ function disable_ID() {
     document.getElementById("id_status").innerHTML = '';
 }
 
+// Third party (1.2) ID / passport toggle - same as the single Query form.
+function enable_ID2() {
+    var pass = document.getElementById("objector_pass");
+    var id = document.getElementById("objector_id");
+    if (!pass || !id) return;
+    pass.disabled = true;
+    $("#objector_pass").hide();
+    $("#pass_L").hide();
+    id.disabled = false;
+    $("#objector_id").show();
+    $("#id_L").show();
+}
+function disable_ID2() {
+    var pass = document.getElementById("objector_pass");
+    var id = document.getElementById("objector_id");
+    if (!pass || !id) return;
+    pass.disabled = false;
+    $("#objector_pass").show();
+    $("#pass_L").show();
+    id.disabled = true;
+    $("#objector_id").hide();
+    $("#id_L").hide();
+    var status = document.getElementById("obj_id_status");
+    if (status) status.innerHTML = '';
+}
+// Start on ID number for the third party, like the owner.
+$(function () { enable_ID2(); });
+
 
 
 var extentElement = document.getElementById('extent');
@@ -142,48 +170,48 @@ const input = document.querySelector('#files');
 
 // Listen for files selection
 if (input) {
-input.addEventListener('change', (e) => {
-    // Retrieve all files
-    const files = input.files;
+    input.addEventListener('change', (e) => {
+        // Retrieve all files
+        const files = input.files;
 
-    // Check files count
-    if (files.length > 10) {
-        input.value = "";
-        alert(`Only 10 files are allowed to upload.`);
-        return;
-    }
+        // Check files count
+        if (files.length > 10) {
+            input.value = "";
+            alert(`Only 10 files are allowed to upload.`);
+            return;
+        }
 
-    for (let i = 0; i < files.length; i++) {
-        ext = input.files.item(i).name;
-        ext2 = ext.split(".").pop();
-        ext2.toLowerCase();
-        console.log(ext2);
+        for (let i = 0; i < files.length; i++) {
+            ext = input.files.item(i).name;
+            ext2 = ext.split(".").pop();
+            ext2.toLowerCase();
+            console.log(ext2);
 
-        switch (ext2) {
-            case 'pdf':
-            case 'jpeg':
-            case 'jpg':
-            case 'png':
-            case 'heif':
-                fsize = input.files.item(i).size;
-                fi = Math.round((fsize / 1024));
-                if (ext.length > 100) {
-                    alert("File name too long.");
+            switch (ext2) {
+                case 'pdf':
+                case 'jpeg':
+                case 'jpg':
+                case 'png':
+                case 'heif':
+                    fsize = input.files.item(i).size;
+                    fi = Math.round((fsize / 1024));
+                    if (ext.length > 100) {
+                        alert("File name too long.");
+                        input.value = '';
+                        break;
+                    }
+                    if (fi >= 10240) {
+                        alert("File too Big, please select a file less than 10,2mb.");
+                        input.value = '';
+                    }
+                    break;
+                default:
+                    alert('File type Not allowed. PDF, JPEG, JPG, PNG,HEIF only.');
                     input.value = '';
                     break;
-                }
-                if (fi >= 10240) {
-                    alert("File too Big, please select a file less than 10,2mb.");
-                    input.value = '';
-                }
-                break;
-            default:
-                alert('File type Not allowed. PDF, JPEG, JPG, PNG,HEIF only.');
-                input.value = '';
-                break;
+            }
         }
-    }
-});
+    });
 }
 
 // Cumulative Multi-query upload: selections from different folders are retained.
@@ -358,39 +386,23 @@ var objId = "";
 var pin
 
 function showInput() {
-
-    desc = document.getElementById("Property_Desc").value;
-    sessionStorage.setItem("desc", desc);
-
-    desc = document.getElementById("Property_Type").value;
-    sessionStorage.setItem("Property_Type", desc);
-
-    Market_value = document.getElementById("Market_Value").value;
-    sessionStorage.setItem("Market_Value", Market_value);
-
-    extent = document.getElementById("extent").value;
-    sessionStorage.setItem("extent", extent);
-
-    Cat = document.getElementById("cat").value;
-    sessionStorage.setItem("cat", Cat);
-
-    owner = document.getElementById("cat").value;
-    sessionStorage.setItem("cat", cat);
-
-    owner = document.getElementById("owner").value;
-    sessionStorage.setItem("owner", owner);
-
-
-    if (document.getElementById("sign_obj").value !== null && document.getElementById("sign_obj").value.trim() !== "") {
-        const submitButton = document.getElementById("submitForm");
-        submitButton.disabled = true;
-        submitButton.innerHTML = 'Please wait...';
-        document.getElementById("myForm").submit();
+    // Only remembers the property summary for the acknowledgement page.
+    // The Multi page script (initializeSubmitToaster) does the checks,
+    // shows the loader and submits the form ONCE. This used to call
+    // form.submit() here as well, which could send the form twice.
+    function value(id) {
+        var el = document.getElementById(id);
+        return el ? el.value : "";
     }
 
-    //obj_Id = document.getElementById("pin").value;
-    //sessionStorage.setItem("pin", pin);
+    sessionStorage.setItem("desc", value("Property_Desc"));
+    sessionStorage.setItem("Property_Type", value("Property_Type"));
+    sessionStorage.setItem("Market_Value", value("Market_Value"));
+    sessionStorage.setItem("extent", value("extent"));
+    sessionStorage.setItem("cat", value("cat"));
+    sessionStorage.setItem("owner", value("owner"));
 
+    return true;
 }
 
 String.prototype.reverse = function () {
@@ -408,7 +420,8 @@ function reformatText(input) {
     x = x.toString().replace(/^,/g, ""); // Remove leading comma
     //y = x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")
     input.value = x;	//Re-format as the user type
-    document.getElementById('Obj_Compensation_Amount').value = parseFloat(x.replace(/,/g, '')); //Removing commas to be able to save data to the database
+    var raw = document.getElementById('Obj_Compensation_Amount'); // optional raw field
+    if (raw) raw.value = parseFloat(x.replace(/,/g, ''));
 
 }
 
@@ -936,6 +949,14 @@ $("textarea").keydown(function (e) {
 
 
 
+// Sets the text of an element only if it is on the page. The Section 78
+// Multi view does not have every Objection heading (obj_head1 etc.), and a
+// missing element used to stop load() with an error (e.g. for a Review).
+function setHtml(id, html) {
+    var el = document.getElementById(id);
+    if (el) el.innerHTML = html;
+}
+
 function load() {
     /* window.alert(property_key);*/
     //Residential focus to hide other sections
@@ -952,15 +973,14 @@ function load() {
         $(".div3_A").toggle(2000);
         $(".div4_R").toggle(2000);
         $(".div4_B").toggle(2000);
-        document.getElementById("form_head").innerHTML = "FORM D: Multiple Purpose (The use of a property for more than one purpose)";
 
     }
-    
+
     //Owner
     if (objector_key == "Owner") {
         $(".Div1-2").hide();
         $(".Div1-3").hide();
-        document.getElementById("o_name_l").innerHTML = 'REGISTERED OWNER OF PROPERTY';
+        setHtml("o_name_l", 'REGISTERED OWNER OF PROPERTY');
     }
     if (objector_key == "Third_Party") {
         $(".Div1-1").hide();
@@ -970,31 +990,31 @@ function load() {
     if (objector_key == "Representative") {
         $(".Div1-2").hide();
         $("#owner_details").hide();
-        document.getElementById("o_name_l").innerHTML = '<span style="color: red; ">*</span>REGISTERED OWNER OF PROPERTY (<span style="color: red;">required</span>)';
-        document.getElementById("owner_head").innerHTML = "1.1 OWNER DETAILS";
+        setHtml("o_name_l", '<span style="color: red; ">*</span>REGISTERED OWNER OF PROPERTY (<span style="color: red;">required</span>)');
+        setHtml("owner_head", "1.1 OWNER DETAILS");
 
     }
     if (AppealStatus == "True") {
-        document.getElementById("obj_head1").innerHTML = "LODGING OF AN APPEAL AGAINST THE DECISION OF THE MINICIPAL VALUER REGARDING MATTERS PERTAINING TO PROPERTY AS REFLECTED IN OR OMITTED FROM THE " +
-            "VALUATION ROLL / SUPPLEMENTARY VALUATION ROLL FOR THE PERIOD 1 JULY 2023 TO 30 JUNE 2027";
-        document.getElementById("obj_head2").innerHTML = "DESCRIPTION  OF PROPERTY IN RESPECT OF WHICH THE APPEAL IS MADE";
-        document.getElementById("obj_head3").innerHTML = "(COMPLETE A SEPARATE FORM FOR EARCH ENTRY APPEALLED TO)";
-        document.getElementById("s_head").innerHTML = "SECTION 1: APPELLANT INFORMATION";
-        document.getElementById("owner_head").innerHTML = "1.1 APPELLANT IS THE OWNER";
-        document.getElementById("T_Party_head").innerHTML = "1.2 APPELLANT IS NOT THE OWNER OR MUNICIPALITY IS THE APPELLANT*";
-        document.getElementById("TP_Name").innerHTML = "NAME OF APPELLANT";
-        document.getElementById("tp_status").innerHTML = "STATUS OF APPELLANT";
-        document.getElementById("r_head").innerHTML = "1.3 AUTHORISED REPRESENTATIVE OF THE APPELLANT";
-        document.getElementById("section6_head").innerHTML = "SECTION 6: APPEAL DETAILS";
-        document.getElementById("Section6_roll").innerHTML = "PARTICULARS AS REFLECTED IN NEW MVD";
-        document.getElementById("Section6_reason").innerHTML = "Appeal";
+        setHtml("obj_head1", "LODGING OF AN APPEAL AGAINST THE DECISION OF THE MINICIPAL VALUER REGARDING MATTERS PERTAINING TO PROPERTY AS REFLECTED IN OR OMITTED FROM THE " +
+            "VALUATION ROLL / SUPPLEMENTARY VALUATION ROLL FOR THE PERIOD 1 JULY 2023 TO 30 JUNE 2027");
+        setHtml("obj_head2", "DESCRIPTION  OF PROPERTY IN RESPECT OF WHICH THE APPEAL IS MADE");
+        setHtml("obj_head3", "(COMPLETE A SEPARATE FORM FOR EARCH ENTRY APPEALLED TO)");
+        setHtml("s_head", "SECTION 1: APPELLANT INFORMATION");
+        setHtml("owner_head", "1.1 APPELLANT IS THE OWNER");
+        setHtml("T_Party_head", "1.2 APPELLANT IS NOT THE OWNER OR MUNICIPALITY IS THE APPELLANT*");
+        setHtml("TP_Name", "NAME OF APPELLANT");
+        setHtml("tp_status", "STATUS OF APPELLANT");
+        setHtml("r_head", "1.3 AUTHORISED REPRESENTATIVE OF THE APPELLANT");
+        setHtml("section6_head", "SECTION 6: APPEAL DETAILS");
+        setHtml("Section6_roll", "PARTICULARS AS REFLECTED IN NEW MVD");
+        setHtml("Section6_reason", "Appeal");
 
     }
 
     if (SubType == "Review") {
-        document.getElementById("obj_head1").innerHTML = "LODGING OF A REVIEW AGAINSTS MATTERS PERTAINING TO A GENERAL / SUPPLEMENTARY VALUATION ON THE PROPERTY DESCRIBED BELOW:";
-        document.getElementById("obj_head2").innerHTML = "DESCRIPTION OF PROPERTY IN RESPECT OF WHICH THE REVIEW IS MADE";
-        document.getElementById("Section6_reason").innerHTML = "REVIEW";
+        setHtml("obj_head1", "LODGING OF A REVIEW AGAINSTS MATTERS PERTAINING TO A GENERAL / SUPPLEMENTARY VALUATION ON THE PROPERTY DESCRIBED BELOW:");
+        setHtml("obj_head2", "DESCRIPTION OF PROPERTY IN RESPECT OF WHICH THE REVIEW IS MADE");
+        setHtml("Section6_reason", "REVIEW");
     }
 }
 // style=" margin-top: 12px; border-radius: 25px; border: 2px solid #73AD21; padding: 20px; width: 1050px;}"
@@ -1649,7 +1669,7 @@ $(document).ready(function () {
             });
         }
 
-        
+
 
     });
     $(".btn_n5").click(function () {
@@ -1801,67 +1821,22 @@ $(document).ready(function () {
 
 
 $(function () {
-    var canvas = document.querySelector('#signature');
-    if (!canvas) return;
-
-    // Match the drawing buffer to the rendered size so ink stays directly
-    // under the mouse/finger on desktop and responsive layouts.
-    var ratio = Math.max(window.devicePixelRatio || 1, 1);
-    var renderedWidth = canvas.getBoundingClientRect().width || 598;
-    var renderedHeight = 160;
-    canvas.width = Math.round(renderedWidth * ratio);
-    canvas.height = Math.round(renderedHeight * ratio);
-    canvas.getContext('2d').scale(ratio, ratio);
-
-    var pad = new SignaturePad(canvas);
+    // genesis-signature.js owns the signature canvas: drawing, Clear and
+    // saving the picture to #SignatureDataUrl (same as the Objection forms).
+    // This file used to resize the canvas and run SignaturePad as well,
+    // which moved the ink away from the pen on scaled screens and wiped
+    // the saved signature (and disabled Submit) as soon as the pen lifted.
     var signatureData = document.getElementById('SignatureDataUrl');
-    var status = document.getElementById('signatureStatus');
-    var submit = document.getElementById('submitForm');
+    if (!signatureData) return;
 
-    function captureSignature() {
-        window.requestAnimationFrame(function () {
-            if (pad.isEmpty()) {
-                if (signatureData) signatureData.value = '';
-                if (status) {
-                    status.textContent = 'No signature drawn';
-                    status.style.color = '#6b6b6b';
-                }
-                if (submit) submit.disabled = true;
-                return;
-            }
-
-            var data = pad.toDataURL('image/png');
-            if (signatureData) {
-                signatureData.value = data;
-                signatureData.dispatchEvent(new Event('change', { bubbles: true }));
-            }
-            $('#savetarget').attr('src', data);
-            if (status) {
-                status.textContent = 'Signature captured';
-                status.style.color = '#0f766e';
-            }
-            if (submit) submit.disabled = false;
-        });
+    function mirror() {
+        $('#savetarget').attr('src', signatureData.value || '');
     }
 
-    canvas.addEventListener('pointerup', captureSignature);
-    canvas.addEventListener('mouseup', captureSignature);
-    canvas.addEventListener('touchend', captureSignature);
+    signatureData.addEventListener('change', mirror);
 
-    // Retained hidden compatibility control from the original Multi view.
-    $('#accept').click(function () {
-        captureSignature();
-    });
-
-    $('#Clear').click(function () {
-        pad.clear();
-        if (signatureData) signatureData.value = '';
-        if (status) {
-            status.textContent = 'No signature drawn';
-            status.style.color = '#6b6b6b';
-        }
-        if (submit) submit.disabled = true;
-    });
+    // Hidden compatibility button kept by the original Multi view.
+    $('#accept').click(mirror);
 });
 
 
