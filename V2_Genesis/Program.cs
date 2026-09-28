@@ -53,6 +53,13 @@ if (genesisLogging.Enabled)
                 "Microsoft.EntityFrameworkCore",
                 LogEventLevel.Warning)
 
+            // EF logs every failed query once, then the app logs the same
+            // exception again with the real context ("Could not generate
+            // acknowledgement for ..."). Keep only the app's entry.
+            .MinimumLevel.Override(
+                "Microsoft.EntityFrameworkCore.Query",
+                LogEventLevel.Fatal)
+
             .Enrich.FromLogContext()
 
             .Enrich.WithProperty(
@@ -73,6 +80,16 @@ if (genesisLogging.Enabled)
                 new YearMonthFileSink(
                     genesisLogging.RootPath,
                     genesisLogging.FileSizeLimitMB))
+
+            // Errors only: C:\Genesis Log\Errors\<year>\<month>\genesis-<date>.log
+            // Open this file first to see what went wrong, with the full
+            // stack trace, without scrolling through every request.
+            .WriteTo.Logger(errors => errors
+                .Filter.ByIncludingOnly(e => e.Level >= LogEventLevel.Error)
+                .WriteTo.Sink(
+                    new YearMonthFileSink(
+                        Path.Combine(genesisLogging.RootPath, "Errors"),
+                        genesisLogging.FileSizeLimitMB)))
 
             .CreateLogger();
 
@@ -219,12 +236,20 @@ builder.Services.AddScoped<ISubmissionViewService, SubmissionViewService>();
 builder.Services.AddScoped<IAdminClientAccountService, AdminClientAccountService>();
 builder.Services.AddScoped<IAdminPropertyEnquiryService, AdminPropertyEnquiryService>();
 builder.Services.AddScoped<GenesisActionLoggingFilter>();
-builder.Services.AddScoped<IAttributeInspectionCalendarService,AttributeInspectionCalendarService>();
+builder.Services.AddScoped<IAttributeInspectionCalendarService, AttributeInspectionCalendarService>();
 
 builder.Services.AddDataProtection();
 
 // ── App Pipeline ──────────────────────────────────────────────────────────────
 var app = builder.Build();
+
+// ── Correlation ID ────────────────────────────────────────────────────────────
+// First in the pipeline, so the HTTP request line and any unhandled error
+// carry the same ID as the controller log lines of that request.
+if (genesisLogging.Enabled)
+{
+    app.UseMiddleware<CorrelationIdMiddleware>();
+}
 
 if (!app.Environment.IsDevelopment())
 {
@@ -242,17 +267,30 @@ if (genesisLogging.Enabled &&
     app.UseSerilogRequestLogging(options =>
     {
         options.MessageTemplate =
-            "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms";
+            "HTTP {RequestMethod} {RequestPath}{QueryString} responded {StatusCode} in {Elapsed:0} ms. User={UserName}";
+
+        options.EnrichDiagnosticContext = (diagnostics, http) =>
+        {
+            diagnostics.Set("QueryString", http.Request.QueryString.Value ?? string.Empty);
+            diagnostics.Set(
+                "UserName",
+                http.User?.Identity?.IsAuthenticated == true
+                    ? http.User.Identity!.Name ?? "Authenticated"
+                    : "Anonymous");
+        };
+
+        // 500s and crashed requests are errors; very slow pages are warnings.
+        options.GetLevel = (http, elapsedMs, ex) =>
+            ex is not null || http.Response.StatusCode >= 500
+                ? LogEventLevel.Error
+                : elapsedMs > 10000
+                    ? LogEventLevel.Warning
+                    : LogEventLevel.Information;
     });
 }
 
 app.UseRouting();
 
-// ── Correlation ID ────────────────────────────────────────────────────────────
-if (genesisLogging.Enabled)
-{
-    app.UseMiddleware<CorrelationIdMiddleware>();
-}
 
 app.UseSession();
 app.UseForwardedHeaders();

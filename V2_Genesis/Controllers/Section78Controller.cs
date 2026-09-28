@@ -1,5 +1,4 @@
-﻿
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
@@ -233,6 +232,18 @@ public class Section78Controller : Controller
 
         TempData.Keep("ReviewStat");
 
+        // ── Section 78 reasons (Obj_Section2Query) ───────────────────
+        // Read the ticks straight from the form as well, and store them as
+        // "Yes" (a checkbox without a value posts "on", which the PDF and
+        // the views did not recognise).
+        NormaliseSection78Reasons(que1);
+
+        _logger.LogInformation(
+            "[S78] Section 78 reasons received. A={A} B={B} C={C} D={D} E={E} F={F} G={G} H={H}, MotivationLength={MotivationLength}",
+            que1.Option_A, que1.Option_B, que1.Option_C, que1.Option_D,
+            que1.Option_E, que1.Option_F, que1.Option_G, que1.Option_H,
+            que1.Motivation_for_Supp_Request?.Length ?? 0);
+
         var result = await _section78.SubmitQueryAsync(
             que, obj1, obj2, que1,
             objR3, objB3, objA3,
@@ -315,6 +326,46 @@ public class Section78Controller : Controller
         ViewBag.GvList = await _db.GvList.OrderBy(r => r.ID).ToListAsync();
         ViewBag.IsMulti = true;
         return View("Display");   // SAME view — flag tells it to show multi rows
+    }
+
+    private void NormaliseSection78Reasons(Obj_Section2QueryModel que1)
+    {
+        string? Tick(string? bound, string field)
+        {
+            var value = string.IsNullOrWhiteSpace(bound)
+                ? Request.Form[field].ToString()
+                : bound;
+
+            if (string.IsNullOrWhiteSpace(value))
+                return null;
+
+            value = value.Trim();
+
+            return value.Equals("on", StringComparison.OrdinalIgnoreCase)
+                || value.Equals("yes", StringComparison.OrdinalIgnoreCase)
+                || value.Equals("true", StringComparison.OrdinalIgnoreCase)
+                || value.Equals("y", StringComparison.OrdinalIgnoreCase)
+                || value == "1"
+                    ? "Yes"
+                    : null;
+        }
+
+        que1.Option_A = Tick(que1.Option_A, "Option_A");
+        que1.Option_B = Tick(que1.Option_B, "Option_B");
+        que1.Option_C = Tick(que1.Option_C, "Option_C");
+        que1.Option_D = Tick(que1.Option_D, "Option_D");
+        que1.Option_E = Tick(que1.Option_E, "Option_E");
+        que1.Option_F = Tick(que1.Option_F, "Option_F");
+        que1.Option_G = Tick(que1.Option_G, "Option_G");
+        que1.Option_H = Tick(que1.Option_H, "Option_H");
+
+        if (string.IsNullOrWhiteSpace(que1.Motivation_for_Supp_Request))
+        {
+            var motivation = Request.Form["Motivation_for_Supp_Request"].ToString();
+            que1.Motivation_for_Supp_Request = string.IsNullOrWhiteSpace(motivation)
+                ? null
+                : motivation.Trim();
+        }
     }
 
     private void ApplyAdminViewContext()

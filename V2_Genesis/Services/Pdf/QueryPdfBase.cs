@@ -512,12 +512,17 @@ namespace GV_Forms.Pdf
 
                             t.Cell().Border(1).Padding(4).Text(((char)('a' + i)).ToString());
                             t.Cell().Border(1).Padding(4).Text(labels[i]);
-                            t.Cell().Border(1).Padding(4).AlignCenter().Text(
+                            // "on" is what an HTML checkbox without a value posts
+                            // (older Section 78 submissions stored it that way).
+                            var isTicked =
                                 string.Equals(tick, "true", StringComparison.OrdinalIgnoreCase) ||
                                 string.Equals(tick, "yes", StringComparison.OrdinalIgnoreCase) ||
-                                string.Equals(tick, "x", StringComparison.OrdinalIgnoreCase)
-                                    ? "X"
-                                    : "");
+                                string.Equals(tick, "y", StringComparison.OrdinalIgnoreCase) ||
+                                string.Equals(tick, "on", StringComparison.OrdinalIgnoreCase) ||
+                                string.Equals(tick, "1", StringComparison.OrdinalIgnoreCase) ||
+                                string.Equals(tick, "x", StringComparison.OrdinalIgnoreCase);
+
+                            t.Cell().Border(1).Padding(4).AlignCenter().Text(isTicked ? "X" : "");
                         }
                     });
                 });
@@ -590,39 +595,57 @@ namespace GV_Forms.Pdf
                             .FontSize(8);
 
                         r.RelativeItem()
-                            .BorderBottom(1)
-                            .Height(24)
-                            .AlignCenter()
-                            .AlignMiddle()
-                            .Element(signatureContainer =>
-                            {
-                                var signature =
-                                    V(sDecl, "Signature_Picture");
+    .BorderBottom(1)
+    .PaddingBottom(2)
+    .Element(signatureContainer =>
+    {
+        // Declared as string on purpose: sDecl is dynamic, so
+        // "var" made this dynamic too and the old LINQ
+        // .Split(',').Last() failed at runtime (extension
+        // methods do not work on dynamic). The catch hid it,
+        // so the signature never appeared on the PDF.
+        string signature = V(sDecl, "Signature_Picture");
 
-                                if (string.IsNullOrWhiteSpace(signature))
-                                    return;
+        var bytes = SignatureBytes(signature);
 
+        if (bytes is null)
+            return;
 
-                                if (string.IsNullOrWhiteSpace(signature))
-                                    return;
-
-                                try
-                                {
-                                    string base64 = signature.Split(',').Last();
-                                    byte[] bytes = Convert.FromBase64String(base64);
-
-                                    signatureContainer.Image(
-                                        bytes,
-                                        ImageScaling.FitArea);
-                                }
-                                catch
-                                {
-                                    // Leave the signature area empty when the data is invalid.
-                                }
-                            });
+        signatureContainer
+            .Height(40)
+            .AlignLeft()
+            .Image(bytes, ImageScaling.FitArea);
+    });
                     });
                 });
             });
+        }
+
+        /// Canvas signature ("data:image/png;base64,....") → image bytes,
+        /// or null when there is no usable signature.
+        private static byte[]? SignatureBytes(string? signature)
+        {
+            if (string.IsNullOrWhiteSpace(signature))
+                return null;
+
+            var base64 = signature.Trim();
+            var comma = base64.IndexOf(',');
+
+            if (comma >= 0)
+                base64 = base64[(comma + 1)..];
+
+            // A "+" can arrive as a space when the value was URL-encoded.
+            base64 = base64.Replace(' ', '+').Replace("\r", "").Replace("\n", "");
+
+            try
+            {
+                var bytes = Convert.FromBase64String(base64);
+                return bytes.Length > 0 ? bytes : null;
+            }
+            catch (FormatException)
+            {
+                return null;
+            }
         }
 
         private void BuildBrandBanner(ColumnDescriptor col)
