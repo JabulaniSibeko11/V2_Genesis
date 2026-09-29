@@ -12,5 +12,10 @@ namespace V2_Genesis.Services.Interfaces
                 string rollSource,
                 string objectionNo,
                 List<IFormFile> files);
+
+        /// Section 51 notice to the property owner when a Third-Party
+        /// objection is submitted (PDF, email + .eml, Section51Table,
+        /// Obj_Property_Info.Section51_Emailed). Never throws.
+        Task<Section51NoticeResult> SendThirdPartyNoticeAsync(Section51NoticeRequest request);
     }
 }

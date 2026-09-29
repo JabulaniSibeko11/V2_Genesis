@@ -3,7 +3,9 @@ using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using System.Data;
 using V2_Genesis.Data;
+using System.Text.RegularExpressions;
 using V2_Genesis.Models;
+using V2_Genesis.Models.Emails;
 using V2_Genesis.Models.Section51;
 using V2_Genesis.Services.Interfaces;
 using V2_Genesis.Services.Section51;
@@ -16,6 +18,7 @@ public class Section51Service : ISection51Service
     private readonly ILogger<Section51Service> _logger;
     private readonly IReadOnlyDictionary<string, Section51RollConfig> _registry;
     private readonly IWebHostEnvironment _environment;
+    private readonly IEmailService _emailService;
 
     private const int MAX_FILES = 10;
     private const int MAX_FILE_MB = 3;
@@ -29,11 +32,13 @@ public class Section51Service : ISection51Service
     public Section51Service(
         IConfiguration config,
         ILogger<Section51Service> logger,
-        IWebHostEnvironment environment)
+        IWebHostEnvironment environment,
+        IEmailService emailService)
     {
         _config = config;
         _logger = logger;
         _environment = environment;
+        _emailService = emailService;
         _registry = Section51RollRegistry.Build(config);
     }
 
@@ -77,9 +82,25 @@ public class Section51Service : ISection51Service
                 _config.GetValue<bool>("Section51:BypassDeadline")
                 && !_environment.IsProduction();
 
+            // Each objection has its own 30-day window (Section51Table.ClosingDate,
+            // written when the Section 51 notice is sent). Older batch notices
+            // without a row fall back to the roll deadline in appsettings.
+            var closingDate = await conn.ExecuteScalarAsync<DateTime?>(
+                @"IF OBJECT_ID('dbo.Section51Table') IS NULL
+                      SELECT CAST(NULL AS datetime);
+                  ELSE
+                      SELECT TOP (1) CAST(ClosingDate AS datetime)
+                      FROM dbo.Section51Table
+                      WHERE LTRIM(RTRIM(ObjectionNo)) = @Objection_No
+                        AND ClosingDate IS NOT NULL
+                      ORDER BY Id DESC;",
+                new { Objection_No = objectionNo.Trim() });
+
             var pastDeadline =
                 !bypassDeadline &&
-                DateTime.UtcNow > cfg.DeadlineUtc;
+                (closingDate.HasValue
+                    ? DateTime.Now > EndOfDay(closingDate.Value)
+                    : DateTime.UtcNow > cfg.DeadlineUtc);
 
             if (bypassDeadline)
             {
@@ -226,5 +247,412 @@ public class Section51Service : ISection51Service
         }
 
         return (true, null, savedNames.Count, savedNames);
+    }
+
+    private static DateTime EndOfDay(DateTime value) =>
+        value.TimeOfDay == TimeSpan.Zero
+            ? value.Date.AddDays(1).AddTicks(-1)
+            : value;
+
+    // ════════════════════════════════════════════════════════════════
+    //  SECTION 51 NOTICE — sent when a Third-Party objection is submitted
+    //
+    //  1. Owner ADDR1–ADDR5 + EMAIL_ADDR from the roll's postal table
+    //     (Section51Rolls:{roll}:PostalAddressTable, by PREMISE_ID).
+    //  2. Notice PDF → {objection folder}\Section 51 Notice\
+    //        {Objection_No}_{Property_Desc}_Section 51.pdf
+    //  3. Owner has an email → email with the PDF, CC Valuation Enquiries,
+    //     .eml copy saved next to the PDF:
+    //        email_{Objection_No}_{Property_Desc}_{Owner_Email}.eml
+    //     No email → only the PDF (to be printed and posted).
+    //  4. Row in dbo.Section51Table (BatchName GENESIS, ClosingDate = +30 days)
+    //  5. Obj_Property_Info.Section51_Emailed = 'Y' / 'N'
+    //
+    //  The Third Party is not notified. Nothing here fails the objection.
+    // ════════════════════════════════════════════════════════════════
+    public async Task<Section51NoticeResult> SendThirdPartyNoticeAsync(Section51NoticeRequest request)
+    {
+        var result = new Section51NoticeResult();
+
+        if (request is null || string.IsNullOrWhiteSpace(request.ObjectionNo))
+        {
+            result.Error = "The objection number is missing.";
+            return result;
+        }
+
+        var objectionNo = request.ObjectionNo.Trim();
+
+        if (!_registry.TryGetValue(request.RollSource, out var cfg))
+        {
+            result.Error = $"Roll '{request.RollSource}' is not configured in Section51Rolls.";
+            _logger.LogError("[S51 Notice] {Error} Objection={ObjectionNo}", result.Error, objectionNo);
+            return result;
+        }
+
+        var connStr = _config.GetConnectionString(cfg.ConnectionKey);
+        if (string.IsNullOrWhiteSpace(connStr))
+        {
+            result.Error = $"Connection string '{cfg.ConnectionKey}' was not found.";
+            _logger.LogError("[S51 Notice] {Error} Objection={ObjectionNo}", result.Error, objectionNo);
+            return result;
+        }
+
+        var settings = _config.GetSection("Section51:Notice");
+        var daysOpen = settings.GetValue<int?>("DaysOpen") ?? 30;
+        var batchName = settings["BatchName"] is { Length: > 0 } b ? b.Trim() : "GENESIS";
+        var portalUrl = settings["PortalUrl"] is { Length: > 0 } u ? u.Trim() : "https://objections.joburg.org.za";
+        var ccAddress = settings["CcAddress"];
+        var testMode = settings.GetValue<bool?>("TestMode") ?? true;
+        var testRecipient = settings["TestRecipient"];
+
+        var letterDate = request.SubmittedAt;
+        var closingDate = request.SubmittedAt.Date.AddDays(daysOpen);
+        var propertyDescription = string.IsNullOrWhiteSpace(request.PropertyDescription)
+            ? "Property"
+            : request.PropertyDescription.Trim();
+
+        await using var conn = new SqlConnection(connStr);
+
+        // ── 1. Owner address + email ─────────────────────────────────
+        OwnerPostalRow? owner = null;
+        try
+        {
+            owner = await LoadOwnerPostalAsync(conn, cfg.PostalAddressTable, request.PremiseId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,
+                "[S51 Notice] Could not read owner details from {Table} for {ObjectionNo} (PREMISE_ID {PremiseId}).",
+                cfg.PostalAddressTable, objectionNo, request.PremiseId);
+        }
+
+        var ownerEmail = FirstValidEmail(owner?.Email);
+        result.OwnerEmail = ownerEmail;
+
+        // ── 2. Notice PDF ────────────────────────────────────────────
+        var s6 = request.Section6;
+        var noticeFolder = Path.Combine(request.ObjectionFolder, "Section 51 Notice");
+        var pdfFileName = $"{SafeFileName(objectionNo)}_{SafeFileName(propertyDescription)}_Section 51.pdf";
+        byte[] pdf;
+
+        try
+        {
+            pdf = Section51PdfBuilder.BuildNotice(
+                new Section51NoticeData
+                {
+                    RollName = cfg.RollName,
+                    ObjectionNo = objectionNo,
+                    Section51Pin = request.Section51Pin,
+                    PropertyFrom = request.PropertyFrom,
+                    ValuationKey = request.ValuationKey,
+                    Addr1 = owner?.Addr1,
+                    Addr2 = owner?.Addr2,
+                    Addr3 = owner?.Addr3,
+                    Addr4 = owner?.Addr4,
+                    Addr5 = owner?.Addr5,
+                    PropertyDesc = propertyDescription,
+                    IsMulti = request.IsMulti,
+                    Section6 = new Section6Row
+                    {
+                        Old_Category = s6?.Old_Category,
+                        Old_Extent = s6?.Old_Extent,
+                        Old_Market_Value = s6?.Old_Market_Value,
+                        New_Category = s6?.New_Category,
+                        New_Extent = s6?.New_Extent,
+                        New_Market_Value = s6?.New_Market_Value,
+                        Old2_Category = s6?.Old2_Category,
+                        Old2_Extent = s6?.Old2_Extent,
+                        Old2_Market_Value = s6?.Old2_Market_Value,
+                        New2_Category = s6?.New2_Category,
+                        New2_Extent = s6?.New2_Extent,
+                        New2_Market_Value = s6?.New2_Market_Value,
+                        Old3_Category = s6?.Old3_Category,
+                        Old3_Extent = s6?.Old3_Extent,
+                        Old3_Market_Value = s6?.Old3_Market_Value,
+                        New3_Category = s6?.New3_Category,
+                        New3_Extent = s6?.New3_Extent,
+                        New3_Market_Value = s6?.New3_Market_Value,
+                        WithEffectDate = settings[$"EffectiveDate:{request.RollSource}"]
+                    }
+                },
+                new Section51NoticeContext
+                {
+                    HeaderImagePath = Path.Combine(_environment.WebRootPath, "Images", "Obj_Header.PNG"),
+                    LetterDate = letterDate,
+                    SubmissionsCloseDate = closingDate,
+                    PortalUrl = portalUrl,
+                    EnquiriesLine = settings["EnquiriesLine"],
+                    SignOffName = settings["SignOffName"],
+                    SignOffTitle = settings["SignOffTitle"]
+                });
+
+            Directory.CreateDirectory(noticeFolder);
+            result.PdfPath = Path.Combine(noticeFolder, pdfFileName);
+            await System.IO.File.WriteAllBytesAsync(result.PdfPath, pdf);
+
+            _logger.LogInformation(
+                "[S51 Notice] Notice PDF saved for {ObjectionNo} → {Path}",
+                objectionNo, result.PdfPath);
+        }
+        catch (Exception ex)
+        {
+            result.Error = "The Section 51 notice PDF could not be created.";
+            _logger.LogError(ex, "[S51 Notice] Notice PDF failed for {ObjectionNo}.", objectionNo);
+            await RecordAsync(conn, cfg, request, owner, ownerEmail, batchName, letterDate, closingDate, emailed: false);
+            return result;
+        }
+
+        // ── 3. Email (owner, or the test recipient) ─────────────────
+        if (!string.IsNullOrWhiteSpace(ownerEmail))
+        {
+            var toAddress = testMode ? testRecipient?.Trim() : ownerEmail;
+
+            if (string.IsNullOrWhiteSpace(toAddress))
+            {
+                _logger.LogError(
+                    "[S51 Notice] Section51:Notice:TestMode is on but TestRecipient is empty; notice not emailed for {ObjectionNo}.",
+                    objectionNo);
+            }
+            else
+            {
+                try
+                {
+                    await _emailService.SendSection51NoticeAsync(new Section51NoticeEmail
+                    {
+                        ObjectionNo = objectionNo,
+                        PropertyDescription = propertyDescription,
+                        ValuationKey = request.ValuationKey,
+                        RollName = cfg.RollName,
+                        Section51Pin = request.Section51Pin,
+                        SubmissionsCloseDate = closingDate,
+                        PortalUrl = portalUrl,
+                        OwnerEmail = ownerEmail,
+                        ToAddress = toAddress,
+                        CcAddress = ccAddress,
+                        IsTest = testMode,
+                        PdfBytes = pdf,
+                        PdfFileName = pdfFileName,
+                        EmlFolderPath = noticeFolder,
+                        EmlFileName =
+                            $"email_{SafeFileName(objectionNo)}_{SafeFileName(propertyDescription)}_{SafeFileName(ownerEmail)}.eml"
+                    });
+
+                    result.Emailed = true;
+                }
+                catch (Exception ex)
+                {
+                    result.Error = "The Section 51 notice could not be emailed; the PDF was saved for printing.";
+                    _logger.LogError(ex,
+                        "[S51 Notice] Email failed for {ObjectionNo} (owner {OwnerEmail}). PDF kept at {Path}.",
+                        objectionNo, ownerEmail, result.PdfPath);
+                }
+            }
+        }
+        else
+        {
+            _logger.LogWarning(
+                "[S51 Notice] No owner email in {Table} for {ObjectionNo} (PREMISE_ID {PremiseId}). PDF saved for printing: {Path}",
+                cfg.PostalAddressTable, objectionNo, request.PremiseId, result.PdfPath);
+        }
+
+        // ── 4 + 5. Section51Table + Obj_Property_Info flag ──────────
+        await RecordAsync(conn, cfg, request, owner, ownerEmail, batchName, letterDate, closingDate, result.Emailed);
+
+        return result;
+    }
+
+    private sealed class OwnerPostalRow
+    {
+        public string? Addr1 { get; set; }
+        public string? Addr2 { get; set; }
+        public string? Addr3 { get; set; }
+        public string? Addr4 { get; set; }
+        public string? Addr5 { get; set; }
+        public string? Email { get; set; }
+    }
+
+    private static readonly Regex SqlIdentifier =
+        new(@"^(?:[A-Za-z0-9_]+\.)?[A-Za-z0-9_]+$", RegexOptions.Compiled);
+
+    private static async Task<OwnerPostalRow?> LoadOwnerPostalAsync(
+        SqlConnection conn,
+        string table,
+        string? premiseId)
+    {
+        if (string.IsNullOrWhiteSpace(premiseId))
+            return null;
+
+        table = table.Trim().Replace("[", "").Replace("]", "");
+
+        // The table name comes from appsettings; only plain names are allowed.
+        if (!SqlIdentifier.IsMatch(table))
+            throw new InvalidOperationException($"Invalid PostalAddressTable name '{table}'.");
+
+        var parts = table.Split('.');
+        var qualified = parts.Length == 2
+            ? $"[{parts[0]}].[{parts[1]}]"
+            : $"[dbo].[{parts[0]}]";
+
+        var hasWefDate = await conn.ExecuteScalarAsync<int?>(
+            "SELECT COL_LENGTH(@Table, 'WEF_DATE');",
+            new { Table = qualified }) is > 0;
+
+        var orderBy = hasWefDate ? "WEF_DATE DESC" : "(SELECT NULL)";
+
+        var sql = $@"
+SELECT TOP (1)
+    CAST(ADDR1 AS nvarchar(255))      AS Addr1,
+    CAST(ADDR2 AS nvarchar(255))      AS Addr2,
+    CAST(ADDR3 AS nvarchar(255))      AS Addr3,
+    CAST(ADDR4 AS nvarchar(255))      AS Addr4,
+    CAST(ADDR5 AS nvarchar(255))      AS Addr5,
+    CAST(EMAIL_ADDR AS nvarchar(255)) AS Email
+FROM {qualified}
+WHERE LTRIM(RTRIM(CAST(PREMISE_ID AS nvarchar(100)))) = @PremiseId
+ORDER BY {orderBy};";
+
+        return await conn.QueryFirstOrDefaultAsync<OwnerPostalRow>(
+            sql,
+            new { PremiseId = premiseId.Trim() });
+    }
+
+    private async Task RecordAsync(
+        SqlConnection conn,
+        Section51RollConfig cfg,
+        Section51NoticeRequest request,
+        OwnerPostalRow? owner,
+        string? ownerEmail,
+        string batchName,
+        DateTime batchDate,
+        DateTime closingDate,
+        bool emailed)
+    {
+        var objectionNo = request.ObjectionNo.Trim();
+        var s6 = request.Section6;
+
+        try
+        {
+            await conn.ExecuteAsync(@"
+IF OBJECT_ID('dbo.Section51Table') IS NOT NULL
+INSERT INTO dbo.Section51Table
+(
+    RollId, BatchName, BatchDate, ClosingDate,
+    ObjectionNo, PremiseId, ValuationKey, PropertyDescription,
+    ADDR1, ADDR2, ADDR3, ADDR4, ADDR5, Email,
+    Section51Pin, RandomPin,
+    OldCategory, OldCategory1, OldCategory2,
+    OldMarketValue, OldMarketValue1, OldMarketValue2,
+    OldExtent, OldExtent1, OldExtent2,
+    NewCategory, NewCategory1, NewCategory2,
+    NewMarketValue, NewMarketValue1, NewMarketValue2,
+    NewExtent, NewExtent1, NewExtent2,
+    WEFDATE, CreatedAtUtc
+)
+VALUES
+(
+    @RollId, @BatchName, @BatchDate, @ClosingDate,
+    @ObjectionNo, @PremiseId, @ValuationKey, @PropertyDescription,
+    @Addr1, @Addr2, @Addr3, @Addr4, @Addr5, @Email,
+    @Section51Pin, @RandomPin,
+    @OldCategory, @OldCategory1, @OldCategory2,
+    @OldMarketValue, @OldMarketValue1, @OldMarketValue2,
+    @OldExtent, @OldExtent1, @OldExtent2,
+    @NewCategory, @NewCategory1, @NewCategory2,
+    @NewMarketValue, @NewMarketValue1, @NewMarketValue2,
+    @NewExtent, @NewExtent1, @NewExtent2,
+    NULL, @CreatedAtUtc
+);",
+                new
+                {
+                    cfg.RollId,
+                    BatchName = batchName,
+                    BatchDate = batchDate,
+                    ClosingDate = closingDate,
+                    ObjectionNo = objectionNo,
+                    PremiseId = request.PremiseId,
+                    ValuationKey = request.ValuationKey,
+                    PropertyDescription = request.PropertyDescription,
+                    owner?.Addr1,
+                    owner?.Addr2,
+                    owner?.Addr3,
+                    owner?.Addr4,
+                    owner?.Addr5,
+                    Email = ownerEmail,
+                    request.Section51Pin,
+                    request.RandomPin,
+                    OldCategory = s6?.Old_Category,
+                    OldCategory1 = s6?.Old2_Category,
+                    OldCategory2 = s6?.Old3_Category,
+                    OldMarketValue = s6?.Old_Market_Value,
+                    OldMarketValue1 = s6?.Old2_Market_Value,
+                    OldMarketValue2 = s6?.Old3_Market_Value,
+                    OldExtent = s6?.Old_Extent,
+                    OldExtent1 = s6?.Old2_Extent,
+                    OldExtent2 = s6?.Old3_Extent,
+                    NewCategory = s6?.New_Category,
+                    NewCategory1 = s6?.New2_Category,
+                    NewCategory2 = s6?.New3_Category,
+                    NewMarketValue = s6?.New_Market_Value,
+                    NewMarketValue1 = s6?.New2_Market_Value,
+                    NewMarketValue2 = s6?.New3_Market_Value,
+                    NewExtent = s6?.New_Extent,
+                    NewExtent1 = s6?.New2_Extent,
+                    NewExtent2 = s6?.New3_Extent,
+                    CreatedAtUtc = DateTime.UtcNow
+                });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,
+                "[S51 Notice] Could not insert the Section51Table row for {ObjectionNo}.",
+                objectionNo);
+        }
+
+        try
+        {
+            await conn.ExecuteAsync(@"
+IF COL_LENGTH('dbo.Obj_Property_Info', 'Section51_Emailed') IS NOT NULL
+    EXEC sp_executesql
+        N'UPDATE dbo.Obj_Property_Info
+             SET Section51_Emailed = @Flag
+           WHERE LTRIM(RTRIM(Objection_No)) = @ObjectionNo',
+        N'@Flag char(1), @ObjectionNo nvarchar(100)',
+        @Flag, @ObjectionNo;",
+                new { Flag = emailed ? "Y" : "N", ObjectionNo = objectionNo });
+
+            _logger.LogInformation(
+                "[S51 Notice] {ObjectionNo}: Section51_Emailed = {Flag}",
+                objectionNo, emailed ? "Y" : "N");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,
+                "[S51 Notice] Could not update Section51_Emailed for {ObjectionNo}.",
+                objectionNo);
+        }
+    }
+
+    private static string? FirstValidEmail(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return null;
+
+        return value
+            .Split(new[] { ';', ',', ' ' }, StringSplitOptions.RemoveEmptyEntries)
+            .Select(x => x.Trim())
+            .FirstOrDefault(x =>
+                x.Contains('@') &&
+                x.IndexOf('.', x.IndexOf('@')) > x.IndexOf('@') + 1 &&
+                System.Net.Mail.MailAddress.TryCreate(x, out _));
+    }
+
+    private static string SafeFileName(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return "NA";
+
+        var invalid = Path.GetInvalidFileNameChars();
+        var cleaned = new string(value.Trim().Select(c => invalid.Contains(c) ? '_' : c).ToArray());
+        return cleaned.Length > 90 ? cleaned[..90] : cleaned;
     }
 }

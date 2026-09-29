@@ -11,6 +11,7 @@ using V2_Genesis.Models;
 using V2_Genesis.Helpers;
 using V2_Genesis.Models.Emails;
 using V2_Genesis.Models.Results;
+using V2_Genesis.Models.Section51;
 using V2_Genesis.Services.Interfaces;
 using V2_Genesis.Services.Notice;
 using V2_Genesis.Services.Objection;
@@ -27,13 +28,15 @@ public class ObjectionFormService : IObjectionFormService
     private readonly INoticeService _noticeService;
     private readonly IEmailService _emailService;
     private readonly ISubmittedFormPdfService _submittedFormPdfService;
+    private readonly ISection51Service _section51Service;
 
 
     public ObjectionFormService(
         ApplicationDbContext db,
         IOptions<ObjectionRollSettings> rollOpts,
         IConfiguration config,
-        ILogger<ObjectionFormService> logger, INoticeService noticeService, IEmailService emailService, ISubmittedFormPdfService submittedFormPdfService)
+        ILogger<ObjectionFormService> logger, INoticeService noticeService, IEmailService emailService, ISubmittedFormPdfService submittedFormPdfService,
+        ISection51Service section51Service)
     {
         _db = db;
         _rollSettings = rollOpts.Value;
@@ -42,6 +45,7 @@ public class ObjectionFormService : IObjectionFormService
         _logger = logger;
         _emailService = emailService;
         _submittedFormPdfService = submittedFormPdfService;
+        _section51Service = section51Service;
     }
 
     public async Task<ObjectionSubmitResult> SubmitAsync(
@@ -279,7 +283,11 @@ public class ObjectionFormService : IObjectionFormService
                     : propertyFrom;
 
         obj.UserID = userId;
-        obj.objection_Status = "Obj-Lodging";
+
+        // Third-Party objection → owner gets a Section 51 notice and a
+        // 30-day window. The SQL job moves it to Obj-Pending afterwards.
+        bool isThirdParty = IsThirdPartyObjector(obj.Objector_Type);
+        obj.objection_Status = isThirdParty ? "Obj-Section51" : "Obj-Lodging";
 
         obj.Property_Type = NormalizePropertyType(obj.Property_Type, isMulti);
 
@@ -386,6 +394,38 @@ public class ObjectionFormService : IObjectionFormService
             obj7: obj7,
             fileCount: count, objFile: objFile);
 
+        // ── 5. Section 51 notice to the owner (Third-Party only) ─────
+        // Never fails the submission — errors are logged by the service.
+        if (isThirdParty)
+        {
+            try
+            {
+                var s51 = await _section51Service.SendThirdPartyNoticeAsync(new Section51NoticeRequest
+                {
+                    RollSource = rollSource,
+                    ObjectionNo = objRef,
+                    PremiseId = obj.Premise_id,
+                    ValuationKey = obj.Valuation_Key,
+                    PropertyDescription = obj.Property_Desc,
+                    PropertyFrom = obj.PropertyFrom,
+                    IsMulti = isMulti,
+                    Section51Pin = obj7.Section51Pin,
+                    RandomPin = obj7.RandomPin,
+                    SubmittedAt = obj.Objection_Start_DateTime,
+                    ObjectionFolder = Path.Combine(cfg.FileRootPath, objRef),
+                    Section6 = obj6
+                });
+
+                _logger.LogInformation(
+                    "Section 51 notice for {ObjectionNo}: Emailed={Emailed}, Pdf={PdfPath}, Error={Error}",
+                    objRef, s51.Emailed, s51.PdfPath, s51.Error);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Section 51 notice failed for {ObjectionNo}", objRef);
+            }
+        }
+
         return new ObjectionSubmitResult
         {
             Success = true,
@@ -394,6 +434,12 @@ public class ObjectionFormService : IObjectionFormService
             IsMulti = isMulti,
             IsAppeal = false
         };
+    }
+
+    private static bool IsThirdPartyObjector(string? objectorType)
+    {
+        var t = (objectorType ?? string.Empty).Trim().Replace("-", "_").Replace(" ", "_");
+        return t.Equals("Third_Party", StringComparison.OrdinalIgnoreCase);
     }
 
     // ── APPEAL ───────────────────────────────────────────────────────

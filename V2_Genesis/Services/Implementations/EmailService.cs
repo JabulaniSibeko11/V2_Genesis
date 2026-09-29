@@ -1897,5 +1897,167 @@ This is an automated email. Please do not reply directly.<br />
 
             return EmailShell("Attribute Submission", content);
         }
+
+        // ════════════════════════════════════════════════════════════
+        //  SECTION 51 NOTICE (Third-Party objection → property owner)
+        // ════════════════════════════════════════════════════════════
+        public async Task SendSection51NoticeAsync(Section51NoticeEmail notice)
+        {
+            if (notice is null)
+                throw new ArgumentNullException(nameof(notice));
+
+            if (string.IsNullOrWhiteSpace(notice.ToAddress))
+                throw new InvalidOperationException(
+                    $"No recipient for the Section 51 notice of {notice.ObjectionNo}.");
+
+            if (notice.PdfBytes is null || notice.PdfBytes.Length == 0)
+                throw new InvalidOperationException(
+                    $"The Section 51 notice PDF is empty for {notice.ObjectionNo}.");
+
+            var propertyDescription = string.IsNullOrWhiteSpace(notice.PropertyDescription)
+                ? "Property"
+                : notice.PropertyDescription.Trim();
+
+            var subject =
+                $"City of Johannesburg — Section 51 Notice: {notice.ObjectionNo} — {propertyDescription}";
+
+            var htmlBody = BuildSection51NoticeBody(notice, propertyDescription);
+
+            MailMessage BuildMessage()
+            {
+                var msg = new MailMessage
+                {
+                    From = new MailAddress(FromAddress, _cfg.FromName),
+                    Subject = subject,
+                    Body = htmlBody,
+                    IsBodyHtml = true
+                };
+
+                msg.To.Add(new MailAddress(notice.ToAddress.Trim()));
+
+                if (!string.IsNullOrWhiteSpace(notice.CcAddress) &&
+                    !notice.CcAddress.Trim().Equals(notice.ToAddress.Trim(), StringComparison.OrdinalIgnoreCase))
+                {
+                    msg.CC.Add(new MailAddress(notice.CcAddress.Trim()));
+                }
+
+                msg.Attachments.Add(new Attachment(
+                    new MemoryStream(notice.PdfBytes),
+                    notice.PdfFileName,
+                    MediaTypeNames.Application.Pdf));
+
+                return msg;
+            }
+
+            // 1. Send
+            using (var msg = BuildMessage())
+            using (var client = BuildClient())
+            {
+                await client.SendMailAsync(msg);
+            }
+
+            _logger.LogInformation(
+                "[S51 Email] Section 51 notice sent for {ObjectionNo} to {To}{Test}. Cc={Cc}",
+                notice.ObjectionNo,
+                notice.ToAddress,
+                notice.IsTest ? $" (TEST — owner email {notice.OwnerEmail})" : string.Empty,
+                notice.CcAddress ?? "(none)");
+
+            // 2. Save the .eml copy (a failure here must not undo the send)
+            try
+            {
+                Directory.CreateDirectory(notice.EmlFolderPath);
+
+                var tmpDir = Path.Combine(Path.GetTempPath(), "eml_" + Guid.NewGuid().ToString("N"));
+                Directory.CreateDirectory(tmpDir);
+
+                try
+                {
+                    using (var msg = BuildMessage())
+                    using (var pickup = new SmtpClient
+                    {
+                        DeliveryMethod = SmtpDeliveryMethod.SpecifiedPickupDirectory,
+                        PickupDirectoryLocation = tmpDir
+                    })
+                    {
+                        pickup.Send(msg);
+                    }
+
+                    var generated = Directory.GetFiles(tmpDir).SingleOrDefault()
+                        ?? throw new InvalidOperationException("The .eml copy was not generated.");
+
+                    File.Move(generated, Path.Combine(notice.EmlFolderPath, notice.EmlFileName), overwrite: true);
+
+                    _logger.LogInformation(
+                        "[S51 Email] EML copy saved as {FileName} for {ObjectionNo}",
+                        notice.EmlFileName,
+                        notice.ObjectionNo);
+                }
+                finally
+                {
+                    if (Directory.Exists(tmpDir))
+                        Directory.Delete(tmpDir, recursive: true);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex,
+                    "[S51 Email] Notice sent but the .eml copy could not be saved for {ObjectionNo}",
+                    notice.ObjectionNo);
+            }
+        }
+
+        private static string BuildSection51NoticeBody(
+            Section51NoticeEmail notice,
+            string propertyDescription)
+        {
+            var content = new StringBuilder();
+
+            if (notice.IsTest)
+            {
+                content.Append(Notice(
+                    $"<strong>TEST MODE</strong> — this Section 51 notice is intended for the property owner at " +
+                    $"<strong>{H(string.IsNullOrWhiteSpace(notice.OwnerEmail) ? "(no email)" : notice.OwnerEmail)}</strong>."));
+            }
+
+            content.Append(Greeting("Property Owner"));
+
+            content.Append(Para(
+                $"<strong>NOTICE OF {H(notice.RollName.ToUpperInvariant())}</strong><br /><strong>Section 51 Notice</strong>"));
+
+            content.Append(Details(
+                ("Property Description", H(propertyDescription)),
+                ("Objection Number", H(notice.ObjectionNo)),
+                ("Valuation Key", H(string.IsNullOrWhiteSpace(notice.ValuationKey) ? "—" : notice.ValuationKey))));
+
+            content.Append(Para(
+                "You are hereby notified that the Municipal Valuer has received an objection from an individual " +
+                "to your property as reflected in the valuation roll."));
+
+            var submission = new StringBuilder();
+            submission.Append("Submissions by the owner in response to the objections must be submitted online to the Municipal Valuer ");
+            submission.Append($"no later than <strong>{H(notice.SubmissionsCloseDate.ToString("dd MMMM yyyy"))}</strong> ");
+            submission.Append($"via <a href='{H(notice.PortalUrl)}' style='color:#9a7400;'>{H(notice.PortalUrl)}</a>. ");
+            submission.Append("To attach submissions, click on “Upload Documents,” select “Section 51 Uploads,” ");
+            submission.Append($"fill in the objection number <strong>{H(notice.ObjectionNo)}</strong> ");
+
+            if (!string.IsNullOrWhiteSpace(notice.Section51Pin))
+                submission.Append($"and PIN <strong>{H(notice.Section51Pin)}</strong>, ");
+
+            submission.Append("and then upload the submission documents.");
+            content.Append(Para(submission.ToString()));
+
+            content.Append(Para(
+                "You will be notified of the Municipal Valuer’s decision in terms of Section 53 of the " +
+                "Municipal Property Rates Act 6 of 2004. If you are dissatisfied with the decision, " +
+                "you will have the right to lodge an appeal."));
+
+            content.Append(Para("The Section 51 notice is attached to this email as a PDF."));
+
+            content.Append(Contact(ValuationEnquiriesEmail, ObjectionEnquiriesPhone));
+            content.Append(SignOff());
+
+            return EmailShell("Section 51 Notice", content.ToString());
+        }
     }
 }

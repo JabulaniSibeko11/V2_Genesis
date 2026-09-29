@@ -96,5 +96,10 @@ namespace V2_Genesis.Services.Interfaces
             byte[] acknowledgementPdf,
             string acknowledgementFileName,
             string folderPath);
+
+        /// Section 51 notice to the property owner (Third-Party objection).
+        /// Sends the email with the notice PDF, CCs Valuation Enquiries and
+        /// saves the .eml copy. Throws when the email could not be sent.
+        Task SendSection51NoticeAsync(Section51NoticeEmail notice);
     }
 }

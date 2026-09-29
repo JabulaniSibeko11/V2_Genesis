@@ -383,6 +383,7 @@ public class EvidenceService : IEvidenceService
         var value = status?.Trim();
         return value is not null &&
             (value.Equals("Obj-Lodging", StringComparison.OrdinalIgnoreCase) ||
+             value.Equals("Obj-Section51", StringComparison.OrdinalIgnoreCase) ||
              value.Equals("Obj-Unallocated", StringComparison.OrdinalIgnoreCase) ||
              value.Equals("App-Lodging", StringComparison.OrdinalIgnoreCase) ||
              value.Equals("App-Unallocated", StringComparison.OrdinalIgnoreCase));

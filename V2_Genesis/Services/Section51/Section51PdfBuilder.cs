@@ -1,0 +1,333 @@
+using QuestPDF.Fluent;
+using QuestPDF.Helpers;
+using QuestPDF.Infrastructure;
+using System.Globalization;
+
+namespace V2_Genesis.Services.Section51
+{
+    // ════════════════════════════════════════════════════════════════════
+    //  SECTION 51 NOTICE PDF
+    //  Ported from GV23_Notice (Section51PdfBuilder) so Genesis can send the
+    //  owner notice immediately when a Third-Party objection is submitted.
+    // ════════════════════════════════════════════════════════════════════
+
+    public sealed class Section51NoticeContext
+    {
+        public string HeaderImagePath { get; set; } = string.Empty;
+        public DateTime LetterDate { get; set; } = DateTime.Now;
+        public DateTime SubmissionsCloseDate { get; set; }
+        public string PortalUrl { get; set; } = string.Empty;
+        public string? EnquiriesLine { get; set; }
+        public string? SignOffName { get; set; }
+        public string? SignOffTitle { get; set; }
+    }
+
+    public sealed class Section51NoticeData
+    {
+        public string? RollName { get; set; }
+        public string? ObjectionNo { get; set; }
+        public string? Section51Pin { get; set; }
+        public string? PropertyFrom { get; set; }
+        public string? ValuationKey { get; set; }
+        public string? EffectiveDate { get; set; }
+
+        public string? Addr1 { get; set; }
+        public string? Addr2 { get; set; }
+        public string? Addr3 { get; set; }
+        public string? Addr4 { get; set; }
+        public string? Addr5 { get; set; }
+
+        public string? PropertyDesc { get; set; }
+        public bool IsMulti { get; set; }
+
+        public Section6Row? Section6 { get; set; }
+    }
+
+    public sealed class Section6Row
+    {
+        public string? Old_Category { get; set; }
+        public string? Old_Extent { get; set; }
+        public string? Old_Market_Value { get; set; }
+        public string? New_Category { get; set; }
+        public string? New_Extent { get; set; }
+        public string? New_Market_Value { get; set; }
+
+        public string? Old2_Category { get; set; }
+        public string? Old2_Extent { get; set; }
+        public string? Old2_Market_Value { get; set; }
+        public string? New2_Category { get; set; }
+        public string? New2_Extent { get; set; }
+        public string? New2_Market_Value { get; set; }
+
+        public string? Old3_Category { get; set; }
+        public string? Old3_Extent { get; set; }
+        public string? Old3_Market_Value { get; set; }
+        public string? New3_Category { get; set; }
+        public string? New3_Extent { get; set; }
+        public string? New3_Market_Value { get; set; }
+
+        public string? WithEffectDate { get; set; }
+    }
+
+    public static class Section51PdfBuilder
+    {
+        public static byte[] BuildNotice(Section51NoticeData data, Section51NoticeContext ctx)
+        {
+            if (data is null) throw new ArgumentNullException(nameof(data));
+            if (ctx is null) throw new ArgumentNullException(nameof(ctx));
+
+            return BuildPdf(ctx, data);
+        }
+
+        private static byte[] BuildPdf(Section51NoticeContext ctx, Section51NoticeData data)
+        {
+            QuestPDF.Settings.License = LicenseType.Community;
+
+            var culture = CultureInfo.GetCultureInfo("en-ZA");
+
+            var title12 = TextStyle.Default.FontFamily("Arial").FontSize(12).SemiBold();
+            var sub10b = TextStyle.Default.FontFamily("Arial").FontSize(10).SemiBold();
+            var body9 = TextStyle.Default.FontFamily("Arial").FontSize(9);
+            var body91 = TextStyle.Default.FontFamily("Arial").FontSize(9).SemiBold();
+            var body9b = TextStyle.Default.FontFamily("Arial").FontSize(9).SemiBold();
+            var body9b1 = TextStyle.Default.FontFamily("Arial").FontSize(9).SemiBold().FontColor(Colors.Red.Medium);
+            var small7 = TextStyle.Default.FontFamily("Arial").FontSize(7).FontColor(Colors.Grey.Darken2);
+            var red9b = TextStyle.Default.FontFamily("Arial").FontSize(9).SemiBold().FontColor(Colors.Red.Medium);
+
+            static string Safe(string? s) => string.IsNullOrWhiteSpace(s) ? "" : s.Trim();
+
+            var isOmission = string.Equals(data.PropertyFrom?.Trim(), "Omission", StringComparison.OrdinalIgnoreCase);
+            var hasHeader = !string.IsNullOrWhiteSpace(ctx.HeaderImagePath) && File.Exists(ctx.HeaderImagePath);
+
+            return Document.Create(container =>
+            {
+                container.Page(page =>
+                {
+                    page.Size(PageSizes.A4);
+                    page.MarginLeft(30);
+                    page.MarginRight(30);
+                    page.MarginTop(10);
+                    page.MarginBottom(10);
+
+                    page.Footer()
+                        .PaddingTop(8)
+                        .AlignCenter()
+                        .Text(t =>
+                        {
+                            t.Line("_______________________________________________").Style(small7);
+                            t.Line("This is an official document generated by the City of Johannesburg Valuation Services Department").Style(small7);
+                            t.Line($"Generated on: {ctx.LetterDate:dd MMMM yyyy}").Style(small7);
+
+                            if (!string.IsNullOrWhiteSpace(data.ValuationKey))
+                                t.Line(Safe(data.ValuationKey)).Style(red9b);
+                        });
+
+                    page.Content().Column(col =>
+                    {
+                        col.Spacing(6);
+
+                        if (hasHeader)
+                            col.Item().Image(ctx.HeaderImagePath, ImageScaling.FitWidth);
+
+                        col.Item().PaddingTop(6).Row(r =>
+                        {
+                            r.RelativeItem().Text(t =>
+                            {
+                                if (!string.IsNullOrWhiteSpace(data.Addr1)) t.Span(Safe(data.Addr1) + "\n").Style(sub10b);
+                                if (!string.IsNullOrWhiteSpace(data.Addr2)) t.Span(Safe(data.Addr2) + "\n").Style(sub10b);
+                                if (!string.IsNullOrWhiteSpace(data.Addr3)) t.Span(Safe(data.Addr3) + "\n").Style(sub10b);
+                                if (!string.IsNullOrWhiteSpace(data.Addr4)) t.Span(Safe(data.Addr4) + "\n").Style(sub10b);
+                                if (!string.IsNullOrWhiteSpace(data.Addr5)) t.Span(Safe(data.Addr5) + "\n").Style(sub10b);
+                            });
+
+                            r.ConstantItem(180)
+                                .AlignRight()
+                                .Text(ctx.LetterDate.ToString("dd MMMM yyyy", culture))
+                                .Style(body9);
+                        });
+
+                        col.Item().AlignCenter().Text(t =>
+                        {
+                            t.Span("SECTION 51 NOTICE  ").Style(title12);
+                        });
+
+                        col.Item().AlignCenter().Text(
+                            "Notifications of processing of objection in terms of section 51 of the Municipal Property Rates act No 6 of 2004"
+                        ).Style(body9b);
+
+                        col.Item().PaddingTop(6).LineHorizontal(1.5f).LineColor(Colors.Grey.Darken2);
+
+                        col.Item().Text("Dear Property Owner,").Style(body9b);
+
+                        col.Item().Text(t =>
+                        {
+                            t.Span("You are hereby notified that the Municipal Valuer has received an objection from an individual to your property which was ").Style(body9);
+                            t.Span("omitted/printed").Style(body9b);
+                            t.Span(" in the ").Style(body9);
+                            t.Span(Safe(data.RollName)).Style(body9b);
+                            t.Span(" (GVR2023).").Style(body9);
+                        });
+
+                        col.Item()
+                           .PaddingTop(2)
+                           .Text($"PROPERTY DESCRIPTION: {Safe(data.PropertyDesc)}")
+                           .Style(body9b);
+
+                        col.Item().PaddingTop(1);
+
+                        col.Item().Element(e => BuildComparisonTable(e, data, isOmission));
+
+                        col.Item().Text(
+                            "\"Processing of objections – A Municipal Valuer must promptly –\n" +
+                            "(b) decide objections on facts, including the submission of an objector, and, if the objector is not the owner, of the owner\"."
+                        ).Style(body9);
+
+                        col.Item().PaddingTop(1);
+
+                        col.Item().Text(t =>
+                        {
+                            t.Span("Submissions by the owner in response to the objections must be submitted online to the Municipal Valuer no later than ").Style(body9);
+                            t.Span(ctx.SubmissionsCloseDate.ToString("dd MMMM yyyy", culture)).Style(body9b);
+                            t.Span($" via {ctx.PortalUrl}. ").Style(body9);
+                            t.Span("To attach submissions, click on “Upload Documents,” select “Section 51 Uploads,” fill in the objection number: ").Style(body9);
+                            t.Span(Safe(data.ObjectionNo)).Style(body9b);
+                            t.Span(" and PIN:  ").Style(body9);
+                            t.Span(Safe(data.Section51Pin)).Style(body9b1);
+                            t.Span(", and then upload the submission documents.").Style(body9);
+                        });
+
+                        col.Item().PaddingTop(1);
+
+                        col.Item().Text(
+                            "You will be notified of the Municipal Valuer’s decision in terms of Section 53 of the Municipal Property Rates Act 6 of 2004. " +
+                            "If you are dissatisfied with the decision, you will have the right to lodge an appeal."
+                        ).Style(body9).Justify();
+
+                        col.Item().PaddingTop(1);
+
+                        if (!string.IsNullOrWhiteSpace(ctx.EnquiriesLine))
+                            col.Item().Text(Safe(ctx.EnquiriesLine)).Style(body91);
+
+                        col.Item().PaddingTop(1);
+
+                        col.Item().Text("Municipal Valuer").Style(body91);
+                        col.Item().Text(string.IsNullOrWhiteSpace(ctx.SignOffName) ? "S.Faiaz" : Safe(ctx.SignOffName)).Style(body91);
+
+                        if (!string.IsNullOrWhiteSpace(ctx.SignOffTitle))
+                            col.Item().Text(Safe(ctx.SignOffTitle)).Style(body91);
+                    });
+                });
+            }).GeneratePdf();
+        }
+
+        private static void BuildComparisonTable(IContainer container, Section51NoticeData data, bool isOmission)
+        {
+            var s6 = data.Section6;
+            var isMulti = data.IsMulti;
+
+            static string Txt(string? v, bool omitted) => omitted ? "Omitted" : (v?.Trim() ?? "");
+            static string Money(string? v, bool omitted) => omitted ? "Omitted" : FormatMoney(v);
+            static string Area(string? v, bool omitted) => omitted ? "Omitted" : FormatExtent(v);
+
+            var effectiveDateText = s6?.WithEffectDate;
+
+            container.Table(t =>
+            {
+                t.ColumnsDefinition(c =>
+                {
+                    c.ConstantColumn(150);
+                    c.RelativeColumn();
+                    c.RelativeColumn();
+                });
+
+                t.Header(h =>
+                {
+                    var rollTitle = string.IsNullOrWhiteSpace(data.RollName)
+                        ? "General Valuation Roll 2023"
+                        : data.RollName;
+
+                    h.Cell().Element(HeaderCell).Text("");
+
+                    h.Cell().Element(HeaderCell).Text($"{rollTitle} (GVR2023)")
+                        .FontFamily("Arial").FontSize(9).SemiBold().FontColor(Colors.White);
+
+                    h.Cell().Element(HeaderCell).Text("Objectors Request")
+                        .FontFamily("Arial").FontSize(9).SemiBold().FontColor(Colors.White);
+                });
+
+                DataRow(t, "Category", Txt(s6?.Old_Category, isOmission), Txt(s6?.New_Category, false));
+                DataRow(t, "Area m²", Area(s6?.Old_Extent, isOmission), Area(s6?.New_Extent, false));
+                DataRow(t, "Market Value", Money(s6?.Old_Market_Value, isOmission), Money(s6?.New_Market_Value, false));
+                DataRow(t, "With Effective Date", effectiveDateText, "");
+
+                if (isMulti)
+                {
+                    DataRow(t, "", "", "");
+
+                    DataRow(t, "Category Split 1", Txt(s6?.Old2_Category, isOmission), Txt(s6?.New2_Category, false));
+                    DataRow(t, "Area m² Split 1", Area(s6?.Old2_Extent, isOmission), Area(s6?.New2_Extent, false));
+                    DataRow(t, "Market Value Split 1", Money(s6?.Old2_Market_Value, isOmission), Money(s6?.New2_Market_Value, false));
+                    DataRow(t, "With Effective Date", effectiveDateText, "");
+
+                    DataRow(t, "", "", "");
+
+                    DataRow(t, "Category Split 2", Txt(s6?.Old3_Category, isOmission), Txt(s6?.New3_Category, false));
+                    DataRow(t, "Area m² Split 2", Area(s6?.Old3_Extent, isOmission), Area(s6?.New3_Extent, false));
+                    DataRow(t, "Market Value Split 2", Money(s6?.Old3_Market_Value, isOmission), Money(s6?.New3_Market_Value, false));
+                    DataRow(t, "With Effective Date", effectiveDateText, "");
+                }
+            });
+
+            static void DataRow(TableDescriptor t, string label, string? left, string? right)
+            {
+                t.Cell().Element(BodyCell).Text(label).FontFamily("Arial").FontSize(9).SemiBold();
+                t.Cell().Element(BodyCell).Text(left ?? "").FontFamily("Arial").FontSize(9);
+                t.Cell().Element(BodyCell).Text(right ?? "").FontFamily("Arial").FontSize(9);
+            }
+
+            static IContainer HeaderCell(IContainer c) =>
+                c.Border(1).Background(Color.FromRGB(70, 130, 180)).Padding(6);
+
+            static IContainer BodyCell(IContainer c) =>
+                c.Border(1).Padding(6);
+        }
+
+        private static string FormatMoney(string? raw)
+        {
+            if (string.IsNullOrWhiteSpace(raw))
+                return "";
+
+            var cleaned = raw.Replace("R", "", StringComparison.OrdinalIgnoreCase)
+                             .Replace(",", "")
+                             .Trim();
+
+            cleaned = new string(cleaned.Where(ch => char.IsDigit(ch) || ch == '.' || ch == '-').ToArray());
+
+            if (decimal.TryParse(cleaned, NumberStyles.Any, CultureInfo.InvariantCulture, out var val))
+            {
+                var s = val.ToString("N0", CultureInfo.InvariantCulture).Replace(",", " ");
+                return $"R {s}";
+            }
+
+            return raw.Trim();
+        }
+
+        private static string FormatExtent(string? raw)
+        {
+            if (string.IsNullOrWhiteSpace(raw))
+                return "";
+
+            var cleaned = raw.Replace(",", "").Trim();
+
+            if (decimal.TryParse(cleaned, NumberStyles.Any, CultureInfo.InvariantCulture, out var val))
+            {
+                if (val == Math.Truncate(val))
+                    return val.ToString("N0", CultureInfo.InvariantCulture).Replace(",", " ");
+
+                return val.ToString("N2", CultureInfo.InvariantCulture).Replace(",", " ");
+            }
+
+            return raw.Trim();
+        }
+    }
+}
