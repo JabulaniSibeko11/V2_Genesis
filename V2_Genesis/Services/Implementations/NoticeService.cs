@@ -1853,7 +1853,6 @@ public class NoticeService : INoticeService
     int fileCount, List<string> fileNames)
     {
         var fileName = $"Attachment_{SanitiseName(objectionNo)}.pdf";
-        var header = Path.Combine(_env.WebRootPath, HEADER_IMAGE);
         var uploadedAt = DateTime.Now;
 
         // Friendly roll name, never the internal key (Objection_Query, ...).
@@ -1875,7 +1874,40 @@ public class NoticeService : INoticeService
 
         var documentCount = documents.Count > 0 ? documents.Count : fileCount;
 
-        var pdf = Document.Create(container =>
+        var pdf = BuildUploadConfirmationPdf(
+            title: "EVIDENCE UPLOAD CONFIRMATION",
+            intro: "This is to acknowledge that your supporting documents have been successfully uploaded and logged. Details below for your records.",
+            importantNotice: "IMPORTANT NOTICE: You have 48 hours from the original submission to upload outstanding evidence.",
+            enquiriesNote: null,
+            objectionNo: objectionNo,
+            referenceLabel: referenceLabel,
+            reference: reference,
+            rollLabel: rollLabel,
+            uploadedAt: uploadedAt,
+            documents: documents,
+            documentCount: documentCount);
+
+        return Task.FromResult((pdf, fileName));
+    }
+    /// Shared layout for the evidence / Section 51 upload confirmations —
+    /// same look as the objection acknowledgement (letter date, title,
+    /// intro, REFERENCE DETAILS, documents table, centred footer).
+    private byte[] BuildUploadConfirmationPdf(
+        string title,
+        string intro,
+        string importantNotice,
+        string? enquiriesNote,
+        string? objectionNo,
+        string referenceLabel,
+        string reference,
+        string rollLabel,
+        DateTime uploadedAt,
+        List<string> documents,
+        int documentCount)
+    {
+        var header = Path.Combine(_env.WebRootPath, HEADER_IMAGE);
+
+        return Document.Create(container =>
         {
             container.Page(page =>
             {
@@ -1947,7 +1979,7 @@ public class NoticeService : INoticeService
 
                     col.Item()
                         .AlignCenter()
-                        .Text("EVIDENCE UPLOAD CONFIRMATION")
+                        .Text(title)
                         .FontSize(12)
                         .Bold();
 
@@ -1955,11 +1987,11 @@ public class NoticeService : INoticeService
 
                     // INTRO
                     col.Item()
-                        .Text("This is to acknowledge that your supporting documents have been successfully uploaded and logged. Details below for your records.")
+                        .Text(intro)
                         .FontSize(9);
 
                     col.Item()
-                        .Text("IMPORTANT NOTICE: You have 48 hours from the original submission to upload outstanding evidence.")
+                        .Text(importantNotice)
                         .FontSize(9)
                         .Bold();
 
@@ -2042,12 +2074,27 @@ public class NoticeService : INoticeService
                                 .Text(documents[i]).FontSize(8);
                         }
                     });
+
+                    if (!string.IsNullOrWhiteSpace(enquiriesNote))
+                    {
+                        col.Item().PaddingTop(6)
+                            .Text(enquiriesNote)
+                            .FontSize(9)
+                            .Bold();
+                    }
+
+                    col.Item()
+                        .DefaultTextStyle(x => x.FontSize(8))
+                        .Text(t =>
+                        {
+                            t.Span("For enquiries: ").Bold();
+                            t.Span("Tel. 011 407-6622  |  valuationenquiries@joburg.org.za");
+                        });
                 });
             });
         }).GeneratePdf();
-
-        return Task.FromResult((pdf, fileName));
     }
+
     /// Roll name shown to the client on the evidence upload confirmation.
     private static string EvidenceRollLabel(string? rollSource, string reference)
     {
@@ -2077,199 +2124,54 @@ public class NoticeService : INoticeService
     string objectionNo, string rollSource,
     int fileCount, List<string> fileNames)
     {
-        var roll = _noticeSettings.For(rollSource);
-        var header = Path.Combine(_env.WebRootPath, HEADER_IMAGE);
         var fileName = $"Section51_{SanitiseName(objectionNo)}.pdf";
+        var uploadedAt = DateTime.Now;
+        var reference = objectionNo?.Trim() ?? string.Empty;
 
-        var pdf = Document.Create(container =>
-        {
-            container.Page(page =>
-            {
-                page.Size(PageSizes.A4);
+        var documents = fileNames?
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .ToList() ?? new List<string>();
 
-                // Side margins (36pt) are applied by the header, content and footer.
-                page.MarginHorizontal(0);
-                page.MarginVertical(18);
-                page.DefaultTextStyle(x => x.FontFamily("Arial").FontSize(9));
+        var pdf = BuildUploadConfirmationPdf(
+            title: "SECTION 51 EVIDENCE UPLOAD CONFIRMATION",
+            intro: "This is to acknowledge that your Section 51 supporting documents have been successfully uploaded and logged against the objection below. Details below for your records.",
+            importantNotice: "IMPORTANT NOTICE: Section 51 evidence may only be submitted once per objection. Please keep this acknowledgement as proof of your submission.",
+            enquiriesNote: null,
+            objectionNo: reference,
+            referenceLabel: "Objection Number:",
+            reference: reference,
+            rollLabel: EvidenceRollLabel(rollSource, reference),
+            uploadedAt: uploadedAt,
+            documents: documents,
+            documentCount: documents.Count > 0 ? documents.Count : fileCount);
 
-                // HEADER: letterhead across the content width, first page only.
-                if (File.Exists(header))
-                {
-                    page.Header()
-                        .ShowOnce()
-                        .PaddingHorizontal(36)
-                        .PaddingBottom(6)
-                        .AlignCenter()
-                        .Height(90)
-                        .Image(header, ImageScaling.FitArea);
-                }
-
-                // FOOTER: centred; the date is the date the submission was made.
-                page.Footer()
-                    .PaddingHorizontal(36)
-                    .PaddingTop(5)
-                    .Column(footer =>
-                    {
-                        footer.Item()
-                            .AlignCenter()
-                            .Text("This is an official document generated by the City of Johannesburg")
-                            .FontSize(7)
-                            .FontColor("#666666");
-
-                        footer.Item()
-                            .AlignCenter()
-                            .Text($"Generated on: {DateTime.Now:dd MMMM yyyy HH:mm}")
-                            .FontSize(7)
-                            .FontColor("#666666");
-
-                        if (!string.IsNullOrWhiteSpace(objectionNo))
-                        {
-                            footer.Item()
-                                .AlignCenter()
-                                .Text(objectionNo)
-                                .FontSize(8)
-                                .SemiBold()
-                                .FontColor("#cc0000");
-                        }
-                    });
-
-                page.Content().PaddingHorizontal(36).Column(col =>
-                {
-                    col.Item().Height(8);
-                    col.Item().AlignRight()
-                        .Text(DateTime.Now.ToString("dd MMMM yyyy HH:mm"))
-                        .FontSize(9);
-                    col.Item().Height(6);
-                    col.Item().BorderBottom(1).BorderColor("#555555");
-                    col.Item().Height(6);
-
-                    col.Item().AlignCenter()
-                        .Text("CITY OF JOHANNESBURG").FontSize(13).Bold();
-                    col.Item().Height(4);
-                    col.Item().AlignCenter()
-                        .Text("SECTION 51 ACKNOWLEDGEMENT").FontSize(10).Bold();
-                    col.Item().Height(4);
-                    col.Item().AlignCenter()
-                        .Text("DOCUMENT UPLOAD CONFIRMATION").FontSize(9).Bold();
-                    col.Item().Height(8);
-                    col.Item().BorderBottom(1).BorderColor("#555555");
-                    col.Item().Height(8);
-
-                    // Success line
-                    col.Item().AlignCenter().PaddingBottom(10)
-                        .Text("✓ Your documents have been successfully uploaded.")
-                        .FontSize(10).Bold().FontColor("#166534");
-
-                    // Details box
-                    col.Item().Background("#F0F7FF").Border(1.5f).BorderColor("#4682B4")
-                        .Padding(10).Column(box =>
-                        {
-                            box.Item().Text(t => {
-                                t.Span("Objection Number: ").Bold();
-                                t.Span(objectionNo);
-                            });
-                            box.Item().Height(3);
-                            box.Item().Text(t => {
-                                t.Span("Roll: ").Bold();
-                                t.Span(roll.RollTitle);
-                            });
-                            box.Item().Height(3);
-                            box.Item().Text(t => {
-                                t.Span("Documents Uploaded: ").Bold();
-                                t.Span($"{fileCount} document(s)");
-                            });
-                            box.Item().Height(3);
-                            box.Item().Text(t => {
-                                t.Span("Upload Date/Time: ").Bold();
-                                t.Span(DateTime.Now.ToString("dd MMMM yyyy HH:mm"));
-                            });
-                        });
-
-                    col.Item().Height(10);
-
-                    // File list
-                    col.Item().AlignCenter()
-                        .Text("UPLOADED DOCUMENTS").Bold().FontSize(9);
-                    col.Item().Height(6);
-
-                    col.Item().Table(table =>
-                    {
-                        table.ColumnsDefinition(c =>
-                        {
-                            c.ConstantColumn(30);
-                            c.RelativeColumn();
-                        });
-
-                        static IContainer TH(IContainer c) =>
-                            c.Background("#4682B4").Padding(6);
-
-                        table.Cell().Element(TH)
-                            .Text("#").FontColor(Colors.White).Bold().FontSize(8);
-                        table.Cell().Element(TH)
-                            .Text("File Name").FontColor(Colors.White).Bold().FontSize(8);
-
-                        bool alt = false;
-                        for (int i = 0; i < fileNames.Count; i++)
-                        {
-                            var bg = alt ? Colors.Grey.Lighten5 : Colors.White;
-                            alt = !alt;
-                            IContainer TD(IContainer c) =>
-                                c.Background(bg).BorderBottom(0.5f)
-                                 .BorderColor("#EEEEEE").Padding(5);
-                            table.Cell().Element(TD).Text((i + 1).ToString()).FontSize(8);
-                            table.Cell().Element(TD).Text(fileNames[i]).FontSize(8);
-                        }
-                    });
-
-                    col.Item().Height(12);
-
-                    // Warning
-                    col.Item().Background("#FFF5E6").Border(1.5f).BorderColor("#FF8C00")
-                        .Padding(8).Column(w =>
-                        {
-                            w.Item().Text("⚠ IMPORTANT NOTE").Bold().FontSize(9)
-                            .FontColor("#8B4500");
-                            w.Item().Height(4);
-                            w.Item().Text(
-                            "Please keep this acknowledgement as proof of your Section 51 " +
-                            "document submission.")
-                            .FontSize(8);
-                        });
-
-                    col.Item().Height(10);
-                    col.Item()
-                          .DefaultTextStyle(x => x.FontSize(8))
-                          .Text(t =>
-                          {
-                              t.Span("For enquiries: ").Bold();
-                              t.Span("Tel. 011 407-6622  |  valuationenquiries@joburg.org.za");
-                          });
-
-                });
-            });
-        }).GeneratePdf();
-
-        // Save to disk
-        _ = SaveSection51ToDiskAsync(rollSource, objectionNo, pdf);
+        // Save a copy in the objection folder with the owner's evidence.
+        _ = SaveSection51AcknowledgementAsync(rollSource, reference, pdf);
 
         return Task.FromResult((pdf, fileName));
     }
 
-    private async Task SaveSection51ToDiskAsync(
+    /// Saves the Section 51 acknowledgement in the objection folder
+    /// (ObjectionRolls:{roll}:FileRootPath\{ObjectionNo}\Section 51 Owner Evidence),
+    /// next to the owner's uploaded evidence.
+    private async Task SaveSection51AcknowledgementAsync(
         string rollSource, string objectionNo, byte[] pdf)
     {
         try
         {
-            var path = _config[$"Section51Rolls:{rollSource}:FileRootPath"];
-            if (string.IsNullOrEmpty(path)) return;
-            var dir = Path.Combine(path, SanitiseName(objectionNo));
+            var root = _config[$"ObjectionRolls:{rollSource}:FileRootPath"];
+            if (string.IsNullOrWhiteSpace(root))
+                root = _config[$"Section51Rolls:{rollSource}:FileRootPath"];
+            if (string.IsNullOrWhiteSpace(root)) return;
+
+            var dir = Path.Combine(root, objectionNo.Trim(), "Section 51 Owner Evidence");
             Directory.CreateDirectory(dir);
             await File.WriteAllBytesAsync(
                 Path.Combine(dir, $"Section51_{SanitiseName(objectionNo)}.pdf"), pdf);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "[Section51] Save PDF failed for {ObjNo}", objectionNo);
+            _logger.LogError(ex, "[Section51] Save acknowledgement failed for {ObjNo}", objectionNo);
         }
     }
     // ════════════════════════════════════════════════════════════════

@@ -85,16 +85,9 @@ public class Section51Service : ISection51Service
             // Each objection has its own 30-day window (Section51Table.ClosingDate,
             // written when the Section 51 notice is sent). Older batch notices
             // without a row fall back to the roll deadline in appsettings.
-            var closingDate = await conn.ExecuteScalarAsync<DateTime?>(
-                @"IF OBJECT_ID('dbo.Section51Table') IS NULL
-                      SELECT CAST(NULL AS datetime);
-                  ELSE
-                      SELECT TOP (1) CAST(ClosingDate AS datetime)
-                      FROM dbo.Section51Table
-                      WHERE LTRIM(RTRIM(ObjectionNo)) = @Objection_No
-                        AND ClosingDate IS NOT NULL
-                      ORDER BY Id DESC;",
-                new { Objection_No = objectionNo.Trim() });
+            // Never let the audit-table lookup break validation: if the table
+            // or a column differs on this roll, log it and use the roll deadline.
+            var closingDate = await GetClosingDateAsync(conn, objectionNo.Trim(), rollSource);
 
             var pastDeadline =
                 !bypassDeadline &&
@@ -119,10 +112,38 @@ public class Section51Service : ISection51Service
         catch (Exception ex)
         {
             _logger.LogError(ex,
-                "[Section51] Validate failed for {ObjNo} on {Roll}",
-                objectionNo, rollSource);
+                "[Section51] Validate failed for {ObjNo} on {Roll} (ConnectionKey {ConnectionKey}, ValidateSp {ValidateSp}): {Message}",
+                objectionNo, rollSource, cfg.ConnectionKey, cfg.ValidateSp, ex.Message);
             return Section51ValidateResult.Fail(
                 "A system error occurred. Please try again.");
+        }
+    }
+
+    private async Task<DateTime?> GetClosingDateAsync(
+        SqlConnection conn, string objectionNo, string rollSource)
+    {
+        try
+        {
+            // Dynamic SQL so a missing table/column is a runtime error we can
+            // catch, not a compile error for the whole batch.
+            return await conn.ExecuteScalarAsync<DateTime?>(
+                @"IF OBJECT_ID('dbo.Section51Table') IS NULL
+                      SELECT CAST(NULL AS datetime);
+                  ELSE
+                      EXEC sp_executesql
+                          N'SELECT MAX(TRY_CONVERT(datetime, ClosingDate))
+                              FROM dbo.Section51Table
+                             WHERE LTRIM(RTRIM(ObjectionNo)) = @Objection_No',
+                          N'@Objection_No nvarchar(100)',
+                          @Objection_No;",
+                new { Objection_No = objectionNo });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex,
+                "[Section51] Could not read ClosingDate from Section51Table for {ObjNo} on {Roll}; using the roll deadline.",
+                objectionNo, rollSource);
+            return null;
         }
     }
 
@@ -155,10 +176,16 @@ public class Section51Service : ISection51Service
                     0, new());
         }
 
-        // Build folder: FileRootPath\{ObjNo}\Section 51 Evidence
-        var baseFolder = Path.Combine(
-            cfg.FileRootPath, objectionNo.Trim());
-        var evidenceFolder = Path.Combine(baseFolder, "Section 51 Evidence");
+        // Owner evidence lives in the objection folder, next to the
+        // acknowledgements and the Section 51 Notice:
+        //   ObjectionRolls:{roll}:FileRootPath\{ObjNo}\Section 51 Owner Evidence
+        // (falls back to Section51Rolls:{roll}:FileRootPath if not configured).
+        var objectionRoot = _config[$"ObjectionRolls:{rollSource}:FileRootPath"];
+        if (string.IsNullOrWhiteSpace(objectionRoot))
+            objectionRoot = cfg.FileRootPath;
+
+        var baseFolder = Path.Combine(objectionRoot, objectionNo.Trim());
+        var evidenceFolder = Path.Combine(baseFolder, "Section 51 Owner Evidence");
         Directory.CreateDirectory(evidenceFolder);
 
         var savedNames = new List<string>();
@@ -331,7 +358,12 @@ public class Section51Service : ISection51Service
 
         // ── 2. Notice PDF ────────────────────────────────────────────
         var s6 = request.Section6;
-        var noticeFolder = Path.Combine(request.ObjectionFolder, "Section 51 Notice");
+        // Notice PDF + email copy go to Section51Rolls:{roll}:FileRootPath
+        // (e.g. C:\Notices\Sup4\Section51). Falls back to the objection
+        // folder only if FileRootPath is not configured.
+        var noticeFolder = !string.IsNullOrWhiteSpace(cfg.FileRootPath)
+            ? cfg.FileRootPath
+            : Path.Combine(request.ObjectionFolder, "Section 51 Notice");
         var pdfFileName = $"{SafeFileName(objectionNo)}_{SafeFileName(propertyDescription)}_Section 51.pdf";
         byte[] pdf;
 

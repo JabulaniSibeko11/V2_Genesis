@@ -1,6 +1,9 @@
 ﻿@{
     ViewData["Title"] = "User Manual";
-    Layout = "_Layout";
+    // Signed in: client/admin legend layout. Signed out: public layout.
+    Layout = User.Identity?.IsAuthenticated == true
+        ? "_Legend_Layout"
+        : "_Layout";
 
     var manualUrl = Url.Content("~/manual/City_of_Johannesburg_Valuation_Portal_User_Manual.pdf");
 }
@@ -90,14 +93,14 @@
                 <div class="manual-sub-actions">
                     <button type="button"
                             data-manual-link
-                            onclick="goToManualPage(15, 'Lodge Objection', this)">
+                            onclick="goToManualPage(18, 'Lodge Objection', this)">
                         <i class="fa-solid fa-file-pen"></i>
                         Lodge Objection
                     </button>
 
                     <button type="button"
                             data-manual-link
-                            onclick="goToManualPage(22, 'Lodge Appeal', this)">
+                            onclick="goToManualPage(27, 'Lodge Appeal', this)">
                         <i class="fa-solid fa-gavel"></i>
                         Lodge Appeal
                     </button>
@@ -122,14 +125,14 @@
                 <div class="manual-sub-actions">
                     <button type="button"
                             data-manual-link
-                            onclick="goToManualPage(26, 'Section 78 Query', this)">
+                            onclick="goToManualPage(31, 'Section 78 Query', this)">
                         <i class="fa-solid fa-magnifying-glass"></i>
                         Lodge Query
                     </button>
 
                     <button type="button"
                             data-manual-link
-                            onclick="goToManualPage(33, 'Section 78 Review', this)">
+                            onclick="goToManualPage(39, 'Section 78 Review', this)">
                         <i class="fa-solid fa-rotate"></i>
                         Lodge Review
                     </button>
@@ -140,7 +143,7 @@
                     class="manual-topic-card manual-topic-card-primary manual-topic-card-clickable"
                     data-manual-card
                     data-manual-link
-                    onclick="goToManualPage(34, 'Rates Rebates', this)">
+                    onclick="goToManualPage(40, 'Rates Rebates', this)">
                 <span class="manual-topic-icon">
                     <i class="fa-solid fa-percent"></i>
                 </span>
@@ -161,7 +164,7 @@
                     class="manual-topic-card manual-topic-card-primary manual-topic-card-clickable"
                     data-manual-card
                     data-manual-link
-                    onclick="goToManualPage(38, 'Property Attributes', this)">
+                    onclick="goToManualPage(45, 'Property Attributes', this)">
                 <span class="manual-topic-icon">
                     <i class="fa-solid fa-clipboard-list"></i>
                 </span>
@@ -196,7 +199,7 @@
             <button type="button"
                     class="manual-topic-card manual-topic-card-clickable"
                     data-manual-card data-manual-link
-                    onclick="goToManualPage(12, 'Search & Link Property', this)">
+                    onclick="goToManualPage(15, 'Search & Link Property', this)">
                 <span class="manual-topic-icon manual-topic-icon-small">
                     <i class="fa-solid fa-magnifying-glass-location"></i>
                 </span>
@@ -209,7 +212,7 @@
             <button type="button"
                     class="manual-topic-card manual-topic-card-clickable"
                     data-manual-card data-manual-link
-                    onclick="goToManualPage(11, 'Client Dashboard', this)">
+                    onclick="goToManualPage(13, 'Client Dashboard', this)">
                 <span class="manual-topic-icon manual-topic-icon-small">
                     <i class="fa-solid fa-gauge-high"></i>
                 </span>
@@ -222,7 +225,7 @@
             <button type="button"
                     class="manual-topic-card manual-topic-card-clickable"
                     data-manual-card data-manual-link
-                    onclick="goToManualPage(48, 'Evidence, Acknowledgements & Notices', this)">
+                    onclick="goToManualPage(54, 'Evidence, Acknowledgements & Notices', this)">
                 <span class="manual-topic-icon manual-topic-icon-small">
                     <i class="fa-solid fa-folder-open"></i>
                 </span>
@@ -235,7 +238,33 @@
             <button type="button"
                     class="manual-topic-card manual-topic-card-clickable"
                     data-manual-card data-manual-link
-                    onclick="goToManualPage(51, 'My Profile & Account Details', this)">
+                    onclick="goToManualPage(25, 'Section 51 (Property Owners)', this)">
+                <span class="manual-topic-icon manual-topic-icon-small">
+                    <i class="fa-solid fa-user-shield"></i>
+                </span>
+                <span class="manual-topic-content">
+                    <strong>Section 51 (Owners)</strong>
+                    <small>Respond to a third-party objection on your property.</small>
+                </span>
+            </button>
+
+            <button type="button"
+                    class="manual-topic-card manual-topic-card-clickable"
+                    data-manual-card data-manual-link
+                    onclick="goToManualPage(61, 'Troubleshooting & FAQs', this)">
+                <span class="manual-topic-icon manual-topic-icon-small">
+                    <i class="fa-solid fa-circle-question"></i>
+                </span>
+                <span class="manual-topic-content">
+                    <strong>Troubleshooting & FAQs</strong>
+                    <small>Common problems, messages and who to contact.</small>
+                </span>
+            </button>
+
+            <button type="button"
+                    class="manual-topic-card manual-topic-card-clickable"
+                    data-manual-card data-manual-link
+                    onclick="goToManualPage(57, 'My Profile & Account Details', this)">
                 <span class="manual-topic-icon manual-topic-icon-small">
                     <i class="fa-solid fa-user-gear"></i>
                 </span>
@@ -248,7 +277,7 @@
             <button type="button"
                     class="manual-topic-card manual-topic-card-clickable"
                     data-manual-card data-manual-link
-                    onclick="goToManualPage(6, 'Client Registration', this)">
+                    onclick="goToManualPage(8, 'Client Registration', this)">
                 <span class="manual-topic-icon manual-topic-icon-small">
                     <i class="fa-solid fa-user-plus"></i>
                 </span>
@@ -261,7 +290,7 @@
             <button type="button"
                     class="manual-topic-card manual-topic-card-clickable"
                     data-manual-card data-manual-link
-                    onclick="goToManualPage(9, 'Login & Password Access', this)">
+                    onclick="goToManualPage(11, 'Login & Password Access', this)">
                 <span class="manual-topic-icon manual-topic-icon-small">
                     <i class="fa-solid fa-key"></i>
                 </span>
@@ -276,7 +305,7 @@
                 <button type="button"
                         class="manual-topic-card manual-topic-card-clickable"
                         data-manual-card data-manual-link
-                        onclick="goToManualPage(53, 'Genesis Administration / Search Enquiries', this)">
+                        onclick="goToManualPage(59, 'Genesis Administration / Search Enquiries', this)">
                     <span class="manual-topic-icon manual-topic-icon-small">
                         <i class="fa-solid fa-shield-halved"></i>
                     </span>

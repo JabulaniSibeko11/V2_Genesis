@@ -12,6 +12,7 @@ public class Section51Controller : Controller
     private readonly ISection51Service _s51Service;
     private readonly INoticeService _noticeService;
     private readonly ApplicationDbContext _db;
+    private readonly ILogger<Section51Controller> _logger;
 
     private const string S_VALIDATED = "s51_validated";
     private const string S_ROLL = "s51_roll";
@@ -21,11 +22,13 @@ public class Section51Controller : Controller
     public Section51Controller(
         ISection51Service s51Service,
         INoticeService noticeService,
-        ApplicationDbContext db)
+        ApplicationDbContext db,
+        ILogger<Section51Controller> logger)
     {
         _s51Service = s51Service;
         _noticeService = noticeService;
         _db = db;
+        _logger = logger;
     }
 
     // ── Roll detection ─────────────────────────────────────────────
@@ -144,6 +147,18 @@ public class Section51Controller : Controller
         {
             ViewBag.Error = error;
             return View();
+        }
+
+        // Save the acknowledgement in the objection folder straight away
+        // (Section 51 Owner Evidence), not only when the owner downloads it.
+        try
+        {
+            await _noticeService.GenerateSection51AcknowledgementAsync(
+                objNo, roll, fileCount, fileNames);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[Section51] Acknowledgement could not be generated for {ObjNo}", objNo);
         }
 
         TempData["s51_objNo"] = objNo;

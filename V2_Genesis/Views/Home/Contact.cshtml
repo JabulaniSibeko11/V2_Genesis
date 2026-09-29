@@ -1,6 +1,9 @@
 ﻿@{
     ViewData["Title"] = "Contact Us";
-    Layout = "_Layout";
+    // Signed in: client/admin legend layout. Signed out: public layout.
+    Layout = User.Identity?.IsAuthenticated == true
+        ? "_Legend_Layout"
+        : "_Layout";
 }
 
 <link href="~/css/views/info-pages.css" rel="stylesheet" asp-append-version="true" />
