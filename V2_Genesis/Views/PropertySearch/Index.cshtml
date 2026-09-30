@@ -63,6 +63,19 @@
         </div>
     </div>
 
+    @if (ViewBag.PeriodClosedMessage is string periodClosedMessage &&
+         !string.IsNullOrWhiteSpace(periodClosedMessage))
+    {
+        <div class="srch-period-closed" role="status"
+             style="max-width:1280px;margin:16px auto 0;width:calc(100% - 32px);display:flex;gap:10px;align-items:flex-start;background:#fef2f2;border:1px solid #dc2626;border-left:4px solid #dc2626;border-radius:10px;padding:12px 16px;color:#b91c1c;font-size:14px;font-weight:500;">
+            <i class="fa-solid fa-calendar-xmark" style="color:#dc2626;margin-top:3px;"></i>
+            <div>
+                <strong style="color:#991b1b;">Objection period closed.</strong>
+                @periodClosedMessage
+            </div>
+        </div>
+    }
+
     <div class="srch-body">
 
         <div class="srch-left">
@@ -607,6 +620,30 @@
 
         document.body.style.overflow =
         'hidden';
+
+        // The results table is built while the modal is still hidden
+        // (width 0), so DataTables Responsive collapses most columns.
+        // Re-measure once the modal is visible so the table uses the
+        // full width on large screens.
+        refitResultsTable();
+        setTimeout(refitResultsTable, 300);
+        }
+
+        function refitResultsTable() {
+        if (!window.jQuery ||
+        !$.fn.DataTable ||
+        !$.fn.DataTable.isDataTable('#psResultsTable')) {
+        return;
+        }
+
+        const table =
+        $('#psResultsTable').DataTable();
+
+        table.columns.adjust();
+
+        if (table.responsive) {
+        table.responsive.recalc();
+        }
         }
 
         function closeResultsModal() {

@@ -152,6 +152,14 @@
                 <i class="fa-solid fa-magnifying-glass"></i> Search Property
             </a>
         }
+        else if (Model.CanSearchRoll)
+        {
+            @* Current roll after the objection period: view only. *@
+            <a href="/search/@Model.Roll.Source" class="cd-detail-search-btn"
+               title="The objection period has closed — you can still search and view property details">
+                <i class="fa-solid fa-magnifying-glass"></i> Search &amp; View Property
+            </a>
+        }
         else
         {
             <span class="cd-detail-search-btn cd-detail-search-btn--disabled"

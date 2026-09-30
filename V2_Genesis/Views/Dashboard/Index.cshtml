@@ -377,7 +377,7 @@
                             }
                             else
                             {
-                                @:The period to inspect the @rollName and object to the entry in the @rollName ran from <strong>@opens</strong> to <strong>@closes</strong> and is now closed. You can still view your linked properties, objections and appeals on the dashboard.
+                                @:The period to inspect the @rollName and object to the entry in the @rollName ran from <strong>@opens</strong> to <strong>@closes</strong> and is now closed. You can still search and view property details (linking and new objections are closed), and view your linked properties, objections and appeals on the dashboard.
                             }
                         </p>
 
@@ -401,12 +401,14 @@
                 </div>
  
                 <div class="legacy-service-actions">
-                    @if (status == "OPEN")
+                    @* Search stays available after the objection period for the
+                       current roll (view only) until the next roll opens. *@
+                    @if (V2_Genesis.Services.PropertySearch.RollDatesSettings.CanSearch(Model.RollDates, sup4.Source, DateTime.Now))
                     {
                         <a href="/search/Objection_Supp4"
                                class="legacy-btn legacy-btn-primary">
                             <i class="fa-solid fa-magnifying-glass"></i>
-                            Search Property
+                            @(status == "OPEN" ? "Search Property" : "Search & View Property")
                         </a>
                     }
  

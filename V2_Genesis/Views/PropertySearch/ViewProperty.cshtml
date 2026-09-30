@@ -148,6 +148,20 @@ string.Equals(Context?.Session?.GetString("PropertyFrom"), "LIS", StringComparis
   
     <div class="ppd-body">
 
+        @if (!isAttributes && !isQuery && !isLis && !isAdmin &&
+             Model?.VisibleUntil is DateTime vpClosedAt &&
+             DateTime.Now > vpClosedAt)
+        {
+            <div class="ppd-period-banner" role="status"
+                 style="display:flex;gap:12px;align-items:flex-start;background:#fef2f2;border:1px solid #dc2626;border-left:4px solid #dc2626;border-radius:10px;padding:14px 16px;margin-bottom:18px;color:#b91c1c;font-size:14px;font-weight:500;">
+                <i class="fa-solid fa-calendar-xmark" style="color:#dc2626;font-size:18px;margin-top:2px;"></i>
+                <div>
+                    <strong style="color:#991b1b;">The objection period for @(string.IsNullOrWhiteSpace(rollShort) ? "this roll" : rollShort) closed on @vpClosedAt.ToString("d MMMM yyyy 'at' HH:mm", System.Globalization.CultureInfo.GetCultureInfo("en-ZA")).</strong><br />
+                    You can still view the property details, but the property can no longer be linked and an objection can no longer be lodged.
+                </div>
+            </div>
+        }
+
 
         <div class="ppd-card">
             <div class="ppd-card-hdr">

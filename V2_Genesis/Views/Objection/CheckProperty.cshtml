@@ -1,7 +1,7 @@
 ﻿@model V2_Genesis.Models.ViewModels.Objections.CheckPropertyViewModel
 @{
     ViewData["Title"] = Model.IsAppeal ? "Property Appeal" : "Property Objection";
-   // Layout = "~/Views/Shared/_ClientLayout.cshtml";
+    // Layout = "~/Views/Shared/_ClientLayout.cshtml";
     Layout = "~/Views/Shared/_Legend_Layout.cshtml";
 
     var d = Model.Main;
@@ -61,6 +61,11 @@
         ViewData["Title"] =
             $"Property Section 78 {section78ProcessName}";
     }
+
+    // Words used on this page ("objection", "appeal", "Section 78 query").
+    var actionNoun = isQuery
+        ? $"Section 78 {section78ProcessName.ToLowerInvariant()}"
+        : Model.IsAppeal ? "appeal" : "objection";
 }
 
 @section Styles {
@@ -129,39 +134,40 @@
                                 ? "appeal"
                                 : "objection")
                     </strong>
-                    process. If you wish to upload supporting documents, please ensure your evidence is ready.
+                    process. Before you start, have your ID or passport number, contact details and
+                    supporting documents (for example valuations, photos or sale prices of similar properties) ready.
                 </p>
 
                 <div class="cp-dl-list">
                     <div class="cp-dl-item">
                         <i class="fa-solid fa-file-pdf"></i>
-                        Evidence attachments must be in <strong>PDF format</strong>
+                        Save your documents as <strong>PDF, JPG or PNG</strong> files
                     </div>
                     <div class="cp-dl-item">
                         <i class="fa-solid fa-upload"></i>
-                        You may upload up to <strong>10 attachments</strong>
+                        You can upload up to <strong>10 documents</strong> with your @actionNoun
                     </div>
                     <div class="cp-dl-item">
-                        <i class="fa-solid fa-weight-hanging"></i>
-                        Maximum total size for all attachments: <strong>10 MB</strong>
+                        <i class="fa-solid fa-clock"></i>
+                        Forgot a document? You have <strong>48 hours</strong> after submitting to add it
+                        (Add Evidence, maximum 3 MB per file)
                     </div>
                     <div class="cp-dl-item">
                         <i class="fa-solid fa-file-lines"></i>
-                        Each attachment may have as many pages as needed within the 10 MB limit
+                        A document may have as many pages as you need
                     </div>
                 </div>
 
                 <p class="cp-disclaimer-note">
-                    The municipality assumes no responsibility or liability for any errors
-                    or omissions in the content of this site. Information is provided on
-                    an "as is" basis.
+                    The City of Johannesburg is not responsible for errors or omissions in the
+                    information shown on this site. The information is provided "as is".
                 </p>
 
                 <div class="cp-agree-row">
                     <label class="cp-agree-label">
                         <input type="checkbox" id="agreeCheckbox"
                                onchange="onAgreeChange(this)" />
-                        By checking this box I confirm that I have read and understand the above information.
+                        I have read and understand the information above.
                     </label>
                 </div>
 
@@ -170,10 +176,10 @@
                     <i class="fa-solid fa-circle-check"></i>
                     <span id="continueBtnText">
                         Continue to @(isQuery
-                                                                                                                                                                                                    ? section78ProcessName
-                                                                                                                                                                    : Model.IsAppeal
-                                                                                                                                                                        ? "Appeal"
-                                                                                                                                                                        : "Objection") Form
+                                                                                                                                                                                                                            ? section78ProcessName
+                                                                                                                                                                                        : Model.IsAppeal
+                                                                                                                                                                                            ? "Appeal"
+                                                                                                                                                                                            : "Objection") Form
                     </span>
                 </button>
             </div>
@@ -183,25 +189,24 @@
         <div id="mainForm" style="display:none; flex-direction:column; gap:20px;">
 
           
-            <div class="cp-card">
+            @* READ-ONLY card: information about the selected property.
+               Styled differently from the two "select" steps below. *@
+            <div class="cp-card cp-card-info">
                 <div class="cp-card-hdr">
-                    <i class="fa-solid fa-map-marker-alt"></i>
-                    Property Information
+                    <i class="fa-solid fa-circle-info"></i>
+                    Your Property
                     <span class="cp-card-sub" id="propInfoSub">
-                        @if (isQuery)
-                        {
-                            @:Details of the property you are submitting a Section 78
-                            @section78ProcessName.ToLowerInvariant()
-                            @:for
-                        }
-                        else
-                        {
-                            @:Details of the property you are
-                            @(Model.IsAppeal ? "appealing" : "objecting to")
-                        }
+                        The property this @actionNoun is for
+                    </span>
+                    <span class="cp-chip cp-chip-info">
+                        <i class="fa-solid fa-eye"></i> For information only — nothing to select
                     </span>
                 </div>
                 <div class="cp-card-body">
+                    <p class="cp-info-hint">
+                        Please check that these details are correct. If this is not your property,
+                        go back and search again.
+                    </p>
                     <div class="cp-prop-grid">
 
                         @if (Model.IsOmission)
@@ -341,15 +346,25 @@
             </div>
 
           
-            <div class="cp-card">
+            <div class="cp-card cp-card-select" id="stepPropertyType">
                 <div class="cp-card-hdr">
-                    <i class="fa-solid fa-house"></i>
-                    Property Type
+                    <span class="cp-step-badge">1</span>
+                    Step 1 · Property Type
                     <span class="cp-card-sub" id="propTypeSub">
-                        Choose the property type you want to @(Model.IsAppeal ? "appeal on" : "object on")
+                        How is the property used?
+                    </span>
+                    <span class="cp-chip cp-chip-required">
+                        <i class="fa-solid fa-hand-pointer"></i> Select one
+                    </span>
+                    <span class="cp-chip cp-chip-done">
+                        <i class="fa-solid fa-circle-check"></i> Done
                     </span>
                 </div>
                 <div class="cp-card-body">
+                    <p class="cp-select-prompt">
+                        <i class="fa-solid fa-hand-pointer"></i>
+                        Click the option that best describes how the property is used.
+                    </p>
                     <div class="cp-radio-grid">
                         <label class="obj-radio-card" id="card-res">
                             <input type="radio" name="propertyType" value="Res"
@@ -357,7 +372,7 @@
                             <div class="obj-radio-content">
                                 <i class="fa-solid fa-house-chimney"></i>
                                 <strong>Residential</strong>
-                                <small>Full Title and Sectional Title used for Residential Purposes</small>
+                                <small>A house, townhouse or flat used as a home (full title or sectional title)</small>
                             </div>
                             <div class="obj-radio-check"><i class="fa-solid fa-circle-check"></i></div>
                         </label>
@@ -368,7 +383,7 @@
                             <div class="obj-radio-content">
                                 <i class="fa-solid fa-tractor"></i>
                                 <strong>Agricultural</strong>
-                                <small>Holdings or Farms</small>
+                                <small>A farm or agricultural holding</small>
                             </div>
                             <div class="obj-radio-check"><i class="fa-solid fa-circle-check"></i></div>
                         </label>
@@ -379,7 +394,7 @@
                             <div class="obj-radio-content">
                                 <i class="fa-solid fa-building"></i>
                                 <strong>Business / Other</strong>
-                                <small>Business, Factories, Offices, Schools</small>
+                                <small>Shops, offices, factories, schools and other non-residential use</small>
                             </div>
                             <div class="obj-radio-check"><i class="fa-solid fa-circle-check"></i></div>
                         </label>
@@ -390,7 +405,7 @@
                             <div class="obj-radio-content">
                                 <i class="fa-solid fa-layer-group"></i>
                                 <strong>Multiple Purposes</strong>
-                                <small>Property used for more than one purpose</small>
+                                <small>Used for more than one purpose, for example a home with a shop</small>
                             </div>
                             <div class="obj-radio-check"><i class="fa-solid fa-circle-check"></i></div>
                         </label>
@@ -400,15 +415,26 @@
             </div>
 
 
-            <div class="cp-card">
+            <div class="cp-card cp-card-select" id="stepObjectorType">
                 <div class="cp-card-hdr">
-                    <i class="fa-solid fa-user"></i>
-                    <span id="objectorTypeHeader">@(Model.IsAppeal ? "Appellant Type" : "Objector Type")</span>
+                    <span class="cp-step-badge">2</span>
+                    Step 2 ·
+                    <span id="objectorTypeHeader">@(isQuery ? "Applicant Type" : Model.IsAppeal ? "Appellant Type" : "Objector Type")</span>
                     <span class="cp-card-sub" id="objectorTypeSub">
-                        Choose the type of @(Model.IsAppeal ? "appellant" : "objector")
+                        Who is lodging this @actionNoun?
+                    </span>
+                    <span class="cp-chip cp-chip-required">
+                        <i class="fa-solid fa-hand-pointer"></i> Select one
+                    </span>
+                    <span class="cp-chip cp-chip-done">
+                        <i class="fa-solid fa-circle-check"></i> Done
                     </span>
                 </div>
                 <div class="cp-card-body">
+                    <p class="cp-select-prompt">
+                        <i class="fa-solid fa-hand-pointer"></i>
+                        Click the option that describes you.
+                    </p>
                     <div class="cp-radio-grid-3">
                         <label class="obj-radio-card">
                             <input type="radio" name="objectorType" value="Owner"
@@ -416,11 +442,7 @@
                             <div class="obj-radio-content">
                                 <i class="fa-solid fa-user-check"></i>
                                 <strong>@(Model.IsAppeal ? "Owner Appellant" : "Owner")</strong>
-                                <small>
-                                    @(Model.IsAppeal
-                                        ? "The registered owner is lodging the appeal"
-                                        : "The registered owner is lodging the objection")
-                                </small>
+                                <small>I am the registered owner of this property</small>
                             </div>
                             <div class="obj-radio-check"><i class="fa-solid fa-circle-check"></i></div>
                         </label>
@@ -434,9 +456,7 @@
                                     <i class="fa-solid fa-users"></i>
                                     <strong>@(Model.IsAppeal ? "Third-Party Appellant" : "Third Party")</strong>
                                     <small>
-                                        @(Model.IsAppeal
-                                            ? "A person other than the owner is lodging the appeal"
-                                            : "A person other than the owner is lodging the objection")
+                                        I am not the owner (for example a tenant, buyer or neighbour).@(Model.IsAppeal ? "" : " The owner will be notified (Section 51).")
                                     </small>
                                 </div>
                                 <div class="obj-radio-check"><i class="fa-solid fa-circle-check"></i></div>
@@ -449,11 +469,7 @@
                             <div class="obj-radio-content">
                                 <i class="fa-solid fa-user-tie"></i>
                                 <strong>@(Model.IsAppeal ? "Appellant Representative" : "Representative")</strong>
-                                <small>
-                                    @(Model.IsAppeal
-                                        ? "An authorised representative is lodging for the appellant"
-                                        : "An authorised representative is lodging for the objector")
-                                </small>
+                                <small>I act for the owner and have a signed letter of authority to upload</small>
                             </div>
                             <div class="obj-radio-check"><i class="fa-solid fa-circle-check"></i></div>
                         </label>
@@ -471,8 +487,8 @@
                     <div class="cp-card-hdr">
                         <i class="fa-solid
                             @(isReview
-                                                                                                                                                                                                                                            ? "fa-magnifying-glass-chart"
-                                                                                                                                                                                                                                            : "fa-file-magnifying-glass")">
+                                                                                                                                                                                                                                                                       ? "fa-magnifying-glass-chart"
+                                                                                                                                                                                                                                                                       : "fa-file-magnifying-glass")">
                         </i>
 
                         Section 78 @section78ProcessName
@@ -620,10 +636,9 @@
         <div class="obj-instr-section">
             <h3><i class="fa-solid fa-user"></i> Section 1: Personal Information</h3>
             <ul>
-                <li>Complete at least one field to submit your <span class="instr-action-word">@(Model.IsAppeal ? "appeal" : "objection")</span></li>
-                <li><strong>ID Number or Passport:</strong> SA citizens enter their ID. Non-citizens provide a Passport or Asylum number</li>
-                <li><strong>Contact Numbers:</strong> Populate at least one contact number</li>
-                <li><strong>Address:</strong> Fill all address fields. Click "Yes" if postal = physical address</li>
+                <li><strong>ID or passport:</strong> South African citizens enter their ID number. Others enter a passport or asylum number.</li>
+                <li><strong>Contact numbers:</strong> Enter at least one phone number (10 digits starting with 0).</li>
+                <li><strong>Address:</strong> Complete all address fields. Select "Yes" if your postal address is the same as your physical address.</li>
             </ul>
         </div>
 
@@ -633,8 +648,8 @@
                 <span id="instrSection2Title">@(Model.IsAppeal ? "Appellant" : "Objector") Type Requirements</span>
             </h3>
             <ul>
-                <li><strong>Third Party:</strong> Clearly mention your <span class="instr-action-word">@(Model.IsAppeal ? "appellant" : "objector")</span> status</li>
-                <li><strong>Representative:</strong> Provide an authorised letter in Section 1</li>
+                <li><strong>Third Party:</strong> State your relationship to the property (for example tenant or buyer).</li>
+                <li><strong>Representative:</strong> Upload the owner's signed letter of authority in Section 1.</li>
             </ul>
         </div>
 
@@ -644,25 +659,26 @@
                 Section 6: <span class="instr-action-word-cap">@(Model.IsAppeal ? "Appeal" : "Objection")</span> Details
             </h3>
             <ul>
-                <li>Only fill in fields you wish to <span class="instr-action-word">@(Model.IsAppeal ? "appeal" : "object to")</span> — leave others blank</li>
-                <li>Do not enter values identical to the original</li>
+                <li>Only fill in the values you want changed — leave the others blank.</li>
+                <li>Do not enter the same value that is already on the roll.</li>
             </ul>
         </div>
 
         <div class="obj-instr-section">
             <h3><i class="fa-solid fa-upload"></i> Document Upload</h3>
             <ul>
-                <li>Upload up to <strong>10 documents</strong> (PDF, PNG, JPG)</li>
-                <li>Additional uploads possible within 48 hours</li>
-                <li>Ensure your signature is clear and visible</li>
+                <li>Upload up to <strong>10 documents</strong> (PDF, JPG or PNG).</li>
+                <li>You can add more documents within <strong>48 hours</strong> after submitting (Add Evidence).</li>
+                <li>Sign clearly in the signature box before you submit.</li>
             </ul>
         </div>
 
         <div class="obj-instr-warning">
             <i class="fa-solid fa-triangle-exclamation"></i>
             <div>
-                <strong>Important Notice:</strong> If you experience problems,
-                do not retry multiple times. Contact the Valuation Admission Team or visit the office.
+                <strong>Important:</strong> If something goes wrong, please do not submit again and again —
+                you may create duplicates. Contact Valuation Enquiries on 011 407-6622 /
+                valuationenquiries@joburg.org.za or visit the office.
             </div>
         </div>
     </div>
@@ -736,6 +752,7 @@
                 r.closest('.obj-radio-card').classList.remove('selected');
             });
             selected.closest('.obj-radio-card').classList.add('selected');
+            selected.closest('.cp-card-select')?.classList.add('is-done');
             var labels = { Res:'Residential', Agric:'Agricultural', Bus:'Business / Other',
                            Multi:'Multiple Purposes', Owner:'Owner', Third_Party:'Third Party',
                            Representative:'Representative' };
@@ -913,9 +930,9 @@
             if (!IS_APPEAL || IS_QUERY) return;
             setText('pageTitle','Property Appeal System'); setText('pageSubtitle','Submit your property appeal online');
             setText('disclaimerTitle','Disclaimer | Online Appeal'); setText('actionWord','appeal');
-            setText('continueBtnText','Continue to Appeal Form'); setText('propTypeSub','Choose the property type you want to appeal on');
-            setText('propInfoSub','Details of the property you are appealing'); setText('objectorTypeHeader','Appellant Type');
-            setText('objectorTypeSub','Choose the type of appellant'); setText('lodgeBtnText','Lodge Appeal');
+            setText('continueBtnText','Continue to Appeal Form'); setText('propTypeSub','How is the property used?');
+            setText('propInfoSub','The property this appeal is for'); setText('objectorTypeHeader','Appellant Type');
+            setText('objectorTypeSub','Who is lodging this appeal?'); setText('lodgeBtnText','Lodge Appeal');
             setText('lodgeBtnText1','Lodge Appeal'); setText('modalTitle','Appeal Form Instructions');
             setText('modalSubtitle','Please read all instructions carefully before starting your appeal');
             setText('instrSection2Title','Appellant Type Requirements'); setText('startBtnWord','Appeal');
@@ -963,14 +980,12 @@
 
                     setText(
                         'propInfoSub',
-                        'Details of the property for this Section 78 ' +
-                        processLower
+                        'The property this Section 78 ' + processLower + ' is for'
                     );
 
                     setText(
                         'propTypeSub',
-                        'Choose the property type for this ' +
-                        processLower
+                        'How is the property used?'
                     );
 
                     setText(
@@ -980,7 +995,7 @@
 
                     setText(
                         'objectorTypeSub',
-                        'Choose the type of applicant'
+                        'Who is lodging this ' + processLower + '?'
                     );
 
                     setText(
@@ -1040,6 +1055,7 @@
                 if (propRadio) {
                     propRadio.checked = true;
                     propRadio.closest('.obj-radio-card')?.classList.add('selected');
+                    propRadio.closest('.cp-card-select')?.classList.add('is-done');
 
                     if (IS_QUERY) {
                         property_type = savedProp;
@@ -1059,6 +1075,7 @@
                 if (objRadio) {
                     objRadio.checked = true;
                     objRadio.closest('.obj-radio-card')?.classList.add('selected');
+                    objRadio.closest('.cp-card-select')?.classList.add('is-done');
 
                     if (IS_QUERY) {
                         objector_type = savedObj;

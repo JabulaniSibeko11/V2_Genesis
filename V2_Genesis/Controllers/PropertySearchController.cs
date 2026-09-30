@@ -134,6 +134,30 @@ public class PropertySearchController : Controller
 
 
 
+    // Search / view only. The current roll stays searchable after its
+    // objection period has closed (until the next roll opens); linking is
+    // still controlled by CanSearchAndLinkRoll().
+    private bool CanSearchRoll(
+        string rollSource,
+        out string? message)
+    {
+        message = null;
+
+        if (IsCurrentUserAdmin() || IsQueryRoll(rollSource))
+            return true;
+
+        if (RollDatesSettings.CanSearch(_rollDates.Dates, rollSource, DateTime.Now))
+            return true;
+
+        var dates = _rollDates.For(rollSource);
+
+        message = dates is not null && DateTime.Now < dates.OpenDate
+            ? $"The objection period has not opened yet. Property search will be available from {dates.OpenDate:dd MMMM yyyy 'at' HH:mm}."
+            : $"The objection period for this roll closed on {dates?.VisibleUntil:dd MMMM yyyy 'at' HH:mm}. Property search is no longer available for this roll.";
+
+        return false;
+    }
+
     private static string ResolveReviewStatus(
         DateTime? reviewCloseDate)
     {
@@ -211,10 +235,21 @@ public class PropertySearchController : Controller
         }
 
         // ─────────────────────────────────────────────────────────────
-        // 3. Check whether clients may search this roll
-        //    Admin bypass remains handled by CanSearchAndLinkRoll()
+        // 3. Check whether clients may search this roll.
+        //    After the objection period the current roll can still be
+        //    searched and viewed (not linked) — see CanSearchRoll().
         // ─────────────────────────────────────────────────────────────
-        if (!CanSearchAndLinkRoll(
+        if (!CanSearchAndLinkRoll(rollSource, out _))
+        {
+            var closedDates = _rollDates.For(rollSource);
+            ViewBag.PeriodClosedMessage =
+                (closedDates is null
+                    ? "The objection period for this roll has closed."
+                    : $"The objection period closed on {closedDates.VisibleUntil:dd MMMM yyyy 'at' HH:mm}.")
+                + " You can still search and view property details, but properties can no longer be linked.";
+        }
+
+        if (!CanSearchRoll(
                 rollSource,
                 out var periodMessage))
         {
@@ -299,7 +334,7 @@ public class PropertySearchController : Controller
         // already-open search page after the objection period has closed.
         // Admin users and Section 78 Query / Review are allowed by
         // CanSearchAndLinkRoll().
-        if (!CanSearchAndLinkRoll(
+        if (!CanSearchRoll(
                 rollSource,
                 out var periodMessage))
         {
@@ -1122,7 +1157,7 @@ public class PropertySearchController : Controller
         // LIS is part of the same property-search/linking journey. Do not let
         // a client bypass a closed objection period by calling the LIS endpoint
         // directly. Admin users and Section 78 Query / Review are exempt.
-        if (!CanSearchAndLinkRoll(
+        if (!CanSearchRoll(
                 rollSource,
                 out var periodMessage))
         {

@@ -82,9 +82,8 @@
         if (dates is null)
             return true;
 
-        return
-            now >= dates.OpenDate
-            && now <= dates.VisibleUntil;
+        // Open period, or the current roll after it closed (view only).
+        return RollDatesSettings.CanSearch(rollDates.Dates, source, now);
     }
 
     string RollStatus(string source)

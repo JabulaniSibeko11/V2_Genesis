@@ -333,9 +333,10 @@
         '<"as-dt-bottom"ip>',
 
         lengthMenu: [
-        [10, 25, 50, -1],
-        [10, 25, 50, 'All']
-        ],
+                // Never show all rows: maximum 30 per page.
+                [10, 20, 30],
+                [10, 20, 30]
+            ],
 
         pageLength: 10,
 

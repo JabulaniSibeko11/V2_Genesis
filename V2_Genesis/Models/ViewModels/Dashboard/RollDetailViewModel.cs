@@ -9,5 +9,9 @@ namespace V2_Genesis.Models.ViewModels.Dashboard
         public RollDateEntry? Dates { get; set; }
         public string PeriodStatus { get; set; } = "unknown";
         public bool CanLodgeObjectionForRoll { get; set; }
+
+        /// Search/view allowed: open period, or the current roll after it
+        /// closed (view only, no linking) until the next roll opens.
+        public bool CanSearchRoll { get; set; }
     }
 }

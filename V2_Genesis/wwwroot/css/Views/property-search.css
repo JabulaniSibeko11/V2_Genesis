@@ -1545,3 +1545,133 @@
             transform: translateY(0);
         }
 }
+
+
+/* ════════════════════════════════════════════════════════════════
+   LARGE SCREENS
+   The search page and the results modal were capped at 1280px /
+   1200px, so on wide monitors the form sat in the middle and the
+   14-column results table was squeezed (columns hidden behind "+").
+   From 1440px the layout, modal and table grow with the screen.
+   ════════════════════════════════════════════════════════════════ */
+
+/* Results table always fills its container (DataTables + responsive). */
+.psm-body .ps-table,
+.psm-body table.dataTable {
+    width: 100% !important;
+}
+
+@media (min-width: 1440px) {
+    .srch-hero-inner,
+    .srch-body,
+    .ps-inner {
+        max-width: 1600px;
+    }
+
+    .srch-body {
+        grid-template-columns: 440px 1fr;
+    }
+
+    .srch-hero {
+        padding: 32px 48px 28px;
+    }
+
+    .srch-left {
+        padding: 40px 40px 44px;
+    }
+
+    .srch-right {
+        padding: 44px 56px;
+    }
+
+    .ps-layout {
+        grid-template-columns: 400px 1fr;
+    }
+
+    .psm-modal {
+        width: 94vw;
+        max-width: 1560px;
+        max-height: 88vh;
+    }
+
+    .psm-body .ps-table {
+        font-size: 13.5px;
+    }
+
+    .psm-body .dataTables_wrapper {
+        padding: 16px 22px;
+    }
+
+    .psm-header {
+        padding: 18px 28px;
+    }
+}
+
+@media (min-width: 1920px) {
+    .srch-hero-inner,
+    .srch-body,
+    .ps-inner {
+        max-width: 1840px;
+    }
+
+    .srch-body {
+        grid-template-columns: 500px 1fr;
+    }
+
+    .srch-left {
+        padding: 48px 48px 52px;
+    }
+
+    .srch-right {
+        padding: 52px 72px;
+    }
+
+    .srch-input,
+    .srch-select {
+        font-size: 15px;
+        padding-top: 13px;
+        padding-bottom: 13px;
+    }
+
+    .srch-label {
+        font-size: 12.5px;
+    }
+
+    .ps-layout {
+        grid-template-columns: 440px 1fr;
+    }
+
+    .psm-modal {
+        width: 92vw;
+        max-width: 1840px;
+    }
+
+    .psm-body .ps-table {
+        font-size: 14.5px;
+    }
+
+        .psm-body .ps-table th,
+        .psm-body .ps-table td {
+            padding: 12px 14px;
+        }
+
+    .psm-header-left {
+        font-size: 17px;
+    }
+}
+
+@media (min-width: 2560px) {
+    .srch-hero-inner,
+    .srch-body,
+    .ps-inner {
+        max-width: 2200px;
+    }
+
+    .psm-modal {
+        max-width: 2200px;
+    }
+
+    .psm-body .ps-table {
+        font-size: 15.5px;
+    }
+}

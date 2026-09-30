@@ -25,7 +25,7 @@
     </div>
 }
 
-<table id="psResultsTable" class="display table ps-table">
+<table id="psResultsTable" class="display table ps-table" style="width:100%">
     <thead>
         <tr>
             @foreach (var h in headers)
@@ -121,34 +121,19 @@
             // DATATABLE LAYOUT
             // =====================================================
             dom:
-                '<"ps-dt-top"lBf>' +
+                '<"ps-dt-top"lf>' +
                 'rt' +
                 '<"ps-dt-bottom"ip>',
 
             lengthMenu: [
-                [10, 25, 50, -1],
-                [10, 25, 50, 'All']
+                // Never show all rows: maximum 30 per page.
+                [10, 20, 30],
+                [10, 20, 30]
             ],
 
             pageLength: 10,
 
-            // =====================================================
-            // EXPORT BUTTONS
-            // =====================================================
-            buttons: [
-                {
-                    extend: 'excel',
-                    text:
-                        '<i class="fa-solid fa-file-excel"></i> Excel',
-                    className: 'ps-dt-btn'
-                },
-                {
-                    extend: 'pdf',
-                    text:
-                        '<i class="fa-solid fa-file-pdf"></i> PDF',
-                    className: 'ps-dt-btn'
-                }
-            ],
+            // No Excel / PDF export: roll data is sold by the City.
 
             // =====================================================
             // LANGUAGE

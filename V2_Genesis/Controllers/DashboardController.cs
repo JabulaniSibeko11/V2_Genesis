@@ -96,7 +96,9 @@ public class DashboardController : Controller
             Data = data,
             Dates = dates,
             PeriodStatus = periodStatus,
-            CanLodgeObjectionForRoll = !roll.IsQuery && periodStatus == "active"
+            CanLodgeObjectionForRoll = !roll.IsQuery && periodStatus == "active",
+            CanSearchRoll = roll.IsQuery ||
+                RollDatesSettings.CanSearch(_rollDates.Dates, rollSource, DateTime.Now)
         };
 
         return View("RollDetail", vm);

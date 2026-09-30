@@ -1,5 +1,4 @@
-﻿
-/* ── CheckProperty page ──────────────────────────────── */
+﻿/* ── CheckProperty page ──────────────────────────────── */
 .cp-page {
     background: #f0f4f5;
     min-height: 100vh;
@@ -1044,5 +1043,157 @@
 
     .obj-modal-actions {
         grid-template-columns: 1fr;
+    }
+}
+
+
+/* ============================================================
+   CLEAR DIFFERENCE BETWEEN "INFORMATION" AND "SELECT" CARDS
+   - .cp-card-info   : read-only property details (light, calm).
+   - .cp-card-select : Step 1 / Step 2 where the client must click
+                       one option (gold frame, step number, chip).
+   ============================================================ */
+
+/* ── Information card ─────────────────────────────────────── */
+.cp-card.cp-card-info {
+    border: 1px solid #cfdfe2;
+    box-shadow: none;
+    background: #fbfdfd;
+}
+
+.cp-card-info .cp-card-hdr {
+    background: #eaf3f4;
+    color: #006570;
+    border-left: 4px solid #8fb9bf;
+}
+
+    .cp-card-info .cp-card-hdr i {
+        color: #006570;
+    }
+
+.cp-card-info .cp-card-sub {
+    color: #3f5f65;
+    font-size: 12.5px;
+}
+
+.cp-card-info .cp-prop-item {
+    background: #fff;
+}
+
+.cp-info-hint {
+    margin: 0 0 14px;
+    font-size: 13.5px;
+    color: #3f5f65;
+}
+
+/* ── Select (step) cards ──────────────────────────────────── */
+.cp-card.cp-card-select {
+    border: 2px solid #e6b000;
+    box-shadow: 0 0 0 4px rgba(230,176,0,.14), 0 4px 16px rgba(0,101,112,.08);
+}
+
+.cp-card-select .cp-card-sub {
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 500;
+    opacity: .92;
+}
+
+.cp-card-select.is-done {
+    border-color: #16a34a;
+    box-shadow: 0 0 0 4px rgba(22,163,74,.12);
+}
+
+.cp-step-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #e6b000;
+    color: #1a1a1a;
+    font-size: 13px;
+    font-weight: 800;
+    flex-shrink: 0;
+}
+
+.cp-card-select.is-done .cp-step-badge {
+    background: #16a34a;
+    color: #fff;
+}
+
+.cp-select-prompt {
+    margin: 0 0 14px;
+    font-size: 14.5px;
+    font-weight: 600;
+    color: #1a1a1a;
+}
+
+    .cp-select-prompt i {
+        color: #c49a00;
+        margin-right: 6px;
+    }
+
+/* ── Header chips ─────────────────────────────────────────── */
+.cp-chip {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 11px;
+    border-radius: 100px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .3px;
+    text-transform: none;
+    white-space: nowrap;
+}
+
+.cp-chip-info {
+    background: #ffffff;
+    color: #3f5f65;
+    border: 1px solid #cfdfe2;
+}
+
+.cp-chip-required {
+    background: #e6b000;
+    color: #1a1a1a;
+}
+
+    .cp-chip-required i,
+    .cp-chip-info i,
+    .cp-chip-done i {
+        color: inherit !important;
+        font-size: 11px !important;
+    }
+
+.cp-chip-done {
+    display: none;
+    background: #16a34a;
+    color: #fff;
+}
+
+.cp-card-select.is-done .cp-chip-required {
+    display: none;
+}
+
+.cp-card-select.is-done .cp-chip-done {
+    display: inline-flex;
+}
+
+/* Easier-to-read option descriptions */
+.cp-card-select .obj-radio-content small {
+    font-size: 13px;
+    color: #4a5a5e;
+}
+
+.cp-card-select .obj-radio-card.selected .obj-radio-content small {
+    color: rgba(255,255,255,.9);
+}
+
+@media (max-width: 640px) {
+    .cp-chip {
+        margin-left: 0;
     }
 }
