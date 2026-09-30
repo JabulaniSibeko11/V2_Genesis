@@ -1210,15 +1210,14 @@ $(document).ready(function () {
             }
 
 
-            // if (LuhnAlgo() == 'Invalid ID Number') {
-            //     document.getElementById("o_id").style.border = "2px solid red";
-            //     focusIfExists("o_id");
-            //     alert("Invalid ID Number");
-
-            // }
-            // else {
-            //     document.getElementById("o_id").style.border = "";
-            //}
+            // SA ID / passport check (sa-id-validation.js). Skipped when a
+            // company registration number is entered.
+            var ownerIdResult = LuhnAlgo();
+            if (ownerIdResult == 'Invalid ID Number') {
+                focusIfExists(document.getElementById("o_id") && !document.getElementById("o_id").disabled ? "o_id" : "o_pass");
+                alert(window.GenesisIdError || "Invalid ID Number");
+                return false;
+            }
             if ((document.getElementById("o_cd_1").value) == '' &&
                 (document.getElementById("o_cd_2").value) == '' &&
                 (document.getElementById("o_cd_3").value) == '' &&
@@ -1249,7 +1248,7 @@ $(document).ready(function () {
                 (document.getElementById("o_p_5").value) !== '' &&
                 (document.getElementById("o_cd_5").value) !== '' &&
                 (cd_o) == 'true'
-                //&& LuhnAlgo() !== 'Invalid ID Number'
+                && ownerIdResult !== 'Invalid ID Number'
             ) {
 
                 $(".div1").hide();

@@ -553,7 +553,7 @@ $(document).ready(function () {
             if (!document.getElementById("o_p_5").value || document.getElementById("o_p_5").value.length < 4) { document.getElementById("o_p_5").style.border = "2px solid red"; fo_o = 3; } else { document.getElementById("o_p_5").style.border = ""; fo_o = 0; }
             if (!document.getElementById("o_st_5").value || document.getElementById("o_st_5").value.length < 4) { document.getElementById("o_st_5").style.border = "2px solid red"; fo_o = 2; } else { document.getElementById("o_st_5").style.border = ""; fo_o = 0; }
 
-            if (LuhnAlgo() == 'Invalid ID Number') { document.getElementById("o_id").style.border = "2px solid red"; focusIfExists("o_id"); alert("Invalid ID Number"); }
+            if (LuhnAlgo() == 'Invalid ID Number') { document.getElementById("o_id").style.border = "2px solid red"; focusIfExists("o_id"); alert(window.GenesisIdError || "Invalid ID Number"); }
             else document.getElementById("o_id").style.border = "";
 
             if (!document.getElementById("o_cd_1").value && !document.getElementById("o_cd_2").value && !document.getElementById("o_cd_3").value && !document.getElementById("o_cd_4").value) {
@@ -570,7 +570,7 @@ $(document).ready(function () {
 
         if (objector_key == "Third_Party") {
             if (!document.getElementById("objector_name").value) { document.getElementById("objector_name").style.border = "2px solid red"; focusIfExists("objector_name"); } else document.getElementById("objector_name").style.border = "";
-            if (LuhnAlgo() == "Invalid ID Number") { alert("Invalid ID Number"); document.getElementById("objector_id").style.border = "2px solid red"; } else document.getElementById("objector_id").style.border = "";
+            if (LuhnAlgo() == "Invalid ID Number") { alert(window.GenesisIdError || "Invalid ID Number"); document.getElementById("objector_id").style.border = "2px solid red"; } else document.getElementById("objector_id").style.border = "";
             var tpFields = ["obj_p_1", "obj_p_2", "obj_p_3", "obj_p_4", "objector_stat"];
             tpFields.forEach(id => { var el = document.getElementById(id); if (!el.value) el.style.border = "2px solid red"; else el.style.border = ""; });
             if (!document.getElementById("obj_p_5").value || document.getElementById("obj_p_5").value.length < 4) document.getElementById("obj_p_5").style.border = "2px solid red"; else document.getElementById("obj_p_5").style.border = "";

@@ -1,0 +1,258 @@
+/* ══════════════════════════════════════════════════════════════
+   form-yes-no.css
+   YES / NO QUESTIONS — ONE BORDERED BOX PER QUESTION
+
+       ┌────────────────────────────────────────────────┐
+       │ KITCHEN                     ◉ Yes      ◉ No    │
+       └────────────────────────────────────────────────┘
+
+   • The question and its options sit together in ONE rounded box.
+   • The individual options have no border of their own.
+   • Big circles for older clients.
+   • A long question wraps on the left; it is never covered by
+     the options (the options move to the next line if needed).
+   • The chosen answer turns the box green.
+
+   The classes are added by ~/js/form-yes-no.js:
+       fieldset.yn-q      a Yes/No (or Good/Average/Poor) question
+       fieldset.yn-done   an option has been chosen
+       label.yn-opt       one option (circle + word)
+       label.yn-on        the chosen option
+       .yn-row            a row that holds several questions
+   Questions inside the teal / green section bars are not tagged,
+   so they keep their existing look.
+
+   Load this file LAST (after objection-form.css and
+   objection-form-css.css). Selectors start with "html body" so
+   they win over the older rules in those files.
+   Used by: Objection, Appeal, Multipurpose and Section 78 forms.
+══════════════════════════════════════════════════════════════ */
+
+/* Rows that hold several questions: boxes sit side by side and wrap */
+html body #myForm .yn-row {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: stretch !important;
+    gap: 12px 16px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+    html body #myForm .yn-row > .yn-wrap {
+        display: flex !important;
+        flex: 1 1 300px !important;
+        width: auto !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+/* ── The box ─────────────────────────────────────────────────── */
+html body #myForm fieldset.yn-q {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    align-content: center !important;
+    justify-content: flex-start !important;
+    grid-template-columns: none !important;
+    gap: 10px 28px !important;
+    flex: 1 1 300px !important;
+    width: auto !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+    margin: 10px 0 16px !important;
+    padding: 14px 22px !important;
+    border: 2px solid #006570 !important;
+    border-radius: 14px !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+    transition: border-color .15s, background-color .15s;
+}
+
+html body #myForm .yn-wrap > fieldset.yn-q {
+    margin: 0 !important;
+    flex: 1 1 auto !important;
+    width: 100% !important;
+}
+
+/* A question on its own row uses the full width */
+html body #myForm fieldset.yn-q.yn-full {
+    flex: 1 1 100% !important;
+    width: 100% !important;
+}
+
+    /* <br> tags inside the old markup would break the row */
+    html body #myForm fieldset.yn-q > br {
+        display: none !important;
+    }
+
+    /* ── The question text ──────────────────────────────────── */
+    html body #myForm fieldset.yn-q > label.form-label,
+    html body #myForm fieldset.yn-q > .form-label {
+        display: block !important;
+        flex: 1 1 120px !important;
+        width: auto !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        white-space: normal !important;
+        overflow-wrap: break-word !important;
+        word-break: normal !important;
+        line-height: 1.35 !important;
+        color: #006570 !important;
+        font-size: 14px !important;
+        font-weight: 800 !important;
+        letter-spacing: .3px;
+        text-transform: uppercase;
+        vertical-align: middle !important;
+    }
+
+        html body #myForm fieldset.yn-q > .form-label small {
+            display: block;
+            margin-top: 2px;
+            color: #5b6b70 !important;
+            font-size: 12px !important;
+            font-weight: 600 !important;
+            text-transform: none;
+        }
+
+    /* All the options of one question, kept together on one line.
+       If they do not fit next to the question, the whole group moves
+       below the question — it never covers it. */
+    html body #myForm fieldset.yn-q > .yn-opts {
+        display: inline-flex !important;
+        flex: 0 1 auto !important;
+        flex-wrap: wrap !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        gap: 8px 28px !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    /* Option holders (<span> or <div class="d-flex">) */
+    html body #myForm fieldset.yn-q > .yn-opts > span,
+    html body #myForm fieldset.yn-q > .yn-opts > .d-flex,
+    html body #myForm fieldset.yn-q > span,
+    html body #myForm fieldset.yn-q > .d-flex {
+        display: inline-flex !important;
+        flex: 0 0 auto !important;
+        flex-wrap: wrap !important;
+        align-items: center !important;
+        gap: 10px 28px !important;
+        width: auto !important;
+        min-width: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: 0 !important;
+        background: transparent !important;
+    }
+
+    /* ── One option: big circle + word, NO border of its own ── */
+    html body #myForm fieldset.yn-q label.yn-opt {
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 10px !important;
+        width: auto !important;
+        min-width: 0 !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+        padding: 4px 6px !important;
+        border: 0 !important;
+        outline: 0;
+        border-radius: 8px !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        color: #006570 !important;
+        font-size: 15px !important;
+        font-weight: 700 !important;
+        line-height: 1.2 !important;
+        letter-spacing: 0 !important;
+        text-transform: none !important;
+        white-space: nowrap !important;
+        cursor: pointer;
+    }
+
+        html body #myForm fieldset.yn-q label.yn-opt:hover {
+            background: #fffaeb !important;
+        }
+
+        html body #myForm fieldset.yn-q label.yn-opt::before,
+        html body #myForm fieldset.yn-q label.yn-opt::after {
+            display: none !important;
+            content: none !important;
+        }
+
+    /* Big, easy-to-see circles */
+    html body #myForm fieldset.yn-q input[type="radio"] {
+        -webkit-appearance: none !important;
+        appearance: none !important;
+        position: relative !important;
+        display: inline-block !important;
+        flex: 0 0 26px !important;
+        width: 26px !important;
+        height: 26px !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: 2px solid #006570 !important;
+        border-radius: 50% !important;
+        background: #ffffff !important;
+        background-image: none !important;
+        box-shadow: none !important;
+        cursor: pointer;
+        vertical-align: middle;
+        float: none !important;
+    }
+
+        html body #myForm fieldset.yn-q input[type="radio"]:checked {
+            border-color: #15803d !important;
+            background: #ffffff radial-gradient(circle, #15803d 0 6px, transparent 7px) no-repeat center !important;
+        }
+
+        html body #myForm fieldset.yn-q input[type="radio"]:focus-visible {
+            outline: 3px solid rgba(230, 176, 0, .55) !important;
+            outline-offset: 2px;
+        }
+
+    /* Chosen option and answered box turn green */
+    html body #myForm fieldset.yn-q label.yn-opt.yn-on {
+        color: #15803d !important;
+    }
+
+html body #myForm fieldset.yn-q.yn-done {
+    border-color: #15803d !important;
+    background: #f3fbf6 !important;
+}
+
+    /* Room-count list that appears after "Yes": its own line in the box */
+    html body #myForm fieldset.yn-q > div:not(.d-flex) {
+        flex: 0 0 100% !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 2px 0 0 !important;
+    }
+
+        html body #myForm fieldset.yn-q > div:not(.d-flex) select {
+            width: 100% !important;
+            max-width: 320px;
+        }
+
+/* ── Phones ─────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+    html body #myForm fieldset.yn-q {
+        flex-basis: 100% !important;
+        padding: 12px 14px !important;
+        gap: 8px 20px !important;
+    }
+
+        html body #myForm fieldset.yn-q > label.form-label,
+        html body #myForm fieldset.yn-q > .form-label {
+            flex-basis: 100% !important;
+        }
+}

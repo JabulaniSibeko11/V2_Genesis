@@ -1221,7 +1221,7 @@ $(document).ready(function () {
             if (LuhnAlgo() == 'Invalid ID Number') {
                 document.getElementById("o_id").style.border = "2px solid red";
                 focusIfExists("o_id");
-                alert("Invalid ID Number");
+                alert(window.GenesisIdError || "Invalid ID Number");
 
             }
             else {
@@ -1347,7 +1347,7 @@ $(document).ready(function () {
             }
 
             if (LuhnAlgo() == "Invalid ID Number") {
-                alert("Invalid ID Number");
+                alert(window.GenesisIdError || "Invalid ID Number");
                 document.getElementById("objector_id").style.border = "2px solid red";
             }
             else {

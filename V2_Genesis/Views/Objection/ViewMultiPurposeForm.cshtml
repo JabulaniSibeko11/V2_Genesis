@@ -289,6 +289,7 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
     <link href="~/css/views/property-search.css" rel="stylesheet" asp-append-version="true" />
     <link href="~/css/views/searchpropertycss.css" rel="stylesheet" asp-append-version="true" />
     <link href="~/css/views/objection-form-css.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/views/form-yes-no.css" rel="stylesheet" asp-append-version="true" />
     <style>
         /* Multipurpose supporting documents — same interaction as Attributes. */
         .obj-ev-intro { margin: 0 0 16px; color: #6b7280; font: 12.5px/1.6 'Poppins', sans-serif; }
@@ -647,11 +648,11 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
                     <div class="instruction-box">
                         <p>
                             <span class="bullet">•</span>
-                            <span id="o_cd_invalid"><strong>Please fill in at least one of the contact details fields.</strong></span>
+                            <span id="o_cd_invalid"><strong>Your cellphone number is required</strong> (10 digits starting with 0). Home, work and fax numbers are optional.</span>
                         </p>
                         <p>
                             <span class="bullet">•</span>
-                            <span ><strong>Please ensure that all contact details provided are valid, accurate</strong></span>
+                            <span><strong>Please check that your cellphone number and e-mail address are correct</strong> — the City will use them to contact you about this submission.</span>
                         </p>
                     </div>
 
@@ -805,11 +806,11 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
                     <div class="instruction-box">
                         <p>
                             <span class="bullet">•</span>
-                            <span id="obj_cd_invalid"><strong>Please fill in at least one of the contact details fields.</strong></span>
+                            <span id="obj_cd_invalid"><strong>Your cellphone number is required</strong> (10 digits starting with 0). Home, work and fax numbers are optional.</span>
                         </p>
                         <p>
                             <span class="bullet">•</span>
-                            <span><strong>Please ensure that all contact details provided are valid, accurate</strong></span>
+                            <span><strong>Please check that your cellphone number and e-mail address are correct</strong> — the City will use them to contact you about this submission.</span>
                         </p>
                     </div>
 
@@ -934,11 +935,11 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
                     <div class="instruction-box">
                         <p>
                             <span class="bullet">•</span>
-                            <span id="rep_cd_invalid"><strong>Please fill in at least one of the contact details fields.</strong></span>
+                            <span id="rep_cd_invalid"><strong>Your cellphone number is required</strong> (10 digits starting with 0). Home, work and fax numbers are optional.</span>
                         </p>
                         <p>
                             <span class="bullet">•</span>
-                            <span><strong>Please ensure that all contact details provided are valid, accurate</strong></span>
+                            <span><strong>Please check that your cellphone number and e-mail address are correct</strong> — the City will use them to contact you about this submission.</span>
                         </p>
                     </div>
 
@@ -4491,6 +4492,8 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
         <script src="https://cdnjs.cloudflare.com/ajax/libs/signature_pad/1.5.3/signature_pad.min.js"></script>
         <script src="https://code.jquery.com/jquery-latest.min.js" type="text/javascript"></script>
         <script asp-append-version="true" src="~/js/objectionmulti.js" type="text/javascript"></script>
+    <script asp-append-version="true" src="~/js/sa-id-validation.js"></script>
+    <script asp-append-version="true" src="~/js/form-yes-no.js"></script>
         <script asp-append-version="true" src="~/js/form-consistency.js"></script>
         <script asp-append-version="true" src="~/js/genesis-form-guard.js"></script>
         <script asp-append-version="true" src="~/js/genesis-signature.js"></script>
