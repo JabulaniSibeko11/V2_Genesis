@@ -208,7 +208,7 @@ string.Equals(Context?.Session?.GetString("PropertyFrom"), "LIS", StringComparis
                             <div class="ppd-locked">
                                 <i class="fa-solid fa-lock"></i>
                                 <span>Sign in to view owner details</span>
-                                <a href="/account/login?returnUrl=@Context.Request.Path@Context.Request.QueryString"
+                                <a href="/login?returnUrl=@Uri.EscapeDataString(returnUrl)"
                                    class="ppd-locked-link">Sign In</a>
                             </div>
                         }
@@ -332,7 +332,7 @@ string.Equals(Context?.Session?.GetString("PropertyFrom"), "LIS", StringComparis
 
       
         <div class="ppd-actions">
-            @if (isUniversalSearch)
+            @if (isUniversalSearch && isAuth)
             {
                 <div class="ppd-anon-action-notice">
                     <i class="fa-solid fa-eye"></i>
@@ -342,17 +342,83 @@ string.Equals(Context?.Session?.GetString("PropertyFrom"), "LIS", StringComparis
                     <i class="fa-solid fa-arrow-left"></i> Back to Global Search
                 </button>
             }
+            else if (!isAuth && !isAttributes)
+            {
+                // Signed-out visitor: may view, but must sign in to link.
+                // The link is remembered and completed straight after sign-in.
+                var anonCanLink =
+                    !string.IsNullOrWhiteSpace(rollSource)
+                    && (isQuery || Model.IsWithinObjectionPeriod || isLis);
+
+                if (anonCanLink)
+                {
+                    var anonLinkKey = isQuery
+                        ? d.Id
+                        : isLis
+                            ? (!string.IsNullOrWhiteSpace(d.PropertyId)
+                                ? d.PropertyId
+                                : !string.IsNullOrWhiteSpace(d.UnitKey)
+                                    ? d.UnitKey
+                                    : d.ValuationKey)
+                            : d.Id;
+
+                    var anonLinkQuery = new Dictionary<string, string?>
+                    {
+                        ["rollSource"] = rollSource,
+                        ["key"] = anonLinkKey,
+                        ["sourceTable"] = sourceTableCode,
+                        ["propertyFrom"] = isQuery ? null : (isLis ? "LIS" : sourceTableCode),
+                        ["unitKey"] = d.UnitKey,
+                        ["valuationKey"] = d.ValuationKey?.ToString(),
+                        ["propertyId"] = d.PropertyId,
+                        ["desc"] = d.PropertyDesc
+                    };
+
+                    var anonLinkUrl = "/property/link-after-login" +
+                        Microsoft.AspNetCore.Http.QueryString.Create(
+                            anonLinkQuery
+                                .Where(x => !string.IsNullOrWhiteSpace(x.Value))
+                                .Select(x => new KeyValuePair<string, string?>(x.Key, x.Value)))
+                            .ToUriComponent();
+
+                    <div class="ppd-anon-action-notice">
+                        <i class="fa-solid fa-lock"></i>
+                        To link this property@(isQuery ? " and lodge a Section 78 Query" : ", lodge an objection and access Section 49"),
+                        please sign in. We will remember this property and link it for you as soon as you are signed in.
+                    </div>
+                    <a href="@anonLinkUrl" class="ppd-btn ppd-btn-primary">
+                        <i class="fa-solid fa-link"></i> Sign In &amp; Link Property
+                    </a>
+                    <a href="@(anonLinkUrl + "&register=true")" class="ppd-btn ppd-btn-outline">
+                        <i class="fa-solid fa-user-plus"></i> Register &amp; Link
+                    </a>
+                    <button type="button" class="ppd-btn ppd-btn-outline" onclick="history.back()">
+                        <i class="fa-solid fa-arrow-left"></i> Back
+                    </button>
+                }
+                else
+                {
+                    <div class="ppd-period-ended">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        The objection period@(string.IsNullOrWhiteSpace(rollShort) ? "" : " for ")<strong>@rollShort</strong> has passed.
+                        You can still view the property details, but it can no longer be linked.
+                    </div>
+                    <button type="button" class="ppd-btn ppd-btn-outline" onclick="history.back()">
+                        <i class="fa-solid fa-arrow-left"></i> Back
+                    </button>
+                }
+            }
             else if (!isAuth)
             {
                 <div class="ppd-anon-action-notice">
                     <i class="fa-solid fa-lock"></i>
                     Sign in to link this property@(isAttributes ? "" : ", lodge an objection and access Section 49").
                 </div>
-                <a href="/account/login?returnUrl=@Context.Request.Path@Context.Request.QueryString"
+                <a href="/login?returnUrl=@Uri.EscapeDataString(returnUrl)"
                        class="ppd-btn ppd-btn-primary">
                     <i class="fa-solid fa-right-to-bracket"></i> Sign In
                 </a>
-                <a href="/account/register" class="ppd-btn ppd-btn-outline">
+                <a href="/register" class="ppd-btn ppd-btn-outline">
                     <i class="fa-solid fa-user-plus"></i> Register
                 </a>
                 <button class="ppd-btn ppd-btn-outline" onclick="history.back()">
@@ -476,8 +542,8 @@ string.Equals(Context?.Session?.GetString("PropertyFrom"), "LIS", StringComparis
             {
                 <div class="ppd-period-ended">
                     <i class="fa-solid fa-triangle-exclamation"></i>
-                    The objection period for <strong>@rollShort</strong> has ended.
-                    You can still view property details.
+                    The objection period for <strong>@rollShort</strong> has passed.
+                    You can still view the property details, but it can no longer be linked.
                 </div>
                 <button class="ppd-btn ppd-btn-outline" onclick="history.back()">
                     <i class="fa-solid fa-arrow-left"></i> Back

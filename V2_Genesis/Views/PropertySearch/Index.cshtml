@@ -6,7 +6,11 @@
 
     ViewData["Title"] = $"Property Search – {roll?.Short}";
     //Layout = "~/Views/Shared/_ClientLayout.cshtml";
-    Layout = "~/Views/Shared/_Legend_Layout.cshtml";
+    // Signed in: legend layout. Signed out (public search): public layout.
+    var searchIsAuth = User.Identity?.IsAuthenticated == true;
+    Layout = searchIsAuth
+        ? "~/Views/Shared/_Legend_Layout.cshtml"
+        : "~/Views/Shared/_Layout.cshtml";
 }
 
 @section Styles {
@@ -51,9 +55,9 @@
                     @(roll?.Short ?? "GV23")
                 </div>
 
-                <a href="/dashboard" class="srch-back-btn">
+                <a href="@(searchIsAuth ? "/dashboard" : "/")" class="srch-back-btn">
                     <i class="fa-solid fa-arrow-left"></i>
-                    Dashboard
+                    @(searchIsAuth ? "Dashboard" : "Home")
                 </a>
             </div>
         </div>

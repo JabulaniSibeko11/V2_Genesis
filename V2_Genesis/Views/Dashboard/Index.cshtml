@@ -280,6 +280,36 @@
 </div>
  
 <div class="legacy-dashboard">
+
+    @* Reminder: a property the client picked before signing in that has
+       not been linked yet (see PendingPropertyLink). *@
+    @{
+        var dashPendingLink = V2_Genesis.Helpers.PendingPropertyLink.Read(Context);
+    }
+    @if (dashPendingLink is not null)
+    {
+        <div role="status"
+             style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;background:#fff8e1;border:1px solid #e6b000;border-left:4px solid #e6b000;border-radius:12px;padding:14px 16px;margin:0 auto 22px;max-width:1400px;color:#1e3a40;font-size:14px;">
+            <i class="fa-solid fa-link" style="color:#b58900;"></i>
+            <div style="flex:1 1 320px;">
+                <strong>You were about to link a property.</strong>
+                Link <strong>@(dashPendingLink.PropertyDescription ?? "the property you selected")</strong>
+                @if (!string.IsNullOrWhiteSpace(dashPendingLink.RollName))
+                {
+                    <text>(@dashPendingLink.RollName)</text>
+                }
+                to your account now?
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <a href="@dashPendingLink.Url" class="legacy-btn legacy-btn-primary legacy-btn-gold">
+                    <i class="fa-solid fa-link"></i> Link Property
+                </a>
+                <a href="/property/pending-link/dismiss?returnUrl=/dashboard" class="legacy-btn legacy-btn-secondary">
+                    Dismiss
+                </a>
+            </div>
+        </div>
+    }
  
     <section class="legacy-dashboard-heading">
         <span class="legacy-dashboard-kicker">CITY OF JOHANNESBURG · VALUATION SERVICES</span>

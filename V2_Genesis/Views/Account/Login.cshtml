@@ -4,6 +4,7 @@
     ViewData["Title"] = "Sign In";
     Layout = "_Layout";
     var siteKey = ViewBag.RecaptchaSiteKey as string ?? "";
+    var pendingLink = ViewBag.PendingLink as V2_Genesis.Helpers.PendingPropertyLink;
 }
 
 <link href="~/account/login.css" rel="stylesheet" asp-append-version="true" />
@@ -69,6 +70,28 @@
                     </div>
                 }
 
+                @if (pendingLink is not null)
+                {
+                    <div class="login-pending-link" role="status"
+                         style="display:flex;gap:10px;align-items:flex-start;background:#fff8e1;border:1px solid #e6b000;border-left:4px solid #e6b000;border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:13px;color:#1e3a40;">
+                        <i class="fa-solid fa-link" style="color:#b58900;margin-top:3px;"></i>
+                        <div>
+                            <strong>Finish linking your property</strong><br />
+                            Sign in and we will link
+                            <strong>@(pendingLink.PropertyDescription ?? "the property you selected")</strong>
+                            @if (!string.IsNullOrWhiteSpace(pendingLink.RollName))
+                            {
+                                <text>(@pendingLink.RollName)</text>
+                            }
+                            to your account straight away.
+                            <div style="margin-top:6px;">
+                                <a href="/property/pending-link/dismiss?returnUrl=/login"
+                                   style="color:#5a5a5a;font-size:12px;">Not now – forget this property</a>
+                            </div>
+                        </div>
+                    </div>
+                }
+
                 <form asp-action="Login" asp-controller="Account" method="post" novalidate>
                     @Html.AntiForgeryToken()
                     <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl" />
@@ -126,7 +149,7 @@
 
                 <div class="login-register-link">
                     Don't have an account?
-                    <a href="/register">Register here</a>
+                    <a href="/register@(string.IsNullOrWhiteSpace(ViewBag.ReturnUrl as string) ? "" : "?returnUrl=" + Uri.EscapeDataString((string)ViewBag.ReturnUrl))">Register here</a>
                 </div>
             </div>
         </div>

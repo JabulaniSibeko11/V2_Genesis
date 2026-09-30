@@ -78,6 +78,23 @@
                 <h2 class="reg-right-title">Create your account</h2>
                 <p class="reg-right-subtitle">Join Johannesburg property owners on City of Johannesburg Valuation Portal. Free &amp; secure.</p>
 
+                @{
+                    var regPendingLink = V2_Genesis.Helpers.PendingPropertyLink.Read(Context);
+                }
+                @if (regPendingLink is not null)
+                {
+                    <div role="status"
+                         style="display:flex;gap:10px;align-items:flex-start;background:#fff8e1;border:1px solid #e6b000;border-left:4px solid #e6b000;border-radius:10px;padding:12px 14px;margin:0 0 16px;font-size:13px;color:#1e3a40;">
+                        <i class="fa-solid fa-link" style="color:#b58900;margin-top:3px;"></i>
+                        <div>
+                            <strong>Your property is waiting</strong><br />
+                            After you confirm your email address and sign in, we will link
+                            <strong>@(regPendingLink.PropertyDescription ?? "the property you selected")</strong>
+                            to your account automatically.
+                        </div>
+                    </div>
+                }
+
                 <!-- Tab switcher -->
                 <div class="reg-tabs" role="tablist">
                     <button class="reg-tab @(activeTab == "individual" ? "active" : "")"

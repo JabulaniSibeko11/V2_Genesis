@@ -12,6 +12,8 @@
 <link href="~/css/views/homeindex2.css" rel="stylesheet" asp-append-version="true" />
 <link href="~/css/views/rate-calculator.css" rel="stylesheet" asp-append-version="true" />
 <link href="~/css/views/info-carousel.css" rel="stylesheet" />
+<link href="~/css/Views/Client-Dashboard.css" rel="stylesheet" asp-append-version="true" />
+<link href="~/css/Views/legacy-client-dashboard.css" rel="stylesheet" asp-append-version="true" />
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" />
 <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css" />
 
@@ -41,10 +43,503 @@
     </div>
 }
 
-@await Html.PartialAsync("_InfoCarousel")
+@* ════════════════════════════════════════════════════════════════
+   PUBLIC DASHBOARD
+   Same service cards as the client dashboard (Dashboard/Index), with
+   limited access for signed-out visitors:
+     • Search Property / View Property are open while the roll's
+       objection period is open.
+     • Linking, lodging and the per-roll dashboards need sign-in. A
+       property picked before sign-in is linked right after sign-in.
+     • When the objection period has passed the search is removed and
+       the card says so.
+   ════════════════════════════════════════════════════════════════ *@
+@{
+    var homeCulture = System.Globalization.CultureInfo.GetCultureInfo("en-ZA");
+
+    var homeSup4 = Model.Rolls.FirstOrDefault(x =>
+        string.Equals(x.Source, "Objection_Supp4", StringComparison.OrdinalIgnoreCase));
+
+    var homeQuery = Model.Rolls.FirstOrDefault(x =>
+        x.IsQuery ||
+        string.Equals(x.Source, "Objection_Query", StringComparison.OrdinalIgnoreCase));
+
+    var homeClosedSources = new[] { "Objection", "Objection_Supp1", "Objection_Supp2", "Objection_Supp3" };
+
+    string HomeStatusFor(string source)
+    {
+        if (!Model.RollDates.TryGetValue(source, out var dates))
+            return "OPEN";
+
+        var now = DateTime.Now;
+        if (now < dates.OpenDate) return "OPENING SOON";
+        return now <= dates.VisibleUntil ? "OPEN" : "CLOSED";
+    }
+
+    bool HomeHasTime(DateTime value) => value.TimeOfDay != TimeSpan.Zero;
+
+    string HomeFormatDate(DateTime value, bool withTime) =>
+        withTime && HomeHasTime(value)
+            ? value.ToString("d MMMM yyyy", homeCulture) + " at " + value.ToString("HH:mm", homeCulture)
+            : value.ToString("d MMMM yyyy", homeCulture);
+
+    string HomeRollName(string source) => source switch
+    {
+        "Objection" => "General Valuation Roll 2023",
+        "Objection_Supp1" => "Supplementary Roll 1",
+        "Objection_Supp2" => "Supplementary Roll 2",
+        "Objection_Supp3" => "Supplementary Roll 3",
+        "Objection_Supp4" => "Supplementary Roll 4",
+        _ => source
+    };
+
+    string SignInFor(string returnUrl) =>
+        "/login?returnUrl=" + Uri.EscapeDataString(returnUrl);
+
+    var homePendingLink = V2_Genesis.Helpers.PendingPropertyLink.Read(Context);
+}
+
+<!-- ── Announcement strip — same as the client dashboard ─────────── -->
+@if (ann is not null && !string.IsNullOrWhiteSpace(ann.Message))
+{
+    <div class="ann-bar @ann.BadgeCss">
+        <div class="ann-inner">
+            <span class="ann-badge @ann.BadgeCss">
+                <span class="ann-dot"></span>
+                @ann.BadgeText
+            </span>
+            <span class="ann-text"><span>@ann.Message</span></span>
+            @if (ann.DaysLeft > 0)
+            {
+                <span class="ann-days @ann.DaysCss">
+                    <i class="fa-solid fa-calendar-days"></i>
+                    @ann.DaysLeft @(ann.DaysLeft == 1 ? "day" : "days") remaining
+                </span>
+            }
+        </div>
+    </div>
+}
+
+<!-- ── Welcome hero — public version of the dashboard hero ─────── -->
+<div class="cd-hero">
+    <div class="cd-welcome-inner">
+        <div class="cd-welcome-left">
+            <div class="cd-hero-avatar">
+                <i class="fa-solid fa-building-columns" style="font-size:18px;"></i>
+            </div>
+            <div>
+                <div class="cd-welcome-eyebrow">
+                    <span></span>
+                    Public Access &nbsp;·&nbsp; Property Dashboard
+                </div>
+                <h1 class="cd-welcome-name">
+                    Welcome to the&nbsp;<em>Valuation Portal</em>
+                </h1>
+                <p class="cd-welcome-sub">
+                    City of Johannesburg
+                    <span class="cd-welcome-dot"></span>
+                    Search and view properties now — sign in to link, lodge and track
+                </p>
+            </div>
+        </div>
+
+        <div class="home-hero-actions">
+            <a href="/login" class="legacy-btn legacy-btn-primary legacy-btn-gold">
+                <i class="fa-solid fa-right-to-bracket"></i>
+                Sign In
+            </a>
+            <a href="/register" class="legacy-btn legacy-btn-secondary home-hero-register">
+                <i class="fa-solid fa-user-plus"></i>
+                Register
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="legacy-dashboard">
+
+    @if (homePendingLink is not null)
+    {
+        <div class="home-pending-link" role="status">
+            <i class="fa-solid fa-link"></i>
+            <div>
+                <strong>You were about to link a property.</strong>
+                Sign in to link
+                <strong>@(homePendingLink.PropertyDescription ?? "the property you selected")</strong>
+                @if (!string.IsNullOrWhiteSpace(homePendingLink.RollName))
+                {
+                    <text>(@homePendingLink.RollName)</text>
+                }
+                to your account.
+            </div>
+            <div class="home-pending-actions">
+                <a href="@SignInFor(homePendingLink.Url)" class="legacy-btn legacy-btn-primary legacy-btn-gold">
+                    <i class="fa-solid fa-right-to-bracket"></i> Sign In &amp; Link
+                </a>
+                <a href="/property/pending-link/dismiss?returnUrl=/" class="legacy-btn legacy-btn-secondary">
+                    Dismiss
+                </a>
+            </div>
+        </div>
+    }
+
+    <section class="legacy-dashboard-heading">
+        <span class="legacy-dashboard-kicker">CITY OF JOHANNESBURG · VALUATION SERVICES</span>
+        <h1>Property Services – Supplementary Rolls and Rebates</h1>
+        <span class="legacy-dashboard-heading-line"></span>
+    </section>
+
+    <div class="legacy-dashboard-grid">
+
+        @if (homeSup4 is not null)
+        {
+            var status = HomeStatusFor(homeSup4.Source);
+
+            <article class="legacy-service-card legacy-service-card-teal">
+                <div class="legacy-service-status @(status == "OPEN" ? "is-open" : "is-closed")">
+                    @status
+                </div>
+
+                <div class="legacy-service-icon">
+                    <i class="fa-solid fa-scroll"></i>
+                </div>
+
+                <h2>Supplementary Roll 4</h2>
+
+                <p>
+                    Search and view properties on the current supplementary
+                    valuation roll. Sign in to link a property and lodge an objection.
+                </p>
+
+                @if (Model.RollDates.TryGetValue(homeSup4.Source, out var sup4Dates))
+                {
+                    var rollName = HomeRollName(homeSup4.Source);
+                    var opens = HomeFormatDate(sup4Dates.OpenDate, withTime: false);
+                    var closes = HomeFormatDate(sup4Dates.VisibleUntil, withTime: true);
+                    var noticeCss = status switch
+                    {
+                        "OPEN" => "is-open",
+                        "OPENING SOON" => "is-soon",
+                        _ => "is-closed"
+                    };
+
+                    <div class="legacy-period-notice @noticeCss">
+                        <div class="legacy-period-head">
+                            <i class="fa-solid @(status == "CLOSED" ? "fa-lock" : "fa-scale-balanced")"></i>
+                            @(status switch
+                            {
+                                "OPEN" => "Inspection & objection period open",
+                                "OPENING SOON" => "Inspection & objection period opens soon",
+                                _ => "The objection period has passed"
+                            })
+                        </div>
+
+                        <p class="legacy-period-text">
+                            @if (status == "OPEN")
+                            {
+                                @:The owner of properties within the boundaries of the City of Johannesburg or any other person has the right to inspect the @rollName and object to the entry in the @rollName from <strong>@opens</strong> to <strong>@closes</strong>.
+                            }
+                            else if (status == "OPENING SOON")
+                            {
+                                @:The owner of properties within the boundaries of the City of Johannesburg or any other person will have the right to inspect the @rollName and object to the entry in the @rollName from <strong>@opens</strong> to <strong>@closes</strong>.
+                            }
+                            else
+                            {
+                                @:The objection period for the @rollName ran from <strong>@opens</strong> to <strong>@closes</strong> and has passed. Properties can no longer be searched and linked for this roll. Sign in to view the objections and appeals you already lodged.
+                            }
+                        </p>
+
+                        <div class="legacy-period-dates">
+                            <span>
+                                <small>Opens</small>
+                                @sup4Dates.OpenDate.ToString("d MMM yyyy", homeCulture)
+                            </span>
+                            <span>
+                                <small>@(status == "CLOSED" ? "Closed" : "Closes")</small>
+                                @sup4Dates.VisibleUntil.ToString("d MMM yyyy", homeCulture)@(HomeHasTime(sup4Dates.VisibleUntil) ? " · " + sup4Dates.VisibleUntil.ToString("HH:mm", homeCulture) : "")
+                            </span>
+                        </div>
+                    </div>
+                }
+
+                <div class="legacy-service-stats">
+                    <span><i class="fa-solid fa-lock"></i> Sign in to see your linked properties, objections and appeals</span>
+                </div>
+
+                <div class="legacy-service-actions">
+                    @if (status == "OPEN")
+                    {
+                        <a href="/search/Objection_Supp4"
+                           class="legacy-btn legacy-btn-primary">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            Search Property
+                        </a>
+                    }
+
+                    <a href="@SignInFor("/dashboard/roll-detail/Objection_Supp4")"
+                       class="legacy-btn legacy-btn-secondary">
+                        <i class="fa-solid fa-right-to-bracket"></i>
+                        Sign in for Dashboard
+                    </a>
+                </div>
+            </article>
+        }
+
+        @if (homeQuery is not null)
+        {
+            <article class="legacy-service-card legacy-service-card-teal">
+                <div class="legacy-service-status is-open">OPEN</div>
+
+                <div class="legacy-service-icon">
+                    <i class="fa-solid fa-magnifying-glass-chart"></i>
+                </div>
+
+                <h2>Section 78 Query / Review</h2>
+
+                <p>
+                    Search and view a property, then sign in to lodge a Section 78
+                    Query and, where available, continue with the Review process.
+                </p>
+
+                <div class="legacy-service-stats">
+                    <span><i class="fa-solid fa-lock"></i> Sign in to see your queries and reviews</span>
+                </div>
+
+                <div class="legacy-service-actions">
+                    <a href="/search/Objection_Query"
+                       class="legacy-btn legacy-btn-primary">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        Search Property
+                    </a>
+                    <a href="@SignInFor("/dashboard/roll-detail/" + homeQuery.Source)"
+                       class="legacy-btn legacy-btn-secondary">
+                        <i class="fa-solid fa-right-to-bracket"></i>
+                        Sign in for Dashboard
+                    </a>
+                </div>
+            </article>
+        }
+
+        <article class="legacy-service-card legacy-service-card-gold">
+            <div class="legacy-service-status is-open">OPEN</div>
+
+            <div class="legacy-service-icon">
+                <i class="fa-solid fa-percent"></i>
+            </div>
+
+            <h2>Rebates Process</h2>
+
+            <p>
+                Apply for and track City of Johannesburg property rate rebate applications.
+            </p>
+
+            <div class="legacy-service-stats">
+                <span><i class="fa-solid fa-lock"></i> Sign in to apply and track applications</span>
+            </div>
+
+            <div class="legacy-service-actions">
+                <a href="/Rebates/Index"
+                   class="legacy-btn legacy-btn-primary legacy-btn-gold">
+                    <i class="fa-solid fa-file-signature"></i>
+                    Apply for Rebates
+                </a>
+                <a href="@SignInFor("/dashboard/rebates-detail")"
+                   class="legacy-btn legacy-btn-secondary">
+                    <i class="fa-solid fa-right-to-bracket"></i>
+                    Sign in for Dashboard
+                </a>
+            </div>
+        </article>
+
+        <article class="legacy-service-card legacy-service-card-gold">
+            <div class="legacy-service-status is-open">OPEN</div>
+
+            <div class="legacy-service-icon">
+                <i class="fa-solid fa-clipboard-list"></i>
+            </div>
+
+            <h2>Property Attributes</h2>
+
+            <p>
+                Submit updated property attribute information and track
+                inspections, corrections and approvals.
+            </p>
+
+            <div class="legacy-service-stats">
+                <span><i class="fa-solid fa-lock"></i> Sign in to submit and track attributes</span>
+            </div>
+
+            <div class="legacy-service-actions">
+                <a href="/attributes/about"
+                   class="legacy-btn legacy-btn-primary legacy-btn-gold">
+                    <i class="fa-solid fa-circle-info"></i>
+                    Learn More
+                </a>
+                <a href="@SignInFor("/dashboard/attributes-detail")"
+                   class="legacy-btn legacy-btn-secondary">
+                    <i class="fa-solid fa-right-to-bracket"></i>
+                    Sign in for Dashboard
+                </a>
+            </div>
+        </article>
+
+    </div>
+
+    <!-- No account needed -->
+  @*   <section class="legacy-dashboard-heading home-public-heading">
+        <span class="legacy-dashboard-kicker">NO ACCOUNT NEEDED · REFERENCE NUMBER AND PIN</span>
+        <h1>Upload Evidence</h1>
+        <span class="legacy-dashboard-heading-line"></span>
+    </section>
+
+    <div class="legacy-dashboard-grid home-public-grid">
+
+        <article class="legacy-service-card legacy-service-card-teal">
+            <div class="legacy-service-status is-open">OPEN</div>
+            <div class="legacy-service-icon">
+                <i class="fa-solid fa-upload"></i>
+            </div>
+            <h2>Add Evidence</h2>
+            <p>
+                Upload supporting documents for your objection, appeal, query or review
+                within 48 hours of submission using your reference number and PIN.
+            </p>
+            <div class="legacy-service-actions">
+                <a href="/evidence/verify" class="legacy-btn legacy-btn-primary">
+                    <i class="fa-solid fa-upload"></i>
+                    Upload Evidence
+                </a>
+            </div>
+        </article>
+
+        <article class="legacy-service-card legacy-service-card-teal">
+            <div class="legacy-service-status is-open">OPEN</div>
+            <div class="legacy-service-icon">
+                <i class="fa-solid fa-file-circle-check"></i>
+            </div>
+            <h2>Section 51 Evidence</h2>
+            <p>
+                Property owners who received a Section 51 notice can respond with evidence
+                using the objection number and PIN on the notice. One submission per objection.
+            </p>
+            <div class="legacy-service-actions">
+                <a href="/section51/verify" class="legacy-btn legacy-btn-primary">
+                    <i class="fa-solid fa-file-arrow-up"></i>
+                    Submit Section 51
+                </a>
+            </div>
+        </article>
+
+    </div> *@
+
+    <section class="legacy-archive">
+        <button type="button"
+                class="legacy-archive-toggle"
+                id="legacyArchiveToggle"
+                aria-expanded="false"
+                onclick="toggleLegacyArchive()">
+            <span>
+                <i class="fa-solid fa-bolt"></i>
+                <strong>Quick Access – Previous Valuation Rolls</strong>
+                <small>GV23 and closed supplementary rolls — sign in to view your submissions</small>
+            </span>
+            <i class="fa-solid fa-chevron-down legacy-archive-chevron"
+               id="legacyArchiveChevron"></i>
+        </button>
+
+        <div class="legacy-archive-body"
+             id="legacyArchiveBody"
+             hidden>
+            @foreach (var source in homeClosedSources)
+            {
+                if (!Model.Rolls.Any(r => string.Equals(r.Source, source, StringComparison.OrdinalIgnoreCase)))
+                {
+                    continue;
+                }
+
+                <article class="legacy-archive-card">
+                    <div>
+                        <span class="legacy-archive-badge">CLOSED</span>
+                        <h3>@HomeRollName(source)</h3>
+                        <p>The objection period has passed.</p>
+                    </div>
+                    <a href="@SignInFor("/dashboard/roll-detail/" + source)"
+                       class="legacy-btn legacy-btn-secondary">
+                        <i class="fa-solid fa-right-to-bracket"></i>
+                        Sign in to view
+                    </a>
+                </article>
+            }
+        </div>
+    </section>
+
+</div>
+
+<style>
+    .home-hero-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+        position: relative;
+        z-index: 2;
+        padding-bottom: 28px;
+    }
+
+    .home-hero-register {
+        background: transparent;
+        color: #fff;
+        border-color: rgba(255,255,255,.45);
+    }
+
+    .home-pending-link {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        flex-wrap: wrap;
+        background: #fff8e1;
+        border: 1px solid #e6b000;
+        border-left: 4px solid #e6b000;
+        border-radius: 12px;
+        padding: 14px 16px;
+        margin: 0 auto 22px;
+        max-width: 1400px;
+        color: #1e3a40;
+        font-size: 14px;
+    }
+
+        .home-pending-link > i {
+            color: #b58900;
+        }
+
+        .home-pending-link > div:first-of-type {
+            flex: 1 1 320px;
+        }
+
+    .home-pending-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .home-public-heading {
+        margin-top: 34px;
+    }
+
+    .home-public-grid {
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    }
+
+    @@media (max-width: 640px) {
+        .home-hero-actions {
+            padding-bottom: 22px;
+        }
+    }
+</style>
 
 
-<section class="hs-section">
+
+@* <section class="hs-section">
     <div class="hs-inner">
         <div class="hs-card">
             <div class="hs-card-header">
@@ -127,159 +622,9 @@
 
         </div>
     </div>
-</section>
+</section> *@
 
-<section class="tiles-section">
-    <div class="tiles-inner">
-        <div class="tiles-header">
-            <h2>Property Services</h2>
-            <p>Everything you need to manage your property valuation rights</p>
-        </div>
-        <div class="tiles-grid">
-
-           @*  <div class="tile tile-rates">
-                <div class="tile-status-row">
-                    <span class="tile-status badge-open">
-                        <span class="tile-status-dot"></span> NEW
-                    </span>
-
-                    <span class="tile-badge-public">Public</span>
-                </div>
-
-                <div class="tile-icon">
-                    <i class="fa-solid fa-calculator"></i>
-                </div>
-
-                <h3 class="tile-title">
-                    Possible Rates Calculator
-                </h3>
-
-                <p class="tile-desc">
-                    Estimate possible monthly and annual property rates by
-                    entering a market value and selecting a property category.
-                    No property search or login is required.
-                </p>
-
-                <div class="tile-actions">
-                    <button type="button"
-                            class="tile-btn tile-btn-solid"
-                            id="openRatesCalculator">
-                        <i class="fa-solid fa-calculator"></i>
-                        Open Calculator
-                    </button>
-                </div>
-            </div> *@
-            <div class="tile tile-evidence">
-                <div class="tile-status-row">
-                    <span class="tile-status badge-open">
-                        <span class="tile-status-dot"></span> OPEN
-                    </span>
-                    <span class="tile-badge-public">Public</span>
-                </div>
-                <div class="tile-icon"><i class="fa-solid fa-upload"></i></div>
-                <h3 class="tile-title">Add Evidence</h3>
-                <p class="tile-desc">
-                    Upload supporting documents for your objection or appeal
-                    within 48 hours of submission. No login required —
-                    just your reference number and PIN.
-                </p>
-                <div class="tile-actions">
-                    <a href="/evidence/verify" class="tile-btn tile-btn-solid">
-                        <i class="fa-solid fa-upload"></i> Upload Evidence
-                    </a>
-                </div>
-            </div>
-
-            <div class="tile tile-section51">
-                <div class="tile-status-row">
-                    <span class="tile-status badge-open">
-                        <span class="tile-status-dot"></span> OPEN
-                    </span>
-                    <span class="tile-badge-public">Public</span>
-                </div>
-                <div class="tile-icon">
-                    <i class="fa-solid fa-file-circle-check"></i>
-                </div>
-                <h3 class="tile-title">Section 51 Upload</h3>
-                <p class="tile-desc">
-                    Submit additional evidence under Section 51 of the
-                    Municipal Property Rates Act. One submission per
-                    objection — no login required.
-                </p>
-                <div class="tile-actions">
-                    <a href="/section51/verify" class="tile-btn tile-btn-solid">
-                        <i class="fa-solid fa-file-arrow-up"></i> Submit Section 51
-                    </a>
-                </div>
-            </div>
-            <div class="tile tile-section78">
-                <div class="tile-status-row">
-                    <span class="tile-status badge-open">
-                        <span class="tile-status-dot"></span> OPEN
-                    </span>
-                    <span class="tile-badge-public">Public</span>
-                </div>
-                <div class="tile-icon">
-                    <i class="fa-solid fa-file-magnifying-glass"></i>
-                </div>
-                <h3 class="tile-title">Section 78 Query</h3>
-                <p class="tile-desc">
-                    Query your property valuation under Section 78 of the
-                    Municipal Property Rates Act. Search your property and
-                    submit a formal query for review.
-                </p>
-                <div class="tile-actions">
-                    <a href="/Section78/PropertyIndex" class="tile-btn tile-btn-solid">
-                        <i class="fa-solid fa-magnifying-glass"></i> Search Property
-                    </a>
-                </div>
-            </div>
-            <div class="tile tile-rebates">
-                <div class="tile-status-row">
-                    <span class="tile-status badge-open">
-                        <span class="tile-status-dot"></span> OPEN
-                    </span>
-                </div>
-                <div class="tile-icon"><i class="fa-solid fa-percent"></i></div>
-                <h3 class="tile-title">Rebates Process</h3>
-                <p class="tile-desc">
-                    Apply or re-apply for rebate benefits if you own a
-                    residential property within the City of Johannesburg
-                    boundaries. Requires account login.
-                </p>
-                <div class="tile-actions">
-                    <a href="/Rebates/Index" class="tile-btn tile-btn-solid">
-                        <i class="fa-solid fa-file-pen"></i> Apply for Rebates
-                    </a>
-                </div>
-            </div>
-
-            <div class="tile tile-attributes">
-                <div class="tile-status-row">
-                    <span class="tile-status badge-open">
-                        <span class="tile-status-dot"></span> NEW
-                    </span>
-                    <span class="tile-badge-v2">V2</span>
-                </div>
-                <div class="tile-icon">
-                    <i class="fa-solid fa-clipboard-list"></i>
-                </div>
-                <h3 class="tile-title">Property Attributes</h3>
-                <p class="tile-desc">
-                    Submit updated or additional property information for
-                    valuation roll preparation. Search your property,
-                    link to your profile and fill in the attributes form.
-                </p>
-                <div class="tile-actions">
-                    <a href="/attributes/about" class="tile-btn tile-btn-solid">
-                        <i class="fa-solid fa-circle-info"></i> Learn More
-                    </a>
-                </div>
-            </div>
-
-        </div>
-    </div>
-</section>
+@* Property Services tiles replaced by the public dashboard above. *@
 @* <div class="rates-modal-backdrop"
      id="ratesModalBackdrop"
      hidden>
@@ -489,6 +834,19 @@
  *@
 
 @section Scripts {
+    <script>
+        // Quick Access – Previous Valuation Rolls (same as the client dashboard).
+        function toggleLegacyArchive() {
+            const body = document.getElementById('legacyArchiveBody');
+            const button = document.getElementById('legacyArchiveToggle');
+            const chevron = document.getElementById('legacyArchiveChevron');
+            if (!body || !button) return;
+            const willOpen = body.hidden;
+            body.hidden = !willOpen;
+            button.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+            chevron?.classList.toggle('is-open', willOpen);
+        }
+    </script>
   
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>

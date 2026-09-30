@@ -2,7 +2,10 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Diagnostics;
 using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using V2_Genesis.Data;
+using V2_Genesis.Services.PropertySearch;
 using V2_Genesis.Models;
 using V2_Genesis.Models.Rates;
 using V2_Genesis.Models.ViewModels.Home;
@@ -20,14 +23,20 @@ public class HomeController : Controller
     private readonly IHomeSearchService _homeSearchService;
     private readonly ILogger<HomeController> _logger;
     private readonly IPropertyRateCalculatorService _rateCalculator;
+    private readonly ApplicationDbContext _db;
+    private readonly RollDatesSettings _rollDates;
     public HomeController(
         IAnnouncementService announcement,
         IOptions<DisclaimerSettings> disclaimerOpts,
         IOptions<ValuationRollSettings> rollOpts,
         IHomeSearchService homeSearchService,
         ILogger<HomeController> logger,
-        IPropertyRateCalculatorService rateCalculator)
+        IPropertyRateCalculatorService rateCalculator,
+        ApplicationDbContext db,
+        IOptions<RollDatesSettings> rollDatesOpts)
     {
+        _db = db;
+        _rollDates = rollDatesOpts.Value;
         _announcement = announcement;
         _disclaimer = disclaimerOpts.Value;
         _roll = rollOpts.Value;
@@ -77,7 +86,7 @@ public class HomeController : Controller
     }
     [HttpGet]
     [Route("/")]
-    public IActionResult Index()
+    public async Task<IActionResult> Index()
     {
         // Authenticated users → their dashboard
         if (User.Identity?.IsAuthenticated == true)
@@ -94,8 +103,23 @@ public class HomeController : Controller
             Announcement = _announcement.GetAnnouncement(),
             Disclaimer = _disclaimer,
             Roll = _roll,
-            ShowDisclaimer = showDisclaimer
+            ShowDisclaimer = showDisclaimer,
+            RollDates = _rollDates.Dates
         };
+
+        // Same roll order as the client dashboard: valuation rolls by ID,
+        // Section 78 Query/Review last.
+        try
+        {
+            vm.Rolls = (await _db.GvList.AsNoTracking().OrderBy(r => r.ID).ToListAsync())
+                .OrderBy(r => r.IsQuery)
+                .ThenBy(r => r.ID)
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "[Home] Could not load valuation rolls for the public dashboard.");
+        }
 
         return View(vm);
     }

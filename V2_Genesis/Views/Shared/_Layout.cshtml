@@ -110,7 +110,7 @@
                         <li>
                             <a href="/section51/verify" class="pub-nav-drop-item">
                                                                <i class="fa-solid fa-file-circle-check"></i>
-                                Section 51 Evidence
+                                Section 51 Owner Evidence
                             </a>
                         </li>
                         <li>
@@ -125,18 +125,18 @@
                                 Valuer Physical Inspection Evidence
                             </a>
                         </li>
-                        <li>
+                       @*  <li>
                             <a href="/evidence/verify?rollSource=Objection_Query"
                                class="pub-nav-drop-item">
                                 <i class="fa-solid fa-file-alt"></i>
                                 Section 78 Query / Review Evidence
                             </a>
-                        </li>
+                        </li> *@
                     </ul>
                 </div>
 
                 <!-- Rebates -->
-                <a href="/Rebates/Index" class="pub-nav-action-link">
+             @*    <a href="/Rebates/Index" class="pub-nav-action-link">
                     <i class="fa-solid fa-percent"></i>
                     Rebates
                 </a>
@@ -144,7 +144,7 @@
                 <a href="/Home/Privacy" class="pub-nav-action-link">
                         <i class="fa-solid fa-headset"></i>
                         Privacy
-                    </a>
+                    </a> *@
                 
                 <!-- Help dropdown -->
                 <div class="pub-nav-dropdown" id="pubHelpDrop">
@@ -254,7 +254,7 @@
             <i class="fa-solid fa-upload"></i> Objection Evidence
         </a>
         <a href="/section51/verify" class="pub-drawer-link pub-drawer-evidence">
-           <i class="fa-solid fa-file-circle-check"></i> Section 51 Evidence
+           <i class="fa-solid fa-file-circle-check"></i> Section 51 Owner Evidence
         </a>
         <a href="/attributes/evidence" class="pub-drawer-link pub-drawer-evidence">
             <i class="fa-solid fa-paperclip"></i> Attribute Evidence
@@ -262,14 +262,14 @@
         <a href="/valuer-inspection" class="pub-drawer-link pub-drawer-evidence">
             <i class="fa-solid fa-camera"></i> Valuer Physical Inspection Evidence
         </a>
-        <a href="/evidence/verify?rollSource=Objection_Query"
+       @*  <a href="/evidence/verify?rollSource=Objection_Query"
            class="pub-drawer-link pub-drawer-evidence">
             <i class="fa-solid fa-file-alt"></i> Section 78 Query / Review Evidence
-        </a>
+        </a> *@
         <div class="pub-drawer-divider"></div>
-        <a href="/Rebates/Index" class="pub-drawer-link">
+        @* <a href="/Rebates/Index" class="pub-drawer-link">
             <i class="fa-solid fa-percent"></i> Rebates
-        </a>
+        </a> *@
         <a href="/Home/Privacy" class="pub-drawer-link">
             <i class="fa-solid fa-shield-halved"></i> Privacy
         </a>
@@ -369,8 +369,8 @@
                     <ul class="footer-col-links">
                         <li><a href="/">Home</a></li>
                         <li><a href="/dashboard">My Dashboard</a></li>
-                        <li><a href="/Rebates/Index">Rebates</a></li>
-                        <li><a href="/attributes/about">Property Attributes</a></li>
+                      @*   <li><a href="/Rebates/Index">Rebates</a></li> *@
+                       @*  <li><a href="/attributes/about">Property Attributes</a></li> *@
                     </ul>
                 </div>
 
@@ -379,12 +379,12 @@
                     <h4 class="footer-col-title">Evidence &amp; Support</h4>
                     <ul class="footer-col-links">
                         <li><a href="/evidence/VerifyObj">Objection Evidence</a></li>
-                      <li><a href="/section51/verify">Section 51 Evidence</a></li>
-                        <li>
+                      <li><a href="/section51/verify">Section 51 Owner Evidence</a></li>
+                       @*  <li>
                             <a href="/evidence/verify?rollSource=Objection_Query">
                                 Section 78 Query / Review Evidence
                             </a>
-                        </li>
+                        </li> *@
                         <li><a href="/Home/FAQ">FAQ</a></li>
                       <li>
     <a href="/help/user-manual">
@@ -402,17 +402,17 @@
                             <i class="fa-solid fa-location-dot"></i>
                             <span>1st Floor, East Wing, 66 Jorissen Street,<br />Braamfontein, Johannesburg</span>
                         </li>
-                        <li>
+                       @*  <li>
                             <i class="fa-solid fa-phone"></i>
                             <span>011 407-6622 / 011 407-6597</span>
-                        </li>
+                        </li> *@
                         <li>
                             <i class="fa-solid fa-envelope"></i>
                             <a href="mailto:valuationenquiries@joburg.org.za">valuationenquiries@joburg.org.za</a>
                         </li>
                         <li>
                             <i class="fa-solid fa-clock"></i>
-                            <span>Mon – Fri, 07:30 – 16:00</span>
+                            <span>Mon – Fri, 07:30 – 15:00</span>
                         </li>
                     </ul>
                 </div>
@@ -421,18 +421,14 @@
         </div>
 
         <div class="footer-bottom">
-            <div class="footer-bottom-inner">
-                <div class="footer-copy">
-                    © @DateTime.Now.Year City of Johannesburg. All rights reserved.
+                <div class="footer-bottom-inner"
+                     style="display:flex; justify-content:center; align-items:center; text-align:center;">
+        
+                    <div class="footer-copy">
+                        © @DateTime.Now.Year City of Johannesburg. All rights reserved.
+                    </div>
+
                 </div>
-                <div class="footer-legal">
-                    <a href="/Home/Privacy">Privacy Policy</a>
-                    <span class="footer-dot">&middot;</span>
-                    <a href="/Home/FAQ">FAQ</a>
-                    <span class="footer-dot">&middot;</span>
-                    <a href="/Home/Contact">Contact Us</a>
-                </div>
-            </div>
         </div>
     </footer>
 

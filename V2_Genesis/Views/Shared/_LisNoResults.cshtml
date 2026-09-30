@@ -80,11 +80,25 @@
 
 
     <div class="nf-actions">
-        <button type="button" class="nf-btn-omit" onclick="openOmissionModal(this)">
-            <i class="fa-solid fa-file-signature"></i>
-            Lodge as Omission
-            <span class="nf-btn-arrow"><i class="fa-solid fa-arrow-right"></i></span>
-        </button>
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+            <button type="button" class="nf-btn-omit" onclick="openOmissionModal(this)">
+                <i class="fa-solid fa-file-signature"></i>
+                Lodge as Omission
+                <span class="nf-btn-arrow"><i class="fa-solid fa-arrow-right"></i></span>
+            </button>
+        }
+        else
+        {
+            @* Omissions are lodged from an account; bring the visitor back to
+               this roll's search after sign-in. *@
+            <a class="nf-btn-omit"
+               href="/login?returnUrl=@Uri.EscapeDataString("/search/" + rollSource)">
+                <i class="fa-solid fa-right-to-bracket"></i>
+                Sign in to Lodge as Omission
+                <span class="nf-btn-arrow"><i class="fa-solid fa-arrow-right"></i></span>
+            </a>
+        }
         <button type="button" class="nf-btn-refine" onclick="refineSearch()">
             <i class="fa-solid fa-rotate-left"></i>
             Refine Search

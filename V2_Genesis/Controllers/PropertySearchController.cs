@@ -9,6 +9,7 @@ using System.Globalization;
 using System.Security.Claims;
 using System.Text.RegularExpressions;
 using V2_Genesis.Data;
+using V2_Genesis.Helpers;
 using V2_Genesis.Models;
 using V2_Genesis.Models.Attributes;
 using V2_Genesis.Models.Lis;
@@ -180,7 +181,10 @@ public class PropertySearchController : Controller
         }
     }
     // ── GET /search/{rollSource} ──────────────────────────────────────
+    // Signed-out visitors may search and view properties while the roll's
+    // objection period is open. Linking still requires sign-in.
     [HttpGet]
+    [AllowAnonymous]
     [Route("search/{rollSource}")]
     public async Task<IActionResult> Index(string rollSource)
     {
@@ -214,6 +218,13 @@ public class PropertySearchController : Controller
                 rollSource,
                 out var periodMessage))
         {
+            if (User.Identity?.IsAuthenticated != true)
+            {
+                // Signed-out visitor: back to the public home page.
+                TempData["NoticeError"] = periodMessage;
+                return RedirectToAction("Index", "Home");
+            }
+
             TempData["PropertySearchPeriodMessage"] =
                 periodMessage;
 
@@ -272,6 +283,7 @@ public class PropertySearchController : Controller
 
     // ── POST /search/{rollSource} — returns partial (AJAX) ───────────
     [HttpPost]
+    [AllowAnonymous]
     [Route("search/{rollSource}")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Search(string rollSource, PropertySearchParams @params)
@@ -808,6 +820,9 @@ public class PropertySearchController : Controller
         if (string.IsNullOrEmpty(userId))
             return RedirectToAction("Login", "Account");
 
+        // Any link started before sign-in is now being completed.
+        PendingPropertyLink.Clear(HttpContext);
+
         if (string.IsNullOrWhiteSpace(rollSource))
         {
             TempData["LinkError"] = "Property could not be linked because the valuation roll is missing.";
@@ -981,6 +996,86 @@ public class PropertySearchController : Controller
         return AfterLinkRedirect(rollSource, isAdmin);
     }
 
+    // ── GET /property/link-after-login ───────────────────────────────
+    // "Link Property" for a signed-out visitor. Remembers the link, sends
+    // them to Sign In (or Register), and after sign-in the link is completed
+    // automatically. Signed-in users go straight to property/save.
+    [HttpGet]
+    [AllowAnonymous]
+    [Route("property/link-after-login")]
+    public async Task<IActionResult> LinkAfterLogin(
+        string rollSource,
+        string? key,
+        string? sourceTable,
+        string? propertyFrom,
+        string? unitKey,
+        string? valuationKey,
+        string? propertyId,
+        string? desc,
+        bool register = false)
+    {
+        if (string.IsNullOrWhiteSpace(rollSource))
+            return RedirectToAction("Index", "Home");
+
+        rollSource = rollSource.Trim();
+
+        var saveUrl = "/property/save" + QueryString.Create(
+            new Dictionary<string, string?>
+            {
+                ["rollSource"] = rollSource,
+                ["key"] = key,
+                ["sourceTable"] = sourceTable,
+                ["propertyFrom"] = propertyFrom,
+                ["unitKey"] = unitKey,
+                ["valuationKey"] = valuationKey,
+                ["propertyId"] = propertyId
+            }
+            .Where(x => !string.IsNullOrWhiteSpace(x.Value))
+            .Select(x => new KeyValuePair<string, string?>(x.Key, x.Value!.Trim()))).ToUriComponent();
+
+        if (User.Identity?.IsAuthenticated == true)
+            return LocalRedirect(saveUrl);
+
+        if (!CanSearchAndLinkRoll(rollSource, out var periodMessage))
+        {
+            TempData["NoticeError"] = periodMessage;
+            return RedirectToAction("Index", "Home");
+        }
+
+        var roll = await _db.GvList
+            .AsNoTracking()
+            .FirstOrDefaultAsync(r => r.Source == rollSource);
+
+        PendingPropertyLink.Save(HttpContext, new PendingPropertyLink
+        {
+            Url = saveUrl,
+            PropertyDescription = string.IsNullOrWhiteSpace(desc) ? null : desc.Trim(),
+            RollSource = rollSource,
+            RollName = roll?.Name ?? roll?.Short
+        });
+
+        _logger.LogInformation(
+            "Signed-out visitor started a property link. Roll={Roll}, Key={Key}, Register={Register}",
+            rollSource, key, register);
+
+        return register
+            ? Redirect("/register?returnUrl=" + Uri.EscapeDataString(saveUrl))
+            : Redirect("/login?returnUrl=" + Uri.EscapeDataString(saveUrl));
+    }
+
+    // ── GET /property/pending-link/dismiss ────────────────────────────
+    [HttpGet]
+    [AllowAnonymous]
+    [Route("property/pending-link/dismiss")]
+    public IActionResult DismissPendingLink(string? returnUrl)
+    {
+        PendingPropertyLink.Clear(HttpContext);
+
+        return !string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl)
+            ? LocalRedirect(returnUrl)
+            : RedirectToAction("Index", "Home");
+    }
+
     // After linking, go straight to the roll's detail page (Linked
     // Properties section) so the client sees the property and the
     // Lodge Query / Lodge Review button. The old "/dashboard?openRoll="
@@ -1012,7 +1107,7 @@ public class PropertySearchController : Controller
         return null;
     }
     [HttpPost]
-    [Authorize]
+    [AllowAnonymous]
     [Route("search/{rollSource}/lis")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> SearchLis(
@@ -1267,6 +1362,7 @@ public class PropertySearchController : Controller
             });
     }
     [HttpGet]
+    [AllowAnonymous]
     [Route("search/{rollSource}/schemes")]
     public async Task<IActionResult> GetSchemes(
     string rollSource,

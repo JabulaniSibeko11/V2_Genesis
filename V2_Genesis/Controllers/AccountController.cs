@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using V2_Genesis.Helpers;
 using Microsoft.Extensions.Options;
 using System.Data;
 using System.Net;
@@ -485,6 +486,7 @@ namespace V2_Genesis.Controllers
 
             ViewBag.ReturnUrl = returnUrl;
             ViewBag.RecaptchaSiteKey = _captchaSiteKey;
+            ViewBag.PendingLink = PendingPropertyLink.Read(HttpContext);
             return View(new LoginViewModel());
         }
 
@@ -498,6 +500,7 @@ namespace V2_Genesis.Controllers
         {
             ViewBag.ReturnUrl = returnUrl;
             ViewBag.RecaptchaSiteKey = _captchaSiteKey;
+            ViewBag.PendingLink = PendingPropertyLink.Read(HttpContext);
 
             // 1. Validate email + password fields first
             if (!ModelState.IsValid)
@@ -601,6 +604,19 @@ namespace V2_Genesis.Controllers
                 Url.IsLocalUrl(returnUrl))
             {
                 return LocalRedirect(returnUrl);
+            }
+
+            // A property link started before sign-in (possibly before
+            // registering) — finish it now.
+            var pendingLink = PendingPropertyLink.Read(HttpContext);
+            if (pendingLink is not null && Url.IsLocalUrl(pendingLink.Url))
+            {
+                _logger.LogInformation(
+                    "Client {Email} signed in with a pending property link for {Roll}.",
+                    user.Email,
+                    pendingLink.RollSource);
+
+                return LocalRedirect(pendingLink.Url);
             }
 
             return RedirectToAction(
