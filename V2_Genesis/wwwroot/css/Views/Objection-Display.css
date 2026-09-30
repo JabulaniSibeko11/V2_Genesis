@@ -16,7 +16,7 @@
 
 /* ── Success hero ──────────────────────────────────────────── */
 .dp-hero {
-    background: linear-gradient(135deg, #1a2e35 0%, #2d4f58 60%, #36626d 100%);
+    background: #006570;
     border-radius: 14px 14px 0 0;
     padding: 36px 40px 32px;
     position: relative;
@@ -31,7 +31,7 @@
         right: -40px;
         width: 200px;
         height: 200px;
-        background: radial-gradient(circle, rgba(230,176,0,.12) 0%, transparent 70%);
+        background: none;
         pointer-events: none;
     }
 
@@ -156,7 +156,7 @@
     }
 
 .dp-section-header {
-    background: linear-gradient(90deg, #1a2e35, #243e48);
+    background: #006570;
     border-left: 4px solid #e6b000;
     padding: 11px 24px;
     display: flex;
@@ -333,7 +333,7 @@
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    background: linear-gradient(135deg, #1a2e35, #36626d);
+    background: #006570;
     color: #e6b000;
     padding: 13px 28px;
     border-radius: 9px;
@@ -341,16 +341,16 @@
     font-size: 14px;
     font-weight: 700;
     text-decoration: none;
-    box-shadow: 0 4px 14px rgba(26,46,53,.2);
+    box-shadow: 0 4px 14px rgba(0,101,112,.2);
     transition: all .2s;
     letter-spacing: .2px;
 }
 
     .dp-btn-primary:hover {
-        background: linear-gradient(135deg, #243e48, #4a7d8a);
+        background: #08737c;
         color: #e6b000;
         transform: translateY(-1px);
-        box-shadow: 0 6px 20px rgba(26,46,53,.28);
+        box-shadow: 0 6px 20px rgba(0,101,112,.28);
         text-decoration: none;
     }
 

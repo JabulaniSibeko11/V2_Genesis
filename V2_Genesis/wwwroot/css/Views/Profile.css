@@ -27,10 +27,10 @@
     margin-bottom: 24px;
     padding: 28px 32px;
     color: #fff;
-    background: linear-gradient(135deg, #1a2e35 0%, #0f2a30 100%);
+    background: #006570;
     border-radius: 18px;
     border-bottom: 4px solid #e6b000;
-    box-shadow: 0 14px 36px rgba(26,46,53,.18);
+    box-shadow: 0 14px 36px rgba(0,101,112,.18);
 }
 
 .profile-avatar {
@@ -74,7 +74,7 @@
     background: #fff;
     border: 1px solid #ede9e3;
     border-radius: 16px;
-    box-shadow: 0 4px 24px rgba(26,46,53,.07), 0 1px 4px rgba(26,46,53,.05);
+    box-shadow: 0 4px 24px rgba(0,101,112,.07), 0 1px 4px rgba(0,101,112,.05);
 }
 
 .profile-security-card {
@@ -172,11 +172,11 @@
 
 .profile-btn-dark {
     color: #e6b000;
-    background: #1a2e35;
+    background: #006570;
 }
 
     .profile-btn-dark:hover {
-        background: #243e48;
+        background: #08737c;
         opacity: 1;
     }
 
@@ -200,7 +200,7 @@
 
     .profile-modal .modal-header {
         color: #fff;
-        background: linear-gradient(135deg, #1a2e35 0%, #243e48 100%);
+        background: #006570;
         border-bottom: 4px solid #e6b000;
     }
 

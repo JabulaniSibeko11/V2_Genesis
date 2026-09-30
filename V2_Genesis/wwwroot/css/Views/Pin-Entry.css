@@ -4,7 +4,7 @@
     position: fixed;
     inset: 0;
     z-index: 2000;
-    background: rgba(13, 34, 40, 0.72);
+    background: rgba(0,101,112, 0.72);
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
     align-items: flex-end;
@@ -63,7 +63,7 @@
 
 /* Header */
 .pin-head {
-    background: linear-gradient(135deg, #1e3a40 0%, #0f2a30 100%);
+    background: #006570;
     border-bottom: 3px solid #e6b000;
     padding: 20px 22px 18px;
     display: flex;
@@ -79,7 +79,7 @@
         position: absolute;
         inset: 0;
         opacity: .04;
-        background: repeating-linear-gradient(45deg,#fff 0,#fff 1px,transparent 0,transparent 50%);
+        background: none;
         background-size: 20px 20px;
         pointer-events: none;
     }
@@ -160,7 +160,7 @@
     width: 64px;
     height: 64px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #1e3a40, #0f2a30);
+    background: #006570;
     border: 3px solid #e6b000;
     display: flex;
     align-items: center;
@@ -208,8 +208,8 @@
 }
 
     .pin-dot.filled {
-        background: #1e3a40;
-        border-color: #1e3a40;
+        background: #006570;
+        border-color: #006570;
         transform: scale(1.1);
     }
 

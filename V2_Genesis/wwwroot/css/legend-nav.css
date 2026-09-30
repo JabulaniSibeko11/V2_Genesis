@@ -1,7 +1,7 @@
 ﻿
 :root {
-    --ln-dark: #1e3a40;
-    --ln-deep: #0d2228;
+    --ln-dark: #006570;
+    --ln-deep: #006570;
     --ln-gold: #e6b000;
     --ln-gold-dark: #9a7600;
     --ln-gold-pale: #fdf6d8;
@@ -252,7 +252,7 @@ details.ln-acc[open] > summary .ln-chevron {
     justify-content: space-between;
     gap: 12px;
     padding: 16px 18px;
-    background: linear-gradient(135deg, #1e3a40 0%, #122830 60%, #0d2228 100%);
+    background: #006570;
     border-bottom: 3px solid var(--ln-gold);
 }
 
@@ -416,7 +416,7 @@ details.ln-acc[open] > summary .ln-chevron {
 
     .ln-group[open] {
         border-color: var(--ln-gold-border);
-        box-shadow: 0 6px 18px rgba(13, 34, 40, .08);
+        box-shadow: 0 6px 18px rgba(0,101,112, .08);
     }
 
 .ln-group-summary {
@@ -709,7 +709,7 @@ details.ln-locked > summary {
     border: 1px solid var(--ln-border);
     border-radius: 16px;
     background: #fff;
-    box-shadow: 0 4px 16px rgba(13, 34, 40, .06);
+    box-shadow: 0 4px 16px rgba(0,101,112, .06);
 }
 
 .ln-profile-top {

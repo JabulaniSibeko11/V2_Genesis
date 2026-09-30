@@ -244,13 +244,13 @@ a.hs-contact-value:hover {
         }
 
         .hs-dt-bottom .dataTables_paginate .paginate_button.current {
-            background: #1e3a40;
-            border-color: #1e3a40;
+            background: #006570;
+            border-color: #006570;
             color: #e6b000;
         }
 
             .hs-dt-bottom .dataTables_paginate .paginate_button.current:hover {
-                background: #2d4f58;
+                background: #08737c;
                 color: #e6b000;
             }
 

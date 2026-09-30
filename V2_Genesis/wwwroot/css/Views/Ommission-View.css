@@ -57,7 +57,7 @@
     gap: 12px;
     padding: 13px 18px;
     margin: 12px 0;
-    background: linear-gradient(135deg,#eff6ff,#f0fdf4);
+    background: #eff6ff;
     border: 1px solid #bfdbfe;
     border-radius: 10px;
 }
@@ -126,9 +126,9 @@
 }
 
 .nf-step-active .nf-step-num {
-    background: #1a2e35;
+    background: #006570;
     color: #e6b000;
-    border-color: #1a2e35;
+    border-color: #006570;
 }
 
 .nf-step-active span {
@@ -163,20 +163,20 @@
     gap: 9px;
     padding: 14px 28px;
     border-radius: 10px;
-    background: linear-gradient(135deg,#1a2e35,#36626d);
+    background: #006570;
     color: #e6b000;
     border: none;
     cursor: pointer;
     font-family: 'Poppins',sans-serif;
     font-size: 15px;
     font-weight: 700;
-    box-shadow: 0 4px 16px rgba(26,46,53,.25);
+    box-shadow: 0 4px 16px rgba(0,101,112,.25);
     transition: transform .15s, box-shadow .15s;
 }
 
     .nf-btn-omit:hover {
         transform: translateY(-1px);
-        box-shadow: 0 6px 20px rgba(26,46,53,.35);
+        box-shadow: 0 6px 20px rgba(0,101,112,.35);
     }
 
 .nf-btn-arrow {
@@ -257,7 +257,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 18px 24px;
-    background: linear-gradient(135deg, #1a2e35 0%, #2d4f58 100%);
+    background: #006570;
     flex-shrink: 0;
 }
 
@@ -322,7 +322,7 @@
 
 .om-progress-bar {
     height: 3px;
-    background: linear-gradient(90deg, #e6b000, #ffd700);
+    background: #e6b000;
     width: 50%;
     transition: width .3s;
 }
@@ -362,7 +362,7 @@
     width: 20px;
     height: 20px;
     border-radius: 50%;
-    background: #1a2e35;
+    background: #006570;
     color: #e6b000;
     display: flex;
     align-items: center;
@@ -418,7 +418,7 @@
 
 .om-selected {
     border-color: #e6b000;
-    background: linear-gradient(135deg,#fffbeb,#fff8e1);
+    background: #fffbeb;
 }
 
     .om-selected .om-type-icon {
@@ -611,19 +611,19 @@
     gap: 8px;
     padding: 12px 24px;
     border-radius: 9px;
-    background: linear-gradient(135deg, #1a2e35, #36626d);
+    background: #006570;
     color: #e6b000;
     border: none;
     cursor: pointer;
     font-family: 'Poppins',sans-serif;
     font-size: 14px;
     font-weight: 700;
-    box-shadow: 0 3px 12px rgba(26,46,53,.2);
+    box-shadow: 0 3px 12px rgba(0,101,112,.2);
     transition: all .15s;
 }
 
     .om-btn-submit:hover {
-        box-shadow: 0 5px 16px rgba(26,46,53,.3);
+        box-shadow: 0 5px 16px rgba(0,101,112,.3);
         transform: translateY(-1px);
     }
 

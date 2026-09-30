@@ -9,9 +9,9 @@
     --sv-gold-dark: #c49a00;
     --sv-gold-hover: #f5c200;
     --sv-gold-pale: #fdf6d8;
-    --sv-dark: #1a2e35;
-    --sv-dark-mid: #243e48;
-    --sv-dark-deep: #12232a;
+    --sv-dark: #006570;
+    --sv-dark-mid: #08737c;
+    --sv-dark-deep: #006570;
     --sv-text: #1a1a1a;
     --sv-text-2: #6b6b6b;
     --sv-border: #e8e3dc;
@@ -121,7 +121,7 @@
    HERO
 ══════════════════════════════════════════════════ */
 .submission-hero {
-    background: linear-gradient(135deg, #1a2e35 0%, #2d4f58 55%, #36626d 100%);
+    background: #006570;
     border-radius: 18px;
     padding: 28px 32px;
     display: flex;
@@ -142,7 +142,7 @@
         width: 220px;
         height: 220px;
         border-radius: 50%;
-        background: radial-gradient(circle, rgba(230,176,0,.12) 0%, transparent 70%);
+        background: none;
         pointer-events: none;
     }
 

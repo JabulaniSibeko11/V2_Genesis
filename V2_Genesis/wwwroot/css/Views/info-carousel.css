@@ -5,7 +5,7 @@
 .ic-root {
     font-family: 'Poppins', sans-serif;
     width: 100%;
-    background: #1e3a40;
+    background: #006570;
     overflow: hidden;
     position: relative;
 }
@@ -31,29 +31,29 @@
         position: absolute;
         inset: 0;
         opacity: .04;
-        background: repeating-linear-gradient( 45deg, #fff 0, #fff 1px, transparent 0, transparent 50% );
+        background: none;
         background-size: 24px 24px;
         pointer-events: none;
     }
 
 /* Slide 1 — Objection & Appeal */
 .ic-slide-1 {
-    background: linear-gradient(135deg, #1e3a40, #0f2a30);
+    background: #006570;
 }
 
 /* Slide 2 — Section 78 */
 .ic-slide-2 {
-    background: linear-gradient(135deg, #1a3540, #0e2430);
+    background: #006570;
 }
 
 /* Slide 3 — Rebates */
 .ic-slide-3 {
-    background: linear-gradient(135deg, #2a1f1a, #1a1210);
+    background: #006570;
 }
 
 /* Slide 4 — Attributes */
 .ic-slide-4 {
-    background: linear-gradient(135deg, #1a2d32, #101e22);
+    background: #006570;
 }
 
 /* ── Left content ──────────────────────────── */

@@ -212,14 +212,14 @@ img {
     }
 
 .nav-link-register {
-    background: #1a2e35;
+    background: #006570;
     color: var(--gold) !important;
     font-weight: 600;
     padding: 8px 18px;
 }
 
     .nav-link-register:hover {
-        background: #243e48;
+        background: #08737c;
     }
 
 /* User menu */
@@ -251,7 +251,7 @@ img {
 .nav-avatar {
     width: 32px;
     height: 32px;
-    background: #1a2e35;
+    background: #006570;
     color: var(--gold);
     border-radius: 50%;
     display: flex;
@@ -377,7 +377,7 @@ img {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: #1a2e35;
+    background: #006570;
     padding: 20px;
 }
 
@@ -845,7 +845,7 @@ img {
 }
 
 .site-footer {
-    background: #1a2e35;
+    background: #006570;
     color: rgba(255,255,255,.6);
     margin-top: auto;
 }
@@ -1443,7 +1443,7 @@ select.coj-township-select {
     overscroll-behavior: contain;
     padding-bottom: 24px;
     scrollbar-width: thin;
-    scrollbar-color: rgba(30,58,64,.28) transparent;
+    scrollbar-color: rgba(0,101,112,.28) transparent;
 }
 
     .cl-drawer-scroll::-webkit-scrollbar {
@@ -1451,7 +1451,7 @@ select.coj-township-select {
     }
 
     .cl-drawer-scroll::-webkit-scrollbar-thumb {
-        background: rgba(30,58,64,.28);
+        background: rgba(0,101,112,.28);
         border-radius: 10px;
     }
 

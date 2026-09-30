@@ -12,13 +12,13 @@
     --at-gold-dim: rgba(230,176,0,.12);
     --at-teal: #006570;
     --at-teal-mid: #36626d;
-    --at-teal-deep: #1a2e35;
+    --at-teal-deep: #006570;
     --at-teal-pale: #e8f3f4;
     --at-white: #ffffff;
     --at-warm: #f7f5f2;
     --at-border: #ede9e3;
     --at-shadow: 0 4px 20px rgba(0,101,112,.1);
-    --at-texture: repeating-linear-gradient( 45deg,#fff 0,#fff 1px,transparent 0,transparent 50% );
+    --at-texture: none;
 }
 
 /* ════════════════════════════════════════════════
@@ -35,7 +35,7 @@
    HERO  (mirrors .obj-hero)
 ════════════════════════════════════════════════ */
 .attr-hero {
-    background: linear-gradient(135deg, var(--at-teal-deep) 0%, #0f2a30 100%);
+    background: var(--at-teal-deep);
     border-bottom: 4px solid var(--at-gold);
     padding: 28px 28px 0;
     position: relative;
@@ -61,7 +61,7 @@
         width: 400px;
         height: 400px;
         border-radius: 50%;
-        background: radial-gradient(circle, rgba(230,176,0,.07) 0%, transparent 70%);
+        background: none;
         pointer-events: none;
     }
 
@@ -297,7 +297,7 @@
    SECTION BARS  (mirrors .obj-section-bar)
 ════════════════════════════════════════════════ */
 .attr-section-title {
-    background: linear-gradient(135deg, var(--at-teal) 0%, #004d56 100%);
+    background: var(--at-teal);
     border-left: 5px solid var(--at-gold);
     border-radius: 0 8px 8px 0;
     padding: 12px 18px;
@@ -1065,7 +1065,7 @@
     display: flex;
     align-items: center;
     gap: 14px;
-    background: linear-gradient(135deg, #fffdf5, #fff9e6);
+    background: #fffdf5;
     border: 1.5px solid var(--at-gold);
     border-radius: 10px;
     padding: 14px 18px;
@@ -1163,7 +1163,7 @@
     border: 2px solid var(--at-gold);
     border-left: 7px solid var(--at-gold);
     border-radius: 14px;
-    background: linear-gradient(135deg, #fffaf0 0%, #f3f9f9 100%);
+    background: #fffaf0;
     box-shadow: 0 5px 16px rgba(0, 55, 61, .08);
 }
 
@@ -1223,7 +1223,7 @@
 
 /* ── Hero ─────────────────────────────────────── */
 .sf-hero {
-    background: linear-gradient(135deg, #1e3a40 0%, #0f2a30 100%);
+    background: #006570;
     border-bottom: 4px solid #e6b000;
     padding: 30px 28px 26px;
     position: relative;
@@ -1235,7 +1235,7 @@
         position: absolute;
         inset: 0;
         opacity: .04;
-        background: repeating-linear-gradient(45deg,#fff 0,#fff 1px,transparent 0,transparent 50%);
+        background: none;
         background-size: 24px 24px;
         pointer-events: none;
     }
@@ -1248,7 +1248,7 @@
         width: 360px;
         height: 360px;
         border-radius: 50%;
-        background: radial-gradient(circle, rgba(230,176,0,.07) 0%, transparent 70%);
+        background: none;
         pointer-events: none;
     }
 
@@ -1346,7 +1346,7 @@
 
 /* Card section bar */
 .sf-card-bar {
-    background: linear-gradient(135deg, #1e3a40 0%, #0f2a30 100%);
+    background: #006570;
     padding: 14px 22px;
     display: flex;
     align-items: center;
@@ -1360,7 +1360,7 @@
         position: absolute;
         inset: 0;
         opacity: .04;
-        background: repeating-linear-gradient(45deg,#fff 0,#fff 1px,transparent 0,transparent 50%);
+        background: none;
         background-size: 20px 20px;
         pointer-events: none;
     }
@@ -1678,7 +1678,7 @@
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    background: linear-gradient(135deg, #006570, #004d56);
+    background: #006570;
     color: #fff;
     border: none;
     border-radius: 10px;

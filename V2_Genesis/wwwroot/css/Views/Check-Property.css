@@ -8,7 +8,7 @@
 
 /* ── Hero strip ──────────────────────────────────────── */
 .cp-hero {
-    background: linear-gradient(135deg, #1a2e35 0%, #2d4f58 55%, #36626d 100%);
+    background: #006570;
     border-bottom: 3px solid #e6b000;
     padding: 24px 40px 20px;
     position: relative;
@@ -22,7 +22,7 @@
         right: -40px;
         width: 180px;
         height: 180px;
-        background: radial-gradient(circle, rgba(230,176,0,.1) 0%, transparent 70%);
+        background: none;
         pointer-events: none;
     }
 
@@ -96,12 +96,12 @@
     background: #fff;
     border-radius: 12px;
     border: 2px solid #e6b000;
-    box-shadow: 0 2px 12px rgba(26,46,53,.07);
+    box-shadow: 0 2px 12px rgba(0,101,112,.07);
     overflow: hidden;
 }
 
 .cp-card-hdr {
-    background: linear-gradient(90deg, #1a2e35, #243e48);
+    background: #006570;
     border-left: 4px solid #e6b000;
     padding: 12px 22px;
     display: flex;
@@ -152,8 +152,8 @@
     gap: 12px;
     padding: 11px 16px;
     border-radius: 8px;
-    background: rgba(26,46,53,.04);
-    border: 1.5px solid rgba(26,46,53,.08);
+    background: rgba(0,101,112,.04);
+    border: 1.5px solid rgba(0,101,112,.08);
     font-size: 13px;
     color: #1a2e35;
 }
@@ -218,16 +218,16 @@
 }
 
 .cp-btn-primary {
-    background: linear-gradient(135deg, #1a2e35, #36626d);
+    background: #006570;
     color: #e6b000;
-    box-shadow: 0 4px 14px rgba(26,46,53,.2);
+    box-shadow: 0 4px 14px rgba(0,101,112,.2);
 }
 
     .cp-btn-primary:hover {
-        background: linear-gradient(135deg, #243e48, #4a7d8a);
+        background: #08737c;
         color: #e6b000;
         transform: translateY(-1px);
-        box-shadow: 0 6px 18px rgba(26,46,53,.28);
+        box-shadow: 0 6px 18px rgba(0,101,112,.28);
         text-decoration: none;
     }
 
@@ -235,7 +235,7 @@
         opacity: .45;
         cursor: not-allowed;
         transform: none;
-        box-shadow: 0 4px 14px rgba(26,46,53,.1);
+        box-shadow: 0 4px 14px rgba(0,101,112,.1);
     }
 
 .cp-btn-outline {
@@ -321,13 +321,13 @@
 
     .obj-radio-card:hover {
         border-color: rgba(230,176,0,.5);
-        box-shadow: 0 2px 12px rgba(26,46,53,.07);
+        box-shadow: 0 2px 12px rgba(0,101,112,.07);
     }
 
     .obj-radio-card.selected {
-        background: linear-gradient(135deg, #1a2e35, #2d4f58);
+        background: #006570;
         border-color: #e6b000;
-        box-shadow: 0 4px 16px rgba(26,46,53,.2);
+        box-shadow: 0 4px 16px rgba(0,101,112,.2);
     }
 
     .obj-radio-card input[type="radio"] {
@@ -423,7 +423,7 @@
 
 /* ── Lodge section ───────────────────────────────────── */
 .cp-lodge-card {
-    background: linear-gradient(135deg, #1a2e35, #243e48);
+    background: #006570;
     border: 2px solid #e6b000;
 }
 
@@ -517,7 +517,7 @@
     }
 
 .obj-modal-header {
-    background: linear-gradient(135deg, #1a2e35, #2d4f58);
+    background: #006570;
     border-bottom: 3px solid #e6b000;
     padding: 18px 24px;
     display: flex;

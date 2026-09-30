@@ -5,7 +5,7 @@
 }
 
 .adms-hero {
-    background: linear-gradient(135deg,#1a2e35 0%,#36626d 100%);
+    background: #006570;
     padding: 32px 28px 28px;
     position: relative;
 }
@@ -17,7 +17,7 @@
         left: 0;
         right: 0;
         height: 3px;
-        background: linear-gradient(90deg,#e6b000,#ffd700,#e6b000);
+        background: #e6b000;
     }
 
 .adms-hero-inner {
@@ -135,7 +135,7 @@
 
 .adms-card-head {
     padding: 14px 20px;
-    background: #1a2e35;
+    background: #006570;
     display: flex;
     align-items: center;
     gap: 10px;
@@ -253,7 +253,7 @@
     gap: 8px;
     padding: 13px 28px;
     border-radius: 9px;
-    background: #1a2e35;
+    background: #006570;
     color: #e6b000;
     border: none;
     cursor: pointer;
@@ -266,7 +266,7 @@
 }
 
     .adms-submit:hover {
-        background: #243e48;
+        background: #08737c;
     }
 
     .adms-submit:disabled {

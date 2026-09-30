@@ -36,7 +36,7 @@
 .ev-card-icon {
     width: 52px;
     height: 52px;
-    background: #1a2e35;
+    background: #006570;
     color: #e6b000;
     border-radius: 12px;
     font-size: 22px;
@@ -196,12 +196,12 @@
 }
 
 .ev-btn-primary {
-    background: #1a2e35;
+    background: #006570;
     color: #e6b000;
 }
 
     .ev-btn-primary:hover {
-        background: #243e48;
+        background: #08737c;
         color: #e6b000;
     }
 
@@ -602,7 +602,7 @@
 /* ── Premium card chrome for VerifyObj ─────────────────────────────── */
 .ev-card-premium {
     border-radius: 18px;
-    box-shadow: 0 8px 32px rgba(26, 46, 53, .10);
+    box-shadow: 0 8px 32px rgba(0,101,112, .10);
     border: 1px solid #eef0f0;
 }
 

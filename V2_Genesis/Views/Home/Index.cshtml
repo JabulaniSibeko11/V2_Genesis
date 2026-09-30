@@ -102,7 +102,7 @@
 <!-- ── Announcement strip — same as the client dashboard ─────────── -->
 @if (ann is not null && !string.IsNullOrWhiteSpace(ann.Message))
 {
-    <div class="ann-bar @ann.BadgeCss">
+    <div class="ann-bar home-ann @ann.BadgeCss">
         <div class="ann-inner">
             <span class="ann-badge @ann.BadgeCss">
                 <span class="ann-dot"></span>
@@ -120,41 +120,8 @@
     </div>
 }
 
-<!-- ── Welcome hero — public version of the dashboard hero ─────── -->
-<div class="cd-hero">
-    <div class="cd-welcome-inner">
-        <div class="cd-welcome-left">
-            <div class="cd-hero-avatar">
-                <i class="fa-solid fa-building-columns" style="font-size:18px;"></i>
-            </div>
-            <div>
-                <div class="cd-welcome-eyebrow">
-                    <span></span>
-                    Public Access &nbsp;·&nbsp; Property Dashboard
-                </div>
-                <h1 class="cd-welcome-name">
-                    Welcome to the&nbsp;<em>Valuation Portal</em>
-                </h1>
-                <p class="cd-welcome-sub">
-                    City of Johannesburg
-                    <span class="cd-welcome-dot"></span>
-                    Search and view properties now — sign in to link, lodge and track
-                </p>
-            </div>
-        </div>
-
-        <div class="home-hero-actions">
-            <a href="/login" class="legacy-btn legacy-btn-primary legacy-btn-gold">
-                <i class="fa-solid fa-right-to-bracket"></i>
-                Sign In
-            </a>
-            <a href="/register" class="legacy-btn legacy-btn-secondary home-hero-register">
-                <i class="fa-solid fa-user-plus"></i>
-                Register
-            </a>
-        </div>
-    </div>
-</div>
+<!-- ── Info carousel (Property Objection & Appeal, Section 78, Rebates, Attributes) ── -->
+@await Html.PartialAsync("_InfoCarousel")
 
 <div class="legacy-dashboard">
 
@@ -476,6 +443,36 @@
 </div>
 
 <style>
+    /* Announcement: scroll the message like the signed-in dashboard.
+       HomeIndex1.css wraps the strip, so force a single rolling line. */
+    .home-ann .ann-inner {
+        max-width: 100%;
+        flex-wrap: nowrap;
+        overflow: hidden;
+    }
+
+    .home-ann .ann-text {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        white-space: nowrap;
+    }
+
+        .home-ann .ann-text > span {
+            display: inline-block;
+            padding-left: 100%;
+            animation: home-ann-scroll 22s linear infinite;
+        }
+
+    .home-ann:hover .ann-text > span {
+        animation-play-state: paused;
+    }
+
+    @@keyframes home-ann-scroll {
+        from { transform: translateX(0); }
+        to { transform: translateX(-100%); }
+    }
+
     .home-hero-actions {
         display: flex;
         gap: 10px;

@@ -11,7 +11,7 @@ body {
 }
 
 .top {
-    background: #0d3036;
+    background: #006570;
     color: #fff;
     padding: 18px 24px;
     border-bottom: 5px solid #e8b600
@@ -146,8 +146,7 @@ body {
 }
 
 .valuer {
-    border-top: 5px solid #0d3036
-}
+    border-top: 5px solid #006570}
 
 .valuer-grid {
     display: grid;

@@ -1,7 +1,7 @@
 .attr-link-backdrop[hidden]{display:none!important}
-.attr-link-backdrop{position:fixed;inset:0;z-index:5000;background:rgba(13,34,40,.68);display:flex;align-items:center;justify-content:center;padding:16px;overflow-y:auto}
+.attr-link-backdrop{position:fixed;inset:0;z-index:5000;background: rgba(0,101,112,.68);display:flex;align-items:center;justify-content:center;padding:16px;overflow-y:auto}
 .attr-link-modal{width:min(100%,520px);max-height:calc(100dvh - 32px);overflow:hidden;display:flex;flex-direction:column;background:#fff;border-radius:18px;box-shadow:0 22px 70px rgba(0,0,0,.28);font-family:'Poppins',sans-serif}
-.attr-link-head{background:#1e3a40;color:#fff;padding:18px 20px;display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.attr-link-head{background: #006570;color:#fff;padding:18px 20px;display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
 .attr-link-head h2{margin:2px 0 0;font-size:20px;font-weight:700}
 .attr-link-kicker{color:#e6b000;font-size:10px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase}
 .attr-link-close{width:40px;height:40px;flex:0 0 40px;border:0;border-radius:10px;background:rgba(255,255,255,.1);color:#fff;cursor:pointer}

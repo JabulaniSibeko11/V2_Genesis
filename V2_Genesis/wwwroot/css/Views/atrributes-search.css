@@ -11,7 +11,7 @@
     --at-gold-dim: rgba(230,176,0,.12);
     --at-teal: #006570;
     --at-teal-mid: #36626d;
-    --at-teal-deep: #1a2e35;
+    --at-teal-deep: #006570;
     --at-teal-pale: #e8f3f4;
     --at-white: #ffffff;
     --at-warm: #f7f5f2;
@@ -39,7 +39,7 @@
     display: flex;
     align-items: center;
     gap: 16px;
-    background: linear-gradient(135deg, var(--at-teal-deep) 0%, #0f2a30 100%);
+    background: var(--at-teal-deep);
     border-bottom: 4px solid var(--at-gold);
     border-radius: 16px;
     padding: 22px 26px;
@@ -55,7 +55,7 @@
         width: 200px;
         height: 200px;
         border-radius: 50%;
-        background: radial-gradient(circle, rgba(230,176,0,.1) 0%, transparent 70%);
+        background: none;
         pointer-events: none;
     }
 
@@ -368,7 +368,7 @@
 }
 
     .as-btn-link:hover {
-        background: #243e48;
+        background: #08737c;
         color: var(--at-gold);
     }
 

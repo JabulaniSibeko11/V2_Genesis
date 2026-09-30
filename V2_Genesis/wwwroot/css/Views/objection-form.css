@@ -31,7 +31,7 @@
 }
 
 .instruction-box {
-    background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+    background: #667eea15;
     border-left: 4px solid #e6b000;
     border-radius: 8px;
     padding: 20px;
@@ -61,7 +61,7 @@
 }
 
 .warning-box {
-    background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+    background: #fff3e0;
     border-left: 4px solid #ff9800;
     border-radius: 8px;
     padding: 20px;
@@ -104,7 +104,7 @@
         left: 0;
         right: 0;
         height: 6px;
-        background: linear-gradient(90deg, #e6b000 0%, #ffd700 50%, #e6b000 100%);
+        background: #e6b000;
     }
 
     .form-header-container h4 {
@@ -222,13 +222,13 @@
 
 /* ── Objection Form Hero ─────────────────────────────────── */
 .obj-hero {
-    background: linear-gradient(135deg, #1a2e35 0%, #2d4f58 55%, #36626d 100%);
+    background: #006570;
     border-bottom: 3px solid #e6b000;
     padding: 0;
     margin-bottom: 24px;
     border-radius: 0 0 12px 12px;
     overflow: hidden;
-    box-shadow: 0 4px 20px rgba(26,46,53,.2);
+    box-shadow: 0 4px 20px rgba(0,101,112,.2);
     position: relative;
 }
 
@@ -239,7 +239,7 @@
         right: -60px;
         width: 220px;
         height: 220px;
-        background: radial-gradient(circle, rgba(230,176,0,.12) 0%, transparent 70%);
+        background: none;
         pointer-events: none;
     }
 
@@ -250,7 +250,7 @@
         left: 30px;
         width: 120px;
         height: 120px;
-        background: radial-gradient(circle, rgba(230,176,0,.06) 0%, transparent 70%);
+        background: none;
         pointer-events: none;
     }
 
@@ -363,7 +363,7 @@
 
 /* Form head bar below hero */
 .obj-form-head {
-    background: linear-gradient(90deg, #1a2e35, #243e48);
+    background: #006570;
     border-bottom: 2px solid #e6b000;
     padding: 10px 32px;
     display: flex;
@@ -393,7 +393,7 @@
     display: flex;
     align-items: center;
     gap: 14px;
-    background: linear-gradient(135deg, #1a2e35, #2d4f58);
+    background: #006570;
     border: 1.5px solid rgba(230,176,0,.4);
     border-radius: 10px;
     padding: 12px 18px;
@@ -489,7 +489,7 @@
 
 /* label banner */
 .s7-banner {
-    background: linear-gradient(90deg, #1a2e35, #2d4f58);
+    background: #006570;
     border-left: 5px solid #e6b000;
     padding: 12px 20px;
     color: #e6b000;
@@ -558,7 +558,7 @@
     display: flex;
     align-items: center;
     gap: 14px;
-    background: linear-gradient(135deg, #1a2e35, #2d4f58);
+    background: #006570;
     border: 1.5px solid rgba(230,176,0,.4);
     border-radius: 10px;
     padding: 14px 18px;
@@ -664,7 +664,7 @@
     min-width: 130px;
     max-width: 200px;
     color: #fff;
-    background: #1a2e35;
+    background: #006570;
     border: 2px solid #e6b000;
     padding: 11px 18px;
     font-size: 13.5px;
@@ -680,9 +680,9 @@
 }
 
     .s7-sig-btn:hover {
-        background: #243e48;
+        background: #08737c;
         transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(26,46,53,.25);
+        box-shadow: 0 4px 12px rgba(0,101,112,.25);
     }
 
     .s7-sig-btn.accepted {
@@ -722,7 +722,7 @@
     }
 
 .s7-submit-btn {
-    background: linear-gradient(135deg, #1a2e35, #36626d);
+    background: #006570;
     color: #e6b000;
     border: none;
     padding: 13px 32px;
@@ -735,14 +735,14 @@
     align-items: center;
     gap: 8px;
     transition: all .2s;
-    box-shadow: 0 4px 16px rgba(26,46,53,.25);
+    box-shadow: 0 4px 16px rgba(0,101,112,.25);
     letter-spacing: .3px;
 }
 
     .s7-submit-btn:hover:not(:disabled) {
-        background: linear-gradient(135deg, #243e48, #4a7d8a);
+        background: #08737c;
         transform: translateY(-1px);
-        box-shadow: 0 6px 20px rgba(26,46,53,.3);
+        box-shadow: 0 6px 20px rgba(0,101,112,.3);
     }
 
     .s7-submit-btn:disabled {
@@ -812,7 +812,7 @@
     border-bottom: 3px solid #e6b000;
     padding: 32px 24px;
     margin-bottom: 30px;
-    background: linear-gradient(135deg, #006570, #00474f);
+    background: #006570;
     border-radius: 10px;
     box-shadow: inset 0 0 0 1px rgba(230,176,0,.15);
 }
@@ -866,7 +866,7 @@
     align-items: center;
     gap: 16px;
     flex-wrap: wrap;
-    background: linear-gradient(135deg, #fffdf5, #fff9e6);
+    background: #fffdf5;
     border: 1.5px solid #e6b000;
     border-radius: 10px;
     padding: 16px 20px;
@@ -912,7 +912,7 @@
 ══════════════════════════════════════════════════════════════ */
 .obj-section-bar {
     border-left: 5px solid #e6b000;
-    background: linear-gradient(135deg, #006572, #00474f);
+    background: #006572;
     padding: 13px 18px;
     margin-bottom: 20px;
     border-radius: 0 8px 8px 0;
@@ -1113,7 +1113,7 @@
     }
 
         #myForm input[type="file"]::file-selector-button:hover {
-            background: #00474f;
+            background: #004d56;
         }
 
 
@@ -1144,7 +1144,7 @@
 .obj-loader-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(26,46,53,.82);
+    background: rgba(0,101,112,.82);
     backdrop-filter: blur(2px);
     z-index: 99999;
     display: none;

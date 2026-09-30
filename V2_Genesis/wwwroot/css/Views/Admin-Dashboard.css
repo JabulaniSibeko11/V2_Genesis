@@ -89,7 +89,7 @@
 .adm-audit-btn:hover { background: rgba(255,255,255,.15); color: #e6b000; }
 
 /* ── Welcome strip ────────────────────────────── */
-.cd-welcome { background: #1a2e35; padding: 20px 24px; }
+.cd-welcome { background: #006570; padding: 20px 24px; }
 
 .cd-welcome-inner {
     max-width: 1400px;
@@ -149,7 +149,7 @@
 }
 
 .cd-stat-card {
-    background: #1a2e35;
+    background: #006570;
     border-radius: 10px;
     padding: 12px 18px;
     display: flex;
@@ -200,7 +200,7 @@
 }
 
 .cd-roll-header {
-    background: #1a2e35;
+    background: #006570;
     padding: 15px 20px;
     display: flex;
     align-items: center;
@@ -210,7 +210,7 @@
     transition: background .15s;
     gap: 12px;
 }
-.cd-roll-header:hover { background: #243e48; }
+.cd-roll-header:hover { background: #08737c; }
 
 .cd-roll-header-left {
     display: flex;
@@ -353,7 +353,7 @@
     min-width: 22px;
     height: 22px;
     padding: 0 7px;
-    background: #1a2e35;
+    background: #006570;
     color: #e6b000;
     border-radius: 100px;
     font-size: 11px;
@@ -416,7 +416,7 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    background: #1a2e35;
+    background: #006570;
     color: #e6b000;
     padding: 8px 16px;
     border-radius: 8px;
@@ -425,11 +425,11 @@
     text-decoration: none;
     transition: background .15s;
 }
-.cd-add-btn:hover { background: #2d4f58; color: #e6b000; }
+.cd-add-btn:hover { background: #08737c; color: #e6b000; }
 
 /* Action button */
 .cd-action-btn {
-    background: #1a2e35;
+    background: #006570;
     color: #e6b000;
     border: none;
     border-radius: 6px;
@@ -440,7 +440,7 @@
     cursor: pointer;
     transition: background .15s;
 }
-.cd-action-btn:hover { background: #2d4f58; }
+.cd-action-btn:hover { background: #08737c; }
 
 /* ── Status pills ─────────────────────────────── */
 .cd-pill {
@@ -472,7 +472,7 @@
     gap: 8px;
 }
 .cd-dt-btn {
-    background: #1a2e35 !important;
+    background: #006570 !important;
     color: #e6b000 !important;
     border: none !important;
     border-radius: 6px !important;
@@ -494,7 +494,7 @@
     width: 52px; height: 52px; border-radius: 12px; flex-shrink: 0;
     display: flex; align-items: center; justify-content: center; font-size: 22px;
 }
-.cd-cta-icon-gold   { background: #1a2e35; color: #e6b000; }
+.cd-cta-icon-gold   { background: #006570; color: #e6b000; }
 .cd-cta-icon-black  { background: #1a1a1a; color: #e6b000; }
 .cd-cta-body        { flex: 1; }
 .cd-cta-body h3     { font-size: 16px; font-weight: 700; color: #1a2e35; margin: 0 0 6px; }
@@ -506,8 +506,8 @@
     font-family: 'Poppins', sans-serif; font-size: 13.5px; font-weight: 700;
     text-decoration: none; transition: all .15s;
 }
-.cd-cta-btn-primary { background: #1a2e35; color: #e6b000; }
-.cd-cta-btn-primary:hover { background: #2d4f58; color: #e6b000; }
+.cd-cta-btn-primary { background: #006570; color: #e6b000; }
+.cd-cta-btn-primary:hover { background: #08737c; color: #e6b000; }
 .cd-cta-btn-black   { background: #1a1a1a; color: #e6b000; }
 .cd-cta-btn-black:hover { background: #333; color: #e6b000; }
 
@@ -644,7 +644,7 @@
 
 /* ── Welcome strip ────────────────────────────── */
 .cd-welcome {
-    background: #1a2e35;
+    background: #006570;
     padding: 20px 24px;
 }
 
@@ -709,7 +709,7 @@
 }
 
 .cd-stat-card {
-    background: #1a2e35;
+    background: #006570;
     border-radius: 10px;
     padding: 12px 18px;
     display: flex;
@@ -765,7 +765,7 @@
 }
 
 .cd-roll-header {
-    background: #1a2e35;
+    background: #006570;
     padding: 15px 20px;
     display: flex;
     align-items: center;
@@ -777,7 +777,7 @@
 }
 
     .cd-roll-header:hover {
-        background: #243e48;
+        background: #08737c;
     }
 
 .cd-roll-header-left {
@@ -955,7 +955,7 @@
     min-width: 22px;
     height: 22px;
     padding: 0 7px;
-    background: #1a2e35;
+    background: #006570;
     color: #e6b000;
     border-radius: 100px;
     font-size: 11px;
@@ -1047,7 +1047,7 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    background: #1a2e35;
+    background: #006570;
     color: #e6b000;
     padding: 8px 16px;
     border-radius: 8px;
@@ -1058,13 +1058,13 @@
 }
 
     .cd-add-btn:hover {
-        background: #2d4f58;
+        background: #08737c;
         color: #e6b000;
     }
 
 /* Action button */
 .cd-action-btn {
-    background: #1a2e35;
+    background: #006570;
     color: #e6b000;
     border: none;
     border-radius: 6px;
@@ -1077,7 +1077,7 @@
 }
 
     .cd-action-btn:hover {
-        background: #2d4f58;
+        background: #08737c;
     }
 
 /* ── Status pills ─────────────────────────────── */
@@ -1133,7 +1133,7 @@
 }
 
 .cd-dt-btn {
-    background: #1a2e35 !important;
+    background: #006570 !important;
     color: #e6b000 !important;
     border: none !important;
     border-radius: 6px !important;
@@ -1164,7 +1164,7 @@
 }
 
 .cd-cta-icon-gold {
-    background: #1a2e35;
+    background: #006570;
     color: #e6b000;
 }
 
@@ -1211,12 +1211,12 @@
 }
 
 .cd-cta-btn-primary {
-    background: #1a2e35;
+    background: #006570;
     color: #e6b000;
 }
 
     .cd-cta-btn-primary:hover {
-        background: #2d4f58;
+        background: #08737c;
         color: #e6b000;
     }
 

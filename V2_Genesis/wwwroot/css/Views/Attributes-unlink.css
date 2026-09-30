@@ -41,10 +41,10 @@
     align-items: center;
     gap: 18px;
     padding: 26px 30px;
-    background: linear-gradient(135deg, #1a2e35 0%, #0f2a30 100%);
+    background: #006570;
     border-radius: 18px;
     border-bottom: 4px solid #dc2626;
-    box-shadow: 0 14px 36px rgba(26,46,53,.18);
+    box-shadow: 0 14px 36px rgba(0,101,112,.18);
 }
 
 .ul-hero-icon {
@@ -89,13 +89,13 @@
     background: #fff;
     border-radius: 14px;
     border: 1px solid #ede9e3;
-    box-shadow: 0 4px 24px rgba(26,46,53,.08), 0 1px 4px rgba(26,46,53,.05);
+    box-shadow: 0 4px 24px rgba(0,101,112,.08), 0 1px 4px rgba(0,101,112,.05);
     overflow: hidden;
 }
 
 .ul-prop-header {
     padding: 14px 20px;
-    background: linear-gradient(135deg, #1a2e35 0%, #0f2a30 100%);
+    background: #006570;
     border-bottom: 3px solid #e6b000;
     display: flex;
     align-items: center;
@@ -250,7 +250,7 @@
 }
 
     .ul-btn-cancel:hover {
-        border-color: #1a2e35;
+        border-color: #006570;
     }
 
 /* ── Responsive ──────────────────────────────────────────────── */

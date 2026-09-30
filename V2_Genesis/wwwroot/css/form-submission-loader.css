@@ -9,7 +9,7 @@
     flex-direction: column;
     gap: 20px;
     padding: 20px;
-    background: rgba(26, 46, 53, .82);
+    background: rgba(0,101,112, .82);
     -webkit-backdrop-filter: blur(2px);
     backdrop-filter: blur(2px);
     font-family: 'Poppins', Arial, sans-serif;

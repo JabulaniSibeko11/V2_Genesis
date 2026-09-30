@@ -4,7 +4,7 @@
     gap: 8px;
     padding: 13px 28px;
     border-radius: 10px;
-    background: #1a2e35;
+    background: #006570;
     color: #e6b000;
     border: none;
     cursor: pointer;
@@ -16,7 +16,7 @@
 }
 
     .ps-btn-lis:hover {
-        background: #243e48;
+        background: #08737c;
     }
 
 .lis-searching {

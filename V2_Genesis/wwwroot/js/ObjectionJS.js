@@ -1179,7 +1179,7 @@ style.textContent = `
         align-items: center;
         gap: 14px;
         padding: 20px 24px;
-        background: linear-gradient(135deg, #1a2e35, #006572);
+        background: #006570;
         color: #ffffff;
         border-bottom: 4px solid #e6b000;
     }

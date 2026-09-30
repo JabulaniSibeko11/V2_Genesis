@@ -23,7 +23,7 @@
     background: #fff;
     border-radius: 16px;
     padding: 32px 40px;
-    box-shadow: 0 20px 60px rgba(15,42,48,.18), 0 4px 16px rgba(15,42,48,.1);
+    box-shadow: 0 20px 60px rgba(0,101,112,.18), 0 4px 16px rgba(0,101,112,.1);
     max-width: 340px;
     text-align: center;
 }
@@ -130,7 +130,7 @@ body.genesis-is-loading {
 
 @keyframes genesis-spinner-fade {
     0% {
-        background-color: #17323a;
+        background-color: #006570;
     }
 
     100% {

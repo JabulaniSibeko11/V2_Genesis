@@ -23,7 +23,7 @@
     width: 52px;
     height: 52px;
     border-radius: 50%;
-    background: #1a2e35;
+    background: #006570;
     color: #e6b000;
     font-size: 22px;
     display: flex;
@@ -65,7 +65,7 @@
 .ev-card-icon {
     width: 52px;
     height: 52px;
-    background: #1a2e35;
+    background: #006570;
     color: #e6b000;
     border-radius: 50%;
     font-size: 22px;
@@ -95,7 +95,7 @@
     gap: 8px;
     padding: 13px 28px;
     border-radius: 9px;
-    background: #1a2e35;
+    background: #006570;
     color: #e6b000;
     border: none;
     cursor: pointer;
@@ -106,7 +106,7 @@
 }
 
     .ev-btn-primary:hover {
-        background: #243e48;
+        background: #08737c;
         color: #e6b000;
     }
 
@@ -295,7 +295,7 @@
 /* ── Premium card chrome ───────────────── */
 .ev-card-premium {
     border-radius: 18px;
-    box-shadow: 0 8px 32px rgba(26, 46, 53, .10);
+    box-shadow: 0 8px 32px rgba(0,101,112, .10);
     border: 1px solid #eef0f0;
 }
 

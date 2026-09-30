@@ -10,9 +10,9 @@
 ═══════════════════════════════════════════════════════════════ */
 
 :root {
-    --adm-dark: #1e3a40;
-    --adm-dark-deep: #0f2a30;
-    --adm-dark-mid: #2d4f58;
+    --adm-dark: #006570;
+    --adm-dark-deep: #006570;
+    --adm-dark-mid: #08737c;
     --adm-teal: #36626d;
     --adm-teal-mid: #4a7d8a;
     --adm-teal-pale: #e8f3f4;
@@ -20,14 +20,14 @@
     --adm-gold-bright: #f5c200;
     --adm-gold-dim: rgba(230,176,0,.12);
     --adm-gold-border: rgba(230,176,0,.28);
-    --adm-texture: repeating-linear-gradient( 45deg, #fff 0, #fff 1px, transparent 0, transparent 50% );
+    --adm-texture: none;
     /* Admin "operations" tone — same brand teal/gold as everywhere
        else in the app, just used with more density than the client
        dashboard's spacious welcome hero. Distinction comes from
        layout and content, not a different colour palette. */
-    --adm-slate: #1a2e35;
-    --adm-slate-deep: #0f2a30;
-    --adm-slate-mid: #2d4f58;
+    --adm-slate: #006570;
+    --adm-slate-deep: #006570;
+    --adm-slate-mid: #08737c;
     --adm-slate-line: rgba(230,176,0,.14);
 }
 
@@ -36,7 +36,7 @@
    line, one action row. No lodgement countdown lives here by design.
 ═══════════════════════════════════════════════════════════════ */
 .adm-command-bar {
-    background: linear-gradient(135deg, var(--adm-slate) 0%, var(--adm-slate-deep) 100%);
+    background: var(--adm-slate);
     border-bottom: 2px solid var(--adm-slate-line);
     font-family: 'Poppins', sans-serif;
 }
@@ -207,7 +207,7 @@
 .adm-kpi-strip {
     display: flex;
     gap: 0;
-    background: linear-gradient(135deg, var(--adm-slate) 0%, var(--adm-slate-deep) 100%);
+    background: var(--adm-slate);
     border-bottom: 3px solid rgba(230,176,0,.2);
     overflow-x: auto;
     position: relative;
@@ -329,7 +329,7 @@
 .cd-roll-query,
 .cd-roll-rebates,
 .cd-roll-attributes {
-    background: linear-gradient(135deg, #1e3a40 0%, #0f2a30 100%) !important;
+    background: #006570;
 }
 
     .cd-roll-header::before, .cd-roll-query::before,
@@ -352,7 +352,7 @@
         width: 180px;
         height: 180px;
         border-radius: 50%;
-        background: radial-gradient(circle, rgba(230,176,0,.05) 0%, transparent 70%);
+        background: none;
         pointer-events: none;
     }
 
@@ -459,7 +459,7 @@
    FOOTER
 ═══════════════════════════════════════════════════════════════ */
 .cl-footer {
-    background: #0f2a30 !important;
+    background: #006570 !important;
     border-top: 2px solid rgba(230,176,0,.25) !important;
 }
 

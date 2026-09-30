@@ -5,7 +5,7 @@
     border: 1px solid #d9e2e5;
     border-top: 4px solid #e6b000;
     border-radius: 14px;
-    box-shadow: 0 10px 28px rgba(26, 46, 53, .08);
+    box-shadow: 0 10px 28px rgba(0,101,112, .08);
 }
 
 .enquiry-property-results {
@@ -101,7 +101,7 @@
 
 .enquiry-foundation-head {
     color: #fff;
-    background: #163940;
+    background: #006570;
 }
 
     .enquiry-foundation-head span,
@@ -442,7 +442,7 @@
     .enquiry-roll-table th {
         padding: 11px 18px;
         color: #fff;
-        background: #294c53;
+        background: #08737c;
         font-size: 11px;
         text-align: left;
         text-transform: uppercase;
@@ -499,7 +499,7 @@
     margin-bottom: 5px;
     padding: 3px 7px;
     color: #fff;
-    background: #315c65;
+    background: #08737c;
     border-radius: 999px;
     font-size: 9px;
     font-weight: 800;

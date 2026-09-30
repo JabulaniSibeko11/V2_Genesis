@@ -1,10 +1,10 @@
 ﻿:root {
-    --unlink-dark: #18323a;
-    --unlink-dark-soft: #254b55;
+    --unlink-dark: #006570;
+    --unlink-dark-soft: #08737c;
     --unlink-gold: #efb900;
     --unlink-gold-dark: #c99600;
     --unlink-page: #f3f6f7;
-    --unlink-text: #18262b;
+    --unlink-text: #006570;
     --unlink-muted: #66777d;
     --unlink-border: #dbe3e6;
     --unlink-danger: #b42318;
@@ -14,7 +14,7 @@
 .unlink-page {
     min-height: calc(100vh - 150px);
     padding: 42px 20px 64px;
-    background: radial-gradient(circle at top right, rgba(239, 185, 0, .10), transparent 26rem), var(--unlink-page);
+    background: var(--unlink-page);
     font-family: "Poppins", Arial, sans-serif;
 }
 
@@ -71,7 +71,7 @@
     gap: 17px;
     padding: 25px 30px;
     color: #fff;
-    background: linear-gradient(135deg, var(--unlink-dark), var(--unlink-dark-soft));
+    background: var(--unlink-dark);
     border-bottom: 4px solid var(--unlink-gold);
 }
 
@@ -309,14 +309,14 @@
 
 .unlink-button-danger {
     color: #fff;
-    background: linear-gradient(135deg, var(--unlink-danger), #c52a1e);
+    background: var(--unlink-danger);
     border: 1px solid var(--unlink-danger);
     box-shadow: 0 5px 14px rgba(180, 35, 24, .22);
 }
 
     .unlink-button-danger:hover {
         color: #fff;
-        background: linear-gradient(135deg, var(--unlink-danger-dark), var(--unlink-danger));
+        background: var(--unlink-danger-dark);
         transform: translateY(-1px);
         box-shadow: 0 7px 18px rgba(180, 35, 24, .28);
     }

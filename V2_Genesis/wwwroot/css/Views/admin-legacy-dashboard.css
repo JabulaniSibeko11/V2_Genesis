@@ -8,8 +8,8 @@
     --adm-gold: #e6b000;
     --adm-gold-dark: #c99700;
     --adm-teal: #006570;
-    --adm-teal-dark: #004e57;
-    --adm-text: #15282c;
+    --adm-teal-dark: #006570;
+    --adm-text: #006570;
     --adm-muted: #65777c;
     --adm-border: #e2e7e8;
 
@@ -120,7 +120,7 @@
 
 .adm-legacy-card-search {
     border-top: 5px solid var(--adm-teal);
-    background: linear-gradient(135deg, #ffffff 0%, #f1f9fa 100%);
+    background: #ffffff;
 }
 
 .adm-legacy-icon {

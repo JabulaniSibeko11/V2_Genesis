@@ -6,8 +6,8 @@
 :root {
     --ab-gold: #e6b000;
     --ab-gold-bright: #f5c200;
-    --ab-dark: #1a2e35;
-    --ab-dark-deep: #0f2a30;
+    --ab-dark: #006570;
+    --ab-dark-deep: #006570;
     --ab-teal: #36626d;
     --ab-turq: #89b7b2;
     --ab-orange: #bb4722;
@@ -20,7 +20,7 @@
 
 /* ── Compact header ───────────────────────── */
 .ab-compact-header {
-    background: linear-gradient(135deg, var(--ab-dark) 0%, var(--ab-dark-deep) 100%);
+    background: var(--ab-dark);
     border-bottom: 3px solid var(--ab-gold);
     padding: 18px 24px;
 }
@@ -106,7 +106,7 @@
     z-index: 200;
     background: var(--ab-white);
     border-bottom: 1.5px solid var(--ab-border);
-    box-shadow: 0 2px 12px rgba(26,46,53,.08);
+    box-shadow: 0 2px 12px rgba(0,101,112,.08);
 }
 
 .ab-nav-inner {
@@ -172,7 +172,7 @@
 }
 
     .ab-nav-cta:hover {
-        background: #243e48;
+        background: #08737c;
         color: var(--ab-gold);
     }
 
@@ -182,7 +182,7 @@
 }
 
 .ab-section-dark {
-    background: linear-gradient(135deg, var(--ab-dark) 0%, var(--ab-dark-deep) 100%);
+    background: var(--ab-dark);
     padding: 56px 24px;
 }
 
@@ -413,7 +413,7 @@
 }
 
     .ab-form-card:hover {
-        box-shadow: 0 8px 24px rgba(26,46,53,.14);
+        box-shadow: 0 8px 24px rgba(0,101,112,.14);
         transform: translateY(-3px);
     }
 
@@ -575,7 +575,7 @@
 
 /* ── Get Started strip ────────────────────── */
 .ab-getstarted {
-    background: linear-gradient(135deg, var(--ab-dark) 0%, var(--ab-dark-deep) 100%);
+    background: var(--ab-dark);
     padding: 48px 24px;
     border-top: 3px solid var(--ab-gold);
 }

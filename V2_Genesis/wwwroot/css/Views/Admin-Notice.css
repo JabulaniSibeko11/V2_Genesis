@@ -4,7 +4,7 @@
 }
 
 .adn-hero {
-    background: linear-gradient(135deg,#1a2e35 0%,#36626d 100%);
+    background: #006570;
     padding: 32px 28px 28px;
     position: relative;
 }
@@ -16,7 +16,7 @@
         left: 0;
         right: 0;
         height: 3px;
-        background: linear-gradient(90deg,#e6b000,#ffd700,#e6b000);
+        background: #e6b000;
     }
 
 .adn-hero-inner {
@@ -94,7 +94,7 @@
 
 .adn-search-head {
     padding: 14px 20px;
-    background: #1a2e35;
+    background: #006570;
     display: flex;
     align-items: center;
     gap: 10px;
@@ -160,7 +160,7 @@
     gap: 8px;
     padding: 11px 22px;
     border-radius: 8px;
-    background: #1a2e35;
+    background: #006570;
     color: #e6b000;
     border: none;
     cursor: pointer;
@@ -172,7 +172,7 @@
 }
 
     .adn-search-btn:hover {
-        background: #243e48;
+        background: #08737c;
     }
 
 /* Client header */
@@ -190,7 +190,7 @@
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    background: #1a2e35;
+    background: #006570;
     color: #e6b000;
     display: flex;
     align-items: center;
@@ -257,7 +257,7 @@
     height: 22px;
     padding: 0 6px;
     border-radius: 100px;
-    background: #1a2e35;
+    background: #006570;
     color: #e6b000;
     font-size: 11px;
     font-weight: 800;
@@ -270,7 +270,7 @@
 }
 
     .nt-table thead th {
-        background: #1a2e35;
+        background: #006570;
         color: #e6b000;
         padding: 10px 14px;
         text-align: left;
@@ -314,7 +314,7 @@
     gap: 6px;
     padding: 6px 13px;
     border-radius: 7px;
-    background: #1a2e35;
+    background: #006570;
     color: #e6b000;
     border: none;
     cursor: pointer;
@@ -326,7 +326,7 @@
 }
 
     .nt-dl-btn:hover {
-        background: #243e48;
+        background: #08737c;
         color: #e6b000;
     }
 

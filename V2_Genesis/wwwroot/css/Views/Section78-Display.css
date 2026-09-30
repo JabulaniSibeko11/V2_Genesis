@@ -13,7 +13,7 @@
 
 /* ── Hero ────────────────────────────────────────────── */
 .disp-hero {
-    background: linear-gradient(135deg,#1a2e35 0%,#36626d 60%,#4a7d8a 100%);
+    background: #006570;
     padding: 36px 24px 32px;
     position: relative;
     overflow: hidden;
@@ -26,7 +26,7 @@
         left: 0;
         right: 0;
         height: 4px;
-        background: linear-gradient(90deg,#e6b000,#ffd700,#e6b000);
+        background: #e6b000;
     }
 
 .disp-hero-inner {
@@ -122,7 +122,7 @@
 
 /* ── Success banner ──────────────────────────────────── */
 .disp-success {
-    background: linear-gradient(135deg,#e8f5e9,#f1fdf3);
+    background: #e8f5e9;
     border: 1.5px solid #4caf50;
     border-radius: 12px;
     padding: 18px 22px;
@@ -194,7 +194,7 @@
     font-weight: 800;
     color: #e6b000;
     letter-spacing: 4px;
-    background: #1a2e35;
+    background: #006570;
     padding: 6px 14px;
     border-radius: 6px;
     display: inline-block;
@@ -269,7 +269,7 @@
 }
 
     .disp-prop-table thead th {
-        background: #1a2e35;
+        background: #006570;
         color: #e6b000;
         padding: 11px 13px;
         text-align: left;

@@ -11,7 +11,7 @@
     gap: 20px;
     padding: 30px 34px;
     border-radius: 20px;
-    background: #102f36;
+    background: #006570;
     color: #fff;
     box-shadow: 0 18px 42px rgba(16,47,54,.18)
 }
@@ -230,7 +230,7 @@
 }
 
 .account-btn-primary {
-    background: #173b43;
+    background: #006570;
     color: #fff
 }
 
@@ -478,7 +478,7 @@
 
         .dataTables_wrapper .dataTables_paginate .paginate_button.current,
         .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
-            background: #173b43 !important;
+            background: #004d56 !important;
             color: #fff !important;
             border: 0 !important;
         }

@@ -17,7 +17,7 @@
     border: 2px solid #e6b000;
     border-radius: 14px;
     overflow: hidden;
-    box-shadow: 0 8px 32px rgba(26,46,53,.14);
+    box-shadow: 0 8px 32px rgba(0,101,112,.14);
     animation: wd-in .35s ease;
 }
 
@@ -35,7 +35,7 @@
 
 /* Header */
 .wd-header {
-    background: linear-gradient(135deg, #1a2e35, #2d4f58);
+    background: #006570;
     border-bottom: 3px solid #e6b000;
     padding: 22px 28px;
     display: flex;
@@ -129,7 +129,7 @@
 .wd-ref {
     width: 100%;
     padding: 11px 16px;
-    background: rgba(26,46,53,.04);
+    background: rgba(0,101,112,.04);
     border: 2px solid #e6b000;
     border-radius: 9px;
     font-size: 14px;
@@ -190,13 +190,13 @@
 }
 
 .wd-btn-confirm {
-    background: linear-gradient(135deg, #991b1b, #b91c1c);
+    background: #991b1b;
     color: #fff;
     box-shadow: 0 4px 14px rgba(153,27,27,.25);
 }
 
     .wd-btn-confirm:hover {
-        background: linear-gradient(135deg, #7f1d1d, #991b1b);
+        background: #7f1d1d;
         transform: translateY(-1px);
         box-shadow: 0 6px 18px rgba(153,27,27,.3);
         color: #fff;

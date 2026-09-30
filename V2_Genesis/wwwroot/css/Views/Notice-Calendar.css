@@ -6,7 +6,7 @@
 
 /* ── Hero ──────────────────────────────────────────────────── */
 .nt-hero {
-    background: linear-gradient(135deg,#1a2e35 0%,#36626d 70%,#4a7d8a 100%);
+    background: #006570;
     padding: 36px 28px 30px;
     position: relative;
     overflow: hidden;
@@ -19,7 +19,7 @@
         left: 0;
         right: 0;
         height: 3px;
-        background: linear-gradient(90deg,#e6b000,#ffd700,#e6b000);
+        background: #e6b000;
     }
 
 .nt-hero-inner {
@@ -87,7 +87,7 @@
 
 .nt-cal-head {
     padding: 16px 22px;
-    background: linear-gradient(135deg,#1a2e35,#2d4f58);
+    background: #006570;
     display: flex;
     align-items: center;
     gap: 12px;
@@ -151,7 +151,7 @@
     align-items: center;
     justify-content: center;
     padding: 12px 8px;
-    background: #1a2e35;
+    background: #006570;
     color: #fff;
     font-family: 'Poppins',sans-serif;
 }
@@ -327,7 +327,7 @@
     height: 22px;
     padding: 0 6px;
     border-radius: 100px;
-    background: #1a2e35;
+    background: #006570;
     color: #e6b000;
     font-size: 11px;
     font-weight: 800;
@@ -350,7 +350,7 @@
 }
 
     .nt-table thead th {
-        background: #1a2e35;
+        background: #006570;
         color: #e6b000;
         padding: 10px 14px;
         text-align: left;
@@ -401,7 +401,7 @@
     gap: 6px;
     padding: 7px 14px;
     border-radius: 7px;
-    background: #1a2e35;
+    background: #006570;
     color: #e6b000;
     border: none;
     cursor: pointer;
@@ -413,7 +413,7 @@
 }
 
     .nt-dl-btn:hover {
-        background: #243e48;
+        background: #08737c;
         color: #e6b000;
     }
 

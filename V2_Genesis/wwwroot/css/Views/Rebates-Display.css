@@ -20,11 +20,11 @@
 }
 
 .disp-hero-success {
-    background: linear-gradient(135deg,#36626d,#4a7d8a);
+    background: #36626d;
 }
 
 .disp-hero-reject {
-    background: linear-gradient(135deg,#7a2010,#bb4722);
+    background: #7a2010;
 }
 
 .disp-hero-icon {

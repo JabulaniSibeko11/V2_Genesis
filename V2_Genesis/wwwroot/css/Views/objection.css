@@ -603,19 +603,19 @@
 
 /* ── Page background ────────────────────────────────────────── */
 .obj-page {
-    background: linear-gradient(160deg, #f0f4f5 0%, #f7f5f2 100%);
+    background: #f0f4f5;
 }
 
 /* ── Heading icon ───────────────────────────────────────────── */
 .obj-heading-icon {
-    background: linear-gradient(135deg, #1a2e35, #36626d);
+    background: #006570;
     color: #e6b000;
-    box-shadow: 0 4px 14px rgba(26,46,53,.2);
+    box-shadow: 0 4px 14px rgba(0,101,112,.2);
 }
 
 /* ── Card headers ───────────────────────────────────────────── */
 .obj-card-header {
-    background: linear-gradient(135deg, #1a2e35, #2d4f58);
+    background: #006570;
     color: #e6b000;
     border-bottom: 2px solid rgba(230,176,0,.3);
 }
@@ -626,13 +626,13 @@
 
 /* ── Continue / primary buttons ─────────────────────────────── */
 .obj-btn-primary {
-    background: linear-gradient(135deg, #e6b000, #d4a000);
+    background: #e6b000;
     color: #1a2e35;
     box-shadow: 0 3px 12px rgba(230,176,0,.3);
 }
 
     .obj-btn-primary:hover:not(:disabled) {
-        background: linear-gradient(135deg, #f5c200, #e6b000);
+        background: #f5c200;
         transform: translateY(-1px);
         box-shadow: 0 5px 18px rgba(230,176,0,.35);
     }
@@ -645,7 +645,7 @@
 /* ── Lodge button ───────────────────────────────────────────── */
 .obj-lodge-card {
     border: 2px solid #e6b000;
-    background: linear-gradient(135deg, #1a2e35 0%, #2d4f58 100%);
+    background: #006570;
 }
 
 .obj-lodge-summary {
@@ -720,7 +720,7 @@
 
 /* ── Instructions modal ─────────────────────────────────────── */
 .obj-modal-header {
-    background: linear-gradient(135deg, #1a2e35, #2d4f58);
+    background: #006570;
     border-bottom: 2px solid rgba(230,176,0,.3);
 }
 
@@ -787,15 +787,15 @@
 
 /* ── Start form button (inside modal) ───────────────────────── */
 #startFormBtn {
-    background: linear-gradient(135deg, #1a2e35, #36626d);
+    background: #006570;
     color: #e6b000;
 }
 
     #startFormBtn:not(:disabled):hover {
-        background: linear-gradient(135deg, #243e48, #4a7d8a);
+        background: #08737c;
     }
 
     #startFormBtn:disabled {
-        background: rgba(26,46,53,.25);
+        background: rgba(0,101,112,.25);
         color: rgba(26,46,53,.4);
     }

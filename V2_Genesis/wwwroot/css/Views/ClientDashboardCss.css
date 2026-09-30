@@ -548,7 +548,7 @@
    WELCOME STRIP
 ════════════════════════════════════════════════ */
 .cd-welcome {
-    background: linear-gradient(135deg, #1a2e35 0%, #2d4f58 55%, #36626d 100%);
+    background: #006570;
     padding: 24px;
 }
 
@@ -718,7 +718,7 @@
 }
 
 .cd-roll-header {
-    background: linear-gradient(135deg, #1a2e35 0%, #2d4f58 55%, #36626d 100%);
+    background: #006570;
     padding: 16px 22px;
     display: flex;
     align-items: center;
@@ -734,7 +734,7 @@
     }
 
 .cd-roll-query {
-    background: linear-gradient(135deg,#2a4e58,#36626d);
+    background: #08737c;
 }
 
 .cd-roll-inactive {
@@ -742,11 +742,11 @@
 }
 
 .cd-roll-rebates {
-    background: linear-gradient(135deg,#7a5800,#b38900);
+    background: #7a5800;
 }
 
 .cd-roll-attributes {
-    background: linear-gradient(135deg,#2a4e58,#36626d);
+    background: #08737c;
     border-top: 3px solid var(--coj-gold);
 }
 
@@ -1533,7 +1533,7 @@
 
 .cd-notification-head {
     padding: 16px 18px;
-    background: #1a2e35;
+    background: #006570;
     color: #ffffff;
     display: flex;
     align-items: center;
@@ -1705,7 +1705,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: #1a2e35;
+    background: #006570;
     color: #ffffff;
     padding: 18px 22px;
 }

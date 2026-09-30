@@ -56,7 +56,7 @@
 }
 
 .toaster {
-    background: linear-gradient(135deg, #1a1a1a, #c49a00);
+    background: #1a1a1a;
     color: #fff;
     padding: 14px 18px;
     border-radius: 10px;
@@ -342,8 +342,8 @@
 
             .psm-body .dataTables_paginate .paginate_button.current,
             .psm-body .dataTables_paginate .paginate_button.current:hover {
-                background: #1a2e35 !important;
-                border-color: #1a2e35 !important;
+                background: #004d56 !important;
+                border-color: #006570 !important;
                 color: #e6b000 !important;
             }
 
@@ -534,7 +534,7 @@
 }
 
 .ps-card-header-gold {
-    background: linear-gradient(135deg, #7a5800, #c49a00);
+    background: #7a5800;
     color: #fff;
 }
 
@@ -939,7 +939,7 @@
 
 /* ── Hero strip at the top ───────────────────────────────── */
 .srch-hero {
-    background: linear-gradient(135deg, #1a2e35 0%, #2d4f58 55%, #36626d 100%);
+    background: #006570;
     border-bottom: 3px solid #e6b000;
     padding: 28px 40px 24px;
     position: relative;
@@ -954,7 +954,7 @@
         right: -40px;
         width: 200px;
         height: 200px;
-        background: radial-gradient(circle, rgba(230,176,0,.1) 0%, transparent 70%);
+        background: none;
         pointer-events: none;
     }
 
@@ -965,7 +965,7 @@
         left: 60px;
         width: 140px;
         height: 140px;
-        background: radial-gradient(circle, rgba(255,255,255,.04) 0%, transparent 70%);
+        background: none;
         pointer-events: none;
     }
 
@@ -1089,7 +1089,7 @@
 
 /* ── LEFT: Form panel ────────────────────────────────────── */
 .srch-left {
-    background: linear-gradient(160deg, #1a2e35 0%, #243e48 100%);
+    background: #006570;
     padding: 36px 32px 40px;
     display: flex;
     flex-direction: column;
@@ -1176,7 +1176,7 @@
 }
 
     .srch-select option {
-        background: #1a2e35;
+        background: #006570;
         color: #fff;
     }
 
@@ -1289,7 +1289,7 @@
     width: 30px;
     height: 30px;
     border-radius: 8px;
-    background: linear-gradient(135deg, #1a2e35, #36626d);
+    background: #006570;
     color: #e6b000;
     font-size: 13px;
     font-weight: 800;
@@ -1364,7 +1364,7 @@
 .ps-preloader {
     position: fixed;
     inset: 0;
-    background: rgba(26,46,53,.7);
+    background: rgba(0,101,112,.7);
     backdrop-filter: blur(4px);
     z-index: 5000;
     display: none;
@@ -1437,7 +1437,7 @@
     }
 
 .psm-header {
-    background: linear-gradient(90deg, #1a2e35, #2d4f58);
+    background: #006570;
     border-bottom: 2px solid #e6b000;
     padding: 15px 22px;
     display: flex;

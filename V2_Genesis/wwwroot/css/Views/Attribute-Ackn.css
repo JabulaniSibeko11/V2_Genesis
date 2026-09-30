@@ -12,7 +12,7 @@
 
 /* ── Hero ─────────────────────────────────────── */
 .aa-hero {
-    background: linear-gradient(135deg, #1e3a40 0%, #0f2a30 100%);
+    background: #006570;
     border-bottom: 4px solid #e6b000;
     padding: 30px 20px 26px;
     position: relative;
@@ -24,7 +24,7 @@
         position: absolute;
         inset: 0;
         opacity: .04;
-        background: repeating-linear-gradient(45deg,#fff 0,#fff 1px,transparent 0,transparent 50%);
+        background: none;
         background-size: 22px 22px;
         pointer-events: none;
     }
@@ -37,7 +37,7 @@
         width: 320px;
         height: 320px;
         border-radius: 50%;
-        background: radial-gradient(circle, rgba(230,176,0,.09) 0%, transparent 70%);
+        background: none;
         pointer-events: none;
     }
 
@@ -153,7 +153,7 @@
    Big dark teal card, gold numbers — most important info
 ──────────────────────────────────────────────── */
 .aa-ref-card {
-    background: linear-gradient(135deg, #1e3a40 0%, #0f2a30 100%);
+    background: #006570;
     border-radius: 16px;
     padding: 4px;
     position: relative;
@@ -166,7 +166,7 @@
         position: absolute;
         inset: 0;
         opacity: .04;
-        background: repeating-linear-gradient(45deg,#fff 0,#fff 1px,transparent 0,transparent 50%);
+        background: none;
         background-size: 20px 20px;
         pointer-events: none;
     }
@@ -220,7 +220,7 @@
 }
 
 .aa-card-bar {
-    background: linear-gradient(135deg, #006570 0%, #004d56 100%);
+    background: #006570;
     padding: 13px 20px;
     display: flex;
     align-items: center;
@@ -448,7 +448,7 @@
 }
 
 .sub-card-bar {
-    background: linear-gradient(135deg, #006570 0%, #004d56 100%);
+    background: #006570;
     padding: 12px 20px;
     display: flex;
     align-items: center;
@@ -476,7 +476,7 @@
 
 /* Section label inside a card (e.g. Primary / Secondary Attributes) */
 .sub-section-bar {
-    background: linear-gradient(135deg, #1e3a40 0%, #0f2a30 100%);
+    background: #006570;
     border-left: 5px solid #e6b000;
     border-radius: 0 8px 8px 0;
     padding: 9px 16px;

@@ -633,7 +633,7 @@ textarea {
 .pub-brand .nav-brand-mark,
 .cl-navbar .nav-brand-mark {
     background: #e6b000 !important;
-    border: 1px solid rgba(30, 58, 64, .18);
+    border: 1px solid rgba(0,101,112, .18);
 }
 
     /* Keep the actual logo properly contained. */
@@ -750,7 +750,7 @@ textarea {
 
     .cl-drawer-scroll::-webkit-scrollbar-thumb,
     .pub-mobile-drawer::-webkit-scrollbar-thumb {
-        background: rgba(30, 58, 64, .30);
+        background: rgba(0,101,112, .30);
         border-radius: 999px;
     }
 

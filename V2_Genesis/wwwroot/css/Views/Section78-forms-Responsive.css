@@ -39,7 +39,7 @@
 }
 
 .instruction-box {
-    background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+    background: #667eea15;
     border-left: 4px solid #e6b000;
     border-radius: 8px;
     padding: 20px;
@@ -69,7 +69,7 @@
 }
 
 .warning-box {
-    background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+    background: #fff3e0;
     border-left: 4px solid #ff9800;
     border-radius: 8px;
     padding: 20px;
@@ -112,7 +112,7 @@
         left: 0;
         right: 0;
         height: 6px;
-        background: linear-gradient(90deg, #e6b000 0%, #ffd700 50%, #e6b000 100%);
+        background: #e6b000;
     }
 
     .form-header-container h4 {

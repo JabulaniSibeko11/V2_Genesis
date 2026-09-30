@@ -14,12 +14,12 @@
     --fv-gold-border: rgba(230,176,0,.3);
     --fv-teal: #006570;
     --fv-teal-mid: #36626d;
-    --fv-teal-deep: #1e3a40;
+    --fv-teal-deep: #006570;
     --fv-teal-pale: #e8f3f4;
     --fv-warm: #f7f5f2;
     --fv-white: #ffffff;
     --fv-shadow: 0 4px 20px rgba(0,101,112,.1);
-    --fv-texture: repeating-linear-gradient( 45deg,#fff 0,#fff 1px,transparent 0,transparent 50% );
+    --fv-texture: none;
 }
 
 /* ════════════════════════════════════════════════
@@ -39,7 +39,7 @@ body {
     flex-wrap: wrap;
     gap: 8px;
     padding: 18px 24px;
-    background: linear-gradient(135deg, var(--fv-teal-deep), #0f2a30);
+    background: var(--fv-teal-deep);
     border-bottom: 3px solid var(--fv-gold);
     position: sticky;
     top: 64px; /* clear the fixed navbar */
@@ -138,7 +138,7 @@ body {
    Replaces bare h4 like "1.1 OBJECTOR IS THE OWNER"
 ════════════════════════════════════════════════ */
 .fv-sub-bar {
-    background: linear-gradient(135deg, var(--fv-teal), #004d56);
+    background: var(--fv-teal);
     border-left: 5px solid var(--fv-gold);
     border-radius: 0 8px 8px 0;
     padding: 11px 18px;
@@ -224,12 +224,12 @@ body {
 }
 
     .fv-compare-col.original {
-        background: linear-gradient(135deg, #e8f3f4, #f0f8f8);
+        background: #e8f3f4;
         border: 2px solid rgba(0,101,112,.25);
     }
 
     .fv-compare-col.requested {
-        background: linear-gradient(135deg, #fffdf5, #fff9e6);
+        background: #fffdf5;
         border: 2px solid var(--fv-gold);
     }
 
@@ -462,7 +462,7 @@ body {
    HERO BANNER
 ════════════════════════════════════════════════ */
 .fv-hero {
-    background: linear-gradient(135deg, #1e3a40 0%, #0f2a30 100%);
+    background: #006570;
     border-bottom: 4px solid var(--fv-gold);
     padding: 32px 28px 0;
     position: relative;
@@ -488,7 +488,7 @@ body {
         width: 400px;
         height: 400px;
         border-radius: 50%;
-        background: radial-gradient(circle, rgba(230,176,0,.07) 0%, transparent 70%);
+        background: none;
         pointer-events: none;
     }
 

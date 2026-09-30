@@ -26,7 +26,7 @@
     .legacy-dashboard .adm-search-strip:hover,
     .legacy-dashboard .adm-search-strip:focus-visible {
         transform: translateY(-2px);
-        box-shadow: 0 10px 34px rgba(13, 34, 40, .16), 0 2px 8px rgba(0, 0, 0, .06);
+        box-shadow: 0 10px 34px rgba(0,101,112, .16), 0 2px 8px rgba(0, 0, 0, .06);
         color: #1e3a40;
     }
 
@@ -38,7 +38,7 @@
     place-items: center;
     border: 2px solid rgba(230, 176, 0, .35);
     border-radius: 15px;
-    background: linear-gradient(135deg, #1e3a40 0%, #0d2228 100%);
+    background: #006570;
     color: #e6b000;
     font-size: 20px;
 }
@@ -109,7 +109,7 @@
 }
 
     .adm-detail-area .cd-roll-section.legacy-roll-dashboard-partial:hover {
-        box-shadow: 0 10px 28px rgba(15, 42, 48, .12);
+        box-shadow: 0 10px 28px rgba(0,101,112, .12);
     }
 
 .adm-detail-area .legacy-roll-dashboard-partial > .cd-roll-header {
@@ -118,7 +118,7 @@
     border-bottom: 3px solid #e6b000;
     border-top-left-radius: 13px 17px;
     border-top-right-radius: 17px;
-    background: linear-gradient(135deg, #1e3a40 0%, #122830 60%, #0d2228 100%);
+    background: #006570;
     filter: none;
 }
 

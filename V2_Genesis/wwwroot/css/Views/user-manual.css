@@ -3,7 +3,7 @@
 ================================================================ */
 
 .manual-hero {
-    background: linear-gradient(135deg, #102f35 0%, #174850 55%, #1d5960 100%);
+    background: #006570;
     color: #fff;
     padding: 52px 24px;
 }
@@ -225,12 +225,12 @@
 }
 
 .manual-topic-card.active {
-    border-color: #173f45;
+    border-color: #006570;
     box-shadow: 0 8px 24px rgba(18, 55, 61, .12);
 }
 
 .manual-topic-card-primary.active {
-    border-top-color: #173f45;
+    border-top-color: #006570;
 }
 
 .manual-topic-card-top {
@@ -262,7 +262,7 @@
 }
 
 .manual-topic-card.active .manual-topic-icon {
-    background: #173f45;
+    background: #006570;
     color: #e6b000;
 }
 
@@ -360,7 +360,7 @@
     margin-left: auto;
     padding: 4px 8px;
     border-radius: 999px;
-    background: #173a40;
+    background: #006570;
     color: #fff;
     font-size: 10px;
     font-weight: 700;
@@ -382,7 +382,7 @@
     justify-content: space-between;
     gap: 15px;
     padding: 12px 17px;
-    background: #153a40;
+    background: #006570;
     color: #fff;
 }
 

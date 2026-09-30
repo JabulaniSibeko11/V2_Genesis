@@ -5,7 +5,7 @@
 ══════════════════════════════════════════════════ */
 .vie-wrap {
     min-height: 100vh;
-    background: linear-gradient(160deg, #1e3a40 0%, #0f2a30 55%, #0d2228 100%);
+    background: #006570;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -22,7 +22,7 @@
         position: absolute;
         inset: 0;
         opacity: .04;
-        background: repeating-linear-gradient( 45deg, #fff 0, #fff 1px, transparent 0, transparent 50% );
+        background: none;
         background-size: 22px 22px;
         pointer-events: none;
     }
@@ -36,7 +36,7 @@
         width: 480px;
         height: 480px;
         border-radius: 50%;
-        background: radial-gradient(circle, rgba(230,176,0,.1) 0%, transparent 65%);
+        background: none;
         pointer-events: none;
     }
 
@@ -81,7 +81,7 @@
 
 /* Card header */
 .vie-card-head {
-    background: linear-gradient(135deg, #1e3a40 0%, #0f2a30 100%);
+    background: #006570;
     padding: 26px 26px 22px;
     border-bottom: 3px solid #e6b000;
     position: relative;
@@ -93,7 +93,7 @@
         position: absolute;
         inset: 0;
         opacity: .04;
-        background: repeating-linear-gradient( 45deg, #fff 0, #fff 1px, transparent 0, transparent 50% );
+        background: none;
         background-size: 20px 20px;
         pointer-events: none;
     }
@@ -373,13 +373,13 @@
     border: 1px solid #e6e0d8;
     border-radius: 18px;
     background: #fff;
-    box-shadow: 0 14px 40px rgba(15, 42, 48, .12);
+    box-shadow: 0 14px 40px rgba(0,101,112, .12);
 }
 
 .vie-upload-head {
     padding: 26px 30px;
     border-bottom: 4px solid #e6b000;
-    background: linear-gradient(135deg, #1e3a40, #0f2a30);
+    background: #006570;
     color: #fff;
 }
 

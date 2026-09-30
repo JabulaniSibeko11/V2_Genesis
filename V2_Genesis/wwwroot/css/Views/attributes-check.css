@@ -12,7 +12,7 @@
 
 /* ── Hero ─────────────────────────────────────── */
 .cc-hero {
-    background: linear-gradient(135deg, #1e3a40 0%, #0f2a30 100%);
+    background: #006570;
     border-bottom: 4px solid #e6b000;
     padding: 28px 20px 0;
     position: relative;
@@ -24,7 +24,7 @@
         position: absolute;
         inset: 0;
         opacity: .04;
-        background: repeating-linear-gradient(45deg,#fff 0,#fff 1px,transparent 0,transparent 50%);
+        background: none;
         background-size: 22px 22px;
         pointer-events: none;
     }
@@ -37,7 +37,7 @@
         width: 340px;
         height: 340px;
         border-radius: 50%;
-        background: radial-gradient(circle, rgba(230,176,0,.08) 0%, transparent 70%);
+        background: none;
         pointer-events: none;
     }
 
@@ -207,7 +207,7 @@
 }
 
 .cc-card-bar {
-    background: linear-gradient(135deg, #1e3a40 0%, #0f2a30 100%);
+    background: #006570;
     padding: 13px 22px;
     display: flex;
     align-items: center;
@@ -222,7 +222,7 @@
         position: absolute;
         inset: 0;
         opacity: .04;
-        background: repeating-linear-gradient(45deg,#fff 0,#fff 1px,transparent 0,transparent 50%);
+        background: none;
         background-size: 20px 20px;
         pointer-events: none;
     }
@@ -438,7 +438,7 @@
 
 /* ── Sidebar: live summary ─────────────────────── */
 .cc-summary {
-    background: linear-gradient(135deg, #1e3a40 0%, #0f2a30 100%);
+    background: #006570;
     border-radius: 14px;
     overflow: hidden;
     box-shadow: 0 8px 28px rgba(0,0,0,.16);
@@ -457,7 +457,7 @@
         position: absolute;
         inset: 0;
         opacity: .04;
-        background: repeating-linear-gradient(45deg,#fff 0,#fff 1px,transparent 0,transparent 50%);
+        background: none;
         background-size: 20px 20px;
         pointer-events: none;
     }
