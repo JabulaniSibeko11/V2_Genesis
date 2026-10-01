@@ -282,14 +282,21 @@ public class AttributesController : Controller
                 "[Attributes] Property account verified and link processed. User={UserId}, UnitKey={UnitKey}, Account={Account}, Duplicate={Duplicate}",
                 userId, model.IdProperty, model.AccountNumber, result.IsDuplicate);
 
+            var linkMessage = result.IsDuplicate
+                ? "This property is already linked to your profile."
+                : "Property verified and linked successfully.";
+
+            // Shown as a banner on the Property Attributes page.
+            TempData["AttrLinkSuccess"] = linkMessage;
+
             return Ok(new
             {
                 success = true,
                 duplicate = result.IsDuplicate,
-                message = result.IsDuplicate
-                    ? "This property is already linked to your profile."
-                    : "Property verified and linked successfully.",
-                redirectUrl = Url.Action("Index", "Dashboard", new { openRoll = "attributes" })
+                message = linkMessage,
+                // Back to the Property Attributes page with the Linked
+                // Properties table open (not the dashboard home).
+                redirectUrl = "/dashboard/attributes-detail?section=linked"
             });
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -723,6 +730,116 @@ public class AttributesController : Controller
         return "Residential";
     }
 
+    // ─────────────────────────────────────────────────────────────────
+    // POPIA — owner details from the roll stay on the server
+    // ─────────────────────────────────────────────────────────────────
+    private const string OwnerContactSessionKey = "Attr_OwnerContact";
+
+    private sealed class StoredOwnerContact
+    {
+        public string? PropertyId { get; set; }
+        public AttributeContactInfoVm? Contact { get; set; }
+    }
+
+    private void KeepOwnerContactOnServer(string? propertyId, AttributeContactInfoVm contact)
+    {
+        var stored = new StoredOwnerContact
+        {
+            PropertyId = propertyId,
+            Contact = System.Text.Json.JsonSerializer.Deserialize<AttributeContactInfoVm>(
+                System.Text.Json.JsonSerializer.Serialize(contact))
+        };
+
+        HttpContext.Session.SetString(
+            OwnerContactSessionKey,
+            System.Text.Json.JsonSerializer.Serialize(stored));
+    }
+
+    private static void HideOwnerContactFromPage(AttributeContactInfoVm contact)
+    {
+        contact.CompanyName = null;
+        contact.CompanyRegistrationNumber = null;
+        contact.FirstNames = null;
+        contact.LastName = null;
+        contact.MaidenName = null;
+        contact.IDNumber = null;
+        contact.DateOfBirth = null;
+        contact.Gender = null;
+        contact.MaritalStatus = null;
+        contact.Citizenship = null;
+        contact.PhysicalAddress = null;
+        contact.PostalAddress = null;
+        contact.PostalCode = null;
+        contact.HomePhoneNo = null;
+        contact.WorkPhoneNo = null;
+        contact.FaxNo = null;
+        contact.Email = null;
+        contact.CellNo = null;
+    }
+
+    private void RestoreOwnerContactFromServer(AttributeSubmissionViewModel model)
+    {
+        if (model?.ContactInfos is null || model.ContactInfos.Count == 0)
+            return;
+
+        var json = HttpContext.Session.GetString(OwnerContactSessionKey);
+        if (string.IsNullOrWhiteSpace(json))
+            return;
+
+        StoredOwnerContact? stored;
+        try
+        {
+            stored = System.Text.Json.JsonSerializer.Deserialize<StoredOwnerContact>(json);
+        }
+        catch
+        {
+            return;
+        }
+
+        var saved = stored?.Contact;
+        if (saved is null)
+            return;
+
+        // Only for the same property the form was opened for.
+        var postedPropertyId = model.PropertyDetails?.PropertyId?.Trim();
+        if (!string.IsNullOrWhiteSpace(stored!.PropertyId) &&
+            !string.IsNullOrWhiteSpace(postedPropertyId) &&
+            !string.Equals(stored.PropertyId.Trim(), postedPropertyId, StringComparison.OrdinalIgnoreCase))
+            return;
+
+        var contact = model.ContactInfos[0];
+
+        // Identity and addresses always come from the roll copy.
+        contact.IsCompany = saved.IsCompany;
+        contact.ContactType = saved.ContactType ?? contact.ContactType;
+        contact.CompanyName = saved.CompanyName;
+        contact.CompanyRegistrationNumber = saved.CompanyRegistrationNumber;
+        contact.FirstNames = saved.FirstNames;
+        contact.LastName = saved.LastName;
+        contact.MaidenName = saved.MaidenName;
+        contact.IDNumber = saved.IDNumber;
+        contact.DateOfBirth = saved.DateOfBirth;
+        contact.Gender = saved.Gender;
+        contact.MaritalStatus = saved.MaritalStatus;
+        contact.Citizenship = saved.Citizenship;
+        contact.PhysicalAddress = saved.PhysicalAddress;
+        contact.PostalAddress = saved.PostalAddress;
+        contact.PostalCode = saved.PostalCode;
+        contact.HomePhoneNo = saved.HomePhoneNo;
+        contact.WorkPhoneNo = saved.WorkPhoneNo;
+        contact.FaxNo = saved.FaxNo;
+
+        // E-mail and cell: what the client typed wins. A representative does
+        // not see these fields, so the owner's details on record are used.
+        if (string.IsNullOrWhiteSpace(contact.Email))
+            contact.Email = saved.Email;
+        if (string.IsNullOrWhiteSpace(contact.CellNo))
+            contact.CellNo = saved.CellNo;
+
+        ModelState.Remove("ContactInfos[0].Email");
+        ModelState.Remove("ContactInfos[0].CellNo");
+    }
+
     private static string BuildOwnerDisplayName(LisPropertyDetail detail)
     {
         var reconstructedName = NormaliseOwnerName(string.Join(
@@ -930,6 +1047,12 @@ public class AttributesController : Controller
                         }.Where(x => !string.IsNullOrWhiteSpace(x)).Select(x => x!.Trim()));
 
                         contact.ContactType = isCompany ? "Company" : "Owner";
+
+                        // POPIA: keep the owner's details from the roll on the
+                        // server only. The page gets an empty contact section;
+                        // the details are put back when the form is submitted.
+                        KeepOwnerContactOnServer(model.PropertyDetails.PropertyId, contact);
+                        HideOwnerContactFromPage(contact);
                     }
                 }
             }
@@ -1014,6 +1137,10 @@ public class AttributesController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(AttributeSubmissionViewModel model)
     {
+        // POPIA: put back the owner's details from the roll (kept on the
+        // server when the form was opened; they are not in the page).
+        RestoreOwnerContactFromServer(model);
+
         if (model.Declaration is null)
         {
             ModelState.AddModelError(
@@ -1337,9 +1464,10 @@ public class AttributesController : Controller
                     vm.TownNameDesc = d.TownNameDesc;
                     vm.LisStreetAddress = d.LisStreetAddress;
                     vm.CatDesc = d.CatDesc;
-                    vm.Rep_Email = d.Email;
-                    vm.Rep_Cell_Phone = d.CellNo;
-                    vm.Rep_Home_Phone = d.TelNo;
+
+                    // POPIA: the representative types their OWN contact details.
+                    // The owner's e-mail and phone numbers from the roll are never
+                    // shown to (or pre-filled for) a representative.
                 }
             }
             catch { /* use empty vm */ }
@@ -1906,6 +2034,6 @@ public class AttributesController : Controller
 
         return isAdmin
             ? RedirectToAction("Index", "Admin", new { openRoll = "attributes" })
-            : RedirectToAction("Index", "Dashboard", new { openRoll = "attributes" });
+            : LocalRedirect("/dashboard/attributes-detail");
     }
 }

@@ -42,7 +42,6 @@
         <div asp-validation-summary="All" class="text-danger" style="margin:12px 0;font-weight:700;"></div>
         <input type="hidden" name="UnitKey" value="@Model.UnitKey" />
         <input type="hidden" name="PropertyDesc" value="@Model.PropertyDesc" />
-        <input type="hidden" name="OwnerName" value="@Model.OwnerName" />
 
         <div class="sf-body">
 
@@ -89,7 +88,8 @@
 
                         <div class="sf-prop-field full">
                             <span class="sf-prop-label">Registered Owner</span>
-                            <span class="sf-prop-value address">@(string.IsNullOrWhiteSpace(Model.OwnerName) ? "—" : Model.OwnerName)</span>
+                            @* POPIA: the owner's name is not shown. *@
+                            <span class="sf-prop-value address" style="color:#6b7280;font-style:italic;">Hidden to protect personal information (POPIA)</span>
                         </div>
 
                         <div class="sf-prop-field full">

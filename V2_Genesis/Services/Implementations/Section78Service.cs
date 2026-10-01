@@ -20,6 +20,13 @@ namespace V2_Genesis.Services.Implementations
 {
     public class Section78Service : ISection78Service
     {
+
+        // POPIA: the owner's name as listed on the valuation roll is never printed
+        // on an acknowledgement (the client can download and share it).
+        private const string PopiaHiddenOwner = "Hidden (POPIA)";
+
+        private static string? HideRollOwner(string? owner) =>
+            string.IsNullOrWhiteSpace(owner) ? owner : PopiaHiddenOwner;
         private readonly IConfiguration _config;
         private readonly QueryDbContext _qdb;
         private readonly string _queryConn;
@@ -550,7 +557,7 @@ namespace V2_Genesis.Services.Implementations
                                 s6?.Old_Address,
                                 FormatMV(s6?.Old_Market_Value),
                                 s6?.Old_Extent,
-                                s6?.Old_Owner,
+                                HideRollOwner(s6?.Old_Owner),
                                 result.IsMulti,
                                 s6?.Old2_Category,
                                 FormatMV(s6?.Old2_Market_Value),
@@ -1392,8 +1399,7 @@ WHERE LTRIM(RTRIM(CAST(Ref AS nvarchar(100)))) = @QueryId
                                     .Old_Market_Value),
                             section6?
                                 .Old_Extent,
-                            section6?
-                                .Old_Owner,
+                            HideRollOwner(section6?.Old_Owner),
                             result.IsMulti,
                             section6?
                                 .Old2_Category,

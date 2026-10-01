@@ -1,0 +1,133 @@
+@*
+    _StatusBanner.cshtml
+    ─────────────────────────────────────────────────────────────────────
+    One clear, in-page message (not a toaster) for the result of an action
+    that redirected to this page. Shown at the top of the page content by
+    _Legend_Layout and _Layout. Reads (and clears) these TempData keys:
+
+        LinkSuccess       property linked (valuation roll / Section 78)
+        AttrLinkSuccess   property linked (Property Attributes)
+        LinkError         property could not be linked
+        AttrLinkError     Property Attributes property problem
+        NoticeError       a document / download could not be produced
+        ReviewCloseDate   (extra detail for a Section 78 review link)
+
+    To show a new message from a controller, set one of the keys above,
+    e.g.  TempData["LinkSuccess"] = "Property successfully linked to your profile.";
+    Styles: ~/css/status-banner.css
+    ─────────────────────────────────────────────────────────────────────
+*@
+@{
+    var gsBanners = new List<(string Kind, string Icon, string Label, string Title, string Message, string? DetailLabel, string? DetailValue, string Guidance)>();
+
+    var gsLinkSuccess = TempData["LinkSuccess"] as string;
+    var gsAttrLinkSuccess = TempData["AttrLinkSuccess"] as string;
+    var gsLinkError = TempData["LinkError"] as string;
+    var gsAttrLinkError = TempData["AttrLinkError"] as string;
+    var gsNoticeError = TempData["NoticeError"] as string;
+    var gsReviewClose = TempData["ReviewCloseDate"] as string;
+
+    if (!string.IsNullOrWhiteSpace(gsLinkSuccess))
+    {
+        gsBanners.Add((
+            "success", "fa-circle-check",
+            "Property Linked",
+            "The property is now linked to your profile",
+            gsLinkSuccess,
+            string.IsNullOrWhiteSpace(gsReviewClose) ? null : "Review closing date",
+            gsReviewClose,
+            "You will find it in the Linked Properties table on this page. Use the Actions button next to the property to continue."));
+    }
+
+    if (!string.IsNullOrWhiteSpace(gsAttrLinkSuccess))
+    {
+        gsBanners.Add((
+            "success", "fa-circle-check",
+            "Property Linked",
+            "The property is now linked to your profile",
+            gsAttrLinkSuccess,
+            null, null,
+            "You will find it in the Linked Properties table on this page. Use the Actions button next to the property to submit its attributes."));
+    }
+
+    if (!string.IsNullOrWhiteSpace(gsLinkError))
+    {
+        gsBanners.Add((
+            "error", "fa-link-slash",
+            "Not Linked",
+            "The property could not be linked",
+            gsLinkError,
+            null, null,
+            "Please check the details and try again. If the problem continues, contact Valuation Services on 011 407 6622 or valuationenquiries@joburg.org.za."));
+    }
+
+    if (!string.IsNullOrWhiteSpace(gsAttrLinkError))
+    {
+        gsBanners.Add((
+            "error", "fa-triangle-exclamation",
+            "Action Not Completed",
+            "We could not complete this request",
+            gsAttrLinkError,
+            null, null,
+            "Please try again. If the problem continues, contact Valuation Services on 011 407 6622 or valuationenquiries@joburg.org.za."));
+    }
+
+    if (!string.IsNullOrWhiteSpace(gsNoticeError))
+    {
+        gsBanners.Add((
+            "warning", "fa-file-circle-exclamation",
+            "Download Not Available",
+            "The document could not be downloaded",
+            gsNoticeError,
+            null, null,
+            "Please try again in a few minutes. If the document is still not available, contact Valuation Services for a copy."));
+    }
+}
+
+@if (gsBanners.Count > 0)
+{
+    <div class="gs-banner-stack">
+        @foreach (var b in gsBanners)
+        {
+            <div class="gs-banner gs-banner--@b.Kind"
+                 role="@(b.Kind == "success" ? "status" : "alert")"
+                 aria-live="@(b.Kind == "success" ? "polite" : "assertive")">
+
+                <div class="gs-banner-icon">
+                    <i class="fa-solid @b.Icon" aria-hidden="true"></i>
+                </div>
+
+                <div class="gs-banner-content">
+                    <div class="gs-banner-heading">
+                        <span class="gs-banner-label">@b.Label</span>
+                        <h3>@b.Title</h3>
+                    </div>
+
+                    <p class="gs-banner-message">@b.Message</p>
+
+                    @if (!string.IsNullOrWhiteSpace(b.DetailValue))
+                    {
+                        <div class="gs-banner-details">
+                            <div class="gs-banner-detail">
+                                <span>@b.DetailLabel</span>
+                                <strong>@b.DetailValue</strong>
+                            </div>
+                        </div>
+                    }
+
+                    <div class="gs-banner-guidance">
+                        <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+                        <span>@b.Guidance</span>
+                    </div>
+                </div>
+
+                <button type="button"
+                        class="gs-banner-close"
+                        aria-label="Close this message"
+                        onclick="this.closest('.gs-banner').remove()">
+                    <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                </button>
+            </div>
+        }
+    </div>
+}

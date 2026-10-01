@@ -23,3 +23,7 @@
 .attr-link-verify{border:1px solid #e6b000;background:#e6b000;color:#14272c}
 .attr-link-verify:disabled{opacity:.65;cursor:wait}
 @media(max-width:575.98px){.attr-link-backdrop{padding:0;align-items:flex-end}.attr-link-modal{width:100%;max-height:92dvh;border-radius:18px 18px 0 0}.attr-link-actions{flex-wrap:wrap}.attr-link-btn{flex:1 1 150px}}
+
+/* Only our own eye button: hide the browser's built-in "show password" icon (Edge) */
+.attr-pin-wrap input::-ms-reveal,
+.attr-pin-wrap input::-ms-clear{display:none;width:0;height:0}

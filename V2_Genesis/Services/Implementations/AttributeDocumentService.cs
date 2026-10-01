@@ -878,6 +878,9 @@ namespace V2_Genesis.Services.Attributes
                 }
             });
         }
+        private static string? PopiaHidden(string? value) =>
+            string.IsNullOrWhiteSpace(value) ? value : "Hidden (POPIA)";
+
         private static void AddSubmittedContactDetails(
     ColumnDescriptor col,
     AttributeSubmissionViewModel model)
@@ -906,19 +909,29 @@ namespace V2_Genesis.Services.Attributes
                         columns.RelativeColumn(2f);
                     });
 
+                    // POPIA: this acknowledgement is downloaded and shared by the
+                    // client. The owner's identity, addresses and phone numbers
+                    // from the roll are never printed on it. The e-mail and cell
+                    // number are printed only when the owner submitted the form
+                    // (they typed them); for a representative they stay hidden.
+                    var isRepresentative =
+                        model.RepresentativeDetails?.IsRepresentative == true;
+
                     if (c.IsCompany)
                     {
-                        AddTwoColumnRow(table, "Company Name", c.CompanyName, "Registration No.", c.CompanyRegistrationNumber);
+                        AddTwoColumnRow(table, "Company Name", PopiaHidden(c.CompanyName), "Registration No.", PopiaHidden(c.CompanyRegistrationNumber));
                     }
                     else
                     {
-                        AddTwoColumnRow(table, "First Names", c.FirstNames, "Surname", c.LastName);
+                        AddTwoColumnRow(table, "First Names", PopiaHidden(c.FirstNames), "Surname", PopiaHidden(c.LastName));
                     }
 
-                    AddFullRow(table, "Physical Address", c.PhysicalAddress);
-                    AddFullRow(table, "Postal Address", CombinePostalAddress(c.PostalAddress, c.PostalCode));
-                    AddTwoColumnRow(table, "Email", c.Email, "Cell No", c.CellNo);
-                    AddTwoColumnRow(table, "Home Phone", c.HomePhoneNo, "Work Phone", c.WorkPhoneNo);
+                    AddFullRow(table, "Physical Address", PopiaHidden(c.PhysicalAddress));
+                    AddFullRow(table, "Postal Address", PopiaHidden(CombinePostalAddress(c.PostalAddress, c.PostalCode)));
+                    AddTwoColumnRow(table,
+                        "Email", isRepresentative ? PopiaHidden(c.Email) : c.Email,
+                        "Cell No", isRepresentative ? PopiaHidden(c.CellNo) : c.CellNo);
+                    AddTwoColumnRow(table, "Home Phone", PopiaHidden(c.HomePhoneNo), "Work Phone", PopiaHidden(c.WorkPhoneNo));
                 });
             }
         }

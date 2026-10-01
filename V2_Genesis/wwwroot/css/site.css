@@ -1557,3 +1557,13 @@ select.coj-township-select {
 }
 
 
+
+
+/* Password / PIN fields have their own eye button. Hide the browser's
+   built-in "show password" icon (Microsoft Edge) so only one eye shows. */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+    display: none;
+    width: 0;
+    height: 0;
+}

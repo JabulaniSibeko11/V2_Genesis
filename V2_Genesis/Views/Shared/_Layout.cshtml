@@ -16,6 +16,7 @@
     <link rel="icon" type="image/png" sizes="32x32" href="~/images/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="~/images/favicon-16x16.png">
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/status-banner.css" asp-append-version="true" />
     <link href="~/css/views/homeindex1.css" rel="stylesheet" asp-append-version="true" />
     <link href="~/css/views/layout.css" rel="stylesheet" />
     <link href="~/css/global-action-loader.css" rel="stylesheet" asp-append-version="true" />
@@ -326,18 +327,8 @@
 
     <!-- ═══════════ MAIN ═══════════ -->
     <main class="main-content">
-        @* Download / document errors (set as TempData["NoticeError"]). *@
-        @if (TempData["NoticeError"] is string layoutNoticeError &&
-             !string.IsNullOrWhiteSpace(layoutNoticeError))
-        {
-            <div style="max-width:1100px;margin:16px auto 0;padding:0 16px;">
-                <div class="alert alert-warning alert-dismissible fade show" role="alert">
-                    <i class="fa-solid fa-file-circle-exclamation me-1"></i>
-                    @layoutNoticeError
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            </div>
-        }
+        @* Result messages shown as one clear in-page banner. *@
+        <partial name="_StatusBanner" />
         @RenderBody()
     </main>
 

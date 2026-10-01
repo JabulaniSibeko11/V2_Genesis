@@ -104,6 +104,31 @@ public class DashboardController : Controller
         return View("RollDetail", vm);
     }
 
+    private async Task<string?> ResolveServicePageAsync(string? openRoll, string? section)
+    {
+        if (string.IsNullOrWhiteSpace(openRoll))
+            return null;
+
+        var key = openRoll.Trim();
+        var query = string.IsNullOrWhiteSpace(section)
+            ? string.Empty
+            : "?section=" + Uri.EscapeDataString(section.Trim().ToLowerInvariant());
+
+        if (key.Equals("attributes", StringComparison.OrdinalIgnoreCase))
+            return "/dashboard/attributes-detail" + query;
+
+        if (key.Equals("rebates", StringComparison.OrdinalIgnoreCase))
+            return "/dashboard/rebates-detail" + query;
+
+        var roll = await _db.GvList
+            .AsNoTracking()
+            .FirstOrDefaultAsync(r => r.Source == key);
+
+        return roll is null
+            ? null
+            : "/dashboard/roll-detail/" + Uri.EscapeDataString(roll.Source) + query;
+    }
+
     // ── On-demand Rebates detail — Tiles drawer for the Rebates tile ────
     [HttpGet]
     [Route("dashboard/rebates-detail")]
@@ -144,10 +169,18 @@ public class DashboardController : Controller
 
     [HttpGet]
     [Route("dashboard")]
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index(string? openRoll = null, string? section = null)
     {
         var user = await _userManager.GetUserAsync(User);
         if (user is null) return RedirectToAction("Login", "Account");
+
+        // Many actions still send the client to "/dashboard?openRoll=…"
+        // (after linking, unlinking, withdrawing …). The dashboard home no
+        // longer opens a service by itself, so go straight to that service's
+        // own page (for example its Linked Properties table) instead.
+        var serviceUrl = await ResolveServicePageAsync(openRoll, section);
+        if (serviceUrl is not null)
+            return LocalRedirect(serviceUrl);
 
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
         var userEmail = User.FindFirstValue(ClaimTypes.Name) ?? string.Empty;

@@ -460,6 +460,11 @@
                 <div class="line"></div>
             </div>
 
+            @{
+                var isRepresentativeSubmission =
+                    ViewBag.RepRequired == true ||
+                    Model.RepresentativeDetails?.IsRepresentative == true;
+            }
             @for (int i = 0; i < Model.ContactInfos.Count; i++)
             {
                 <div class="attr-section-title">
@@ -467,34 +472,29 @@
                     <span>Contact Details</span>
                 </div>
 
-                @* Privacy requirement:
-                   Owner/company identity and address information remains in the form model
-                   and is posted back to the server, but is not displayed to the client. *@
+                @* POPIA: the owner's details from the roll (name, ID number,
+                   addresses, phone numbers) are kept on the server and are not
+                   in this page. They are added back when the form is submitted. *@
                 <input asp-for="ContactInfos[i].ContactType" type="hidden" />
                 <input asp-for="ContactInfos[i].IsCompany" type="hidden" />
-                <input asp-for="ContactInfos[i].CompanyName" type="hidden" />
-                <input asp-for="ContactInfos[i].CompanyRegistrationNumber" type="hidden" />
-                <input asp-for="ContactInfos[i].FirstNames" type="hidden" />
-                <input asp-for="ContactInfos[i].LastName" type="hidden" />
-                <input asp-for="ContactInfos[i].MaidenName" type="hidden" />
-                <input asp-for="ContactInfos[i].IDNumber" type="hidden" />
-                <input asp-for="ContactInfos[i].DateOfBirth" type="hidden" />
-                <input asp-for="ContactInfos[i].Gender" type="hidden" />
-                <input asp-for="ContactInfos[i].MaritalStatus" type="hidden" />
-                <input asp-for="ContactInfos[i].Citizenship" type="hidden" />
-                <input asp-for="ContactInfos[i].PhysicalAddress" type="hidden" />
-                <input asp-for="ContactInfos[i].PostalAddress" type="hidden" />
-                <input asp-for="ContactInfos[i].PostalCode" type="hidden" />
-                <input asp-for="ContactInfos[i].HomePhoneNo" type="hidden" />
-                <input asp-for="ContactInfos[i].WorkPhoneNo" type="hidden" />
-                <input asp-for="ContactInfos[i].FaxNo" type="hidden" />
                 <input asp-for="ContactInfos[i].Interviewed" type="hidden" />
                 <input asp-for="ContactInfos[i].Comments" type="hidden" />
 
+                @if (isRepresentativeSubmission && i == 0)
+                {
+                    <div class="attr-contact-privacy-note">
+                        <i class="fa-solid fa-shield-halved"></i>
+                        To protect the owner's personal information (POPIA), the owner's contact details on
+                        record are not shown. The City will use them to keep the owner informed. Your own
+                        contact details are the ones you entered as the representative.
+                    </div>
+                    continue;
+                }
+
                 <div class="attr-contact-privacy-note">
                     <i class="fa-solid fa-shield-halved"></i>
-                    For privacy, only your contact email and cell number are shown here.
-                    You may update either value before submitting.
+                    To protect personal information (POPIA), the details on record are not shown.
+                    Enter the e-mail address and cell number the City should use to contact you about this submission.
                 </div>
 
                 <table class="attr-table contact-table" data-contact-index="@i">

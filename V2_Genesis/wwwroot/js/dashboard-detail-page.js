@@ -656,7 +656,10 @@
         }
         else {
             window.setTimeout(function () {
-                body.closest('.cd-widget')
+                // A result banner ("Property Linked" …) sits just above the
+                // sections: show it together with the opened section.
+                const banner = document.querySelector('.gs-banner');
+                (banner || body.closest('.cd-widget'))
                     ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }, 150);
         }

@@ -17,6 +17,13 @@ namespace V2_Genesis.Services.Implementations;
 
 public class NoticeService : INoticeService
 {
+
+    // POPIA: the owner's name as listed on the valuation roll is never printed
+    // on an acknowledgement (the client can download and share it).
+    private const string PopiaHiddenOwner = "Hidden (POPIA)";
+
+    private static string? HideRollOwner(string? owner) =>
+        string.IsNullOrWhiteSpace(owner) ? owner : PopiaHiddenOwner;
     private readonly IPropertySearchService _search;
     private readonly IWebHostEnvironment _env;
     private readonly NoticeRollSettings _noticeSettings;
@@ -1438,7 +1445,7 @@ public class NoticeService : INoticeService
                         isOmission ? null : data.Old_Address,
                         isOmission ? null : FormatAcknowledgementMarketValue(data.Old_MarketValue),
                         isOmission ? null : data.Old_Extent,
-                        isOmission ? null : data.Old_Owner,
+                        isOmission ? null : HideRollOwner(data.Old_Owner),
                         !isOmission && data.IsMulti,
                         isOmission ? null : data.Old2_Category,
                         isOmission ? null : FormatAcknowledgementMarketValue(data.Old2_MarketValue),
@@ -1810,7 +1817,7 @@ public class NoticeService : INoticeService
             if (isFirst)
             {
                 Row("Property Description", oldDesc, newDesc);
-                Row("Owner", oldOwner, newOwner);
+                Row("Owner", HideRollOwner(oldOwner), newOwner);
                 Row("Physical Address", oldAddr, newAddr);
             }
             Row("Category", oldCat, newCat);

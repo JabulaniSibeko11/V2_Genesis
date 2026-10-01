@@ -1,5 +1,4 @@
-﻿
-.client-dashboard-page {
+﻿.client-dashboard-page {
     --dd-dark: #006570;
     --dd-deep: #006570;
     --dd-gold: #e6b000;
@@ -900,3 +899,59 @@
     outline: 2px solid var(--dd-gold, #e6b000);
     outline-offset: -2px;
 }
+
+/* ============================================================
+   READABLE TABLE TEXT
+   Table rows and the "Show entries / Search / Showing 1 to 3"
+   text are dark (near black) and slightly bolder, so clients —
+   including older clients — can read them easily. The teal
+   header row, the LIS / Omitted badges and the Actions button
+   keep their own colours.
+   ============================================================ */
+.client-dashboard-page .legacy-roll-dashboard-partial table.cd-table tbody td {
+    color: #1f2937 !important;
+    font-size: 15px !important;
+    font-weight: 500 !important;
+}
+
+    .client-dashboard-page .legacy-roll-dashboard-partial table.cd-table tbody td strong {
+        color: #111827 !important;
+        font-weight: 700 !important;
+    }
+
+    .client-dashboard-page .legacy-roll-dashboard-partial table.cd-table tbody td a:not(.cd-action-btn):not(.dropdown-item):not([class*="btn"]) {
+        color: #1f2937 !important;
+    }
+
+    .client-dashboard-page .legacy-roll-dashboard-partial table.cd-table tbody td .cd-source-dash {
+        color: #1f2937 !important;
+    }
+
+/* Responsive "+" child rows (small screens) */
+.client-dashboard-page .legacy-roll-dashboard-partial table.dataTable > tbody > tr.child ul.dtr-details > li,
+.client-dashboard-page .legacy-roll-dashboard-partial table.dataTable > tbody > tr.child span.dtr-data {
+    color: #1f2937 !important;
+    font-size: 15px !important;
+    font-weight: 500 !important;
+}
+
+/* Show entries / Search / Showing 1 to 3 of 3 entries */
+.client-dashboard-page .legacy-roll-dashboard-partial .dataTables_length,
+.client-dashboard-page .legacy-roll-dashboard-partial .dataTables_filter,
+.client-dashboard-page .legacy-roll-dashboard-partial .dataTables_info,
+.client-dashboard-page .legacy-roll-dashboard-partial .dataTables_length label,
+.client-dashboard-page .legacy-roll-dashboard-partial .dataTables_filter label {
+    color: #1f2937 !important;
+    font-size: 15px !important;
+    font-weight: 600 !important;
+}
+
+    .client-dashboard-page .legacy-roll-dashboard-partial .dataTables_length select,
+    .client-dashboard-page .legacy-roll-dashboard-partial .dataTables_filter input {
+        color: #1f2937 !important;
+        font-size: 15px !important;
+    }
+
+        .client-dashboard-page .legacy-roll-dashboard-partial .dataTables_filter input::placeholder {
+            color: #6b7280 !important;
+        }
