@@ -694,6 +694,16 @@
 
         closeResultsModal();
 
+        /*
+        * A new search starts clean: remove the LIS / omission screens of the
+        * previous search (the omission form is moved to <body> when opened).
+        */
+        document
+        .querySelectorAll('body > #omitModal, body > #omitBackdrop')
+        .forEach(el => el.remove());
+        document.body.style.overflow = '';
+        document.getElementById('psmBody').innerHTML = '';
+
         const data =
         new FormData(this);
 

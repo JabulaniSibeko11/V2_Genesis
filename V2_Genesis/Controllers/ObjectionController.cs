@@ -1371,6 +1371,12 @@ public class ObjectionController : Controller
      ? RollSource.Trim()
      : ResolveSubmissionRollSource(SourceTable ?? PropertyFrom);
 
+        // POPIA: the roll owner name is no longer sent to the browser
+        // (Section 6 shows an empty box). Save it from the server's own copy
+        // of the roll record instead of from the posted form.
+        if (obj6 != null)
+            obj6.Old_Owner = TempData.Peek("CurrentFilter_ON")?.ToString() ?? "";
+
         var sourceTable = !string.IsNullOrWhiteSpace(SourceTable)
             ? SourceTable.Trim()
             : ResolveSourceTable(rollSource);

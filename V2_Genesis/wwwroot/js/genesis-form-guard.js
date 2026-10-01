@@ -18,7 +18,15 @@
     const form = document.getElementById('myForm');
     if (!form) return;
 
-    const DRAFT_PREFIX = 'GenesisFormDraft:v1:';
+    const DRAFT_PREFIX = 'GenesisFormDraft:v2:';
+
+    // Drafts saved by the older version (one draft for every form type of a
+    // property, including Section 6 roll values) are removed.
+    try {
+        Object.keys(sessionStorage)
+            .filter(function (k) { return k.indexOf('GenesisFormDraft:v1:') === 0; })
+            .forEach(function (k) { sessionStorage.removeItem(k); });
+    } catch (_) { }
     const FILE_DB = 'GenesisEvidenceDrafts';
     const FILE_STORE = 'files';
     const FILE_EXPIRY_MS = 24 * 60 * 60 * 1000;
@@ -39,11 +47,24 @@
         return appeal === 'true' ? 'Appeal' : 'Objection';
     }
 
+    // The draft belongs to ONE form: the process, the property, the form
+    // type (Residential / Business / Agricultural / Multipurpose) and who
+    // is lodging. Without the form type, a client who first opened the
+    // Residential form and then went back to choose the Multipurpose form
+    // got the Residential values (including Section 6) back.
     function getDraftKey() {
         const process = getProcessName();
         const premise = valueOf('Premise_id') || 'NoPremise';
         const property = valueOf('Property_Desc') || 'NoProperty';
-        return DRAFT_PREFIX + process + ':' + premise + ':' + property;
+        let formType = '';
+        let objector = '';
+        try {
+            formType = sessionStorage.getItem('property_choice') || '';
+            objector = sessionStorage.getItem('objector_choice') || '';
+        } catch (_) { }
+        formType = formType || valueOf('Property_Type') || 'NoType';
+        objector = objector || valueOf('Objector_Type') || 'NoObjector';
+        return DRAFT_PREFIX + process + ':' + premise + ':' + property + ':' + formType + ':' + objector;
     }
 
     function normaliseEmail(value) {
@@ -147,10 +168,24 @@
     // ─────────────────────────────────────────────────────────────
     let saveTimer = null;
 
+    // Values that come from the server (valuation roll values in Section 6,
+    // the form type, the property keys ...) are never saved or restored:
+    // they must always show what the server sent for THIS form.
+    const SERVER_FIELDS = [
+        'Property_Type', 'Objector_Type', 'Premise_id', 'Property_Desc',
+        'Valuation_Key', 'Unit_Key', 'AppealStat', 'obj_appeal', 'reviewStat',
+        'RollSource', 'SourceTable', 'PropertyFrom'
+    ];
+
     function shouldSkipControl(el) {
         if (!el.name) return true;
         if (el.type === 'file' || el.type === 'password') return true;
         if (el.name === '__RequestVerificationToken') return true;
+        if (el.disabled || el.readOnly) return true;
+        if (el.id !== 'SignatureDataUrl' &&
+            (el.type === 'hidden' || el.hasAttribute('hidden'))) return true;
+        if (/^Old\d?_/i.test(el.name)) return true;
+        if (SERVER_FIELDS.indexOf(el.name) !== -1) return true;
         return false;
     }
 
@@ -217,6 +252,8 @@
             if (!controls.length) return;
 
             controls.forEach(function (el) {
+                if (shouldSkipControl(el)) return;
+
                 if (el.type === 'radio') {
                     el.checked = el.value === values[name];
                 } else if (el.type === 'checkbox') {

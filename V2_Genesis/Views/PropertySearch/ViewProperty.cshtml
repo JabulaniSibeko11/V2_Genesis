@@ -213,19 +213,8 @@ string.Equals(Context?.Session?.GetString("PropertyFrom"), "LIS", StringComparis
                 {
                     <div class="ppd-row">
                         <span class="ppd-label"><i class="fa-solid fa-user"></i> Owner</span>
-                        @if (isAuth)
-                        {
-                            <input class="ppd-val" disabled value="@(d.OwnerName ?? "–")" />
-                        }
-                        else
-                        {
-                            <div class="ppd-locked">
-                                <i class="fa-solid fa-lock"></i>
-                                <span>Sign in to view owner details</span>
-                                <a href="/login?returnUrl=@Uri.EscapeDataString(returnUrl)"
-                                   class="ppd-locked-link">Sign In</a>
-                            </div>
-                        }
+                        @* POPIA: the owner's name is not shown to anyone on this page. *@
+                        <input class="ppd-val" disabled value="" placeholder="Hidden to protect personal information (POPIA)" />
                     </div>
                 }
 

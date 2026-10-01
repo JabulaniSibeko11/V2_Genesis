@@ -454,7 +454,17 @@
     //  _LisNoResults.cshtml — REPLACE the entire <script> block
     // ════════════════════════════════════════════════════════════════
 
+    // This script runs again for every new search. Remove the omission
+    // modal left behind by an earlier search (it was moved to <body>),
+    // so the new search's values are always the ones shown.
+    document.querySelectorAll('body > #omitModal, body > #omitBackdrop')
+        .forEach(function (el) { el.parentNode.removeChild(el); });
+    document.body.style.overflow = '';
+
     // ── Values from server (Razor-rendered) ─────────────────────────
+    // "var" (not "let"): the script is run again on the next search and a
+    // second "let" of the same name stopped the whole script, so the
+    // omission form kept the FIRST search's township, stand and address.
     var _omitTown   = @Html.Raw(jsTown);
     var _omitStand  = @Html.Raw(jsStand);
     var _omitScheme = @Html.Raw(jsScheme);
@@ -463,8 +473,8 @@
     var _defType    = '@defType';
 
     // ── Open modal ───────────────────────────────────────────────────
-    let _omitParentModal = null;
-    let _omitParentDisplay = '';
+    var _omitParentModal = null;
+    var _omitParentDisplay = '';
 
     function openOmissionModal(trigger) {
         var modal = document.getElementById('omitModal');

@@ -238,6 +238,12 @@ public class Section78Controller : Controller
         // the views did not recognise).
         NormaliseSection78Reasons(que1);
 
+        // POPIA: the roll owner name is no longer sent to the browser
+        // (Section 6 shows an empty box). Save it from the server's own copy
+        // of the roll record instead of from the posted form.
+        if (obj6 != null)
+            obj6.Old_Owner = TempData.Peek("CurrentFilter_ON")?.ToString() ?? "";
+
         _logger.LogInformation(
             "[S78] Section 78 reasons received. A={A} B={B} C={C} D={D} E={E} F={F} G={G} H={H}, MotivationLength={MotivationLength}",
             que1.Option_A, que1.Option_B, que1.Option_C, que1.Option_D,

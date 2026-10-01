@@ -283,9 +283,9 @@
                             </div>
 
                             <table class="dp-compare-table">
-                                <tr><td>Property</td><td>@(string.IsNullOrWhiteSpace(oldPropDesc) ? "–" : oldPropDesc)</td></tr>
-                                <tr><td>Address</td><td>@(string.IsNullOrWhiteSpace(oldAddress) ? "–" : oldAddress)</td></tr>
-                                <tr><td>Owner</td><td>@(string.IsNullOrWhiteSpace(oldOwner) ? "–" : oldOwner)</td></tr>
+                                <tr><td>Property Description</td><td>@(string.IsNullOrWhiteSpace(oldPropDesc) ? "–" : oldPropDesc)</td></tr>
+                                <tr><td>Physical Address</td><td>@(string.IsNullOrWhiteSpace(oldAddress) ? "–" : oldAddress)</td></tr>
+                                <tr><td>Owner Name</td><td>@(string.IsNullOrWhiteSpace(oldOwner) ? "–" : oldOwner)</td></tr>
                             </table>
 
                             @if (isMulti)
@@ -358,17 +358,17 @@
 
                             <table class="dp-compare-table">
                                 <tr>
-                                    <td>Property</td>@{
+                                    <td>Property Description</td>@{
                                     NewVal(newPropDesc);
                                 }
                             </tr>
                             <tr>
-                                <td>Address</td>@{
+                                <td>Physical Address</td>@{
                                 NewVal(newAddress);
                             }
                         </tr>
                         <tr>
-                            <td>Owner</td>@{
+                            <td>Owner Name</td>@{
                             NewVal(newOwner);
                         }
                     </tr>
@@ -553,6 +553,18 @@
 </div>
 
 @section Scripts {
+    <script>
+        // The submission is done: clear the saved form drafts (typed values and
+        // evidence files) so the next form starts empty.
+        (function () {
+            try {
+                Object.keys(sessionStorage)
+                    .filter(function (k) { return k.indexOf('GenesisFormDraft:') === 0; })
+                    .forEach(function (k) { sessionStorage.removeItem(k); });
+            } catch (e) { }
+            try { if (window.indexedDB) indexedDB.deleteDatabase('GenesisEvidenceDrafts'); } catch (e) { }
+        })();
+    </script>
     <script>
         function showDlToast() {
             console.log('Acknowledgement download started');
