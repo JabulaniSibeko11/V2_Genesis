@@ -158,6 +158,39 @@ This is an automated email. Please do not reply directly.<br />
         private static string Button(string label, string link) =>
             $"<div style='text-align:center;margin:26px 0;'><a href='{H(link)}' style='display:inline-block;background:{EmailStyle.Gold};color:{EmailStyle.Dark};text-decoration:none;padding:13px 30px;border-radius:6px;font-weight:700;font-size:15px;'>{H(label)}</a></div>";
 
+        // ── Upload Evidence PIN + link (Objection, Appeal, Query, Review) ──
+        private string EvidenceUploadLink(string referenceNo)
+        {
+            var portal =
+                _config["Portal:BaseUrl"] is { Length: > 0 } baseUrl ? baseUrl
+                : _config["Section51:Notice:PortalUrl"] is { Length: > 0 } s51Url ? s51Url
+                : "https://objections.joburg.org.za";
+
+            return portal.TrimEnd('/') +
+                   "/evidence/verify?objectionNo=" +
+                   Uri.EscapeDataString(referenceNo?.Trim() ?? string.Empty);
+        }
+
+        private static string PinCell(string? pin) =>
+            string.IsNullOrWhiteSpace(pin)
+                ? "See the attached acknowledgement"
+                : $"<strong style='font-size:16px;letter-spacing:1px;'>{H(pin.Trim())}</strong>";
+
+        private static string EvidenceUploadSection(string referenceNo, string? pin, string link)
+        {
+            var deadline = DateTime.Now.AddHours(48).ToString("dd MMMM yyyy 'at' HH:mm");
+
+            return Notice(
+                       "<strong>Upload supporting evidence within 48 hours</strong> " +
+                       $"(by <strong>{H(deadline)}</strong>).<br/>" +
+                       "Click the button below, then enter your reference number " +
+                       $"<strong>{H(referenceNo)}</strong> and your <strong>Upload Evidence PIN</strong>" +
+                       (string.IsNullOrWhiteSpace(pin) ? "" : $" <strong>{H(pin.Trim())}</strong>") +
+                       ". You do not need to sign in. The PIN is only for uploading evidence for this submission &mdash; keep it safe and do not share it.")
+                   + Button("Upload Evidence", link)
+                   + SmallPrint($"If the button does not work, copy this link into your browser: {H(link)}");
+        }
+
         private static string BulletList(IEnumerable<string> itemsHtml, bool numbered = false)
         {
             var tag = numbered ? "ol" : "ul";
@@ -304,7 +337,8 @@ This is an automated email. Please do not reply directly.<br />
             bool isAppeal,
             byte[] acknowledgementPdf,
             string folderPath,
-            List<EmailAttachment>? extraAttachments = null)
+            List<EmailAttachment>? extraAttachments = null,
+            string? evidencePin = null)
         {
             try
             {
@@ -358,7 +392,9 @@ This is an automated email. Please do not reply directly.<br />
                         rollTitle,
                         isAppeal,
                         recipient,
-                        recipients);
+                        recipients,
+                        evidencePin,
+                        EvidenceUploadLink(objectionRef));
 
                     // One failed address must not stop the other party.
                     try
@@ -495,7 +531,8 @@ This is an automated email. Please do not reply directly.<br />
             string propertyDescription,
             byte[] acknowledgementPdf,
             string folderPath,
-            List<EmailAttachment>? extraAttachments = null)
+            List<EmailAttachment>? extraAttachments = null,
+            string? evidencePin = null)
         {
             try
             {
@@ -516,7 +553,12 @@ This is an automated email. Please do not reply directly.<br />
 
                 foreach (var recipient in recipients)
                 {
-                    var htmlBody = BuildSection78HtmlBody(queryRef, isReview, recipient);
+                    var htmlBody = BuildSection78HtmlBody(
+                        queryRef,
+                        isReview,
+                        recipient,
+                        evidencePin,
+                        EvidenceUploadLink(queryRef));
 
                     try
                     {
@@ -630,7 +672,9 @@ This is an automated email. Please do not reply directly.<br />
         private static string BuildSection78HtmlBody(
             string queryRef,
             bool isReview,
-            EmailRecipient recipient)
+            EmailRecipient recipient,
+            string? evidencePin,
+            string evidenceLink)
         {
             var actionWord = isReview ? "Review" : "Query";
             var lower = actionWord.ToLowerInvariant();
@@ -650,7 +694,9 @@ This is an automated email. Please do not reply directly.<br />
                     ("Submission Type", $"Section 78 {actionWord}"),
                     ("Date Submitted", H(date)),
                     ("Recipient", H(RecipientLabel(recipient))),
-                    ("Status", $"{actionWord}-Lodging"))
+                    ("Status", $"{actionWord}-Lodging"),
+                    ("Upload Evidence PIN", PinCell(evidencePin)))
+                + EvidenceUploadSection(queryRef, evidencePin, evidenceLink)
                 + Notice($"<strong>Please keep your reference number</strong> ({H(queryRef)}) for all future correspondence regarding this {lower}. Your official acknowledgement document is attached to this email.")
                 + Contact(ValuationEnquiriesEmail, Section78EnquiriesPhone);
 
@@ -1191,7 +1237,9 @@ This is an automated email. Please do not reply directly.<br />
             string rollTitle,
             bool isAppeal,
             EmailRecipient recipient,
-            List<EmailRecipient> recipients)
+            List<EmailRecipient> recipients,
+            string? evidencePin,
+            string evidenceLink)
         {
             var actionWord = isAppeal ? "appeal" : "objection";
             var ActionWord = isAppeal ? "Appeal" : "Objection";
@@ -1215,8 +1263,9 @@ This is an automated email. Please do not reply directly.<br />
                     ($"{ActionWord} Reference", $"<strong style='font-size:16px;'>{H(objectionRef)}</strong>"),
                     ("Valuation Roll", H(rollTitle)),
                     ("Submission Date", H(now)),
-                    ($"{ActorWord} Type", H(recipientType)))
-                + Notice("<strong>Important:</strong> You have <strong>48 hours</strong> from the submission time to upload any additional supporting evidence. Log into the portal and use the <em>Add Evidence</em> function.")
+                    ($"{ActorWord} Type", H(recipientType)),
+                    ("Upload Evidence PIN", PinCell(evidencePin)))
+                + EvidenceUploadSection(objectionRef, evidencePin, evidenceLink)
                 + Para($"Please find the official {ActionWord} acknowledgement and the populated {ActionWord} form attached to this email. Keep the attached documents for your records as proof of submission.")
                 + Contact(ValuationEnquiriesEmail, ObjectionEnquiriesPhone);
 
@@ -1887,12 +1936,12 @@ This is an automated email. Please do not reply directly.<br />
                 + Details(
                     ("Attribute Number", $"<strong style='font-size:16px;'>{H(attributeNumber)}</strong>"),
                     ("Property Description", H(propertyDescription)),
-                    ("Evidence PIN", $"<strong>{H(evidencePin)}</strong>"),
+                    ("Upload Evidence PIN", $"<strong>{H(evidencePin)}</strong>"),
                     ("Evidence Deadline", H(evidenceDeadline.ToString("dd MMMM yyyy HH:mm"))))
                 + Notice("<strong>Important:</strong> You may upload additional supporting evidence within 48 hours of the original submission, subject to the remaining evidence-file limit.")
                 + Para("The following documents are attached:")
                 + BulletList(new[] { "Attribute submission acknowledgement", "Submitted attribute form" }, numbered: true)
-                + Para("Please keep your attribute reference number and evidence PIN safe for future use.")
+                + Para("Please keep your attribute reference number and Upload Evidence PIN safe for future use.")
                 + SignOff();
 
             return EmailShell("Attribute Submission", content);

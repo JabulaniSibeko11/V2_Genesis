@@ -32,7 +32,8 @@ namespace V2_Genesis.Services.Interfaces
             bool isAppeal,
             byte[] acknowledgementPdf,
             string folderPath,
-            List<EmailAttachment>? extraAttachments = null);
+            List<EmailAttachment>? extraAttachments = null,
+            string? evidencePin = null);
 
         Task SendSection78AcknowledgementAsync(
             string queryRef,
@@ -40,7 +41,8 @@ namespace V2_Genesis.Services.Interfaces
             string propertyDescription,
             byte[] acknowledgementPdf,
             string folderPath,
-            List<EmailAttachment>? extraAttachments = null);
+            List<EmailAttachment>? extraAttachments = null,
+            string? evidencePin = null);
 
         // Single attachment method
         Task SendEmailWithAttachmentAsync(

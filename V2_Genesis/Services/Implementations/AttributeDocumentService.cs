@@ -879,7 +879,7 @@ namespace V2_Genesis.Services.Attributes
             });
         }
         private static string? PopiaHidden(string? value) =>
-            string.IsNullOrWhiteSpace(value) ? value : "Hidden (POPIA)";
+            string.Empty; // POPIA: the box is left blank on the PDF
 
         private static void AddSubmittedContactDetails(
     ColumnDescriptor col,
@@ -1316,7 +1316,7 @@ namespace V2_Genesis.Services.Attributes
                 {
                     RefRow(refBox, "Property Description:", propertyDescription);
                     RefRow(refBox, "Attribute Reference:", reference);
-                    RefRow(refBox, "PIN:", string.IsNullOrWhiteSpace(pin) ? "Not available" : pin);
+                    RefRow(refBox, "Upload Evidence PIN:", string.IsNullOrWhiteSpace(pin) ? "Not available" : pin);
                     RefRow(refBox, "Date Captured:",
                         propertyInfo.SubmissionDateTime.ToString("dd MMMM yyyy HH:mm"));
                 });

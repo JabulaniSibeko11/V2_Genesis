@@ -23,7 +23,8 @@ namespace V2_Genesis.Services.Implementations
 
         // POPIA: the owner's name as listed on the valuation roll is never printed
         // on an acknowledgement (the client can download and share it).
-        private const string PopiaHiddenOwner = "Hidden (POPIA)";
+        // The Owner box is simply left blank.
+        private const string PopiaHiddenOwner = "";
 
         private static string? HideRollOwner(string? owner) =>
             string.IsNullOrWhiteSpace(owner) ? owner : PopiaHiddenOwner;
@@ -383,7 +384,8 @@ namespace V2_Genesis.Services.Implementations
                         ?? "Property",
                     ackPdfBytes,
                     folderPath,
-                    extraAttachments);
+                    extraAttachments,
+                    evidencePin: result.RandomPin);
             }
             catch (Exception ex)
             {
@@ -535,7 +537,7 @@ namespace V2_Genesis.Services.Implementations
                                 {
                                     RefRow(refBox, "Property Description:", s6?.Old_Property_Description);
                                     RefRow(refBox, $"{typeWordTitle} Reference:", result.QueryRef);
-                                    RefRow(refBox, "PIN:", result.RandomPin);
+                                    RefRow(refBox, "Upload Evidence PIN:", result.RandomPin);
                                     RefRow(refBox, "Date Captured:", generatedDate);
                                 });
 
@@ -1365,7 +1367,7 @@ WHERE LTRIM(RTRIM(CAST(Ref AS nvarchar(100)))) = @QueryId
 
                                 ReferenceRow(
                                     referenceBox,
-                                    "PIN:",
+                                    "Upload Evidence PIN:",
                                     result.RandomPin);
 
                                 ReferenceRow(

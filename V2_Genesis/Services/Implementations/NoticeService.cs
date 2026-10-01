@@ -20,7 +20,8 @@ public class NoticeService : INoticeService
 
     // POPIA: the owner's name as listed on the valuation roll is never printed
     // on an acknowledgement (the client can download and share it).
-    private const string PopiaHiddenOwner = "Hidden (POPIA)";
+    // The Owner box is simply left blank.
+    private const string PopiaHiddenOwner = "";
 
     private static string? HideRollOwner(string? owner) =>
         string.IsNullOrWhiteSpace(owner) ? owner : PopiaHiddenOwner;
@@ -1426,7 +1427,7 @@ public class NoticeService : INoticeService
                         {
                             RefRow(refBox, "Property Description:", data.Old_PropertyDescription);
                             RefRow(refBox, referenceLabel, data.ObjectionRef);
-                            RefRow(refBox, "PIN:", data.ObjectionNo);
+                            RefRow(refBox, "Upload Evidence PIN:", data.ObjectionNo);
                             RefRow(refBox, "Date Captured:", data.SubmissionTime);
                         });
 

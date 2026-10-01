@@ -1217,7 +1217,8 @@ public class ObjectionFormService : IObjectionFormService
                 isAppeal,
                 ackPdfBytes,
                 folderPath,
-                extraAttachments);
+                extraAttachments,
+                evidencePin: pin);
 
             _logger.LogInformation(
                 "[ObjectionFormService] PDFs and email completed for {ReferenceNo}. Folder: {Folder}",
