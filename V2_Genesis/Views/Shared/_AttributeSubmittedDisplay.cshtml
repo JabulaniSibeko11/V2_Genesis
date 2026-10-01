@@ -13,6 +13,17 @@
         return string.IsNullOrWhiteSpace(text) ? "–" : text;
     }
 
+    // POPIA: the owner's details from the roll are never shown on this page.
+    // E-mail and cell number are shown only when the owner submitted the form
+    // (they typed them); for a representative they stay hidden.
+    bool isRepresentativeSubmission = Model.RepresentativeDetails?.IsRepresentative == true;
+
+    string Hidden(object? value)
+    {
+        var text = value?.ToString();
+        return string.IsNullOrWhiteSpace(text) ? "–" : "Hidden (POPIA)";
+    }
+
     string BoolValue(bool? value)
     {
         if (value == true) return "Yes";
@@ -218,48 +229,48 @@
                             {
                                 <div class="sub-field">
                                     <span class="sub-field-label">Company Name</span>
-                                    <div class="sub-field-value">@DisplayValue(contact.CompanyName)</div>
+                                    <div class="sub-field-value">@Hidden(contact.CompanyName)</div>
                                 </div>
                                 <div class="sub-field">
                                     <span class="sub-field-label">Registration No.</span>
-                                    <div class="sub-field-value">@DisplayValue(contact.CompanyRegistrationNumber)</div>
+                                    <div class="sub-field-value">@Hidden(contact.CompanyRegistrationNumber)</div>
                                 </div>
                             }
                             else
                             {
                                 <div class="sub-field">
                                     <span class="sub-field-label">First Names</span>
-                                    <div class="sub-field-value">@DisplayValue(contact.FirstNames)</div>
+                                    <div class="sub-field-value">@Hidden(contact.FirstNames)</div>
                                 </div>
                                 <div class="sub-field">
                                     <span class="sub-field-label">Last Name</span>
-                                    <div class="sub-field-value">@DisplayValue(contact.LastName)</div>
+                                    <div class="sub-field-value">@Hidden(contact.LastName)</div>
                                 </div>
                             }
 
                             <div class="sub-field full">
                                 <span class="sub-field-label">Physical Address</span>
-                                <div class="sub-field-value">@DisplayValue(contact.PhysicalAddress)</div>
+                                <div class="sub-field-value">@Hidden(contact.PhysicalAddress)</div>
                             </div>
                             <div class="sub-field full">
                                 <span class="sub-field-label">Postal Address</span>
-                                <div class="sub-field-value">@DisplayValue(contact.PostalAddress)</div>
+                                <div class="sub-field-value">@Hidden(contact.PostalAddress)</div>
                             </div>
                             <div class="sub-field">
                                 <span class="sub-field-label">Email</span>
-                                <div class="sub-field-value">@DisplayValue(contact.Email)</div>
+                                <div class="sub-field-value">@(isRepresentativeSubmission ? Hidden(contact.Email) : DisplayValue(contact.Email))</div>
                             </div>
                             <div class="sub-field">
                                 <span class="sub-field-label">Cell No</span>
-                                <div class="sub-field-value">@DisplayValue(contact.CellNo)</div>
+                                <div class="sub-field-value">@(isRepresentativeSubmission ? Hidden(contact.CellNo) : DisplayValue(contact.CellNo))</div>
                             </div>
                             <div class="sub-field">
                                 <span class="sub-field-label">Home Phone</span>
-                                <div class="sub-field-value">@DisplayValue(contact.HomePhoneNo)</div>
+                                <div class="sub-field-value">@Hidden(contact.HomePhoneNo)</div>
                             </div>
                             <div class="sub-field">
                                 <span class="sub-field-label">Work Phone</span>
-                                <div class="sub-field-value">@DisplayValue(contact.WorkPhoneNo)</div>
+                                <div class="sub-field-value">@Hidden(contact.WorkPhoneNo)</div>
                             </div>
                         </div>
                     </div>
@@ -559,33 +570,6 @@
             </div>
         </div>
     </div>
-    
-    
-    <div class="sub-card">
-        <div class="sub-card-bar">
-            <i class="fa-solid fa-signature"></i>
-            <h4>Declaration</h4>
-        </div>
-        <div class="sub-card-body">
-            <div class="sub-grid">
-                <div class="sub-field">
-                    <span class="sub-field-label">Declaration Accepted</span>
-                    <div class="sub-field-value">@(Model.Declaration?.DeclarationAccepted == true ? "Yes" : "No")</div>
-                </div>
-                <div class="sub-field">
-                    <span class="sub-field-label">Signature Name</span>
-                    <div class="sub-field-value">@DisplayValue(Model.Declaration?.SignatureName)</div>
-                </div>
-            </div>
-
-            @if (!string.IsNullOrWhiteSpace(Model.Declaration?.SignaturePicture))
-            {
-                <div class="sub-sig-box">
-                    <span class="sub-sig-label">Electronic Signature</span>
-                    <img src="@Model.Declaration.SignaturePicture" alt="Signature" />
-                </div>
-            }
-        </div>
-    </div>
+    @* The client's signature (and signature name) are not shown on this page. *@
 
 </div>
