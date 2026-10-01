@@ -224,7 +224,7 @@ function RSA() {
     }
     if (objector_key == "Representative") {
         $(".Div1-2").hide();
-        document.getElementById("owner_head").innerHTML = "1.1 OWNER DETAILS";
+        document.getElementById("owner_head").innerHTML = "OWNER DETAILS";
 
     }
 }
@@ -964,7 +964,7 @@ function load() {
     if (objector_key == "Owner") {
         $(".Div1-2").hide();
         $(".Div1-3").hide();
-        document.getElementById("o_name_l").innerHTML = 'REGISTERED OWNER OF PROPERTY';
+        document.getElementById("o_name_l").innerHTML = 'REGISTERED OWNER OF PROPERTY <span class="text-danger" title="This field is required">*</span>';
     }
     if (objector_key == "Third_Party") {
         $(".Div1-1").hide();
@@ -974,16 +974,16 @@ function load() {
     if (objector_key == "Representative") {
         $(".Div1-2").hide();
         $("#owner_details").hide();
-        document.getElementById("o_name_l").innerHTML = '<span style="color: red; ">*</span>REGISTERED OWNER OF PROPERTY (<span style="color: red;">required</span>)';
-        document.getElementById("owner_head").innerHTML = "1.1 OWNER DETAILS";
+        document.getElementById("o_name_l").innerHTML = 'REGISTERED OWNER OF PROPERTY <span class="text-danger" title="This field is required">*</span> <small class="text-muted fst-italic">(the owner you are acting for)</small>';
+        document.getElementById("owner_head").innerHTML = "OWNER DETAILS";
 
     }
    
     if (objector_key == "Representative" && AppealStatus == "True") {
         $(".Div1-2").hide();
         $("#owner_details").hide();
-        document.getElementById("o_name_l").innerHTML = '<span style="color: red; ">*</span>REGISTERED OWNER OF PROPERTY (<span style="color: red;">required</span>)';
-        document.getElementById("owner_head").innerHTML = "1.1 OWNER DETAILS";
+        document.getElementById("o_name_l").innerHTML = 'REGISTERED OWNER OF PROPERTY <span class="text-danger" title="This field is required">*</span> <small class="text-muted fst-italic">(the owner you are acting for)</small>';
+        document.getElementById("owner_head").innerHTML = "OWNER DETAILS";
 
     }
 
@@ -1236,7 +1236,7 @@ $(document).ready(function () {
                 oCd3Value == '' &&
                 (document.getElementById("o_cd_4").value) == ''
             ) {
-                document.getElementById("o_cd_invalid").innerHTML = "Please fill at least one of the contact details fields.";
+                document.getElementById("o_cd_invalid").innerHTML = "Please enter your cellphone number (10 digits starting with 0). Home, work and fax numbers are optional.";
                 document.getElementById("o_cd_invalid").style.color = "red";
                 document.getElementById("o_cd_2").style.border = "2px solid red";
                 document.getElementById("o_cd_3").style.border = "2px solid red";
@@ -1412,7 +1412,7 @@ $(document).ready(function () {
                 oCd3Value == '' &&
                 (document.getElementById("obj_cd_4").value) == ''
             ) {
-                document.getElementById("obj_cd_invalid").innerHTML = "Please fill at least one of the contact details fields.";
+                document.getElementById("obj_cd_invalid").innerHTML = "Please enter your cellphone number (10 digits starting with 0). Home, work and fax numbers are optional.";
                 document.getElementById("obj_cd_invalid").style.color = "red";
                 document.getElementById("obj_cd_2").style.border = "2px solid red";
                 document.getElementById("obj_cd_3").style.border = "2px solid red";
@@ -1609,7 +1609,7 @@ $(document).ready(function () {
                 repCd3Value == '' &&
                 (document.getElementById("rep_cd_4").value) == ''
             ) {
-                document.getElementById("rep_cd_invalid").innerHTML = "Please fill at least one of the contact details fields.";
+                document.getElementById("rep_cd_invalid").innerHTML = "Please enter your cellphone number (10 digits starting with 0). Home, work and fax numbers are optional.";
                 document.getElementById("rep_cd_invalid").style.color = "red";
                 document.getElementById("rep_cd_2").style.border = "2px solid red";
                 document.getElementById("rep_cd_3").style.border = "2px solid red";
@@ -1700,7 +1700,7 @@ $(document).ready(function () {
                 oCd3Value == '' &&
                 (document.getElementById("o_cd_4").value) == ''
             ) {
-                document.getElementById("o_cd_invalid").innerHTML = "Please fill at least one of the contact details fields.";
+                document.getElementById("o_cd_invalid").innerHTML = "Please enter your cellphone number (10 digits starting with 0). Home, work and fax numbers are optional.";
                 document.getElementById("o_cd_invalid").style.color = "red";
                 document.getElementById("o_cd_2").style.border = "2px solid red";
                 document.getElementById("o_cd_3").style.border = "2px solid red";
@@ -1828,39 +1828,42 @@ $(document).ready(function () {
 
         //div3
         
+        // Multipurpose order: Section 3 Residential (Form A) -> Section 3 Business
+        // and Commercial (Form B) -> Section 3 Agricultural (Form C) ->
+        // Section 4 Residential -> Section 4 Business and Commercial.
         $(".btn_R_p3").click(function () {
-                $(".div2").show();
-                $(".div3_R").hide();
-        });
-        $(".btn_A_p3").click(function () {
-                $(".div3_R").show();
-                $(".div3_A").hide();
+            $(".div2").show();
+            $(".div3_R").hide();
         });
         $(".btn_B_p3").click(function () {
-                $(".div3_A").show();
-                $(".div3_B").hide();
+            $(".div3_R").show();
+            $(".div3_B").hide();
+        });
+        $(".btn_A_p3").click(function () {
+            $(".div3_B").show();
+            $(".div3_A").hide();
         });
 
-        $(".btn_R_n3").click(function () { 
-                $(".div3_R").hide();
-                $(".div3_A").show();
-                focusIfExists("s3a");
-        });
-        $(".btn_A_n3").click(function () {
-            $(".div3_A").hide();
+        $(".btn_R_n3").click(function () {
+            $(".div3_R").hide();
             $(".div3_B").show();
             focusIfExists("s3b");
         });
         $(".btn_B_n3").click(function () {
             $(".div3_B").hide();
+            $(".div3_A").show();
+            focusIfExists("s3a");
+        });
+        $(".btn_A_n3").click(function () {
+            $(".div3_A").hide();
             $(".div4_R").show();
             focusIfExists("sch_name");
         });
-    
+
         //div4
 
         $(".btn_R_p4").click(function () {
-                $(".div3_B").show();
+                $(".div3_A").show();
                 $(".div4_R").hide();
         });
         $(".btn_B_p4").click(function () {

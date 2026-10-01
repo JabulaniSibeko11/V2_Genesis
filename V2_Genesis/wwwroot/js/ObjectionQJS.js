@@ -182,7 +182,7 @@ function onlyNumberKey(evt) {
 function RSA() {
     if (sessionStorage.getItem('objector_choice') == "Owner") { $("#o_pass").hide(); $("#o_id").show(); }
     if (objector_key == "Third_Party") { $(".Div1-1").hide(); $(".Div1-3").hide(); }
-    if (objector_key == "Representative") { $(".Div1-2").hide(); document.getElementById("owner_head").innerHTML = "1.1 OWNER DETAILS"; }
+    if (objector_key == "Representative") { $(".Div1-2").hide(); document.getElementById("owner_head").innerHTML = "OWNER DETAILS"; }
 }
 function foreigner() {
     if (sessionStorage.getItem('objector_choice') == "Owner") { $("#o_id").hide(); $("#o_pass").show(); }
@@ -465,7 +465,7 @@ function load() {
     // ── Objector type ─────────────────────────────────────────────
     if (objector_key == "Owner") {
         $(".Div1-2").hide(); $(".Div1-3").hide();
-        document.getElementById("o_name_l").innerHTML = 'REGISTERED OWNER OF PROPERTY';
+        document.getElementById("o_name_l").innerHTML = 'REGISTERED OWNER OF PROPERTY <span class="text-danger" title="This field is required">*</span>';
     }
     if (objector_key == "Third_Party") {
         $(".Div1-1").hide(); $(".Div1-3").hide();
@@ -474,8 +474,8 @@ function load() {
         $(".Div1-2").hide();
         $("#owner_details").hide();
         document.getElementById("o_name_l").innerHTML =
-            '<span style="color:red;">*</span>REGISTERED OWNER OF PROPERTY (<span style="color:red;">required</span>)';
-        document.getElementById("owner_head").innerHTML = "1.1 OWNER DETAILS";
+            'REGISTERED OWNER OF PROPERTY <span class="text-danger" title="This field is required">*</span> <small class="text-muted fst-italic">(the owner you are acting for)</small>';
+        document.getElementById("owner_head").innerHTML = "OWNER DETAILS";
     }
 }
 
@@ -557,7 +557,7 @@ $(document).ready(function () {
             else document.getElementById("o_id").style.border = "";
 
             if (!document.getElementById("o_cd_1").value && !document.getElementById("o_cd_2").value && !document.getElementById("o_cd_3").value && !document.getElementById("o_cd_4").value) {
-                document.getElementById("o_cd_invalid").innerHTML = "Please fill at least one of the contact details fields."; document.getElementById("o_cd_invalid").style.color = "red"; return false;
+                document.getElementById("o_cd_invalid").innerHTML = "Please enter your cellphone number (10 digits starting with 0). Home, work and fax numbers are optional."; document.getElementById("o_cd_invalid").style.color = "red"; return false;
             } else { cd_o = 'true'; document.getElementById("o_cd_invalid").innerHTML = ""; }
 
             if (!_validatePhone("o_cd_2")) return false;
@@ -577,7 +577,7 @@ $(document).ready(function () {
             var tpEmail = document.getElementById("obj_cd_5").value;
             if (!tpEmail || !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(tpEmail)) { document.getElementById("obj_cd_5").style.border = "2px solid red"; return false; } else document.getElementById("obj_cd_5").style.border = "";
             if (!document.getElementById("obj_cd_1").value && !document.getElementById("obj_cd_2").value && !document.getElementById("obj_cd_3").value && !document.getElementById("obj_cd_4").value) {
-                document.getElementById("obj_cd_invalid").innerHTML = "Please fill at least one of the contact details fields."; document.getElementById("obj_cd_invalid").style.color = "red"; return false;
+                document.getElementById("obj_cd_invalid").innerHTML = "Please enter your cellphone number (10 digits starting with 0). Home, work and fax numbers are optional."; document.getElementById("obj_cd_invalid").style.color = "red"; return false;
             } else { cd_obj = 'true'; document.getElementById("obj_cd_invalid").innerHTML = ""; }
             if (!_validatePhone("obj_cd_2")) return false;
             if (!_validatePhone("obj_cd_3")) return false;
@@ -594,10 +594,10 @@ $(document).ready(function () {
             var repEmail = document.getElementById("rep_cd_5").value;
             if (!repEmail || !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(repEmail)) { document.getElementById("rep_cd_5").style.border = "2px solid red"; return false; } else document.getElementById("rep_cd_5").style.border = "";
             if (document.getElementById("fileR").files.length == 0) { document.getElementById("fileR").style.border = "2px solid red"; alert("Representative must upload their Authorization Letter to proceed."); } else { if (document.getElementById("fileR").files.item(0).name.length > 100) { alert("File name too long."); document.getElementById("fileR").value = ''; } else document.getElementById("fileR").style.border = ""; }
-            if (!document.getElementById("rep_cd_1").value && !document.getElementById("rep_cd_2").value && !document.getElementById("rep_cd_3").value && !document.getElementById("rep_cd_4").value) { document.getElementById("rep_cd_invalid").innerHTML = "Please fill at least one contact field."; document.getElementById("rep_cd_invalid").style.color = "red"; return false; } else { cd_rep = 'true'; document.getElementById("rep_cd_invalid").innerHTML = ""; }
+            if (!document.getElementById("rep_cd_1").value && !document.getElementById("rep_cd_2").value && !document.getElementById("rep_cd_3").value && !document.getElementById("rep_cd_4").value) { document.getElementById("rep_cd_invalid").innerHTML = "Please enter your cellphone number (10 digits starting with 0). Home, work and fax numbers are optional."; document.getElementById("rep_cd_invalid").style.color = "red"; return false; } else { cd_rep = 'true'; document.getElementById("rep_cd_invalid").innerHTML = ""; }
             if (!_validatePhone("rep_cd_2")) return false;
             if (!_validatePhone("rep_cd_3")) return false;
-            if (!document.getElementById("o_cd_1").value && !document.getElementById("o_cd_2").value && !document.getElementById("o_cd_3").value && !document.getElementById("o_cd_4").value) { document.getElementById("o_cd_invalid").innerHTML = "Please fill at least one contact field."; document.getElementById("o_cd_invalid").style.color = "red"; return false; } else { cd_o = 'true'; document.getElementById("o_cd_invalid").innerHTML = ""; }
+            if (!document.getElementById("o_cd_1").value && !document.getElementById("o_cd_2").value && !document.getElementById("o_cd_3").value && !document.getElementById("o_cd_4").value) { document.getElementById("o_cd_invalid").innerHTML = "Please enter your cellphone number (10 digits starting with 0). Home, work and fax numbers are optional."; document.getElementById("o_cd_invalid").style.color = "red"; return false; } else { cd_o = 'true'; document.getElementById("o_cd_invalid").innerHTML = ""; }
             if (!_validatePhone("o_cd_2")) return false;
             if (!_validatePhone("o_cd_3")) return false;
             if (document.getElementById("rep_name").value && document.getElementById("o_name").value && document.getElementById("rep_p_1").value && document.getElementById("rep_p_5").value && document.getElementById("fileR").files.length !== 0 && cd_rep == 'true' && cd_o == 'true') {

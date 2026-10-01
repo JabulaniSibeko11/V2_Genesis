@@ -980,7 +980,7 @@ function load() {
     if (objector_key == "Owner") {
         $(".Div1-2").hide();
         $(".Div1-3").hide();
-        setHtml("o_name_l", 'Registered Owner of Property<span style="color: red;">*</span>');
+        setHtml("o_name_l", 'REGISTERED OWNER OF PROPERTY <span class="text-danger" title="This field is required">*</span>');
     }
     if (objector_key == "Third_Party") {
         $(".Div1-1").hide();
@@ -990,9 +990,9 @@ function load() {
     if (objector_key == "Representative") {
         $(".Div1-2").hide();
         $("#owner_details").hide();
-        setHtml("o_name_l", 'Registered Owner of Property<span style="color: red;">*</span>');
+        setHtml("o_name_l", 'REGISTERED OWNER OF PROPERTY <span class="text-danger" title="This field is required">*</span> <small class="text-muted fst-italic">(the owner you are acting for)</small>');
         
-        setHtml("owner_head", "1.1 OWNER DETAILS");
+        setHtml("owner_head", "OWNER DETAILS");
 
     }
     if (AppealStatus == "True") {
@@ -1223,7 +1223,7 @@ $(document).ready(function () {
                 (document.getElementById("o_cd_3").value) == '' &&
                 (document.getElementById("o_cd_4").value) == ''
             ) {
-                document.getElementById("o_cd_invalid").innerHTML = "Please fill at least one of the contact details fields.";
+                document.getElementById("o_cd_invalid").innerHTML = "Please enter your cellphone number (10 digits starting with 0). Home, work and fax numbers are optional.";
                 document.getElementById("o_cd_invalid").style.color = "red";
                 document.getElementById("o_cd_1").style.border = "2px solid red";
                 document.getElementById("o_cd_2").style.border = "2px solid red";
@@ -1322,7 +1322,7 @@ $(document).ready(function () {
                 (document.getElementById("rep_cd_3").value) == '' &&
                 (document.getElementById("rep_cd_4").value) == ''
             ) {
-                document.getElementById("rep_cd_invalid").innerHTML = "Please fill at least one of the contact details fields.";
+                document.getElementById("rep_cd_invalid").innerHTML = "Please enter your cellphone number (10 digits starting with 0). Home, work and fax numbers are optional.";
                 document.getElementById("rep_cd_invalid").style.color = "red";
                 document.getElementById("rep_cd_1").style.border = "2px solid red";
                 document.getElementById("rep_cd_2").style.border = "2px solid red";
@@ -1340,7 +1340,7 @@ $(document).ready(function () {
                 (document.getElementById("o_cd_3").value) == '' &&
                 (document.getElementById("o_cd_4").value) == ''
             ) {
-                document.getElementById("o_cd_invalid").innerHTML = "Please fill at least one of the contact details fields.";
+                document.getElementById("o_cd_invalid").innerHTML = "Please enter your cellphone number (10 digits starting with 0). Home, work and fax numbers are optional.";
                 document.getElementById("o_cd_invalid").style.color = "red";
                 document.getElementById("o_cd_1").style.border = "2px solid red";
                 document.getElementById("o_cd_2").style.border = "2px solid red";
@@ -1662,11 +1662,8 @@ $(document).ready(function () {
             $(".div5").hide();
         }
         if (property_key == "Multi") {
-
-            $(".btn_p5").click(function () {
-                $(".div4_B").show();
-                $(".div5").hide();
-            });
+            $(".div4_B").show();
+            $(".div5").hide();
         }
 
 

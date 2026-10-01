@@ -289,7 +289,7 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
     <link href="~/css/views/property-search.css" rel="stylesheet" asp-append-version="true" />
     <link href="~/css/views/searchpropertycss.css" rel="stylesheet" asp-append-version="true" />
     <link href="~/css/views/objection-form-css.css" rel="stylesheet" asp-append-version="true" />
-    <link href="~/css/views/form-yes-no.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/views/genesis-forms.css" rel="stylesheet" asp-append-version="true" />
     <style>
         /* Multipurpose supporting documents — same interaction as Attributes. */
         .obj-ev-intro { margin: 0 0 16px; color: #6b7280; font: 12.5px/1.6 'Poppins', sans-serif; }
@@ -512,13 +512,13 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
             <div class="Div1-1">
                 <div class="obj-section-bar">
                     <span class="obj-bar-num">1.1</span>
-                    <span >@partyUpper IS THE OWNER</span>
+                    <span id="owner_head">@partyUpper IS THE OWNER</span>
                 </div>
              
 
                 <div class="mb-4">
-                    <label for="o_name" class="form-label fw-semibold  text-dark">
-                        Registered Owner of Property<span style="color: red;">*</span>
+                    <label for="o_name" id="o_name_l" class="form-label fw-semibold  text-dark">
+                        REGISTERED OWNER OF PROPERTY <span class="text-danger" title="This field is required">*</span>
                     </label>
                     <input name="owner_name" id="o_name"class="form-control border-2 rounded shadow-sm px-4 py-2"maxlength="80"type="text"onpaste="return false;"ondrop="return false;"asp-for="Owner_Name"placeholder="Enter full name of registered owner" />
                 </div>
@@ -556,7 +556,7 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
                     </div>
 
                 
-                    <div class="obj-section-bar">
+                    <div class="obj-section-bar obj-sub-bar">
 
                           <span style="font-weight: bold; color:white; font-size: 16px; text-transform: uppercase; letter-spacing: 0.5px;">PHYSICAL ADDRESS OF OWNER</span>
                   </div>
@@ -592,12 +592,12 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
 
                     </br>
                   
-                    <div class="obj-section-bar">
+                    <div class="obj-section-bar obj-sub-bar">
 
                         <span>POSTAL ADDRESS OF OWNER</span>
                     </div>
                   
-                  <div class="obj-section-bar">
+                  <div class="obj-section-bar obj-sub-bar">
                     
                       <fieldset class="col-md-6" style="width: 100%;">
                     <label class="gen-same-address">
@@ -639,7 +639,7 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
                 
 
            
-                <div class="obj-section-bar">
+                <div class="obj-section-bar obj-sub-bar">
                   
                     <span >CONTACT DETAILS</span>
                   </div>
@@ -648,7 +648,7 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
                     <div class="instruction-box">
                         <p>
                             <span class="bullet">•</span>
-                            <span id="o_cd_invalid"><strong>Your cellphone number is required</strong> (10 digits starting with 0). Home, work and fax numbers are optional.</span>
+                            <span><strong>Your cellphone number is required</strong> (10 digits starting with 0). Home, work and fax numbers are optional. <span id="o_cd_invalid" class="obj-inline-error" role="alert"></span></span>
                         </p>
                         <p>
                             <span class="bullet">•</span>
@@ -762,7 +762,7 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
             </div>
              <br></br>
              
-                <div class="obj-section-bar">
+                <div class="obj-section-bar obj-sub-bar">
                  
                     <span style="font-weight: bold; font-size: 16px; color: white; text-transform: uppercase; letter-spacing: 0.5px;">POSTAL ADDRESS OF @partyUpper</span>
                   </div>
@@ -796,7 +796,7 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
             
       
        
-                <div class="obj-section-bar">
+                <div class="obj-section-bar obj-sub-bar">
                
                     <span >CONTACT DETAILS</span>
                   </div>
@@ -806,7 +806,7 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
                     <div class="instruction-box">
                         <p>
                             <span class="bullet">•</span>
-                            <span id="obj_cd_invalid"><strong>Your cellphone number is required</strong> (10 digits starting with 0). Home, work and fax numbers are optional.</span>
+                            <span><strong>Your cellphone number is required</strong> (10 digits starting with 0). Home, work and fax numbers are optional. <span id="obj_cd_invalid" class="obj-inline-error" role="alert"></span></span>
                         </p>
                         <p>
                             <span class="bullet">•</span>
@@ -888,7 +888,7 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
                     <br/>
             
 
-                <div class="obj-section-bar">
+                <div class="obj-section-bar obj-sub-bar">
                     
                     <span style="font-weight: bold; font-size: 16px; color:white; text-transform: uppercase; letter-spacing: 0.5px;">POSTAL ADDRESS OF REPRESENTATIVE</span>
                   </div>
@@ -926,7 +926,7 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
                 
            
              
-                <div class="obj-section-bar">
+                <div class="obj-section-bar obj-sub-bar">
                    
                     <span >CONTACT DETAILS</span>
                   </div>
@@ -935,7 +935,7 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
                     <div class="instruction-box">
                         <p>
                             <span class="bullet">•</span>
-                            <span id="rep_cd_invalid"><strong>Your cellphone number is required</strong> (10 digits starting with 0). Home, work and fax numbers are optional.</span>
+                            <span><strong>Your cellphone number is required</strong> (10 digits starting with 0). Home, work and fax numbers are optional. <span id="rep_cd_invalid" class="obj-inline-error" role="alert"></span></span>
                         </p>
                         <p>
                             <span class="bullet">•</span>
@@ -1050,10 +1050,7 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
     
 
           
-        <div class="obj-section-bar">
-                
-            <span style="font-weight: bold; font-size: 16px; color:white; text-transform: uppercase; letter-spacing: 0.5px;">PHYSICAL ADDRESS</span>
-        </div>
+        <div class="obj-section-bar"><span class="obj-bar-num">2.1</span><span>PHYSICAL ADDRESS</span></div>
 
         <div class="row mb-2">
             <div class="col-sm-12">
@@ -1098,6 +1095,7 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
             </div>
         </div>
 
+        <div class="obj-section-bar"><span class="obj-bar-num">2.2</span><span>SERVITUDES AND ENDORSEMENTS</span></div>
         <div class="mb-4">
             <label for="textarea" class="form-label fw-semibold text-dark">PROVIDE FULL DETAILS OF ALL SERVITUDES, ROAD PROCLAMATIONS OR OTHER ENDORSEMENTS AGAINST THE PROPERTY  <small class="text-muted fst-italic d-block">(if applicable)</small> </label>
             <textarea class="form-control" id="textarea" maxlength="500" asp-for="Full_Details" rows="4" cols="150" class="form-control border-2 shadow-sm rounded px-3 py-2" placeholder="Enter details here..."></textarea>
@@ -1165,7 +1163,7 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
                 </div>
                 <div class="col-sm-6">
                     <label class="form-label fw-semibold text-dark"> AMOUNT (R) </label>
-                    <input class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="12" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" onkeyup="reformatText(this)" id="Compensation_Amount" asp-for="Compensation_Amount">
+                    <input class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="12" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" onkeyup="reformatText(this)" id="Compensation_Amount_Display" inputmode="numeric" autocomplete="off">
 
                 </div>
             </div>
@@ -1175,19 +1173,20 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
         </div>
 
         <script>
-                        function toggleCompensationDetails(show) {
-                            document.getElementById('compensationDetails').style.display = show ? 'block' : 'none';
-                        }
+                function toggleCompensationDetails(show) {
+                    var box = document.getElementById('compensationDetails');
+                    if (box) box.style.display = show ? 'block' : 'none';
+                }
 
-                        // Optionally show it if already selected on page load
-                        window.onload = function () {
-                            const yesChecked = document.getElementById('comp_yes').checked;
-                            toggleCompensationDetails(yesChecked);
-                        };
-        </script>
+                // Show the payment details again when "Yes" is already chosen (e.g. after a page reload).
+                document.addEventListener('DOMContentLoaded', function () {
+                    var yes = document.querySelector('input[name="Compensation_Paid"][value="Yes"]');
+                    toggleCompensationDetails(!!(yes && yes.checked));
+                });
+            </script>
 
 
-        <input id="Compensation_Amount" asp-for="Compensation_Amount" hidden />
+        <input type="hidden" id="Obj_Compensation_Amount" asp-for="Compensation_Amount" />
         <div>
             <button type="button" class="btn_p2 btn obj-nav-btn obj-nav-btn-prev"><strong>Previous</strong></button>
             <button type="button" class="btn_n2 btn obj-nav-btn obj-nav-btn-next"><strong>Next</strong></button>
@@ -1201,7 +1200,7 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
         <div class="div3_R obj-form-card">
           <div style="width: 100%; margin: 20px 0; padding: 10px 0; position: relative;">
 
-                <h4 class="obj-section-title" id="s_head"><strong>SECTION 3: DESCRIPTION OF RESIDENTIAL DWELLING (FOR SECTIONAL TITLES SEE SECTION 4)</strong></h4>
+                <h4 class="obj-section-title obj-section-title--typed obj-type-res" id="s_head"><span class="obj-type-chip obj-type-chip--res"><i class="fa-solid fa-house" aria-hidden="true"></i> Residential &middot; Form A</span><strong>SECTION 3: RESIDENTIAL</strong><span class="obj-section-sub">Description of the residential dwelling. For sectional title units, also complete Section 4.</span></h4>
                  <div class="obj-step-divider">
                     <div class="line"></div>
                     <div class="dot"></div>
@@ -1228,10 +1227,7 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
             <br></br>
 
    
-                  <div class="obj-section-bar">
-               
-                <span style="font-weight: bold; font-size: 16px; color:white; text-transform: uppercase; letter-spacing: 0.5px;">STATE YES OR NO <small style="color:white;">(If Yes, indicate number of rooms)</small></span>
-            </div>
+                  <div class="obj-section-bar obj-sub-bar"><span>STATE YES OR NO <small>(if Yes, choose the number of rooms)</small></span></div>
 
             <div class="d-flex">
                 <fieldset class="col-md-4">
@@ -1619,7 +1615,7 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
           
             <div class="obj-section-bar">
                 <span class="obj-bar-num">3.2</span>
-                    <span style="font-weight: bold; font-size: 16px; color:white; : uppercase; letter-spacing: 0.5px;">OUTBUILDING</span>
+                    <span>OUTBUILDINGS</span>
            </div>
 
             <div class="row mb-2">
@@ -1671,7 +1667,7 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
            
             <div class="obj-section-bar">
                 <span class="obj-bar-num">3.3</span>
-                    <span >OTHER BUILDINGS <small style="color:white;">(ATTACH ANNEXURE)</small></span>
+                    <span>OTHER FEATURES <small>(ATTACH ANNEXURE IF NEEDED)</small></span>
             </div>
 
             <div class="d-flex">
@@ -1862,7 +1858,7 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
             </script>
 
             <div class="col-sm-12">
-                <label class="form-label fw-semibold text-dark">  DRIVEWAY<small class="text-muted fst-italic d-block">((e.g. Bricks, pavers))</small>  </label>
+                <label class="form-label fw-semibold text-dark">  DRIVEWAY<small class="text-muted fst-italic d-block">(e.g. bricks, pavers)</small>  </label>
                 <input  class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="50" type="text" onpaste="return false;" ondrop="return false;" asp-for="Res_Drive_Way">
             </div>
 
@@ -1960,7 +1956,7 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
 
             
         <div style="width: 100%; margin: 20px 0; padding: 10px 0; position: relative;">
-            <h4 class="obj-section-title" id="s_head"><strong>SECTION 3: DESCRIPTION OF BUILDINGS (INFORMATION UNDER 3.1 TO 3.4 TO BE SUPPLIED BY MEANS OF ANNEXURES AS FOLLOWS)</strong></h4>
+            <h4 class="obj-section-title obj-section-title--typed obj-type-agric" id="s_head"><span class="obj-type-chip obj-type-chip--agric"><i class="fa-solid fa-tractor" aria-hidden="true"></i> Agricultural &middot; Form C</span><strong>SECTION 3: AGRICULTURAL HOLDINGS OR FARMS</strong><span class="obj-section-sub">Description of the farm or holding. Information under 3.1 to 3.4 can be supplied as annexures.</span></h4>
             <div class="obj-step-divider">
                 <div class="line"></div>
                 <div class="dot"></div>
@@ -1972,7 +1968,7 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
             
 
         <div class="obj-section-bar">
-            <span style="font-weight: bold; color:white; margin-right: 8px;">3.1</span>
+            <span class="obj-bar-num">3.1</span>
             <span style="font-weight: bold; font-size: 16px; color:white; text-transform: uppercase; letter-spacing: 0.5px;">MAIN DWELLING ON FARM/HOLDING</span>
         </div>
 
@@ -1990,10 +1986,7 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
         <br></br>
 
            
-        <div class="obj-section-bar">
-
-            <span style="font-weight: bold; font-size: 16px; color:white; text-transform: uppercase; letter-spacing: 0.5px;">STATE YES OR NO (IF YES INDICATE NUMBER OF ROOMS)</span>
-        </div>
+        <div class="obj-section-bar obj-sub-bar"><span>STATE YES OR NO <small>(if Yes, choose the number of rooms)</small></span></div>
         <div class="d-flex">
             <fieldset class="col-md-4">
                 <label class="form-label fw-semibold text-dark"> KITCHEN </label>
@@ -2367,8 +2360,8 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
 
           
         <div class="obj-section-bar">
-            <span style="font-weight: bold; color:white; margin-right: 8px;">3.2</span>
-            <span style="font-weight: bold; font-size: 16px; color:white; text-transform: uppercase; letter-spacing: 0.5px;">OTHER BUILDING<small style="color:white">(ATTACH ANNEXTURE A)</small></span>
+            <span class="obj-bar-num">3.2</span>
+            <span>OTHER BUILDINGS <small>(ATTACH AS ANNEXURE A)</small></span>
         </div>
         <div class="row mb-2">
             <div class="col-sm-3">
@@ -2412,12 +2405,12 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
       
         <div class="obj-section-bar">
 
-            <span style="font-weight: bold; color:white; margin-right: 8px;">3.3</span>
-            <span style="font-weight: bold; font-size: 16px; color:white; text-transform: uppercase; letter-spacing: 0.5px;">IS ANY PORTION OF THE PROPERTY USED FOR ANY PURPOSE OTHER THAN AGRICULTURAL?<small style="color:white;">(e.g Business, mining, eco-tourism, trading in or hunting of game)</small></span>
+            <span class="obj-bar-num">3.3</span>
+            <span>NON-AGRICULTURAL USE</span>
         </div>
 
         <fieldset class="d-flex px-2">
-            <label class="form-label fw-semibold text-dark" style="vertical-align:middle"></label>
+            <label class="form-label fw-semibold text-dark">IS ANY PORTION OF THE PROPERTY USED FOR ANY PURPOSE OTHER THAN AGRICULTURAL? <small class="obj-q-hint">(e.g. business, mining, eco-tourism, trading in or hunting of game)</small></label>
             <span class="px-1">
                 <label class="btn px-0 py-2 fw-semibold text-dark" autocomplete="off">
                     <input type="radio" class="form-check-input" asp-for="Agri_Another_Purpose_Not_Agriculture" value="Yes">
@@ -2460,10 +2453,7 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
         </script>
         <br></br>
          
-        <div class="obj-section-bar">
-                
-            <span style="font-weight: bold; font-size: 16px; color:white; text-transform: uppercase; letter-spacing: 0.5px;">IF NECESSARY PROVIDE ANNEXURE B</span>
-        </div>
+        <p class="obj-note"><i class="fa-solid fa-paperclip" aria-hidden="true"></i> If necessary, provide Annexure B.</p>
 
                
         <div class="obj-section-bar">
@@ -2582,21 +2572,19 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
         </div>
 
 
-        <div class="obj-section-bar">
-            <fieldset class="col-md-6" style="width: 100%;">
-                <label class="form-label fw-semibold  mb-2" style="color:white;">IS THE PROPERTY EXPOSED TO RIVER</label>
+        <fieldset class="col-md-12">
+                <label class="form-label fw-semibold text-dark">IS THE PROPERTY EXPOSED TO RIVER</label>
                 <div class="d-flex gap-4">
-                    <label class="btn px-0 py-2 d-flex align-items-center" style="cursor: pointer; margin: 0;color:white;" autocomplete="off">
-                        <input type="radio" class="form-check-input me-2" asp-for="Agri_Exposed_To_River" value="Yes">
+                    <label class="btn px-0 py-2 d-flex align-items-center" style="cursor: pointer;" autocomplete="off">
+                        <input type="radio" class="form-check-input" asp-for="Agri_Exposed_To_River" value="Yes">
                         Yes
                     </label>
-                    <label class="btn px-0 py-2 d-flex align-items-center" style="cursor: pointer; margin: 0;color:white;" autocomplete="off">
-                        <input type="radio" class="form-check-input me-2" asp-for="Agri_Exposed_To_River" value="No">
+                    <label class="btn px-0 py-2 d-flex align-items-center" style="cursor: pointer;" autocomplete="off">
+                        <input type="radio" class="form-check-input" asp-for="Agri_Exposed_To_River" value="No">
                         No
                     </label>
                 </div>
             </fieldset>
-        </div>
 
         <div class="obj-section-bar">
             <span class="obj-bar-num">3.5</span>
@@ -2604,21 +2592,19 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
         </div>
 
 
-        <div class="obj-section-bar">
-            <fieldset class="col-md-6" style="width: 100%;">
-                <label class="form-label fw-semibold  mb-2" style="color:white;">IS YOUR PROPERTY AFFECTED BY LAND CLAIM</label>
+        <fieldset class="col-md-12">
+                <label class="form-label fw-semibold text-dark">IS YOUR PROPERTY AFFECTED BY LAND CLAIM</label>
                 <div class="d-flex gap-4">
-                    <label class="btn px-0 py-2 d-flex align-items-center" style="cursor: pointer; margin: 0;color:white;" autocomplete="off">
-                        <input type="radio" class="form-check-input me-2" onclick="show_div_af()" asp-for="Agri_Land_Claim" value="Yes">
+                    <label class="btn px-0 py-2 d-flex align-items-center" style="cursor: pointer;" autocomplete="off">
+                        <input type="radio" class="form-check-input" onclick="show_div_af()" asp-for="Agri_Land_Claim" value="Yes">
                         Yes
                     </label>
-                    <label class="btn px-0 py-2 d-flex align-items-center" style="cursor: pointer; margin: 0;color:white;" autocomplete="off">
-                        <input type="radio" class="form-check-input me-2" onclick="hide_div_af()" asp-for="Agri_Land_Claim" value="No">
+                    <label class="btn px-0 py-2 d-flex align-items-center" style="cursor: pointer;" autocomplete="off">
+                        <input type="radio" class="form-check-input" onclick="hide_div_af()" asp-for="Agri_Land_Claim" value="No">
                         No
                     </label>
                 </div>
             </fieldset>
-        </div>
 
             
         <div id="Land_Claim_section" style="display: none; margin-top: -10px; padding: 15px; border-left: 5px solid #3498db; background-color: #f8f9fa; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
@@ -2651,21 +2637,19 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
         </script>
 
             
-        <div class="obj-section-bar">
-            <fieldset class="col-md-6" style="width: 100%;">
-                <label class="form-label fw-semibold  mb-2" style="color:white;">DO YOU HAVE WATER RIGHTS?</label>
+        <fieldset class="col-md-12">
+                <label class="form-label fw-semibold text-dark">DO YOU HAVE WATER RIGHTS?</label>
                 <div class="d-flex gap-4">
-                    <label class="btn px-0 py-2 d-flex align-items-center" style="cursor: pointer; margin: 0;color:white;" autocomplete="off">
-                        <input type="radio" class="form-check-input me-2" onclick="show_div_wr()" asp-for="Agri_Water_Rights" value="Yes">
+                    <label class="btn px-0 py-2 d-flex align-items-center" style="cursor: pointer;" autocomplete="off">
+                        <input type="radio" class="form-check-input" onclick="show_div_wr()" asp-for="Agri_Water_Rights" value="Yes">
                         Yes
                     </label>
-                    <label class="btn px-0 py-2 d-flex align-items-center" style="cursor: pointer; margin: 0;color:white;" autocomplete="off">
-                        <input type="radio" class="form-check-input me-2" onclick="hide_div_wr()" asp-for="Agri_Water_Rights" value="No">
+                    <label class="btn px-0 py-2 d-flex align-items-center" style="cursor: pointer;" autocomplete="off">
+                        <input type="radio" class="form-check-input" onclick="hide_div_wr()" asp-for="Agri_Water_Rights" value="No">
                         No
                     </label>
                 </div>
             </fieldset>
-        </div>
 
         <div id="Water_Right_section" style="display: none; margin-top: -10px; padding: 15px; border-left: 5px solid #3498db; background-color: #f8f9fa; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
             <div id="water-right">
@@ -2697,21 +2681,19 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
                         });
         </script>
 
-        <div class="obj-section-bar">
-            <fieldset class="col-md-6" style="width: 100%;">
-                <label class="form-label fw-semibold  mb-2" style="color:white;">HAVE YOU APPLIED FOR A REZONING OR CONSENT USE?</label>
+        <fieldset class="col-md-12">
+                <label class="form-label fw-semibold text-dark">HAVE YOU APPLIED FOR A REZONING OR CONSENT USE?</label>
                 <div class="d-flex gap-4">
-                    <label class="btn px-0 py-2 d-flex align-items-center" style="cursor: pointer; margin: 0;color:white;" autocomplete="off">
-                        <input type="radio" class="form-check-input me-2" onclick="show_div_wr()" asp-for="Agri_Rezoning_Consent_Use" value="Yes">
+                    <label class="btn px-0 py-2 d-flex align-items-center" style="cursor: pointer;" autocomplete="off">
+                        <input type="radio" class="form-check-input" onclick="show_div_wr()" asp-for="Agri_Rezoning_Consent_Use" value="Yes">
                         Yes
                     </label>
-                    <label class="btn px-0 py-2 d-flex align-items-center" style="cursor: pointer; margin: 0;color:white;" autocomplete="off">
-                        <input type="radio" class="form-check-input me-2" onclick="hide_div_wr()" asp-for="Agri_Rezoning_Consent_Use" value="No">
+                    <label class="btn px-0 py-2 d-flex align-items-center" style="cursor: pointer;" autocomplete="off">
+                        <input type="radio" class="form-check-input" onclick="hide_div_wr()" asp-for="Agri_Rezoning_Consent_Use" value="No">
                         No
                     </label>
                 </div>
             </fieldset>
-        </div>
 
         <div id="CONSENT_USE_section" style="display: none; margin-top: -10px; padding: 15px; border-left: 5px solid #3498db; background-color: #f8f9fa; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
               
@@ -2744,21 +2726,19 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
                             toggleDescSection();
                         });
         </script>
-        <div class="obj-section-bar">
-            <fieldset class="col-md-6" style="width: 100%;">
-                <label class="form-label fw-semibold  mb-2" style="color:white;">HAS YOUR AGRICULTURAL HOLDINGS PROPERTY BEEN EXCISED?</label>
+        <fieldset class="col-md-12">
+                <label class="form-label fw-semibold text-dark">HAS YOUR AGRICULTURAL HOLDINGS PROPERTY BEEN EXCISED?</label>
                 <div class="d-flex gap-4">
-                    <label class="btn px-0 py-2 d-flex align-items-center" style="cursor: pointer; margin: 0;color:white;" autocomplete="off">
-                        <input type="radio" class="form-check-input me-2" asp-for="Agri_Land_Excised" value="Yes">
+                    <label class="btn px-0 py-2 d-flex align-items-center" style="cursor: pointer;" autocomplete="off">
+                        <input type="radio" class="form-check-input" asp-for="Agri_Land_Excised" value="Yes">
                         Yes
                     </label>
-                    <label class="btn px-0 py-2 d-flex align-items-center" style="cursor: pointer; margin: 0;color:white;" autocomplete="off">
-                        <input type="radio" class="form-check-input me-2" asp-for="Agri_Land_Excised" value="No">
+                    <label class="btn px-0 py-2 d-flex align-items-center" style="cursor: pointer;" autocomplete="off">
+                        <input type="radio" class="form-check-input" asp-for="Agri_Land_Excised" value="No">
                         No
                     </label>
                 </div>
             </fieldset>
-        </div>
 
 
         <div id="Agr_Land_section" style="display: none; margin-top: -10px; padding: 15px; border-left: 5px solid #3498db; background-color: #f8f9fa; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
@@ -2791,21 +2771,19 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
                         });
         </script>
      
-        <div class="obj-section-bar">
-            <fieldset class="col-md-6" style="width: 100%;">
-                <label class="form-label fw-semibold  mb-2" style="color:white;">HAS THE TOWNSHIP APPLIED FOR OR PROCLAIMED?</label>
+        <fieldset class="col-md-12">
+                <label class="form-label fw-semibold text-dark">HAS THE TOWNSHIP APPLIED FOR OR PROCLAIMED?</label>
                 <div class="d-flex gap-4">
-                    <label class="btn px-0 py-2 d-flex align-items-center" style="cursor: pointer; margin: 0;color:white;" autocomplete="off">
-                        <input type="radio" class="form-check-input me-2" asp-for="Agri_Township_Applied" value="Yes">
+                    <label class="btn px-0 py-2 d-flex align-items-center" style="cursor: pointer;" autocomplete="off">
+                        <input type="radio" class="form-check-input" asp-for="Agri_Township_Applied" value="Yes">
                         Yes
                     </label>
-                    <label class="btn px-0 py-2 d-flex align-items-center" style="cursor: pointer; margin: 0;color:white;" autocomplete="off">
-                        <input type="radio" class="form-check-input me-2" asp-for="Agri_Township_Applied" value="No">
+                    <label class="btn px-0 py-2 d-flex align-items-center" style="cursor: pointer;" autocomplete="off">
+                        <input type="radio" class="form-check-input" asp-for="Agri_Township_Applied" value="No">
                         No
                     </label>
                 </div>
             </fieldset>
-        </div>
        
         <div id="Agr_township_section" style="display: none; margin-top: -10px; padding: 15px; border-left: 5px solid #3498db; background-color: #f8f9fa; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
             <div id="water-right">
@@ -2836,10 +2814,7 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
                         });
         </script>
 
-        <div class="obj-section-bar">
-                            
-            <span style="font-weight: bold; font-size: 16px; color: white; text-transform: uppercase; letter-spacing: 0.5px;">TENANT AND RENT INFORMATION - ANNEXURE C</span>
-        </div>
+        <div class="obj-section-bar obj-sub-bar"><span>TENANT AND RENT INFORMATION <small>(ANNEXURE C)</small></span></div>
 
         <div class=" row mb-2">
             <div class="col-sm-10">
@@ -2907,21 +2882,14 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
        <div class="div3_B obj-form-card">
 
             <div style="width: 100%; margin: 20px 0; padding: 10px 0; position: relative;">
-                <h4 class="obj-section-title" id="s_head"><strong>SECTION 3: DESCRIPTION OF BUILDINGS (FOR SECTIONAL TITLES SEE SECTION 4)</strong></h4>
+                <h4 class="obj-section-title obj-section-title--typed obj-type-bus" id="s_head"><span class="obj-type-chip obj-type-chip--bus"><i class="fa-solid fa-building" aria-hidden="true"></i> Business &amp; Commercial &middot; Form B</span><strong>SECTION 3: BUSINESS AND COMMERCIAL</strong><span class="obj-section-sub">Description of the buildings. For sectional title units, also complete Section 4. Information under 3.1 to 3.4 can be supplied as annexures.</span></h4>
                 <div class="obj-step-divider">
                     <div class="line"></div>
                     <div class="dot"></div>
                     <div class="line"></div>
                 </div>
             </div>
-             <div class="obj-section-bar">
-     
-                <span >(INFORMATION UNDER 3.1 TO 3.4 TO BE SUPPLIED BY MEANS OF ANNEXURES AS FOLLOWS)</span>
-            </div>
-
-            <div class="obj-section-bar">
-                <span >TENANT AND RENT INFORMATION - ANNEXURE A</span>
-            </div>
+             <div class="obj-section-bar"><span class="obj-bar-num">3.1</span><span>TENANT AND RENT INFORMATION <small>(ANNEXURE A)</small></span></div>
 
             <div class="row mb-2">
                 <div class="col-sm-10">
@@ -2971,7 +2939,7 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
                 
 
             <div class="obj-section-bar">
-                <span style="font-weight: bold; color: white;; margin-right: 8px;">3.3</span>
+                <span class="obj-bar-num">3.3</span>
                     <span >STATEMENT OF INCOME & EXPENDITURE FOR PREVIOUS FINANCIAL YEAR - ANNEXURE C</span>
               </div>
 
@@ -2995,12 +2963,12 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
             </div>
 
             <div class="row mb-2">
-                <div class="col-mb-6">
+                <div class="col-md-6">
                     <label class="form-label fw-semibold text-dark"> DESCRIPTION <small class="text-muted fst-italic ms-2">(e.g. Used as a shop, office, etc)</small></label>
                     <input  class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" asp-for="Bus_Shops">
 
                 </div>
-                <div class="col-mb-6">
+                <div class="col-md-6">
                     <label class="form-label fw-semibold text-dark"> CONDITION </label>
                     <input  class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" asp-for="Bus_Building_Condition">
 
@@ -3008,7 +2976,8 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
             </div>
 
             <div class="col-sm-12">
-                <h5 style="margin-top: 15px;">3.5 IF THE PROPERTY HAS NOT BEEN DEVELOPED TO ITS HIGHEST AND BEST USE, INDICATE THE EXTENT OF LAND THAT IS AVAILABLE FOR FURTHER DEVELOPMENT. <small class="text-muted fst-italic ms-2">(m²)</small></h5>
+                <div class="obj-section-bar"><span class="obj-bar-num">3.5</span><span>LAND AVAILABLE FOR FURTHER DEVELOPMENT</span></div>
+                <label class="form-label fw-semibold text-dark">IF THE PROPERTY HAS NOT BEEN DEVELOPED TO ITS HIGHEST AND BEST USE, HOW MUCH LAND IS AVAILABLE FOR FURTHER DEVELOPMENT? <small class="text-muted fst-italic ms-2">(m²)</small></label>
                 <input  class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" asp-for="Bus_Extent_Land_further_Dev">
 
             </div>
@@ -3036,7 +3005,7 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
     <div class="div4_B obj-form-card">
 
         <div style="width: 100%; margin: 20px 0; padding: 10px 0; position: relative;">
-            <h4 class="obj-section-title" id="s_head"><strong>SECTION 4: SECTIONAL TITLE UNITS</strong></h4>
+            <h4 class="obj-section-title obj-section-title--typed obj-type-bus" id="s_head"><span class="obj-type-chip obj-type-chip--bus"><i class="fa-solid fa-building" aria-hidden="true"></i> Business &amp; Commercial &middot; Form B</span><strong>SECTION 4: BUSINESS AND COMMERCIAL &ndash; SECTIONAL TITLE UNITS</strong><span class="obj-section-sub">Only complete this section if the property is a sectional title unit.</span></h4>
             <div class="obj-step-divider">
                 <div class="line"></div>
                 <div class="dot"></div>
@@ -3122,10 +3091,7 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
         </div>
 
            
-        <div class="obj-section-bar">
-                  
-            <span style="font-weight: bold; font-size: 16px; color:white; text-transform: uppercase; letter-spacing: 0.5px;">TENANT AND RENT INFORMATION - ANNEXURE A (ADD ANNEXURE FOR ADDITIONAL INFORMATION)</span>
-        </div>
+        <div class="obj-section-bar"><span class="obj-bar-num">4.2</span><span>TENANT AND RENT INFORMATION <small>(ANNEXURE A &ndash; add an annexure for more tenants)</small></span></div>
 
 
         <div class="row mb-2">
@@ -3175,7 +3141,8 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
         </div>
 
                
-        <div class="row mt-4">
+        <div class="obj-section-bar"><span class="obj-bar-num">4.3</span><span>COMMON PROPERTY AND EXCLUSIVE AREAS</span></div>
+            <div class="row mt-4">
             <!-- COMMON PROPERTY SECTION -->
             <div class="col-md-6">
                 <div style="background: #f8f9fa; border: 2px solid #e6b000; border-radius: 10px; padding: 25px; margin-bottom: 30px; box-shadow: 0 2px 10px rgba(0, 101, 112, 0.1);">
@@ -3262,7 +3229,7 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
     <div class="div4_R obj-form-card">
 
         <div style="width: 100%; margin: 20px 0; padding: 10px 0; position: relative;">
-            <h4 class="obj-section-title" id="s_head"><strong>SECTION 4: SECTIONAL TITLE UNITS</strong></h4>
+            <h4 class="obj-section-title obj-section-title--typed obj-type-res" id="s_head"><span class="obj-type-chip obj-type-chip--res"><i class="fa-solid fa-house" aria-hidden="true"></i> Residential &middot; Form A</span><strong>SECTION 4: RESIDENTIAL &ndash; SECTIONAL TITLE UNITS</strong><span class="obj-section-sub">Only complete this section if the property is a sectional title unit.</span></h4>
             <div class="obj-step-divider">
                 <div class="line"></div>
                 <div class="dot"></div>
@@ -3334,7 +3301,8 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
                 </div> *@
         </div>
 
-        <div class="d-flex">
+        <div class="obj-section-bar obj-sub-bar"><span>STATE YES OR NO <small>(if Yes, choose the number of rooms)</small></span></div>
+            <div class="d-flex">
             <fieldset class="col-md-4 mt-3">
                 <label class="form-label fw-semibold text-dark"> KITCHEN </label>
                 <span>
@@ -3717,7 +3685,8 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
         </div>
     </br>
 </br>
-<div class="row mt-4">
+<div class="obj-section-bar"><span class="obj-bar-num">4.2</span><span>COMMON PROPERTY AND EXCLUSIVE AREAS</span></div>
+            <div class="row mt-4">
 
     <!-- COMMON PROPERTY SECTION -->
     <div class="col-md-6">
@@ -3823,25 +3792,27 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
                 </div>
             </div>
 
+            <div class="obj-section-bar"><span class="obj-bar-num">5.1</span><span>PROPERTY ON THE MARKET</span></div>
+
             <div style="display: flex; margin-bottom: 20px;">
                 <div style="flex: 3; margin-right: 15px;">
                     <label class="form-label fw-semibold text-dark">IF YOUR PROPERTY IS CURRENTLY ON THE MARKET, WHAT IS THE ASKING PRICE?</label>
-                    <input type="text" style="width: 100%; padding: 8px; border: 1px solid #c9d0e0; border-radius: 4px; box-sizing: border-box;" maxlength="12" onkeypress="return onlyNumberKey(event)">
+                    <input type="text" name="Current_Asking_price" id="s5" inputmode="numeric" style="width: 100%; padding: 8px; border: 1px solid #c9d0e0; border-radius: 4px; box-sizing: border-box;" maxlength="12" onkeypress="return onlyNumberKey(event)">
                 </div>
                 <div style="flex: 1;">
                     <label class="form-label fw-semibold text-dark">OFFER RECEIVED <span style="font-style: italic; color: #777; font-size: 12px;">(R)</span></label>
-                    <input type="text" style="width: 100%; padding: 8px; border: 1px solid #c9d0e0; border-radius: 4px; box-sizing: border-box;" maxlength="12" onkeypress="return onlyNumberKey(event)">
+                    <input type="text" name="Current_Recieved_Offer" inputmode="numeric" style="width: 100%; padding: 8px; border: 1px solid #c9d0e0; border-radius: 4px; box-sizing: border-box;" maxlength="12" onkeypress="return onlyNumberKey(event)">
                 </div>
             </div>
         
             <div style="display: flex; margin-bottom: 20px;">
                 <div style="flex: 3; margin-right: 15px;">
                     <label style="display: block; font-weight: 600; margin-bottom: 8px; color: black; font-size: 14px;">IF YOUR PROPERTY HAS BEEN ON THE MARKET IN THE LAST 3 YEARS, WHAT WAS THE ASKING PRICE?</label>
-                    <input type="text" style="width: 100%; padding: 8px; border: 1px solid #c9d0e0; border-radius: 4px; box-sizing: border-box;" maxlength="12" onkeypress="return onlyNumberKey(event)">
+                    <input type="text" name="Previous_Asking_price" inputmode="numeric" style="width: 100%; padding: 8px; border: 1px solid #c9d0e0; border-radius: 4px; box-sizing: border-box;" maxlength="12" onkeypress="return onlyNumberKey(event)">
                 </div>
                 <div style="flex: 1;">
                     <label class="form-label fw-semibold text-dark">OFFER RECEIVED <span style="font-style: italic; color: #777; font-size: 12px;">(R)</span></label>
-                    <input type="text" style="width: 100%; padding: 8px; border: 1px solid #c9d0e0; border-radius: 4px; box-sizing: border-box;" maxlength="12" onkeypress="return onlyNumberKey(event)">
+                    <input type="text" name="Previous_Recieved_Offer" inputmode="numeric" style="width: 100%; padding: 8px; border: 1px solid #c9d0e0; border-radius: 4px; box-sizing: border-box;" maxlength="12" onkeypress="return onlyNumberKey(event)">
                 </div>
             </div>
             <div class="row mb-2">
@@ -3857,7 +3828,8 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
                 </div>
             </div>
               
-            <div class="col-sm-12">
+            <div class="obj-section-bar"><span class="obj-bar-num">5.2</span><span>SALES OF OTHER PROPERTIES IN THE AREA</span></div>
+                <div class="col-sm-12">
                 <label class="form-label fw-semibold text-dark">SALES TRANSACTIONS(OF OTHER PROPERTIES IN THE VICINITY) USED BY @partyUpper IN DETERMINING THE MARKET VALUES OF THE @propertyActionText</label>
                 <input class="form-control border-2 rounded shadow-sm px-4 py-2" type="text" onpaste="return false;" ondrop="return false;" maxlength="12" asp-for="Other_Nearby_Sales">
 
@@ -3956,38 +3928,33 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
                 <div class="dot"></div>
                 <div class="line"></div>
             </div>
-            <div class="alert-notice">
-
+            <div class="alert-notice obj-s6-help">
                 <div class="alert-header">
                     <span class="alert-icon">📋</span>
-                    <h3 class="alert-title"><strong>Section 6 Instructions</strong> </h3>
+                    <h3 class="alert-title"><strong>How to complete Section 6</strong></h3>
                 </div>
-
                 <div class="instruction-box">
-                    <p>
-                        <span class="bullet">•</span>
-                        <span id="new_change_invalid"><strong>Complete at least one field below</strong> to submit your objection</span>
-                    </p>
-                    <p>
-                        <span class="bullet">•</span>
-                        <span><strong>Only fill in the fields you wish to object to</strong> — leave other fields blank</span>
-                    </p>
+                    <p><span class="bullet">1</span><span><strong>Left column (6.1):</strong> these are the details on the valuation roll. You cannot change them.</span></p>
+                    <p><span class="bullet">2</span><span><strong>Right column (6.2):</strong> fill in <strong>only</strong> the details you want the City to change. Leave the others blank.</span></p>
+                    <p><span class="bullet">3</span><span>Fill in <strong>at least one</strong> detail in the right column, otherwise you cannot continue.</span></p>
+                    <p><span class="bullet">4</span><span>Type the <strong>market value</strong> in Rand using numbers only, for example <strong>1250000</strong>.</span></p>
+                    <p><span class="bullet">5</span><span>Use box <strong>6.3</strong> to explain your reasons. You can upload supporting documents on the next page.</span></p>
                 </div>
-
                 <div class="warning-box">
                     <p>
                         <span class="warning-icon">⚠️</span>
                         <span>
-                            <strong>Important:</strong> Do not enter values that are <span class="highlight">identical to the original</span>.
-                            Unchanged values will be automatically cleared after 5 seconds to prevent submission errors.
+                            <strong>Important:</strong> a new value must be <span class="highlight">different from the value on the roll</span>.
+                            If it is the same, the field turns red and you must change it (or leave it blank) before you can continue.
                         </span>
                     </p>
                 </div>
+                <p id="new_change_invalid" class="obj-inline-error" role="alert" aria-live="polite"></p>
             </div>
             <div class="row mt-4">
                 <div class="col-md-6">
                     <div style="padding: 20px; border: 3px solid #006570; border-radius: 12px; background: #e8f5e9; box-shadow: 0 4px 15px rgba(0, 101, 112, 0.15);">
-                        <h6 style="margin-top: 0; margin-bottom: 20px; color: white; background: #006570; padding: 12px 15px; border-radius: 8px; text-align: center; font-size: 16px; font-weight: 700; letter-spacing: 0.5px;" id="Section6_roll">@particularsHeading</h6>
+                        <h6 style="margin-top: 0; margin-bottom: 20px; color: white; background: #006570; padding: 12px 15px; border-radius: 8px; text-align: center; font-size: 16px; font-weight: 700; letter-spacing: 0.5px;" id="Section6_roll">6.1 @particularsHeading</h6>
 
                         <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #006570; font-size: 13px; text-transform: uppercase; letter-spacing: 0.3px;"> DESCRIPTION OF THE PROPERTY/UNIT</label>
                         <input style="width: 100%; padding: 12px 16px; margin-bottom: 15px; border: 2px solid #006570; border-radius: 8px; background: white; font-size: 14px; color: #333; box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);" id="desc"  type="text" onpaste="return false;" ondrop="return false;" disabled value="@messagePD" asp-for="Old_Property_Description">
@@ -4084,7 +4051,7 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
 
                 <div class="col-md-6" style="flex:1">
                     <div style="padding: 20px; border: 3px solid #e6b000; border-radius: 12px; background: #fff9e6; box-shadow: 0 6px 20px rgba(230, 176, 0, 0.2);">
-                        <h6 style="margin-top: 0; margin-bottom: 20px; color: white; background: #e6b000; padding: 12px 15px; border-radius: 8px; text-align: center; font-size: 16px; font-weight: 700; letter-spacing: 0.5px; box-shadow: 0 3px 10px rgba(230, 176, 0, 0.3);">CHANGES REQUESTED BY @partyUpper</h6>
+                        <h6 style="margin-top: 0; margin-bottom: 20px; color: white; background: #e6b000; padding: 12px 15px; border-radius: 8px; text-align: center; font-size: 16px; font-weight: 700; letter-spacing: 0.5px; box-shadow: 0 3px 10px rgba(230, 176, 0, 0.3);">6.2 CHANGES REQUESTED BY @partyUpper</h6>
 
                      
                         <label style ="display: block; margin-bottom: 8px; font-weight: 600; color: #d4a000; font-size: 13px; text-transform: uppercase; letter-spacing: 0.3px;">DESCRIPTION OF THE PROPERTY/UNIT</label>
@@ -4159,7 +4126,6 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
 
                         <hr />
 
-                        <span id="new_change_invalid">Please fill at least one of the contact details fields.</span>
                         <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #d4a000; font-size: 13px; text-transform: uppercase; letter-spacing: 0.3px;">CATEGORY</label>
                         <select style="width: 100%; padding: 12px 16px; margin-bottom: 15px; border: 2px solid #e6b000; border-radius: 8px; background: white; font-size: 14px; color: #333; transition: all 0.3s; box-shadow: 0 2px 8px rgba(230, 176, 0, 0.1); cursor: pointer;" id="NewCat2" asp-for="New3_Category">
                             <option value="" selected disabled>--Select Category--</option>
@@ -4226,7 +4192,7 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
             </div>
 
             <div>
-                <label style="display: block; margin-bottom: 10px; font-weight: 600; color: #006570; font-size: 14px;">ADVERSE FEATURES AND/OR FURTHER REASONS IN SUPPORT OF THIS <span id="Section6_reason">OBJECTION</span> (ANNEXURE CAN BE PROVIDED)</label>
+                <label style="display: block; margin-bottom: 10px; font-weight: 600; color: #006570; font-size: 14px;">6.3 ADVERSE FEATURES AND/OR FURTHER REASONS IN SUPPORT OF THIS <span id="Section6_reason">OBJECTION</span> (ANNEXURE CAN BE PROVIDED)</label>
                 <textarea style="width: 100%; padding: 15px; border: 2px solid #e6b000; border-radius: 8px; background: white; font-size: 14px; color: #333; resize: vertical; box-shadow: 0 2px 8px rgba(230, 176, 0, 0.1);" id="textarea" maxlength="500" asp-for="Objection_Reasons" rows="4" cols="150"></textarea>
             </div>
 
@@ -4278,10 +4244,7 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
     <div id="sectionUpload" style="display:flex;justify-content: center;">
         <div class="divU obj-form-card">
 
-            <div class="obj-section-bar">
-               
-                <span>Upload Documents</span>
-            </div>
+            <div class="obj-section-bar"><span class="obj-bar-num">6.4</span><span>UPLOAD SUPPORTING DOCUMENTS</span></div>
 
             <p class="obj-ev-intro">
                 Attach anything that supports the information supplied in this form.
@@ -4345,9 +4308,7 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
                 </div>
             </div>
 
-            <div class="obj-section-bar">
-                <span>Declaration &amp; @(_isAppeal ? "Appeal" : "Objection") Details</span>
-            </div>
+            <div class="obj-section-bar"><span class="obj-bar-num">7.1</span><span>Declaration &amp; @(_isAppeal ? "Appeal" : "Objection") Details</span></div>
 
             <!-- ── Legal notice (Section 42(2)) ───────────────────────── -->
             <div class="obj-legal-box">
@@ -4493,7 +4454,32 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
         <script src="https://code.jquery.com/jquery-latest.min.js" type="text/javascript"></script>
         <script asp-append-version="true" src="~/js/objectionmulti.js" type="text/javascript"></script>
     <script asp-append-version="true" src="~/js/sa-id-validation.js"></script>
-    <script asp-append-version="true" src="~/js/form-yes-no.js"></script>
+    <script asp-append-version="true" src="~/js/genesis-forms.js"></script>
+    <script>
+        // Requested Split 3 is not saved in the database. Keep what the client
+        // typed so the Multipurpose acknowledgement page can show it
+        // (same as the Section 78 Multipurpose form).
+        (function () {
+            var map = {
+                NewCat3: 'obj_New4_Category',
+                NewExtent3: 'obj_New4_Extent',
+                NewMarketValue3: 'obj_New4_Market_Value'
+            };
+
+            function save() {
+                Object.keys(map).forEach(function (id) {
+                    var el = document.getElementById(id);
+                    try { sessionStorage.setItem(map[id], el && el.value ? el.value : ''); }
+                    catch (e) { }
+                });
+            }
+
+            save(); // clears values from a previous submission
+            ['input', 'change', 'submit'].forEach(function (name) {
+                document.addEventListener(name, save, true);
+            });
+        })();
+    </script>
         <script asp-append-version="true" src="~/js/form-consistency.js"></script>
         <script asp-append-version="true" src="~/js/genesis-form-guard.js"></script>
         <script asp-append-version="true" src="~/js/genesis-signature.js"></script>

@@ -709,34 +709,40 @@ public class ObjectionController : Controller
                 }
             }
 
-            foreach (var item in splitItems)
+            // Clear the split rows of a property opened earlier in this
+            // session, otherwise its Business / Residential split could show
+            // on this property's Section 6 and acknowledgement page.
+            foreach (var key in new[]
             {
-                if (item.IsMultiPurpose)
-                {
-                    TempData["CurrentFilter_mult_purp_CAT"] = item.CatDesc;
-                    TempData["CurrentFilter_mult_purp_PA"] = item.LisStreetAddress;
-                    TempData["CurrentFilter_mult_purp_EXT"] = item.RateableArea;
-                    TempData["CurrentFilter_mult_purp_MV"] = item.MarketValue;
-                }
-                else if (item.CatDesc is
-                    "Residential" or
-                    "Public Service Infrastructure" or
-                    "Split - Residential" or
-                    "Split - Industrial" or
-                    "Industrial")
-                {
-                    TempData["CurrentFilter_mult_Res_CAT"] = item.CatDesc;
-                    TempData["CurrentFilter_mult_Res_PA"] = item.LisStreetAddress;
-                    TempData["CurrentFilter_mult_Res_EXT"] = item.RateableArea;
-                    TempData["CurrentFilter_mult_Res_MV"] = item.MarketValue;
-                }
-                else
-                {
-                    TempData["CurrentFilter_mult_Bus_CAT"] = item.CatDesc;
-                    TempData["CurrentFilter_mult_Bus_PA"] = item.LisStreetAddress;
-                    TempData["CurrentFilter_mult_Bus_EXT"] = item.RateableArea;
-                    TempData["CurrentFilter_mult_Bus_MV"] = item.MarketValue;
-                }
+                "CurrentFilter_mult_purp_CAT", "CurrentFilter_mult_purp_PA", "CurrentFilter_mult_purp_EXT", "CurrentFilter_mult_purp_MV",
+                "CurrentFilter_mult_Res_CAT", "CurrentFilter_mult_Res_PA", "CurrentFilter_mult_Res_EXT", "CurrentFilter_mult_Res_MV",
+                "CurrentFilter_mult_Bus_CAT", "CurrentFilter_mult_Bus_PA", "CurrentFilter_mult_Bus_EXT", "CurrentFilter_mult_Bus_MV"
+            })
+            {
+                TempData.Remove(key);
+            }
+
+            // Section 6 has three "as reflected on the roll" slots, filled the
+            // same way as the Section 78 Multipurpose form: the Multiple
+            // Purposes row first, then the split rows in the order the roll
+            // returns them. (Sorting by category put two Business splits in
+            // the same slot, so one of them was lost.)
+            var splitRows = splitItems
+                .Select((row, index) => new { row, index })
+                .OrderByDescending(x => x.row.IsMultiPurpose)
+                .ThenBy(x => x.index)
+                .Select(x => x.row)
+                .Take(3)
+                .ToList();
+
+            var slots = new[] { "purp", "Res", "Bus" };
+            for (var i = 0; i < splitRows.Count; i++)
+            {
+                var slot = slots[i];
+                TempData[$"CurrentFilter_mult_{slot}_CAT"] = splitRows[i].CatDesc;
+                TempData[$"CurrentFilter_mult_{slot}_PA"] = splitRows[i].LisStreetAddress;
+                TempData[$"CurrentFilter_mult_{slot}_EXT"] = splitRows[i].RateableArea;
+                TempData[$"CurrentFilter_mult_{slot}_MV"] = splitRows[i].MarketValue;
             }
 
             KeepObjectionFormTempData();
