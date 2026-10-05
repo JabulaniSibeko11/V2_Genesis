@@ -2083,18 +2083,44 @@ This is an automated email. Please do not reply directly.<br />
                 "You are hereby notified that the Municipal Valuer has received an objection from an individual " +
                 "to your property as reflected in the valuation roll."));
 
-            var submission = new StringBuilder();
-            submission.Append("Submissions by the owner in response to the objections must be submitted online to the Municipal Valuer ");
-            submission.Append($"no later than <strong>{H(notice.SubmissionsCloseDate.ToString("dd MMMM yyyy"))}</strong> ");
-            submission.Append($"via <a href='{H(notice.PortalUrl)}' style='color:#9a7400;'>{H(notice.PortalUrl)}</a>. ");
-            submission.Append("To attach submissions, click on “Upload Documents,” select “Section 51 Uploads,” ");
-            submission.Append($"fill in the objection number <strong>{H(notice.ObjectionNo)}</strong> ");
+            // Direct link: opens the Section 51 upload page with the objection
+            // number filled in. No portal account or sign-in is needed.
+            var portal = string.IsNullOrWhiteSpace(notice.PortalUrl)
+                ? "https://objections.joburg.org.za"
+                : notice.PortalUrl.Trim().TrimEnd('/');
+            var uploadLink = portal + "/section51/verify?objectionNo=" +
+                Uri.EscapeDataString(notice.ObjectionNo?.Trim() ?? string.Empty);
 
-            if (!string.IsNullOrWhiteSpace(notice.Section51Pin))
-                submission.Append($"and PIN <strong>{H(notice.Section51Pin)}</strong>, ");
+            content.Append(Para(
+                "Submissions by the owner in response to the objection must be submitted online to the Municipal Valuer " +
+                $"no later than <strong>{H(notice.SubmissionsCloseDate.ToString("dd MMMM yyyy"))}</strong>."));
 
-            submission.Append("and then upload the submission documents.");
-            content.Append(Para(submission.ToString()));
+            content.Append(Details(
+                ("Objection Number", $"<strong>{H(notice.ObjectionNo)}</strong>"),
+                ("Section 51 PIN", string.IsNullOrWhiteSpace(notice.Section51Pin)
+                    ? "See the attached notice"
+                    : $"<strong style='font-size:16px;letter-spacing:1px;'>{H(notice.Section51Pin.Trim())}</strong>"),
+                ("Submissions close", H(notice.SubmissionsCloseDate.ToString("dd MMMM yyyy")))));
+
+            content.Append(Para(
+                "<strong>The quickest way:</strong> click the button below. The upload page opens with the objection " +
+                "number already filled in — enter your Section 51 PIN and upload your documents. " +
+                "You do <strong>not</strong> need a portal account or to sign in."));
+
+            content.Append(Button("Upload Section 51 Submission", uploadLink));
+
+            content.Append(Para("<strong>Or go to the portal yourself:</strong>"));
+            content.Append(BulletList(new[]
+            {
+                $"<strong>No portal account:</strong> open <a href='{H(portal)}' style='color:#9a7400;'>{H(portal)}</a>, " +
+                "click <strong>Add Evidence</strong> in the top menu and choose <strong>Section 51 Owner Evidence</strong>.",
+                "<strong>You have a portal account:</strong> sign in, click <strong>Add Evidence</strong> in the top menu " +
+                "and choose <strong>Section 51 Evidence</strong>.",
+                $"Enter the objection number <strong>{H(notice.ObjectionNo)}</strong> and your Section 51 PIN, " +
+                "then upload your documents: up to 10 files (PDF, JPG or PNG, 3 MB each). Section 51 documents can be submitted once."
+            }, numbered: false));
+
+            content.Append(SmallPrint($"If the button does not work, copy this link into your browser: {H(uploadLink)}"));
 
             content.Append(Para(
                 "You will be notified of the Municipal Valuer’s decision in terms of Section 53 of the " +

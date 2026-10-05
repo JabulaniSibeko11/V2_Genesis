@@ -78,24 +78,26 @@
                        name="objectionNo"
                        class="ev-input"
                        placeholder="e.g. OBJ-GV23-SUP3-12345"
+                       value="@(ViewBag.PrefilledRef as string)"
                        autocomplete="off"
-                       autofocus
+                       autofocus="@(string.IsNullOrWhiteSpace(ViewBag.PrefilledRef as string) ? "autofocus" : null)"
                        required />
             </div>
 
             <div class="ev-form-group">
                 <label class="ev-label">
-                    <i class="fa-solid fa-key"></i> PIN
+                    <i class="fa-solid fa-key"></i> Section 51 PIN
                 </label>
                 <input type="text"
                        name="pin"
                        class="ev-input"
                        placeholder="Enter your PIN (case-sensitive)"
                        autocomplete="off"
+                       autofocus="@(string.IsNullOrWhiteSpace(ViewBag.PrefilledRef as string) ? null : "autofocus")"
                        required />
                 <p class="ev-hint">
-                    Your PIN was in the acknowledgement letter from your
-                    original objection submission.
+                    Your PIN is in the Section 51 notice (e-mail and letter) the City sent
+                    to you as the property owner. You do not need to sign in.
                 </p>
             </div>
 

@@ -1,4 +1,4 @@
-using QuestPDF.Fluent;
+﻿using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 using System.Globalization;
@@ -189,7 +189,12 @@ namespace V2_Genesis.Services.Section51
                             t.Span("Submissions by the owner in response to the objections must be submitted online to the Municipal Valuer no later than ").Style(body9);
                             t.Span(ctx.SubmissionsCloseDate.ToString("dd MMMM yyyy", culture)).Style(body9b);
                             t.Span($" via {ctx.PortalUrl}. ").Style(body9);
-                            t.Span("To attach submissions, click on “Upload Documents,” select “Section 51 Uploads,” fill in the objection number: ").Style(body9);
+                            // Same steps as the web app menus and the notice e-mail.
+                            t.Span("No sign-in is needed: on the portal click “Add Evidence” and choose “Section 51 Owner Evidence” ").Style(body9);
+                            t.Span("(if you have a portal account and are signed in: “Add Evidence” → “Section 51 Evidence”). ").Style(body9);
+                            t.Span("Or go directly to ").Style(body9);
+                            t.Span(ctx.PortalUrl.TrimEnd('/') + "/section51/verify").Style(body9b);
+                            t.Span(". Enter the objection number: ").Style(body9);
                             t.Span(Safe(data.ObjectionNo)).Style(body9b);
                             t.Span(" and PIN:  ").Style(body9);
                             t.Span(Safe(data.Section51Pin)).Style(body9b1);

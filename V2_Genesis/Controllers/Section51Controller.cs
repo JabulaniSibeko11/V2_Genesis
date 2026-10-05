@@ -45,9 +45,12 @@ public class Section51Controller : Controller
     // ── GET /section51/verify ──────────────────────────────────────
     [HttpGet]
     [Route("section51/verify")]
-    public async Task<IActionResult> Verify()
+    // The link in the Section 51 notice e-mail opens this page with the
+    // objection number already filled in:  /section51/verify?objectionNo=…
+    public async Task<IActionResult> Verify(string? objectionNo = null)
     {
         ViewBag.GvList = await _db.GvList.AsNoTracking().OrderBy(r => r.ID).ToListAsync();
+        ViewBag.PrefilledRef = objectionNo?.Trim();
         return View();
     }
 
@@ -57,6 +60,7 @@ public class Section51Controller : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Verify(string objectionNo, string pin)
     {
+        ViewBag.PrefilledRef = objectionNo?.Trim();
         ViewBag.GvList = await _db.GvList.AsNoTracking().OrderBy(r => r.ID).ToListAsync();
 
         if (string.IsNullOrWhiteSpace(objectionNo) ||
