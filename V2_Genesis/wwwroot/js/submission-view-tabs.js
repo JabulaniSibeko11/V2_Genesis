@@ -1,4 +1,14 @@
 document.addEventListener("DOMContentLoaded", function () {
+    // Empty read-only values: show "Not provided" (styled in Submission-View.css).
+    document
+        .querySelectorAll(".municipal-readonly-input, .municipal-readonly-textarea")
+        .forEach(function (box) {
+            if (box.children.length === 0 && box.textContent.trim() === "") {
+                box.textContent = "Not provided";
+                box.classList.add("is-empty");
+            }
+        });
+
     document
         .querySelectorAll("[data-submitted-form-tabs]")
         .forEach(function (container) {
@@ -43,6 +53,19 @@ document.addEventListener("DOMContentLoaded", function () {
             tabs.forEach(function (tab) {
                 tab.addEventListener("click", function () {
                     activate(tab.dataset.sectionKey, true);
+
+                    // On phones the tabs take up the screen: bring the
+                    // chosen section into view.
+                    if (window.matchMedia("(max-width: 900px)").matches) {
+                        const panel = container.querySelector(
+                            '[data-section-panel="' + tab.dataset.sectionKey + '"]');
+                        if (panel) {
+                            const nav = document.querySelector("#clientNav, .cl-navbar");
+                            const offset = nav ? nav.getBoundingClientRect().height + 12 : 12;
+                            const top = panel.getBoundingClientRect().top + window.pageYOffset - offset;
+                            window.scrollTo({ top: Math.max(top, 0), behavior: "smooth" });
+                        }
+                    }
                 });
             });
 

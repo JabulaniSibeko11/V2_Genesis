@@ -1445,3 +1445,117 @@
         text-align: center;
     }
 
+
+
+/* ══════════════════════════════════════════════════════════════
+   READ-ONLY FIELDS — clear values and clear "not provided"
+   Every value box has the same height. An empty box is no longer a
+   thin grey bar: it shows "Not provided" in light italic text on a
+   white, dashed box, so it is obvious the field was left blank.
+   (.is-empty is added by submission-view-tabs.js; :empty covers
+   boxes without any text.)
+══════════════════════════════════════════════════════════════ */
+.municipal-readonly-input {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 10px 14px;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.municipal-readonly-textarea {
+    min-height: 64px;
+    padding: 12px 14px;
+    font-size: 14px;
+}
+
+.municipal-readonly-input:empty,
+.municipal-readonly-input.is-empty,
+.municipal-readonly-textarea:empty,
+.municipal-readonly-textarea.is-empty {
+    background: #ffffff;
+    border: 1px dashed #cfd6d8;
+    color: #8a9599;
+    font-weight: 500;
+    font-style: italic;
+}
+
+    .municipal-readonly-input:empty::before,
+    .municipal-readonly-textarea:empty::before {
+        content: "Not provided";
+    }
+
+.municipal-readonly-field label {
+    font-size: 11.5px;
+    color: #4b5563;
+}
+
+/* Desktop: the tabs wrap onto a second line instead of being cut off. */
+.submitted-tabs-scroll {
+    overflow: visible;
+}
+
+.submitted-tabs {
+    flex-wrap: wrap;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   SECTION TABS ON PHONES / SMALL TABLETS
+   No hidden sideways scrolling: the tabs wrap into a grid, so every
+   section is visible and easy to tap.
+══════════════════════════════════════════════════════════════ */
+@media (max-width: 900px) {
+    .submitted-tabs-scroll {
+        overflow: visible;
+    }
+
+    .submitted-tabs {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    .submitted-tab {
+        white-space: normal;
+        min-height: 58px;
+        padding: 10px 12px;
+        justify-content: center;
+        text-align: left;
+    }
+
+        .submitted-tab span {
+            font-size: 12.5px;
+            line-height: 1.3;
+        }
+}
+
+@media (max-width: 640px) {
+    .submitted-tabs {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .submitted-tab {
+        min-height: 56px;
+        border-radius: 12px;
+    }
+
+        .submitted-tab strong {
+            font-size: 10.5px;
+        }
+
+    .municipal-readonly-input {
+        min-height: 46px;
+        font-size: 15px;
+    }
+
+    .municipal-readonly-field label {
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 360px) {
+    .submitted-tabs {
+        grid-template-columns: 1fr;
+    }
+}
