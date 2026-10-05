@@ -1,3 +1,4 @@
 <Solution>
+  <Project Path="V2_Genesis.Tests/V2_Genesis.Tests.csproj" Id="d25bcf85-eee1-4a2a-ae89-75ea1efe05a2" />
   <Project Path="V2_Genesis/V2_Genesis.csproj" />
 </Solution>
