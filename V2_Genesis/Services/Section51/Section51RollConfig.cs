@@ -1,4 +1,4 @@
-namespace V2_Genesis.Services.Section51;
+﻿namespace V2_Genesis.Services.Section51;
 
 /// <summary>
 /// appsettings.json → Section51Rolls:{roll}.
@@ -8,6 +8,13 @@ namespace V2_Genesis.Services.Section51;
 ///                       submitted (ADDR1–ADDR5, EMAIL_ADDR, PREMISE_ID).
 ///   RollId              Value written to Section51Table.RollId.
 ///   RollName            Roll name printed on the notice and in the email.
+///   NoticePdfPath       Register folder for every Section 51 notice PDF of
+///                       the roll, e.g. C:\Sup4\Sup 4 Notices\Section 51 Notices
+///   EmailCopyPath       Register folder for the .eml copy of every Section 51
+///                       e-mail, e.g. C:\Sup4\Sup 4 Emails\Section 51 Notice Emails
+///   Both fall back to FileRootPath when they are not set.
+///   A copy of the PDF and the .eml is ALSO saved in the Objection Pack:
+///       ObjectionRolls:{roll}:FileRootPath\{ObjectionNo}\Section 51 Notice
 /// </summary>
 public record Section51RollConfig(
     string ValidateSp,
@@ -17,7 +24,9 @@ public record Section51RollConfig(
     string ConnectionKey,
     string PostalAddressTable,
     string RollId,
-    string RollName
+    string RollName,
+    string NoticePdfPath,
+    string EmailCopyPath
 );
 
 public static class Section51RollRegistry
@@ -56,7 +65,9 @@ public static class Section51RollRegistry
                 ConnectionKey: config[$"Section51Rolls:{key}:ConnectionKey"] ?? "Sup3Connection",
                 PostalAddressTable: Value("PostalAddressTable", defaults.Table),
                 RollId: Value("RollId", defaults.RollId),
-                RollName: Value("RollName", defaults.RollName)
+                RollName: Value("RollName", defaults.RollName),
+                NoticePdfPath: Value("NoticePdfPath", config[$"Section51Rolls:{key}:FileRootPath"] ?? string.Empty),
+                EmailCopyPath: Value("EmailCopyPath", config[$"Section51Rolls:{key}:FileRootPath"] ?? string.Empty)
             );
         }
 

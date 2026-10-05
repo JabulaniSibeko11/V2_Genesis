@@ -2035,7 +2035,26 @@ This is an automated email. Please do not reply directly.<br />
                     var generated = Directory.GetFiles(tmpDir).SingleOrDefault()
                         ?? throw new InvalidOperationException("The .eml copy was not generated.");
 
-                    File.Move(generated, Path.Combine(notice.EmlFolderPath, notice.EmlFileName), overwrite: true);
+                    var emlPath = Path.Combine(notice.EmlFolderPath, notice.EmlFileName);
+                    File.Move(generated, emlPath, overwrite: true);
+
+                    // Same copy in the Objection Pack (…\{ObjectionNo}\Section51).
+                    foreach (var folder in notice.EmlExtraFolders
+                                 .Where(f => !string.IsNullOrWhiteSpace(f))
+                                 .Distinct(StringComparer.OrdinalIgnoreCase))
+                    {
+                        try
+                        {
+                            Directory.CreateDirectory(folder);
+                            File.Copy(emlPath, Path.Combine(folder, notice.EmlFileName), overwrite: true);
+                        }
+                        catch (Exception copyEx)
+                        {
+                            _logger.LogError(copyEx,
+                                "[S51 Email] .eml copy to {Folder} failed for {ObjectionNo}",
+                                folder, notice.ObjectionNo);
+                        }
+                    }
 
                     _logger.LogInformation(
                         "[S51 Email] EML copy saved as {FileName} for {ObjectionNo}",

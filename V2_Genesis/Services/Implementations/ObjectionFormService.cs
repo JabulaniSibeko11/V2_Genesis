@@ -362,7 +362,9 @@ public class ObjectionFormService : IObjectionFormService
             objRef,
             files ?? new List<IFormFile>(),
             fileR ?? new List<IFormFile>(),
-            objFile);
+            objFile,
+            PackFolders.Representative(_config),
+            PackFolders.SubmittedEvidence(_config));
 
         objFile.Ref = objId;
         objFile.Objection_Ref_files = objRef;
@@ -795,7 +797,9 @@ public class ObjectionFormService : IObjectionFormService
                 appNo,
                 files ?? new List<IFormFile>(),
                 fileR ?? new List<IFormFile>(),
-                objFile);
+                objFile,
+                PackFolders.Representative(_config),
+                PackFolders.SubmittedEvidence(_config));
 
         objFile.Ref =
             appId;
@@ -899,70 +903,47 @@ public class ObjectionFormService : IObjectionFormService
             return;
         }
 
+        // Appeal Pack:  {AppealRootPath}\{Appeal_No}\{Objection_No} Objection Pack.zip
+        // The whole Objection Pack (acknowledgement, form, evidence, Section 51,
+        // MVD …) is zipped as it is on the day the appeal is lodged.
         var appealFolder =
             Path.Combine(
                 appealRootPath,
                 cleanAppealNo);
 
-        var destinationFolder =
-            Path.Combine(
+        try
+        {
+            Directory.CreateDirectory(appealFolder);
+
+            var zipPath = Path.Combine(
                 appealFolder,
-                cleanObjectionNo);
+                PackFolders.ObjectionPackZipName(cleanObjectionNo));
 
-        Directory.CreateDirectory(destinationFolder);
+            await Task.Run(() =>
+            {
+                if (File.Exists(zipPath))
+                    File.Delete(zipPath);
 
-        await Task.Run(() =>
-        {
-            CopyDirectoryRecursive(
-                sourceFolder,
-                destinationFolder);
-        });
+                System.IO.Compression.ZipFile.CreateFromDirectory(
+                    sourceFolder,
+                    zipPath,
+                    System.IO.Compression.CompressionLevel.Optimal,
+                    includeBaseDirectory: true);
+            });
 
-        _logger.LogInformation(
-            "[Appeal Pack] Copied Objection pack {ObjectionNo} " +
-            "into Appeal {AppealNo}. Destination={Destination}",
-            cleanObjectionNo,
-            cleanAppealNo,
-            destinationFolder);
-    }
-
-    private static void CopyDirectoryRecursive(
-        string sourceFolder,
-        string destinationFolder)
-    {
-        Directory.CreateDirectory(destinationFolder);
-
-        foreach (var sourceFile in
-                 Directory.EnumerateFiles(sourceFolder))
-        {
-            var fileName =
-                Path.GetFileName(sourceFile);
-
-            var destinationFile =
-                Path.Combine(
-                    destinationFolder,
-                    fileName);
-
-            File.Copy(
-                sourceFile,
-                destinationFile,
-                overwrite: true);
+            _logger.LogInformation(
+                "[Appeal Pack] Objection Pack {ObjectionNo} zipped into Appeal {AppealNo}: {Zip}",
+                cleanObjectionNo,
+                cleanAppealNo,
+                zipPath);
         }
-
-        foreach (var sourceSubFolder in
-                 Directory.EnumerateDirectories(sourceFolder))
+        catch (Exception ex)
         {
-            var folderName =
-                Path.GetFileName(sourceSubFolder);
-
-            var destinationSubFolder =
-                Path.Combine(
-                    destinationFolder,
-                    folderName);
-
-            CopyDirectoryRecursive(
-                sourceSubFolder,
-                destinationSubFolder);
+            // The appeal itself must not fail because of the pack copy.
+            _logger.LogError(ex,
+                "[Appeal Pack] Could not zip Objection Pack {ObjectionNo} into Appeal {AppealNo}",
+                cleanObjectionNo,
+                cleanAppealNo);
         }
     }
 
@@ -1054,8 +1035,21 @@ public class ObjectionFormService : IObjectionFormService
                     $"Acknowledgement PDF is empty for {referenceNo}.");
             }
 
-            // 2. Do not save the acknowledgement to disk.
-            // Every download rebuilds the PDF from the submitted database records.
+            // 2. Keep a copy of the acknowledgement in the Objection / Appeal
+            // Pack. (Downloads on the portal still rebuild it from the database.)
+            try
+            {
+                var ackName = string.IsNullOrWhiteSpace(ackFileName)
+                    ? $"{PackFolders.SafeName(referenceNo)}_Acknowledgement.pdf"
+                    : Path.GetFileName(ackFileName);
+                await File.WriteAllBytesAsync(Path.Combine(folderPath, ackName), ackPdfBytes);
+            }
+            catch (Exception ackSaveEx)
+            {
+                _logger.LogError(ackSaveEx,
+                    "[ObjectionFormService] Acknowledgement copy could not be saved in the pack for {ReferenceNo}",
+                    referenceNo);
+            }
 
             // 3. Generate populated Form A/B/C/D PDF
             SubmittedFormPdfResult submittedFormPdf;
@@ -1339,8 +1333,13 @@ public class ObjectionFormService : IObjectionFormService
         string folder,
         List<IFormFile> files,
         List<IFormFile> fileR,
-        Obj_Files objFile)
+        Obj_Files objFile,
+        string representativeFolder,
+        string evidenceFolder)
     {
+        // Objection / Appeal Pack:  {root}\{reference}\
+        //   Representative\       letter of authority (representative only)
+        //   Submitted Evidence\   evidence uploaded with the form
         string dir = Path.Combine(rootPath, folder);
         Directory.CreateDirectory(dir);
 
@@ -1350,7 +1349,7 @@ public class ObjectionFormService : IObjectionFormService
             if (f == null || f.Length == 0)
                 continue;
 
-            string repDir = Path.Combine(dir, "Representative Letter");
+            string repDir = Path.Combine(dir, representativeFolder);
             Directory.CreateDirectory(repDir);
 
             string name = Path.GetFileName(f.FileName);
@@ -1373,7 +1372,10 @@ public class ObjectionFormService : IObjectionFormService
 
             string name = Path.GetFileName(f.FileName);
 
-            await using var stream = File.Create(Path.Combine(dir, name));
+            string evidenceDir = Path.Combine(dir, evidenceFolder);
+            Directory.CreateDirectory(evidenceDir);
+
+            await using var stream = File.Create(Path.Combine(evidenceDir, name));
             await f.CopyToAsync(stream);
 
             SetFileSlot(objFile, count, name);

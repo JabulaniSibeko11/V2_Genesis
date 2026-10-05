@@ -2279,7 +2279,8 @@ ORDER BY {orderBy};",
                 root = _config[$"Section51Rolls:{rollSource}:FileRootPath"];
             if (string.IsNullOrWhiteSpace(root)) return;
 
-            var dir = Path.Combine(root, objectionNo.Trim(), "Section 51 Owner Evidence");
+            var dir = Path.Combine(root, objectionNo.Trim(),
+                V2_Genesis.Services.Objection.PackFolders.Section51OwnerEvidence(_config));
             Directory.CreateDirectory(dir);
             await File.WriteAllBytesAsync(
                 Path.Combine(dir, $"Section51_{SanitiseName(objectionNo)}.pdf"), pdf);
@@ -2356,7 +2357,11 @@ ORDER BY {orderBy};",
                             s49.path, s49.ext, null, null, null));
 
                     // ── Section 51 ──────────────────────────────────────
-                    var s51 = FindNoticeFile(objRoot, "Section51");
+                    // Objection Pack "Section 51 Notice" (older packs: "Section51")
+                    var s51 = FindNoticeFile(objRoot,
+                        V2_Genesis.Services.Objection.PackFolders.Section51Notice(_config));
+                    if (!s51.exists)
+                        s51 = FindNoticeFile(objRoot, "Section51");
                     if (s51.exists)
                         vm.ObjectionNotices.Add(Notice(
                             objNo, propDesc, roll.Name,
@@ -2452,8 +2457,10 @@ ORDER BY {orderBy};",
                     var appNo = appeal.Appeal_No?.ToString() ?? "";
                     var propDesc = appeal.A_Property_Desc?.ToString() ?? "";
 
-                    // Appeal Decision notice (.eml in appeal root folder)
-                    var appDecision = FindNoticeFile(roll.AppealRootPath, appNo);
+                    // Appeal Decision notice (in the Appeal Pack folder). The
+                    // pack also holds Genesis' own files (acknowledgement,
+                    // form, e-mail copy, zipped objection pack): skip those.
+                    var appDecision = FindAppealDecisionFile(roll.AppealRootPath, appNo);
                     if (appDecision.exists)
                         vm.AppealNotices.Add(Notice(
                             appNo, propDesc, roll.Name,
@@ -2505,6 +2512,50 @@ ORDER BY {orderBy};",
         catch (Exception ex)
         {
             _logger.LogError(ex, "[Notices] Query load failed");
+        }
+    }
+
+    // ── Appeal decision in the Appeal Pack ───────────────────────────
+    private static (bool exists, string path, string ext) FindAppealDecisionFile(
+        string appealRoot, string appealNo)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(appealRoot) || string.IsNullOrWhiteSpace(appealNo))
+                return (false, "", "");
+
+            var dir = Path.Combine(appealRoot, appealNo.Trim());
+            if (!Directory.Exists(dir)) return (false, "", "");
+
+            static bool IsGenesisFile(string path)
+            {
+                var name = Path.GetFileName(path);
+                return name.StartsWith("Email_", StringComparison.OrdinalIgnoreCase)
+                    || name.Contains("Acknowledgement", StringComparison.OrdinalIgnoreCase)
+                    || name.Contains("_Form", StringComparison.OrdinalIgnoreCase)
+                    || name.Contains("Section49", StringComparison.OrdinalIgnoreCase);
+            }
+
+            var candidates = Directory.GetFiles(dir)
+                .Where(f =>
+                {
+                    var ext = Path.GetExtension(f).ToLowerInvariant();
+                    return (ext == ".pdf" || ext == ".eml") && !IsGenesisFile(f);
+                })
+                .OrderByDescending(f =>
+                    Path.GetFileName(f).Contains("Decision", StringComparison.OrdinalIgnoreCase)
+                    || Path.GetFileName(f).Contains("Section52", StringComparison.OrdinalIgnoreCase))
+                .ThenByDescending(File.GetLastWriteTime)
+                .ToList();
+
+            var file = candidates.FirstOrDefault();
+            return file is null
+                ? (false, "", "")
+                : (true, file, Path.GetExtension(file).ToLowerInvariant());
+        }
+        catch
+        {
+            return (false, "", "");
         }
     }
 

@@ -177,8 +177,12 @@ public class EvidenceService : IEvidenceService
                 $"Maximum {MAX_FILES} allowed (you already have {currentCount}).",
                 currentCount, new());
 
+        // Objection / Appeal Pack: {root}\{reference}\Submitted Evidence
         string rootPath = isAppeal ? cfg.AppealRootPath : cfg.FileRootPath;
-        string folder = Path.Combine(rootPath, objectionNo.Trim());
+        string folder = Path.Combine(
+            rootPath,
+            objectionNo.Trim(),
+            V2_Genesis.Services.Objection.PackFolders.SubmittedEvidence(_config));
         Directory.CreateDirectory(folder);
 
         var savedNames = new List<string>();

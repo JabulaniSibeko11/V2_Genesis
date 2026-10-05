@@ -185,7 +185,7 @@ public class Section51Service : ISection51Service
             objectionRoot = cfg.FileRootPath;
 
         var baseFolder = Path.Combine(objectionRoot, objectionNo.Trim());
-        var evidenceFolder = Path.Combine(baseFolder, "Section 51 Owner Evidence");
+        var evidenceFolder = Path.Combine(baseFolder, V2_Genesis.Services.Objection.PackFolders.Section51OwnerEvidence(_config));
         Directory.CreateDirectory(evidenceFolder);
 
         var savedNames = new List<string>();
@@ -358,12 +358,17 @@ public class Section51Service : ISection51Service
 
         // ── 2. Notice PDF ────────────────────────────────────────────
         var s6 = request.Section6;
-        // Notice PDF + email copy go to Section51Rolls:{roll}:FileRootPath
-        // (e.g. C:\Notices\Sup4\Section51). Falls back to the objection
-        // folder only if FileRootPath is not configured.
-        var noticeFolder = !string.IsNullOrWhiteSpace(cfg.FileRootPath)
-            ? cfg.FileRootPath
-            : Path.Combine(request.ObjectionFolder, "Section 51 Notice");
+        // Where the notice is saved (appsettings → Section51Rolls:{roll}):
+        //   NoticePdfPath  register of all Section 51 PDFs of the roll
+        //   EmailCopyPath  register of all Section 51 e-mails (.eml) of the roll
+        //   Objection Pack ObjectionRolls:{roll}:FileRootPath\{ObjNo}\Section 51 Notice
+        //                  (PDF + .eml — the dashboard "Section 51" notice reads
+        //                  this folder).
+        var packFolder = string.IsNullOrWhiteSpace(request.ObjectionFolder)
+            ? string.Empty
+            : Path.Combine(request.ObjectionFolder, V2_Genesis.Services.Objection.PackFolders.Section51Notice(_config));
+        var noticeFolder = FirstFolder(cfg.NoticePdfPath, cfg.FileRootPath, packFolder);
+        var emailFolder = FirstFolder(cfg.EmailCopyPath, noticeFolder);
         var pdfFileName = $"{SafeFileName(objectionNo)}_{SafeFileName(propertyDescription)}_Section 51.pdf";
         byte[] pdf;
 
@@ -422,6 +427,23 @@ public class Section51Service : ISection51Service
             result.PdfPath = Path.Combine(noticeFolder, pdfFileName);
             await System.IO.File.WriteAllBytesAsync(result.PdfPath, pdf);
 
+            // Same PDF in the Objection Pack. A failure here is logged only.
+            if (!string.IsNullOrWhiteSpace(packFolder) &&
+                !packFolder.Equals(noticeFolder, StringComparison.OrdinalIgnoreCase))
+            {
+                try
+                {
+                    Directory.CreateDirectory(packFolder);
+                    await System.IO.File.WriteAllBytesAsync(Path.Combine(packFolder, pdfFileName), pdf);
+                }
+                catch (Exception packEx)
+                {
+                    _logger.LogError(packEx,
+                        "[S51 Notice] Copy to the Objection Pack {Folder} failed for {ObjectionNo}.",
+                        packFolder, objectionNo);
+                }
+            }
+
             _logger.LogInformation(
                 "[S51 Notice] Notice PDF saved for {ObjectionNo} → {Path}",
                 objectionNo, result.PdfPath);
@@ -464,7 +486,10 @@ public class Section51Service : ISection51Service
                         IsTest = testMode,
                         PdfBytes = pdf,
                         PdfFileName = pdfFileName,
-                        EmlFolderPath = noticeFolder,
+                        EmlFolderPath = emailFolder,
+                        EmlExtraFolders = string.IsNullOrWhiteSpace(packFolder)
+                            ? new List<string>()
+                            : new List<string> { packFolder },
                         EmlFileName =
                             $"email_{SafeFileName(objectionNo)}_{SafeFileName(propertyDescription)}_{SafeFileName(ownerEmail)}.eml"
                     });
@@ -492,6 +517,9 @@ public class Section51Service : ISection51Service
 
         return result;
     }
+
+    private static string FirstFolder(params string?[] folders) =>
+        folders.FirstOrDefault(f => !string.IsNullOrWhiteSpace(f))?.Trim() ?? string.Empty;
 
     private sealed class OwnerPostalRow
     {
