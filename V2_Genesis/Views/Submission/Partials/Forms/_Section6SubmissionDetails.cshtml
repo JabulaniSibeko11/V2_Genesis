@@ -1,21 +1,84 @@
 ﻿@using V2_Genesis.Models.ViewModels.Submissions
 @model SubmissionViewModel
 
+@*
+    SECTION 6 — same layout as Section 6 on the forms:
+      left   6.1  particulars as reflected in the valuation roll (teal)
+      right  6.2  particulars requested by the objector / appellant (gold)
+      below  6.3  reasons
+    A requested value is marked "Changed"; a field the client left blank
+    shows "No change requested".
+*@
 @{
     var title =
         Model.IsAppeal ? "APPEAL DETAILS"
         : Model.IsReview ? "REVIEW DETAILS"
         : Model.IsQuery ? "QUERY DETAILS"
-        : Model.IsAttribute ? "ATTRIBUTE DETAILS"
         : "OBJECTION DETAILS";
 
-    var requestedByLabel =
-        Model.IsAppeal ? "Requested by appellant"
-        : Model.IsObjection ? "Requested by objector"
-        : "Requested by client";
+    var party =
+        Model.IsAppeal ? "appellant"
+        : Model.IsObjection ? "objector"
+        : "client";
+
+    var current = Model.CurrentValuation;
+    var requested = Model.RequestedValuation;
+
+    var lines = Model.IsMulti
+        ? Model.MultiPurposeLines.Where(l => l.HasValues).OrderBy(l => l.LineNumber).ToList()
+        : new List<MultiPurposeLineViewModel>();
+
+    // The general fields (description, address, owner …) and, for a
+    // single-purpose property, category / extent / market value.
+    var generalRows = new List<(string Label, string Current, string Requested, bool Money)>
+    {
+        ("Description of the property / unit", current.PropertyDescription, requested.PropertyDescription, false)
+    };
+
+    if (!lines.Any())
+    {
+        generalRows.Add(("Category", current.Category, requested.Category, false));
+    }
+
+    generalRows.Add(("Physical address / door no. / flat no.", current.Address, requested.Address, false));
+
+    if (!lines.Any())
+    {
+        generalRows.Add(("Extent (m²)", current.Extent, requested.Extent, false));
+        generalRows.Add(("Market value", current.MarketValue, requested.MarketValue, true));
+    }
+
+    generalRows.Add(("Name of owner", current.Owner, requested.Owner, false));
+
+    var anyRequested =
+        requested.HasValues ||
+        lines.Any(l => !string.IsNullOrWhiteSpace(l.RequestedCategory)
+                    || !string.IsNullOrWhiteSpace(l.RequestedExtent)
+                    || !string.IsNullOrWhiteSpace(l.RequestedMarketValue));
+
+    // One requested value (6.2): "Changed" tag, or "No change requested".
+    Func<(string Label, string Current, string Requested, bool Money), object> RequestedCell =
+        @<div class="municipal-readonly-field">
+            @{
+                var hasValue = !string.IsNullOrWhiteSpace(item.Requested);
+                var changed = hasValue && (item.Requested ?? "").Trim().ToLowerInvariant() != (item.Current ?? "").Trim().ToLowerInvariant();
+            }
+            <label>
+                @item.Label
+                @if (changed) { <span class="s6v-changed">Changed</span> }
+            </label>
+            @if (hasValue)
+            {
+                <div class="municipal-readonly-input @(changed ? "s6v-value--changed" : "")">@(item.Money ? SubmissionFieldReader.DisplayMoney(item.Requested) : SubmissionFieldReader.Display(item.Requested))</div>
+            }
+            else
+            {
+                <div class="municipal-readonly-input is-empty">No change requested</div>
+            }
+        </div>;
 }
 
-<div class="municipal-form-section">
+<div class="municipal-form-section s6v">
     <partial name="Partials/Forms/_SectionHeading"
              model='new SubmissionSectionHeadingViewModel
                  {
@@ -23,220 +86,102 @@
                      Title = title
                  }' />
 
-    @if (Model.IsMulti && Model.MultiPurposeLines.Any())
+    @if (!anyRequested)
     {
-        <div class="municipal-inner-heading">
-            Multipurpose valuation comparison
-        </div>
+        <p class="s6v-note">No new values were captured in 6.2 for this submission.</p>
+    }
 
-        <div class="municipal-comparison-table-wrap">
-            <table class="municipal-comparison-table">
-                <thead>
-                    <tr>
-                        <th rowspan="2">Line</th>
-                        <th colspan="3">Current valuation record</th>
-                        <th colspan="3">@requestedByLabel</th>
-                    </tr>
-                    <tr>
-                        <th>Category</th>
-                        <th>Extent</th>
-                        <th>Market value</th>
-                        <th>Category</th>
-                        <th>Extent</th>
-                        <th>Market value</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var line in Model.MultiPurposeLines.OrderBy(x => x.LineNumber))
+    <div class="s6v-columns">
+
+        @* ── 6.1 Valuation roll ─────────────────────────────────── *@
+        <section class="s6v-col s6v-col--roll" aria-label="6.1 Particulars as reflected in the valuation roll">
+            <header class="s6v-col-head">
+                <span class="s6v-num">6.1</span>
+                <span>Particulars as reflected in the valuation roll</span>
+            </header>
+
+            @foreach (var row in generalRows)
+            {
+                <div class="municipal-readonly-field">
+                    <label>@row.Label</label>
+                    <div class="municipal-readonly-input">@(row.Money ? SubmissionFieldReader.DisplayMoney(row.Current) : SubmissionFieldReader.Display(row.Current))</div>
+                </div>
+            }
+
+            @foreach (var line in lines)
+            {
+                <div class="s6v-purpose">
+                    <div class="s6v-purpose-title">Purpose @line.LineNumber</div>
+                    <div class="municipal-readonly-field"><label>Category</label><div class="municipal-readonly-input">@SubmissionFieldReader.Display(line.CurrentCategory)</div></div>
+                    <div class="s6v-pair">
+                        <div class="municipal-readonly-field"><label>Extent (m²)</label><div class="municipal-readonly-input">@SubmissionFieldReader.Display(line.CurrentExtent)</div></div>
+                        <div class="municipal-readonly-field"><label>Market value</label><div class="municipal-readonly-input">@SubmissionFieldReader.DisplayMoney(line.CurrentMarketValue)</div></div>
+                    </div>
+                </div>
+            }
+        </section>
+
+        @* ── 6.2 Requested by the client ────────────────────────── *@
+        <section class="s6v-col s6v-col--requested" aria-label="6.2 Particulars requested by the @party">
+            <header class="s6v-col-head">
+                <span class="s6v-num">6.2</span>
+                <span>Particulars requested by the @party</span>
+            </header>
+
+            @foreach (var row in generalRows)
+            {
+                @RequestedCell((row.Label, row.Current, row.Requested, row.Money))
+            }
+
+            @foreach (var line in lines)
+            {
+                <div class="s6v-purpose">
+                    <div class="s6v-purpose-title">Purpose @line.LineNumber</div>
+
+                    @RequestedCell(("Category", line.CurrentCategory, line.RequestedCategory, false))
+                    <div class="s6v-pair">
+                        @RequestedCell(("Extent (m²)", line.CurrentExtent, line.RequestedExtent, false))
+                        @RequestedCell(("Market value", line.CurrentMarketValue, line.RequestedMarketValue, true))
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(line.Remarks))
                     {
-                        <tr>
-                            <td>@line.LineNumber</td>
-
-                            <td>
-                                @SubmissionFieldReader.Display(
-                                    line.CurrentCategory)
-                            </td>
-
-                            <td>
-                                @SubmissionFieldReader.Display(
-                                    line.CurrentExtent)
-                            </td>
-
-                            <td>
-                                @SubmissionFieldReader.DisplayMoney(
-                                    line.CurrentMarketValue)
-                            </td>
-
-                            <td>
-                                @SubmissionFieldReader.Display(
-                                    line.RequestedCategory)
-                            </td>
-
-                            <td>
-                                @SubmissionFieldReader.Display(
-                                    line.RequestedExtent)
-                            </td>
-
-                            <td>
-                                @SubmissionFieldReader.DisplayMoney(
-                                    line.RequestedMarketValue)
-                            </td>
-                        </tr>
-
-                        @if (!string.IsNullOrWhiteSpace(line.Remarks))
-                        {
-                            <tr class="municipal-comparison-remarks">
-                                <td></td>
-                                <td colspan="6">
-                                    <strong>Remarks:</strong>
-                                    @line.Remarks
-                                </td>
-                            </tr>
-                        }
+                        <div class="municipal-readonly-field">
+                            <label>Remarks</label>
+                            <div class="municipal-readonly-textarea">@line.Remarks</div>
+                        </div>
                     }
-                </tbody>
-            </table>
-        </div>
-    }
-    else
-    {
-        <div class="municipal-comparison-grid">
-            <article>
-                <header>Current valuation record</header>
-
-                <dl>
-                    <dt>Property description</dt>
-                    <dd>
-                        @SubmissionFieldReader.Display(
-                            Model.CurrentValuation.PropertyDescription)
-                    </dd>
-
-                    <dt>Category</dt>
-                    <dd>
-                        @SubmissionFieldReader.Display(
-                            Model.CurrentValuation.Category)
-                    </dd>
-
-                    <dt>Address</dt>
-                    <dd>
-                        @SubmissionFieldReader.Display(
-                            Model.CurrentValuation.Address)
-                    </dd>
-
-                    <dt>Extent</dt>
-                    <dd>
-                        @SubmissionFieldReader.Display(
-                            Model.CurrentValuation.Extent)
-                    </dd>
-
-                    <dt>Market value</dt>
-                    <dd>
-                        @SubmissionFieldReader.DisplayMoney(
-                            Model.CurrentValuation.MarketValue)
-                    </dd>
-
-                    <dt>Owner</dt>
-                    <dd>
-                        @SubmissionFieldReader.Display(
-                            Model.CurrentValuation.Owner)
-                    </dd>
-                </dl>
-            </article>
-
-            <article class="municipal-comparison-requested">
-                <header>@requestedByLabel</header>
-
-                <dl>
-                    <dt>Property description</dt>
-                    <dd>
-                        @SubmissionFieldReader.Display(
-                            Model.RequestedValuation.PropertyDescription)
-                    </dd>
-
-                    <dt>Category</dt>
-                    <dd>
-                        @SubmissionFieldReader.Display(
-                            Model.RequestedValuation.Category)
-                    </dd>
-
-                    <dt>Address</dt>
-                    <dd>
-                        @SubmissionFieldReader.Display(
-                            Model.RequestedValuation.Address)
-                    </dd>
-
-                    <dt>Extent</dt>
-                    <dd>
-                        @SubmissionFieldReader.Display(
-                            Model.RequestedValuation.Extent)
-                    </dd>
-
-                    <dt>Market value</dt>
-                    <dd>
-                        @SubmissionFieldReader.DisplayMoney(
-                            Model.RequestedValuation.MarketValue)
-                    </dd>
-
-                    <dt>Owner</dt>
-                    <dd>
-                        @SubmissionFieldReader.Display(
-                            Model.RequestedValuation.Owner)
-                    </dd>
-                </dl>
-            </article>
-        </div>
-    }
-
-    @if (Model.Reasons.HasReasons)
-    {
-        <div class="municipal-inner-heading">
-            Reasons and motivation
-        </div>
-
-        <div class="municipal-field-grid">
-            @if (!string.IsNullOrWhiteSpace(
-                    Model.Reasons.PrimaryReason))
-            {
-                <div class="municipal-readonly-field municipal-readonly-field--wide">
-                    <label>Primary reason</label>
-                    <div class="municipal-readonly-textarea">
-                        @Model.Reasons.PrimaryReason
-                    </div>
                 </div>
             }
+        </section>
+    </div>
 
-            @if (!string.IsNullOrWhiteSpace(
-                    Model.Reasons.Motivation))
+    @* ── 6.3 Reasons ─────────────────────────────────────────────── *@
+    <div class="s6v-reasons">
+        <header class="s6v-col-head s6v-col-head--plain">
+            <span class="s6v-num">6.3</span>
+            <span>Adverse features and / or further reasons in support of this @(Model.IsAppeal ? "appeal" : Model.IsSection78 ? (Model.IsReview ? "review" : "query") : "objection")</span>
+        </header>
+
+        @if (Model.Reasons.HasReasons)
+        {
+            @foreach (var reason in new[]
             {
-                <div class="municipal-readonly-field municipal-readonly-field--wide">
-                    <label>Motivation</label>
-                    <div class="municipal-readonly-textarea">
-                        @Model.Reasons.Motivation
-                    </div>
+                (Label: "Reasons", Text: Model.Reasons.PrimaryReason),
+                (Label: "Motivation", Text: Model.Reasons.Motivation),
+                (Label: "Requested outcome", Text: Model.Reasons.RequestedOutcome),
+                (Label: "Additional information", Text: Model.Reasons.OtherReason)
+            }.Where(r => !string.IsNullOrWhiteSpace(r.Text)))
+            {
+                <div class="municipal-readonly-field">
+                    <label>@reason.Label</label>
+                    <div class="municipal-readonly-textarea">@reason.Text</div>
                 </div>
             }
-
-            @if (!string.IsNullOrWhiteSpace(
-                    Model.Reasons.RequestedOutcome))
-            {
-                <div class="municipal-readonly-field municipal-readonly-field--wide">
-                    <label>Requested outcome</label>
-                    <div class="municipal-readonly-textarea">
-                        @Model.Reasons.RequestedOutcome
-                    </div>
-                </div>
-            }
-
-            @if (!string.IsNullOrWhiteSpace(
-                    Model.Reasons.OtherReason))
-            {
-                <div class="municipal-readonly-field municipal-readonly-field--wide">
-                    <label>Additional information</label>
-                    <div class="municipal-readonly-textarea">
-                        @Model.Reasons.OtherReason
-                    </div>
-                </div>
-            }
-        </div>
-    }
+        }
+        else
+        {
+            <div class="municipal-readonly-textarea is-empty">No reasons were captured.</div>
+        }
+    </div>
 </div>

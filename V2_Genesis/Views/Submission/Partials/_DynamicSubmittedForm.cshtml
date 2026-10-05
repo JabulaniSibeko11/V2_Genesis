@@ -1,4 +1,4 @@
-@using V2_Genesis.Models.ViewModels.Submissions
+﻿@using V2_Genesis.Models.ViewModels.Submissions
 @model SubmissionViewModel
 
 @if (Model.IsAttribute)
@@ -79,6 +79,22 @@ else
                         <span>@sect.Title</span>
                     </button>
                 }
+
+                @* Supporting documents: their own tab (not under every section). *@
+                @if (Model.Documents.Any())
+                {
+                    <button type="button"
+                            id="tab-documents"
+                            class="submitted-tab submitted-tab--docs"
+                            role="tab"
+                            aria-selected="false"
+                            aria-controls="panel-documents"
+                            data-section-key="documents">
+
+                        <strong>Documents</strong>
+                        <span>Supporting documents (@Model.Documents.Count)</span>
+                    </button>
+                }
             </div>
         </div>
 
@@ -100,6 +116,18 @@ else
                         <partial name="@partialName"
                                  model="Model" />
                     }
+                </section>
+            }
+
+            @if (Model.Documents.Any())
+            {
+                <section id="panel-documents"
+                         class="submitted-panel"
+                         role="tabpanel"
+                         aria-labelledby="tab-documents"
+                         data-section-panel="documents"
+                         hidden="hidden">
+                    <partial name="Partials/_SupportingDocuments" model="Model.Documents" />
                 </section>
             }
         </div>

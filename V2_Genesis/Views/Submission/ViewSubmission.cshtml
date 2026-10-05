@@ -19,7 +19,13 @@
 
         <partial name="Partials/_DynamicSubmittedForm" model="Model" />
 
-        <partial name="Partials/_SupportingDocuments" model="Model.Documents" />
+        @* Objection / appeal / Section 78: the documents are a tab of the
+           submitted form. Attributes and rebates keep them here. *@
+        @if (Model.IsAttribute || Model.IsRebate ||
+             !Model.FormSections.Any(section => section.IsAvailable))
+        {
+            <partial name="Partials/_SupportingDocuments" model="Model.Documents" />
+        }
         <partial name="Partials/_SubmissionFooter" model="Model" />
     </div>
 </main>

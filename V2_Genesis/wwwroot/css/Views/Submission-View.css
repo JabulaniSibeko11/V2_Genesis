@@ -1455,6 +1455,11 @@
    (.is-empty is added by submission-view-tabs.js; :empty covers
    boxes without any text.)
 ══════════════════════════════════════════════════════════════ */
+.municipal-readonly-input,
+.municipal-readonly-textarea {
+    box-sizing: border-box;
+}
+
 .municipal-readonly-input {
     display: flex;
     align-items: center;
@@ -1557,5 +1562,166 @@
 @media (max-width: 360px) {
     .submitted-tabs {
         grid-template-columns: 1fr;
+    }
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   SECTION 6 — same look as Section 6 on the forms
+   6.1 roll values (teal box) | 6.2 requested values (gold box)
+   6.3 reasons underneath. Partial: Forms/_Section6SubmissionDetails
+══════════════════════════════════════════════════════════════ */
+.s6v-note {
+    margin: 0 0 14px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    background: #fff8e1;
+    border: 1px solid #f5d77a;
+    color: #7a5a00;
+    font-size: 13.5px;
+    font-weight: 600;
+}
+
+.s6v-columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    align-items: start;
+}
+
+.s6v-col {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 18px;
+    border-radius: 14px;
+}
+
+.s6v-col--roll {
+    border: 2px solid #006570;
+    background: #eef7f6;
+}
+
+.s6v-col--requested {
+    border: 2px solid #e6b000;
+    background: #fffbea;
+}
+
+.s6v-col-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: -2px 0 4px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(0, 0, 0, .08);
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: .3px;
+    text-transform: uppercase;
+    color: #1f2937;
+}
+
+.s6v-col--roll .s6v-col-head { color: #004f58; }
+.s6v-col--requested .s6v-col-head { color: #7a5a00; }
+
+.s6v-num {
+    flex: 0 0 auto;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: #006570;
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.s6v-col--requested .s6v-num { background: #e6b000; color: #1a1a1a; }
+
+.s6v-col .municipal-readonly-input {
+    background: #ffffff;
+}
+
+.s6v-col .municipal-readonly-input.is-empty {
+    background: transparent;
+}
+
+.s6v-changed {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: #15803d;
+    color: #ffffff;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .3px;
+    vertical-align: middle;
+}
+
+.municipal-readonly-input.s6v-value--changed {
+    border: 2px solid #15803d;
+    background: #f0fdf4;
+    color: #14532d;
+}
+
+.s6v-purpose {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, .65);
+    border: 1px solid rgba(0, 0, 0, .08);
+}
+
+.s6v-purpose-title {
+    font-size: 12.5px;
+    font-weight: 800;
+    color: #006570;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+}
+
+.s6v-col--requested .s6v-purpose-title { color: #8a6500; }
+
+.s6v-pair {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.s6v-reasons {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 18px;
+    padding: 18px;
+    border-radius: 14px;
+    border: 1px solid var(--sv-border, #e5e7eb);
+    background: #ffffff;
+}
+
+.s6v-col-head--plain { color: #004f58; }
+
+/* Supporting documents tab */
+.submitted-tab--docs strong { color: #006570; }
+
+#panel-documents .submission-section {
+    margin: 0;
+}
+
+@media (max-width: 900px) {
+    .s6v-columns {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 420px) {
+    .s6v-pair {
+        grid-template-columns: 1fr;
+    }
+
+    .s6v-col,
+    .s6v-reasons {
+        padding: 14px;
     }
 }
