@@ -178,6 +178,7 @@
         @Model.Dates.VisibleUntil.ToString("dd MMMM yyyy"). You can still view
         your existing linked properties, objections and appeals below, but new
         objections can no longer be lodged for this roll.
+        <partial name="_ClientHelp" model="@("objection")" />
     </div>
 }
 
@@ -291,6 +292,11 @@
                                                             <small class="text-muted ms-1">(@item.Review_Close_Date.Value.ToString("dd MMM yyyy"))</small>
                                                         }
                                                     </span>
+                                                </li>
+                                                <li>
+                                                    <a class="dropdown-item" href="mailto:valuationenquiries@joburg.org.za?subject=Section%2078%20review%20-%20@Uri.EscapeDataString(item.PropertyDesc ?? string.Empty)">
+                                                        <i class="fa-solid fa-headset"></i> Need help? Contact Valuation Services
+                                                    </a>
                                                 </li>
                                             }
                                             else
@@ -909,7 +915,8 @@ else
                                                         </a>
                                                     </li>
                                                 }
-                                                @if (!objectionIsLis && !objectionIsOmission)
+                                                @* Section 49 is for the owner only: hidden for a Third-Party objection. *@
+                                                @if (!objectionIsLis && !objectionIsOmission && !item.IsThirdParty)
 {
     <li>
         <a class="dropdown-item"

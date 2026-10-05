@@ -1,4 +1,4 @@
-@*
+﻿@*
     _StatusBanner.cshtml
     ─────────────────────────────────────────────────────────────────────
     One clear, in-page message (not a toaster) for the result of an action
@@ -11,6 +11,9 @@
         AttrLinkError     Property Attributes property problem
         NoticeError       a document / download could not be produced
         ReviewCloseDate   (extra detail for a Section 78 review link)
+        LodgementWindowError  objection / appeal could not be lodged
+                              (period closed, notice not issued, ...)
+        AppealCloseDate       (extra detail for a closed appeal period)
 
     To show a new message from a controller, set one of the keys above,
     e.g.  TempData["LinkSuccess"] = "Property successfully linked to your profile.";
@@ -26,6 +29,20 @@
     var gsAttrLinkError = TempData["AttrLinkError"] as string;
     var gsNoticeError = TempData["NoticeError"] as string;
     var gsReviewClose = TempData["ReviewCloseDate"] as string;
+    var gsLodgeError = TempData["LodgementWindowError"] as string;
+    var gsAppealClose = TempData["AppealCloseDate"] as string;
+
+    // Which help to show under a lodgement error.
+    string? gsLodgeHelp = null;
+    if (!string.IsNullOrWhiteSpace(gsLodgeError))
+    {
+        var e = gsLodgeError.ToLowerInvariant();
+        // Only a CLOSED period gets the late objection / late appeal help
+        // (not "opens on …", "already lodged" or "notice not issued").
+        var isClosed = e.Contains("closed") || (e.Contains("not open") && !e.Contains("opens"));
+        if (isClosed)
+            gsLodgeHelp = e.Contains("appeal") ? "appeal" : "objection";
+    }
 
     if (!string.IsNullOrWhiteSpace(gsLinkSuccess))
     {
@@ -70,6 +87,22 @@
             gsAttrLinkError,
             null, null,
             "Please try again. If the problem continues, contact Valuation Services on 011 407 6622 or valuationenquiries@joburg.org.za."));
+    }
+
+    if (!string.IsNullOrWhiteSpace(gsLodgeError))
+    {
+        gsBanners.Add((
+            "warning", "fa-calendar-xmark",
+            "Not Lodged",
+            gsLodgeHelp == "appeal"
+                ? "The appeal could not be lodged online"
+                : "This could not be lodged online",
+            gsLodgeError,
+            string.IsNullOrWhiteSpace(gsAppealClose) ? null : "Appeal closing date",
+            gsAppealClose,
+            gsLodgeHelp is null
+                ? "If you need help, contact Valuation Services on 011 407 6622 or valuationenquiries@joburg.org.za."
+                : "See below what you can still do."));
     }
 
     if (!string.IsNullOrWhiteSpace(gsNoticeError))
@@ -119,6 +152,11 @@
                         <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
                         <span>@b.Guidance</span>
                     </div>
+
+                    @if (b.Label == "Not Lodged" && gsLodgeHelp is not null)
+                    {
+                        <partial name="_ClientHelp" model="@gsLodgeHelp" />
+                    }
                 </div>
 
                 <button type="button"

@@ -26,6 +26,13 @@ public sealed class AppealEligibilityResult
         && IsAppealPeriodOpen
         && !ExistingAppealFound;
 
+    // Admin team: the appeal period is always open. Only the objection,
+    // the issued MVD notice and "no appeal lodged yet" are checked.
+    public bool CanLodgeAsAdmin =>
+        ObjectionExists
+        && HasNoticeSentStatus
+        && !ExistingAppealFound;
+
     public string Message
     {
         get

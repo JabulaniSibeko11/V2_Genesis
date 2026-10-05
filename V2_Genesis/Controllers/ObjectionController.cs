@@ -435,7 +435,13 @@ public class ObjectionController : Controller
                     valuationKey: valuationKey,
                     propertyDesc: null);
 
-            if (!eligibility.CanLodge)
+            // Clients must be inside the appeal period. For the admin team
+            // the appeal period is always open (dates are not checked).
+            var canLodgeAppeal = isAdminRequest
+                ? eligibility.CanLodgeAsAdmin
+                : eligibility.CanLodge;
+
+            if (!canLodgeAppeal)
             {
                 TempData["LodgementWindowError"] =
                     eligibility.Message;

@@ -95,6 +95,7 @@ public class EvidenceController : Controller
         if (!result.IsValid)
         {
             ViewBag.Error = result.Error;
+            ViewBag.WindowClosed = result.Error?.Contains("48-hour", StringComparison.OrdinalIgnoreCase) == true;
             ViewBag.PrefilledRef = refNo;
             ViewBag.PrefilledRoll = rollSource;
             ViewBag.IsAuthenticated = User.Identity?.IsAuthenticated == true;

@@ -1,0 +1,425 @@
+﻿@*
+    _AdminGuide.cshtml
+    ─────────────────────────────────────────────────────────────────────
+    "How this portal works for the admin team" — shown on the Admin
+    dashboard (Views/Admin/Index.cshtml) under the page heading.
+    Explains the admin rule (objection and appeal periods are always open
+    for late objections CLO and late condonation appeals CLA; all other
+    windows apply to everyone), what each service does, the rules that
+    still apply, and what the statuses mean.
+    The open / closed state of the panel is remembered in the browser.
+    ─────────────────────────────────────────────────────────────────────
+*@
+
+<style>
+    .adm-guide {
+        margin: 0 0 22px;
+        border: 1px solid #cfe3e5;
+        border-radius: 16px;
+        background: #ffffff;
+        box-shadow: 0 6px 20px rgba(0, 101, 112, .08);
+        font-family: 'Poppins', sans-serif;
+        color: #1f2937;
+        overflow: hidden;
+    }
+
+    .adm-guide > summary {
+        list-style: none;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 16px 20px;
+        cursor: pointer;
+        background: linear-gradient(90deg, #006570, #0b7d89);
+        color: #ffffff;
+    }
+
+        .adm-guide > summary::-webkit-details-marker { display: none; }
+
+        .adm-guide > summary:focus-visible {
+            outline: 3px solid #e6b000;
+            outline-offset: -3px;
+        }
+
+    .adm-guide-icon {
+        flex: 0 0 44px;
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255, 255, 255, .16);
+        font-size: 20px;
+    }
+
+    .adm-guide-title {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+        .adm-guide-title strong {
+            display: block;
+            font-size: 17px;
+            font-weight: 800;
+        }
+
+        .adm-guide-title small {
+            display: block;
+            margin-top: 2px;
+            font-size: 13px;
+            color: rgba(255, 255, 255, .9);
+        }
+
+    .adm-guide-toggle {
+        flex: 0 0 auto;
+        padding: 6px 12px;
+        border-radius: 999px;
+        background: #e6b000;
+        color: #1a1a1a;
+        font-size: 12.5px;
+        font-weight: 800;
+        white-space: nowrap;
+    }
+
+        .adm-guide-toggle .when-open { display: none; }
+    .adm-guide[open] .adm-guide-toggle .when-open { display: inline; }
+    .adm-guide[open] .adm-guide-toggle .when-closed { display: none; }
+
+    .adm-guide-body {
+        padding: 20px;
+        display: grid;
+        gap: 20px;
+    }
+
+    .adm-guide-rule {
+        display: flex;
+        gap: 14px;
+        align-items: flex-start;
+        padding: 16px 18px;
+        border-radius: 14px;
+        border: 1px solid #bbf7d0;
+        border-left: 6px solid #15803d;
+        background: #f0fdf4;
+    }
+
+        .adm-guide-rule i {
+            margin-top: 2px;
+            color: #15803d;
+            font-size: 22px;
+        }
+
+        .adm-guide-rule h3 {
+            margin: 0 0 4px;
+            font-size: 16px;
+            font-weight: 800;
+            color: #14532d;
+        }
+
+        .adm-guide-rule p {
+            margin: 0;
+            font-size: 14.5px;
+            line-height: 1.6;
+        }
+
+    .adm-guide-rule-same {
+        border-color: #fde68a;
+        border-left-color: #b45309;
+        background: #fffbeb;
+    }
+
+        .adm-guide-rule-same i { color: #b45309; }
+        .adm-guide-rule-same h3 { color: #78350f; }
+
+    .adm-guide h4 {
+        margin: 0 0 10px;
+        font-size: 15px;
+        font-weight: 800;
+        color: #006570;
+        letter-spacing: .2px;
+    }
+
+    .adm-guide-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 12px;
+    }
+
+    .adm-guide-card {
+        padding: 14px 16px;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        background: #fafafa;
+    }
+
+        .adm-guide-card h5 {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0 0 6px;
+            font-size: 14.5px;
+            font-weight: 800;
+            color: #111827;
+        }
+
+            .adm-guide-card h5 i {
+                color: #006570;
+                width: 18px;
+                text-align: center;
+            }
+
+        .adm-guide-card p,
+        .adm-guide-card li {
+            margin: 0;
+            font-size: 13.5px;
+            line-height: 1.55;
+            color: #374151;
+        }
+
+        .adm-guide-card ol {
+            margin: 4px 0 0;
+            padding-left: 18px;
+        }
+
+    .adm-guide-list {
+        margin: 0;
+        padding-left: 20px;
+        display: grid;
+        gap: 6px;
+        font-size: 14px;
+        line-height: 1.55;
+    }
+
+    .adm-guide-status {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13.5px;
+    }
+
+        .adm-guide-status th,
+        .adm-guide-status td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #e5e7eb;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        .adm-guide-status th {
+            background: #f1f5f9;
+            color: #1f2937;
+            font-weight: 800;
+        }
+
+        .adm-guide code {
+            padding: 1px 6px;
+            border-radius: 6px;
+            background: #eef6f7;
+            color: #004f58;
+            font-size: 12.5px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+    /* Small helper styles used on the Admin dashboard */
+    .adm-client-period {
+        margin: -2px 0 10px;
+        font-size: 12.5px;
+        font-weight: 600;
+        color: #4b5563;
+    }
+
+        .adm-client-period i {
+            margin-right: 4px;
+            color: #6b7280;
+        }
+
+    .adm-open-note {
+        margin-top: 2px;
+        font-size: 11.5px;
+        font-weight: 600;
+        color: #15803d !important;
+    }
+
+    .legacy-archive-badge.adm-badge-open {
+        background: #dcfce7;
+        color: #14532d;
+        border-color: #bbf7d0;
+    }
+
+    @@media (max-width: 600px) {
+        .adm-guide > summary { padding: 14px; gap: 10px; }
+        .adm-guide-icon { flex-basis: 38px; width: 38px; height: 38px; font-size: 17px; }
+        .adm-guide-toggle { display: none; }
+        .adm-guide-body { padding: 14px; }
+        .adm-guide-status th:nth-child(3),
+        .adm-guide-status td:nth-child(3) { display: none; }
+    }
+</style>
+
+<details class="adm-guide" id="admGuide" open>
+    <summary>
+        <span class="adm-guide-icon"><i class="fa-solid fa-user-shield" aria-hidden="true"></i></span>
+        <span class="adm-guide-title">
+            <strong>Admin guide — how this portal works for you</strong>
+            <small>Objections (CLO) and appeals (CLA) are always open for you. Evidence, Section 51 and review periods are the same for everyone.</small>
+        </span>
+        <span class="adm-guide-toggle">
+            <span class="when-open">Hide guide</span>
+            <span class="when-closed">Show guide</span>
+        </span>
+    </summary>
+
+    <div class="adm-guide-body">
+
+        <!-- 1. The admin rules -->
+        <div class="adm-guide-rule">
+            <i class="fa-solid fa-lock-open" aria-hidden="true"></i>
+            <div>
+                <h3>Objections and appeals are ALWAYS OPEN for the admin team</h3>
+                <p>
+                    On every roll (GV23 and Supplementary Rolls 1–4) you can capture an objection or an appeal
+                    at any time, also after the client period has closed. This is for
+                    <strong>late objections (CLO)</strong> and <strong>late condonation appeals (CLA)</strong>
+                    that are approved and captured internally. Where you see <em>“Clients: closed on …”</em>,
+                    that is what the client sees.
+                </p>
+            </div>
+        </div>
+
+        <div class="adm-guide-rule adm-guide-rule-same">
+            <i class="fa-solid fa-scale-balanced" aria-hidden="true"></i>
+            <div>
+                <h3>These periods are the SAME for everyone, also for you</h3>
+                <p>
+                    The <strong>48-hour Add Evidence window</strong>, the <strong>Section 51 upload period</strong>
+                    and the <strong>Section 78 review period</strong> cannot be reopened by the admin team.
+                    The client receives these dates and links by e-mail, so the rule must be the same on both
+                    sides. When a client asks you to capture after the window has closed, explain that it is
+                    closed for everyone and that the valuer handling the case decides about any new information.
+                </p>
+            </div>
+        </div>
+
+        <!-- 2. What you can do -->
+        <div>
+            <h4>What you can do, step by step</h4>
+            <div class="adm-guide-grid">
+
+                <div class="adm-guide-card">
+                    <h5><i class="fa-solid fa-magnifying-glass"></i> Find anything</h5>
+                    <p>Use <strong>Search Enquiries</strong> (below the cards) to find a property, an objection, appeal,
+                        query, review or a client account — by reference number, property description or e-mail.</p>
+                </div>
+
+                <div class="adm-guide-card">
+                    <h5><i class="fa-solid fa-file-pen"></i> Lodge an objection for a client</h5>
+                    <ol>
+                        <li>Choose the roll and click <strong>Search Property</strong>.</li>
+                        <li>Open the property and click <strong>Link</strong>.</li>
+                        <li>In the roll <strong>Dashboard → Linked Properties</strong> choose <em>Actions → Object</em>.</li>
+                        <li>Complete the form with the client. The acknowledgement and PIN go to the client by e-mail.</li>
+                        <li>After the client period this is a <strong>late objection (CLO)</strong> — only capture it when it was approved.</li>
+                    </ol>
+                </div>
+
+                <div class="adm-guide-card">
+                    <h5><i class="fa-solid fa-gavel"></i> Lodge an appeal</h5>
+                    <p>Roll <strong>Dashboard → Objections → Actions → Lodge Appeal</strong>. Possible once the
+                        Municipal Valuer’s Decision (MVD) notice was sent (status <code>Notice-Sent</code>).
+                        One appeal per objection. After the appeal period this is a
+                        <strong>late condonation appeal (CLA)</strong> — only capture it when condonation was approved.</p>
+                </div>
+
+                <div class="adm-guide-card">
+                    <h5><i class="fa-solid fa-magnifying-glass-chart"></i> Section 78 query / review</h5>
+                    <p>Section 78 card → <strong>Search Property</strong> → link → <em>Lodge Query</em>.
+                        When the property is on the review list you can <em>Lodge Review</em> while the
+                        review period is open. The review period is the same for clients and for you.</p>
+                </div>
+
+                <div class="adm-guide-card">
+                    <h5><i class="fa-solid fa-paperclip"></i> Add evidence</h5>
+                    <p><em>Actions → Add Evidence</em>, then enter the reference number and the
+                        <strong>Upload Evidence PIN</strong> from the acknowledgement. Only within
+                        <strong>48 hours</strong> of the submission — for clients and for you. Maximum 10 files.</p>
+                </div>
+
+                <div class="adm-guide-card">
+                    <h5><i class="fa-solid fa-percent"></i> Rebates &amp; <i class="fa-solid fa-clipboard-list"></i> Attributes</h5>
+                    <p>Use <strong>Apply for Rebates</strong> or <strong>Search Property</strong> on the
+                        Attributes card to capture for a client. <strong>Dashboard</strong> on each card lists the
+                        submissions and their status.</p>
+                </div>
+
+                <div class="adm-guide-card">
+                    <h5><i class="fa-solid fa-file-arrow-down"></i> Documents</h5>
+                    <p>Acknowledgements, Section 49, Section 51, MVD and outcome notices are in the
+                        <em>Actions</em> menu of each row, or under <strong>Notices</strong>.</p>
+                </div>
+
+                <div class="adm-guide-card">
+                    <h5><i class="fa-solid fa-user-group"></i> Third-Party objections</h5>
+                    <p>The owner automatically gets a <strong>Section 51 notice</strong> (status
+                        <code>Obj-Section51</code>). No Section 49 notice is sent to, or downloadable by,
+                        the third party.</p>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- 3. Rules that still apply -->
+        <div>
+            <h4>Rules that still apply (also for the admin team)</h4>
+            <ul class="adm-guide-list">
+                <li><strong>Section 6:</strong> a new value must be different from the value on the roll. A
+                    category that is already on the roll cannot be chosen — for example “MultiPurpose*” for a
+                    “Multiple Purposes” or “Split - …” property, or “Public Service Infrastructure” when the roll
+                    shows “Split - Public Service Infrastructure”.</li>
+                <li><strong>One appeal per objection</strong>, and only after the MVD notice was sent.</li>
+                <li><strong>POPIA:</strong> the owner name from the roll is not shown on screens or printed on
+                    acknowledgements.</li>
+                <li>Required fields, ID numbers, signatures and the declaration are checked as for clients.</li>
+                <li><strong>Helping a client:</strong> clients who are stopped by a closed period see a
+                    <em>“Need help?”</em> box with what they can still do (late objection, condonation of a late
+                    appeal) and the Valuation Services contact details.</li>
+            </ul>
+        </div>
+
+        <!-- 4. Status meanings -->
+        <div>
+            <h4>What the statuses mean</h4>
+            <table class="adm-guide-status">
+                <thead>
+                    <tr><th>Status</th><th>Meaning</th><th>What happens next</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>Obj-Lodging</code> / <code>App-Lodging</code></td><td>Just lodged</td><td>Evidence can be added for 48 hours (same for everyone)</td></tr>
+                    <tr><td><code>Obj-Section51</code></td><td>Third-Party objection</td><td>The owner has received a Section 51 notice</td></tr>
+                    <tr><td><code>Obj-Unallocated</code> / <code>App-Unallocated</code></td><td>Waiting for a valuer</td><td>Allocated by the valuation team</td></tr>
+                    <tr><td><code>Obj-Inprogress</code></td><td>Being assessed</td><td>Valuer decision (MVD) follows</td></tr>
+                    <tr><td><code>Notice-Sent</code></td><td>MVD notice issued</td><td>An appeal can be lodged</td></tr>
+                    <tr><td><code>App-Scheduled</code></td><td>Appeal hearing scheduled</td><td>Appeal board decision follows</td></tr>
+                    <tr><td><code>Query-Lodging</code> / <code>Review-Lodging</code></td><td>Section 78 just lodged</td><td>Evidence window, then allocation</td></tr>
+                    <tr><td><code>…-Finalized</code></td><td>Completed</td><td>Outcome notice can be downloaded</td></tr>
+                    <tr><td><code>…-Withdrawn</code></td><td>Withdrawn by the client</td><td>No further action</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+</details>
+
+<script>
+    (function () {
+        var guide = document.getElementById('admGuide');
+        if (!guide) return;
+        var KEY = 'admGuideOpen';
+        try {
+            var saved = localStorage.getItem(KEY);
+            if (saved === '0') guide.removeAttribute('open');
+        } catch (e) { }
+        guide.addEventListener('toggle', function () {
+            try { localStorage.setItem(KEY, guide.open ? '1' : '0'); } catch (e) { }
+        });
+    })();
+</script>

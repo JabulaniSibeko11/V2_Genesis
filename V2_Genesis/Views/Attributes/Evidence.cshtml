@@ -51,8 +51,8 @@
                         <i class="fa-solid fa-triangle-exclamation"></i>
                         <strong>Upload window closed.</strong>
                         The 48-hour window for adding evidence to this submission has passed.
-                        Contact the City of Johannesburg if you need to submit additional information.
                     </div>
+                    <partial name="_ClientHelp" model="@("evidence")" />
                 }
                 else if (ViewBag.Error is not null)
                 {

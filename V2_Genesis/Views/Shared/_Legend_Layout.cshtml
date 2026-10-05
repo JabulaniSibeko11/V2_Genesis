@@ -88,6 +88,10 @@
 
     string RollStatus(string source)
     {
+        // Admin team: every roll is always open.
+        if (isAdmin)
+            return "Open";
+
         var dates =
             rollDates.For(source);
 

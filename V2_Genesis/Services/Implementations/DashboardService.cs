@@ -186,6 +186,23 @@ public class DashboardService : IDashboardService
                 }
             }
 
+            if (!isQuery)
+            {
+                try
+                {
+                    await PopulateObjectorTypesAsync(
+                        conn,
+                        objectedProperties);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(
+                        ex,
+                        "Could not read Objector_Type for roll {RollSource}",
+                        rollSource);
+                }
+            }
+
             rollData.ObjectedProperties =
                 objectedProperties;
         }
@@ -338,6 +355,57 @@ public class DashboardService : IDashboardService
         }
 
         return rollData;
+    }
+
+    // The dashboard hides "Download Section 49 Notice" for a Third-Party
+    // objection, so each objection needs its Objector_Type.
+    private static async Task PopulateObjectorTypesAsync(
+        SqlConnection conn,
+        List<ObjectedPropertyResult> properties)
+    {
+        var references = properties
+            .Where(p => string.IsNullOrWhiteSpace(p.Objector_Type))
+            .Select(p => p.Objection_No?.Trim())
+            .Where(r => !string.IsNullOrWhiteSpace(r))
+            .Select(r => r!)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        if (references.Length == 0)
+            return;
+
+        var rows = await conn.QueryAsync<ObjectorTypeRow>(
+            @"SELECT LTRIM(RTRIM(Objection_No)) AS Objection_No, Objector_Type
+              FROM dbo.Obj_Property_Info
+              WHERE LTRIM(RTRIM(Objection_No)) IN @References;",
+            new { References = references },
+            commandTimeout: 30);
+
+        var types = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
+        foreach (var row in rows)
+        {
+            if (!string.IsNullOrWhiteSpace(row.Objection_No) &&
+                !types.ContainsKey(row.Objection_No))
+            {
+                types[row.Objection_No!] = row.Objector_Type;
+            }
+        }
+
+        foreach (var property in properties)
+        {
+            if (string.IsNullOrWhiteSpace(property.Objector_Type) &&
+                property.Objection_No is { } no &&
+                types.TryGetValue(no.Trim(), out var type))
+            {
+                property.Objector_Type = type;
+            }
+        }
+    }
+
+    private sealed class ObjectorTypeRow
+    {
+        public string? Objection_No { get; set; }
+        public string? Objector_Type { get; set; }
     }
 
     private static async Task PopulateAppealDecisionTypesAsync(

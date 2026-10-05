@@ -106,6 +106,8 @@ public class NoticeService : INoticeService
         var dates = _rollDates.For(rollSource);
         var main = items.First();
 
+        await ApplyRollPostalAddressAsync(rollSource, main);
+
         var fileName =
             $"Section49_{SanitiseName(main.PropertyDesc ?? unitKey)}.pdf";
 
@@ -131,7 +133,8 @@ public class NoticeService : INoticeService
             string unitKey,
             string valuationKey,
             string objectionNo,
-            string propertyDescription)
+            string propertyDescription,
+            string? premiseId = null)
     {
         if (!IsSupportedSection49Roll(rollSource))
         {
@@ -172,6 +175,8 @@ public class NoticeService : INoticeService
         var dates = _rollDates.For(rollSource);
         var main = items.First();
 
+        await ApplyRollPostalAddressAsync(rollSource, main, premiseId);
+
         var finalPropertyDescription =
             string.IsNullOrWhiteSpace(propertyDescription)
                 ? main.PropertyDesc ?? unitKey
@@ -205,6 +210,108 @@ public class NoticeService : INoticeService
             valuationKey);
 
         return (pdfBytes, fileName);
+    }
+
+    // ── Section 49 postal address ───────────────────────────────────
+    // The owner's postal address on the Section 49 notice always comes
+    // from the roll's postal address table, for every roll:
+    //   Section51Rolls:{roll}:PostalAddressTable
+    //   (Objection_Postal_address, Supp1_Postal_address … Supp4_Postal_address)
+    // matched on PREMISE_ID. Only the PDF uses it; nothing is written back.
+    // If the table has no row, the address from the roll detail is kept.
+    private static readonly System.Text.RegularExpressions.Regex PostalTableName =
+        new(@"^(?:[A-Za-z0-9_]+\.)?[A-Za-z0-9_]+$");
+
+    private async Task ApplyRollPostalAddressAsync(
+        string rollSource,
+        PropertyDetailResult main,
+        string? premiseId = null)
+    {
+        var premise = !string.IsNullOrWhiteSpace(premiseId)
+            ? premiseId.Trim()
+            : main.PremiseId?.Trim();
+
+        if (string.IsNullOrWhiteSpace(premise))
+        {
+            _logger.LogWarning(
+                "[Section49] No PREMISE_ID for {Property} on {Roll}; postal address not looked up.",
+                main.PropertyDesc, rollSource);
+            return;
+        }
+
+        try
+        {
+            var registry = V2_Genesis.Services.Section51.Section51RollRegistry.Build(_config);
+            if (!registry.TryGetValue(rollSource?.Trim() ?? string.Empty, out var cfg))
+                return;
+
+            var connStr = _config.GetConnectionString(cfg.ConnectionKey);
+            var table = (cfg.PostalAddressTable ?? string.Empty)
+                .Trim().Replace("[", "").Replace("]", "");
+
+            if (string.IsNullOrWhiteSpace(connStr) || !PostalTableName.IsMatch(table))
+            {
+                _logger.LogWarning(
+                    "[Section49] Postal address table/connection not configured for {Roll}.", rollSource);
+                return;
+            }
+
+            var parts = table.Split('.');
+            var qualified = parts.Length == 2
+                ? $"[{parts[0]}].[{parts[1]}]"
+                : $"[dbo].[{parts[0]}]";
+
+            await using var conn = new SqlConnection(connStr);
+
+            var hasWefDate = await conn.ExecuteScalarAsync<int?>(
+                "SELECT COL_LENGTH(@Table, 'WEF_DATE');",
+                new { Table = qualified }) is > 0;
+
+            var orderBy = hasWefDate ? "WEF_DATE DESC" : "(SELECT NULL)";
+
+            var row = await conn.QueryFirstOrDefaultAsync<Section49PostalRow>($@"
+SELECT TOP (1)
+    CAST(ADDR1 AS nvarchar(255)) AS A1,
+    CAST(ADDR2 AS nvarchar(255)) AS A2,
+    CAST(ADDR3 AS nvarchar(255)) AS A3,
+    CAST(ADDR4 AS nvarchar(255)) AS A4,
+    CAST(ADDR5 AS nvarchar(255)) AS A5
+FROM {qualified}
+WHERE LTRIM(RTRIM(CAST(PREMISE_ID AS nvarchar(100)))) = @PremiseId
+ORDER BY {orderBy};",
+                new { PremiseId = premise });
+
+            if (row is null ||
+                string.IsNullOrWhiteSpace(row.A1) && string.IsNullOrWhiteSpace(row.A2) &&
+                string.IsNullOrWhiteSpace(row.A3) && string.IsNullOrWhiteSpace(row.A4) &&
+                string.IsNullOrWhiteSpace(row.A5))
+            {
+                _logger.LogInformation(
+                    "[Section49] No postal address in {Table} for PREMISE_ID {PremiseId}.", table, premise);
+                return;
+            }
+
+            main.ADDR1 = row.A1;
+            main.ADDR2 = row.A2;
+            main.ADDR3 = row.A3;
+            main.ADDR4 = row.A4;
+            main.ADDR5 = row.A5;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,
+                "[Section49] Could not read the postal address for PREMISE_ID {PremiseId} on {Roll}.",
+                premise, rollSource);
+        }
+    }
+
+    private sealed class Section49PostalRow
+    {
+        public string? A1 { get; set; }
+        public string? A2 { get; set; }
+        public string? A3 { get; set; }
+        public string? A4 { get; set; }
+        public string? A5 { get; set; }
     }
 
     private static bool IsSupportedSection49Roll(string? rollSource)

@@ -1,4 +1,4 @@
-/*
+﻿/*
  * sa-id-validation.js
  * ---------------------------------------------------------------------------
  * South African ID number validation for the Objection, Appeal, Multipurpose
@@ -13,8 +13,9 @@
  *   12    population register index (usually 8)
  *   13    checksum digit (Luhn)
  *
- * Owner section: when a COMPANY / C.C. REGISTRATION NO. is entered, the ID
- * number and passport number are not requested (hidden and not validated).
+ * Owner (1.1) and Third-Party objector (1.2): when a COMPANY / C.C.
+ * REGISTRATION NO. is entered, the ID number and passport number are not
+ * requested (hidden and not validated).
  *
  * The form scripts compare LuhnAlgo() with 'Invalid ID Number'; that return
  * value is kept. The detailed reason is shown under the field and placed in
@@ -128,61 +129,78 @@
         input.style.border = ok === null ? '' : ok ? '2px solid #16a34a' : '2px solid #dc2626';
     }
 
-    // ── Company registration: owner ID / passport not requested ──────
-    function companyInput() {
-        return document.querySelector('input[name="Owner_Company"]');
+    // ── Company registration: ID / passport not requested ─────────────
+    // Applies to the OWNER (1.1) and to the THIRD-PARTY objector (1.2).
+    // When a company / C.C. registration number is typed, the ID number
+    // and passport number are hidden, cleared and not validated.
+    var PARTIES = {
+        Owner: { idId: 'o_id', passId: 'o_pass', statusId: 'id_status', company: 'Owner_Company', noteId: 'ownerCompanyIdNote' },
+        Third_Party: { idId: 'objector_id', passId: 'objector_pass', statusId: 'obj_id_status', company: 'Objector_Company', noteId: 'objectorCompanyIdNote' }
+    };
+
+    function companyInputFor(party) {
+        return document.querySelector('input[name="' + party.company + '"]');
     }
 
-    function ownerHasCompany() {
-        var c = companyInput();
-        return !!(c && c.value && c.value.trim());
+    function hasCompany(party) {
+        var c = companyInputFor(party);
+        return !!(c && !c.disabled && c.value && c.value.trim());
     }
 
-    function ownerIdBlock() {
-        var id = $('o_id');
+    function ownerHasCompany() { return hasCompany(PARTIES.Owner); }
+
+    function idBlockFor(party) {
+        var id = $(party.idId);
         return id ? id.closest('.col-sm-8') : null;
     }
 
-    function ownerIdModeIsId() {
-        // First radio in the owner group = ID Number
-        var block = ownerIdBlock();
+    function idModeIsId(party) {
+        // First radio in the group = ID Number
+        var block = idBlockFor(party);
         var radio = block ? block.querySelector('input[type="radio"]') : null;
         return !radio || radio.checked;
     }
 
-    function applyCompanyRule() {
-        var block = ownerIdBlock();
+    function applyCompanyRuleFor(party) {
+        var block = idBlockFor(party);
         if (!block) return;
 
-        var note = $('ownerCompanyIdNote');
+        var note = $(party.noteId);
         if (!note) {
             note = document.createElement('div');
-            note.id = 'ownerCompanyIdNote';
+            note.id = party.noteId;
             note.style.cssText =
                 'display:none;margin:6px 0 10px;padding:10px 12px;border-radius:8px;' +
                 'background:#ecfdf3;border:1px solid #16a34a;color:#14532d;font-size:13px;font-weight:600;';
             note.innerHTML =
                 '<i class="fa-solid fa-building" style="margin-right:6px;"></i>' +
                 'A company / C.C. registration number was entered, so an ID or passport number is not required.';
-            block.parentNode.insertBefore(note, block);
+            block.insertBefore(note, block.firstChild);
         }
 
-        var idInput = $('o_id');
-        var passInput = $('o_pass');
+        var idInput = $(party.idId);
+        var passInput = $(party.passId);
+        var parts = Array.prototype.filter.call(block.children, function (c) { return c !== note; });
 
-        if (ownerHasCompany()) {
-            block.style.display = 'none';
+        if (hasCompany(party)) {
+            parts.forEach(function (c) { c.style.display = 'none'; });
             note.style.display = 'block';
             if (idInput) { idInput.value = ''; idInput.disabled = true; markField(idInput, null); }
             if (passInput) { passInput.value = ''; passInput.disabled = true; markField(passInput, null); }
-            setStatus('id_status', '', true);
+            setStatus(party.statusId, '', true);
+            window.GenesisIdError = '';
         } else {
-            block.style.display = '';
+            parts.forEach(function (c) { c.style.display = ''; });
             note.style.display = 'none';
-            var idMode = ownerIdModeIsId();
+            var idMode = idModeIsId(party);
             if (idInput) idInput.disabled = !idMode;
             if (passInput) passInput.disabled = idMode;
         }
+    }
+
+    function applyCompanyRule() {
+        applyCompanyRuleFor(PARTIES.Owner);
+        applyCompanyRuleFor(PARTIES.Third_Party);
     }
 
     // ── Live checks on the ID inputs ──────────────────────────────────
@@ -242,8 +260,9 @@
         return '';
     }
 
-    function checkPerson(idInputId, passInputId, statusId, allowCompany) {
-        if (allowCompany && ownerHasCompany()) return pass(statusId, null, '');
+    function checkPerson(idInputId, passInputId, statusId, party) {
+        var allowCompany = !!party;
+        if (party && hasCompany(party)) return pass(statusId, null, '');
 
         var idInput = $(idInputId);
         var passInput = $(passInputId);
@@ -266,12 +285,12 @@
         return p.valid ? pass(statusId, passInput, '') : fail(statusId, passInput, p.message);
     }
 
-    window.GenesisSaId = { validate: validate, validatePassport: validatePassport };
+    window.GenesisSaId = { validate: validate, validatePassport: validatePassport, applyCompanyRule: applyCompanyRule };
 
     window.LuhnAlgo = function () {
         var key = currentObjectorKey();
-        if (key === 'Owner') return checkPerson('o_id', 'o_pass', 'id_status', true);
-        if (key === 'Third_Party') return checkPerson('objector_id', 'objector_pass', 'obj_id_status', false);
+        if (key === 'Owner') return checkPerson('o_id', 'o_pass', 'id_status', PARTIES.Owner);
+        if (key === 'Third_Party') return checkPerson('objector_id', 'objector_pass', 'obj_id_status', PARTIES.Third_Party);
         window.GenesisIdError = '';
         return '';
     };
@@ -280,23 +299,29 @@
         wireIdInput('o_id', 'id_status');
         wireIdInput('objector_id', 'obj_id_status');
 
-        var company = companyInput();
-        if (company) {
-            company.addEventListener('input', applyCompanyRule);
-            company.addEventListener('change', applyCompanyRule);
-        }
+        [PARTIES.Owner, PARTIES.Third_Party].forEach(function (party) {
+            var company = companyInputFor(party);
+            if (company) {
+                company.addEventListener('input', function () { applyCompanyRuleFor(party); });
+                company.addEventListener('change', function () { applyCompanyRuleFor(party); });
+            }
 
-        // Re-apply after the ID / Passport radios are clicked.
-        var block = ownerIdBlock();
-        if (block) {
-            block.querySelectorAll('input[type="radio"]').forEach(function (r) {
-                r.addEventListener('change', function () {
-                    setStatus('id_status', '', true);
-                    markField($('o_id'), null);
-                    markField($('o_pass'), null);
+            // Re-apply after the ID / Passport radios are clicked.
+            var block = idBlockFor(party);
+            if (block) {
+                block.querySelectorAll('input[type="radio"]').forEach(function (r) {
+                    r.addEventListener('change', function () {
+                        setStatus(party.statusId, '', true);
+                        markField($(party.idId), null);
+                        markField($(party.passId), null);
+                    });
                 });
-            });
-        }
+            }
+        });
+
+        // Drafts restored by genesis-form-guard.js fill the company box
+        // without an input event: check again once the page has loaded.
+        window.addEventListener('load', function () { setTimeout(applyCompanyRule, 50); });
 
         applyCompanyRule();
     }

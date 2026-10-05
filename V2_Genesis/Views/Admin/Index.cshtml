@@ -368,6 +368,27 @@
         await NotificationService.GetLatestAsync(
             adminNoteUserId, adminNoteEmail, true, 10);
 
+    // ── Admin team rule ─────────────────────────────────────────────
+    // The objection and appeal periods are always open for the admin team
+    // (late objections CLO and late condonation appeals CLA are captured
+    // internally). The client dates are shown for information only.
+    // The 48-hour evidence window, the Section 51 closing date and the
+    // Section 78 review period apply to everyone, also the admin team.
+    string AdminClientPeriodText(string source)
+    {
+        var dates = Model.DatesFor(source);
+        if (dates is null)
+            return "no client dates set";
+
+        var now = DateTime.Now;
+        if (now < dates.OpenDate)
+            return "opens " + dates.OpenDate.ToString("dd MMM yyyy");
+
+        return now <= dates.VisibleUntil
+            ? "open until " + dates.VisibleUntil.ToString("dd MMM yyyy HH:mm")
+            : "closed on " + dates.VisibleUntil.ToString("dd MMM yyyy");
+    }
+
     string AdminPublicPeriodStatus(string source)
     {
         var dates = Model.DatesFor(source);
@@ -405,7 +426,7 @@
                 </span>
 
                 <span class="ann-text">
-                    <span>@adminAnn.Message</span>
+                    <span><strong>What clients see:</strong> @adminAnn.Message</span>
                 </span>
 
                 @if (adminAnn.DaysLeft > 0)
@@ -557,6 +578,8 @@
             <span class="legacy-dashboard-heading-line"></span>
         </section>
 
+        <partial name="_AdminGuide" />
+
         <div class="legacy-dashboard-grid">
 
             @if (adminSup4 is not null)
@@ -566,8 +589,8 @@
 
                 <article class="legacy-service-card legacy-service-card-teal">
 
-                    <div class="legacy-service-status @(status == "OPEN" ? "is-open" : "is-closed")">
-                        @status
+                    <div class="legacy-service-status is-open" title="Objections and appeals are always open for the admin team (late objections CLO and late condonation appeals CLA)">
+                        OPEN FOR ADMIN
                     </div>
 
                     <div class="legacy-service-icon">
@@ -575,6 +598,11 @@
                     </div>
 
                     <h2>Supplementary Roll 4</h2>
+
+                    <div class="adm-client-period">
+                        <i class="fa-solid fa-users"></i>
+                        Clients: @AdminClientPeriodText(adminSup4.Source)
+                    </div>
 
                     <p>
                         Search, capture and manage Supplementary Roll 4
@@ -768,7 +796,7 @@
                 <span>
                     <i class="fa-solid fa-bolt"></i>
                     <strong>Quick Access – Previous Valuation Rolls</strong>
-                    <small>View GV23 and closed supplementary rolls</small>
+                    <small>GV23 and Supplementary Rolls 1–3 — closed for clients; the admin team can still capture late objections (CLO) and late appeals (CLA)</small>
                 </span>
 
                 <i class="fa-solid fa-chevron-down legacy-archive-chevron"
@@ -786,8 +814,12 @@
                     <article class="legacy-archive-card">
 
                         <div>
-                            <span class="legacy-archive-badge">CLOSED</span>
+                            <span class="legacy-archive-badge adm-badge-open">OPEN FOR ADMIN</span>
                             <h3>@AdminRollLabel(roll.Source)</h3>
+                            <div class="adm-client-period">
+                                <i class="fa-solid fa-users"></i>
+                                Clients: @AdminClientPeriodText(roll.Source)
+                            </div>
                             <p>
                                 @data.LinkedCount linked ·
                                 @data.ObjectedCount objections ·
@@ -1023,7 +1055,7 @@
                                 @dates.OpenDate.ToString("dd MMM yyyy") – @dates.VisibleUntil.ToString("dd MMM yyyy")
                             </span>
                           
-                            <span class="cd-roll-badge cd-badge-open">Objection Open</span>
+                            <span class="cd-roll-badge cd-badge-open" title="Clients: @AdminClientPeriodText(roll.Source)">Open for admin</span>
                         </div>
                     }
  
@@ -1104,6 +1136,7 @@
                                             }
                                             else if (item.IsActionClosed)
                                             {
+                                                @* The Section 78 review period applies to everyone, also the admin team. *@
                                                 <li>
                                                     <span class="dropdown-item disabled" aria-disabled="true">
                                                         <i class="fa-solid fa-lock"></i> Review period closed

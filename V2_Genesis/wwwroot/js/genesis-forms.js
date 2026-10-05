@@ -1,4 +1,4 @@
-/*
+﻿/*
  * genesis-forms.js
  * ---------------------------------------------------------------------------
  * Shared behaviour for the Objection, Appeal, Multipurpose and Section 78
@@ -152,31 +152,68 @@
             function (card) { return card.offsetParent !== null; });
     }
 
+    // The form scripts focus a field of the new step (phy_c, sign_obj, the
+    // upload box, a delayed "first field" focus …). A plain focus() makes
+    // the browser jump to that field, which is why a step used to open in
+    // the middle or at the bottom. For a short moment after a step change
+    // every focus() keeps the page where it is (the field still gets the
+    // cursor), and the page is placed at the top of the new step.
+    var holdScrollUntil = 0;
+    var nativeFocus = HTMLElement.prototype.focus;
+    HTMLElement.prototype.focus = function (options) {
+        if (Date.now() < holdScrollUntil) {
+            var opts = {};
+            if (options && typeof options === 'object') {
+                for (var k in options) opts[k] = options[k];
+            }
+            opts.preventScroll = true;
+            return nativeFocus.call(this, opts);
+        }
+        return nativeFocus.apply(this, arguments);
+    };
+
+    function navOffset() {
+        var nav = document.querySelector('#clientNav, .cl-navbar, .pub-nav, .navbar.fixed-top, header.sticky-top');
+        if (!nav) return 16;
+        var pos = getComputedStyle(nav).position;
+        return /fixed|sticky/.test(pos) ? nav.getBoundingClientRect().height + 14 : 16;
+    }
+
+    function scrollToStep(step) {
+        if (!step || step.offsetParent === null) return;
+        var top = step.getBoundingClientRect().top + window.pageYOffset - navOffset();
+        // Instant: a smooth scroll is interrupted by the form's own focus().
+        window.scrollTo({ top: Math.max(top, 0), left: 0, behavior: 'auto' });
+    }
+
     document.addEventListener('click', function (e) {
         var btn = e.target && e.target.closest
-            ? e.target.closest('#myForm button[class*="btn_n"], #myForm button[class*="btn_p"], #myForm .obj-nav-btn')
+            ? e.target.closest('#myForm button[class*="btn_n"], #myForm button[class*="btn_p"], #myForm .obj-nav-btn, #myForm [data-step-nav]')
             : null;
         if (!btn || btn.type === 'submit' || btn.id === 'submitForm') return;
 
+        // Collected in the capture phase, i.e. BEFORE the form script runs.
         var before = visibleSteps();
 
-        // Run after the form script has swapped the steps (and focused a field).
         setTimeout(function () {
             var after = visibleSteps();
             var changed = after.length !== before.length ||
                 after.some(function (card, i) { return card !== before[i]; });
-            if (!changed) return; // validation kept the client on this step
+
+            // Validation kept the client on this step: the form itself
+            // scrolls to / focuses the field that needs attention.
+            if (!changed) return;
 
             var step = after.filter(function (card) { return before.indexOf(card) === -1; })[0] || after[0];
-            if (!step) return;
 
-            var nav = document.querySelector('.cl-navbar, .navbar.fixed-top, header.sticky-top');
-            var fixedNav = nav && /fixed|sticky/.test(getComputedStyle(nav).position);
-            var offset = fixedNav ? nav.getBoundingClientRect().height + 12 : 16;
-            var top = step.getBoundingClientRect().top + window.pageYOffset - offset;
-            window.scrollTo({ top: Math.max(top, 0), behavior: 'smooth' });
-        }, 80);
-    });
+            // Keep later focus() calls (some run 250 ms later) from moving
+            // the page, then place the top of the new step under the navbar.
+            holdScrollUntil = Date.now() + 1200;
+            scrollToStep(step);
+            requestAnimationFrame(function () { scrollToStep(step); });
+            setTimeout(function () { scrollToStep(step); }, 400);
+        }, 0);
+    }, true);
 
     // ════════════════════════════════════════════════════════════════
     // 3. COMPENSATION AMOUNT (Section 2)

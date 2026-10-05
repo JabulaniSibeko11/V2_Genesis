@@ -79,6 +79,11 @@
                     <i class="fa-solid fa-circle-xmark"></i>
                     @ViewBag.Error
                 </div>
+
+                @if (ViewBag.WindowClosed == true)
+                {
+                    <partial name="_ClientHelp" model="@("evidence")" />
+                }
             }
 
             <div class="ev-notice-premium">
@@ -142,6 +147,11 @@
                     <i class="fa-solid fa-circle-xmark"></i>
                     @ViewBag.Error
                 </div>
+
+                @if (ViewBag.WindowClosed == true)
+                {
+                    <partial name="_ClientHelp" model="@("evidence")" />
+                }
             }
 
             <div class="ev-notice-premium">

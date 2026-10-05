@@ -70,6 +70,19 @@ namespace V2_Genesis.Models.Results
         public bool IsReview =>
             Sub_typ == 1;
 
+        // Owner / Representative / Third_Party (Obj_Property_Info.Objector_Type).
+        public string? Objector_Type { get; set; }
+
+        // A Third-Party objector is not the owner: no Section 49 for them.
+        public bool IsThirdParty
+        {
+            get
+            {
+                var t = (Objector_Type ?? string.Empty).Trim().Replace("-", "_").Replace(" ", "_");
+                return t.Equals("Third_Party", StringComparison.OrdinalIgnoreCase);
+            }
+        }
+
         public string DisplayReference =>
             !string.IsNullOrWhiteSpace(Query_No)
                 ? Query_No

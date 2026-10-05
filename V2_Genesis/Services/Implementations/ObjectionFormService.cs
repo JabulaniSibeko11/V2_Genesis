@@ -1138,12 +1138,17 @@ public class ObjectionFormService : IObjectionFormService
             //   2. Populated Appeal form
             //
             // It must NOT generate another Section 49 notice.
+            // A Third-Party objector is not the owner: the owner gets a
+            // Section 51 notice instead, so no Section 49 is attached.
+            var isThirdPartyObjection = IsThirdPartyObjector(obj.Objector_Type);
+
             if (!isAppeal &&
+                !isThirdPartyObjection &&
                 ShouldGenerateSection49(
                     rollSource,
                     propertyFrom))
             {
-                
+
                 try
                 {
                     var unitKey = FloatKeyHelper.Normalize(
@@ -1166,7 +1171,8 @@ public class ObjectionFormService : IObjectionFormService
                             unitKey,
                             valuationKey,
                             referenceNo,
-                            propertyDescription ?? string.Empty);
+                            propertyDescription ?? string.Empty,
+                            obj.Premise_id);
 
                     var section49Path = Path.Combine(folderPath, section49FileName);
                     await File.WriteAllBytesAsync(section49Path, section49Bytes);
@@ -1201,9 +1207,10 @@ public class ObjectionFormService : IObjectionFormService
             {
                 _logger.LogInformation(
                     "[ObjectionFormService] Section 49 skipped for {ReferenceNo}. " +
-                    "IsAppeal={IsAppeal}, Roll={RollSource}, PropertyFrom={PropertyFrom}",
+                    "IsAppeal={IsAppeal}, ThirdParty={ThirdParty}, Roll={RollSource}, PropertyFrom={PropertyFrom}",
                     referenceNo,
                     isAppeal,
+                    isThirdPartyObjection,
                     rollSource,
                     propertyFrom);
             }
