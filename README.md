@@ -26,6 +26,7 @@ Clients sign in with an email and password. The admin team signs in with **Login
 - ASP.NET Core Identity with claims; Windows / Negotiate authentication for admins
 - QuestPDF for every PDF (forms, acknowledgements, notices)
 - Serilog logging (`C:\Genesis Log`)
+- xUnit + Moq automated tests, run by GitHub Actions on every push
 - Hosted on **IIS**
 
 ## Repository layout
@@ -40,6 +41,11 @@ V2_Genesis/
   Views/                   Razor views (client and admin layouts, forms, submission view)
   wwwroot/                 css, js (form validation, Section 6 rules, SA ID checks), images
   appsettings.json         settings for development
+V2_Genesis.Tests/          automated tests (xUnit + Moq)
+  Helpers/                 date, status and key helpers
+  Models/                  business rules on results (appeal eligibility …)
+  Services/                service logic (pack folders …)
+.github/workflows/         tests.yml — builds and runs the tests on GitHub
 ```
 
 ## Run it locally
@@ -92,12 +98,47 @@ All in `appsettings.json` (production values are set on the server):
 - Objection Pack: `{Data folder}\{Objection_No}`. Appeal Pack: `{Appeal folder}\{Appeal_No}`,
   with the objection pack zipped inside.
 
-## Testing updates
+## Testing
 
-There is no automated test project yet, so every update is tested by hand on UAT before it is merged.
+Every update is tested in two ways: the **automated tests** must be green, and the
+**flows you changed** are tested by hand on UAT.
+
+### Automated tests (`V2_Genesis.Tests`)
+
+The tests check the business rules without a database, e-mail or browser, so they run in
+under a second.
+
+| Test class | Rule it protects |
+|---|---|
+| `AppealEligibilityResultTests` | Clients appeal only while the period is open; admin can always appeal (late condonation appeals); never twice, never before the MVD notice; messages never mention CLO / CLA |
+| `DashboardNoticeStatusHelperTests` | Which notice a client may download for each status (Section 51, Section 53, outcomes) |
+| `WefDateFormatterTests` | The "With Effective Date" is written in full, day-first (10 January 2025) |
+| `FloatKeyHelperTests` | Property keys never show as scientific notation |
+| `PackFoldersTests` | Objection / Appeal Pack folder and zip names |
+
+**Run them in Visual Studio:** *Test → Test Explorer → Run All* (Ctrl+R, A).
+**Or from a terminal:**
+
+```bash
+dotnet test V2_Genesis.slnx
+```
+
+**On GitHub:** `.github/workflows/tests.yml` builds the solution and runs every test on each push
+to `master` / `legacy-dashboard-demo` and on every pull request. The result shows as a green tick
+or red cross on the commit and in the **Actions** tab. Do not merge a pull request with a red cross.
+
+**Adding a test:** when you change a business rule or fix a bug, add a test that would have caught
+it. Put it in the folder that matches the app (`Helpers`, `Models`, `Services`) and name it after the
+rule, e.g. `Admin_can_lodge_when_the_appeal_period_is_closed`. Code that talks to SQL Server or
+SMTP is tested by replacing that part with Moq.
+
+**Package versions:** keep the `Microsoft.AspNetCore.*` packages of the test project on the same
+version as the app (*Manage NuGet Packages for Solution → Consolidate*).
+
+### Testing an update by hand (UAT)
 
 1. **Branch** from the main branch: `git checkout -b test/<short-name>`.
-2. **Build** with no new errors or warnings: `dotnet build`.
+2. **Build and run the automated tests** — no new errors or warnings, all tests green.
 3. **Keep test mode on** for local / UAT runs: `Email:TestMode = true`
    (and, only if you must test outside a period, `Section51:BypassDeadline = true` — switch it back after).
 4. **Test the flows your change touches**, at least:
@@ -112,8 +153,8 @@ There is no automated test project yet, so every update is tested by hand on UAT
    - [ ] Admin lodges on a closed roll; client screens show no CLO / CLA
    - [ ] Check the page on a phone-sized screen
 5. **Check the log** in `C:\Genesis Log` for errors during your test.
-6. **Write in the pull request** what changed, which flows you tested and screenshots of any screen
-   that changed. Remove test data from UAT afterwards.
+6. **Write in the pull request** what changed, which flows you tested, that the tests are green,
+   and screenshots of any screen that changed. Remove test data from UAT afterwards.
 
 ## Security
 
