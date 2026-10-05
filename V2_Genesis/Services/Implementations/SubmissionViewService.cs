@@ -748,11 +748,19 @@ namespace V2_Genesis.Services.Implementations
             bool isAppeal,
             CancellationToken cancellationToken)
         {
+            // SQL-injection guard: table and column names cannot be SQL
+            // parameters. They come from the fixed list in
+            // GetSupplementarySectionDefinitions(); this check makes sure a
+            // future change can never pass anything else (e.g. request data).
+            tableName = SafeSqlIdentifier(tableName);
+            referenceColumn = SafeSqlIdentifier(referenceColumn);
+            appealReferenceColumn = SafeSqlIdentifier(appealReferenceColumn);
+
             var byReference = new CommandDefinition(
                 $"""
                  SELECT TOP (1) *
-                 FROM dbo.{tableName}
-                 WHERE LTRIM(RTRIM(ISNULL({referenceColumn}, ''))) = @ReferenceNumber
+                 FROM dbo.[{tableName}]
+                 WHERE LTRIM(RTRIM(ISNULL([{referenceColumn}], ''))) = @ReferenceNumber
                  """,
                 new { ReferenceNumber = referenceNumber.Trim() },
                 commandTimeout: 60,
@@ -767,13 +775,13 @@ namespace V2_Genesis.Services.Implementations
                 : "Ref";
 
             var legacyFilter = isAppeal
-                ? $"TRY_CONVERT(bigint, {numericReferenceColumn}) = TRY_CONVERT(bigint, @SubmissionId)"
-                : $"TRY_CONVERT(bigint, {numericReferenceColumn}) = TRY_CONVERT(bigint, @SubmissionId) AND {appealReferenceColumn} IS NULL";
+                ? $"TRY_CONVERT(bigint, [{numericReferenceColumn}]) = TRY_CONVERT(bigint, @SubmissionId)"
+                : $"TRY_CONVERT(bigint, [{numericReferenceColumn}]) = TRY_CONVERT(bigint, @SubmissionId) AND [{appealReferenceColumn}] IS NULL";
 
             var byNumericReference = new CommandDefinition(
                 $"""
                  SELECT TOP (1) *
-                 FROM dbo.{tableName}
+                 FROM dbo.[{tableName}]
                  WHERE {legacyFilter}
                  """,
                 new { SubmissionId = submissionIdText },
@@ -781,6 +789,19 @@ namespace V2_Genesis.Services.Implementations
                 cancellationToken: cancellationToken);
 
             return await connection.QueryFirstOrDefaultAsync<dynamic>(byNumericReference);
+        }
+
+        private static readonly System.Text.RegularExpressions.Regex SqlIdentifierRx =
+            new(@"^[A-Za-z_][A-Za-z0-9_]{0,127}$",
+                System.Text.RegularExpressions.RegexOptions.Compiled);
+
+        /// Only plain table / column names (letters, digits, underscore).
+        private static string SafeSqlIdentifier(string? name)
+        {
+            var value = (name ?? string.Empty).Trim();
+            if (!SqlIdentifierRx.IsMatch(value))
+                throw new ArgumentException($"Invalid SQL identifier '{value}'.", nameof(name));
+            return value;
         }
 
         private static IReadOnlyList<SupplementarySectionDefinition>

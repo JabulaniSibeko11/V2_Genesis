@@ -285,9 +285,17 @@ namespace V2_Genesis.Services.Implementations
         private static string? Normalise(string? val)
             => string.IsNullOrWhiteSpace(val) ? null : val.Trim();
 
-        // Wraps value in %…% wildcard for LIKE, empty string if null
+        // Wraps value in %…% wildcard for LIKE, empty string if null.
+        // The value is still passed as a parameter; the LIKE wild cards the
+        // user types ([ % _) are escaped so they are searched as text and
+        // cannot widen the search to the whole roll.
         private static string Like(string? val)
-            => string.IsNullOrWhiteSpace(val) ? "%%" : $"%{val.Trim()}%";
+            => string.IsNullOrWhiteSpace(val)
+                ? "%%"
+                : "%" + val.Trim()
+                    .Replace("[", "[[]")
+                    .Replace("%", "[%]")
+                    .Replace("_", "[_]") + "%";
         private static LisProperty MapRow(dynamic dr)
         {
             var d = (IDictionary<string, object>)dr;
