@@ -1197,3 +1197,52 @@
         margin-left: 0;
     }
 }
+
+
+/* ══════════════════════════════════════════════════════════════
+   SAME SIZE AS THE ATTRIBUTES "CONFIRM PROPERTY" PAGE
+   (attributes-check.css: 1200px wide, 20px side padding, 54px icon,
+   23px title). Placed last so it wins over the 100% width above.
+══════════════════════════════════════════════════════════════ */
+.cp-hero {
+    padding: 28px 20px 24px;
+    border-bottom-width: 4px;
+}
+
+.cp-hero-inner {
+    max-width: 1200px;
+}
+
+.cp-hero-icon {
+    width: 54px;
+    height: 54px;
+}
+
+.cp-hero-title {
+    font-size: 23px;
+}
+
+.cp-hero-sub {
+    font-size: 13px;
+}
+
+.cp-body {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px 20px 60px;
+}
+
+@media (max-width: 640px) {
+    .cp-hero {
+        padding: 22px 16px 18px;
+    }
+
+    .cp-hero-title {
+        font-size: 18px;
+    }
+
+    .cp-body {
+        padding: 18px 14px 48px;
+    }
+}
