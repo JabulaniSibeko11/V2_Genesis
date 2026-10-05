@@ -1,4 +1,4 @@
-@model string
+﻿@model string
 @*
     _ClientHelp.cshtml
     ─────────────────────────────────────────────────────────────────────
@@ -11,8 +11,10 @@
     Model (kind):
       "evidence"   48-hour evidence window closed
       "section51"  Section 51 upload closed / already submitted
-      "objection"  objection period closed  → late objection (CLO)
-      "appeal"     appeal period closed     → condonation of a late appeal (CLA)
+      "objection"  objection period closed  (contact details only)
+      "appeal"     appeal period closed     (contact details only)
+    Late objections (CLO) and late condonation appeals (CLA) are NOT
+    mentioned to clients; they are handled internally by the admin team.
       "review"     Section 78 review period closed
 
     Usage:  <partial name="_ClientHelp" model="@("evidence")" />
@@ -38,15 +40,13 @@
 
         "objection" => (
             "Missed the objection period?",
-            "New objections can no longer be lodged online for this roll. In some cases the City can accept a "
-            + "late objection (CLO). Contact Valuation Services with your property details and the reason the "
-            + "objection is late. A late objection is not guaranteed to be accepted."),
+            "New objections can no longer be lodged online for this roll. If you have a question, "
+            + "contact Valuation Services and quote your property description."),
 
         "appeal" => (
             "Missed the appeal period?",
-            "You may apply for condonation of a late appeal (CLA). Contact Valuation Services with your objection "
-            + "number and written reasons why the appeal is late. Late appeals are considered by the Appeal Board; "
-            + "approval is not guaranteed."),
+            "An appeal can no longer be lodged online for this objection. If you have a question, "
+            + "contact Valuation Services and quote your objection number."),
 
         "review" => (
             "Need help with your Section 78 review?",

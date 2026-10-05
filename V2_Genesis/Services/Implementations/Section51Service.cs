@@ -557,11 +557,8 @@ public class Section51Service : ISection51Service
             if (string.IsNullOrWhiteSpace(raw) || raw.Equals("NULL", StringComparison.OrdinalIgnoreCase))
                 return null;
 
-            return DateTime.TryParse(raw, System.Globalization.CultureInfo.InvariantCulture,
-                       System.Globalization.DateTimeStyles.None, out var d) ||
-                   DateTime.TryParse(raw, out d)
-                ? d.ToString("dd MMMM yyyy", System.Globalization.CultureInfo.GetCultureInfo("en-ZA"))
-                : raw;
+            // Day-first, written in full: "10 January 2025".
+            return V2_Genesis.Helpers.WefDateFormatter.Format(raw);
         }
         catch (Exception ex)
         {

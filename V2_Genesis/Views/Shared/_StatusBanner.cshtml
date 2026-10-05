@@ -100,9 +100,7 @@
             gsLodgeError,
             string.IsNullOrWhiteSpace(gsAppealClose) ? null : "Appeal closing date",
             gsAppealClose,
-            gsLodgeHelp is null
-                ? "If you need help, contact Valuation Services on 011 407 6622 or valuationenquiries@joburg.org.za."
-                : "See below what you can still do."));
+            "If you need help, contact Valuation Services on 011 407 6622 or valuationenquiries@joburg.org.za."));
     }
 
     if (!string.IsNullOrWhiteSpace(gsNoticeError))
@@ -153,10 +151,7 @@
                         <span>@b.Guidance</span>
                     </div>
 
-                    @if (b.Label == "Not Lodged" && gsLodgeHelp is not null)
-                    {
-                        <partial name="_ClientHelp" model="@gsLodgeHelp" />
-                    }
+
                 </div>
 
                 <button type="button"

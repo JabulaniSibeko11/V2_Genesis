@@ -920,8 +920,9 @@ ORDER BY {orderBy};",
                                                 row.MarketValue),
                                         right: true);
 
+                                    // e.g. "10 January 2025" (not 10/01/2025 00:00:00)
                                     DataCell(
-                                        row.WefDate,
+                                        WefDateFormatter.Format(row.WefDate),
                                         center: true);
                                 }
                             });
