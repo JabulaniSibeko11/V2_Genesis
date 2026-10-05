@@ -614,13 +614,14 @@ ORDER BY {orderBy};",
                                         }
                                     });
 
+                                // Letter date of the roll's Section 49 notice
+                                // (appsettings NoticeRolls:{roll}:Section49LetterDate).
                                 row.ConstantItem(180)
                                     .AlignRight()
                                     .Text(
-                                        DateTime.Now
-                                            .ToString(
-                                                "dd MMMM yyyy",
-                                                culture))
+                                        !string.IsNullOrWhiteSpace(roll.Section49LetterDate)
+                                            ? roll.Section49LetterDate.Trim()
+                                            : DateTime.Now.ToString("dd MMMM yyyy", culture))
                                     .Style(body9);
                             });
 

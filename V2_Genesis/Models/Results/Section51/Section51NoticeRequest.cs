@@ -1,4 +1,4 @@
-namespace V2_Genesis.Models.Section51;
+﻿namespace V2_Genesis.Models.Section51;
 
 /// <summary>
 /// Data needed to send the Section 51 notice to the property owner when a
@@ -10,6 +10,7 @@ public sealed class Section51NoticeRequest
     public string ObjectionNo { get; set; } = string.Empty;
     public string? PremiseId { get; set; }
     public string? ValuationKey { get; set; }
+    public string? UnitKey { get; set; }
     public string? PropertyDescription { get; set; }
     public string? PropertyFrom { get; set; }
     public bool IsMulti { get; set; }

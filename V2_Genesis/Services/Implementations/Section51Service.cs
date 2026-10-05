@@ -19,6 +19,7 @@ public class Section51Service : ISection51Service
     private readonly IReadOnlyDictionary<string, Section51RollConfig> _registry;
     private readonly IWebHostEnvironment _environment;
     private readonly IEmailService _emailService;
+    private readonly IPropertySearchService _propertySearch;
 
     private const int MAX_FILES = 10;
     private const int MAX_FILE_MB = 3;
@@ -33,8 +34,10 @@ public class Section51Service : ISection51Service
         IConfiguration config,
         ILogger<Section51Service> logger,
         IWebHostEnvironment environment,
-        IEmailService emailService)
+        IEmailService emailService,
+        IPropertySearchService propertySearch)
     {
+        _propertySearch = propertySearch;
         _config = config;
         _logger = logger;
         _environment = environment;
@@ -356,6 +359,9 @@ public class Section51Service : ISection51Service
         var ownerEmail = FirstValidEmail(owner?.Email);
         result.OwnerEmail = ownerEmail;
 
+        // ── 1b. With Effective Date from the roll ───────────────────
+        var wefDate = await GetRollWefDateAsync(request);
+
         // ── 2. Notice PDF ────────────────────────────────────────────
         var s6 = request.Section6;
         // Where the notice is saved (appsettings → Section51Rolls:{roll}):
@@ -409,7 +415,10 @@ public class Section51Service : ISection51Service
                         New3_Category = s6?.New3_Category,
                         New3_Extent = s6?.New3_Extent,
                         New3_Market_Value = s6?.New3_Market_Value,
-                        WithEffectDate = settings[$"EffectiveDate:{request.RollSource}"]
+                        // "With Effective Date" = WefDate of the property on the
+                        // roll (e.g. [Objection_Supp4].[dbo].[Sup4].WefDate).
+                        // Empty when the roll has no WefDate for this property.
+                        WithEffectDate = wefDate
                     }
                 },
                 new Section51NoticeContext
@@ -516,6 +525,51 @@ public class Section51Service : ISection51Service
         await RecordAsync(conn, cfg, request, owner, ownerEmail, batchName, letterDate, closingDate, result.Emailed);
 
         return result;
+    }
+
+    /// WefDate of the property on the roll (property detail of the roll,
+    /// e.g. [Objection_Supp4].[dbo].[Sup4]). Returns null when the roll has
+    /// no WefDate for this property, so the notice shows it empty.
+    private async Task<string?> GetRollWefDateAsync(Section51NoticeRequest request)
+    {
+        try
+        {
+            var unitKey = V2_Genesis.Helpers.FloatKeyHelper.Normalize(request.UnitKey);
+            var valuationKey = V2_Genesis.Helpers.FloatKeyHelper.Normalize(request.ValuationKey);
+
+            if (string.IsNullOrWhiteSpace(unitKey) && string.IsNullOrWhiteSpace(valuationKey))
+                return null;
+
+            var rows = await _propertySearch.GetPropertyDetailsAsync(
+                request.RollSource,
+                unitKey ?? string.Empty,
+                valuationKey ?? string.Empty);
+
+            var row = rows.FirstOrDefault(r =>
+                          !string.IsNullOrWhiteSpace(r.WefDate) &&
+                          string.Equals(
+                              V2_Genesis.Helpers.FloatKeyHelper.Normalize(r.ValuationKey),
+                              valuationKey,
+                              StringComparison.OrdinalIgnoreCase))
+                      ?? rows.FirstOrDefault(r => !string.IsNullOrWhiteSpace(r.WefDate));
+
+            var raw = row?.WefDate?.Trim();
+            if (string.IsNullOrWhiteSpace(raw) || raw.Equals("NULL", StringComparison.OrdinalIgnoreCase))
+                return null;
+
+            return DateTime.TryParse(raw, System.Globalization.CultureInfo.InvariantCulture,
+                       System.Globalization.DateTimeStyles.None, out var d) ||
+                   DateTime.TryParse(raw, out d)
+                ? d.ToString("dd MMMM yyyy", System.Globalization.CultureInfo.GetCultureInfo("en-ZA"))
+                : raw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex,
+                "[S51 Notice] Could not read WefDate from the roll for {ObjectionNo} ({Roll}).",
+                request.ObjectionNo, request.RollSource);
+            return null;
+        }
     }
 
     private static string FirstFolder(params string?[] folders) =>

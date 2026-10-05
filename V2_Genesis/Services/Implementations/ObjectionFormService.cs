@@ -408,6 +408,7 @@ public class ObjectionFormService : IObjectionFormService
                     ObjectionNo = objRef,
                     PremiseId = obj.Premise_id,
                     ValuationKey = obj.Valuation_Key,
+                    UnitKey = obj.Unit_key,
                     PropertyDescription = obj.Property_Desc,
                     PropertyFrom = obj.PropertyFrom,
                     IsMulti = isMulti,

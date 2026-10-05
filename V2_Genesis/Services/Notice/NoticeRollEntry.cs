@@ -7,6 +7,11 @@ public class NoticeRollEntry
     public string RollTitle { get; set; } = string.Empty;
     public string FinancialYears { get; set; } = string.Empty;
     public string? ExtendedPeriodText { get; set; }
+
+    /// Letter date printed on the Section 49 notice of this roll, exactly as
+    /// written in appsettings (NoticeRolls:{roll}:Section49LetterDate).
+    /// Empty = today's date.
+    public string? Section49LetterDate { get; set; }
 }
 
 public class NoticeRollSettings
