@@ -3,7 +3,7 @@
     ViewData["Title"] = "Add Evidence — Attributes";
     bool isAuth = User?.Identity?.IsAuthenticated ?? false;
     Layout = isAuth
-        ? "~/Views/Shared/_ClientLayout.cshtml"
+        ? "~/Views/Shared/_Legend_Layout.cshtml"
         : "~/Views/Shared/_Layout.cshtml";
 
     var submissions = ViewBag.Submissions as IEnumerable<dynamic>;

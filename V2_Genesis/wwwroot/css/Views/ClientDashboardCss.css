@@ -90,7 +90,9 @@
     margin: 0;
     padding: 0;
     flex: 1;
-    overflow: hidden;
+    /* Must stay visible: the dropdown menus open below this list.
+       "hidden" cut them off on every page that loads this file. */
+    overflow: visible;
 }
 
 .cl-nav-item {

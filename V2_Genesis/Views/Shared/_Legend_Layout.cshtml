@@ -149,47 +149,72 @@
     }
 
 
+    // ── Which menu tab is "you are here" (underlined) ─────────────────
+    // 1. ?openRoll= or ?rollSource= in the address,
+    // 2. /search/{roll} and /dashboard/roll-detail/{roll},
+    // 3. on the property, objection, Section 51 and notice pages the
+    //    roll the client is busy with (Session "RollSource").
+    var queryRoll =
+        Context.Request.Query["rollSource"].ToString();
+
+    bool IsRollPage =
+        reqPath.StartsWith("/property/")
+        || reqPath.StartsWith("/objection/")
+        || reqPath.StartsWith("/section51/")
+        || reqPath.StartsWith("/notice/section49");
+
+    var sessionRoll =
+        IsRollPage
+            ? (Context.Session.GetString("RollSource") ?? string.Empty)
+            : string.Empty;
+
     bool IsRollSelected(string source) =>
-        openRoll.Equals(
-            source,
-            StringComparison.OrdinalIgnoreCase)
-        || reqPath.Equals(
-            "/search/" + source.ToLowerInvariant(),
-            StringComparison.OrdinalIgnoreCase);
-
-    var gvSelected =
-        IsRollSelected("Objection");
-
-    var supplementarySelected =
-        supplementaryRolls.Any(x =>
-            IsRollSelected(x.Source));
-
-    var querySelected =
-        reqPath.StartsWith("/search/objection_query")
-        || openRoll.Equals(
-            "Objection_Query",
-            StringComparison.OrdinalIgnoreCase);
-
-    var rebatesSelected =
-        reqPath.StartsWith("/rebates")
-        || openRoll.Equals(
-            "rebates",
-            StringComparison.OrdinalIgnoreCase);
-
-    var attributesSelected =
-        reqPath.StartsWith("/attributes")
-        || openRoll.Equals(
-            "attributes",
-            StringComparison.OrdinalIgnoreCase);
+        openRoll.Equals(source, StringComparison.OrdinalIgnoreCase)
+        || (!reqPath.StartsWith("/evidence")
+            && queryRoll.Equals(source, StringComparison.OrdinalIgnoreCase))
+        || reqPath.Equals("/search/" + source.ToLowerInvariant())
+        || reqPath.StartsWith("/search/" + source.ToLowerInvariant() + "/")
+        || reqPath.Equals("/dashboard/roll-detail/" + source.ToLowerInvariant())
+        || sessionRoll.Equals(source, StringComparison.OrdinalIgnoreCase);
 
     var evidenceSelected =
         reqPath.StartsWith("/evidence")
+        || reqPath.StartsWith("/section78/verify")
         || reqPath.StartsWith("/attributes/evidence");
 
+    var querySelected =
+        !evidenceSelected
+        && (reqPath.StartsWith("/section78/")
+            || IsRollSelected("Objection_Query"));
+
+    var gvSelected =
+        !evidenceSelected
+        && !querySelected
+        && IsRollSelected("Objection");
+
+    var supplementarySelected =
+        !evidenceSelected
+        && !querySelected
+        && supplementaryRolls.Any(x => IsRollSelected(x.Source));
+
+    var rebatesSelected =
+        reqPath.StartsWith("/rebates")
+        || reqPath.StartsWith("/dashboard/rebates-detail")
+        || openRoll.Equals("rebates", StringComparison.OrdinalIgnoreCase);
+
+    var attributesSelected =
+        !evidenceSelected
+        && (reqPath.StartsWith("/attributes")
+            || reqPath.StartsWith("/dashboard/attributes-detail")
+            || openRoll.Equals("attributes", StringComparison.OrdinalIgnoreCase)
+            || sessionRoll.Equals("attributes", StringComparison.OrdinalIgnoreCase));
+
     var helpSelected =
-        reqPath.StartsWith("/help", StringComparison.OrdinalIgnoreCase)
-        || reqPath.StartsWith("/Home/FAQ", StringComparison.OrdinalIgnoreCase)
-        || reqPath.StartsWith("/Home/Contact", StringComparison.OrdinalIgnoreCase);
+        reqPath.StartsWith("/help")
+        || reqPath.StartsWith("/home/faq")
+        || reqPath.StartsWith("/home/contact")
+        || reqPath.StartsWith("/home/usermanual")
+        || reqPath.StartsWith("/home/privacy");
 
     string RollDateRange(string source)
     {
@@ -1337,7 +1362,7 @@
             <!-- Attributes -->
             <details class="ln-acc ln-group"
                      name="ln-drawer"
-                     open="@(attributesSelected && !evidenceSelected || reqPath == "/dashboard/attributes-detail")">
+                     open="@attributesSelected">
 
                 <summary class="ln-group-summary">
                     <span class="ln-group-icon"><i class="fa-solid fa-clipboard-list"></i></span>

@@ -1567,3 +1567,41 @@ input[type="password"]::-ms-clear {
     width: 0;
     height: 0;
 }
+
+
+/* ══════════════════════════════════════════════════════════════
+   CLIENT NAVBAR — works the same on EVERY page
+   Some pages still load older stylesheets (ClientDashboardCss.css)
+   after the layout. These rules use the navbar id (#clientNav) so
+   they always win:
+   • the menu list never cuts off its dropdowns;
+   • the tab you are on (GV23, Supplementary Rolls, Section 78,
+     Rebates, Attributes, Add Evidence, Help) is underlined.
+══════════════════════════════════════════════════════════════ */
+#clientNav .cl-nav-links,
+#clientNav .cl-nav-item,
+#clientNav .cl-dropdown {
+    overflow: visible !important;
+}
+
+#clientNav .cl-nav-link {
+    position: relative;
+}
+
+    #clientNav .cl-nav-link.active {
+        background: rgba(0, 0, 0, .10) !important;
+        border-bottom: 0 !important;
+        color: #1a1a1a !important;
+        font-weight: 700;
+    }
+
+        #clientNav .cl-nav-link.active::after {
+            content: "";
+            position: absolute;
+            left: 10px;
+            right: 10px;
+            bottom: 0;
+            height: 4px;
+            border-radius: 4px 4px 0 0;
+            background: #006570;
+        }
