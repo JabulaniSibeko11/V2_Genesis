@@ -1,4 +1,4 @@
-namespace V2_Genesis.Models.Emails
+﻿namespace V2_Genesis.Models.Emails
 {
     /// <summary>
     /// Section 51 notice email sent to the property owner when a
@@ -29,5 +29,8 @@ namespace V2_Genesis.Models.Emails
         /// Folder and file name for the .eml copy.
         public string EmlFolderPath { get; set; } = string.Empty;
         public string EmlFileName { get; set; } = string.Empty;
+
+        /// Other folders that get the same .eml copy (the Objection Pack).
+        public List<string> EmlExtraFolders { get; set; } = new();
     }
 }
