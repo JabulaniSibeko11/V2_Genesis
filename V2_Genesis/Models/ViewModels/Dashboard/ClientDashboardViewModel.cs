@@ -42,9 +42,17 @@ public class RollData
     public List<LinkedPropertyResult> LinkedProperties { get; set; } = new();
     public List<ObjectedPropertyResult> ObjectedProperties { get; set; } = new();
     public List<AppealResult> Appeals { get; set; } = new();
+
+    /// Client "My Appeals": appeal rows of the dashboard procedure plus the
+    /// account's appeals from Obj_Property_Info_Appeal (A_UserID). Not part of
+    /// ObjectedProperties, so objection lists never show APP-… rows.
+    public List<ObjectedPropertyResult> AccountAppeals { get; set; } = new();
     public List<NotificationResult> Notifications { get; set; } = new();
 
     public int LinkedCount => LinkedProperties.Count;
     public int ObjectedCount => ObjectedProperties.Count;
+
+    /// Objections only (Sub_typ 0) — appeal rows (APP-…) are not counted.
+    public int ObjectionCount => ObjectedProperties.Count(x => x.Sub_typ == 0);
     public int AppealsCount => Appeals.Count;
 }

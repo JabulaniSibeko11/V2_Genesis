@@ -168,16 +168,29 @@ public class DashboardService : IDashboardService
                 // Appeals of this account straight from Obj_Property_Info_Appeal
                 // (the dashboard procedure did not always return them), and the
                 // appeal period / lodged appeal of every Notice-Sent objection.
+                // Kept apart from ObjectedProperties: the objection lists (client
+                // and admin) must only show objections, never APP-… rows.
+                var accountAppeals = objectedProperties.Where(r => r.Sub_typ == 1).ToList();
                 try
                 {
                     var userAppeals =
                         await AppealDashboardData.LoadUserAppealsAsync(conn, userId);
-                    AppealDashboardData.MergeAppeals(objectedProperties, userAppeals);
+                    AppealDashboardData.MergeAppeals(accountAppeals, userAppeals);
+
+                    try
+                    {
+                        await PopulateAppealDecisionTypesAsync(rollDb, accountAppeals);
+                    }
+                    catch
+                    {
+                        // Appeal_Decision table not on this roll: labels stay default.
+                    }
                 }
                 catch (Exception ex)
                 {
                     _logger.LogWarning(ex, "Could not load the appeals of the account for roll {RollSource}", rollSource);
                 }
+                rollData.AccountAppeals = accountAppeals;
 
                 try
                 {

@@ -1087,9 +1087,11 @@ else
     }
 
     @* ── My Appeals ─────────────────────────────────── *@
-    @if (Model.Roll.HasAppeal || Model.Data.ObjectedProperties.Any(x => x.Sub_typ == 1))
+    @if (Model.Roll.HasAppeal || Model.Data.AccountAppeals.Count > 0)
     {
-        var appeals = Model.Data.ObjectedProperties.Where(x => x.Sub_typ == 1).ToList();
+        var appeals = Model.Data.AccountAppeals.Count > 0
+            ? Model.Data.AccountAppeals
+            : Model.Data.ObjectedProperties.Where(x => x.Sub_typ == 1).ToList();
         <div class="cd-widget">
             <div class="cd-widget-toggle" onclick="toggleWidget('@rollKey-appeals')">
                 <div class="cd-widget-toggle-left">

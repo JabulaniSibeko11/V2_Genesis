@@ -621,7 +621,7 @@
 
                     <div class="legacy-service-stats">
                         <span><i class="fa-solid fa-link"></i> @data.LinkedCount Linked</span>
-                        <span><i class="fa-solid fa-file-pen"></i> @data.ObjectedCount Objections</span>
+                        <span><i class="fa-solid fa-file-pen"></i> @data.ObjectionCount Objections</span>
                         <span><i class="fa-solid fa-gavel"></i> @data.AppealsCount Appeals</span>
                     </div>
 
@@ -832,7 +832,7 @@
                             </div>
                             <p>
                                 @data.LinkedCount linked ·
-                                @data.ObjectedCount objections ·
+                                @data.ObjectionCount objections ·
                                 @data.AppealsCount appeals
                             </p>
                         </div>
@@ -1745,7 +1745,7 @@
                                     <i class="fa-solid fa-file-pen"></i>
                                     <h3>Properties Objected On</h3>
                                     <span class="cd-count-badge cd-count-orange">
-                                        @rd.ObjectedCount
+                                        @rd.ObjectionCount
                                     </span>
                                 </div>
                                 <i class="fa-solid fa-chevron-down cd-widget-chevron"
@@ -1768,7 +1768,7 @@
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            @foreach (var item in rd.ObjectedProperties)
+                                            @foreach (var item in rd.ObjectedProperties.Where(x => x.Sub_typ == 0))
                                             {
                                                 var objectionIsLis = IsLisPropertySource(item.PropertyFrom);
                                                 var objectionIsOmission = IsOmissionPropertySource(item.PropertyFrom);
