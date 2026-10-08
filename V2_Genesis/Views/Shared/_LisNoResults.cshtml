@@ -439,6 +439,11 @@
                         onclick="closeOmissionModal()">
                     <i class="fa-solid fa-xmark"></i> Cancel
                 </button>
+                <button type="button" class="om-btn-cancel"
+                        onclick="refineSearch()"
+                        title="Close this and change the search">
+                    <i class="fa-solid fa-rotate-left"></i> Refine Search
+                </button>
                 <button type="submit" class="om-btn-submit" id="omitSubmitBtn">
                     <i class="fa-solid fa-arrow-right"></i>
                     Continue to Objection Form
@@ -692,19 +697,23 @@
         setTimeout(function() { d.remove(); }, 5000);
     }
 
-    // ── Refine search — go back to Roll search ───────────────────────
+    // ── Refine search — back to the search form ──────────────────────
+    // Closes the omission box and the results box, so the client can change
+    // the township / stand / address / scheme / unit and search again.
+    // (Before, it only re-showed the "No Properties Found" card inside the
+    //  results box, with its LIS button hidden - a dead end.)
     function refineSearch() {
         closeOmissionModal();
-
-        // ← FIX: clean up modal elements from body BEFORE clearing the
-        //   container — prevents duplicate ID conflicts on the next search
         _cleanupOmitElements();
+
+        if (typeof window.genesisRefineSearch === 'function') {
+            window.genesisRefineSearch();
+            return;
+        }
 
         var container = document.getElementById('lisResultsContainer');
         if (container) container.innerHTML = '';
-
-        var nr = document.getElementById('rollNoResults');
-        if (nr) { nr.style.display = ''; nr.scrollIntoView({behavior:'smooth',block:'start'}); }
+        if (typeof window.closeResultsModal === 'function') window.closeResultsModal();
     }
 
     // ── Init ─────────────────────────────────────────────────────────

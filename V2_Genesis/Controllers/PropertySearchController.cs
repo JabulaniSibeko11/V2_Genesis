@@ -1154,6 +1154,20 @@ public class PropertySearchController : Controller
     string? SearchUnit,
     string? SearchOwner)
     {
+        // Section 78 Query / Review works only on properties that are on the
+        // roll: there is no LIS search (and no omission) for it. Blocks a
+        // direct call to /search/Objection_Query/lis as well.
+        if (IsQueryRoll(rollSource))
+        {
+            return Content(
+                @"<div class=""alert alert-warning m-3"" role=""alert"">
+                        <i class=""fa-solid fa-circle-info me-2""></i>
+                        <strong>LIS search is not available for Section 78</strong>
+                        <div class=""mt-1"">A Section 78 Query or Review can only be lodged for a property on the valuation roll. Please check the township, stand, address, scheme or unit you entered and search again.</div>
+                   </div>",
+                "text/html");
+        }
+
         // LIS is part of the same property-search/linking journey. Do not let
         // a client bypass a closed objection period by calling the LIS endpoint
         // directly. Admin users and Section 78 Query / Review are exempt.
@@ -1327,6 +1341,14 @@ public class PropertySearchController : Controller
        string? ST_Unit,
        string? ST_Right)
     {
+        // An omitted property cannot be lodged as a Section 78 Query / Review.
+        if (IsQueryRoll(rollSource))
+        {
+            TempData["LinkError"] =
+                "A Section 78 Query or Review can only be lodged for a property on the valuation roll. Please check your search details.";
+            return RedirectToAction(nameof(Index), new { rollSource });
+        }
+
         // Omission is also reached from the property-search journey. Prevent
         // direct POSTs after the objection period has closed.
         if (!CanSearchAndLinkRoll(

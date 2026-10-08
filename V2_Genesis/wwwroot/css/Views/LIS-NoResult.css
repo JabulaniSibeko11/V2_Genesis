@@ -58,3 +58,32 @@
         font-size: 12.5px;
     }
 }
+
+/* "Refine Search" under the LIS button (back to the search form) */
+.ps-btn-refine-roll {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    margin: 16px 0 0 8px;
+    border-radius: 10px;
+    border: 1.5px solid #006570;
+    background: #fff;
+    color: #006570;
+    cursor: pointer;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+    .ps-btn-refine-roll:hover {
+        background: #e8f4f5;
+    }
+
+@media (max-width: 575.98px) {
+    .ps-btn-refine-roll {
+        width: 100%;
+        justify-content: center;
+        margin-left: 0;
+    }
+}

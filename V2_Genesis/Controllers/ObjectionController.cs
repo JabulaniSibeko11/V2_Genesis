@@ -213,8 +213,13 @@ public class ObjectionController : Controller
             string.IsNullOrWhiteSpace(unitKey) &&
             string.IsNullOrWhiteSpace(valuationKey);
 
+        // Section 78 Query / Review never uses an omitted property.
+        bool isQueryRollSource =
+            (rollSource ?? string.Empty).Contains("Query", StringComparison.OrdinalIgnoreCase);
+
         bool isOmission =
             !isAppeal &&
+            !isQueryRollSource &&
             (
                 omission ||
                 (

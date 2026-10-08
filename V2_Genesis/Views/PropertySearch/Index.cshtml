@@ -270,10 +270,19 @@
 
                 <div>
                     <strong>Property not found?</strong>
-                    If no results appear, try broadening your search —
-                    remove one filter, check spelling, or use the LIS
-                    (Land Information System) search for the latest property
-                    data including recently subdivided or consolidated erfs.
+                    @if (roll?.IsQuery == true || (roll?.Source ?? "").Contains("Query", StringComparison.OrdinalIgnoreCase))
+                    {
+                        @:A Section 78 Query or Review can only be lodged for a property on the valuation roll.
+                        @:If no results appear, check the township, stand, address, scheme or unit you entered,
+                        @:or search with fewer details (for example township and stand only).
+                    }
+                    else
+                    {
+                        @:If no results appear, try broadening your search —
+                        @:remove one filter, check spelling, or use the LIS
+                        @:(Land Information System) search for the latest property
+                        @:data including recently subdivided or consolidated erfs.
+                    }
                 </div>
             </div>
 
@@ -675,6 +684,32 @@
         */
         window.closeResultsModal =
         closeResultsModal;
+
+        /*
+        * "Refine Search" (no results / omission screens): close the results
+        * box, keep what the client typed, and put the cursor in the form.
+        */
+        window.genesisRefineSearch = function () {
+            document
+                .querySelectorAll('body > #omitModal, body > #omitBackdrop')
+                .forEach(function (el) { el.remove(); });
+
+            closeResultsModal();
+
+            var bodyEl = document.getElementById('psmBody');
+            if (bodyEl) bodyEl.innerHTML = '';
+
+            var f = document.getElementById('searchForm');
+            if (f) f.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            setTimeout(function () {
+                var first = document.getElementById('TownName');
+                if (first) {
+                    first.focus({ preventScroll: true });
+                    if (first.select) first.select();
+                }
+            }, 350);
+        };
 
         form.addEventListener(
         'submit',
