@@ -9,6 +9,8 @@
             return status switch
             {
                 "obj-lodging" => "Objection Lodged",
+                "obj-pending" or "obj-unallocated" => "Objection Pending",
+                "obj-section51" => "Owner Notified (Section 51)",
                 "obj-inprogress" => "Objection In Progress",
                 "obj-finalized" => "Objection Finalised",
                 "notice-sent" => "Objection Finalised",
@@ -16,12 +18,15 @@
                 "notice-sent-invalid-objection" => "Objection Not Valid",
                 "notice-sent-invalid-omission" => "Omission Objection Not Valid",
                 "app-lodging" => "Appeal Lodged",
+                "app-pending" or "app-unallocated" => "Appeal Pending",
                 "app-scheduling" => "Appeal Being Scheduled",
                 "app-scheduled" => "Appeal Scheduled",
                 "app-pending-approval" => "Appeal Pending Approval",
                 "app-finalized" => "Appeal Finalised",
-                "query-lodging" => "Query Lodged",
+                "query-lodging" or "que-lodging" => "Query Lodged",
                 "review-lodging" => "Review Lodged",
+                "query-pending" or "query-unallocated" => "Query Pending",
+                "review-pending" or "review-unallocated" => "Review Pending",
                 "withdrawn" => "Withdrawn",
                 _ => "Status Information"
             };
@@ -35,6 +40,12 @@
             {
                 "obj-lodging" =>
                     "Your objection has been received by the Valuation Department. The system has recorded your submission and it is waiting to be reviewed.",
+
+                "obj-pending" or "obj-unallocated" =>
+                    "The 48 hours to add evidence have ended. Your objection is waiting to be allocated to a valuer for assessment.",
+
+                "obj-section51" =>
+                    "The registered owner has been sent a Section 51 notice and may respond within 30 days. Your objection is then allocated to a valuer.",
 
                 "obj-inprogress" =>
                     "Your objection is currently being reviewed by the Valuation Department. You may be contacted if more information or evidence is required.",
@@ -54,6 +65,9 @@
                 "app-lodging" =>
                     "Your appeal has been received. The appeal process has started and the matter will be prepared for further handling.",
 
+                "app-pending" or "app-unallocated" =>
+                    "The 48 hours to add evidence have ended. Your appeal is waiting to be prepared for the Valuation Appeal Board.",
+
                 "app-scheduling" =>
                     "Your appeal is being prepared for scheduling. The Valuation Appeal Board or admin team may still need to confirm the hearing details.",
 
@@ -71,6 +85,12 @@
 
                 "review-lodging" =>
                     "Your Section 78 review has been received and is waiting to be reviewed.",
+
+                "query-pending" or "query-unallocated" =>
+                    "The 48 hours to add evidence have ended. Your Section 78 query is waiting to be allocated to a valuer.",
+
+                "review-pending" or "review-unallocated" =>
+                    "The 48 hours to add evidence have ended. Your Section 78 review is waiting to be allocated to a valuer.",
 
                 "withdrawn" =>
                     "This case has been withdrawn. No further processing will continue unless a new submission is lodged.",
@@ -98,8 +118,12 @@
                 "app-pending-approval" => "status-warning",
                 "app-finalized" => "status-success",
 
-                "query-lodging" => "status-info",
+                "query-lodging" or "que-lodging" => "status-info",
                 "review-lodging" => "status-info",
+                "obj-pending" or "obj-unallocated" or "obj-section51" => "status-warning",
+                "app-pending" or "app-unallocated" => "status-warning",
+                "query-pending" or "query-unallocated" => "status-warning",
+                "review-pending" or "review-unallocated" => "status-warning",
                 "withdrawn" => "status-danger",
 
                 _ => "status-muted"

@@ -1,4 +1,4 @@
-/* ══════════════════════════════════════════════════════════════
+﻿/* ══════════════════════════════════════════════════════════════
    genesis-forms.css
    Clear, readable look for the Objection, Appeal, Multipurpose and
    Section 78 Query / Review forms.
@@ -567,4 +567,135 @@ html body #myForm fieldset.yn-q.yn-done {
         html body #myForm fieldset.yn-q > .form-label {
             flex: 1 1 100% !important;
         }
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   FORM HEADER (genesis-forms.js §5)
+   Section 1  → the full header card inside the form (title, roll period,
+                "Description of property" card). The top bar is hidden.
+   Section 2+ → the full card is hidden; the compact "form description"
+                bar at the top shows the form type and the property.
+   ══════════════════════════════════════════════════════════════════ */
+body:not(.gs-form-later) .obj-hero {
+    display: none !important;
+}
+
+body.gs-form-later #myForm .gs-form-intro {
+    display: none !important;
+}
+
+/* ── Compact form description bar ── */
+body.gs-form-later .obj-hero {
+    animation: gsHeaderIn .25s ease-out;
+}
+
+@keyframes gsHeaderIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: none; }
+}
+
+body.gs-form-later .obj-hero-inner {
+    padding: 18px 28px 14px;
+    align-items: center;
+    gap: 14px 28px;
+}
+
+body.gs-form-later .obj-hero-org {
+    font-size: 9.5px;
+    letter-spacing: 1.8px;
+    margin-bottom: 4px;
+}
+
+body.gs-form-later .obj-hero-title {
+    font-size: 21px;
+    margin-bottom: 2px;
+}
+
+body.gs-form-later .obj-hero-sub {
+    font-size: 12.5px;
+    color: rgba(255, 255, 255, .7);
+}
+
+body.gs-form-later .obj-hero-right {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    max-width: 560px;
+}
+
+body.gs-form-later .obj-hero-type-badge {
+    font-size: 11px;
+    padding: 6px 14px;
+    white-space: nowrap;
+}
+
+body.gs-form-later .obj-hero-prop {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 100%;
+    text-align: left;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #fff;
+    background: rgba(255, 255, 255, .10);
+    border: 1px solid rgba(255, 255, 255, .18);
+    border-radius: 10px;
+    padding: 7px 14px;
+    line-height: 1.35;
+}
+
+    body.gs-form-later .obj-hero-prop strong {
+        color: var(--of-gold, #e6b000);
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+body.gs-form-later .obj-form-head {
+    padding: 9px 28px;
+    background: rgba(0, 0, 0, .14);
+    border-top: 1px solid rgba(255, 255, 255, .10);
+    flex-wrap: wrap;
+    row-gap: 4px;
+}
+
+body.gs-form-later .obj-form-head-label {
+    color: rgba(255, 255, 255, .55);
+    background: rgba(255, 255, 255, .08);
+    border-radius: 100px;
+    padding: 3px 10px;
+}
+
+body.gs-form-later .obj-form-head-title {
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+@media (max-width: 767.98px) {
+    body.gs-form-later .obj-hero-inner {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 14px 16px 12px;
+    }
+
+    body.gs-form-later .obj-hero-title {
+        font-size: 18px;
+    }
+
+    body.gs-form-later .obj-hero-right {
+        display: flex !important;   /* the page CSS hides it on phones */
+        justify-content: flex-start;
+        max-width: 100%;
+        width: 100%;
+    }
+
+    body.gs-form-later .obj-hero-prop {
+        width: 100%;
+    }
+
+    body.gs-form-later .obj-form-head {
+        padding: 8px 16px;
+    }
 }

@@ -14,6 +14,11 @@
         public static bool CanDownloadSection51(string? status) =>
             Is(status, "Obj-Section51");
 
+        /// Third-Party objection: the Section 51 notice stays available after
+        /// the Genesis status job moved Obj-Section51 to Obj-Pending.
+        public static bool CanDownloadSection51(string? status, bool isThirdParty) =>
+            Is(status, "Obj-Section51") || (isThirdParty && Is(status, "Obj-Pending"));
+
         public static bool CanDownloadSection53(string? status) =>
             Is(status, "Notice-Sent", "Appeal-Closed");
 

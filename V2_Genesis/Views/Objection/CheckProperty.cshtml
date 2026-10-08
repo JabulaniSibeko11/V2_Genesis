@@ -1019,6 +1019,40 @@
 
         function setText(id, text) { var el=document.getElementById(id); if(el) el.textContent=text; }
 
+        // ── Back from the form (Section 1) ────────────────────────────
+        // The form's Back button returns here with resume=1 (genesis-forms.js).
+        // The client already accepted the disclaimer, so the page opens on
+        // the property type / objector type step with the choices restored.
+        // This page's address is kept so the form knows where "Back" goes.
+        (function () {
+            var params = new URLSearchParams(window.location.search);
+            var resume = params.get('resume') === '1';
+            params.delete('resume');
+
+            var clean = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
+            try { sessionStorage.setItem('genesis_check_url', clean); } catch (e) { /* private mode */ }
+
+            if (resume) {
+                try { window.history.replaceState(null, '', clean); } catch (e) { /* ignore */ }
+                document.addEventListener('DOMContentLoaded', function () {
+                    showMainForm();
+                    var main = document.getElementById('mainForm');
+                    if (main) main.scrollIntoView({ block: 'start' });
+                });
+            }
+        })();
+
+        // Browser Back/Forward may restore this page from memory with the
+        // instructions box still open - always close it.
+        window.addEventListener('pageshow', function (e) {
+            if (e.persisted) {
+                closeInstrModal();
+                if (window.GenesisLoader && window.GenesisLoader.hide) {
+                    try { window.GenesisLoader.hide(); } catch (err) { /* ignore */ }
+                }
+            }
+        });
+
         document.addEventListener('DOMContentLoaded', function () {
             updateAppealLabels();
             updateQueryLabels();

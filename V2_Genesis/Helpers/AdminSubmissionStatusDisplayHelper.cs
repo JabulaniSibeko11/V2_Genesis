@@ -10,6 +10,7 @@ public static class AdminSubmissionStatusDisplayHelper
             // Objections
             ["Obj-Lodging"] = "Lodgement in Progress",
             ["Obj-Unallocated"] = "Pending Allocation",
+            ["Obj-Pending"] = "Pending Allocation (48 hours ended)",
             ["Obj-Section51"] = "Section 51 Review",
             ["Obj-Inprogress"] = "Assessment in Progress",
             ["Obj-Pending-Approval"] = "Pending Approval",
@@ -21,6 +22,7 @@ public static class AdminSubmissionStatusDisplayHelper
             // Appeals
             ["App-Lodging"] = "Appeal Lodgement in Progress",
             ["App-Unallocated"] = "Pending Allocation",
+            ["App-Pending"] = "Pending Allocation (48 hours ended)",
             ["App-Scheduling"] = "Scheduling in Progress",
             ["App-Scheduled"] = "Hearing Scheduled",
             ["App-Pending-Approval"] = "Pending Approval",
@@ -34,6 +36,9 @@ public static class AdminSubmissionStatusDisplayHelper
             // Queries and Reviews
             ["Query-Lodging"] = "Query Lodgement in Progress",
             ["Query-Unallocated"] = "Pending Allocation",
+            ["Que-Lodging"] = "Lodgement in Progress",
+            ["Query-Pending"] = "Pending Allocation (48 hours ended)",
+            ["Review-Pending"] = "Pending Allocation (48 hours ended)",
             ["Query-Inprogress"] = "Query in Progress",
             ["Query-Pending-Approval"] = "Pending Approval",
             ["Query-Finalized"] = "Query Finalised",

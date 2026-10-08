@@ -37,36 +37,80 @@ public static class DashboardDisplayHelpers
             new CultureInfo("en-ZA"));
     }
 
-    public static string GetStatusDisplayText(string? status) => status switch
+    /// <summary>
+    /// Status shown to the CLIENT.
+    ///
+    /// Status life-cycle (the SQL Agent job "Genesis status job" saves the
+    /// change when the time is up — see Database/10_Genesis_Status_Job.sql):
+    ///   Objection   Obj-Lodging   ──48 h──►  Obj-Pending
+    ///   Third-Party Obj-Section51 ──30 days (owner's Section 51 period)──► Obj-Pending
+    ///   Appeal      App-Lodging   ──48 h──►  App-Pending
+    ///   Section 78  Que-Lodging   ──48 h──►  Query-Pending / Review-Pending
+    ///
+    /// The third party (objector) sees "Obj-Lodging" during his own 48 hours
+    /// and "Obj-Pending" afterwards — "Obj-Section51" is the owner's period
+    /// and is not a status the objector needs to see.
+    /// </summary>
+    public static string GetStatusDisplayText(string? status) =>
+        GetStatusDisplayText(status, evidenceWindowOpen: null);
+
+    /// <param name="evidenceWindowOpen">
+    /// The row's 48-hour window (Evidence_Window_Open). When known, the screen
+    /// follows the clock even if the SQL job has not run yet.
+    /// </param>
+    public static string GetStatusDisplayText(string? status, bool? evidenceWindowOpen)
     {
-        "Obj-Unallocated" or "Obj-Section51" => "Obj-Pending",
-        "Obj-Inprogress" or "Obj-Pending-Approval" or "Obj-Rejected" => "Obj-InProgress",
-        "Obj-Lodging" => "Obj-Lodging",
-        "Obj-PenTest" => "Invalid",
+        var s = (status ?? "").Trim();
 
-        "App-Unallocated" => "App-Unallocated",
-        "App-Lodging" => "App-Lodging",
-        "App-Finalized" => "App-Finalized",
+        // Still inside / already past the 48 hours, before the SQL job ran.
+        if (s.Equals("Obj-Section51", StringComparison.OrdinalIgnoreCase))
+            return evidenceWindowOpen == true ? "Obj-Lodging" : "Obj-Pending";
 
-        "Query-Lodging" => "Query-Lodging",
-        "Query-Unallocated" => "Query-Pending",
-        "Query-Inprogress" => "Query-InProgress",
-        "Query-Finalized" or "Notice-Sent" => "Finalised",
-        "Notice-Sent-Dear-Johnny" => "Outcome Available",
-        "Notice-Sent-Invalid-Objection" => "Objection Not Valid",
-        "Notice-Sent-Invalid-Omission" => "Omission Objection Not Valid",
-        "Query-Withdrawn" => "Withdrawn",
+        if (evidenceWindowOpen == false)
+        {
+            if (s.Equals("Obj-Lodging", StringComparison.OrdinalIgnoreCase)) return "Obj-Pending";
+            if (s.Equals("App-Lodging", StringComparison.OrdinalIgnoreCase)) return "App-Pending";
+        }
 
-        null or "" => "Pending",
-        _ => status
-    };
+        return s.ToLowerInvariant() switch
+        {
+            "obj-lodging" => "Obj-Lodging",
+            "obj-pending" or "obj-unallocated" => "Obj-Pending",
+            "obj-inprogress" or "obj-pending-approval" or "obj-rejected" => "Obj-InProgress",
+            "obj-pentest" => "Invalid",
 
-    public static string GetStatusPill(string? status)
+            "app-lodging" => "App-Lodging",
+            "app-pending" or "app-unallocated" => "App-Pending",
+            "app-finalized" or "app-finalised" => "App-Finalized",
+
+            "que-lodging" or "query-lodging" => "Query-Lodging",
+            "review-lodging" => "Review-Lodging",
+            "query-pending" or "query-unallocated" => "Query-Pending",
+            "review-pending" or "review-unallocated" => "Review-Pending",
+            "query-inprogress" => "Query-InProgress",
+            "query-finalized" or "review-finalized" or "notice-sent" => "Finalised",
+            "notice-sent-dear-johnny" => "Outcome Available",
+            "notice-sent-invalid-objection" => "Objection Not Valid",
+            "notice-sent-invalid-omission" => "Omission Objection Not Valid",
+            "query-withdrawn" or "review-withdrawn" => "Withdrawn",
+
+            "" => "Pending",
+            _ => s
+        };
+    }
+
+    public static string GetStatusPill(string? status) =>
+        GetStatusPill(status, evidenceWindowOpen: null);
+
+    public static string GetStatusPill(string? status, bool? evidenceWindowOpen)
     {
-        var title = StatusExplanationHelper.GetTitle(status);
-        var description = StatusExplanationHelper.GetDescription(status);
-        var badgeClass = StatusExplanationHelper.GetBadgeClass(status);
-        var displayText = GetStatusDisplayText(status);
+        var displayText = GetStatusDisplayText(status, evidenceWindowOpen);
+
+        // Explain what the client SEES (e.g. Obj-Section51 shown as Obj-Pending).
+        var explainAs = displayText.Contains('-') ? displayText : status;
+        var title = StatusExplanationHelper.GetTitle(explainAs);
+        var description = StatusExplanationHelper.GetDescription(explainAs);
+        var badgeClass = StatusExplanationHelper.GetBadgeClass(explainAs);
 
         return $@"
 <span class='client-status-badge cd-pill {Enc(badgeClass)}'

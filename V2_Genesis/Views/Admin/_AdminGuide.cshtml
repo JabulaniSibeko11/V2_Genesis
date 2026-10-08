@@ -394,13 +394,14 @@
                     <tr><th>Status</th><th>Meaning</th><th>What happens next</th></tr>
                 </thead>
                 <tbody>
-                    <tr><td><code>Obj-Lodging</code> / <code>App-Lodging</code></td><td>Just lodged</td><td>Evidence can be added for 48 hours (same for everyone)</td></tr>
-                    <tr><td><code>Obj-Section51</code></td><td>Third-Party objection</td><td>The owner has received a Section 51 notice</td></tr>
+                    <tr><td><code>Obj-Lodging</code> / <code>App-Lodging</code></td><td>Just lodged</td><td>Evidence can be added for 48 hours (same for everyone). After 48 hours the status becomes <code>Obj-Pending</code> / <code>App-Pending</code> automatically.</td></tr>
+                    <tr><td><code>Obj-Section51</code></td><td>Third-Party objection</td><td>The owner has received a Section 51 notice and has 30 days. The objector sees <code>Obj-Lodging</code> for 48 hours, then <code>Obj-Pending</code>. After the 30 days the status becomes <code>Obj-Pending</code>.</td></tr>
+                    <tr><td><code>Obj-Pending</code> / <code>App-Pending</code></td><td>48 hours (or the Section 51 period) ended</td><td>Waiting to be allocated to a valuer</td></tr>
                     <tr><td><code>Obj-Unallocated</code> / <code>App-Unallocated</code></td><td>Waiting for a valuer</td><td>Allocated by the valuation team</td></tr>
                     <tr><td><code>Obj-Inprogress</code></td><td>Being assessed</td><td>Valuer decision (MVD) follows</td></tr>
                     <tr><td><code>Notice-Sent</code></td><td>MVD notice issued</td><td>An appeal can be lodged</td></tr>
                     <tr><td><code>App-Scheduled</code></td><td>Appeal hearing scheduled</td><td>Appeal board decision follows</td></tr>
-                    <tr><td><code>Query-Lodging</code> / <code>Review-Lodging</code></td><td>Section 78 just lodged</td><td>Evidence window, then allocation</td></tr>
+                    <tr><td><code>Query-Lodging</code> / <code>Review-Lodging</code></td><td>Section 78 just lodged</td><td>Evidence for 48 hours, then <code>Query-Pending</code> / <code>Review-Pending</code></td></tr>
                     <tr><td><code>…-Finalized</code></td><td>Completed</td><td>Outcome notice can be downloaded</td></tr>
                     <tr><td><code>…-Withdrawn</code></td><td>Withdrawn by the client</td><td>No further action</td></tr>
                 </tbody>

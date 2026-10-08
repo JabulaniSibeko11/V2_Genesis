@@ -195,15 +195,25 @@ public class AdminDashboardService : IAdminDashboardService
                     Unit_key = objection.UnitKey,
                     Valuation_Key = objection.ValuationKey,
                     Property_Type = objection.PropertyType,
-                    PropertyFrom = objection.PropertyFrom
+                    PropertyFrom = objection.PropertyFrom,
+                    Objector_Type = objection.ObjectorType,
+                    Submission_Date = objection.ObjectionStartDateTime
                 })
                 .Take(500)
                 .ToListAsync();
 
+            var objectionNow = DateTime.Now;
             foreach (var objection in objProps)
             {
                 objection.Town_Name =
                     ExtractTownFromPropertyDesc(objection.Property_Desc);
+
+                // Same 48-hour rule as the client dashboard (evidence window).
+                objection.Evidence_Expires_At = objection.Submission_Date?.AddHours(48);
+                objection.Evidence_Window_Open =
+                    objection.Evidence_Expires_At.HasValue &&
+                    objection.Evidence_Expires_At.Value >= objectionNow &&
+                    (objection.objection_Status?.Trim() is "Obj-Lodging" or "Obj-Section51");
             }
 
             var appealRows = await rollDb.Appeals
@@ -1012,6 +1022,7 @@ public class AdminDashboardService : IAdminDashboardService
                 entity.Property(x => x.PropertyFrom).HasColumnName("PropertyFrom");
                 entity.Property(x => x.UserId).HasColumnName("UserID");
                 entity.Property(x => x.ObjectorType).HasColumnName("Objector_Type");
+                entity.Property(x => x.ObjectionStartDateTime).HasColumnName("Objection_Start_DateTime");
             });
 
             modelBuilder.Entity<AdminAppealRow>(entity =>
@@ -1077,6 +1088,7 @@ public class AdminDashboardService : IAdminDashboardService
         public string? PropertyFrom { get; set; }
         public string? UserId { get; set; }
         public string? ObjectorType { get; set; }
+        public DateTime? ObjectionStartDateTime { get; set; }
     }
 
     private sealed class AdminAppealRow

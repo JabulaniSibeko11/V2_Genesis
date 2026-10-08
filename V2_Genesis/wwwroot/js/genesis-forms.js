@@ -27,6 +27,12 @@
  *    separators while the plain number is posted in #Obj_Compensation_Amount.
  *
  * 4. "1.1" is never shown twice when a script renames the 1.1 bar.
+ *
+ * 5. Form header: the full header card shows on Section 1 only; from
+ *    Section 2 the compact form description bar shows instead.
+ *
+ * 6. Back on Section 1 returns to the Check Property page on the property
+ *    type / objector type step (not the disclaimer or the instructions).
  * ---------------------------------------------------------------------------
  */
 (function () {
@@ -252,11 +258,88 @@
         tidyOwnerHead();
     }
 
+    // ════════════════════════════════════════════════════════════════
+    // 5. FORM HEADER: FULL ON SECTION 1, COMPACT FROM SECTION 2
+    // ════════════════════════════════════════════════════════════════
+    // Section 1 shows the full form header (title, roll period and the
+    // "Description of property" card). From Section 2 on that card is
+    // hidden and the compact form description bar (form type + property)
+    // is shown at the top instead.
+    //   body.gs-form-s1    Section 1 is showing (also Section 78 step 1.4)
+    //   body.gs-form-later any later section
+    // The header card is only hidden (never removed): it holds the posted
+    // Property_Desc field.
+    function isShown(el) {
+        if (!el) return false;
+        if (el.offsetParent !== null) return true;
+        // An element inside a hidden parent: check its own style chain.
+        return getComputedStyle(el).display !== 'none' &&
+               !!(el.getClientRects && el.getClientRects().length);
+    }
+
+    function markIntroCard() {
+        var f = document.getElementById('myForm');
+        if (!f) return;
+        var probe = f.querySelector('.obj-prop-header-card, .obj-form-banner');
+        var card = probe && probe.closest('.obj-form-card');
+        if (card) card.classList.add('gs-form-intro');
+    }
+
+    function updateFormHeader() {
+        var f = document.getElementById('myForm');
+        if (!f) return;
+        var section1 =
+            isShown(f.querySelector('.div1')) ||
+            isShown(f.querySelector('.div781'));
+
+        document.body.classList.toggle('gs-form-s1', section1);
+        document.body.classList.toggle('gs-form-later', !section1);
+    }
+
+    function watchSections() {
+        var f = document.getElementById('myForm');
+        if (!f) return;
+        markIntroCard();
+        updateFormHeader();
+        if (!window.MutationObserver) return;
+        // Synchronous enough: runs before the scroll-to-step timer above.
+        new MutationObserver(updateFormHeader)
+            .observe(f, { attributes: true, attributeFilter: ['style', 'class', 'hidden'], subtree: true });
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // 6. BACK ON SECTION 1 → THE PROPERTY PAGE (property type / objector)
+    // ════════════════════════════════════════════════════════════════
+    // The Check Property page stores its own address (genesis_check_url)
+    // when it opens. Back returns there with resume=1, so the page opens
+    // on the property type / objector type step - not on the disclaimer
+    // or the instructions.
+    function checkPropertyUrl() {
+        var saved = null;
+        try { saved = sessionStorage.getItem('genesis_check_url'); } catch (e) { saved = null; }
+        if (!saved || saved.indexOf('/objection/check') === -1) return null;
+        return saved + (saved.indexOf('?') === -1 ? '?' : '&') + 'resume=1';
+    }
+
+    document.addEventListener('click', function (e) {
+        var back = e.target && e.target.closest ? e.target.closest('#myForm #form_back, #myForm .form_back') : null;
+        if (!back) return;
+        var url = checkPropertyUrl();
+        if (!url) return;            // no saved page: keep history.back()
+        e.preventDefault();
+        e.stopPropagation();
+        if (window.GenesisLoader && window.GenesisLoader.show) {
+            try { window.GenesisLoader.show('property', back); } catch (err) { /* ignore */ }
+        }
+        window.location.href = url;
+    }, true);
+
     // ── Start ────────────────────────────────────────────────────────
     function init() {
         form = form || document.getElementById('myForm');
         tag();
         watchOwnerHead();
+        watchSections();
     }
 
     window.GenesisForms = { refresh: function () { tag(); refreshAll(); } };

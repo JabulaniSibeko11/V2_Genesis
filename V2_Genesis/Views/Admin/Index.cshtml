@@ -69,14 +69,24 @@
 
         return normalisedStatus switch
         {
-            "Obj-Unallocated" or "Obj-Section51"
+            "Obj-Unallocated" or "Obj-Pending"
                 => "<span class='cd-pill cd-pill-pending'>Obj-Pending</span>",
+            "Obj-Section51"
+                => "<span class='cd-pill cd-pill-pending' title='Owner notified - 30-day Section 51 period'>Obj-Section51</span>",
             "Obj-Inprogress" or "Obj-Pending-Approval"
                 => "<span class='cd-pill cd-pill-inprogress'>Obj-InProgress</span>",
             "Obj-Lodging"
                 => "<span class='cd-pill cd-pill-lodging'>Obj-Lodging</span>",
-            "App-Unallocated" or "App-Lodging"
-                => $"<span class='cd-pill cd-pill-pending'>{normalisedStatus}</span>",
+            "App-Lodging"
+                => "<span class='cd-pill cd-pill-lodging'>App-Lodging</span>",
+            "App-Unallocated" or "App-Pending"
+                => "<span class='cd-pill cd-pill-pending'>App-Pending</span>",
+            "Que-Lodging" or "Query-Lodging" or "Review-Lodging"
+                => $"<span class='cd-pill cd-pill-lodging'>{normalisedStatus}</span>",
+            "Query-Unallocated" or "Query-Pending"
+                => "<span class='cd-pill cd-pill-pending'>Query-Pending</span>",
+            "Review-Unallocated" or "Review-Pending"
+                => "<span class='cd-pill cd-pill-pending'>Review-Pending</span>",
             "App-Finalized" or "App-Finalised"
                 => "<span class='cd-pill cd-pill-completed'>App-Finalized</span>",
             _ => $"<span class='cd-pill cd-pill-completed'>{normalisedStatus}</span>"
@@ -1336,7 +1346,9 @@
          "Que-Lodging" or
          "Que-Unallocated" or
          "Query-Lodging" or
-         "Query-Unallocated")
+         "Query-Unallocated" or
+         "Query-Pending" or
+         "Review-Pending")
     {
         <li>
             <a class="dropdown-item"
@@ -1549,7 +1561,9 @@
              "Que-Lodging" or
              "Que-Unallocated" or
              "Query-Lodging" or
-             "Query-Unallocated")
+             "Query-Unallocated" or
+             "Query-Pending" or
+             "Review-Pending")
     {
         <li>
             <span class="dropdown-item disabled"
@@ -1581,7 +1595,9 @@
          "Que-Lodging" or
          "Que-Unallocated" or
          "Query-Lodging" or
-         "Query-Unallocated")
+         "Query-Unallocated" or
+         "Query-Pending" or
+         "Review-Pending")
     {
         <li>
             <a class="dropdown-item"
@@ -1875,7 +1891,7 @@
        SECTION 51
        ───────────────────────────────────────────── *@
     @if (DashboardNoticeStatusHelper
-        .CanDownloadSection51(item.objection_Status))
+        .CanDownloadSection51(item.objection_Status, item.IsThirdParty))
     {
         <li>
             <a class="dropdown-item"
@@ -1916,7 +1932,9 @@
     }
     else if (item.objection_Status is
              "Obj-Lodging" or
-             "Obj-Unallocated")
+             "Obj-Unallocated" or
+             "Obj-Pending" or
+             "Obj-Section51")
     {
         <li>
             <span class="dropdown-item disabled"
@@ -2069,7 +2087,9 @@
        ───────────────────────────────────────────── *@
     @if (item.objection_Status is
          "Obj-Lodging" or
-         "Obj-Unallocated")
+         "Obj-Unallocated" or
+         "Obj-Pending" or
+         "Obj-Section51")
     {
         <li>
             <a class="dropdown-item"
@@ -2214,7 +2234,8 @@
     }
     else if (item.objection_Status is
              "App-Lodging" or
-             "App-Unallocated")
+             "App-Unallocated" or
+             "App-Pending")
     {
         <li>
             <span class="dropdown-item disabled"
@@ -2264,7 +2285,8 @@
 
     @if (item.objection_Status is
          "App-Lodging" or
-         "App-Unallocated")
+         "App-Unallocated" or
+         "App-Pending")
     {
         <li>
             <a class="dropdown-item"

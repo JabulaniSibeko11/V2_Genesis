@@ -369,7 +369,7 @@
                                 <td>@item.Town_Name</td>
                                 <td>@DashboardDisplayHelpers.FormatZAR(item.Old_Market_Value)</td>
                                 <td>
-                                    @Html.Raw(DashboardDisplayHelpers.GetStatusPill(item.objection_Status))
+                                    @Html.Raw(DashboardDisplayHelpers.GetStatusPill(item.objection_Status, item.Evidence_Window_Open))
                                     @if (item.Evidence_Expires_At.HasValue)
                                     {
                                         <small class="d-block mt-1 @(item.Evidence_Window_Open ? "text-success" : "text-muted")">
@@ -465,7 +465,7 @@
                                                     </span>
                                                 </li>
                                             }
-                                            @if (item.objection_Status is "Que-Lodging" or "Que-Unallocated" or "Query-Lodging" or "Query-Unallocated" or "Review-Lodging" or "Review-Unallocated")
+                                            @if (item.objection_Status is "Que-Lodging" or "Que-Unallocated" or "Query-Lodging" or "Query-Unallocated" or "Query-Pending" or "Review-Lodging" or "Review-Unallocated" or "Review-Pending")
                                             {
                                                 <li>
                                                     <a class="dropdown-item"
@@ -558,7 +558,7 @@
                                     <td>@item.Town_Name</td>
                                     <td>@DashboardDisplayHelpers.FormatZAR(item.Old_Market_Value)</td>
                                     <td>
-                                        @Html.Raw(DashboardDisplayHelpers.GetStatusPill(item.objection_Status))
+                                        @Html.Raw(DashboardDisplayHelpers.GetStatusPill(item.objection_Status, item.Evidence_Window_Open))
                                         @if (item.Evidence_Expires_At.HasValue)
                                         {
                                             <small class="d-block mt-1 @(item.Evidence_Window_Open ? "text-success" : "text-muted")">
@@ -638,7 +638,7 @@
                                                         </span>
                                                     </li>
                                                 }
-                                                @if (item.objection_Status is "Que-Lodging" or "Que-Unallocated" or "Query-Lodging" or "Query-Unallocated" or "Review-Lodging" or "Review-Unallocated")
+                                                @if (item.objection_Status is "Que-Lodging" or "Que-Unallocated" or "Query-Lodging" or "Query-Unallocated" or "Query-Pending" or "Review-Lodging" or "Review-Unallocated" or "Review-Pending")
                                                 {
                                                     <li>
                                                         <a class="dropdown-item"
@@ -851,7 +851,7 @@ else
                                         }
                                     </td>
                                     <td>
-                                        @Html.Raw(DashboardDisplayHelpers.GetStatusPill(item.objection_Status))
+                                        @Html.Raw(DashboardDisplayHelpers.GetStatusPill(item.objection_Status, item.Evidence_Window_Open))
                                         @if (item.Evidence_Expires_At.HasValue)
                                         {
                                             <small class="d-block mt-1 @(item.Evidence_Window_Open ? "text-success" : "text-muted")">
@@ -899,7 +899,7 @@ else
                                                         <i class="fa-solid fa-download"></i> Download Acknowledgement
                                                     </a>
                                                 </li>
-                                                @if (DashboardNoticeStatusHelper.CanDownloadSection51(item.objection_Status))
+                                                @if (DashboardNoticeStatusHelper.CanDownloadSection51(item.objection_Status, item.IsThirdParty))
                                                 {
                                                     <li>
                                                         <a class="dropdown-item"
@@ -942,7 +942,7 @@ else
                                                         }
                                                     </li>
                                                 }
-                                                else if (item.objection_Status is "Obj-Lodging" or "Obj-Unallocated" or "Obj-Section51")
+                                                else if (item.objection_Status is "Obj-Lodging" or "Obj-Unallocated" or "Obj-Pending" or "Obj-Section51")
                                                 {
                                                     <li>
                                                         <span class="dropdown-item disabled"
@@ -1048,7 +1048,7 @@ else
 </a>
                                                     </li>
                                                 }
-                                                @if (item.objection_Status == "Obj-Lodging" || item.objection_Status == "Obj-Unallocated" || item.objection_Status == "Obj-Section51")
+                                                @if (item.objection_Status is "Obj-Lodging" or "Obj-Unallocated" or "Obj-Pending" or "Obj-Section51")
                                                 {
                                                     <li>
                                                         <a class="dropdown-item"
@@ -1111,7 +1111,7 @@ else
                                     <td>@item.Old_Category</td>
                                     <td>@DashboardDisplayHelpers.FormatZAR(item.Old_Market_Value)</td>
                                     <td>
-                                        @Html.Raw(DashboardDisplayHelpers.GetStatusPill(item.objection_Status))
+                                        @Html.Raw(DashboardDisplayHelpers.GetStatusPill(item.objection_Status, item.Evidence_Window_Open))
                                         @if (item.Evidence_Expires_At.HasValue)
                                         {
                                             <small class="d-block mt-1 @(item.Evidence_Window_Open ? "text-success" : "text-muted")">
@@ -1181,7 +1181,7 @@ else
                                                         </li>
                                                     }
                                                 }
-                                                else if (item.objection_Status is "App-Lodging" or "App-Unallocated")
+                                                else if (item.objection_Status is "App-Lodging" or "App-Unallocated" or "App-Pending")
                                                 {
                                                     <li>
                                                         <span class="dropdown-item disabled"
@@ -1223,7 +1223,7 @@ else
                                                     </li>
                      
                                                 }
-                                                @if (item.objection_Status == "App-Lodging" || item.objection_Status == "App-Unallocated")
+                                                @if (item.objection_Status is "App-Lodging" or "App-Unallocated" or "App-Pending")
                                                 {
                                                     <li>
                                                         <a class="dropdown-item"
