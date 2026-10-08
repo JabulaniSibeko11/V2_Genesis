@@ -27,5 +27,14 @@
         public string? Sector { get; set; }
 
         public bool IsMultiPurpose => CatDesc == "Multiple Purposes";
+
+        // Appeal: the Municipal Valuer's Decision splits (Obj_Property_Info
+        // New2_* / New3_* MVD columns) — Section 6 of a multipurpose appeal.
+        public string? Mvd2Category { get; set; }
+        public string? Mvd2Extent { get; set; }
+        public string? Mvd2MarketValue { get; set; }
+        public string? Mvd3Category { get; set; }
+        public string? Mvd3Extent { get; set; }
+        public string? Mvd3MarketValue { get; set; }
     }
 }

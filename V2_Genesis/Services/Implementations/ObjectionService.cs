@@ -194,10 +194,9 @@ public class ObjectionService : IObjectionService
     }
 
     // ── Appeal property fetch ─────────────────────────────────────────
-    // The MVD table is used only for appeal-window dates.
-    // Appeal form values still come from the existing IndexAppeal stored
-    // procedure. The parent objection is used as a reliable fallback for
-    // PropertyDesc / UnitKey / ValuationKey when the dashboard/SP omits them.
+    // Appeal form values = the objection outcome: the MVD columns of
+    // Obj_Property_Info (main + New2/New3 splits). Objection_MVD is only used
+    // for the appeal period (Appeal_Start_Date / Appeal_Close_Date).
     public async Task<List<CheckPropertyResult>> GetPropertyForAppealAsync(
      string rollSource,
      string objectionNo)
@@ -336,7 +335,15 @@ public class ObjectionService : IObjectionService
                 row.New2CategoryMvd?.Trim(),
 
             SchemeName =
-                row.PropertyDescription?.Trim()
+                row.PropertyDescription?.Trim(),
+
+            // MVD splits for a multipurpose appeal (Section 6).
+            Mvd2Category = row.New2CategoryMvd?.Trim(),
+            Mvd2Extent = row.New2ExtentMvd?.Trim(),
+            Mvd2MarketValue = row.New2MarketValueMvd?.Trim(),
+            Mvd3Category = row.New3CategoryMvd?.Trim(),
+            Mvd3Extent = row.New3ExtentMvd?.Trim(),
+            Mvd3MarketValue = row.New3MarketValueMvd?.Trim()
         };
 
         return new List<CheckPropertyResult>

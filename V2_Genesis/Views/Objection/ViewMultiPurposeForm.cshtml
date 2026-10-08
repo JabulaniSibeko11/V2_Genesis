@@ -487,7 +487,7 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
     <input type="text" hidden onpaste="return false;" ondrop="return false;" class="form-control border-2 rounded shadow-sm px-4 py-2" id="Property_id" value="@messagePI" asp-for="Property_id" />
     <input type="text" hidden onpaste="return false;" ondrop="return false;" class="form-control border-2 rounded shadow-sm px-4 py-2" id="Valuation_Key" value="@messageVK" asp-for="Valuation_Key" />
     <input type="text" hidden onpaste="return false;" ondrop="return false;" class="form-control border-2 rounded shadow-sm px-4 py-2" id="Sector_Type" value="@messageS" asp-for="Sector" />
-    <input type="text" hidden onpaste="return false;" ondrop="return false;" class="form-control border-2 rounded shadow-sm px-4 py-2" id="AppealStat" name="AppealStat" value="">
+    <input type="text" hidden onpaste="return false;" ondrop="return false;" class="form-control border-2 rounded shadow-sm px-4 py-2" id="AppealStat" name="AppealStat" value="@(_isAppeal ? "True" : "False")">
     <input type="text" hidden onpaste="return false;" ondrop="return false;" class="form-control border-2 rounded shadow-sm px-4 py-2" id="obj_appeal" name="obj_appeal" value="@obj_Appeal">
     <input type="hidden" id="userEmail" value="@ViewData["UserEmail"]" />
     <input type="hidden" id="isAdminFlag" value="@(_isAdmin ? "true" : "false")" />

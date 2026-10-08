@@ -284,70 +284,81 @@ public class DashboardService : IDashboardService
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToArray();
 
-            if (appealNumbers.Length > 0)
+            // Older roll databases (e.g. GV23) have no Appeal_Start_DateTime
+            // column: then the appeals are still shown, only without the
+            // 48-hour evidence date.
+            try
             {
-                var appealRows = await rollDb.Appeals
-                    .AsNoTracking()
-                    .Where(x => appealNumbers.Contains(
-                        (x.AppealNo ?? string.Empty).Trim()))
-                    .Select(x => new
-                    {
-                        x.AppealNo,
-                        x.AppealStartDateTime,
-                        x.AppealStatus
-                    })
-                    .ToListAsync();
-
-                var now = DateTime.Now;
-                var windowRows = appealRows.Select(x =>
+                if (appealNumbers.Length > 0)
                 {
-                    var expiresAt = x.AppealStartDateTime?.AddHours(48);
-                    var status = x.AppealStatus?.Trim();
+                    var appealRows = await rollDb.Appeals
+                        .AsNoTracking()
+                        .Where(x => appealNumbers.Contains(
+                            (x.AppealNo ?? string.Empty).Trim()))
+                        .Select(x => new
+                        {
+                            x.AppealNo,
+                            x.AppealStartDateTime,
+                            x.AppealStatus
+                        })
+                        .ToListAsync();
 
-                    return new AppealEvidenceWindowRow
+                    var now = DateTime.Now;
+                    var windowRows = appealRows.Select(x =>
                     {
-                        Appeal_No = x.AppealNo?.Trim(),
-                        Appeal_Start_DateTime = x.AppealStartDateTime,
-                        Evidence_Expires_At = expiresAt,
-                        Evidence_Window_Open =
-                            expiresAt.HasValue &&
-                            now <= expiresAt.Value &&
-                            (string.Equals(status, "App-Lodging", StringComparison.OrdinalIgnoreCase) ||
-                             string.Equals(status, "App-Unallocated", StringComparison.OrdinalIgnoreCase))
-                    };
-                });
+                        var expiresAt = x.AppealStartDateTime?.AddHours(48);
+                        var status = x.AppealStatus?.Trim();
 
-                var windowByAppeal = windowRows
-                    .Where(x => !string.IsNullOrWhiteSpace(x.Appeal_No))
-                    .GroupBy(
-                        x => x.Appeal_No!.Trim(),
-                        StringComparer.OrdinalIgnoreCase)
-                    .ToDictionary(
-                        group => group.Key,
-                        group => group.First(),
-                        StringComparer.OrdinalIgnoreCase);
+                        return new AppealEvidenceWindowRow
+                        {
+                            Appeal_No = x.AppealNo?.Trim(),
+                            Appeal_Start_DateTime = x.AppealStartDateTime,
+                            Evidence_Expires_At = expiresAt,
+                            Evidence_Window_Open =
+                                expiresAt.HasValue &&
+                                now <= expiresAt.Value &&
+                                (string.Equals(status, "App-Lodging", StringComparison.OrdinalIgnoreCase) ||
+                                 string.Equals(status, "App-Unallocated", StringComparison.OrdinalIgnoreCase))
+                        };
+                    });
 
-                foreach (var appeal in appeals)
-                {
-                    var appealNo = appeal.Appeal_No?.Trim();
+                    var windowByAppeal = windowRows
+                        .Where(x => !string.IsNullOrWhiteSpace(x.Appeal_No))
+                        .GroupBy(
+                            x => x.Appeal_No!.Trim(),
+                            StringComparer.OrdinalIgnoreCase)
+                        .ToDictionary(
+                            group => group.Key,
+                            group => group.First(),
+                            StringComparer.OrdinalIgnoreCase);
 
-                    if (string.IsNullOrWhiteSpace(appealNo)
-                        || !windowByAppeal.TryGetValue(
-                            appealNo,
-                            out var window))
+                    foreach (var appeal in appeals)
                     {
-                        continue;
+                        var appealNo = appeal.Appeal_No?.Trim();
+
+                        if (string.IsNullOrWhiteSpace(appealNo)
+                            || !windowByAppeal.TryGetValue(
+                                appealNo,
+                                out var window))
+                        {
+                            continue;
+                        }
+
+                        appeal.Appeal_Start_DateTime =
+                            window.Appeal_Start_DateTime;
+
+                        appeal.Evidence_Expires_At =
+                            window.Evidence_Expires_At;
+
+                        appeal.Evidence_Window_Open =
+                            window.Evidence_Window_Open;
                     }
-
-                    appeal.Appeal_Start_DateTime =
-                        window.Appeal_Start_DateTime;
-
-                    appeal.Evidence_Expires_At =
-                        window.Evidence_Expires_At;
-
-                    appeal.Evidence_Window_Open =
-                        window.Evidence_Window_Open;
                 }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex,
+                    "Appeal evidence window not available for roll {RollSource}", rollSource);
             }
 
             rollData.Appeals = appeals;

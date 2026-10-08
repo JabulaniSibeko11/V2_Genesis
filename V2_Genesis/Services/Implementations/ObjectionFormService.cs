@@ -480,10 +480,29 @@ public class ObjectionFormService : IObjectionFormService
                 "The original objection reference is required when lodging an appeal.");
         }
 
+        // One appeal per objection (also checked on CheckProperty; checked
+        // again here so a double click / second tab cannot create two).
+        var alreadyLodged = await db.Obj_Property_Info_Appeal
+            .AsNoTracking()
+            .Where(x => (x.Obj_Ref ?? string.Empty).Trim() == originalObjectionNo)
+            .Where(x => !(x.Appeal_Status ?? string.Empty).Contains("Withdraw"))
+            .Select(x => x.Appeal_No)
+            .FirstOrDefaultAsync();
+
+        if (!string.IsNullOrWhiteSpace(alreadyLodged))
+        {
+            throw new InvalidOperationException(
+                $"An appeal ({alreadyLodged.Trim()}) has already been lodged for objection {originalObjectionNo}.");
+        }
+
         var appealPropertyType =
             NormalizePropertyType(
                 obj.Property_Type,
                 isMulti);
+
+        // All appeal rows are saved together: if any step fails nothing is
+        // kept (no half appeal that would block a new attempt).
+        await using var tx = await db.Database.BeginTransactionAsync();
 
         // ============================================================
         // 1. CREATE APPEAL HEADER
@@ -569,28 +588,14 @@ public class ObjectionFormService : IObjectionFormService
         // Table and column names are static.
         // ============================================================
 
-        await db.Database.ExecuteSqlInterpolatedAsync($@"
-        UPDATE dbo.Obj_Property_Info_Appeal
-
-        SET
-            Town_Name =
-                {obj2.Town_Name},
-
-            Old_Category =
-                {obj6.Old_Category},
-
-            Old_Market_Value =
-                {obj6.Old_Market_Value},
-
-            Objector_Type =
-                {obj.Objector_Type},
-
-            PremiseID =
-                {obj.Premise_id}
-
-        WHERE Appeal_ID =
-                {appId};
-    ");
+        await UpdateLegacyAppealColumnsAsync(
+            db,
+            appId,
+            obj2.Town_Name,
+            obj6.Old_Category,
+            obj6.Old_Market_Value,
+            obj.Objector_Type,
+            obj.Premise_id);
 
         _logger.LogInformation(
             "[Appeal Submission] Appeal header completed. " +
@@ -819,6 +824,8 @@ public class ObjectionFormService : IObjectionFormService
 
         await db.SaveChangesAsync();
 
+        await tx.CommitAsync();
+
         // ============================================================
         // 16. GENERATE APPEAL ACKNOWLEDGEMENT
         //     + APPEAL FORM
@@ -867,6 +874,56 @@ public class ObjectionFormService : IObjectionFormService
 
             IsAppeal = true
         };
+    }
+
+    // Dashboard columns on Obj_Property_Info_Appeal (Town_Name, Old_Category,
+    // Old_Market_Value, Objector_Type, PremiseID). Not every roll database
+    // has all of them, so only the columns that exist are updated.
+    private async Task UpdateLegacyAppealColumnsAsync(
+        ApplicationDbContext db,
+        int appealId,
+        string? townName,
+        string? oldCategory,
+        string? oldMarketValue,
+        string? objectorType,
+        string? premiseId)
+    {
+        var wanted = new (string Column, object? Value)[]
+        {
+            ("Town_Name", townName),
+            ("Old_Category", oldCategory),
+            ("Old_Market_Value", oldMarketValue),
+            ("Objector_Type", objectorType),
+            ("PremiseID", premiseId)
+        };
+
+        var existing = new List<(string Column, object? Value)>();
+        foreach (var w in wanted)
+        {
+            var len = await db.Database
+                .SqlQueryRaw<int?>(
+                    "SELECT COL_LENGTH('dbo.Obj_Property_Info_Appeal', @c) AS [Value]",
+                    new SqlParameter("@c", w.Column))
+                .FirstOrDefaultAsync();
+
+            if (len is > 0)
+                existing.Add(w);
+        }
+
+        if (existing.Count == 0)
+            return;
+
+        // Column names come from the fixed list above; values are parameters.
+        var setClause = string.Join(", ",
+            existing.Select((c, i) => $"[{c.Column}] = @p{i}"));
+        var parameters = existing
+            .Select((c, i) => (object)new SqlParameter($"@p{i}", c.Value ?? DBNull.Value))
+            .ToList();
+        parameters.Add(new SqlParameter("@appealId", appealId));
+
+        await db.Database.ExecuteSqlRawAsync(
+            $"UPDATE dbo.Obj_Property_Info_Appeal SET {setClause} WHERE Appeal_ID = @appealId;",
+            parameters);
     }
 
     private async Task CopyObjectionPackToAppealAsync(

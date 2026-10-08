@@ -683,6 +683,46 @@ public class ObjectionController : Controller
 
             var splitItems = items;
 
+            // Appeal: Section 6 "as decided" = the MVD of the objection
+            // (Obj_Property_Info), main row + New2/New3 MVD splits.
+            if (isAppeal)
+            {
+                splitItems = new List<CheckPropertyResult>
+                {
+                    new()
+                    {
+                        CatDesc = d.CatDesc,
+                        LisStreetAddress = d.LisStreetAddress,
+                        RateableArea = d.RateableArea,
+                        MarketValue = d.MarketValue
+                    }
+                };
+
+                if (!string.IsNullOrWhiteSpace(d.Mvd2Category) ||
+                    !string.IsNullOrWhiteSpace(d.Mvd2Extent) ||
+                    !string.IsNullOrWhiteSpace(d.Mvd2MarketValue))
+                {
+                    splitItems.Add(new CheckPropertyResult
+                    {
+                        CatDesc = d.Mvd2Category,
+                        RateableArea = d.Mvd2Extent,
+                        MarketValue = d.Mvd2MarketValue
+                    });
+                }
+
+                if (!string.IsNullOrWhiteSpace(d.Mvd3Category) ||
+                    !string.IsNullOrWhiteSpace(d.Mvd3Extent) ||
+                    !string.IsNullOrWhiteSpace(d.Mvd3MarketValue))
+                {
+                    splitItems.Add(new CheckPropertyResult
+                    {
+                        CatDesc = d.Mvd3Category,
+                        RateableArea = d.Mvd3Extent,
+                        MarketValue = d.Mvd3MarketValue
+                    });
+                }
+            }
+
             // Only a NORMAL roll objection may reload valuation-roll splits.
             // An Appeal must keep the MVD values loaded from Obj_Property_Info;
             // re-querying the original roll here would replace the MVD decision
@@ -738,7 +778,7 @@ public class ObjectionController : Controller
             // the same slot, so one of them was lost.)
             var splitRows = splitItems
                 .Select((row, index) => new { row, index })
-                .OrderByDescending(x => x.row.IsMultiPurpose)
+                .OrderByDescending(x => !isAppeal && x.row.IsMultiPurpose)
                 .ThenBy(x => x.index)
                 .Select(x => x.row)
                 .Take(3)
@@ -1415,14 +1455,39 @@ public class ObjectionController : Controller
         TempData["RollDisplayName"] = BuildRollDisplayName(rollSource, sourceTable);
         TempData.Keep("RollDisplayName");
 
+        // Appeal or objection: the server decides (TempData from CheckProperty),
+        // not only the hidden field the browser fills from sessionStorage.
+        // A lost/stale sessionStorage value sent an appeal down the objection
+        // path, which failed and sent the user back to CheckProperty.
+        var serverAppealStatus = TempData.Peek("AppealStatus")?.ToString();
+        var appealStat = serverAppealStatus is "True" or "False"
+            ? serverAppealStatus
+            : (string.Equals(AppealStat?.Trim(), "True", StringComparison.OrdinalIgnoreCase) ? "True" : "False");
+
+        // The original objection number of the appeal (set by CheckProperty).
+        var appealObjectionNo = !string.IsNullOrWhiteSpace(obj_appeal)
+            ? obj_appeal.Trim()
+            : TempData.Peek("ObjectionNum")?.ToString()?.Trim();
+
         var result = await _objectionFormService.SubmitAsync(
-            rollSource, userId, AppealStat, obj_appeal, propertyFrom, obj, obj1, obj2, objR3, objB3,
+            rollSource, userId, appealStat, appealObjectionNo, propertyFrom, obj, obj1, obj2, objR3, objB3,
             objA3, objB4, objR4, obj5, obj6, obj7, obj_file, files, fileR, appeal);
 
         if (!result.Success)
         {
-            TempData["FormError"] = result.ErrorMessage;
-            return RedirectToAction("CheckProperty");
+            var what = appealStat == "True" ? "appeal" : "objection";
+
+            _logger.LogError(
+                "[SubmitObjectionForm] {What} submission failed. Roll={RollSource}, Objection={ObjectionNo}, User={UserId}, Error={Error}",
+                what, rollSource, appealObjectionNo, userId, result.ErrorMessage);
+
+            // Show the reason on the dashboard instead of an empty CheckProperty page.
+            TempData["LodgementWindowError"] = IsAdminAppealRequest()
+                ? $"The {what} could not be submitted: {result.ErrorMessage}"
+                : $"The {what} could not be submitted. Nothing was saved — please try again, or contact " +
+                  "AdministrationEnquiries@joburg.org.za if it happens again.";
+
+            return RedirectAfterAppealBlock(rollSource);
         }
 
 

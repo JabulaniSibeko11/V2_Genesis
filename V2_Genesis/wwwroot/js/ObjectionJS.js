@@ -61,10 +61,19 @@ function pos_no() {
     document.getElementById("o_p_5").value = "";
 }
 
-if (document.getElementById("AppealStat").value !== null) {
-    document.getElementById("AppealStat").value = sessionStorage.getItem('AppealStatus');
-}
-document.getElementById("AppealStat").value = sessionStorage.getItem('AppealStatus');
+// Appeal or objection: the server already wrote "True"/"False" in the
+// hidden field. sessionStorage is only a fallback when the field is empty.
+(function () {
+    var el = document.getElementById("AppealStat");
+    if (!el) return;
+    if (el.value === "True" || el.value === "False") {
+        sessionStorage.setItem('AppealStatus', el.value);
+        if (typeof AppealStatus !== 'undefined') AppealStatus = el.value;
+    } else if (sessionStorage.getItem('AppealStatus')) {
+        el.value = sessionStorage.getItem('AppealStatus');
+    }
+})();
+
 document.getElementById("o_pass").disabled = true;
 $("#o_pass").hide();
 $("#pass_input_L").hide();

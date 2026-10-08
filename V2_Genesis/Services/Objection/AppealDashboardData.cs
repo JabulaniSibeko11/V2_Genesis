@@ -119,7 +119,8 @@ LEFT JOIN dbo.Obj_Property_Info o
        ON LTRIM(RTRIM(o.Objection_No)) = LTRIM(RTRIM(a.Obj_Ref))
 WHERE LTRIM(RTRIM(a.A_UserID)) = @UserId;";
 
-        // Older roll databases have no MVD columns on Obj_Property_Info.
+        // Older roll databases (e.g. GV23) have no MVD columns on
+        // Obj_Property_Info and/or no Appeal_Start_DateTime on the appeal table.
         const string sqlWithoutMvd = @"
 SELECT LTRIM(RTRIM(a.Appeal_No))        AS Appeal_No,
        LTRIM(RTRIM(a.Obj_Ref))          AS Obj_Ref,
@@ -128,7 +129,7 @@ SELECT LTRIM(RTRIM(a.Appeal_No))        AS Appeal_No,
        a.A_Unit_key                     AS Unit_key,
        a.A_Valuation_Key                AS Valuation_Key,
        LTRIM(RTRIM(a.Appeal_Status))    AS Appeal_Status,
-       a.Appeal_Start_DateTime          AS Start_DateTime,
+       CAST(NULL AS datetime)           AS Start_DateTime,
        CAST(NULL AS nvarchar(100))      AS Category,
        CAST(NULL AS nvarchar(100))      AS Market_Value,
        CAST(NULL AS nvarchar(100))      AS PropertyFrom
