@@ -183,14 +183,16 @@
         var parts = Array.prototype.filter.call(block.children, function (c) { return c !== note; });
 
         if (hasCompany(party)) {
-            parts.forEach(function (c) { c.style.display = 'none'; });
+            // !important: the page CSS forces the ID / Passport radio row to
+            // display:flex !important, so a plain display:none did not hide it.
+            parts.forEach(function (c) { c.style.setProperty('display', 'none', 'important'); });
             note.style.display = 'block';
             if (idInput) { idInput.value = ''; idInput.disabled = true; markField(idInput, null); }
             if (passInput) { passInput.value = ''; passInput.disabled = true; markField(passInput, null); }
             setStatus(party.statusId, '', true);
             window.GenesisIdError = '';
         } else {
-            parts.forEach(function (c) { c.style.display = ''; });
+            parts.forEach(function (c) { c.style.removeProperty('display'); });
             note.style.display = 'none';
             var idMode = idModeIsId(party);
             if (idInput) idInput.disabled = !idMode;

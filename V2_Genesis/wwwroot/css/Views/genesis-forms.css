@@ -699,3 +699,17 @@ body.gs-form-later .obj-form-head-title {
         padding: 8px 16px;
     }
 }
+
+/* "(if applicable)" on the same line as its label, so the input boxes of
+   a row stay level (it used to drop to its own line under the label). */
+#myForm .gs-if-applicable {
+    display: inline !important;
+    margin-left: 6px;
+    font-size: 11px;
+    font-style: italic;
+    font-weight: 500;
+    text-transform: none;
+    letter-spacing: 0;
+    color: #7a8a8e !important;
+    white-space: nowrap;
+}

@@ -1013,7 +1013,7 @@
 
                 </div>
                 <div class="col-sm-8">
-                    <label class="form-label fw-semibold text-dark d-flex"> MUNICIPAL ACCOUNT NO<small class="text-muted fst-italic d-block">(if applicable)</small> </label>
+                    <label class="form-label fw-semibold text-dark"> MUNICIPAL ACCOUNT NO<small class="gs-if-applicable">(if applicable)</small> </label>
                     <input  class="form-control border-2 rounded shadow-sm px-4 py-2" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" maxlength="12" asp-for="Municipal_Account_No">
 
                 </div>
@@ -1026,7 +1026,7 @@
 
                 </div>
                 <div class="col-sm-6">
-                    <label class="form-label fw-semibold text-dark d-flex"> REGISTERED AMOUNT OF BOND <small class="text-muted fst-italic d-block">(if applicable)</small></label>
+                    <label class="form-label fw-semibold text-dark"> REGISTERED AMOUNT OF BOND <small class="gs-if-applicable">(if applicable)</small></label>
                     <input  class="form-control border-2 rounded shadow-sm px-4 py-2" maxlength="12" min="0" type="text" onpaste="return false;" ondrop="return false;" onkeypress="return onlyNumberKey(event)" asp-for="Registered_Amount">
 
                 </div>
@@ -1034,7 +1034,7 @@
 
             <div class="obj-section-bar"><span class="obj-bar-num">2.2</span><span>SERVITUDES AND ENDORSEMENTS</span></div>
         <div class="mb-4">
-                <label for="textarea" class="form-label fw-semibold text-dark">PROVIDE FULL DETAILS OF ALL SERVITUDES, ROAD PROCLAMATIONS OR OTHER ENDORSEMENTS AGAINST THE PROPERTY  <small class="text-muted fst-italic d-block">(if applicable)</small> </label>
+                <label for="textarea" class="form-label fw-semibold text-dark">PROVIDE FULL DETAILS OF ALL SERVITUDES, ROAD PROCLAMATIONS OR OTHER ENDORSEMENTS AGAINST THE PROPERTY  <small class="gs-if-applicable">(if applicable)</small> </label>
                 <textarea class="form-control" id="textarea" maxlength="500"  asp-for="Full_Details" rows="4" cols="150" class="form-control border-2 shadow-sm rounded px-3 py-2" placeholder="Enter details here..."></textarea>
                 <small class="form-text text-muted">Max 500 characters.</small>
             </div>
@@ -3724,7 +3724,7 @@
         
         <div style="display: flex; margin-bottom: 20px;">
             <div style="flex: 3; margin-right: 15px;">
-                <label style="display: block; font-weight: 600; margin-bottom: 8px; color: black; font-size: 14px;">IF YOUR PROPERTY HAS BEEN ON THE MARKET IN THE LAST 3 YEARS, WHAT WAS THE ASKING PRICE?</label>
+                <label class="form-label fw-semibold">IF YOUR PROPERTY HAS BEEN ON THE MARKET IN THE LAST 3 YEARS, WHAT WAS THE ASKING PRICE?</label>
                 <input type="text" name="Previous_Asking_price" inputmode="numeric" style="width: 100%; padding: 8px; border: 1px solid #c9d0e0; border-radius: 4px; box-sizing: border-box;" maxlength="12" onkeypress="return onlyNumberKey(event)">
             </div>
             <div style="flex: 1;">
