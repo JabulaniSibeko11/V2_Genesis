@@ -29,7 +29,7 @@ public sealed class AttributeInspectionLinkController : Controller
     // the inspection PIN, and only inside the PIN validity window.
     // After MaxPinAttempts wrong PINs the details stay locked until
     // Valuation Administration resets PinFailedAttempts.
-    private const int MaxPinAttempts = 5;
+    private const int MaxPinAttempts = InspectionValuerAccess.MaxPinAttempts;
     private const string AdministrationAssistanceEmail =
         "AdministrationEnquiries@Joburg.org.za";
 
@@ -1210,18 +1210,10 @@ Please contact the client and assist with arranging a suitable inspection appoin
     }
 
     private static bool IsOwner(AttrPropertyInfo property, string userId) =>
-        !string.IsNullOrWhiteSpace(property.SubmittedByUserId) &&
-        string.Equals(property.SubmittedByUserId.Trim(), userId.Trim(), StringComparison.OrdinalIgnoreCase);
+        InspectionValuerAccess.IsOwner(property.SubmittedByUserId, userId);
 
-    private static bool PinMatches(string supplied, string expected)
-    {
-        if (supplied.Length == 0 || expected.Length == 0)
-            return false;
-
-        return CryptographicOperations.FixedTimeEquals(
-            Encoding.UTF8.GetBytes(supplied.ToUpperInvariant()),
-            Encoding.UTF8.GetBytes(expected.ToUpperInvariant()));
-    }
+    private static bool PinMatches(string supplied, string expected) =>
+        InspectionValuerAccess.PinMatches(supplied, expected);
 
     private string LoginUrlFor(Guid token)
     {
@@ -1241,38 +1233,23 @@ Please contact the client and assist with arranging a suitable inspection appoin
     ///   Pin          PIN still to be entered
     ///   Visible      show the valuer
     /// </summary>
+    // Rules: Services/Attributes/InspectionValuerAccess.cs (unit-tested).
     private string ValuerAccessFor(
         AttrInspectionRequest request,
         AttrPropertyInfo property,
         Guid token,
-        DateTime now)
-    {
-        if (request.EmailTokenExpiresAt.HasValue &&
-            request.EmailTokenExpiresAt.Value < now)
-            return "Hidden";
-
-        if (!request.ValuerDetailsSent ||
-            string.IsNullOrWhiteSpace(request.InspectionPin))
-            return "NotReleased";
-
-        var userId = CurrentUserId();
-        if (userId == null)
-            return "SignIn";
-
-        if (!IsOwner(property, userId))
-            return "NotOwner";
-
-        if (request.PinFailedAttempts >= MaxPinAttempts)
-            return "Locked";
-
-        if (request.PinValidFrom.HasValue && now < request.PinValidFrom.Value)
-            return "NotYetValid";
-
-        if (request.PinValidUntil.HasValue && now > request.PinValidUntil.Value)
-            return "Ended";
-
-        return IsPinSessionVerified(token) ? "Visible" : "Pin";
-    }
+        DateTime now) =>
+        InspectionValuerAccess.Decide(
+            now,
+            request.EmailTokenExpiresAt,
+            request.ValuerDetailsSent,
+            request.InspectionPin,
+            CurrentUserId(),
+            property.SubmittedByUserId,
+            request.PinFailedAttempts,
+            request.PinValidFrom,
+            request.PinValidUntil,
+            IsPinSessionVerified(token));
 
     private async Task AuditValuerViewAsync(Guid token)
     {
