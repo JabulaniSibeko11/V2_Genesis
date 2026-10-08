@@ -26,6 +26,7 @@ var builder = WebApplication.CreateBuilder(args);
 var cfg = builder.Configuration;
 
 QuestPDF.Settings.License = LicenseType.Community;
+V2_Genesis.Helpers.QuestPdfFonts.Configure();   // QuestPDF 2026.9+: Arial for all PDFs
 
 var genesisLogging =
     cfg.GetSection("GenesisLogging")
