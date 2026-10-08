@@ -749,7 +749,18 @@
                         return;
                     }
  
+                    // Natural ascending order on the first column
+                    // (GV23-Sup4-6, -7, -17 … not -17, -22, -6).
+                    var dtOrder = jQuery.fn.dataTable.ext.type.order;
+                    if (!dtOrder['gs-natural-asc']) {
+                        var coll = new Intl.Collator('en', { numeric: true, sensitivity: 'base' });
+                        var clean = function (v) { return String(v == null ? '' : v).replace(/<[^>]*>/g, '').trim(); };
+                        dtOrder['gs-natural-asc'] = function (a, b) { return coll.compare(clean(a), clean(b)); };
+                        dtOrder['gs-natural-desc'] = function (a, b) { return coll.compare(clean(b), clean(a)); };
+                    }
+
                     jQuery(selector).DataTable({
+                        order: [[0, 'asc']],
                         responsive: {
                             details: {
                                 type: 'inline',
@@ -765,6 +776,7 @@
                         columnDefs: [
                             {
                                 targets: 0,
+                                type: 'gs-natural',
                                 className: 'dtr-control all',
                                 responsivePriority: 1
                             },

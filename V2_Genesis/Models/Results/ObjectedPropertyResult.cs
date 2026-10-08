@@ -83,6 +83,22 @@ namespace V2_Genesis.Models.Results
             }
         }
 
+        // ── Appeal period (Objection_MVD), filled for Notice-Sent objections ──
+        public DateTime? Appeal_Start_Date { get; set; }
+        public DateTime? Appeal_Close_Date { get; set; }
+
+        /// Open / NotYetOpen / Closed / Unknown — see Services/Objection/AppealWindowRules.
+        public string Appeal_Window_State { get; set; } = "Unknown";
+
+        public bool IsAppealWindowOpen =>
+            Appeal_Window_State == "Open";
+
+        /// Appeal already lodged for this objection (its appeal number).
+        public string? Lodged_Appeal_No { get; set; }
+
+        /// For an appeal row (Sub_typ 1 on the objection roll): the objection it appeals.
+        public string? Appeal_Objection_Ref { get; set; }
+
         public string DisplayReference =>
             !string.IsNullOrWhiteSpace(Query_No)
                 ? Query_No

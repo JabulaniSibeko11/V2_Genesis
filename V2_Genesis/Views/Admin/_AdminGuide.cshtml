@@ -3,9 +3,8 @@
     ─────────────────────────────────────────────────────────────────────
     "How this portal works for the admin team" — shown on the Admin
     dashboard (Views/Admin/Index.cshtml) under the page heading.
-    Explains the admin rule (objection and appeal periods are always open
-    for late objections CLO and late condonation appeals CLA; all other
-    windows apply to everyone), what each service does, the rules that
+    Explains the admin rule (the objection period is always open for late
+    objections CLO; appeals and all other windows apply to everyone), what each service does, the rules that
     still apply, and what the statuses mean.
     The open / closed state of the panel is remembered in the browser.
     ─────────────────────────────────────────────────────────────────────
@@ -261,7 +260,7 @@
         <span class="adm-guide-icon"><i class="fa-solid fa-user-shield" aria-hidden="true"></i></span>
         <span class="adm-guide-title">
             <strong>Admin guide — how this portal works for you</strong>
-            <small>Objections (CLO) and appeals (CLA) are always open for you. Evidence, Section 51 and review periods are the same for everyone.</small>
+            <small>Objections (CLO) are always open for you. Appeals, evidence, Section 51 and review periods are the same for everyone.</small>
         </span>
         <span class="adm-guide-toggle">
             <span class="when-open">Hide guide</span>
@@ -275,13 +274,17 @@
         <div class="adm-guide-rule">
             <i class="fa-solid fa-lock-open" aria-hidden="true"></i>
             <div>
-                <h3>Objections and appeals are ALWAYS OPEN for the admin team</h3>
+                <h3>Objections are ALWAYS OPEN for the admin team</h3>
                 <p>
-                    On every roll (GV23 and Supplementary Rolls 1–4) you can capture an objection or an appeal
+                    On every roll (GV23 and Supplementary Rolls 1–4) you can capture an objection
                     at any time, also after the client period has closed. This is for
-                    <strong>late objections (CLO)</strong> and <strong>late condonation appeals (CLA)</strong>
-                    that are approved and captured internally. Where you see <em>“Clients: closed on …”</em>,
-                    that is what the client sees.
+                    <strong>late objections (CLO)</strong> that are approved and captured internally.
+                    Where you see <em>“Clients: closed on …”</em>, that is what the client sees.
+                </p>
+                <p>
+                    <strong>Appeals are not always open:</strong> an appeal can only be lodged until the
+                    <strong>appeal close date</strong> of the objection (Objection_MVD), for clients and for you.
+                    The dashboard shows <em>“Appeal closes: …”</em> under the status.
                 </p>
             </div>
         </div>
@@ -326,8 +329,9 @@
                     <h5><i class="fa-solid fa-gavel"></i> Lodge an appeal</h5>
                     <p>Roll <strong>Dashboard → Objections → Actions → Lodge Appeal</strong>. Possible once the
                         Municipal Valuer’s Decision (MVD) notice was sent (status <code>Notice-Sent</code>).
-                        One appeal per objection. After the appeal period this is a
-                        <strong>late condonation appeal (CLA)</strong> — only capture it when condonation was approved.</p>
+                        One appeal per objection, and only until the <strong>appeal close date</strong>
+                        shown under the status (<em>“Appeal closes: …”</em>). After that date the button
+                        shows <em>“Appeal period closed”</em> — also for the admin team.</p>
                 </div>
 
                 <div class="adm-guide-card">
@@ -381,7 +385,7 @@
                 <li>Required fields, ID numbers, signatures and the declaration are checked as for clients.</li>
                 <li><strong>Helping a client:</strong> clients who are stopped by a closed evidence or
                     Section 51 window see a <em>“Need help?”</em> box with the Valuation Services contact details.
-                    Late objections (CLO) and late condonation appeals (CLA) are <strong>not</strong> mentioned
+                    Late objections (CLO) are <strong>not</strong> mentioned
                     to clients — they are handled internally.</li>
             </ul>
         </div>

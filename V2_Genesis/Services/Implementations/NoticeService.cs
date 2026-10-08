@@ -127,6 +127,97 @@ public class NoticeService : INoticeService
         return (pdfBytes, fileName);
     }
 
+    // ── Section 49 on screen ─────────────────────────────────────────
+    // Same content and rules as GenerateSection49Pdf (roll title with GVR2023,
+    // postal address from the roll's postal table, up to 4 rows, letter date),
+    // so the web page matches the PDF notice. The signature is NOT given to
+    // the page on purpose: it is only printed on the PDF.
+    public async Task<Section49ViewModel?> GetSection49ViewAsync(
+        string rollSource,
+        string unitKey,
+        string valuationKey)
+    {
+        var items = await _search.GetPropertyDetailsAsync(
+            rollSource,
+            unitKey,
+            valuationKey);
+
+        if (items is null || items.Count == 0)
+            return null;
+
+        var roll = _noticeSettings.For(rollSource);
+        var dates = _rollDates.For(rollSource);
+        var main = items.First();
+
+        await ApplyRollPostalAddressAsync(rollSource, main);
+
+        static string Safe(string? value) =>
+            string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim();
+
+        var postalLines = new[] { main.ADDR1, main.ADDR2, main.ADDR3, main.ADDR4, main.ADDR5 }
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Select(x => Safe(x))
+            .ToList();
+
+        if (postalLines.Count == 0)
+        {
+            if (!string.IsNullOrWhiteSpace(main.PropertyDesc))
+                postalLines.Add(Safe(main.PropertyDesc));
+            postalLines.Add("JOHANNESBURG");
+        }
+
+        var title = Safe(roll.RollTitle);
+        var rollTitle =
+            string.IsNullOrWhiteSpace(title)
+                ? "GVR2023"
+                : title.Contains("GVR2023", StringComparison.OrdinalIgnoreCase) ||
+                  title.Contains("GV2023", StringComparison.OrdinalIgnoreCase)
+                    ? title
+                    : $"{title} (GVR2023)";
+
+        var rows = items.Take(4).ToList();
+        var isMultiple =
+            rows.Any(x => Safe(x.CatDesc).Contains("Multiple", StringComparison.OrdinalIgnoreCase)) ||
+            Safe(main.CatDesc).Contains("Multiple", StringComparison.OrdinalIgnoreCase);
+
+        var viewRows = rows.Select(x => new Section49ViewRow
+        {
+            Category = Safe(x.CatDesc),
+            Area = Safe(x.RateableArea),
+            MarketValue = string.IsNullOrWhiteSpace(x.MarketValue) ? string.Empty : FormatZAR(x.MarketValue),
+            EffectiveDate = WefDateFormatter.Format(x.WefDate)
+        }).ToList();
+
+        if (isMultiple)
+        {
+            while (viewRows.Count < 4)
+                viewRows.Add(new Section49ViewRow());
+        }
+
+        var culture = System.Globalization.CultureInfo.GetCultureInfo("en-ZA");
+
+        return new Section49ViewModel
+        {
+            RollSource = rollSource,
+            UnitKey = unitKey,
+            ValuationKey = valuationKey,
+            RollTitle = rollTitle,
+            FinancialYears = Safe(roll.FinancialYears),
+            LetterDate = !string.IsNullOrWhiteSpace(roll.Section49LetterDate)
+                ? roll.Section49LetterDate.Trim()
+                : DateTime.Now.ToString("dd MMMM yyyy", culture),
+            OpenDate = dates?.OpenDate,
+            ClosingDate = dates?.VisibleUntil,
+            ExtendedPeriodText = dates?.ExtendedPeriodText,
+            PostalLines = postalLines,
+            PropertyDescription = Safe(main.PropertyDesc),
+            PhysicalAddress = !string.IsNullOrWhiteSpace(main.LisStreetAddress)
+                ? Safe(main.LisStreetAddress)
+                : Safe(main.PropertyDesc),
+            Rows = viewRows
+        };
+    }
+
     public async Task<(byte[] Pdf, string FileName)>
         GenerateSection49ForObjectionAsync(
             string rollSource,

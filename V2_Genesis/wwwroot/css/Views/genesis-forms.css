@@ -713,3 +713,100 @@ body.gs-form-later .obj-form-head-title {
     color: #7a8a8e !important;
     white-space: nowrap;
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   Fencing table (Section 3 — Fencing: Yes)
+   Same look as the other Section 3 cards: teal header, clear input
+   boxes for Type and Height, scrolls sideways on a phone.
+   ══════════════════════════════════════════════════════════════════ */
+.gs-fence-wrap {
+    margin-top: 14px;
+    border: 2px solid #006570;
+    border-radius: 14px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    background: #fff;
+}
+
+.gs-fence-table {
+    width: 100%;
+    min-width: 640px;
+    margin: 0 !important;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+    .gs-fence-table thead th {
+        background: #006570 !important;
+        color: #fff !important;
+        font-size: 12.5px;
+        font-weight: 700;
+        letter-spacing: .06em;
+        text-transform: uppercase;
+        padding: 12px 14px !important;
+        border: 0 !important;
+        white-space: nowrap;
+    }
+
+    .gs-fence-table tbody th {
+        width: 150px;
+        background: #eef7f8 !important;
+        color: #006570 !important;
+        font-size: 13px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+        vertical-align: middle !important;
+        padding: 12px 14px !important;
+        border: 0 !important;
+        border-top: 1px solid #d7e2e4 !important;
+        white-space: nowrap;
+    }
+
+        .gs-fence-table tbody th small {
+            font-size: 11px;
+            text-transform: none;
+            color: #5b6b70;
+        }
+
+    .gs-fence-table tbody td {
+        padding: 10px 10px !important;
+        vertical-align: middle !important;
+        border: 0 !important;
+        border-top: 1px solid #d7e2e4 !important;
+        border-left: 1px solid #edf2f3 !important;
+        background: #fff !important;
+    }
+
+    .gs-fence-table .gs-fence-input {
+        width: 100%;
+        min-height: 44px;
+        border: 1.5px solid #cfdcde !important;
+        border-radius: 10px !important;
+        background: #f8fbfb !important;
+        padding: 8px 12px;
+        font-size: 14px;
+        box-shadow: none !important;
+    }
+
+        .gs-fence-table .gs-fence-input:focus {
+            border-color: #006570 !important;
+            background: #fff !important;
+            box-shadow: 0 0 0 3px rgba(0, 101, 112, .14) !important;
+        }
+
+        .gs-fence-table .gs-fence-input::placeholder {
+            color: #9aa8ab;
+        }
+
+        /* Height boxes: no number spinners */
+        .gs-fence-table input[type=number].gs-fence-input {
+            -moz-appearance: textfield;
+            appearance: textfield;
+        }
+
+            .gs-fence-table input[type=number].gs-fence-input::-webkit-outer-spin-button,
+            .gs-fence-table input[type=number].gs-fence-input::-webkit-inner-spin-button {
+                -webkit-appearance: none;
+                margin: 0;
+            }

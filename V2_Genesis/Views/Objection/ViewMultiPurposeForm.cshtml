@@ -1777,23 +1777,24 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
             </div>
 
             <div id="fence_table" style="display: none">
-                <table class="table table-bordered table-hover mt-3">
-                    <thead class="thead-light">
+                <div class="gs-fence-wrap">
+                    <table class="table gs-fence-table">
+                    <thead>
                         <tr>
-                            <th scope="col" class="col-1">
-                                FENCING&nbsp;&nbsp;
+                            <th scope="col">
+                                Fencing
                             </th>
-                            <th scope="col" class="col-1">
-                                FRONT
+                            <th scope="col">
+                                Front
                             </th>
-                            <th scope="col" class="col-1">
-                                BACK
+                            <th scope="col">
+                                Back
                             </th>
-                            <th scope="col" class="col-1">
-                                SIDE 1
+                            <th scope="col">
+                                Side 1
                             </th>
-                            <th scope="col" class="col-1">
-                                SIDE 2
+                            <th scope="col">
+                                Side 2
                             </th>
                         </tr>
                     </thead>
@@ -1803,37 +1804,38 @@ var old3MarketValueDisplay = FormatRand(messageMV3);
                                 Type
                             </th>
                             <td>
-                                <input style="border:none;" placeholder="e.g. Wood, Masonry" asp-for="Res_Fence_Front" maxlength="30" onpaste="return false;" ondrop="return false;" />
+                                <input class="form-control gs-fence-input" placeholder="e.g. Wood, Masonry" asp-for="Res_Fence_Front" maxlength="30" onpaste="return false;" ondrop="return false;" />
                             </td>
                             <td>
-                                <input style="border:none;" placeholder="e.g. Wood, Masonry" asp-for="Res_Fence_Back" maxlength="30" onpaste="return false;" ondrop="return false;" />
+                                <input class="form-control gs-fence-input" placeholder="e.g. Wood, Masonry" asp-for="Res_Fence_Back" maxlength="30" onpaste="return false;" ondrop="return false;" />
                             </td>
                             <td>
-                                <input style="border:none;" placeholder="e.g. Wood, Masonry" asp-for="Res_Fence_Side_1" maxlength="30" onpaste="return false;" ondrop="return false;" />
+                                <input class="form-control gs-fence-input" placeholder="e.g. Wood, Masonry" asp-for="Res_Fence_Side_1" maxlength="30" onpaste="return false;" ondrop="return false;" />
                             </td>
                             <td>
-                                <input style="border:none;" placeholder="e.g. Wood, Masonry" asp-for="Res_Fence_Side_2" maxlength="30" onpaste="return false;" ondrop="return false;" />
+                                <input class="form-control gs-fence-input" placeholder="e.g. Wood, Masonry" asp-for="Res_Fence_Side_2" maxlength="30" onpaste="return false;" ondrop="return false;" />
                             </td>
                         </tr>
                         <tr>
                             <th scope="row">
-                                Height (CM)
+                                Height <small>(cm)</small>
                             </th>
                             <td>
-                                <input style="border:none;" asp-for="Res_Fence_Height_Front" onpaste="return false;" maxlength="4" ondrop="return false;" onkeypress="return onlyNumberKey(event)" />
+                                <input inputmode="numeric" placeholder="e.g. 180" class="form-control gs-fence-input" asp-for="Res_Fence_Height_Front" onpaste="return false;" maxlength="4" ondrop="return false;" onkeypress="return onlyNumberKey(event)" />
                             </td>
                             <td>
-                                <input style="border:none;" asp-for="Res_Fence_Height_Back" onpaste="return false;" maxlength="4" ondrop="return false;" onkeypress="return onlyNumberKey(event)" />
+                                <input inputmode="numeric" placeholder="e.g. 180" class="form-control gs-fence-input" asp-for="Res_Fence_Height_Back" onpaste="return false;" maxlength="4" ondrop="return false;" onkeypress="return onlyNumberKey(event)" />
                             </td>
                             <td>
-                                <input style="border:none;" asp-for="Res_Fence_Height_Side1" onpaste="return false;" maxlength="4" ondrop="return false;" onkeypress="return onlyNumberKey(event)" />
+                                <input inputmode="numeric" placeholder="e.g. 180" class="form-control gs-fence-input" asp-for="Res_Fence_Height_Side1" onpaste="return false;" maxlength="4" ondrop="return false;" onkeypress="return onlyNumberKey(event)" />
                             </td>
                             <td>
-                                <input style="border:none;" asp-for="Res_Fence_Height_Side2" onpaste="return false;" maxlength="4" ondrop="return false;" onkeypress="return onlyNumberKey(event)" />
+                                <input inputmode="numeric" placeholder="e.g. 180" class="form-control gs-fence-input" asp-for="Res_Fence_Height_Side2" onpaste="return false;" maxlength="4" ondrop="return false;" onkeypress="return onlyNumberKey(event)" />
                             </td>
                         </tr>
                     </tbody>
                 </table>
+            </div>
             </div>
             <script>
                 document.addEventListener("DOMContentLoaded", function () {

@@ -1,392 +1,503 @@
-﻿/* ═══════════════════════════════════════════════
-   SECTION 49 NOTICE — mobile-first
-═══════════════════════════════════════════════ */
-.s49-page {
-    background: #f5f5f5;
-    min-height: calc(100vh - 64px);
-    padding: 20px 16px;
-    font-family: 'Poppins',sans-serif;
+/* ══════════════════════════════════════════════════════════════════
+   Section 49 notice on screen  (Views/Notice/Section49Display)
+   Looks like the Section 49 PDF: white A4 sheets on a grey desk,
+   Arial, steel-blue table header, red closing date, page 2 = NB.
+   ══════════════════════════════════════════════════════════════════ */
+.s49,
+.s49 *,
+.s49 *::before,
+.s49 *::after {
+    box-sizing: border-box;
 }
 
-.s49-inner {
-    max-width: 860px;
+.s49 {
+    --s49-ink: #1a1a1a;
+    --s49-muted: #555;
+    --s49-line: #4a4a4a;
+    --s49-blue: rgb(70, 130, 180);
+    --s49-red: #e53935;
+    --s49-gold: #e6b000;
+    background: #e9ecef;
+    min-height: calc(100vh - 64px);
+    padding: 0 12px 32px;
+    font-family: Arial, Helvetica, sans-serif;
+    color: var(--s49-ink);
+}
+
+/* ── Toolbar ───────────────────────────────────────────────────── */
+.s49-toolbar {
+    margin: 0 -12px 20px;
+    padding: 10px 12px;
+    background: #fff;
+    border-bottom: 1px solid #dde2e6;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, .05);
+}
+
+.s49-toolbar-inner {
+    max-width: 820px;
     margin: 0 auto;
     display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
-
-/* ── Top bar ─────────────────────────────────── */
-.s49-topbar {
-    display: flex;
-    justify-content: space-between;
     align-items: center;
-    flex-wrap: wrap;
-    gap: 10px;
+    justify-content: space-between;
+    gap: 12px;
 }
 
-.s49-back {
+.s49-tb-title {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    font-family: 'Poppins', Arial, sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    color: #006570;
+}
+
+    .s49-tb-title small {
+        font-weight: 500;
+        font-size: 12.5px;
+        color: var(--s49-muted);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+.s49-tb-btn {
     display: inline-flex;
     align-items: center;
-    gap: 7px;
+    gap: 8px;
+    padding: 9px 16px;
+    border-radius: 10px;
+    border: 1.5px solid #d3d9dd;
+    background: #fff;
+    color: #333;
+    font-family: 'Poppins', Arial, sans-serif;
     font-size: 13px;
     font-weight: 600;
-    color: #6b6b6b;
     text-decoration: none;
-    background: #fff;
-    border: 1.5px solid #e8e8e8;
-    padding: 8px 14px;
-    border-radius: 8px;
-    transition: all .15s;
+    white-space: nowrap;
+    transition: border-color .15s, background .15s, color .15s;
 }
 
-    .s49-back:hover {
-        border-color: #e6b000;
-        color: #c49a00;
+    .s49-tb-btn:hover {
+        border-color: var(--s49-gold);
+        color: #8a6a00;
     }
 
-.s49-download-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    background: #1a1a1a;
-    color: #e6b000;
-    padding: 9px 18px;
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: 700;
-    text-decoration: none;
-    transition: background .15s;
-}
-
-    .s49-download-btn:hover {
-        background: #333;
-        color: #e6b000;
-    }
-
-/* ── Notice container ────────────────────────── */
-.s49-notice {
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 2px 16px rgba(0,0,0,.09);
-    padding: 30px 32px;
-}
-
-/* ── Header image ────────────────────────────── */
-.s49-logo {
-    width: 100%;
-    max-width: 520px;
-    display: block;
-    margin: 0 auto 16px;
-}
-
-/* ── Titles ──────────────────────────────────── */
-.s49-title-block {
-    text-align: center;
-    margin-bottom: 14px;
-}
-
-    .s49-title-block h1 {
-        font-size: 16px;
-        font-weight: 800;
-        color: #1a1a1a;
-        margin: 0 0 6px;
-    }
-
-    .s49-title-block h2 {
-        font-size: 12px;
-        font-weight: 700;
-        color: #1a1a1a;
-        line-height: 1.5;
-        margin: 0;
-    }
-
-.s49-divider {
-    border: none;
-    border-top: 1.5px solid #ccc;
-    margin: 14px 0;
-}
-
-/* ── Body text ───────────────────────────────── */
-.s49-body {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-    .s49-body p {
-        font-size: 13px;
-        line-height: 1.7;
-        color: #333;
-        margin: 0;
-        text-align: justify;
-    }
-
-    .s49-body a {
-        color: #e6b000;
-    }
-
-/* ── Property box ────────────────────────────── */
-.s49-property-box {
-    border: 1px solid #4682B4;
-    border-radius: 8px;
-    overflow: hidden;
-    margin: 14px 0;
-}
-
-.s49-property-header {
-    background: #4682B4;
+.s49-tb-primary {
+    background: #006570;
+    border-color: #006570;
     color: #fff;
-    padding: 10px 16px;
-    font-size: 11.5px;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    gap: 8px;
 }
 
-.s49-property-info {
+    .s49-tb-primary:hover {
+        background: #004f58;
+        border-color: #004f58;
+        color: #fff;
+    }
+
+.s49-alert {
+    max-width: 794px;
+    margin: 0 auto 16px;
     padding: 12px 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    background: #F0F7FF;
+    border-radius: 10px;
+    background: #fdecec;
+    border: 1px solid #f4c4c4;
+    color: #9b1c1c;
+    font-weight: 600;
+    font-size: 14px;
 }
 
-.s49-info-item {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
+/* ── A4 sheet ──────────────────────────────────────────────────── */
+.s49-sheet {
+    position: relative;
+    max-width: 794px;          /* A4 width at 96 dpi */
+    margin: 0 auto 24px;
+    padding: 14px 40px 20px;
+    background: #fff;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, .12);
+    font-size: 13px;
+    line-height: 1.5;
 }
 
-.s49-info-label {
-    font-size: 10.5px;
+    .s49-sheet p {
+        margin: 0 0 9px;
+    }
+
+.s49-justify {
+    text-align: justify;
+}
+
+.s49-header-img {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+.s49-address-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    margin: 10px 0 8px;
+}
+
+.s49-postal {
+    font-size: 14px;
     font-weight: 700;
-    color: #4682B4;
+    line-height: 1.45;
     text-transform: uppercase;
 }
 
-.s49-info-value {
-    font-size: 13px;
-    color: #1a1a1a;
+.s49-letter-date {
+    flex-shrink: 0;
+    text-align: right;
 }
 
-/* ── Valuation table ─────────────────────────── */
+.s49-h1 {
+    margin: 6px 0 2px;
+    text-align: center;
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: .02em;
+}
+
+.s49-h2,
+.s49-h3 {
+    margin: 0 0 6px;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.4;
+}
+
+.s49-rule {
+    border: 0;
+    border-top: 2px solid var(--s49-line);
+    opacity: 1;
+    margin: 6px 0 12px;
+}
+
+.s49-greeting {
+    font-weight: 700;
+}
+
+.s49-office {
+    margin: 0 0 9px;
+    padding: 6px 8px;
+    background: #f0f0f0;
+}
+
+.s49-details {
+    margin: 6px 0 10px;
+    padding: 7px 11px;
+    background: rgb(245, 250, 255);
+    line-height: 1.6;
+}
+
+/* Tables use the sheet's font size (not the browser's table default). */
+.s49-table,
+.s49-nb {
+    font-size: inherit;
+}
+
+/* Page 2 is short: no empty A4 space, footer straight after the text. */
+.s49-sheet-short {
+    min-height: 0;
+    padding-bottom: 20px;
+}
+
+    .s49-sheet-short .s49-footer {
+        position: static;
+        margin-top: 28px;
+    }
+
+/* ── Valuation table ── */
 .s49-table-wrap {
     overflow-x: auto;
-    margin: 14px 0;
+    -webkit-overflow-scrolling: touch;
 }
 
 .s49-table {
     width: 100%;
+    min-width: 520px;
     border-collapse: collapse;
-    font-size: 12.5px;
-    min-width: 480px;
 }
 
-    .s49-table thead th {
-        background: #4682B4;
-        color: #fff;
-        font-size: 11px;
-        font-weight: 700;
-        padding: 10px 12px;
-        text-align: center;
+    .s49-table th,
+    .s49-table td {
+        border: 1px solid #222;
+        padding: 6px 8px;
     }
 
-    .s49-table tbody td {
-        padding: 9px 12px;
-        border-bottom: 1px solid #eee;
+    .s49-table th {
+        background: var(--s49-blue);
+        color: #fff;
+        font-weight: 700;
+        text-align: left;
+    }
+
+    .s49-table td {
+        height: 32px;
+    }
+
+    .s49-table .s49-num {
+        text-align: right;
+        white-space: nowrap;
+    }
+
+    .s49-table .s49-center {
+        text-align: center;
+        white-space: nowrap;
+    }
+
+.s49-closing {
+    margin-top: 14px !important;
+    text-align: center;
+    color: var(--s49-red);
+    font-weight: 700;
+}
+
+/* ── Footer (both pages) ── */
+.s49-footer {
+    margin-top: 28px;
+    text-align: center;
+    font-size: 10px;
+    line-height: 1.5;
+    color: #555;
+}
+
+.s49-footer-line {
+    width: 320px;
+    max-width: 80%;
+    margin: 0 auto 4px;
+    border-top: 1px solid #555;
+}
+
+.s49-key {
+    color: var(--s49-red);
+    font-weight: 700;
+}
+
+/* ── Page 2: NB table ── */
+.s49-nb {
+    width: 100%;
+    margin-top: 8px;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+    .s49-nb th,
+    .s49-nb td {
+        border: 1px solid #222;
+        padding: 8px 10px;
+        vertical-align: top;
+    }
+
+    .s49-nb th {
+        text-align: center;
+        font-size: 14px;
+        font-weight: 700;
+    }
+
+    .s49-nb ul {
+        margin: 0 0 6px;
+        padding-left: 18px;
+    }
+
+    .s49-nb li {
+        margin-bottom: 2px;
+    }
+
+    .s49-nb .s49-or {
+        margin: 6px 0 2px;
+        font-weight: 700;
+    }
+
+    .s49-nb .s49-rep {
+        text-align: center;
+        color: var(--s49-red);
+        font-weight: 700;
         vertical-align: middle;
     }
 
-    .s49-table tbody tr:nth-child(even) {
-        background: #F8FAFC;
+.s49-enq {
+    margin-top: 16px !important;
+}
+
+.s49-enq-list {
+    padding-left: 18px;
+}
+
+    .s49-enq-list a {
+        color: var(--s49-ink);
     }
 
-.s49-mv {
-    font-weight: 700;
-    color: #1a1a1a;
-}
-
-/* ── Closing date banner ─────────────────────── */
-.s49-closing-date {
-    background: #FFF5E6;
-    border: 1.5px solid #FF8C00;
-    border-radius: 8px;
-    padding: 14px 18px;
-    text-align: center;
-    font-size: 13.5px;
-    font-weight: 800;
-    color: #8B4500;
+.s49-bottom-actions {
+    max-width: 794px;
+    margin: 0 auto;
     display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    margin: 14px 0;
+    justify-content: space-between;
+    gap: 12px;
 }
 
-/* ── Requirements two-column ─────────────────── */
-.s49-requirements {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 14px;
-    margin: 14px 0;
-}
+/* ── Phone ─────────────────────────────────────────────────────── */
+@media (max-width: 767.98px) {
+    .s49 {
+        padding: 0 8px 24px;
+    }
 
-.s49-req-col {
-    border-radius: 8px;
-    padding: 14px;
-}
+    .s49-toolbar {
+        margin: 0 -8px 14px;
+    }
 
-    .s49-req-col h4 {
+    .s49-tb-title small {
+        display: none;
+    }
+
+    .s49-tb-btn {
+        padding: 8px 12px;
         font-size: 12.5px;
-        font-weight: 700;
-        margin: 0 0 10px;
-        display: flex;
-        align-items: center;
-        gap: 7px;
     }
 
-    .s49-req-col ul {
-        margin: 0 0 10px;
-        padding-left: 16px;
-    }
-
-    .s49-req-col li {
-        font-size: 12px;
-        line-height: 1.7;
-        color: #444;
-    }
-
-    .s49-req-col p {
-        font-size: 12px;
-        margin: 0;
-    }
-
-.s49-req-res {
-    background: #F0F8FF;
-    border: 1px solid #4682B4;
-}
-
-    .s49-req-res h4 {
-        color: #4682B4;
-    }
-
-.s49-req-bus {
-    background: #FFF8F0;
-    border: 1px solid #FF8C00;
-}
-
-    .s49-req-bus h4 {
-        color: #FF8C00;
-    }
-
-/* ── Representatives warning ─────────────────── */
-.s49-rep-warning {
-    background: #FFE0E0;
-    border: 2px solid #DC143C;
-    border-radius: 8px;
-    padding: 12px 16px;
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    font-size: 13px;
-    margin: 14px 0;
-}
-
-    .s49-rep-warning i {
-        color: #DC143C;
-        font-size: 18px;
-        flex-shrink: 0;
-        margin-top: 2px;
-    }
-
-/* ── Contact ──────────────────────────────────── */
-.s49-contact {
-    font-size: 13px;
-    color: #444;
-    padding: 12px 0;
-}
-
-    .s49-contact h4 {
+    .s49-sheet {
+        min-height: 0;
+        padding: 10px 16px 16px;
         font-size: 13px;
-        font-weight: 700;
-        color: #1a1a1a;
-        margin: 0 0 6px;
     }
 
-    .s49-contact a {
-        color: #e6b000;
-    }
-
-/* ── Action buttons ──────────────────────────── */
-.s49-actions {
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
-    padding: 4px 0;
-}
-
-.s49-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    padding: 12px 22px;
-    border-radius: 9px;
-    font-family: 'Poppins',sans-serif;
-    font-size: 14px;
-    font-weight: 700;
-    text-decoration: none;
-    transition: all .15s;
-}
-
-.s49-btn-primary {
-    background: #1a1a1a;
-    color: #e6b000;
-}
-
-    .s49-btn-primary:hover {
-        background: #333;
-        color: #e6b000;
-    }
-
-.s49-btn-outline {
-    background: #fff;
-    color: #1a1a1a;
-    border: 1.5px solid #e8e8e8;
-}
-
-    .s49-btn-outline:hover {
-        border-color: #e6b000;
-        color: #c49a00;
-    }
-
-/* ── Mobile ───────────────────────────────────── */
-@media (max-width:600px) {
-    .s49-notice {
-        padding: 18px 14px;
-    }
-
-    .s49-requirements {
-        grid-template-columns: 1fr;
-    }
-
-    .s49-actions {
+    .s49-address-row {
         flex-direction: column;
+        gap: 6px;
     }
 
-    .s49-btn {
+    .s49-letter-date {
+        text-align: left;
+    }
+
+    .s49-footer {
+        position: static;
+        margin-top: 20px;
+    }
+
+    .s49-nb,
+    .s49-nb tbody,
+    .s49-nb tr,
+    .s49-nb th,
+    .s49-nb td {
+        display: block;
         width: 100%;
-        justify-content: center;
     }
 
-    .s49-topbar {
-        flex-direction: column;
-        align-items: flex-start;
+        .s49-nb td + td {
+            border-top: 0;
+        }
+}
+
+@media (max-width: 420px) {
+    .s49-tb-title span {
+        display: none;
+    }
+}
+
+/* ── Print: only the two sheets ── */
+@media print {
+    .s49 {
+        background: #fff;
+        padding: 0;
     }
 
-    .s49-download-btn {
-        width: 100%;
-        justify-content: center;
+    .s49-toolbar,
+    .s49-bottom-actions,
+    .s49-alert {
+        display: none !important;
     }
+
+    .s49-sheet {
+        box-shadow: none;
+        margin: 0;
+        page-break-after: always;
+    }
+}
+
+/* ── Big screens: wider, easier-to-read sheet ── */
+@media (min-width: 1400px) {
+    .s49-toolbar-inner,
+    .s49-alert,
+    .s49-sheet,
+    .s49-bottom-actions {
+        max-width: 940px;
+    }
+
+    .s49-sheet {
+        padding: 18px 52px 24px;
+        font-size: 14.5px;
+    }
+
+    .s49-h1 { font-size: 19px; }
+    .s49-h2, .s49-h3 { font-size: 15.5px; }
+    .s49-postal { font-size: 15px; }
+}
+
+/* ── Small phones: valuation rows become stacked cards ── */
+@media (max-width: 575.98px) {
+    .s49-justify { text-align: left; }
+
+    .s49-sheet {
+        padding: 10px 12px 14px;
+        font-size: 12.5px;
+    }
+
+    .s49-h1 { font-size: 15px; }
+    .s49-h2, .s49-h3 { font-size: 12.5px; }
+    .s49-postal { font-size: 13px; }
+
+    .s49-table-wrap { overflow: visible; }
+
+    .s49-table {
+        min-width: 0;
+        border-collapse: separate;
+        border-spacing: 0 8px;
+    }
+
+        .s49-table thead { display: none; }
+
+        .s49-table,
+        .s49-table tbody,
+        .s49-table tr,
+        .s49-table td {
+            display: block;
+            width: 100%;
+        }
+
+            .s49-table tr {
+                border: 1px solid #222;
+                border-top: 4px solid var(--s49-blue);
+            }
+
+            .s49-table td,
+            .s49-table td.s49-num,
+            .s49-table td.s49-center {
+                display: flex;
+                justify-content: space-between;
+                gap: 12px;
+                height: auto;
+                border: 0;
+                border-bottom: 1px solid #e3e3e3;
+                text-align: right;
+                white-space: normal;
+            }
+
+                .s49-table td:last-child { border-bottom: 0; }
+
+                .s49-table td::before {
+                    content: attr(data-label);
+                    font-weight: 700;
+                    text-align: left;
+                    color: #333;
+                }
+
+                .s49-table td:empty { display: none; }
+
+    .s49-bottom-actions .s49-tb-btn { flex: 1; justify-content: center; }
 }

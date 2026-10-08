@@ -440,11 +440,9 @@ public class ObjectionController : Controller
                     valuationKey: valuationKey,
                     propertyDesc: null);
 
-            // Clients must be inside the appeal period. For the admin team
-            // the appeal period is always open (dates are not checked).
-            var canLodgeAppeal = isAdminRequest
-                ? eligibility.CanLodgeAsAdmin
-                : eligibility.CanLodge;
+            // Clients and the admin team: only inside the appeal period
+            // (Objection_MVD Appeal_Start_Date – Appeal_Close_Date).
+            var canLodgeAppeal = eligibility.CanLodge;
 
             if (!canLodgeAppeal)
             {

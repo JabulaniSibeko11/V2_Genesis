@@ -3,6 +3,7 @@ using GenesisV2.Services.PropertySearch;
 using Microsoft.EntityFrameworkCore;
 using System.Data;
 using System.Data.SqlClient;
+using V2_Genesis.Services.Objection;
 using V2_Genesis.Data;
 using V2_Genesis.Models.Results;
 using V2_Genesis.Models.Results.Atrributes;
@@ -161,6 +162,33 @@ public class DashboardService : IDashboardService
 
             var objectedProperties =
                 objected.ToList();
+
+            if (!isQuery)
+            {
+                // Appeals of this account straight from Obj_Property_Info_Appeal
+                // (the dashboard procedure did not always return them), and the
+                // appeal period / lodged appeal of every Notice-Sent objection.
+                try
+                {
+                    var userAppeals =
+                        await AppealDashboardData.LoadUserAppealsAsync(conn, userId);
+                    AppealDashboardData.MergeAppeals(objectedProperties, userAppeals);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Could not load the appeals of the account for roll {RollSource}", rollSource);
+                }
+
+                try
+                {
+                    await AppealDashboardData.PopulateAppealWindowsAsync(
+                        conn, objectedProperties, AppealDashboardData.MvdTable(_config));
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Could not read the appeal periods for roll {RollSource}", rollSource);
+                }
+            }
 
             if (isQuery)
             {
@@ -359,12 +387,21 @@ public class DashboardService : IDashboardService
 
     // The dashboard hides "Download Section 49 Notice" for a Third-Party
     // objection, so each objection needs its Objector_Type.
+    /// <summary>
+    /// Fills from Obj_Property_Info what the dashboard procedure does not return:
+    ///   • Objector_Type (Owner / Representative / Third_Party)
+    ///   • the 48-hour evidence window (Objection_Start_DateTime + 48 h).
+    /// Without the window the status pill treated a just-lodged objection as
+    /// "48 hours ended" and showed Obj-Pending straight after submitting.
+    /// </summary>
     private static async Task PopulateObjectorTypesAsync(
         SqlConnection conn,
         List<ObjectedPropertyResult> properties)
     {
         var references = properties
-            .Where(p => string.IsNullOrWhiteSpace(p.Objector_Type))
+            .Where(p => p.Sub_typ == 0)
+            .Where(p => string.IsNullOrWhiteSpace(p.Objector_Type) ||
+                        !p.Evidence_Expires_At.HasValue)
             .Select(p => p.Objection_No?.Trim())
             .Where(r => !string.IsNullOrWhiteSpace(r))
             .Select(r => r!)
@@ -375,29 +412,48 @@ public class DashboardService : IDashboardService
             return;
 
         var rows = await conn.QueryAsync<ObjectorTypeRow>(
-            @"SELECT LTRIM(RTRIM(Objection_No)) AS Objection_No, Objector_Type
+            @"SELECT LTRIM(RTRIM(Objection_No)) AS Objection_No,
+                     Objector_Type,
+                     Objection_Start_DateTime
               FROM dbo.Obj_Property_Info
               WHERE LTRIM(RTRIM(Objection_No)) IN @References;",
             new { References = references },
             commandTimeout: 30);
 
-        var types = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
+        var byNo = new Dictionary<string, ObjectorTypeRow>(StringComparer.OrdinalIgnoreCase);
         foreach (var row in rows)
         {
             if (!string.IsNullOrWhiteSpace(row.Objection_No) &&
-                !types.ContainsKey(row.Objection_No))
+                !byNo.ContainsKey(row.Objection_No))
             {
-                types[row.Objection_No!] = row.Objector_Type;
+                byNo[row.Objection_No!] = row;
             }
         }
 
+        var now = DateTime.Now;
+
         foreach (var property in properties)
         {
-            if (string.IsNullOrWhiteSpace(property.Objector_Type) &&
-                property.Objection_No is { } no &&
-                types.TryGetValue(no.Trim(), out var type))
+            if (property.Sub_typ != 0 ||
+                property.Objection_No is not { } no ||
+                !byNo.TryGetValue(no.Trim(), out var row))
             {
-                property.Objector_Type = type;
+                continue;
+            }
+
+            if (string.IsNullOrWhiteSpace(property.Objector_Type))
+                property.Objector_Type = row.Objector_Type;
+
+            if (!property.Evidence_Expires_At.HasValue && row.Objection_Start_DateTime.HasValue)
+            {
+                property.Submission_Date ??= row.Objection_Start_DateTime;
+                property.Evidence_Expires_At = row.Objection_Start_DateTime.Value.AddHours(48);
+                property.Evidence_Window_Open =
+                    now <= property.Evidence_Expires_At.Value &&
+                    (property.objection_Status?.Trim() is { } st &&
+                     (st.Equals("Obj-Lodging", StringComparison.OrdinalIgnoreCase) ||
+                      st.Equals("Obj-Section51", StringComparison.OrdinalIgnoreCase) ||
+                      st.Equals("Obj-Unallocated", StringComparison.OrdinalIgnoreCase)));
             }
         }
     }
@@ -406,6 +462,7 @@ public class DashboardService : IDashboardService
     {
         public string? Objection_No { get; set; }
         public string? Objector_Type { get; set; }
+        public DateTime? Objection_Start_DateTime { get; set; }
     }
 
     private static async Task PopulateAppealDecisionTypesAsync(

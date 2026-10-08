@@ -378,3 +378,171 @@ input::-webkit-textfield-decoration-container {
     display: none !important;
 }
 
+
+/* ══════════════════════════════════════════════════════════════════
+   RESPONSIVE PASS  (small phones → big screens)
+   ══════════════════════════════════════════════════════════════════ */
+
+/* Left panel runs the full height of the card (no empty strip under it). */
+.reg-left {
+    position: relative;
+    top: auto;
+    align-self: stretch;
+}
+
+.reg-brand-name {
+    line-height: 1.35;
+    letter-spacing: 1.5px;
+}
+
+/* No empty error lines between the fields. */
+.reg-right .f-err:empty {
+    display: none;
+}
+
+.reg-right .chk-wrap {
+    margin-bottom: 16px;
+}
+
+/* Stacked first / last name: same spacing as the other fields. */
+@media (max-width: 560px) {
+    .reg-right .f-row {
+        gap: 0;
+    }
+}
+
+/* Tablet & phone: the left panel becomes a short brand banner on top. */
+@media (max-width: 900px) {
+    .reg-page {
+        padding: 24px 16px;
+    }
+
+    .reg-wrap {
+        max-width: 640px;
+        margin: 0 auto;
+    }
+
+    .reg-left {
+        display: flex;
+        gap: 14px;
+        padding: 24px 28px;
+        border-right: 0;
+        border-bottom: 3px solid #e6b000;
+    }
+
+    .reg-desc,
+    .reg-features,
+    .reg-badge {
+        display: none;
+    }
+
+    .reg-headline {
+        font-size: 24px;
+        margin: 0;
+    }
+
+        .reg-headline br {
+            display: none;
+        }
+
+        .reg-headline span {
+            margin-left: 6px;
+        }
+}
+
+@media (max-width: 480px) {
+    .reg-page {
+        padding: 12px 10px 24px;
+    }
+
+    .reg-wrap {
+        border-radius: 14px;
+    }
+
+    .reg-left {
+        padding: 18px;
+        gap: 10px;
+    }
+
+    .reg-brand {
+        gap: 10px;
+    }
+
+    .reg-brand-mark {
+        width: 48px;
+        height: 48px;
+        border-radius: 10px;
+    }
+
+    .reg-brand-name {
+        font-size: 13px;
+        letter-spacing: 1px;
+    }
+
+    .reg-headline {
+        font-size: 19px;
+    }
+
+    .reg-right {
+        padding: 22px 16px;
+    }
+
+    .reg-right-title {
+        font-size: 21px;
+    }
+
+    .reg-right-subtitle {
+        margin-bottom: 18px;
+    }
+
+    .id-toggle {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .id-toggle-btn {
+        padding: 9px 8px;
+    }
+
+    .chk-label {
+        font-size: 12.5px;
+    }
+}
+
+@media (max-width: 340px) {
+    .reg-headline span {
+        display: block;
+        margin-left: 0;
+    }
+
+    .reg-tab {
+        padding: 9px 10px;
+    }
+}
+
+/* Big screens */
+@media (min-width: 1600px) {
+    .reg-page .container {
+        max-width: 1320px;
+    }
+
+    .reg-wrap {
+        grid-template-columns: 480px 1fr;
+    }
+
+    .reg-left {
+        padding: 64px 56px;
+    }
+
+    .reg-right {
+        padding: 64px 72px;
+    }
+
+    .reg-headline {
+        font-size: 38px;
+    }
+
+    .reg-desc {
+        font-size: 15px;
+    }
+}

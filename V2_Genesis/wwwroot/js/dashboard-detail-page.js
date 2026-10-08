@@ -4,6 +4,18 @@
     const PIN_LEN = 4;
     const pinValues = {};
 
+    // Reference numbers sort in natural order (GV23-Sup4-6, -7, -17, -22 …),
+    // not as text (-17, -22, -6, -7). Used for the first column, ascending by default.
+    function registerNaturalSort() {
+        if (!window.jQuery || !jQuery.fn || !jQuery.fn.dataTable) return;
+        const ext = jQuery.fn.dataTable.ext.type.order;
+        if (ext['gs-natural-asc']) return;
+        const collator = new Intl.Collator('en', { numeric: true, sensitivity: 'base' });
+        const clean = v => String(v ?? '').replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+        ext['gs-natural-asc'] = (a, b) => collator.compare(clean(a), clean(b));
+        ext['gs-natural-desc'] = (a, b) => collator.compare(clean(b), clean(a));
+    }
+
     function initDataTable(table) {
         if (!window.jQuery ||
             !jQuery.fn ||
@@ -56,7 +68,11 @@
         table.dataset.dtMode =
             phoneMode ? 'phone' : 'desktop';
 
+        registerNaturalSort();
+
         jQuery(selector).DataTable({
+            order: [[0, 'asc']],
+
             responsive:
                 useResponsive
                     ? {
@@ -87,6 +103,7 @@
                     ? [
                         {
                             targets: 0,
+                            type: 'gs-natural',
                             className:
                                 'dtr-control all',
                             responsivePriority: 1
@@ -103,6 +120,10 @@
                         }
                     ]
                     : [
+                        {
+                            targets: 0,
+                            type: 'gs-natural'
+                        },
                         {
                             targets: -1,
                             orderable: false

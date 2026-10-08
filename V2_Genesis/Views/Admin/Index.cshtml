@@ -379,11 +379,11 @@
             adminNoteUserId, adminNoteEmail, true, 10);
 
     // ── Admin team rule ─────────────────────────────────────────────
-    // The objection and appeal periods are always open for the admin team
-    // (late objections CLO and late condonation appeals CLA are captured
-    // internally). The client dates are shown for information only.
-    // The 48-hour evidence window, the Section 51 closing date and the
-    // Section 78 review period apply to everyone, also the admin team.
+    // The objection period is always open for the admin team (late
+    // objections CLO are captured internally). The appeal period
+    // (Objection_MVD Appeal_Close_Date), the 48-hour evidence window, the
+    // Section 51 closing date and the Section 78 review period apply to
+    // everyone, also the admin team.
     string AdminClientPeriodText(string source)
     {
         var dates = Model.DatesFor(source);
@@ -599,7 +599,7 @@
 
                 <article class="legacy-service-card legacy-service-card-teal">
 
-                    <div class="legacy-service-status is-open" title="Objections and appeals are always open for the admin team (late objections CLO and late condonation appeals CLA)">
+                    <div class="legacy-service-status is-open" title="Objections are always open for the admin team (late objections CLO). Appeals follow the appeal close date of each objection.">
                         OPEN FOR ADMIN
                     </div>
 
@@ -806,7 +806,7 @@
                 <span>
                     <i class="fa-solid fa-bolt"></i>
                     <strong>Quick Access – Previous Valuation Rolls</strong>
-                    <small>GV23 and Supplementary Rolls 1–3 — closed for clients; the admin team can still capture late objections (CLO) and late appeals (CLA)</small>
+                    <small>GV23 and Supplementary Rolls 1–3 — closed for clients; the admin team can still capture late objections (CLO). Appeals only until each objection’s appeal close date</small>
                 </span>
 
                 <i class="fa-solid fa-chevron-down legacy-archive-chevron"
@@ -1796,7 +1796,29 @@
                                                             <span class="cd-source-badge cd-source-badge--roll">@propertySourceLabel</span>
                                                         }
                                                     </td>
-                                                    <td>@Html.Raw(GetStatusPill(item.objection_Status))</td>
+                                                    <td>
+                                                        @Html.Raw(GetStatusPill(item.objection_Status))
+                                                        @* Appeal period (Objection_MVD) — same for admin and clients *@
+                                                        @if (!string.IsNullOrWhiteSpace(item.Lodged_Appeal_No))
+                                                        {
+                                                            <small class="d-block mt-1 text-muted">Appeal lodged: @item.Lodged_Appeal_No</small>
+                                                        }
+                                                        else if (item.Appeal_Close_Date.HasValue)
+                                                        {
+                                                            if (item.Appeal_Window_State == "Open")
+                                                            {
+                                                                <small class="d-block mt-1 text-success">Appeal closes: @item.Appeal_Close_Date.Value.ToString("dd MMM yyyy") 15:00</small>
+                                                            }
+                                                            else if (item.Appeal_Window_State == "NotYetOpen" && item.Appeal_Start_Date.HasValue)
+                                                            {
+                                                                <small class="d-block mt-1 text-muted">Appeal opens: @item.Appeal_Start_Date.Value.ToString("dd MMM yyyy")</small>
+                                                            }
+                                                            else
+                                                            {
+                                                                <small class="d-block mt-1 text-muted">Appeal closed: @item.Appeal_Close_Date.Value.ToString("dd MMM yyyy")</small>
+                                                            }
+                                                        }
+                                                    </td>
                                                     <td>
                                                         <div class="dropdown">
                                                            <button class="cd-action-btn dropdown-toggle"
@@ -2048,11 +2070,24 @@
 
 
     @* ─────────────────────────────────────────────
-       LODGE APPEAL
+       LODGE APPEAL — only inside the appeal period
+       (Objection_MVD Appeal_Start_Date – Appeal_Close_Date).
+       The admin team has no late appeals.
        ───────────────────────────────────────────── *@
     @if (DashboardNoticeStatusHelper
         .Is(item.objection_Status, "Notice-Sent"))
     {
+        if (!string.IsNullOrWhiteSpace(item.Lodged_Appeal_No))
+        {
+            <li>
+                <span class="dropdown-item disabled" aria-disabled="true">
+                    <i class="fa-solid fa-gavel"></i> Appeal lodged
+                    <small class="d-block text-muted">@item.Lodged_Appeal_No</small>
+                </span>
+            </li>
+        }
+        else if (item.IsAppealWindowOpen)
+        {
         <li>
             <a class="dropdown-item"
                href="@Url.Action(
@@ -2076,8 +2111,28 @@
 
                 <i class="fa-solid fa-gavel"></i>
                 Lodge Appeal
+                <small class="d-block text-muted">Closes @item.Appeal_Close_Date?.ToString("dd MMM yyyy") at 15:00</small>
             </a>
         </li>
+        }
+        else if (item.Appeal_Window_State == "NotYetOpen" && item.Appeal_Start_Date.HasValue)
+        {
+            <li>
+                <span class="dropdown-item disabled" aria-disabled="true">
+                    <i class="fa-solid fa-lock"></i> Appeal not open yet
+                    <small class="d-block text-muted">Opens @item.Appeal_Start_Date.Value.ToString("dd MMM yyyy")</small>
+                </span>
+            </li>
+        }
+        else if (item.Appeal_Close_Date.HasValue)
+        {
+            <li>
+                <span class="dropdown-item disabled" aria-disabled="true">
+                    <i class="fa-solid fa-lock"></i> Appeal period closed
+                    <small class="d-block text-muted">Closed @item.Appeal_Close_Date.Value.ToString("dd MMM yyyy") at 15:00</small>
+                </span>
+            </li>
+        }
     }
 
 

@@ -265,21 +265,30 @@ namespace V2_Genesis.Services.Section51
                 DataRow(t, "Market Value", Money(s6?.Old_Market_Value, isOmission), Money(s6?.New_Market_Value, false));
                 DataRow(t, "With Effective Date", effectiveDateText, "");
 
-                if (isMulti)
+                // A split is printed only when it has values. A multipurpose form
+                // lodged on a single property therefore stays a single notice.
+                // The effective date is printed on the main row only; the split
+                // rows leave it blank (the roll has one effective date).
+                if (isMulti && HasSplit(s6?.Old2_Category, s6?.Old2_Extent, s6?.Old2_Market_Value,
+                                        s6?.New2_Category, s6?.New2_Extent, s6?.New2_Market_Value))
                 {
                     DataRow(t, "", "", "");
 
                     DataRow(t, "Category Split 1", Txt(s6?.Old2_Category, isOmission), Txt(s6?.New2_Category, false));
                     DataRow(t, "Area m² Split 1", Area(s6?.Old2_Extent, isOmission), Area(s6?.New2_Extent, false));
                     DataRow(t, "Market Value Split 1", Money(s6?.Old2_Market_Value, isOmission), Money(s6?.New2_Market_Value, false));
-                    DataRow(t, "With Effective Date", effectiveDateText, "");
+                    DataRow(t, "With Effective Date", "", "");
+                }
 
+                if (isMulti && HasSplit(s6?.Old3_Category, s6?.Old3_Extent, s6?.Old3_Market_Value,
+                                        s6?.New3_Category, s6?.New3_Extent, s6?.New3_Market_Value))
+                {
                     DataRow(t, "", "", "");
 
                     DataRow(t, "Category Split 2", Txt(s6?.Old3_Category, isOmission), Txt(s6?.New3_Category, false));
                     DataRow(t, "Area m² Split 2", Area(s6?.Old3_Extent, isOmission), Area(s6?.New3_Extent, false));
                     DataRow(t, "Market Value Split 2", Money(s6?.Old3_Market_Value, isOmission), Money(s6?.New3_Market_Value, false));
-                    DataRow(t, "With Effective Date", effectiveDateText, "");
+                    DataRow(t, "With Effective Date", "", "");
                 }
             });
 
@@ -296,6 +305,18 @@ namespace V2_Genesis.Services.Section51
             static IContainer BodyCell(IContainer c) =>
                 c.Border(1).Padding(6);
         }
+
+        /// True when a split (roll side or objector side) has any value.
+        /// Zero / "0" counts as empty. Used so that a multipurpose form on a
+        /// single property prints a single notice (no empty split blocks).
+        public static bool HasSplit(params string?[] values) =>
+            values.Any(v =>
+            {
+                var t = v?.Trim();
+                if (string.IsNullOrEmpty(t)) return false;
+                var digits = t.Replace("R", "", StringComparison.OrdinalIgnoreCase).Replace(",", "").Replace(" ", "");
+                return !(decimal.TryParse(digits, NumberStyles.Any, CultureInfo.InvariantCulture, out var n) && n == 0);
+            });
 
         private static string FormatMoney(string? raw)
         {

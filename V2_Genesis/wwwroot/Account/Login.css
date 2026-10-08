@@ -344,3 +344,178 @@ input::-webkit-textfield-decoration-container {
         min-height: 150px;
     }
 }
+/* ══════════════════════════════════════════════════════════════════
+   RESPONSIVE PASS  (small phones → big screens)
+   ══════════════════════════════════════════════════════════════════ */
+
+/* The gold glow stays inside the left panel (it pushed the page sideways). */
+.login-left {
+    position: relative;
+    overflow: hidden;
+}
+
+/* The card can't clip (reCAPTCHA must stay visible), so round the panels. */
+.login-left {
+    border-radius: 16px 0 0 16px;
+}
+
+.login-right {
+    border-radius: 0 16px 16px 0;
+}
+
+/* No empty error lines between the fields. */
+.login-right .f-err:empty {
+    display: none;
+}
+
+.login-brand-name {
+    line-height: 1.35;
+}
+
+/* Tablet & phone: the left panel becomes a short brand banner on top. */
+@media (max-width: 800px) {
+    .login-page {
+        align-items: flex-start;
+        padding: 24px 16px;
+    }
+
+    .login-wrap {
+        max-width: 560px;
+    }
+
+    .login-left {
+        display: flex;
+        gap: 14px;
+        padding: 24px 28px;
+        border-right: 0;
+        border-bottom: 3px solid #e6b000;
+        border-radius: 16px 16px 0 0;
+    }
+
+    .login-right {
+        border-radius: 0 0 16px 16px;
+    }
+
+    .login-desc,
+    .login-features,
+    .login-badge {
+        display: none;
+    }
+
+    .login-headline {
+        font-size: 24px;
+        margin: 0;
+    }
+
+        .login-headline br {
+            display: none;
+        }
+
+        .login-headline span {
+            margin-left: 6px;
+        }
+}
+
+@media (max-width: 480px) {
+    .login-page {
+        padding: 12px 10px 24px;
+    }
+
+    .login-wrap {
+        border-radius: 14px;
+    }
+
+    .login-left {
+        border-radius: 14px 14px 0 0;
+    }
+
+    .login-right {
+        border-radius: 0 0 14px 14px;
+    }
+
+    .login-left {
+        padding: 18px 18px;
+        gap: 10px;
+    }
+
+    .login-brand {
+        gap: 10px;
+    }
+
+    .login-brand-mark {
+        width: 48px;
+        height: 48px;
+        border-radius: 10px;
+    }
+
+    .login-brand-name {
+        font-size: 13px;
+        letter-spacing: 1px;
+    }
+
+    .login-headline {
+        font-size: 19px;
+    }
+
+    .login-right {
+        padding: 22px 16px;
+    }
+
+    .login-subtitle {
+        margin-bottom: 18px;
+    }
+
+    .login-pw-row {
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+
+    .recaptcha-wrap {
+        min-height: 0;
+        display: flex;
+        justify-content: center;
+    }
+}
+
+/* Very small phones (320px): reCAPTCHA compact is 164px wide — fits. */
+@media (max-width: 340px) {
+    .login-headline span {
+        display: block;
+        margin-left: 0;
+    }
+}
+
+/* Landscape phones / short screens: start at the top. */
+@media (max-height: 640px) and (min-width: 801px) {
+    .login-page {
+        align-items: flex-start;
+    }
+}
+
+/* Big screens */
+@media (min-width: 1600px) {
+    .login-wrap {
+        max-width: 1240px;
+    }
+
+    .login-left,
+    .login-right {
+        padding: 72px 64px;
+    }
+
+    .login-headline {
+        font-size: 44px;
+    }
+
+    .login-desc {
+        font-size: 15.5px;
+    }
+
+    .login-feat {
+        font-size: 15px;
+    }
+
+    .login-form-card {
+        max-width: 460px;
+    }
+}

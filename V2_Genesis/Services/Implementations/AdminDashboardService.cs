@@ -216,6 +216,20 @@ public class AdminDashboardService : IAdminDashboardService
                     (objection.objection_Status?.Trim() is "Obj-Lodging" or "Obj-Section51");
             }
 
+            // Appeal period (Objection_MVD) of every Notice-Sent objection —
+            // the admin team follows the same appeal period as clients.
+            try
+            {
+                await using var windowConn = GetConn(rollSource);
+                await V2_Genesis.Services.Objection.AppealDashboardData.PopulateAppealWindowsAsync(
+                    windowConn, objProps,
+                    V2_Genesis.Services.Objection.AppealDashboardData.MvdTable(_config));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "[AdminDashboard] Appeal periods could not be read for {Roll}", rollSource);
+            }
+
             var appealRows = await rollDb.Appeals
                 .AsNoTracking()
                 .OrderByDescending(x => x.AppealId)

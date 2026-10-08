@@ -265,27 +265,18 @@ public class NoticeController : Controller
         string unitKey,
         string valuationKey)
     {
-        var roll = await _db.GvList
-            .FirstOrDefaultAsync(r => r.Source == rollSource);
+        if (string.IsNullOrWhiteSpace(rollSource) ||
+            !await _db.GvList.AnyAsync(r => r.Source == rollSource))
+        {
+            return NotFound();
+        }
 
-        if (roll is null) return NotFound();
+        // Same content as the Section 49 PDF (NoticeService.GenerateSection49Pdf).
+        var model = await _notice.GetSection49ViewAsync(rollSource, unitKey, valuationKey);
 
-        var items = await _search.GetPropertyDetailsAsync(
-            rollSource, unitKey, valuationKey);
+        if (model is null) return NotFound("Property not found.");
 
-        if (!items.Any()) return NotFound("Property not found.");
-
-        // ── Pass dates to view ────────────────────────────────────────
-        var dates = _rollDates.For(rollSource);             // ← NEW
-
-        ViewData["RollSource"] = rollSource;
-        ViewData["UnitKey"] = unitKey;
-        ViewData["ValuationKey"] = valuationKey;
-        ViewBag.Roll = roll;
-        ViewBag.Dates = dates;            // ← NEW
-        ViewBag.GvList = await _db.GvList.OrderBy(r => r.ID).ToListAsync();
-
-        return View(items);
+        return View(model);
     }
 
     // ── GET /notice/section49/download — PDF download ────────────────

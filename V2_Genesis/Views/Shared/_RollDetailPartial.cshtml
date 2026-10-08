@@ -369,10 +369,11 @@
                                 <td>@item.Town_Name</td>
                                 <td>@DashboardDisplayHelpers.FormatZAR(item.Old_Market_Value)</td>
                                 <td>
-                                    @Html.Raw(DashboardDisplayHelpers.GetStatusPill(item.objection_Status, item.Evidence_Window_Open))
-                                    @if (item.Evidence_Expires_At.HasValue)
+                                    @Html.Raw(DashboardDisplayHelpers.GetStatusPill(item.objection_Status, item.Evidence_Expires_At.HasValue ? item.Evidence_Window_Open : (bool?)null))
+                                    @* Evidence date only while Obj-Lodging / App-Lodging (48-hour window open) *@
+                                    @if (item.Evidence_Window_Open && item.Evidence_Expires_At.HasValue)
                                     {
-                                        <small class="d-block mt-1 @(item.Evidence_Window_Open ? "text-success" : "text-muted")">
+                                        <small class="d-block mt-1 text-success">
                                             Evidence closes: @item.Evidence_Expires_At.Value.ToString("dd MMM yyyy HH:mm")
                                         </small>
                                     }
@@ -456,12 +457,6 @@
                                                           title="The 48-hour evidence window has closed">
                                                         <i class="fa-solid fa-lock"></i>
                                                         Evidence Window Closed
-                                                        @if (item.Evidence_Expires_At.HasValue)
-                                                        {
-                                                            <small class="d-block text-muted">
-                                                                Closed @item.Evidence_Expires_At.Value.ToString("dd MMM yyyy HH:mm")
-                                                            </small>
-                                                        }
                                                     </span>
                                                 </li>
                                             }
@@ -558,10 +553,11 @@
                                     <td>@item.Town_Name</td>
                                     <td>@DashboardDisplayHelpers.FormatZAR(item.Old_Market_Value)</td>
                                     <td>
-                                        @Html.Raw(DashboardDisplayHelpers.GetStatusPill(item.objection_Status, item.Evidence_Window_Open))
-                                        @if (item.Evidence_Expires_At.HasValue)
+                                        @Html.Raw(DashboardDisplayHelpers.GetStatusPill(item.objection_Status, item.Evidence_Expires_At.HasValue ? item.Evidence_Window_Open : (bool?)null))
+                                        @* Evidence date only while Obj-Lodging / App-Lodging (48-hour window open) *@
+                                    @if (item.Evidence_Window_Open && item.Evidence_Expires_At.HasValue)
                                         {
-                                            <small class="d-block mt-1 @(item.Evidence_Window_Open ? "text-success" : "text-muted")">
+                                            <small class="d-block mt-1 text-success">
                                                 Evidence closes: @item.Evidence_Expires_At.Value.ToString("dd MMM yyyy HH:mm")
                                             </small>
                                         }
@@ -629,12 +625,6 @@
                                                               title="The 48-hour evidence window has closed">
                                                             <i class="fa-solid fa-lock"></i>
                                                             Evidence Window Closed
-                                                            @if (item.Evidence_Expires_At.HasValue)
-                                                            {
-                                                                <small class="d-block text-muted">
-                                                                    Closed @item.Evidence_Expires_At.Value.ToString("dd MMM yyyy HH:mm")
-                                                                </small>
-                                                            }
                                                         </span>
                                                     </li>
                                                 }
@@ -851,12 +841,33 @@ else
                                         }
                                     </td>
                                     <td>
-                                        @Html.Raw(DashboardDisplayHelpers.GetStatusPill(item.objection_Status, item.Evidence_Window_Open))
-                                        @if (item.Evidence_Expires_At.HasValue)
+                                        @Html.Raw(DashboardDisplayHelpers.GetStatusPill(item.objection_Status, item.Evidence_Expires_At.HasValue ? item.Evidence_Window_Open : (bool?)null))
+                                        @* Evidence date only while Obj-Lodging / App-Lodging (48-hour window open) *@
+                                    @if (item.Evidence_Window_Open && item.Evidence_Expires_At.HasValue)
                                         {
-                                            <small class="d-block mt-1 @(item.Evidence_Window_Open ? "text-success" : "text-muted")">
+                                            <small class="d-block mt-1 text-success">
                                                 Evidence closes: @item.Evidence_Expires_At.Value.ToString("dd MMM yyyy HH:mm")
                                             </small>
+                                        }
+                                        @* Appeal period from Objection_MVD (Notice-Sent = Finalised) *@
+                                        @if (item.Appeal_Close_Date.HasValue && string.IsNullOrWhiteSpace(item.Lodged_Appeal_No))
+                                        {
+                                            if (item.Appeal_Window_State == "Open")
+                                            {
+                                                <small class="d-block mt-1 text-success">Appeal closes: @item.Appeal_Close_Date.Value.ToString("dd MMM yyyy") 15:00</small>
+                                            }
+                                            else if (item.Appeal_Window_State == "NotYetOpen" && item.Appeal_Start_Date.HasValue)
+                                            {
+                                                <small class="d-block mt-1 text-muted">Appeal opens: @item.Appeal_Start_Date.Value.ToString("dd MMM yyyy")</small>
+                                            }
+                                            else
+                                            {
+                                                <small class="d-block mt-1 text-muted">Appeal closed: @item.Appeal_Close_Date.Value.ToString("dd MMM yyyy")</small>
+                                            }
+                                        }
+                                        else if (!string.IsNullOrWhiteSpace(item.Lodged_Appeal_No))
+                                        {
+                                            <small class="d-block mt-1 text-muted">Appeal lodged: @item.Lodged_Appeal_No</small>
                                         }
                                     </td>
                                     <td>
@@ -899,21 +910,8 @@ else
                                                         <i class="fa-solid fa-download"></i> Download Acknowledgement
                                                     </a>
                                                 </li>
-                                                @if (DashboardNoticeStatusHelper.CanDownloadSection51(item.objection_Status, item.IsThirdParty))
-                                                {
-                                                    <li>
-                                                        <a class="dropdown-item"
-                                                               asp-controller="Notice"
-                                                               asp-action="DownloadAvailable"
-                                                               asp-route-referenceNo="@item.Objection_No"
-                                                               asp-route-type="Section51"
-                                                               asp-route-rollSource="@Model.Roll.Source"
-                                                               asp-route-returnUrl="@rollReturnUrl">
-                                                            <i class="fa-solid fa-users"></i>
-                                                            Download Section 51 Notice
-                                                        </a>
-                                                    </li>
-                                                }
+                                                @* No Section 51 download on the client dashboard: the Section 51 notice
+                                                   is the owner's document, never shown to the Third-Party objector. *@
                                                 @* Section 49 is for the owner only: hidden for a Third-Party objection. *@
                                                 @if (!objectionIsLis && !objectionIsOmission && !item.IsThirdParty)
 {
@@ -950,12 +948,6 @@ else
                                                               title="The 48-hour evidence window has closed">
                                                             <i class="fa-solid fa-lock"></i>
                                                             Evidence Window Closed
-                                                            @if (item.Evidence_Expires_At.HasValue)
-                                                            {
-                                                                <small class="d-block text-muted">
-                                                                    Closed @item.Evidence_Expires_At.Value.ToString("dd MMM yyyy HH:mm")
-                                                                </small>
-                                                            }
                                                         </span>
                                                     </li>
                                                 }
@@ -1010,22 +1002,22 @@ else
                                                         </a>
                                                     </li>
                                                 }
-                                                @{
-                                                    var appealWindow = await ObjectionRules.CheckAppealWindowAsync(
-                                                        rollSource: Model.Roll.Source,
-                                                        objectionNo: item.Objection_No,
-                                                        unitKey: item.Unit_key,
-                                                        valuationKey: item.Valuation_Key,
-                                                        propertyDesc: item.Property_Desc);
-
-                                                    var canLodgeAppealForItem =
-                                                        DashboardNoticeStatusHelper.Is(item.objection_Status, "Notice-Sent") &&
-                                                        appealWindow.IsOpen;
-                                                }
-
-                                                @if (canLodgeAppealForItem)
+                                                @* Appeal: only after the MVD notice (Notice-Sent) and only inside the
+                                                   appeal period from Objection_MVD — the same for clients and admin. *@
+                                                @if (DashboardNoticeStatusHelper.Is(item.objection_Status, "Notice-Sent"))
                                                 {
-                                                    <li>
+                                                    if (!string.IsNullOrWhiteSpace(item.Lodged_Appeal_No))
+                                                    {
+                                                        <li>
+                                                            <span class="dropdown-item disabled" aria-disabled="true">
+                                                                <i class="fa-solid fa-gavel"></i> Appeal lodged
+                                                                <small class="d-block text-muted">@item.Lodged_Appeal_No</small>
+                                                            </span>
+                                                        </li>
+                                                    }
+                                                    else if (item.IsAppealWindowOpen)
+                                                    {
+                                                        <li>
                                                      <a class="dropdown-item"
    href="@Url.Action(
        "CheckProperty",
@@ -1045,8 +1037,28 @@ else
 
     <i class="fa-solid fa-gavel"></i>
     Lodge Appeal
+    <small class="d-block text-muted">Closes @item.Appeal_Close_Date?.ToString("dd MMM yyyy") at 15:00</small>
 </a>
-                                                    </li>
+                                                        </li>
+                                                    }
+                                                    else if (item.Appeal_Window_State == "NotYetOpen" && item.Appeal_Start_Date.HasValue)
+                                                    {
+                                                        <li>
+                                                            <span class="dropdown-item disabled" aria-disabled="true">
+                                                                <i class="fa-solid fa-lock"></i> Appeal not open yet
+                                                                <small class="d-block text-muted">Opens @item.Appeal_Start_Date.Value.ToString("dd MMM yyyy")</small>
+                                                            </span>
+                                                        </li>
+                                                    }
+                                                    else if (item.Appeal_Close_Date.HasValue)
+                                                    {
+                                                        <li>
+                                                            <span class="dropdown-item disabled" aria-disabled="true">
+                                                                <i class="fa-solid fa-lock"></i> Appeal period closed
+                                                                <small class="d-block text-muted">Closed @item.Appeal_Close_Date.Value.ToString("dd MMM yyyy") at 15:00</small>
+                                                            </span>
+                                                        </li>
+                                                    }
                                                 }
                                                 @if (item.objection_Status is "Obj-Lodging" or "Obj-Unallocated" or "Obj-Pending" or "Obj-Section51")
                                                 {
@@ -1075,7 +1087,7 @@ else
     }
 
     @* ── My Appeals ─────────────────────────────────── *@
-    @if (Model.Roll.HasAppeal)
+    @if (Model.Roll.HasAppeal || Model.Data.ObjectedProperties.Any(x => x.Sub_typ == 1))
     {
         var appeals = Model.Data.ObjectedProperties.Where(x => x.Sub_typ == 1).ToList();
         <div class="cd-widget">
@@ -1111,10 +1123,11 @@ else
                                     <td>@item.Old_Category</td>
                                     <td>@DashboardDisplayHelpers.FormatZAR(item.Old_Market_Value)</td>
                                     <td>
-                                        @Html.Raw(DashboardDisplayHelpers.GetStatusPill(item.objection_Status, item.Evidence_Window_Open))
-                                        @if (item.Evidence_Expires_At.HasValue)
+                                        @Html.Raw(DashboardDisplayHelpers.GetStatusPill(item.objection_Status, item.Evidence_Expires_At.HasValue ? item.Evidence_Window_Open : (bool?)null))
+                                        @* Evidence date only while Obj-Lodging / App-Lodging (48-hour window open) *@
+                                    @if (item.Evidence_Window_Open && item.Evidence_Expires_At.HasValue)
                                         {
-                                            <small class="d-block mt-1 @(item.Evidence_Window_Open ? "text-success" : "text-muted")">
+                                            <small class="d-block mt-1 text-success">
                                                 Evidence closes: @item.Evidence_Expires_At.Value.ToString("dd MMM yyyy HH:mm")
                                             </small>
                                         }
@@ -1189,12 +1202,6 @@ else
                                                               title="The 48-hour evidence window has closed">
                                                             <i class="fa-solid fa-lock"></i>
                                                             Evidence Window Closed
-                                                            @if (item.Evidence_Expires_At.HasValue)
-                                                            {
-                                                                <small class="d-block text-muted">
-                                                                    Closed @item.Evidence_Expires_At.Value.ToString("dd MMM yyyy HH:mm")
-                                                                </small>
-                                                            }
                                                         </span>
                                                     </li>
                                                 }
