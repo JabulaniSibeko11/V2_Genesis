@@ -1,9 +1,13 @@
 ﻿using System.Net;
+using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using V2_Genesis.Data;
+using V2_Genesis.Helpers;
 using V2_Genesis.Models.Attributes;
 using V2_Genesis.Models.Configuration;
 using V2_Genesis.Models.ViewModels.Attributes;
@@ -17,6 +21,15 @@ namespace V2_Genesis.Controllers;
 public sealed class AttributeInspectionLinkController : Controller
 {
     private const int OnlineBookingMonthCount = 3;
+
+    // ── Protecting the valuer ───────────────────────────────────────
+    // Anyone with the e-mail link can choose an appointment date, but the
+    // valuer's personal details (name, cell, e-mail, vehicle, photo) are
+    // only released to the signed-in client who owns the submission, after
+    // the inspection PIN, and only inside the PIN validity window.
+    // After MaxPinAttempts wrong PINs the details stay locked until
+    // Valuation Administration resets PinFailedAttempts.
+    private const int MaxPinAttempts = 5;
     private const string AdministrationAssistanceEmail =
         "AdministrationEnquiries@Joburg.org.za";
 
@@ -55,22 +68,9 @@ public sealed class AttributeInspectionLinkController : Controller
         if (model == null)
             return View("Invalid");
 
-        if (string.Equals(
-                view,
-                "valuer",
-                StringComparison.OrdinalIgnoreCase) &&
-            !model.IsExpired)
+        if (model.ValuerAccess == "Visible")
         {
-            if (model.RequiresPinVerification)
-            {
-                model.Message =
-                    "Enter the inspection PIN from the City email to view the authorised valuer and vehicle details.";
-            }
-            else if (!model.ValuerDetailsReleased)
-            {
-                model.Message =
-                    "The appointment is confirmed. The authorised valuer details will appear here as soon as the valuer releases them.";
-            }
+            await AuditValuerViewAsync(token);
         }
 
         return View(model);
@@ -639,12 +639,29 @@ Please contact the client and assist with arranging a suitable inspection appoin
         if (property == null)
             return View("Invalid");
 
+        IActionResult BackToValuer() =>
+            RedirectToAction(nameof(Index), new { token, view = "valuer" });
+
+        // 1. Only the signed-in owner of the submission may unlock the valuer.
+        var userId = CurrentUserId();
+        if (userId == null)
+            return Redirect(LoginUrlFor(token));
+
+        if (!IsOwner(property, userId))
+        {
+            _logger.LogWarning(
+                "Inspection PIN attempt by a user who does not own the submission. Request {InspectionRequestId}, user {UserId}.",
+                request.Id, userId);
+
+            TempData["InspectionPinError"] =
+                "This inspection belongs to a different account. Sign in with the account that submitted the property attributes.";
+            return BackToValuer();
+        }
+
         if (request.EmailTokenExpiresAt.HasValue &&
             request.EmailTokenExpiresAt.Value < DateTime.Now)
         {
-            return RedirectToAction(
-                nameof(Index),
-                new { token, view = "valuer" });
+            return BackToValuer();
         }
 
         if (!request.ValuerDetailsSent ||
@@ -652,23 +669,26 @@ Please contact the client and assist with arranging a suitable inspection appoin
         {
             TempData["InspectionPinError"] =
                 "The authorised valuer details have not been released yet.";
+            return BackToValuer();
+        }
 
-            return RedirectToAction(
-                nameof(Index),
-                new { token, view = "valuer" });
+        // 2. Locked after too many wrong PINs.
+        if (request.PinFailedAttempts >= MaxPinAttempts)
+        {
+            TempData["InspectionPinError"] =
+                $"The PIN is locked after {MaxPinAttempts} incorrect attempts. Please contact Valuation Administration ({AdministrationAssistanceEmail}).";
+            return BackToValuer();
         }
 
         var now = DateTime.Now;
 
+        // 3. Only inside the PIN validity window.
         if (request.PinValidFrom.HasValue &&
             now < request.PinValidFrom.Value)
         {
             TempData["InspectionPinError"] =
                 $"The inspection PIN will be valid from {request.PinValidFrom.Value:dd MMM yyyy HH:mm}.";
-
-            return RedirectToAction(
-                nameof(Index),
-                new { token, view = "valuer" });
+            return BackToValuer();
         }
 
         if (request.PinValidUntil.HasValue &&
@@ -676,66 +696,79 @@ Please contact the client and assist with arranging a suitable inspection appoin
         {
             TempData["InspectionPinError"] =
                 "The inspection PIN has expired. Please contact Valuation Administration.";
-
-            return RedirectToAction(
-                nameof(Index),
-                new { token, view = "valuer" });
+            return BackToValuer();
         }
 
-        var suppliedPin =
-            (inspectionPin ?? string.Empty).Trim();
+        var suppliedPin = (inspectionPin ?? string.Empty).Trim();
+        var expectedPin = (request.InspectionPin ?? string.Empty).Trim();
 
-        var expectedPin =
-            (request.InspectionPin ?? string.Empty).Trim();
-
-        if (!string.Equals(
-                suppliedPin,
-                expectedPin,
-                StringComparison.OrdinalIgnoreCase))
+        if (!PinMatches(suppliedPin, expectedPin))
         {
             request.PinFailedAttempts += 1;
-            request.UpdatedBy =
-                request.ClientEmail ??
-                "GenesisSecureEmailLink";
+            request.UpdatedBy = request.ClientEmail ?? "GenesisSecureEmailLink";
             request.UpdatedDate = now;
+
+            var left = Math.Max(0, MaxPinAttempts - request.PinFailedAttempts);
+
+            if (left == 0)
+            {
+                _db.AttrPropertyInfoAuditTrail.Add(new AttrPropertyInfoAuditTrail
+                {
+                    Attr_ID = property.Attr_ID,
+                    Attr_No = property.Attr_No,
+                    Action = "Inspection PIN Locked",
+                    OldStatus = property.Attr_Status,
+                    NewStatus = property.Attr_Status,
+                    ActionByUserId = userId,
+                    ActionByName = request.ClientName ?? "Client",
+                    ActionRole = "Client - Secure Email Link",
+                    Comment = $"Inspection PIN locked after {MaxPinAttempts} incorrect attempts. IP {HttpContext.Connection.RemoteIpAddress}.",
+                    ActionDateTime = now
+                });
+            }
 
             await _db.SaveChangesAsync();
 
-            TempData["InspectionPinError"] =
-                "The inspection PIN is incorrect. Please use the PIN from the City email.";
+            TempData["InspectionPinError"] = left == 0
+                ? $"The PIN is now locked after {MaxPinAttempts} incorrect attempts. Please contact Valuation Administration ({AdministrationAssistanceEmail})."
+                : $"The inspection PIN is incorrect. {left} attempt{(left == 1 ? "" : "s")} left.";
 
-            return RedirectToAction(
-                nameof(Index),
-                new { token, view = "valuer" });
+            return BackToValuer();
         }
 
+        request.PinFailedAttempts = 0;
         request.PinVerifiedAt = now;
-        request.PinVerifiedByEmail =
-            request.ClientEmail;
+        request.PinVerifiedByEmail = request.ClientEmail;
         request.PinUsedAt = now;
-        request.PinUsedByEmail =
-            request.ClientEmail;
-        request.PinUsedIpAddress =
-            HttpContext.Connection.RemoteIpAddress?.ToString();
-        request.PinUsedUserAgent =
-            Request.Headers.UserAgent.ToString();
-        request.UpdatedBy =
-            request.ClientEmail ??
-            "GenesisSecureEmailLink";
+        request.PinUsedByEmail = request.ClientEmail;
+        request.PinUsedIpAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+        request.PinUsedUserAgent = Request.Headers.UserAgent.ToString();
+        request.UpdatedBy = request.ClientEmail ?? "GenesisSecureEmailLink";
         request.UpdatedDate = now;
+
+        _db.AttrPropertyInfoAuditTrail.Add(new AttrPropertyInfoAuditTrail
+        {
+            Attr_ID = property.Attr_ID,
+            Attr_No = property.Attr_No,
+            Action = "Inspection PIN Verified",
+            OldStatus = property.Attr_Status,
+            NewStatus = property.Attr_Status,
+            ActionByUserId = userId,
+            ActionByName = request.ClientName ?? "Client",
+            ActionRole = "Client - Secure Email Link",
+            Comment = $"Valuer details unlocked with the inspection PIN. IP {request.PinUsedIpAddress}.",
+            ActionDateTime = now
+        });
 
         await _db.SaveChangesAsync();
 
-        HttpContext.Session.SetString(
-            PinSessionKey(token),
-            "1");
+        // The unlock belongs to this browser session AND this user.
+        HttpContext.Session.SetString(PinSessionKey(token), userId);
 
         TempData["InspectionLinkSuccess"] =
-            "PIN verified. You can now view the authorised valuer details.";
+            "PIN verified. The authorised valuer details are shown below.";
 
-        return RedirectToAction(
-            nameof(Index),
-            new { token, view = "valuer" });
+        return BackToValuer();
     }
 
     [HttpGet("{token:guid}/valuer-photo")]
@@ -743,57 +776,38 @@ Please contact the client and assist with arranging a suitable inspection appoin
     {
         ApplySecureLinkHeaders();
 
-        var context =
-            await ResolveSecureRequestAsync(token);
+        var context = await ResolveSecureRequestAsync(token);
+        if (context == null)
+            return NotFound();
 
-        if (context == null ||
-            !context.Value.Request.ValuerDetailsSent ||
-            !IsPinSessionVerified(token))
+        var (request, property) = context.Value;
+
+        if (ValuerAccessFor(request, property, token, DateTime.Now) != "Visible" ||
+            string.IsNullOrWhiteSpace(request.ValuerSapNumber))
         {
             return NotFound();
         }
 
-        var request = context.Value.Request;
-
-        if (string.IsNullOrWhiteSpace(
-                request.ValuerSapNumber))
-        {
-            return NotFound();
-        }
-
-        var valuer =
-            await _db.AttrValuerInspectionDetails
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x =>
-                    x.SapNumber ==
-                        request.ValuerSapNumber &&
-                    x.IsActive);
+        var valuer = await _db.AttrValuerInspectionDetails
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x =>
+                x.SapNumber == request.ValuerSapNumber &&
+                x.IsActive);
 
         if (valuer == null)
             return NotFound();
 
         var path = ResolvePhotoPath(valuer);
-
-        if (path == null ||
-            !System.IO.File.Exists(path))
+        if (path == null)
         {
+            _logger.LogWarning(
+                "Valuer photo not found for SAP {SapNumber}. PhotoPath={PhotoPath}, PhotoFileName={PhotoFileName}, Root={Root}",
+                valuer.SapNumber, valuer.PhotoPath, valuer.PhotoFileName, _photoSettings.RootFolder);
             return NotFound();
         }
 
-        var ext =
-            Path.GetExtension(path)
-                .ToLowerInvariant();
-
-        var contentType = ext switch
-        {
-            ".png" => "image/png",
-            ".jpg" or ".jpeg" => "image/jpeg",
-            _ => "application/octet-stream"
-        };
-
-        return PhysicalFile(
-            path,
-            contentType);
+        Response.Headers.ContentDisposition = "inline";
+        return PhysicalFile(path, ValuerPhotoResolver.ContentType(path));
     }
 
     private async Task<PublicInspectionLinkVm?>
@@ -894,18 +908,22 @@ Please contact the client and assist with arranging a suitable inspection appoin
                     .ToListAsync();
         }
 
-        var pinVerified =
-            IsPinSessionVerified(token);
+        var userId = CurrentUserId();
+        var isOwner = userId != null && IsOwner(property, userId);
+        var pinVerified = IsPinSessionVerified(token);
 
         var valuerDetailsReleased =
             request.ValuerDetailsSent &&
             !string.IsNullOrWhiteSpace(
                 request.InspectionPin);
 
+        var valuerAccess = expired
+            ? "Hidden"
+            : ValuerAccessFor(request, property, token, now);
+
         PublicValuerDetailsVm? valuerVm = null;
 
-        if (valuerDetailsReleased &&
-            pinVerified &&
+        if (valuerAccess == "Visible" &&
             !string.IsNullOrWhiteSpace(
                 request.ValuerSapNumber))
         {
@@ -935,12 +953,16 @@ Please contact the client and assist with arranging a suitable inspection appoin
                         VehicleColour =
                             valuer.VehicleColour,
                         HasPhoto =
-                            ResolvePhotoPath(valuer)
-                                is string p &&
-                            System.IO.File.Exists(p)
+                            ResolvePhotoPath(valuer) != null
                     };
             }
         }
+
+        var viewer =
+            User.FindFirstValue(ClaimTypes.Email) ??
+            User.FindFirstValue(ClaimTypes.Name) ??
+            request.ClientEmail ??
+            "Client";
 
         return new PublicInspectionLinkVm
         {
@@ -1003,16 +1025,27 @@ Please contact the client and assist with arranging a suitable inspection appoin
             PinVerified =
                 pinVerified,
             RequiresPinVerification =
-                !expired &&
-                valuerDetailsReleased &&
-                !pinVerified,
+                valuerAccess == "Pin",
+            IsSignedIn =
+                userId != null,
+            IsOwner =
+                isOwner,
+            PinLocked =
+                valuerAccess == "Locked",
+            PinAttemptsLeft =
+                Math.Max(0, MaxPinAttempts - request.PinFailedAttempts),
+            ValuerAccess =
+                valuerAccess,
+            LoginUrl =
+                LoginUrlFor(token),
+            WatermarkText =
+                $"CONFIDENTIAL · {request.Attr_No ?? property.Attr_No} · {viewer} · {now:dd MMM yyyy HH:mm}",
             PinValidFrom =
                 request.PinValidFrom,
             PinValidUntil =
                 request.PinValidUntil,
             ValuerDetailsAvailable =
-                !expired &&
-                pinVerified &&
+                valuerAccess == "Visible" &&
                 valuerVm != null,
             Slots = slots,
             Valuer = valuerVm
@@ -1155,59 +1188,137 @@ Please contact the client and assist with arranging a suitable inspection appoin
     private static string PinSessionKey(Guid token) =>
         $"attribute-inspection-pin:{token:D}";
 
-    private bool IsPinSessionVerified(Guid token) =>
-        string.Equals(
-            HttpContext.Session.GetString(
-                PinSessionKey(token)),
-            "1",
-            StringComparison.Ordinal);
+    // The PIN unlock is kept in the session together with the user id: a
+    // different user signing in on the same browser does not inherit it.
+    private bool IsPinSessionVerified(Guid token)
+    {
+        var userId = CurrentUserId();
+        return userId != null &&
+               string.Equals(
+                   HttpContext.Session.GetString(PinSessionKey(token)),
+                   userId,
+                   StringComparison.Ordinal);
+    }
+
+    private string? CurrentUserId()
+    {
+        if (User.Identity?.IsAuthenticated != true)
+            return null;
+
+        var id = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        return string.IsNullOrWhiteSpace(id) ? null : id;
+    }
+
+    private static bool IsOwner(AttrPropertyInfo property, string userId) =>
+        !string.IsNullOrWhiteSpace(property.SubmittedByUserId) &&
+        string.Equals(property.SubmittedByUserId.Trim(), userId.Trim(), StringComparison.OrdinalIgnoreCase);
+
+    private static bool PinMatches(string supplied, string expected)
+    {
+        if (supplied.Length == 0 || expected.Length == 0)
+            return false;
+
+        return CryptographicOperations.FixedTimeEquals(
+            Encoding.UTF8.GetBytes(supplied.ToUpperInvariant()),
+            Encoding.UTF8.GetBytes(expected.ToUpperInvariant()));
+    }
+
+    private string LoginUrlFor(Guid token)
+    {
+        var back = Url.Action(nameof(Index), new { token, view = "valuer" })
+                   ?? $"/attributes/inspection/{token:D}?view=valuer";
+        return "/login?returnUrl=" + Uri.EscapeDataString(back);
+    }
+
+    /// <summary>
+    /// What the visitor may see of the valuer:
+    ///   NotReleased  details not released by the valuer yet
+    ///   SignIn       not signed in
+    ///   NotOwner     signed in with another account
+    ///   Locked       too many wrong PINs
+    ///   NotYetValid  before PinValidFrom
+    ///   Ended        after PinValidUntil
+    ///   Pin          PIN still to be entered
+    ///   Visible      show the valuer
+    /// </summary>
+    private string ValuerAccessFor(
+        AttrInspectionRequest request,
+        AttrPropertyInfo property,
+        Guid token,
+        DateTime now)
+    {
+        if (request.EmailTokenExpiresAt.HasValue &&
+            request.EmailTokenExpiresAt.Value < now)
+            return "Hidden";
+
+        if (!request.ValuerDetailsSent ||
+            string.IsNullOrWhiteSpace(request.InspectionPin))
+            return "NotReleased";
+
+        var userId = CurrentUserId();
+        if (userId == null)
+            return "SignIn";
+
+        if (!IsOwner(property, userId))
+            return "NotOwner";
+
+        if (request.PinFailedAttempts >= MaxPinAttempts)
+            return "Locked";
+
+        if (request.PinValidFrom.HasValue && now < request.PinValidFrom.Value)
+            return "NotYetValid";
+
+        if (request.PinValidUntil.HasValue && now > request.PinValidUntil.Value)
+            return "Ended";
+
+        return IsPinSessionVerified(token) ? "Visible" : "Pin";
+    }
+
+    private async Task AuditValuerViewAsync(Guid token)
+    {
+        // Recorded once per browser session (not on every month change).
+        var key = PinSessionKey(token) + ":viewed";
+        if (HttpContext.Session.GetString(key) == "1")
+            return;
+
+        try
+        {
+            var context = await ResolveSecureRequestAsync(token);
+            if (context == null)
+                return;
+
+            var (request, property) = context.Value;
+            HttpContext.Session.SetString(key, "1");
+
+            _db.AttrPropertyInfoAuditTrail.Add(new AttrPropertyInfoAuditTrail
+            {
+                Attr_ID = property.Attr_ID,
+                Attr_No = property.Attr_No,
+                Action = "Valuer Details Viewed",
+                OldStatus = property.Attr_Status,
+                NewStatus = property.Attr_Status,
+                ActionByUserId = CurrentUserId() ?? "Client",
+                ActionByName = request.ClientName ?? "Client",
+                ActionRole = "Client - Secure Email Link",
+                Comment = $"Authorised valuer details displayed. IP {HttpContext.Connection.RemoteIpAddress}.",
+                ActionDateTime = DateTime.Now
+            });
+
+            await _db.SaveChangesAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Could not record the valuer-details view for link {Token}.", token);
+        }
+    }
 
     private string? ResolvePhotoPath(
-        AttrValuerInspectionDetail valuer)
-    {
-        var root =
-            Path.GetFullPath(
-                _photoSettings.RootFolder ??
-                @"C:\AIVS\ValuerInspectionPhotos");
-
-        string? candidate = null;
-
-        if (!string.IsNullOrWhiteSpace(
-                valuer.PhotoPath))
-        {
-            candidate =
-                Path.IsPathRooted(
-                    valuer.PhotoPath)
-                    ? valuer.PhotoPath
-                    : Path.Combine(
-                        root,
-                        valuer.PhotoPath);
-        }
-        else if (!string.IsNullOrWhiteSpace(
-                     valuer.PhotoFileName))
-        {
-            candidate =
-                Path.Combine(
-                    root,
-                    Path.GetFileName(
-                        valuer.PhotoFileName));
-        }
-
-        if (string.IsNullOrWhiteSpace(candidate))
-            return null;
-
-        var full =
-            Path.GetFullPath(candidate);
-
-        if (!full.StartsWith(
-                root,
-                StringComparison.OrdinalIgnoreCase))
-        {
-            return null;
-        }
-
-        return full;
-    }
+        AttrValuerInspectionDetail valuer) =>
+        ValuerPhotoResolver.Resolve(
+            valuer.PhotoPath,
+            valuer.PhotoFileName,
+            valuer.SapNumber,
+            _photoSettings);
 
     private void ApplySecureLinkHeaders()
     {

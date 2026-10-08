@@ -1,7 +1,20 @@
-@model V2_Genesis.Models.ViewModels.Attributes.PublicInspectionLinkVm
+﻿@model V2_Genesis.Models.ViewModels.Attributes.PublicInspectionLinkVm
+@*
+    Secure attribute inspection page  (/attributes/inspection/{token})
+    Opened from the City e-mail or from Dashboard → Attributes → Enter PIN.
+
+    • Anyone with the link can choose an inspection date.
+    • The authorised valuer (name, phone, e-mail, vehicle, photo) is shown
+      ONLY to the signed-in client who owns the submission, after the PIN,
+      inside the PIN validity window (AttributeInspectionLinkController).
+    • The valuer card is watermarked with the viewer's e-mail and the time,
+      cannot be selected / copied / printed, and is hidden when the page
+      is not in front or after 3 minutes.
+    Styles: ~/css/Views/inspection-link.css
+*@
 @{
     ViewData["Title"] = "Attribute Inspection";
-    Layout = null;
+    Layout = "~/Views/Shared/_Legend_Layout.cshtml";
 
     var instanceKey = Model.InspectionRequestId.ToString();
 
@@ -32,163 +45,111 @@
             x => x.Key,
             x => x.OrderBy(s => s.ProposedDateTime).ToList());
 
-    var clientStatus = (Model.Status ?? string.Empty).Trim() switch
+    var rawStatus = (Model.Status ?? string.Empty).Trim();
+
+    var clientStatus = rawStatus switch
     {
-        "PendingClientResponse" => "Awaiting Appointment Selection",
-        "Confirmed" => "Appointment Confirmed",
-        "InspectionConfirmed" => "Appointment Confirmed",
-        "InspectionDetailsSent" => "Valuer Details Available",
-        "InspectionCompleted" => "Inspection Completed",
-        _ => "Inspection In Progress"
+        "PendingClientResponse" => "Choose a date",
+        "Confirmed" => "Appointment confirmed",
+        "InspectionConfirmed" => "Appointment confirmed",
+        "InspectionDetailsSent" => "Valuer details released",
+        "InspectionCompleted" => "Inspection completed",
+        _ => "In progress"
     };
 
-    var statusClass = (Model.Status ?? string.Empty).Trim() switch
+    var statusClass = rawStatus switch
     {
-        "PendingClientResponse" => "status-waiting",
-        "Confirmed" => "status-confirmed",
-        "InspectionConfirmed" => "status-confirmed",
-        "InspectionDetailsSent" => "status-ready",
-        "InspectionCompleted" => "status-complete",
-        _ => "status-neutral"
+        "PendingClientResponse" => "waiting",
+        "InspectionCompleted" => "done",
+        _ => ""
     };
+
+    var completed = rawStatus == "InspectionCompleted";
+    var step1Done = Model.ConfirmedDateTime.HasValue;
+    var step2Done = Model.ValuerDetailsReleased || completed;
+
+    var pinError = TempData["InspectionPinError"]?.ToString();
+    var askedForValuer = string.Equals(
+        Context.Request.Query["view"].ToString(), "valuer", StringComparison.OrdinalIgnoreCase);
+
+    // Watermark tile for the valuer card (viewer + reference + time).
+    var wm = System.Net.WebUtility.HtmlEncode(Model.WatermarkText ?? "CONFIDENTIAL");
+    var wmSvg =
+        "<svg xmlns='http://www.w3.org/2000/svg' width='600' height='230'>" +
+        "<text x='20' y='130' transform='rotate(-20 300 115)' font-family='Arial' font-size='15' font-weight='700' fill='%23003a40'>" +
+        wm + "</text></svg>";
+    var wmUrl = "data:image/svg+xml;utf8," + Uri.EscapeDataString(wmSvg).Replace("%2523", "%23");
 }
-<!doctype html>
-<html lang="en">
-<head>
-    <meta charset="utf-8" />
 
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1, viewport-fit=cover" />
-
+@section Styles {
     <meta name="referrer" content="no-referrer" />
     <meta name="robots" content="noindex,nofollow,noarchive,nosnippet" />
+    <link href="~/css/Views/inspection-link.css" rel="stylesheet" asp-append-version="true" />
+}
 
-    <link rel="icon" type="image/png" sizes="32x32" href="~/images/favicon-32x32.png" />
-    <link rel="icon" type="image/png" sizes="16x16" href="~/images/favicon-16x16.png" />
+<div class="ail">
 
-    <title>City of Johannesburg - Attribute Inspection</title>
+    <header class="ail-hero">
+        <div class="ail-wrap ail-hero-inner">
+            <div class="ail-hero-left">
+                <div class="ail-hero-icon"><i class="fa-solid fa-house-circle-check"></i></div>
+                <div>
+                    <div class="ail-eyebrow">City of Johannesburg · Valuation Services</div>
+                    <h1>Property Attribute <span>Inspection</span></h1>
+                    <p class="ail-hero-sub">Secure appointment page for your physical inspection.</p>
+                </div>
+            </div>
+            <div class="ail-hero-right">
+                <span class="ail-chip"><i class="fa-solid fa-hashtag"></i>@Model.AttrNo</span>
+                <span class="ail-chip gold"><i class="fa-solid fa-circle-dot"></i>@clientStatus</span>
+            </div>
+        </div>
+    </header>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap"
-          rel="stylesheet" />
+    <main class="ail-wrap">
 
-    <link rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
-
-    <link href="~/css/views/calendar-css.css"
-          rel="stylesheet"
-          asp-append-version="true" />
-
-    <link href="~/css/views/calendar-link-css.css"
-          rel="stylesheet"
-          asp-append-version="true" />
-
-    <link href="~/css/views/Pin-Entry.css"
-          rel="stylesheet"
-          asp-append-version="true" />
-
-    <link rel="stylesheet"
-          href="~/css/site.css"
-          asp-append-version="true" />
-
-  
-</head>
-
-<body>
-    <div class="top">
-        <strong>City of Johannesburg</strong><br />
-        Valuation Services - Property Attributes
-    </div>
-
-    <main class="wrap">
         @if (TempData["InspectionLinkSuccess"] != null)
         {
-            <div class="successx" role="status">
-                @TempData["InspectionLinkSuccess"]
+            <div class="ail-alert ok" role="status">
+                <i class="fa-solid fa-circle-check"></i>
+                <div>@TempData["InspectionLinkSuccess"]</div>
             </div>
         }
 
         @if (!string.IsNullOrWhiteSpace(Model.Message))
         {
-            <div class="notice" role="status">
-                @Model.Message
+            <div class="ail-alert info" role="status">
+                <i class="fa-solid fa-circle-info"></i>
+                <div>@Model.Message</div>
             </div>
         }
 
         @if (Model.IsExpired)
         {
-            <div class="errorx" role="alert">
-                <strong>This secure link has expired.</strong>
-                Please contact Valuation Administration if assistance is required.
+            <div class="ail-alert bad" role="alert">
+                <i class="fa-solid fa-link-slash"></i>
+                <div>
+                    <strong>This secure link has expired.</strong>
+                    Please contact Valuation Administration at AdministrationEnquiries@joburg.org.za if you need help.
+                </div>
             </div>
         }
 
-        <section class="cardx" aria-labelledby="inspection-heading">
-            <div class="headx">
-                <h1 id="inspection-heading">Physical Inspection</h1>
+        <div class="ail-grid">
 
-                <div class="muted">
-                    Secure City of Johannesburg Valuation Administration appointment link.
-                </div>
-            </div>
-
-            <div class="bodyx">
-                <div class="gridx">
-                    <div class="fieldx">
-                        <span>Reference</span>
-                        <strong>@Model.AttrNo</strong>
-                    </div>
-
-                    <div class="fieldx">
-                        <span>Status</span>
-                        <strong class="client-status @statusClass">
-                            @clientStatus
-                        </strong>
-                    </div>
-
-                    <div class="fieldx">
-                        <span>Property</span>
-                        <strong>@Model.PropertyDescription</strong>
-                    </div>
-                </div>
-
-                <div class="secure-note">
-                    <span class="secure-badge" aria-hidden="true">✓</span>
-
-                    <div>
-                        <strong>Security notice</strong><br />
-                        This link is unique to this inspection request.
-                        Do not forward or share it. Valuer personal details are
-                        not displayed until the authorised PIN stage.
-                    </div>
-                </div>
-
-                @if (Model.ConfirmedDateTime.HasValue)
-                {
-                    <div class="successx calendar-top-gap" role="status">
-                        <strong>Inspection appointment confirmed</strong><br />
-                        @Model.ConfirmedDateTime.Value.ToString(
-                            "dddd, dd MMMM yyyy 'at' HH:mm")
-                    </div>
-                }
-            </div>
-        </section>
-
+            <div class="ail-main">
         @if (Model.CanSelectDate)
         {
-            <section class="cardx" aria-labelledby="calendar-heading">
-                <div class="headx">
-                    <h1 id="calendar-heading">
-                        Select Inspection Date &amp; Time
-                    </h1>
-
-                    <div class="muted">
-                        On a phone, select a date first and then choose the time.
+            <section class="ail-card" aria-labelledby="calendar-heading">
+                <div class="ail-card-head">
+                    <div class="ico"><i class="fa-solid fa-calendar-days"></i></div>
+                    <div>
+                        <h2 id="calendar-heading">Choose your inspection date &amp; time</h2>
+                        <p>On a phone, tap a date first and then choose the time.</p>
                     </div>
                 </div>
 
-                <div class="bodyx">
+                <div class="ail-card-body">
                     <div class="month-nav"
                          aria-label="Inspection calendar month navigation">
 
@@ -202,13 +163,13 @@
                                    asp-route-token="@Model.Token"
                                    asp-route-year="@Model.PreviousMonth.Value.Year"
                                    asp-route-month="@Model.PreviousMonth.Value.Month">
-                                    ← Previous
+                                    <i class="fa-solid fa-chevron-left"></i> Previous
                                 </a>
                             }
                             else
                             {
                                 <span class="month-nav-btn disabled">
-                                    ← Previous
+                                    <i class="fa-solid fa-chevron-left"></i> Previous
                                 </span>
                             }
                         </div>
@@ -227,13 +188,13 @@
                                    asp-route-token="@Model.Token"
                                    asp-route-year="@Model.NextMonth.Value.Year"
                                    asp-route-month="@Model.NextMonth.Value.Month">
-                                    Next →
+                                    Next <i class="fa-solid fa-chevron-right"></i>
                                 </a>
                             }
                             else
                             {
                                 <span class="month-nav-btn disabled">
-                                    Next →
+                                    Next <i class="fa-solid fa-chevron-right"></i>
                                 </span>
                             }
                         </div>
@@ -248,7 +209,9 @@
 
                     @if (!availableSlots.Any())
                     {
-                        <div class="notice" role="status">
+                        <div class="ail-alert info" role="status">
+                            <i class="fa-solid fa-circle-info"></i>
+                            <div>
                             <strong>
                                 No inspection appointments are currently available
                                 for @Model.CurrentMonth.ToString("MMMM yyyy").
@@ -269,6 +232,7 @@
                                     request assistance from Valuation Administration.
                                 </div>
                             }
+                            </div>
                         </div>
                     }
                     else
@@ -556,7 +520,7 @@
                         else
                         {
                             <div class="admin-requested">
-                                ✓ Administration assistance has already been requested.
+                                <i class="fa-solid fa-circle-check"></i> Administration assistance has already been requested.
                             </div>
                         }
                     </div>
@@ -614,101 +578,315 @@
             </section>
         }
 
-        @if (Model.ValuerDetailsAvailable &&
-             Model.Valuer != null)
-        {
-            <section class="cardx valuer"
-                     aria-labelledby="valuer-heading">
 
-                <div class="headx">
-                    <h1 id="valuer-heading">
-                        Authorised Valuer Details
-                    </h1>
+                @* ── Authorised valuer ─────────────────────────────────── *@
+                @if (Model.ValuerAccess == "Visible" && Model.Valuer != null)
+                {
+                    var vehicleText = string.Join(" · ",
+                        new[] { Model.Valuer.VehicleColour, Model.Valuer.VehicleMake }
+                            .Where(x => !string.IsNullOrWhiteSpace(x)));
+                    if (string.IsNullOrWhiteSpace(vehicleText)) { vehicleText = "-"; }
 
-                    <div class="muted">
-                        Use these details to verify the City official
-                        who arrives for the inspection.
+                    <section class="ail-card ail-valuer" id="ailValuer" aria-labelledby="valuer-heading">
+                        <div class="ail-watermark" style="background-image:url(&quot;@Html.Raw(wmUrl)&quot;);"></div>
+
+                        <div class="ail-card-head">
+                            <div class="ico"><i class="fa-solid fa-user-shield"></i></div>
+                            <div>
+                                <h2 id="valuer-heading">Authorised valuer</h2>
+                                <p>Check that the person and the vehicle match before you let anyone in.</p>
+                            </div>
+                        </div>
+
+                        <div class="ail-card-body">
+                            <div class="ail-valuer-body">
+                                <div class="ail-photo">
+                                    @if (Model.Valuer.HasPhoto)
+                                    {
+                                        <img src="@Url.Action("ValuerPhoto", new { token = Model.Token })"
+                                             alt="Photo of the authorised valuer"
+                                             draggable="false"
+                                             onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />
+                                        <div class="ail-photo-empty" style="display:none;">
+                                            <i class="fa-solid fa-user"></i>
+                                            Photo not available
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="ail-photo-empty">
+                                            <i class="fa-solid fa-user"></i>
+                                            Photo not available
+                                        </div>
+                                    }
+                                    <span class="ail-verified"><i class="fa-solid fa-check"></i> City official</span>
+                                </div>
+
+                                <div>
+                                    <div class="ail-valuer-name">@Model.Valuer.ValuerName</div>
+                                    <div class="ail-valuer-role">Valuer · City of Johannesburg Valuation Services</div>
+
+                                    <div class="ail-kv">
+                                        <div class="ail-kv-item">
+                                            <span>Cell</span>
+                                            <strong>@(Model.Valuer.CellNumber ?? "-")</strong>
+                                        </div>
+                                        <div class="ail-kv-item">
+                                            <span>E-mail</span>
+                                            <strong>@(Model.Valuer.EmailAddress ?? "-")</strong>
+                                        </div>
+                                        <div class="ail-kv-item reg">
+                                            <span>Vehicle registration</span>
+                                            <strong>@(Model.Valuer.VehicleRegistration ?? "-")</strong>
+                                        </div>
+                                        <div class="ail-kv-item">
+                                            <span>Vehicle</span>
+                                            <strong>@vehicleText</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="ail-safety">
+                                <i class="fa-solid fa-triangle-exclamation"></i>
+                                <div>
+                                    <strong>Safety check:</strong> do not allow the inspection if the person, the photo or
+                                    the vehicle registration does not match. If you are unsure, e-mail
+                                    AdministrationEnquiries@joburg.org.za before the inspection continues.
+                                </div>
+                            </div>
+
+                            <div class="ail-valuer-meta">
+                                <span><i class="fa-solid fa-lock"></i> Confidential. Do not share, save or screenshot.</span>
+                                <span>Shown to @(Model.WatermarkText?.Split('·').ElementAtOrDefault(2)?.Trim())</span>
+                            </div>
+                        </div>
+
+                        <div class="ail-shield" id="ailShield" role="status">
+                            <i class="fa-solid fa-eye-slash"></i>
+                            <strong>Valuer details hidden</strong>
+                            <p>For the valuer's safety the details are hidden when this page is not in front or after a few minutes.</p>
+                            <button type="button" class="ail-btn primary" id="ailReveal">
+                                <i class="fa-solid fa-eye"></i> Show again
+                            </button>
+                        </div>
+                    </section>
+                }
+                else if (Model.ValuerAccess is "Pin" or "SignIn" or "NotOwner" or "Locked" or "NotYetValid" or "Ended"
+                         || (Model.ValuerAccess == "NotReleased" && Model.ConfirmedDateTime.HasValue))
+                {
+                    var gateBad = Model.ValuerAccess is "NotOwner" or "Locked" or "Ended";
+
+                    <section class="ail-card" aria-labelledby="valuer-gate-heading">
+                        <div class="ail-card-head">
+                            <div class="ico"><i class="fa-solid fa-user-shield"></i></div>
+                            <div>
+                                <h2 id="valuer-gate-heading">Authorised valuer</h2>
+                                <p>Who will come to the property for the inspection.</p>
+                            </div>
+                        </div>
+                        <div class="ail-card-body">
+                            <div class="ail-gate @(gateBad ? "bad" : "")">
+                                @switch (Model.ValuerAccess)
+                                {
+                                    case "Pin":
+                                        <div class="big"><i class="fa-solid fa-key"></i></div>
+                                        <div>
+                                            <h3>Enter your inspection PIN</h3>
+                                            <p>
+                                                The valuer's name, photo and vehicle are released. Enter the 4-digit PIN
+                                                from the City e-mail to see them.
+                                                @if (Model.PinAttemptsLeft < 5)
+                                                {
+                                                    <br /><strong>@Model.PinAttemptsLeft attempt@(Model.PinAttemptsLeft == 1 ? "" : "s") left.</strong>
+                                                }
+                                            </p>
+                                            <button type="button" class="ail-btn primary" onclick="GsPin.open('@instanceKey')">
+                                                <i class="fa-solid fa-unlock-keyhole"></i> Enter PIN
+                                            </button>
+                                        </div>
+                                        break;
+
+                                    case "SignIn":
+                                        <div class="big"><i class="fa-solid fa-right-to-bracket"></i></div>
+                                        <div>
+                                            <h3>Sign in to see the valuer</h3>
+                                            <p>
+                                                To protect our valuers, their details are only shown to the account that
+                                                submitted the property attributes. Sign in, then enter the PIN from the City e-mail.
+                                            </p>
+                                            <a class="ail-btn primary" href="@Model.LoginUrl">
+                                                <i class="fa-solid fa-right-to-bracket"></i> Sign in
+                                            </a>
+                                        </div>
+                                        break;
+
+                                    case "NotOwner":
+                                        <div class="big"><i class="fa-solid fa-user-lock"></i></div>
+                                        <div>
+                                            <h3>This inspection belongs to another account</h3>
+                                            <p>
+                                                Sign in with the account that submitted the property attributes to see the
+                                                valuer. Contact Valuation Administration if you need help.
+                                            </p>
+                                        </div>
+                                        break;
+
+                                    case "Locked":
+                                        <div class="big"><i class="fa-solid fa-lock"></i></div>
+                                        <div>
+                                            <h3>The PIN is locked</h3>
+                                            <p>
+                                                The PIN was entered incorrectly too many times. Please contact Valuation
+                                                Administration at AdministrationEnquiries@joburg.org.za to unlock it.
+                                            </p>
+                                        </div>
+                                        break;
+
+                                    case "NotYetValid":
+                                        <div class="big"><i class="fa-solid fa-hourglass-half"></i></div>
+                                        <div>
+                                            <h3>Available closer to the inspection</h3>
+                                            <p>
+                                                The valuer's details can be viewed from
+                                                <strong>@Model.PinValidFrom?.ToString("dddd, dd MMMM yyyy 'at' HH:mm")</strong>.
+                                            </p>
+                                        </div>
+                                        break;
+
+                                    case "Ended":
+                                        <div class="big"><i class="fa-solid fa-calendar-xmark"></i></div>
+                                        <div>
+                                            <h3>No longer available</h3>
+                                            <p>The period to view the valuer's details has ended.</p>
+                                        </div>
+                                        break;
+
+                                    default:
+                                        <div class="big"><i class="fa-solid fa-envelope-open-text"></i></div>
+                                        <div>
+                                            <h3>Not released yet</h3>
+                                            <p>
+                                                Before the inspection you will receive an e-mail with a PIN. With the PIN you
+                                                can see the valuer's name, photo and vehicle on this page.
+                                            </p>
+                                        </div>
+                                        break;
+                                }
+                            </div>
+                        </div>
+                    </section>
+                }
+            </div>
+
+            <aside class="ail-side">
+                <section class="ail-card" aria-labelledby="inspection-heading">
+                    <div class="ail-card-head">
+                        <div class="ico"><i class="fa-solid fa-clipboard-list"></i></div>
+                        <div>
+                            <h2 id="inspection-heading">Your inspection</h2>
+                            <p>Physical inspection of property attributes</p>
+                        </div>
                     </div>
-                </div>
+                    <div class="ail-card-body">
+                        <div class="ail-facts">
+                            <div class="ail-fact">
+                                <span>Reference</span>
+                                <strong>@Model.AttrNo</strong>
+                            </div>
+                            <div class="ail-fact">
+                                <span>Property</span>
+                                <strong>@Model.PropertyDescription</strong>
+                            </div>
+                            <div class="ail-fact">
+                                <span>Status</span>
+                                <strong class="ail-status @statusClass">@clientStatus</strong>
+                            </div>
+                            @if (Model.ExpiresAt.HasValue && !Model.IsExpired)
+                            {
+                                <div class="ail-fact">
+                                    <span>Link valid until</span>
+                                    <strong>@Model.ExpiresAt.Value.ToString("dd MMM yyyy HH:mm")</strong>
+                                </div>
+                            }
+                        </div>
 
-                <div class="bodyx valuer-grid">
-                    <div>
-                        @if (Model.Valuer.HasPhoto)
+                        @if (Model.ConfirmedDateTime.HasValue)
                         {
-                            <img class="photo"
-                                 src="@Url.Action(
-                                     "ValuerPhoto",
-                                     new { token = Model.Token })"
-                                 alt="Authorised valuer" />
+                            <div class="ail-confirmed">
+                                <i class="fa-solid fa-calendar-check"></i>
+                                <div>
+                                    <small>Appointment confirmed</small>
+                                    <strong>@Model.ConfirmedDateTime.Value.ToString("dddd, dd MMMM yyyy 'at' HH:mm")</strong>
+                                </div>
+                            </div>
                         }
                     </div>
+                </section>
 
-                    <div class="gridx">
-                        <div class="fieldx">
-                            <span>Valuer</span>
-                            <strong>@Model.Valuer.ValuerName</strong>
-                        </div>
+                <section class="ail-card" aria-label="Progress">
+                    <div class="ail-card-body">
+                        <ol class="ail-steps">
+                            <li class="@(step1Done ? "done" : "now")">
+                                <span class="dot">@(step1Done ? Html.Raw("<i class='fa-solid fa-check'></i>") : Html.Raw("1"))</span>
+                                <div><strong>Choose a date</strong>Pick a time that suits you.</div>
+                            </li>
+                            <li class="@(step2Done ? "done" : step1Done ? "now" : "")">
+                                <span class="dot">@(step2Done ? Html.Raw("<i class='fa-solid fa-check'></i>") : Html.Raw("2"))</span>
+                                <div><strong>Valuer released</strong>You get an e-mail with a PIN.</div>
+                            </li>
+                            <li class="@(completed ? "done" : step2Done ? "now" : "")">
+                                <span class="dot">@(completed ? Html.Raw("<i class='fa-solid fa-check'></i>") : Html.Raw("3"))</span>
+                                <div><strong>Inspection</strong>Check the valuer, then let them in.</div>
+                            </li>
+                        </ol>
+                    </div>
+                </section>
 
-                        <div class="fieldx">
-                            <span>Cell</span>
-                            <strong>@(Model.Valuer.CellNumber ?? "-")</strong>
-                        </div>
-
-                        <div class="fieldx">
-                            <span>Email</span>
-                            <strong>@(Model.Valuer.EmailAddress ?? "-")</strong>
-                        </div>
-
-                        <div class="fieldx">
-                            <span>Vehicle Registration</span>
-                            <strong>@(Model.Valuer.VehicleRegistration ?? "-")</strong>
-                        </div>
-
-                        <div class="fieldx">
-                            <span>Vehicle Make</span>
-                            <strong>@(Model.Valuer.VehicleMake ?? "-")</strong>
-                        </div>
-
-                        <div class="fieldx">
-                            <span>Vehicle Colour</span>
-                            <strong>@(Model.Valuer.VehicleColour ?? "-")</strong>
-                        </div>
+                <div class="ail-secure">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    <div>
+                        <strong>Keep this link private.</strong> It belongs to this inspection only. The City will never
+                        ask you for money or banking details for an inspection.
                     </div>
                 </div>
-            </section>
-        }
-
-        <footer class="foot">
-            AdministrationEnquiries@joburg.org.za ·
-            Secure City of Johannesburg appointment link ·
-            Do not forward this link.
-        </footer>
+            </aside>
+        </div>
     </main>
+</div>
 
-    @if (Model.RequiresPinVerification)
-    {
-        var pinModal =
-            new V2_Genesis.Models.ViewModels.Attributes.InspectionPinModalVm
-            {
-                InstanceKey = instanceKey,
-                AppointmentRef = Model.AttrNo,
-                FormAction = Url.Action(
-                    "VerifyPin",
-                    "AttributeInspectionLink",
-                    new { token = Model.Token })
-                    ?? Url.Content(
-                        $"~/attributes/inspection/{Model.Token:D}/verify-pin"),
-                PinFieldName = "inspectionPin",
-                ConfirmedDateTime = Model.ConfirmedDateTime,
-                ErrorMessage =
-                    TempData["InspectionPinError"]?.ToString(),
-                AutoOpen = true
-            };
+@if (Model.ValuerAccess == "Pin")
+{
+    var pinModal =
+        new V2_Genesis.Models.ViewModels.Attributes.InspectionPinModalVm
+        {
+            InstanceKey = instanceKey,
+            AppointmentRef = Model.AttrNo,
+            FormAction = Url.Action(
+                "VerifyPin",
+                "AttributeInspectionLink",
+                new { token = Model.Token })
+                ?? Url.Content(
+                    $"~/attributes/inspection/{Model.Token:D}/verify-pin"),
+            PinFieldName = "inspectionPin",
+            ConfirmedDateTime = Model.ConfirmedDateTime,
+            ErrorMessage = pinError,
+            AutoOpen = askedForValuer || !string.IsNullOrWhiteSpace(pinError)
+        };
 
-        <partial name="Attributes/_InspectionPinModal"
-                 model="pinModal" />
-    }
+    <partial name="Attributes/_InspectionPinModal" model="pinModal" />
+}
+else if (!string.IsNullOrWhiteSpace(pinError))
+{
+    <div class="ail ail-wrap">
+        <div class="ail-alert bad" role="alert">
+            <i class="fa-solid fa-circle-exclamation"></i>
+            <div>@pinError</div>
+        </div>
+    </div>
+}
 
+@section Scripts {
     <script>
         (function () {
             'use strict';
@@ -922,8 +1100,62 @@
         })();
     </script>
 
-    <script src="~/js/attribute-inspection-modals.js"
-            asp-append-version="true">
-    </script>
-</body>
-</html>
+
+    <script src="~/js/attribute-inspection-modals.js" asp-append-version="true"></script>
+
+    @if (Model.ValuerAccess == "Visible")
+    {
+        <script>
+            // Protecting the valuer: no copy, no right-click, no printing, and the
+            // details are hidden when the page is not in front or after 3 minutes.
+            // (A browser cannot block every screenshot; the watermark shows who
+            // looked and when.)
+            (function () {
+                'use strict';
+                var card = document.getElementById('ailValuer');
+                var reveal = document.getElementById('ailReveal');
+                if (!card) return;
+
+                var SHOW_MS = 3 * 60 * 1000;
+                var timer = null;
+
+                function hide() {
+                    card.classList.add('is-shielded');
+                    clearTimeout(timer);
+                }
+
+                function show() {
+                    card.classList.remove('is-shielded');
+                    clearTimeout(timer);
+                    timer = setTimeout(hide, SHOW_MS);
+                }
+
+                show();
+                if (reveal) reveal.addEventListener('click', show);
+
+                document.addEventListener('visibilitychange', function () { if (document.hidden) hide(); });
+                window.addEventListener('blur', hide);
+                window.addEventListener('beforeprint', hide);
+
+                ['contextmenu', 'copy', 'cut', 'dragstart', 'selectstart'].forEach(function (type) {
+                    card.addEventListener(type, function (e) { e.preventDefault(); });
+                });
+
+                document.addEventListener('keydown', function (e) {
+                    var k = (e.key || '').toLowerCase();
+                    if ((e.ctrlKey || e.metaKey) && (k === 'p' || k === 's' || k === 'c')) {
+                        e.preventDefault();
+                        hide();
+                    }
+                });
+
+                document.addEventListener('keyup', function (e) {
+                    if (e.key === 'PrintScreen') {
+                        hide();
+                        try { navigator.clipboard && navigator.clipboard.writeText(''); } catch (err) { /* ignore */ }
+                    }
+                });
+            })();
+        </script>
+    }
+}

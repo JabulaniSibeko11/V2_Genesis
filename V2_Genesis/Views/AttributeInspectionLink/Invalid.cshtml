@@ -1,41 +1,50 @@
-﻿@{
-    Layout = null;
+@{
+    ViewData["Title"] = "Inspection link not valid";
+    Layout = "~/Views/Shared/_Legend_Layout.cshtml";
 }
-<!doctype html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Invalid Link</title>
-    <style>
-            body {
-                font-family: Arial;
-                background: #f5f5f2;
-                margin: 0
-            }
 
-            .top {
-                background: #006570;
-                color: white;
-                padding: 20px;
-                border-bottom: 5px solid #e8b600
-            }
+@section Styles {
+    <meta name="referrer" content="no-referrer" />
+    <meta name="robots" content="noindex,nofollow,noarchive,nosnippet" />
+    <link href="~/css/Views/inspection-link.css" rel="stylesheet" asp-append-version="true" />
+}
 
-            .box {
-                max-width: 700px;
-                margin: 60px auto;
-                background: white;
-                border: 1px solid #ddd;
-                border-radius: 12px;
-                padding: 30px
-            }
+<div class="ail">
+    <header class="ail-hero">
+        <div class="ail-wrap ail-hero-inner">
+            <div class="ail-hero-left">
+                <div class="ail-hero-icon"><i class="fa-solid fa-link-slash"></i></div>
+                <div>
+                    <div class="ail-eyebrow">City of Johannesburg · Valuation Services</div>
+                    <h1>Property Attribute <span>Inspection</span></h1>
+                    <p class="ail-hero-sub">Secure appointment page</p>
+                </div>
+            </div>
+        </div>
+    </header>
 
-            h1 {
-                margin-top: 0
-        }</style>
-    </head>
-    <body>
-        <div class="top"><strong>City of Johannesburg - Valuation Services</strong></div>
-        <div class="box"><h1>Secure link unavailable</h1><p>This inspection link is invalid, unavailable, or is not an Administration-captured submission.</p><p>Please contact Valuation Administration for assistance.</p></div>
-    </body>
-</html>
+    <main class="ail-wrap" style="max-width:720px;">
+        <section class="ail-card">
+            <div class="ail-card-body">
+                <div class="ail-gate bad">
+                    <div class="big"><i class="fa-solid fa-link-slash"></i></div>
+                    <div>
+                        <h3>This inspection link is not valid</h3>
+                        <p>
+                            The link may be incomplete, may have been replaced by a newer e-mail, or the
+                            inspection request is no longer active. Open the latest e-mail from the City, or
+                            go to your dashboard: <strong>Attributes → Appointments</strong>.
+                        </p>
+                        <p>
+                            Need help? E-mail
+                            <a href="mailto:AdministrationEnquiries@joburg.org.za">AdministrationEnquiries@joburg.org.za</a>.
+                        </p>
+                        <a class="ail-btn primary" href="/dashboard?openRoll=attributes">
+                            <i class="fa-solid fa-gauge"></i> Go to my dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+</div>

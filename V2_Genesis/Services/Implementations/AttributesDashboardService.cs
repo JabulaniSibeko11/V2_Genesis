@@ -107,6 +107,10 @@ public class AttributesDashboardService : IAttributesDashboardService
 
                 data.Appointments = new List<AttributeAppointment>();
             }
+
+            // A submission with a physical inspection is shown ONLY under
+            // "My Appointments with Valuer" - never in both lists.
+            data.Submissions = WithoutInspectionDuplicates(data.Submissions, data.Appointments);
         }
         catch (Exception ex)
         {
@@ -115,6 +119,37 @@ public class AttributesDashboardService : IAttributesDashboardService
         }
 
         return data;
+    }
+
+    // Appointment statuses that no longer hold the submission: the
+    // submission shows again under "My Submissions".
+    private static readonly HashSet<string> EndedAppointmentStatuses =
+        new(StringComparer.OrdinalIgnoreCase)
+        {
+            "Expired", "Cancelled", "Canceled", "InspectionCancelled", "Withdrawn", "Rejected"
+        };
+
+    internal static List<AttributeSubmission> WithoutInspectionDuplicates(
+        List<AttributeSubmission> submissions,
+        List<AttributeAppointment> appointments)
+    {
+        if (submissions.Count == 0 || appointments.Count == 0)
+            return submissions;
+
+        var active = appointments
+            .Where(a => !EndedAppointmentStatuses.Contains((a.Status ?? string.Empty).Trim()))
+            .ToList();
+
+        var attrIds = active.Select(a => a.AttrId).ToHashSet();
+        var refs = active
+            .Select(a => (a.AppointmentRef ?? string.Empty).Trim())
+            .Where(r => r.Length > 0)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        return submissions
+            .Where(s => !attrIds.Contains(s.Id) &&
+                        !refs.Contains((s.SubmissionRef ?? string.Empty).Trim()))
+            .ToList();
     }
 
     private static string NormalizeAppointmentStatus(
@@ -274,61 +309,15 @@ public class AttributesDashboardService : IAttributesDashboardService
             ContentType = contentType
         };
     }
+    // Same rules as the secure inspection link (Helpers/ValuerPhotoResolver).
     private string? ResolveValuerPhotoPath(
     string? photoPath,
-    string? photoFileName)
-    {
-        if (!string.IsNullOrWhiteSpace(photoPath))
-        {
-            var cleanedPath = photoPath.Trim();
-
-            if (File.Exists(cleanedPath))
-                return cleanedPath;
-
-            var pathExt = Path.GetExtension(cleanedPath);
-
-            if (string.IsNullOrWhiteSpace(pathExt))
-            {
-                foreach (var ext in _valuerPhotoStorageSettings.AllowedExtensions)
-                {
-                    var candidate = cleanedPath + ext;
-
-                    if (File.Exists(candidate))
-                        return candidate;
-                }
-            }
-        }
-
-        if (string.IsNullOrWhiteSpace(photoFileName))
-            return null;
-
-        var safeFileName = Path.GetFileName(photoFileName.Trim());
-
-        if (string.IsNullOrWhiteSpace(safeFileName))
-            return null;
-
-        var directPath = Path.Combine(
-            _valuerPhotoStorageSettings.RootFolder,
-            safeFileName);
-
-        if (File.Exists(directPath))
-            return directPath;
-
-        var directExt = Path.GetExtension(directPath);
-
-        if (string.IsNullOrWhiteSpace(directExt))
-        {
-            foreach (var ext in _valuerPhotoStorageSettings.AllowedExtensions)
-            {
-                var candidate = directPath + ext;
-
-                if (File.Exists(candidate))
-                    return candidate;
-            }
-        }
-
-        return null;
-    }
+    string? photoFileName) =>
+        V2_Genesis.Helpers.ValuerPhotoResolver.Resolve(
+            photoPath,
+            photoFileName,
+            sapNumber: null,
+            _valuerPhotoStorageSettings);
     public async Task ResubmitReturnedAttributeAsync(
     ResubmitReturnedAttributeVm vm,
     string userId,

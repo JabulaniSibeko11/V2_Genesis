@@ -1,0 +1,284 @@
+﻿/* ══════════════════════════════════════════════════════════════════
+   Inspection PIN modal  (Views/Shared/Attributes/_InspectionPinModal)
+   A centred card that always fits the visible screen (desktop and phone).
+   ══════════════════════════════════════════════════════════════════ */
+.ipin-backdrop {
+    --ipin-teal: #006570;
+    --ipin-teal-dark: #004f58;
+    --ipin-gold: #e6b000;
+    --ipin-ink: #0f2a2e;
+    --ipin-muted: #5b6b70;
+    --ipin-line: #d7e2e4;
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: rgba(8, 30, 34, .62);
+    backdrop-filter: blur(3px);
+    font-family: 'Poppins', system-ui, sans-serif;
+}
+
+    .ipin-backdrop.open {
+        display: flex;
+    }
+
+body.ipin-lock {
+    overflow: hidden;
+}
+
+.ipin {
+    position: relative;
+    width: 100%;
+    max-width: 420px;
+    max-height: calc(100vh - 32px);
+    overflow-y: auto;
+    background: #fff;
+    border-radius: 20px;
+    border-top: 5px solid var(--ipin-gold);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, .28);
+    padding: 30px 28px 22px;
+    text-align: center;
+    animation: ipinIn .22s ease-out;
+}
+
+@keyframes ipinIn {
+    from { opacity: 0; transform: translateY(14px) scale(.98); }
+    to   { opacity: 1; transform: none; }
+}
+
+.ipin-grab {
+    display: none;
+}
+
+.ipin-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid var(--ipin-line);
+    background: #fff;
+    color: var(--ipin-muted);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+    .ipin-close:hover {
+        background: #f2f6f7;
+        color: var(--ipin-ink);
+    }
+
+.ipin-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 14px;
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    color: #fff;
+    background: linear-gradient(140deg, var(--ipin-teal), var(--ipin-teal-dark));
+    box-shadow: 0 10px 22px rgba(0, 101, 112, .28);
+}
+
+.ipin-title {
+    margin: 0 0 6px;
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--ipin-ink);
+}
+
+.ipin-sub {
+    margin: 0 0 14px;
+    font-size: 13.5px;
+    line-height: 1.55;
+    color: var(--ipin-muted);
+}
+
+    .ipin-sub strong {
+        color: var(--ipin-ink);
+    }
+
+.ipin-date {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-align: left;
+    margin: 0 0 18px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    background: #eef7f8;
+    border: 1px solid #cfe6e9;
+    font-size: 13px;
+    color: var(--ipin-ink);
+}
+
+    .ipin-date i {
+        color: var(--ipin-teal);
+        font-size: 16px;
+    }
+
+/* ── 4 boxes ── */
+.ipin-boxes {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin: 4px 0 12px;
+}
+
+.ipin-box {
+    width: 58px;
+    height: 64px;
+    border: 2px solid var(--ipin-line);
+    border-radius: 14px;
+    background: #f8fbfb;
+    text-align: center;
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--ipin-ink);
+    caret-color: var(--ipin-teal);
+    outline: none;
+    transition: border-color .15s, box-shadow .15s, background .15s;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+    .ipin-box:focus {
+        border-color: var(--ipin-teal);
+        background: #fff;
+        box-shadow: 0 0 0 4px rgba(0, 101, 112, .14);
+    }
+
+    .ipin-box.filled {
+        border-color: var(--ipin-teal);
+        background: #fff;
+    }
+
+.ipin-error {
+    display: none;
+    align-items: flex-start;
+    gap: 8px;
+    margin: 0 0 12px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: #fdecec;
+    border: 1px solid #f4c4c4;
+    color: #9b1c1c;
+    font-size: 13px;
+    font-weight: 600;
+    text-align: left;
+}
+
+    .ipin-error.show {
+        display: flex;
+    }
+
+.ipin-submit {
+    width: 100%;
+    min-height: 50px;
+    border: 0;
+    border-radius: 12px;
+    background: var(--ipin-teal);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    cursor: pointer;
+    transition: background .15s, opacity .15s;
+}
+
+    .ipin-submit:hover:not(:disabled) {
+        background: var(--ipin-teal-dark);
+    }
+
+    .ipin-submit:disabled {
+        opacity: .45;
+        cursor: not-allowed;
+    }
+
+.ipin-foot {
+    margin: 12px 0 0;
+    font-size: 11.5px;
+    line-height: 1.5;
+    color: var(--ipin-muted);
+}
+
+    .ipin-foot i {
+        color: var(--ipin-teal);
+        margin-right: 4px;
+    }
+
+/* ── Phone: centred box that always fits the visible screen ── */
+.ipin {
+    max-height: calc(100dvh - 32px);
+}
+
+@media (max-width: 575.98px) {
+    .ipin-backdrop {
+        padding: 12px;
+    }
+
+    .ipin {
+        max-height: calc(100vh - 24px);
+        max-height: calc(100dvh - 24px);
+        border-radius: 18px;
+        padding: 20px 18px 18px;
+    }
+
+    .ipin-close {
+        top: 10px;
+        right: 10px;
+    }
+
+    .ipin-icon {
+        width: 50px;
+        height: 50px;
+        font-size: 20px;
+        border-radius: 14px;
+        margin-bottom: 10px;
+    }
+
+    .ipin-title {
+        font-size: 18px;
+    }
+
+    .ipin-sub {
+        font-size: 13px;
+        margin-bottom: 10px;
+    }
+
+    .ipin-date {
+        margin-bottom: 14px;
+    }
+
+    .ipin-boxes {
+        gap: 10px;
+    }
+
+    .ipin-box {
+        width: 54px;
+        height: 60px;
+        font-size: 24px;
+    }
+}
+
+@media (max-width: 340px) {
+    .ipin-boxes {
+        gap: 7px;
+    }
+
+    .ipin-box {
+        width: 48px;
+        height: 56px;
+    }
+}

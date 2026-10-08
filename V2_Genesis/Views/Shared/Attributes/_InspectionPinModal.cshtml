@@ -1,50 +1,71 @@
 @model V2_Genesis.Models.ViewModels.Attributes.InspectionPinModalVm
 
+@*
+    Inspection PIN modal (secure inspection link + dashboard).
+    Four PIN boxes - the phone shows its own number keyboard; there is no
+    on-screen keypad. On a phone the modal opens as a bottom sheet.
+    Behaviour: ~/js/inspection-pin.js   Styles: ~/css/Views/inspection-pin.css
+    The posted field (Model.PinFieldName) is the hidden input #pinHiddenInput_{key}.
+*@
 @{
-    var modalId = $"pinModal_{Model.InstanceKey}";
-    var inputId = $"pinHiddenInput_{Model.InstanceKey}";
-    var submitId = $"pinSubmitBtn_{Model.InstanceKey}";
-    var errorId = $"pinError_{Model.InstanceKey}";
-    var errorMsgId = $"pinErrorMsg_{Model.InstanceKey}";
-    var contextTitleId = $"pinContextTitle_{Model.InstanceKey}";
-    var formId = $"pinForm_{Model.InstanceKey}";
+    var key = Model.InstanceKey;
+    var modalId = $"pinModal_{key}";
+    var inputId = $"pinHiddenInput_{key}";
+    var submitId = $"pinSubmitBtn_{key}";
+    var errorId = $"pinError_{key}";
+    var errorMsgId = $"pinErrorMsg_{key}";
+    var titleId = $"pinContextTitle_{key}";
+    var formId = $"pinForm_{key}";
+    var hasError = !string.IsNullOrWhiteSpace(Model.ErrorMessage);
 }
 
-<link href="~/css/views/Pin-Entry.css"rel="stylesheet" asp-append-version="true" />
+<link href="~/css/Views/inspection-pin.css" rel="stylesheet" asp-append-version="true" />
 
-<div class="pin-backdrop @(Model.AutoOpen ? "open" : "")" id="@modalId"data-pin-instance="@Model.InstanceKey"style="display:@(Model.AutoOpen ? "flex" : "none");">
+<div class="pin-backdrop ipin-backdrop @(Model.AutoOpen ? "open" : "")"
+     id="@modalId"
+     data-pin-instance="@key"
+     aria-hidden="@(Model.AutoOpen ? "false" : "true")"
+     style="display:@(Model.AutoOpen ? "flex" : "none");">
 
-    <div class="pin-modal" role="dialog"aria-modal="true"aria-labelledby="@contextTitleId">
+    <div class="ipin" role="dialog" aria-modal="true" aria-labelledby="@titleId">
 
-        <div class="pin-handle"></div>
+        <div class="ipin-grab" aria-hidden="true"></div>
 
-        <div class="pin-head">
-            <div class="pin-head-icon">
-                <i class="fa-solid fa-lock"></i>
-            </div>
+        <button type="button"
+                class="ipin-close"
+                onclick="GsPin.close('@key')"
+                aria-label="Close">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
 
-            <div class="pin-head-text">
-                <div class="pin-head-title">
-                    Enter Inspection PIN
-                </div>
-                <div class="pin-head-sub">
-                    @Model.AppointmentRef
-                </div>
-            </div>
-
-            <button type="button"
-                    class="pin-head-close"
-                    onclick="closePinModal('@Model.InstanceKey')"
-                    aria-label="Close">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
+        <div class="ipin-icon" aria-hidden="true">
+            <i class="fa-solid fa-user-shield"></i>
         </div>
+
+        <h2 class="ipin-title" id="@titleId">Enter your inspection PIN</h2>
+
+        <p class="ipin-sub">
+            Type the <strong>4-digit PIN</strong> from the City e-mail to see the
+            authorised valuer for <strong>@Model.AppointmentRef</strong>.
+        </p>
+
+        @if (Model.ConfirmedDateTime.HasValue)
+        {
+            <div class="ipin-date">
+                <i class="fa-solid fa-calendar-check" aria-hidden="true"></i>
+                <span>
+                    Inspection
+                    <strong>@Model.ConfirmedDateTime.Value.ToString("dddd, dd MMMM yyyy 'at' HH:mm")</strong>
+                </span>
+            </div>
+        }
 
         <form action="@Model.FormAction"
               method="post"
               autocomplete="off"
               id="@formId"
-              onsubmit="return submitInspectionPin('@Model.InstanceKey', this);">
+              novalidate
+              onsubmit="return GsPin.submit('@key', this);">
 
             @Html.AntiForgeryToken()
 
@@ -55,114 +76,40 @@
                        value="@Model.InspectionRequestId.Value" />
             }
 
-            <div class="pin-body">
-                <div class="pin-lock-ring">
-                    <i class="fa-solid fa-shield-halved"></i>
-                </div>
+            <input type="hidden" id="@inputId" name="@Model.PinFieldName" value="" />
 
-                <div class="pin-context">
-                    <div class="pin-context-title"
-                         id="@contextTitleId">
-                        Verify your inspection appointment
-                    </div>
-
-                    <div class="pin-context-sub">
-                        Enter the 4-digit PIN sent to you by the City.
-                    </div>
-                </div>
-
-                @if (Model.ConfirmedDateTime.HasValue)
+            <div class="ipin-boxes" data-pin-boxes="@key" role="group" aria-label="4-digit inspection PIN">
+                @for (var i = 0; i < 4; i++)
                 {
-                    <div class="pin-confirmed-date">
-                        <i class="fa-solid fa-calendar-check"></i>
-
-                        <div>
-                            <span class="pin-confirmed-label">
-                                Confirmed inspection date
-                            </span>
-
-                            <span class="pin-confirmed-value">
-                                @Model.ConfirmedDateTime.Value.ToString("dd MMM yyyy HH:mm")
-                            </span>
-                        </div>
-                    </div>
+                    <input type="password"
+                           class="ipin-box"
+                           inputmode="numeric"
+                           pattern="[0-9]*"
+                           maxlength="1"
+                           autocomplete="@(i == 0 ? "one-time-code" : "off")"
+                           aria-label="PIN digit @(i + 1) of 4"
+                           data-index="@i" />
                 }
-
-                <div class="pin-dots"
-                     aria-label="4 digit PIN entry">
-                    <div class="pin-dot" id="dot_@(Model.InstanceKey)_0"></div>
-                    <div class="pin-dot" id="dot_@(Model.InstanceKey)_1"></div>
-                    <div class="pin-dot" id="dot_@(Model.InstanceKey)_2"></div>
-                    <div class="pin-dot" id="dot_@(Model.InstanceKey)_3"></div>
-                </div>
-
-                <input type="password"
-                       id="@inputId"
-                       name="@Model.PinFieldName"
-                       class="pin-input-hidden"
-                       maxlength="4"
-                       inputmode="numeric"
-                       pattern="[0-9]{4}"
-                       autocomplete="one-time-code"
-                       required />
-
-                <div class="pin-error @(string.IsNullOrWhiteSpace(Model.ErrorMessage) ? "" : "show")"
-                     id="@errorId"
-                     role="alert">
-
-                    <i class="fa-solid fa-circle-exclamation"></i>
-
-                    <span id="@errorMsgId">
-                        @(string.IsNullOrWhiteSpace(Model.ErrorMessage)
-                            ? "Incorrect PIN. Please try again."
-                            : Model.ErrorMessage)
-                    </span>
-                </div>
-
-                <div class="pin-keypad">
-                    @for (var n = 1; n <= 9; n++)
-                    {
-                        <button type="button"
-                                class="pin-key"
-                                onclick="pinKey('@Model.InstanceKey', '@n')">
-                            <span class="pin-key-num">@n</span>
-                        </button>
-                    }
-
-                    <button type="button"
-                            class="pin-key"
-                            style="border:none;background:none;box-shadow:none;cursor:default;"
-                            disabled>
-                    </button>
-
-                    <button type="button"
-                            class="pin-key pin-key-zero"
-                            onclick="pinKey('@Model.InstanceKey', '0')">
-                        <span class="pin-key-num">0</span>
-                    </button>
-
-                    <button type="button"
-                            class="pin-key pin-key-del"
-                            onclick="pinDelete('@Model.InstanceKey')"
-                            aria-label="Delete">
-                        <i class="fa-solid fa-delete-left pin-key-icon"></i>
-                    </button>
-                </div>
             </div>
 
-            <div class="pin-foot">
-                <button type="submit"
-                        class="pin-submit-btn"
-                        id="@submitId"
-                        disabled>
-                    <i class="fa-solid fa-unlock"></i>
-                    Confirm PIN
-                </button>
-
-                <div class="pin-forgot">
-                    This PIN is linked to this inspection request only.
-                </div>
+            <div class="ipin-error @(hasError ? "show" : "")" id="@errorId" role="alert">
+                <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
+                <span id="@errorMsgId">
+                    @(hasError ? Model.ErrorMessage : "Incorrect PIN. Please try again.")
+                </span>
             </div>
+
+            <button type="submit" class="ipin-submit" id="@submitId" disabled>
+                <i class="fa-solid fa-unlock-keyhole" aria-hidden="true"></i>
+                Unlock valuer details
+            </button>
+
+            <p class="ipin-foot">
+                <i class="fa-solid fa-shield-halved" aria-hidden="true"></i>
+                This PIN works only for this inspection. After 5 incorrect attempts it is locked.
+            </p>
         </form>
     </div>
 </div>
+
+<script src="~/js/inspection-pin.js" asp-append-version="true"></script>

@@ -38,6 +38,21 @@ public sealed class PublicInspectionLinkVm
     public DateTime? PinValidFrom { get; set; }
     public DateTime? PinValidUntil { get; set; }
 
+    // ── Protection of the valuer's details ──────────────────────────
+    // The authorised valuer (name, phone, e-mail, vehicle, photo) is shown
+    // only to the SIGNED-IN client who owns the submission, after the PIN,
+    // inside the PIN validity window. See AttributeInspectionLinkController.
+    public bool IsSignedIn { get; set; }
+    public bool IsOwner { get; set; }
+    public bool PinLocked { get; set; }
+    public int PinAttemptsLeft { get; set; }
+
+    /// Hidden | NotReleased | SignIn | NotOwner | Locked | NotYetValid | Ended | Pin | Visible
+    public string ValuerAccess { get; set; } = "Hidden";
+
+    public string? LoginUrl { get; set; }
+    public string? WatermarkText { get; set; }
+
     public string? Message { get; set; }
 
     // Only the selected month is populated for a pending request.
