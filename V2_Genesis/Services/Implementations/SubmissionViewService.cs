@@ -496,11 +496,14 @@ namespace V2_Genesis.Services.Implementations
 
             List<object> resultSets;
 
-            if (IsSupplementaryRoll(rollSource))
+            if (isAppeal || IsSupplementaryRoll(rollSource))
             {
                 // Sup1-Sup4 do not consistently contain the GV23 submitted-
                 // form stored procedures. Read the same submitted section
                 // tables directly from the selected supplementary database.
+                // Appeals are always read this way (every roll): the appeal's
+                // own Obj_Property_Info_Appeal row and its own section rows,
+                // never the objection's.
                 resultSets = await LoadSupplementaryFormDataAsync(
                     connection,
                     referenceNumber,
@@ -756,13 +759,20 @@ namespace V2_Genesis.Services.Implementations
             referenceColumn = SafeSqlIdentifier(referenceColumn);
             appealReferenceColumn = SafeSqlIdentifier(appealReferenceColumn);
 
+            // Appeal: prefer the row whose Appeal_Ref_* is this Appeal_ID.
+            // Objection: prefer the row that is not an appeal row.
+            var preferOrder = isAppeal
+                ? $"CASE WHEN TRY_CONVERT(bigint, [{appealReferenceColumn}]) = TRY_CONVERT(bigint, @SubmissionId) THEN 0 ELSE 1 END"
+                : $"CASE WHEN [{appealReferenceColumn}] IS NULL OR TRY_CONVERT(bigint, [{appealReferenceColumn}]) = 0 THEN 0 ELSE 1 END";
+
             var byReference = new CommandDefinition(
                 $"""
                  SELECT TOP (1) *
                  FROM dbo.[{tableName}]
                  WHERE LTRIM(RTRIM(ISNULL([{referenceColumn}], ''))) = @ReferenceNumber
+                 ORDER BY {preferOrder}
                  """,
-                new { ReferenceNumber = referenceNumber.Trim() },
+                new { ReferenceNumber = referenceNumber.Trim(), SubmissionId = submissionIdText },
                 commandTimeout: 60,
                 cancellationToken: cancellationToken);
 

@@ -346,10 +346,99 @@ public class ObjectionService : IObjectionService
             Mvd3MarketValue = row.New3MarketValueMvd?.Trim()
         };
 
+        // A revised MVD (Obj_Property_Info.ReviseMVD) replaces the decision:
+        // the appeal is then against the revised values.
+        await ApplyRevisedMvdAsync(connectionString, objectionNo, result);
+
         return new List<CheckPropertyResult>
     {
         result
     };
+    }
+
+    // Reads the *_ReviseMVD columns of Obj_Property_Info with Dapper (not EF),
+    // so a roll database without those columns still loads the normal MVD.
+    private async Task ApplyRevisedMvdAsync(
+        string connectionString,
+        string objectionNo,
+        CheckPropertyResult result)
+    {
+        try
+        {
+            await using var conn = new SqlConnection(connectionString);
+            var r = await conn.QueryFirstOrDefaultAsync<RevisedMvdRow>(@"
+SELECT TOP (1)
+       CAST(ReviseMVD AS nvarchar(20))                    AS ReviseMvd,
+       CAST(New_Property_Description_ReviseMVD AS nvarchar(255)) AS Description,
+       CAST(New_Address_ReviseMVD AS nvarchar(255))       AS Address,
+       CAST(New_Owner_ReviseMVD AS nvarchar(255))         AS Owner,
+       CAST(New_Category_ReviseMVD AS nvarchar(100))      AS Category,
+       CAST(New_Extent_ReviseMVD AS nvarchar(50))         AS Extent,
+       CAST(New_Market_Value_ReviseMVD AS nvarchar(50))   AS MarketValue,
+       CAST(New2_Category_ReviseMVD AS nvarchar(100))     AS Category2,
+       CAST(New2_Extent_ReviseMVD AS nvarchar(50))        AS Extent2,
+       CAST(New2_Market_Value_ReviseMVD AS nvarchar(50))  AS MarketValue2,
+       CAST(New3_Category_ReviseMVD AS nvarchar(100))     AS Category3,
+       CAST(New3_Extent_ReviseMVD AS nvarchar(50))        AS Extent3,
+       CAST(New3_Market_Value_ReviseMVD AS nvarchar(50))  AS MarketValue3,
+       wefDate_ReviseMVD                                  AS WefDate
+FROM dbo.Obj_Property_Info
+WHERE LTRIM(RTRIM(Objection_No)) = @No
+ORDER BY Objection_ID DESC;", new { No = objectionNo });
+
+            var flag = r?.ReviseMvd?.Trim();
+            var revised = flag is not null &&
+                (flag == "1" ||
+                 flag.Equals("Yes", StringComparison.OrdinalIgnoreCase) ||
+                 flag.Equals("Y", StringComparison.OrdinalIgnoreCase) ||
+                 flag.Equals("True", StringComparison.OrdinalIgnoreCase));
+
+            if (!revised || r is null)
+                return;
+
+            static string? Pick(string? revisedValue, string? current) =>
+                !string.IsNullOrWhiteSpace(revisedValue) ? revisedValue.Trim() : current;
+
+            result.PropertyDesc = Pick(r.Description, result.PropertyDesc);
+            result.LisStreetAddress = Pick(r.Address, result.LisStreetAddress);
+            result.OwnerName = Pick(r.Owner, result.OwnerName);
+            result.CatDesc = Pick(r.Category, result.CatDesc);
+            result.RateableArea = Pick(r.Extent, result.RateableArea);
+            result.MarketValue = Pick(r.MarketValue, result.MarketValue);
+            result.Mvd2Category = Pick(r.Category2, result.Mvd2Category);
+            result.Mvd2Extent = Pick(r.Extent2, result.Mvd2Extent);
+            result.Mvd2MarketValue = Pick(r.MarketValue2, result.Mvd2MarketValue);
+            result.Mvd3Category = Pick(r.Category3, result.Mvd3Category);
+            result.Mvd3Extent = Pick(r.Extent3, result.Mvd3Extent);
+            result.Mvd3MarketValue = Pick(r.MarketValue3, result.Mvd3MarketValue);
+
+            if (r.WefDate is DateTime wef)
+                result.WefDate = wef.ToString("dd MMMM yyyy", CultureInfo.GetCultureInfo("en-ZA"));
+            else if (r.WefDate is not null && !string.IsNullOrWhiteSpace(r.WefDate.ToString()))
+                result.WefDate = WefDateFormatter.Format(r.WefDate.ToString());
+        }
+        catch (Exception)
+        {
+            // No ReviseMVD columns on this roll: keep the normal MVD values.
+        }
+    }
+
+    private sealed class RevisedMvdRow
+    {
+        public string? ReviseMvd { get; set; }
+        public string? Description { get; set; }
+        public string? Address { get; set; }
+        public string? Owner { get; set; }
+        public string? Category { get; set; }
+        public string? Extent { get; set; }
+        public string? MarketValue { get; set; }
+        public string? Category2 { get; set; }
+        public string? Extent2 { get; set; }
+        public string? MarketValue2 { get; set; }
+        public string? Category3 { get; set; }
+        public string? Extent3 { get; set; }
+        public string? MarketValue3 { get; set; }
+        public object? WefDate { get; set; }
     }
     private static string? GetDynamicString(
         object? row,
