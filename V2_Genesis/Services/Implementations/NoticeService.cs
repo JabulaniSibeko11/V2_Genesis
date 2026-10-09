@@ -1442,16 +1442,91 @@ ORDER BY {orderBy};",
                 propertyDesc);
         }
     }
-    public Task<(byte[] Pdf, string FileName)> GenerateAcknowledgementAsync(
+    public async Task<(byte[] Pdf, string FileName)> GenerateAcknowledgementAsync(
     AcknowledgementData data)
     {
         var roll = _noticeSettings.For(data.RollSource);
         var dates = _rollDates.For(data.RollSource);
         var fileName = BuildAcknowledgementFileName(data);
 
+        if (data.IsAppeal && !data.AppealCloseDate.HasValue)
+            await LoadAppealPeriodAsync(data);
+
         var pdfBytes = BuildAcknowledgementPdf(data, roll, dates);
 
-        return Task.FromResult((pdfBytes, fileName));
+        return (pdfBytes, fileName);
+    }
+
+    // Appeal acknowledgement: the appeal period is the one of the appealed
+    // objection in Objection_MVD (not the roll's objection period).
+    private async Task LoadAppealPeriodAsync(AcknowledgementData data)
+    {
+        try
+        {
+            var rollCfg = Rolls.FirstOrDefault(r =>
+                string.Equals(r.ConnKey, RollConnKey(data.RollSource), StringComparison.OrdinalIgnoreCase));
+            var connStr = rollCfg is null ? null : _config.GetConnectionString(rollCfg.ConnKey);
+            if (string.IsNullOrWhiteSpace(connStr))
+                return;
+
+            var appealNo = (data.ObjectionRef ?? data.ObjectionNo ?? string.Empty).Trim();
+            if (appealNo.Length == 0)
+                return;
+
+            await using var conn = new SqlConnection(connStr);
+
+            var objectionNo = await conn.ExecuteScalarAsync<string?>(
+                "SELECT TOP (1) LTRIM(RTRIM(Obj_Ref)) FROM dbo.Obj_Property_Info_Appeal WHERE LTRIM(RTRIM(Appeal_No)) = @No;",
+                new { No = appealNo });
+
+            if (string.IsNullOrWhiteSpace(objectionNo))
+                return;
+
+            var table = V2_Genesis.Services.Objection.AppealDashboardData.MvdTable(_config);
+            var w = await conn.QueryFirstOrDefaultAsync<AppealPeriodRow>($@"
+SELECT TOP (1)
+       Appeal_Start_Date             AS Start,
+       Appeal_Close_Date             AS [Close],
+       Appeal_Start_Date_ReviseMVD   AS RevisedStart,
+       Appeal_Close_Date_ReviseMVD   AS RevisedClose,
+       CAST(Revise_MVD AS nvarchar(20)) AS ReviseMvd
+FROM dbo.[{table}]
+WHERE LTRIM(RTRIM(Objection_No)) = @No
+ORDER BY Batch_Date DESC;", new { No = objectionNo });
+
+            if (w is null)
+                return;
+
+            var window = V2_Genesis.Services.Objection.AppealWindowRules.Resolve(
+                w.Start, w.Close, w.RevisedStart, w.RevisedClose, w.ReviseMvd);
+
+            data.AppealStartDate = window.Start;
+            data.AppealCloseDate = window.Close;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "[Acknowledgement] Appeal period not found for {Ref}", data.ObjectionRef);
+        }
+    }
+
+    private static string RollConnKey(string? rollSource) => rollSource?.Trim() switch
+    {
+        "Objection" => "DefaultConnection",
+        "Objection_Supp1" => "Sup1Connection",
+        "Objection_Supp2" => "Sup2Connection",
+        "Objection_Supp3" => "Sup3Connection",
+        "Objection_Supp4" => "Sup4Connection",
+        "Objection_Supp5" => "Sup5Connection",
+        _ => "DefaultConnection"
+    };
+
+    private sealed class AppealPeriodRow
+    {
+        public DateTime? Start { get; set; }
+        public DateTime? Close { get; set; }
+        public DateTime? RevisedStart { get; set; }
+        public DateTime? RevisedClose { get; set; }
+        public string? ReviseMvd { get; set; }
     }
 
     // ── PDF builder ───────────────────────────────────────────────────────
@@ -1482,11 +1557,12 @@ ORDER BY {orderBy};",
         string actionWord = data.IsAppeal ? "appeal" : "objection";
         string actionWordUpper = data.IsAppeal ? "APPEAL" : "OBJECTION";
 
+        // Appeal heading: "{ROLL} APPEAL ACKNOWLEDGEMENT".
         string titleLabel =
             data.IsAppeal
                 ? data.IsMulti
-                    ? "MULTIPURPOSE APPEAL ACKNOWLEDGEMENT"
-                    : "APPEAL ACKNOWLEDGEMENT"
+                    ? $"{rollTitle.ToUpperInvariant()} MULTIPURPOSE APPEAL ACKNOWLEDGEMENT"
+                    : $"{rollTitle.ToUpperInvariant()} APPEAL ACKNOWLEDGEMENT"
                 : data.IsMulti
                     ? "MULTIPURPOSE OBJECTION ACKNOWLEDGEMENT"
                     : "OBJECTION ACKNOWLEDGEMENT";
@@ -1495,11 +1571,22 @@ ORDER BY {orderBy};",
             ? "Appeal Number:"
             : "Objection Number:";
 
-        string listedTitle = isLis
-            ? "PROPERTY DETAILS AS LISTED IN LIS"
-            : $"PROPERTY DETAILS AS LISTED IN {rollTitle.ToUpperInvariant()}";
+        // An appeal is against the Municipal Valuer's Decision (Section 6).
+        string listedTitle = data.IsAppeal
+            ? "PROPERTY DETAILS AS LISTED IN MUNICIPAL VALUER DECISION"
+            : isLis
+                ? "PROPERTY DETAILS AS LISTED IN LIS"
+                : $"PROPERTY DETAILS AS LISTED IN {rollTitle.ToUpperInvariant()}";
 
-        string sourceSummary = sourceType switch
+        string sourceSummary = data.IsAppeal
+            ? data.AppealCloseDate.HasValue
+                ? $"{rollTitle.ToUpperInvariant()}\nAPPEAL PERIOD: " +
+                  (data.AppealStartDate.HasValue
+                      ? $"{data.AppealStartDate.Value:dd MMMM yyyy} AT 08:00 - "
+                      : string.Empty) +
+                  $"{data.AppealCloseDate.Value:dd MMMM yyyy} AT 15:00"
+                : rollTitle.ToUpperInvariant()
+            : sourceType switch
         {
             AcknowledgementSource.Lis =>
                 $"LIS IN {rollTitle.ToUpperInvariant()}",

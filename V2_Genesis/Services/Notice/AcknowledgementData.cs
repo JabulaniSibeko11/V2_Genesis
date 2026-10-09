@@ -49,6 +49,11 @@ namespace V2_Genesis.Services.Notice
         public string? ValuationKey { get; set; }
 
         public bool IsAppeal { get; set; }
+
+        // Appeal period of the appealed objection (Objection_MVD
+        // Appeal_Start_Date / Appeal_Close_Date, or the ReviseMVD dates).
+        public DateTime? AppealStartDate { get; set; }
+        public DateTime? AppealCloseDate { get; set; }
         public List<string> UploadedDocumentNames { get; set; } = new();
 
         // ── Factory: build from TempData ─────────────────────────────────

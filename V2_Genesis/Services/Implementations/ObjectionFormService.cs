@@ -855,11 +855,23 @@ public class ObjectionFormService : IObjectionFormService
             fileCount: count,
             objFile: objFile);
 
+        // Appeal Pack: {AppealRootPath}\{Appeal_No}\ (e.g. C:\...\Sup3AppealData\APP-GV23-Sup3-76)
+        //   {Objection_No} Objection Pack.zip, acknowledgement, appeal form,
+        //   Submitted Evidence\, Representative\.
+        var appealPack = Path.Combine(cfg.AppealRootPath, appNo);
+        var packFiles = Directory.Exists(appealPack)
+            ? Directory.GetFiles(appealPack, "*", SearchOption.AllDirectories)
+                .Select(f => Path.GetRelativePath(appealPack, f))
+                .ToArray()
+            : Array.Empty<string>();
+
         _logger.LogInformation(
             "[Appeal Submission] Appeal completed successfully. " +
-            "AppealNo={AppealNo}, OriginalObjection={ObjectionNo}",
+            "AppealNo={AppealNo}, OriginalObjection={ObjectionNo}, AppealPack={AppealPack}, Files={Files}",
             appNo,
-            originalObjectionNo);
+            originalObjectionNo,
+            appealPack,
+            string.Join(" | ", packFiles));
 
         return new ObjectionSubmitResult
         {
