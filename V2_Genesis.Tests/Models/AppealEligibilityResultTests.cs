@@ -6,8 +6,8 @@ namespace V2_Genesis.Tests.Models;
 /// <summary>
 /// Business rules for lodging an appeal:
 ///   Client  – objection exists, MVD notice sent, appeal period open, no appeal yet.
-///   Admin   – the appeal period is always open (late condonation appeals),
-///             but the other rules still apply.
+///   Admin   – same rules as clients: no appeal outside the appeal period
+///             (decision 8 Oct 2026 — no late appeals for the admin team).
 /// </summary>
 public class AppealEligibilityResultTests
 {
@@ -41,12 +41,40 @@ public class AppealEligibilityResultTests
         => Assert.False(Eligible(periodOpen: false).CanLodge);
 
     [Fact]
-    public void Admin_can_lodge_when_the_appeal_period_is_closed()
-        => Assert.True(Eligible(periodOpen: false).CanLodgeAsAdmin);
+    public void Admin_cannot_lodge_when_the_appeal_period_is_closed()
+        => Assert.False(Eligible(periodOpen: false).CanLodgeAsAdmin);
 
     [Fact]
-    public void Admin_can_lodge_when_no_appeal_period_is_configured()
-        => Assert.True(Eligible(periodExists: false, periodOpen: false).CanLodgeAsAdmin);
+    public void Admin_cannot_lodge_when_no_appeal_period_is_configured()
+        => Assert.False(Eligible(periodExists: false, periodOpen: false).CanLodgeAsAdmin);
+
+    [Theory]
+    [InlineData(true, true, true, true, false)]
+    [InlineData(true, true, true, false, false)]
+    [InlineData(true, true, false, false, false)]
+    [InlineData(true, false, true, true, false)]
+    [InlineData(true, true, true, true, true)]
+    public void Admin_and_client_follow_the_same_rule(bool exists, bool sent, bool periodExists, bool open, bool lodged)
+    {
+        var r = Eligible(exists, sent, periodExists, open, lodged);
+        Assert.Equal(r.CanLodge, r.CanLodgeAsAdmin);
+    }
+
+    [Fact]
+    public void Closed_period_message_gives_the_close_date()
+    {
+        var r = new AppealEligibilityResult
+        {
+            ObjectionExists = true,
+            HasNoticeSentStatus = true,
+            AppealPeriodExists = true,
+            IsAppealPeriodOpen = false,
+            AppealStartDate = new DateTime(2026, 4, 16),
+            AppealCloseDate = new DateTime(2026, 6, 1)
+        };
+
+        Assert.Contains("01 June 2026", r.Message);
+    }
 
     [Theory]
     [InlineData(false, true, false)]   // objection not found

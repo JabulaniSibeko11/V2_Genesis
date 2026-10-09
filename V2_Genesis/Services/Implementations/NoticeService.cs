@@ -1557,35 +1557,18 @@ ORDER BY Batch_Date DESC;", new { No = objectionNo });
         string actionWord = data.IsAppeal ? "appeal" : "objection";
         string actionWordUpper = data.IsAppeal ? "APPEAL" : "OBJECTION";
 
-        // Appeal heading: "{ROLL} APPEAL ACKNOWLEDGEMENT".
-        string titleLabel =
-            data.IsAppeal
-                ? data.IsMulti
-                    ? $"{rollTitle.ToUpperInvariant()} MULTIPURPOSE APPEAL ACKNOWLEDGEMENT"
-                    : $"{rollTitle.ToUpperInvariant()} APPEAL ACKNOWLEDGEMENT"
-                : data.IsMulti
-                    ? "MULTIPURPOSE OBJECTION ACKNOWLEDGEMENT"
-                    : "OBJECTION ACKNOWLEDGEMENT";
+        // Appeal heading: "{ROLL} APPEAL ACKNOWLEDGEMENT" (Helpers/AcknowledgementText).
+        string titleLabel = AcknowledgementText.Title(data.IsAppeal, data.IsMulti, rollTitle);
 
         string referenceLabel = data.IsAppeal
             ? "Appeal Number:"
             : "Objection Number:";
 
         // An appeal is against the Municipal Valuer's Decision (Section 6).
-        string listedTitle = data.IsAppeal
-            ? "PROPERTY DETAILS AS LISTED IN MUNICIPAL VALUER DECISION"
-            : isLis
-                ? "PROPERTY DETAILS AS LISTED IN LIS"
-                : $"PROPERTY DETAILS AS LISTED IN {rollTitle.ToUpperInvariant()}";
+        string listedTitle = AcknowledgementText.ListedTitle(data.IsAppeal, isLis, rollTitle);
 
         string sourceSummary = data.IsAppeal
-            ? data.AppealCloseDate.HasValue
-                ? $"{rollTitle.ToUpperInvariant()}\nAPPEAL PERIOD: " +
-                  (data.AppealStartDate.HasValue
-                      ? $"{data.AppealStartDate.Value:dd MMMM yyyy} AT 08:00 - "
-                      : string.Empty) +
-                  $"{data.AppealCloseDate.Value:dd MMMM yyyy} AT 15:00"
-                : rollTitle.ToUpperInvariant()
+            ? AcknowledgementText.AppealPeriod(rollTitle, data.AppealStartDate, data.AppealCloseDate)
             : sourceType switch
         {
             AcknowledgementSource.Lis =>

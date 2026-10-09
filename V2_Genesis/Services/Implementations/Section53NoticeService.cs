@@ -487,28 +487,10 @@ public sealed class Section53NoticeService : ISection53NoticeService
         !string.IsNullOrWhiteSpace(row.MvdExtent3) ||
         !string.IsNullOrWhiteSpace(row.MvdMarketValue3);
 
-    // Same formats as eNotice: "R 29 184 000", extent "1 174" or "1 174.50".
-    private static string FormatRand(string? value)
-    {
-        if (string.IsNullOrWhiteSpace(value)) return string.Empty;
-        var raw = value.Replace("R", string.Empty, StringComparison.OrdinalIgnoreCase)
-            .Replace(",", string.Empty).Trim();
-        raw = new string(raw.Where(ch => char.IsDigit(ch) || ch == '.' || ch == '-').ToArray());
-        return decimal.TryParse(raw, NumberStyles.Any, CultureInfo.InvariantCulture, out var amount)
-            ? "R " + amount.ToString("#,##0", CultureInfo.InvariantCulture).Replace(",", " ")
-            : value.Trim();
-    }
+    // Same formats as eNotice (Helpers/NoticeNumberFormat).
+    private static string FormatRand(string? value) => V2_Genesis.Helpers.NoticeNumberFormat.Rand(value);
 
-    private static string FormatExtent(string? value)
-    {
-        if (string.IsNullOrWhiteSpace(value)) return string.Empty;
-        var raw = value.Replace(",", string.Empty).Trim();
-        if (!decimal.TryParse(raw, NumberStyles.Any, CultureInfo.InvariantCulture, out var extent))
-            return value.Trim();
-        return extent == Math.Truncate(extent)
-            ? extent.ToString("N0", CultureInfo.InvariantCulture).Replace(",", " ")
-            : extent.ToString("N2", CultureInfo.InvariantCulture).Replace(",", " ");
-    }
+    private static string FormatExtent(string? value) => V2_Genesis.Helpers.NoticeNumberFormat.Extent(value);
 
     private static string FormatDate(DateTime? value) =>
         value?.ToString("dd MMMM yyyy", CultureInfo.GetCultureInfo("en-ZA")) ?? string.Empty;

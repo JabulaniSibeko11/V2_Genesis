@@ -26,6 +26,15 @@ public class StatusDisplayTests
         Assert.Equal("App-Pending", DashboardDisplayHelpers.GetStatusDisplayText("App-Lodging", false));
     }
 
+    // Regression (8 Oct 2026): the dashboard procedure gave no evidence date,
+    // and a just-lodged objection showed Obj-Pending. Unknown window = keep the stored status.
+    [Fact]
+    public void Lodging_stays_lodging_when_the_48_hour_window_is_unknown()
+    {
+        Assert.Equal("Obj-Lodging", DashboardDisplayHelpers.GetStatusDisplayText("Obj-Lodging", null));
+        Assert.Equal("App-Lodging", DashboardDisplayHelpers.GetStatusDisplayText("App-Lodging", null));
+    }
+
     [Fact]
     public void Lodging_stays_lodging_inside_the_48_hours()
     {

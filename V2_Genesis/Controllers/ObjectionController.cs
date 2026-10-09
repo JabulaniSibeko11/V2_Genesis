@@ -687,40 +687,7 @@ public class ObjectionController : Controller
             // (Obj_Property_Info), main row + New2/New3 MVD splits.
             if (isAppeal)
             {
-                splitItems = new List<CheckPropertyResult>
-                {
-                    new()
-                    {
-                        CatDesc = d.CatDesc,
-                        LisStreetAddress = d.LisStreetAddress,
-                        RateableArea = d.RateableArea,
-                        MarketValue = d.MarketValue
-                    }
-                };
-
-                if (!string.IsNullOrWhiteSpace(d.Mvd2Category) ||
-                    !string.IsNullOrWhiteSpace(d.Mvd2Extent) ||
-                    !string.IsNullOrWhiteSpace(d.Mvd2MarketValue))
-                {
-                    splitItems.Add(new CheckPropertyResult
-                    {
-                        CatDesc = d.Mvd2Category,
-                        RateableArea = d.Mvd2Extent,
-                        MarketValue = d.Mvd2MarketValue
-                    });
-                }
-
-                if (!string.IsNullOrWhiteSpace(d.Mvd3Category) ||
-                    !string.IsNullOrWhiteSpace(d.Mvd3Extent) ||
-                    !string.IsNullOrWhiteSpace(d.Mvd3MarketValue))
-                {
-                    splitItems.Add(new CheckPropertyResult
-                    {
-                        CatDesc = d.Mvd3Category,
-                        RateableArea = d.Mvd3Extent,
-                        MarketValue = d.Mvd3MarketValue
-                    });
-                }
+                splitItems = AppealSection6Rows.Build(d);
             }
 
             // Only a NORMAL roll objection may reload valuation-roll splits.
