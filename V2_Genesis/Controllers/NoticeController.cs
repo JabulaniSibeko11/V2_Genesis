@@ -405,6 +405,12 @@ public class NoticeController : Controller
         var displayName = User.FindFirstValue(ClaimTypes.Name) ?? "Client";
 
         var vm = await _notice.GetNoticesDashboardAsync(userId, displayName);
+
+        // The Section 51 notice is the owner's document. The objections on a
+        // client's account are their own (Third-Party) objections, so the
+        // Section 51 notice is never listed for them. Admin sees it on Admin.
+        vm.ObjectionNotices.RemoveAll(n => n.Type == NoticeType.Section51);
+
         return View(vm);   // Views/Notices/Index.cshtml
     }
 
@@ -491,6 +497,13 @@ public class NoticeController : Controller
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrWhiteSpace(userId))
             return Challenge();
+
+        // Section 51 is never downloadable by the Third-Party objector (client).
+        if (type == NoticeType.Section51 && !IsAdministrativeUser())
+        {
+            TempData["NoticeError"] = "This notice is not available for your account.";
+            return RedirectToDashboard(returnUrl, rollSource);
+        }
 
         try
         {
