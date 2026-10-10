@@ -291,10 +291,12 @@ public class Section51Service : ISection51Service
     //     (Section51Rolls:{roll}:PostalAddressTable, by PREMISE_ID).
     //  2. Notice PDF → {objection folder}\Section 51 Notice\
     //        {Objection_No}_{Property_Desc}_Section 51.pdf
-    //  3. Owner has an email → email with the PDF, CC Valuation Enquiries,
+    //  3. Owner has an email → email with the PDF to the owner, CC Valuation
+    //     Enquiries, BCC the roll's tracking mailbox (TrackingEmail),
     //     .eml copy saved next to the PDF:
     //        email_{Objection_No}_{Property_Desc}_{Owner_Email}.eml
-    //     No email → only the PDF (to be printed and posted).
+    //     No email → the email goes to the tracking mailbox only, and the
+    //     PDF is printed and posted to the owner.
     //  4. Row in dbo.Section51Table (BatchName GENESIS, ClosingDate = +30 days)
     //  5. Obj_Property_Info.Section51_Emailed = 'Y' / 'N'
     //
@@ -465,60 +467,75 @@ public class Section51Service : ISection51Service
             return result;
         }
 
-        // ── 3. Email (owner, or the test recipient) ─────────────────
-        if (!string.IsNullOrWhiteSpace(ownerEmail))
+        // ── 3. Email ─────────────────────────────────────────────────
+        //  Owner email    → owner, CC Valuation Enquiries, BCC roll tracking mailbox
+        //  No owner email → roll tracking mailbox (e.g. GV23Supp4@joburg.org.za),
+        //                   so the notice is tracked; the PDF is still posted.
+        //  Test mode      → test recipient, CC as above.
+        var trackingEmail =
+            _config[$"Section51Rolls:{request.RollSource}:TrackingEmail"] is { Length: > 0 } rollTracking
+                ? rollTracking
+                : settings["TrackingEmail"];
+
+        var plan = V2_Genesis.Services.Section51.Section51Recipients.Resolve(
+            ownerEmail, testMode, testRecipient, ccAddress, trackingEmail);
+
+        if (!plan.OwnerHasEmail)
         {
-            var toAddress = testMode ? testRecipient?.Trim() : ownerEmail;
+            _logger.LogWarning(
+                "[S51 Notice] No owner email in {Table} for {ObjectionNo} (PREMISE_ID {PremiseId}). PDF saved for printing: {Path}. Tracking mailbox: {Tracking}",
+                cfg.PostalAddressTable, objectionNo, request.PremiseId, result.PdfPath,
+                string.IsNullOrWhiteSpace(trackingEmail) ? "(not set)" : trackingEmail);
+        }
 
-            if (string.IsNullOrWhiteSpace(toAddress))
-            {
-                _logger.LogError(
-                    "[S51 Notice] Section51:Notice:TestMode is on but TestRecipient is empty; notice not emailed for {ObjectionNo}.",
-                    objectionNo);
-            }
-            else
-            {
-                try
-                {
-                    await _emailService.SendSection51NoticeAsync(new Section51NoticeEmail
-                    {
-                        ObjectionNo = objectionNo,
-                        PropertyDescription = propertyDescription,
-                        ValuationKey = request.ValuationKey,
-                        RollName = cfg.RollName,
-                        Section51Pin = request.Section51Pin,
-                        SubmissionsCloseDate = closingDate,
-                        PortalUrl = portalUrl,
-                        OwnerEmail = ownerEmail,
-                        ToAddress = toAddress,
-                        CcAddress = ccAddress,
-                        IsTest = testMode,
-                        PdfBytes = pdf,
-                        PdfFileName = pdfFileName,
-                        EmlFolderPath = emailFolder,
-                        EmlExtraFolders = string.IsNullOrWhiteSpace(packFolder)
-                            ? new List<string>()
-                            : new List<string> { packFolder },
-                        EmlFileName =
-                            $"email_{SafeFileName(objectionNo)}_{SafeFileName(propertyDescription)}_{SafeFileName(ownerEmail)}.eml"
-                    });
-
-                    result.Emailed = true;
-                }
-                catch (Exception ex)
-                {
-                    result.Error = "The Section 51 notice could not be emailed; the PDF was saved for printing.";
-                    _logger.LogError(ex,
-                        "[S51 Notice] Email failed for {ObjectionNo} (owner {OwnerEmail}). PDF kept at {Path}.",
-                        objectionNo, ownerEmail, result.PdfPath);
-                }
-            }
+        if (!plan.CanSend)
+        {
+            _logger.LogError(
+                testMode
+                    ? "[S51 Notice] Section51:Notice:TestMode is on but TestRecipient is empty; notice not emailed for {ObjectionNo}."
+                    : "[S51 Notice] No owner email and no TrackingEmail for this roll; notice not emailed for {ObjectionNo}.",
+                objectionNo);
         }
         else
         {
-            _logger.LogWarning(
-                "[S51 Notice] No owner email in {Table} for {ObjectionNo} (PREMISE_ID {PremiseId}). PDF saved for printing: {Path}",
-                cfg.PostalAddressTable, objectionNo, request.PremiseId, result.PdfPath);
+            try
+            {
+                await _emailService.SendSection51NoticeAsync(new Section51NoticeEmail
+                {
+                    ObjectionNo = objectionNo,
+                    PropertyDescription = propertyDescription,
+                    ValuationKey = request.ValuationKey,
+                    RollName = cfg.RollName,
+                    Section51Pin = request.Section51Pin,
+                    SubmissionsCloseDate = closingDate,
+                    PortalUrl = portalUrl,
+                    OwnerEmail = ownerEmail ?? string.Empty,
+                    OwnerHasEmail = plan.OwnerHasEmail,
+                    ToAddress = plan.To!,
+                    CcAddresses = plan.Cc.ToList(),
+                    BccAddresses = plan.Bcc.ToList(),
+                    IsTest = testMode,
+                    PdfBytes = pdf,
+                    PdfFileName = pdfFileName,
+                    EmlFolderPath = emailFolder,
+                    EmlExtraFolders = string.IsNullOrWhiteSpace(packFolder)
+                        ? new List<string>()
+                        : new List<string> { packFolder },
+                    EmlFileName =
+                        $"email_{SafeFileName(objectionNo)}_{SafeFileName(propertyDescription)}_{SafeFileName(plan.OwnerHasEmail ? ownerEmail! : "No owner email")}.eml"
+                });
+
+                // Section51_Emailed = 'Y' only when the OWNER got it. A notice that
+                // only went to the tracking mailbox still has to be posted.
+                result.Emailed = plan.OwnerHasEmail;
+            }
+            catch (Exception ex)
+            {
+                result.Error = "The Section 51 notice could not be emailed; the PDF was saved for printing.";
+                _logger.LogError(ex,
+                    "[S51 Notice] Email failed for {ObjectionNo} (to {To}). PDF kept at {Path}.",
+                    objectionNo, plan.To, result.PdfPath);
+            }
         }
 
         // ── 4 + 5. Section51Table + Obj_Property_Info flag ──────────

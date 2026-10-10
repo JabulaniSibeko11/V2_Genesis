@@ -1436,6 +1436,22 @@ public class ObjectionController : Controller
             ? obj_appeal.Trim()
             : TempData.Peek("ObjectionNum")?.ToString()?.Trim();
 
+        // A Representative may not use their own e-mail as the owner's e-mail
+        // (the browser blocks it; this catches a skipped browser check).
+        // Without it the owner never gets the acknowledgement.
+        if (V2_Genesis.Helpers.Section1EmailRules.OwnerUsesRepEmail(obj1?.Owner_Email, obj1?.Rep_Email))
+        {
+            _logger.LogWarning(
+                "[SubmitObjectionForm] Blocked: owner e-mail equals representative e-mail. Roll={RollSource}, Premise={PremiseId}, User={UserId}",
+                rollSource, obj?.Premise_id, userId);
+
+            TempData["LodgementWindowError"] =
+                V2_Genesis.Helpers.Section1EmailRules.OwnerUsesRepEmailMessage +
+                " Nothing was saved — open the form again (your answers are kept in this browser) and correct the owner's e-mail.";
+
+            return RedirectAfterAppealBlock(rollSource);
+        }
+
         var result = await _objectionFormService.SubmitAsync(
             rollSource, userId, appealStat, appealObjectionNo, propertyFrom, obj, obj1, obj2, objR3, objB3,
             objA3, objB4, objR4, obj5, obj6, obj7, obj_file, files, fileR, appeal);

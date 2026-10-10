@@ -1984,10 +1984,22 @@ This is an automated email. Please do not reply directly.<br />
 
                 msg.To.Add(new MailAddress(notice.ToAddress.Trim()));
 
-                if (!string.IsNullOrWhiteSpace(notice.CcAddress) &&
-                    !notice.CcAddress.Trim().Equals(notice.ToAddress.Trim(), StringComparison.OrdinalIgnoreCase))
+                foreach (var cc in notice.CcAddresses
+                             .Where(x => !string.IsNullOrWhiteSpace(x))
+                             .Select(x => x.Trim())
+                             .Where(x => !x.Equals(notice.ToAddress.Trim(), StringComparison.OrdinalIgnoreCase))
+                             .Distinct(StringComparer.OrdinalIgnoreCase))
                 {
-                    msg.CC.Add(new MailAddress(notice.CcAddress.Trim()));
+                    msg.CC.Add(new MailAddress(cc));
+                }
+
+                foreach (var bcc in notice.BccAddresses
+                             .Where(x => !string.IsNullOrWhiteSpace(x))
+                             .Select(x => x.Trim())
+                             .Where(x => !x.Equals(notice.ToAddress.Trim(), StringComparison.OrdinalIgnoreCase))
+                             .Distinct(StringComparer.OrdinalIgnoreCase))
+                {
+                    msg.Bcc.Add(new MailAddress(bcc));
                 }
 
                 msg.Attachments.Add(new Attachment(
@@ -2006,11 +2018,14 @@ This is an automated email. Please do not reply directly.<br />
             }
 
             _logger.LogInformation(
-                "[S51 Email] Section 51 notice sent for {ObjectionNo} to {To}{Test}. Cc={Cc}",
+                "[S51 Email] Section 51 notice sent for {ObjectionNo} to {To}{Test}. Cc={Cc}, Bcc={Bcc}",
                 notice.ObjectionNo,
                 notice.ToAddress,
-                notice.IsTest ? $" (TEST — owner email {notice.OwnerEmail})" : string.Empty,
-                notice.CcAddress ?? "(none)");
+                notice.IsTest
+                    ? $" (TEST — owner email {(notice.OwnerHasEmail ? notice.OwnerEmail : "none")})"
+                    : notice.OwnerHasEmail ? string.Empty : " (no owner email — tracking mailbox only)",
+                notice.CcAddresses.Count == 0 ? "(none)" : string.Join(", ", notice.CcAddresses),
+                notice.BccAddresses.Count == 0 ? "(none)" : string.Join(", ", notice.BccAddresses));
 
             // 2. Save the .eml copy (a failure here must not undo the send)
             try
@@ -2085,7 +2100,15 @@ This is an automated email. Please do not reply directly.<br />
             {
                 content.Append(Notice(
                     $"<strong>TEST MODE</strong> — this Section 51 notice is intended for the property owner at " +
-                    $"<strong>{H(string.IsNullOrWhiteSpace(notice.OwnerEmail) ? "(no email)" : notice.OwnerEmail)}</strong>."));
+                    $"<strong>{H(!notice.OwnerHasEmail || string.IsNullOrWhiteSpace(notice.OwnerEmail) ? "(no email)" : notice.OwnerEmail)}</strong>."));
+            }
+
+            if (!notice.OwnerHasEmail)
+            {
+                // Internal copy for the tracking mailbox only.
+                content.Append(Notice(
+                    "<strong>NO OWNER E-MAIL ON THE ROLL</strong> — this copy was sent to the Section 51 tracking " +
+                    "mailbox only. Please print the attached notice and post it to the owner's postal address."));
             }
 
             content.Append(Greeting("Property Owner"));

@@ -135,12 +135,56 @@
         return true;
     }
 
+    // A Representative must not put their own e-mail in the Owner details:
+    // the owner would never receive the acknowledgement and the owner's
+    // contact details would be lost. (Server checks the same rule.)
+    const OWNER_IS_REP_MESSAGE =
+        "The owner's e-mail cannot be the same as the representative's e-mail. " +
+        "Please enter the property owner's own e-mail address.";
+
+    function validateOwnerNotRep() {
+        const owner = form.querySelector('[data-email-primary="Owner_Email"]');
+        const rep = form.querySelector('[data-email-primary="Rep_Email"]');
+        if (!owner || !rep) return true;
+
+        const ownerEmail = normaliseEmail(owner.value);
+        const repEmail = normaliseEmail(rep.value);
+        const clash = !!ownerEmail && !!repEmail && ownerEmail === repEmail;
+
+        const ownerConfirm = form.querySelector('[data-email-confirm="Owner_Email"]');
+        const ownerStatus = form.querySelector('[data-email-status="Owner_Email"]');
+
+        if (clash) {
+            owner.classList.add('is-invalid');
+            owner.classList.remove('is-valid');
+            owner.setCustomValidity(OWNER_IS_REP_MESSAGE);
+            if (ownerConfirm) {
+                ownerConfirm.classList.remove('is-valid');
+                ownerConfirm.classList.add('is-invalid');
+            }
+            if (ownerStatus) {
+                ownerStatus.textContent = OWNER_IS_REP_MESSAGE;
+                ownerStatus.classList.remove('text-success');
+                ownerStatus.classList.add('text-danger');
+            }
+            return false;
+        }
+
+        // No clash: let the normal match check set the owner's state again.
+        if (owner.validationMessage === OWNER_IS_REP_MESSAGE) {
+            owner.setCustomValidity('');
+            validateEmailPair('Owner_Email', false);
+        }
+        return true;
+    }
+
     function validateAllEmailPairs(showEmptyError) {
         let valid = true;
         form.querySelectorAll('[data-email-primary]').forEach(function (primary) {
             const modelName = primary.getAttribute('data-email-primary');
             if (!validateEmailPair(modelName, showEmptyError)) valid = false;
         });
+        if (!validateOwnerNotRep()) valid = false;
         return valid;
     }
 
@@ -151,6 +195,7 @@
                 input.getAttribute('data-email-confirm');
 
             validateEmailPair(modelName, false);
+            validateOwnerNotRep();
             scheduleSave();
         });
 
@@ -160,6 +205,7 @@
                 input.getAttribute('data-email-confirm');
 
             validateEmailPair(modelName, true);
+            validateOwnerNotRep();
         });
     });
 
@@ -433,7 +479,9 @@
             invalid?.scrollIntoView({ behavior: 'smooth', block: 'center' });
             invalid?.focus();
 
-            alert('Please make sure the email address and confirmation email match before submitting.');
+            alert(validateOwnerNotRep()
+                ? 'Please make sure the email address and confirmation email match before submitting.'
+                : OWNER_IS_REP_MESSAGE);
             return false;
         }
 
